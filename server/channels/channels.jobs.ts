@@ -13,6 +13,9 @@ import { listingFactsSpec } from "./listing-facts.job";
 import { pushStockSpec } from "@server/shared/jobs/push-stock.job";
 import { channelStockService } from "./channel-stock.service";
 import { channelOrdersService } from "./channel-orders.service";
+import { platformListingService } from "./platform-listing.service";
+import { listingPublishService } from "./listing-publish.service";
+import { checkListingsSpec, LISTING_CHECK_EVERY_SECONDS, publishListingSpec } from "./listing-publish.job";
 import { checkOrdersSpec, checkStockSpec, ORDERS_CHECK_EVERY_SECONDS } from "./stock-checks.job";
 import { enqueue, enqueueLater } from "@server/shared/jobs/jobs.enqueue";
 import { prisma } from "@server/shared/prisma";
@@ -25,6 +28,10 @@ export const listingReadJob = registerJob({
   ...listingReadSpec,
   handler: async ({ jobId, payload }) => {
     const outcome = await channelImportService.runRead(payload.connectionId);
+    // Each newly linked listing gets its platform listing with what is live (channel-listings D3).
+    await platformListingService.ensureForConnection(payload.connectionId).catch((error: unknown) => {
+      console.error(`[channels] platform listings not made for ${payload.connectionId}: ${error instanceof Error ? error.name : "error"}`);
+    });
     console.log(`[jobs] channels.read-listings ${jobId}: ${JSON.stringify({ connection: payload.connectionId, ...outcome })}`);
   },
 });
@@ -52,6 +59,9 @@ export const channelsMaintainJob = registerJob({
     // Stock sync's daily check, and a restart of the order check if its chain stopped (inventory-sync Q23).
     await enqueue(prisma, checkStockSpec, {});
     await enqueueLater(prisma, checkOrdersSpec, {}, { afterSeconds: 0, onePerSeconds: ORDERS_CHECK_EVERY_SECONDS });
+    // Platform listings for anything linked since, and one more look at listings still waiting (marketplace-publish D5).
+    await platformListingService.ensureForAll().catch((error: unknown) => console.error(`[channels] platform listings pass failed: ${error instanceof Error ? error.name : "error"}`));
+    await listingPublishService.daily();
     console.log(
       `[jobs] channels.maintain ${jobId}: checked ${summary.checked}, renewed ${summary.renewed}, ` +
         `resealed ${summary.resealed}, needs reconnect ${summary.needsReconnect}, ` +
@@ -109,5 +119,25 @@ export const checkStockJob = registerJob({
   handler: async ({ jobId }) => {
     const checked = await channelStockService.dailyCheckAll();
     if (checked > 0) console.log(`[jobs] channels.check-stock ${jobId}: ${checked} connections`);
+  },
+});
+
+/** One listing's reviewed changes to its marketplace (marketplace-publish D3, D4). A busy marketplace throws, so the queue retries. */
+export const publishListingJob = registerJob({
+  ...publishListingSpec,
+  handler: async ({ jobId, payload }) => {
+    const outcome = await listingPublishService.send(payload.listingId);
+    console.log(`[jobs] channels.publish-listing ${jobId}: ${JSON.stringify({ listing: payload.listingId, ...outcome })}`);
+  },
+});
+
+/** The marketplaces' answers to what was sent (marketplace-publish D5): runs again only while one is waiting. */
+export const checkListingsJob = registerJob({
+  ...checkListingsSpec,
+  handler: async ({ jobId }) => {
+    const checked = await listingPublishService.checkDue(() =>
+      enqueueLater(prisma, checkListingsSpec, {}, { afterSeconds: LISTING_CHECK_EVERY_SECONDS, onePerSeconds: LISTING_CHECK_EVERY_SECONDS }),
+    );
+    if (checked > 0) console.log(`[jobs] channels.check-listings ${jobId}: ${checked} listings`);
   },
 });

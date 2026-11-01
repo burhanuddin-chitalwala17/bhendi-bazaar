@@ -20,6 +20,8 @@ import {
 } from "./shop-details-sections";
 import { OPTIONAL_ROWS, SHOP_DETAILS_COPY } from "./shop-details-copy";
 import { ShopPreview } from "./shop-preview";
+import { SaveBar } from "./save-bar";
+import { SaveBarProvider, useSaveBar } from "./useSaveBar";
 import { ShopLinkRow, ShopNameRow, ShopPrivatePart, type ContactProps } from "./shop-private-part";
 
 /** ux First use: none of the three essentials yet. Name is always there, so logo and line decide. */
@@ -31,8 +33,8 @@ const anyOptional = (d: ShopDetailsDto) =>
 
 /**
  * Shop details (org-profile D2): "Buyers see this" with essentials first, each optional row collapsed and saying
- * what it adds, every section saving alone. Holds the page's version, so each save carries the
- * latest one (Q21), and the draft the `lg:` preview draws (D10).
+ * what it adds, and one Save for every change (Q30). Holds the page's version, so each section's
+ * write carries the latest one (Q21), and the draft the `lg:` preview draws (D10).
  */
 export function ShopDetailsEditor({
   orgId,
@@ -63,6 +65,7 @@ export function ShopDetailsEditor({
   const onDraft = useCallback((part: Partial<ShopDetailsDto>) => setDraft((d) => ({ ...d, ...part })), []);
   // The page keys this editor on the read's version, so a refresh with newer values remounts it.
   const onLoadLatest = useCallback(() => router.refresh(), [router]);
+  const bar = useSaveBar();
 
   const props: SectionProps = { orgId, details, version: () => version.current, onSaved, onLoadLatest, onDraft };
   const contact: ContactProps = { orgId, details, contactVersion: () => contactVersion.current, onSaved, onLoadLatest };
@@ -73,6 +76,7 @@ export function ShopDetailsEditor({
       : null;
 
   return (
+    <SaveBarProvider value={bar.api}>
     <div className="lg:grid lg:grid-cols-5 lg:items-start lg:gap-8">
       <div className="space-y-6 lg:col-span-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -120,11 +124,13 @@ export function ShopDetailsEditor({
         </section>
 
         <ShopPrivatePart {...contact} />
+        <SaveBar changed={bar.changed} saving={bar.saving} slow={bar.slow} onSave={() => void bar.saveAll()} onDiscard={bar.discardAll} />
       </div>
 
       <aside className="hidden lg:sticky lg:top-6 lg:col-span-2 lg:block">
         <ShopPreview details={{ ...details, ...draft }} />
       </aside>
     </div>
+    </SaveBarProvider>
   );
 }

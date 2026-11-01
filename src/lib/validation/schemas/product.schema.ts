@@ -122,6 +122,19 @@ const productFields = z
         { message: "Each location may appear only once" }
       ),
     sku: z.string().trim().max(64).optional(),
+    // Strict fields every marketplace shares, and the points a marketplace shows first
+    // (channel-listings Q6, D7). MRP in rupees as typed, like price.
+    // An emptied box is null, which clears the stored MRP; absent leaves it (channel-listings D7).
+    mrp: z.preprocess((v) => (v === "" || (typeof v === "number" && Number.isNaN(v)) ? null : v), rupeeAmount("MRP").nullable()).optional(),
+    barcode: z
+      .string()
+      .trim()
+      .refine((value) => value === "" || /^\d{8,14}$/.test(value), "A barcode is 8 to 14 digits")
+      .optional(),
+    keyFeatures: z
+      .array(z.string().trim().min(1, "Write the point, or remove it").max(500, "Keep each point to 500 characters"))
+      .max(5, "Up to five points")
+      .optional(),
     lowStockThreshold: optionalNumber(z.number().int("Low stock threshold must be a whole number").min(0)),
 
     /**
@@ -182,7 +195,7 @@ export const teamProductEditSchema = productFields
 export const PRODUCT_FORM_FIELDS = [
   "name", "description", "price", "salePrice", "currency",
   "orgId", "categoryId", "tags", "flags", "media",
-  "weight", "sizes", "colors", "stockLocations", "sku", "lowStockThreshold",
+  "weight", "sizes", "colors", "stockLocations", "sku", "lowStockThreshold", "mrp", "barcode", "keyFeatures",
   "kind", "familyId", "brandId", "facts", "measurements",
 ] as const;
 

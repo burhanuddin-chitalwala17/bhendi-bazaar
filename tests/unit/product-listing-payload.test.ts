@@ -105,7 +105,7 @@ describe("the form's field list stays in step with the schema", () => {
   it("names no field the schema does not accept", () => {
     const accepted = Object.keys(productFormSchema.parse(base));
     const optional = ["description", "salePrice", "currency", "tags", "flags", "sizes", "colors",
-      "sku", "lowStockThreshold", "kind", "familyId", "brandId", "facts", "measurements"];
+      "sku", "lowStockThreshold", "kind", "familyId", "brandId", "facts", "measurements", "mrp", "barcode", "keyFeatures"];
     for (const field of PRODUCT_FORM_FIELDS) {
       expect(
         accepted.includes(field) || optional.includes(field),

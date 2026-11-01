@@ -60,7 +60,7 @@ describe("the step map (spec R1, R2)", () => {
   });
 
   it("hides only the seldom-used fields under More options (Q7)", () => {
-    expect([...MORE_OPTIONS_FIELDS].sort()).toEqual(["familyId", "flags", "lowStockThreshold", "sku", "tags"]);
+    expect([...MORE_OPTIONS_FIELDS].sort()).toEqual(["barcode", "familyId", "flags", "lowStockThreshold", "sku", "tags"]);
   });
 
   it("counts nested errors on their step and finds the first one in step order (spec R4)", () => {

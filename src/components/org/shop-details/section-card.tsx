@@ -6,6 +6,7 @@ import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SHOP_DETAILS_COPY } from "./shop-details-copy";
 import type { SectionProblem } from "./useShopDetailsSection";
+import { useSaveAll } from "./useSaveBar";
 
 /** The eye and the line saying where a field shows (org-profile D2, A2). */
 export function SeenBy({ children }: { children: ReactNode }) {
@@ -17,16 +18,10 @@ export function SeenBy({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * One section's own form, banner and Save (R9). The button is never disabled (ADR-0053): while a
- * save is in flight it says so, and after 3 s says it is still going.
- */
+/** One section's form and banners. Saving is the page's one bar (Q30); Enter or "Try again" runs it. */
 export function SectionForm({
   id,
   title,
-  onSubmit,
-  isSubmitting,
-  slow,
   problem,
   formError,
   onLoadLatest,
@@ -34,17 +29,15 @@ export function SectionForm({
 }: {
   id: string;
   title?: string;
-  onSubmit: (event?: React.BaseSyntheticEvent) => void;
-  isSubmitting: boolean;
-  slow: boolean;
   problem: SectionProblem;
   /** A failure with no banner of its own and no field to sit on: shown here, never silent (ADR-0013). */
   formError: string | null;
   onLoadLatest: () => void;
   children: ReactNode;
 }) {
+  const saveAll = useSaveAll();
   return (
-    <form id={id} onSubmit={onSubmit} noValidate className="scroll-mt-20 space-y-4">
+    <form id={id} onSubmit={saveAll} noValidate className="scroll-mt-20 space-y-4">
       {title && <h3 className="font-heading text-base font-semibold">{title}</h3>}
       {problem?.kind === "retry" && (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-card border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -68,9 +61,6 @@ export function SectionForm({
         </p>
       )}
       {children}
-      <Button type="submit" className="h-11 w-full md:w-auto" aria-busy={isSubmitting}>
-        {isSubmitting && slow ? SHOP_DETAILS_COPY.stillSaving : SHOP_DETAILS_COPY.save}
-      </Button>
     </form>
   );
 }

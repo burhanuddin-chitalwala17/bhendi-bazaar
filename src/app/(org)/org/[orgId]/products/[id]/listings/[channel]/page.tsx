@@ -1,0 +1,45 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { requireOrgMember } from "@/lib/org-auth";
+import { platformListingDAL } from "@/data-access-layer/platform-listing.dal";
+import { PageShell } from "@/components/shared/page-shell";
+import { SectionHeader } from "@/components/shared/SectionHeader";
+import { ListingEditor } from "@/components/channel/listing-editor";
+import { ListingLocked } from "@/components/channel/listing-locked";
+import { ListingStatusLine } from "@/components/channel/listing-status-line";
+import { ListingIssuesBanner } from "@/components/channel/listing-issues-banner";
+import { ListingDraftBanner } from "@/components/channel/listing-draft-banner";
+import { LISTING } from "@/components/channel/platform-listing-copy";
+
+export const metadata = {
+  title: "Marketplace listing",
+  robots: { index: false, follow: false },
+};
+
+/** A product's listing on one marketplace (channel-listings ux.md "Listing screen"). */
+export default async function ListingPage({ params }: { params: Promise<{ orgId: string; id: string; channel: string }> }) {
+  const { orgId, id, channel } = await params;
+  const scope = await requireOrgMember(orgId);
+  const screen = await platformListingDAL.screen(scope.orgId, id, channel);
+  if (!screen) notFound();
+  return (
+    <PageShell width="narrow">
+      <Link href={`/org/${scope.orgId}/products/${id}`} className="text-sm text-muted-foreground underline-offset-4 hover:underline">
+        ‹ {screen.productName}
+      </Link>
+      <SectionHeader as="h1" help="channels" title={LISTING.screenTitle(screen.label)} description={LISTING.intro(screen.label)} />
+      <div>
+        <ListingStatusLine status={screen.status} label={screen.label} />
+      </div>
+      <ListingIssuesBanner screen={screen} />
+      <ListingDraftBanner orgId={scope.orgId} screen={screen} />
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-3 lg:items-start">
+        <div className="lg:col-span-2">
+          <ListingEditor orgId={scope.orgId} screen={screen} />
+        </div>
+        <ListingLocked orgId={scope.orgId} screen={screen} />
+      </div>
+    </PageShell>
+  );
+}

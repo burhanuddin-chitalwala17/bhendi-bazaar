@@ -1,7 +1,7 @@
 # UX — own-store/org-profile
 
 - **Status:** Signed off
-- **Verified:** 2026-11-01
+- **Verified:** 2026-11-02
 - **Prototype:** `seller-portal-prototype.html`, section "Shop details" (shared with seller-onboarding; to be published as a private artifact)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [seller-onboarding ux](../seller-onboarding/ux.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
@@ -58,7 +58,9 @@ Each starts one step before the screen.
 | Empty | All optional fields blank, essentials done | "Your shop page shows the basics. Add more whenever you like." | Add more |
 | Loading | Section skeletons; a refresh keeps the values on screen | — | — |
 | Partial | Essentials 2 of 3, each optional row says what it adds | "About your shop · adds the 'About' section" | Add |
-| Success | Toast, section stays open | "Saved. Buyers see this on your shop page now." | See as a buyer |
+| Unsaved | A bar on the tab bar (foot of the column from md), only while something changed (Q30) | "Unsaved changes" | Discard · Save |
+| Success | Toast, section stays open, bar goes | "Saved. Buyers see this on your shop page now." · several sections: "All changes saved." | See as a buyer |
+| Partly saved | The rest save; the failed section opens and scrolls into view with its own banner or field message; the bar stays | "Not everything saved. The section that didn't says why." | Fix · Save |
 | Retryable error | Banner on the section, values kept | "Couldn't save. What you typed is still here." | Try again |
 | Terminal error | Field message under the field | "Use at least 3 letters." · "Enter a valid phone number for the selected country" · "Use the handle on its own, not a web address." | Fix field |
 | Refused | Staff editing name/contact; or link taken | "Only the shop owner can change this." · "That link is taken. Try {suggestion}." | Ask owner / use suggestion |
@@ -96,7 +98,7 @@ Each starts one step before the screen.
   your name" · "The person behind the shop · adds a face buyers trust" · "Social handles · adds
   your Instagram and Facebook" · "Delivery and returns · tells buyers what to expect".
 - Tax card: "Tax and bank details · We'll ask before your first payout. Nothing to do now."
-- Buttons: "Save" · "See as a buyer" · "Change name" · "Keep old name" · "Try again".
+- Buttons: "Save" (the one save bar, Q30) · "Discard" · "See as a buyer" · "Change name" · "Keep old name" · "Try again".
 - Toasts: "Saved. Buyers see this on your shop page now." · "Saved. We'll call this number about
   orders." · "Saved. New orders will come to this email." (added building U3: an email save had no
   line of its own) · "Name changed." · email to old address: "Your shop's email was changed".

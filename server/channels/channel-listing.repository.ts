@@ -3,7 +3,7 @@ import { prisma } from "@server/shared/prisma";
 
 import { uniqueViolationFields } from "@server/shared/constraint";
 
-import { LINK_SOURCE, type LeftOffReason, type MarketplaceChannel } from "./channel-connection.types";
+import { LINK_SOURCE, LISTING_STATUS, type LeftOffReason, type MarketplaceChannel } from "./channel-connection.types";
 import type { ListingAttributes } from "./providers/listing-read";
 
 /**
@@ -403,6 +403,38 @@ export const channelListingRepository = {
       where: { connectionId, productId: { not: null }, goneAt: null },
       select: { id: true, productId: true, sku: true, externalId: true, title: true, attributes: true, stockSent: true, product: { select: { name: true } } },
       orderBy: { title: "asc" },
+    });
+  },
+
+  /** The live linked mirror rows of these products on a connection: what a listing screen shows as "On Amazon now" (channel-listings D3, D5). */
+  async mirrorsFor(connectionId: string, productIds: readonly string[]) {
+    return await prisma.channelListing.findMany({
+      where: { connectionId, productId: { in: [...productIds] }, goneAt: null },
+      select: { id: true, productId: true, sku: true, externalId: true, title: true, pricePaise: true, status: true, quantity: true, attributes: true, attributesReadAt: true, lastSeenAt: true },
+    });
+  },
+
+  /**
+   * The mirror row of a listing we created (marketplace-publish D6), linked to its product at once so
+   * stock sync and the next read take it up. Keyed on (connection, SKU) like a read's, so a read that
+   * got there first keeps its row and only gains the link where it has none.
+   */
+  async createLinked(data: { connectionId: string; orgId: string; channel: string; sku: string; productId: string; title: string; pricePaise: number; externalId: string | null }) {
+    const now = new Date();
+    return await prisma.channelListing.upsert({
+      where: { connectionId_sku: { connectionId: data.connectionId, sku: data.sku } },
+      create: { ...data, skuKey: data.sku.trim().toLowerCase(), status: LISTING_STATUS.LIVE, linkSource: LINK_SOURCE.OWNER, linkedAt: now, lastSeenAt: now },
+      update: {},
+      select: { id: true },
+    });
+  },
+
+  /** Linked mirror rows on a connection with no `PlatformListing` yet, for seeding (channel-listings D3). */
+  async linkedWithoutPlatformListing(connectionId: string, take = 500) {
+    return await prisma.channelListing.findMany({
+      where: { connectionId, productId: { not: null }, goneAt: null, platformListing: null },
+      select: { productId: true },
+      take,
     });
   },
 

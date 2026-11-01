@@ -518,6 +518,37 @@ Routes, both `withOrg`:
   marketplace location to one of the shop's active locations or not used, never both. `{ ok: true }`;
   400 for a location not the shop's or closed.
 
+### Platform listings and publishing
+
+Since channel-listings and marketplace-publish ([specs](specs/marketplace-integration/channel-listings/))
+channels reads, on the server, from `server/channels/platform-listing.types.ts`. **`ListingScreenDTO`**:
+the listing's id and `version`, `values` (the six `LISTING_FIELD`s computed from the product with the
+listing's own over it; price in paise, photos as media ids), `own` per field, the `product`'s values,
+`theirs` (title, price, features, description as the marketplace showed them at the last read, with
+`readAt`), the marketplace's `rules` (`ListingRules`: writable fields, limits, whole rupees, photo
+rule, `canCreate`, `editIn`), the product's `photos` (each with a `warning`), `locked` (MRP, barcode,
+brand, stock), `status` (**`ListingStatusDTO`**: `LISTING_STATUS`, waiting and issue counts, when),
+`waitingFields`, `issues` (**`ListingIssue`**: code, message, severity, our field or null), `showing`
+and `draft` (create mode, target page, marketplace type, facts still needed). **`ProductListingSummaryDTO`**
+gives each connected marketplace's status for a product. **`ReviewDTO`** lists **`ReviewListingDTO`**s
+(id, version, name, status, `creating`, and **`ReviewChangeDTO`**s: field, `from` or null, `to`, `big`);
+**`PublishResultDTO`** is `{ sent, refused }`. `server/channels/providers/publish.ts` holds `PageMatch`
+(ASIN, title, image, matched by barcode or name).
+
+Routes, all `withOrg`; bodies in `platform-listing.schema.ts`:
+- `PUT /api/org/[orgId]/products/[id]/listings/[channel]` — `listingSaveSchema`: `{ seenVersion,
+  overrides }`, only the six fields (price in rupees), `strict()` so a strict field is a 400. Answers
+  `{ version, waiting }`; 409 when another save came first.
+- `POST` the same path — `listingDraftSchema`: `{ mode: "offer" | "new", targetExternalId }`. `{ id }`;
+  409 when the product is already on that marketplace or it cannot create.
+- `GET /api/org/[orgId]/products/[id]/listings/[channel]/pages` — `{ pages: PageMatch[] }`.
+- `POST /api/org/[orgId]/channels/[channel]/publish` — `listingPublishSchema`: `items`, each `{ id,
+  version, fields }`. Answers `PublishResultDTO`; a listing that moved since the review is refused.
+- `POST /api/org/[orgId]/channels/[channel]/families/[familyId]` — the family's page and member drafts.
+  `{ id, members }`.
+
+The product form gains `mrp` (rupees), `barcode` (8–14 digits or blank) and `keyFeatures` (up to five).
+
 ### Image enhancement
 
 Since PR-185 the org portal speaks **`EnhancementDto`** (`server/content/enhancement.types.ts`): `id`, `tool`, `preset`, `state`, `sourceAssetId`, `sourceRef`, `proposalUrl` (null unless the state is `PROPOSED`), `resultAssetId`, `resultRef`, `error`, `costPaise` (integer paise, [Invariant 3](../CLAUDE.md)), `createdAt`, `proposedAt`, `decidedAt` — beside **`EnhancementUsage`** (`used`, `allowance`, `paused`, `pauseReason`), which every answer carries so the sheet can say where the shop stands. Four routes, all `withOrg` and parsed by `src/lib/validation/schemas/enhancement.schema.ts`: `POST /api/org/:orgId/enhancements` (`{ sourceAssetId? | sourceRef?, tool, preset?, slot?, slotRole? }`, exactly one of the first two: the library names a photo by its asset id, the gallery editor knows only the URL of one it has just put up, and a request carrying both or neither is a 400) → `{ enhancement, usage }`; `GET …/:id` → `{ enhancement }`, which the sheet polls while the worker runs; `POST …/:id/accept` → `{ enhancement }` with `resultRef`, the derived image's URL; `POST …/:id/discard` → `{ enhancement }`. A refusal is a `DomainError` with the reason the org member reads ([image-enhancement](specs/image-enhancement/) R7, R10). Since PR-198 `preset` is **not free text**: it is one of the keys in `server/content/scene-presets.ts`, required when `tool` is `SCENE` and refused on every other tool, so a request carrying a description nobody approved is a 400 rather than a row (R11).

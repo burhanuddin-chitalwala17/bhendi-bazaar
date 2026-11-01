@@ -65,6 +65,10 @@ export interface ProductDetails {
   tags: string[];
   flags: ProductFlag[];
   sku?: string;
+  /** Paise; null until the shop or a marketplace fill sets it. */
+  mrpPaise?: number | null;
+  barcode?: string | null;
+  keyFeatures?: string[];
   stock: number;
   lowStockThreshold: number;
   weight: number;

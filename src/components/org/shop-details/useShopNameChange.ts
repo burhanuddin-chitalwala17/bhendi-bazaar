@@ -9,6 +9,7 @@ import { ApiError } from "@/lib/api-error";
 import { openShopSchema } from "@/lib/validation/schemas/org.schema";
 import type { ShopDetailsDto } from "@server/catalog/shop-details.types";
 import { NAME_SHEET_COPY } from "./shop-details-copy";
+import { useSaveBarEntry } from "./useSaveBar";
 
 const SLOW_AFTER_MS = 3000;
 const nameSchema = z.object({ name: openShopSchema.shape.name });
@@ -23,7 +24,7 @@ export type NameProblem =
 
 /**
  * A shop's rename (org-profile D7, Q15): the field validates first (ux Terminal error stays on the
- * field), Save opens the confirming sheet only when the name changed, and "Change name" writes.
+ * field), the page's Save opens the confirming sheet only when the name changed, and "Change name" writes.
  */
 export function useShopNameChange({
   current,
@@ -40,15 +41,17 @@ export function useShopNameChange({
   const [problem, setProblem] = useState<NameProblem>(null);
   const busy = useRef(false);
 
+  const opened = useRef(false);
   const form = useServerForm<NameInput>({
     schema: nameSchema,
     defaultValues: { name: current },
     // Nothing is written here: a valid new name only opens the sheet.
     submit: async ({ name }) => {
+      opened.current = true;
       if (name !== current) {
         setProblem(null);
         setPending(name);
-      }
+      } else form.reset({ name: current }); // "Noor Attar " trims to the same name: nothing to change.
     },
   });
 
@@ -88,6 +91,18 @@ export function useShopNameChange({
     setProblem(null);
     form.reset({ name: current });
   };
+
+  // On the save bar last (Q30): its save is opening the sheet; the sheet's own toast says the rename.
+  useSaveBarEntry("shop-name", {
+    dirty: form.formState.isDirty,
+    save: async () => {
+      opened.current = false;
+      await form.onSubmit();
+      return opened.current;
+    },
+    discard: keep,
+    last: true,
+  });
 
   return { form, pending, changing, slow, problem, confirm, keep };
 }

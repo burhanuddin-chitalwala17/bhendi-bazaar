@@ -32,6 +32,9 @@ export const FIELD_STEP: Record<FormField, Exclude<ProductStepKey, "review">> = 
   stockLocations: "price",
   weight: "price",
   sku: "price",
+  mrp: "price",
+  barcode: "price",
+  keyFeatures: "what",
   lowStockThreshold: "price",
   kind: "details",
   brandId: "details",
@@ -42,7 +45,7 @@ export const FIELD_STEP: Record<FormField, Exclude<ProductStepKey, "review">> = 
 };
 
 /** The seldom-used fields, behind "More options" in their step (Q7). */
-export const MORE_OPTIONS_FIELDS = ["sku", "lowStockThreshold", "tags", "flags", "familyId"] as const;
+export const MORE_OPTIONS_FIELDS = ["sku", "barcode", "lowStockThreshold", "tags", "flags", "familyId"] as const;
 
 const META = new Set(["message", "type", "ref", "types"]);
 
@@ -106,6 +109,9 @@ export const FIELD_LABEL: Record<FormField, string> = {
   stockLocations: "Stock",
   weight: "Packed weight",
   sku: "SKU",
+  mrp: "MRP",
+  barcode: "Barcode",
+  keyFeatures: "Key features",
   lowStockThreshold: "Low-stock alert",
   kind: "Kind",
   brandId: "Brand",

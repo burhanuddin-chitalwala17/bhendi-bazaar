@@ -340,6 +340,34 @@ our app (an empty body is accepted and changes nothing). Amazon: `orders/v0/orde
 inventory is not ours to use and a listing has one seller-fulfilled (`DEFAULT`) quantity;
 `patchListingsItem` with `mode=VALIDATION_PREVIEW` returns `VALID` for a quantity patch.
 
+**Editing and creating a listing, checked 2026-11-02** (channel-listings, marketplace-publish), from
+Amazon's Listings Items 2021-08-01 and Product Type Definitions 2020-09-01 models and guides, and
+Flipkart's [listings v3](https://seller.flipkart.com/api-docs/listing-api-docs/LMAPIRef.html).
+
+- **Amazon edits by patch, never put.** A put replaces the whole listing and drops what it leaves out.
+  Patch operations are per top-level attribute; price is a `merge` of `purchasable_offer` with its
+  selectors (`marketplace_id`, `currency`, `audience`), where a sub-attribute set to null is removed.
+  Amazon has no pause: ending the offer (`end_at`) takes a listing off sale and keeps it; `deleteListingsItem`
+  removes the SKU for good. MRP is `purchasable_offer.maximum_retail_price`, Amazon.in only.
+- **Accepted is not live.** A put or patch answers `ACCEPTED` or `INVALID` with issues; later problems
+  come only by polling `getListingsItem(includedData=summaries,issues)` without an AWS queue. An issue
+  carries code, message, severity (ERROR, WARNING, INFO), categories and, only sometimes,
+  `attributeNames`. `summaries.status` holds `BUYABLE` when on sale.
+- **Without Brand Registry an edit may not show.** Amazon merges every seller's contribution to a page
+  and may keep another's title or photos while still answering ACCEPTED; `getListingsItem` attributes
+  echo what we sent, `summaries.itemName` what the page shows.
+- **A new page needs a barcode or the brand's exemption** (`supplier_declared_has_product_identifier_exemption`,
+  approved once per brand in Seller Central). A category needing approval comes back as an issue in
+  `QUALIFICATION_REQUIRED`. `mode=VALIDATION_PREVIEW` checks without creating, is rate-limited, and does
+  not prove approval. Variation themes are read from the type's schema (unused ones were removed in 2025);
+  the schema link lives seven days. Listings calls run at 5 a second per seller and app.
+- **Flipkart edits price and status only.** `POST /listings/v3/update/price` takes `product_id`, `mrp`,
+  `selling_price` (whole numbers) and `currency`; `POST /listings/v3/update` sends the whole listing
+  back with `listing_status` ACTIVE or INACTIVE. Title, photos, features and description belong to its
+  catalogue and change only in Seller Hub, with about two days of checking; no API creates a product.
+  Each SKU answers on its own with status, `errors` and `attribute_errors`; an inactive listing carries
+  no reason we can read. No rate limit is published.
+
 **Paid.** Flipkart's Reports API (settlement and fulfilment reports) is a paid partner service;
 nothing public marks listings, inventory or shipments as paid, and the partner dashboard's metered
 plans should be confirmed with `api-partner-support@flipkart.com` before relying on them.

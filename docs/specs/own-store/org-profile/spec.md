@@ -4,7 +4,7 @@
 - **Status:** Implemented — 2026-11-01 (units 1–5)
 - **Domain:** catalog (Org, OrgProfile)
 - **Phase:** 12 — The shop's own store
-- **Verified:** 2026-11-01
+- **Verified:** 2026-11-02
 - **References:** [decisions.md](decisions.md), [ux.md](ux.md), [own-store](../spec.md) (Q14, Q15), [seller-onboarding](../seller-onboarding/) (asks these fields), [seller-profile](../../seller-profile/) (R1, R2, R5, R12), [brand-page](../../seller-profile/brand-page/), [org-storefront](../../org-storefront/), [ADR-0030](../../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md (written after UX sign-off).
@@ -53,8 +53,9 @@ facts with looks, and a shop cannot change its own phone, email or name anywhere
   "How you work" blocks — leave this page for storefront-themes (Q6); nothing a shop has typed
   is lost on the way.
 - R8 — The internal org code never shows to the shop.
-- R9 — Every save is per section, says what changed and where it shows ("Saved. Buyers see your
-  new name now."), and keeps the seller on the page. No button is ever disabled (ADR-0053).
+- R9 — ~~Every save is per section~~ (superseded by [Q30](decisions.md): one save bar for the page,
+  each changed section still written alone). A save says what changed and where it shows ("Saved.
+  Buyers see your new name now."), and keeps the seller on the page. No button is ever disabled (ADR-0053).
 - R10 — "See as a buyer" from the page opens the shop page as a buyer sees it, so the seller
   checks the result without hunting for it.
 

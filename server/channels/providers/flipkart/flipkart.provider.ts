@@ -1,3 +1,4 @@
+import { FLIPKART_LISTING_RULES, flipkartListingStatus, flipkartPublish, flipkartTheirsFromRead } from "./flipkart.publish";
 import {
   MarketplaceAuthError,
   MarketplaceUnavailableError,
@@ -60,6 +61,14 @@ async function token(params: Record<string, string>, previousRefresh: string | n
 
 export const flipkartProvider: MarketplaceProvider = {
   channel: "flipkart",
+  listingRules: FLIPKART_LISTING_RULES,
+  theirsFromRead: flipkartTheirsFromRead,
+  publishListing: flipkartPublish,
+  listingStatus: flipkartListingStatus,
+  // No public API creates a Flipkart product (parent Q33): it is made in Seller Hub and read back.
+  findPages: async () => [],
+  createListing: async () => ({ accepted: [], issues: [{ code: "not_supported", message: "New products are made in Flipkart Seller Hub.", severity: "error", field: null }], decidesLater: false }),
+  variationThemes: async () => [],
   connectionCap: null,
   readListings: readFlipkartListings,
   listingDetail: flipkartListingDetail,

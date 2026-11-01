@@ -3,7 +3,7 @@
 - **Status:** Implemented — 2026-11-01 (units 1–5; accepted 2026-10-30, UX signed off 2026-10-30)
 - **Domain:** catalog (Org, OrgProfile); notifications (one email)
 - **Phase:** 12 — The shop's own store
-- **Verified:** 2026-11-01
+- **Verified:** 2026-11-02
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), [seller-onboarding trd](../seller-onboarding/trd.md), [storefront-themes](../storefront-themes/spec.md), [seller-profile trd](../../seller-profile/trd.md), [brand-page](../../seller-profile/brand-page/), [ADR-0003](../../../adr/0003-one-repository-per-aggregate.md), [ADR-0013](../../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0021](../../../adr/0021-audit-trail-never-fails-the-action.md), [ADR-0030](../../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md), [ADR-0035](../../../adr/0035-every-response-carries-a-nonce-based-csp.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0046](../../../adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md), [ADR-0063](../../../adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md)
 
 > Technical approach and decisions. No code — references to existing code only.
@@ -37,7 +37,8 @@ forward.
   sees this", with the eye icon on each field. Essentials (name, logo, tagline) come first. Optional
   rows collapse under "Add more to your shop page". The tax card is static copy (R6). "See as a
   buyer" opens `/store/[handle]`.
-- **D3 — Per-section save, no clobbering (R9; A6; Q17, Q21).** `PATCH /api/org/[orgId]/shop/details`
+- **D3 — Per-section save, no clobbering (R9; A6; Q17, Q21).** *The one-Save-per-card UI is superseded by
+  [Q30](decisions.md): one save bar sends each changed section through this same PATCH, in turn.* `PATCH /api/org/[orgId]/shop/details`
   parses `shopDetailsSectionSchema`, a union on `section`: essentials, about, place, person, social,
   promise. Each section whitelists only its own fields and carries `expectedUpdatedAt`. The repository
   writes those columns only, by `updateMany` on (orgId, updatedAt). A count of 0 is a `ConflictError`
@@ -99,12 +100,14 @@ None.
 
 ## UI approach
 Screens, states and copy come from [ux.md](ux.md).
-- **Phone:** one column. Each section is a card with its own Save. The name sheet uses `FormDialog`
+- **Phone:** one column. ~~Each section is a card with its own Save~~ One save bar, shown only while
+  something is unsaved, sits on the tab bar (Q30). The name sheet uses `FormDialog`
   (a bottom sheet, centred from `md:`; ux says `lg:`, and the primitive's tablet switch is kept).
   Inputs stay at 16px. **`md:`** widens the fields. **`lg:`** puts the preview (D10) on the right.
 - **Rendering:** the page is a server component. Client leaves are one form per section, the name
   sheet and the preview.
-- **Behaviour:** `shopDetailsApiClient.ts` (section save, contact) behind `useServerForm` per section,
+- **Behaviour:** `shopDetailsApiClient.ts` (section save, contact) behind `useServerForm` per section, each joined
+  to the page's save bar (`useSaveBar`, Q30),
   reusing `orgsApiClient` (create) and `orgStorefrontApiClient` (handle, looks). DTOs: `ShopDetailsDto`
   (no code, GST, PAN or business name) and `BrandPageDto`.
 - **Surfaces:** `FormDialog` only; no new tokens.

@@ -1,6 +1,8 @@
 import type { MarketplaceChannel } from "../channel-connection.types";
 import type { ListingAttributes, ListingDetail, ListingSink, TokenSource } from "./listing-read";
 import type { ListingStock, LocationCount, MarketplaceLocation, OrdersPage, StockListingRef } from "./stock";
+import type { ListingRules } from "../platform-listing.types";
+import type { CreateListingInput, PageMatch, PublishAnswer, PublishChanges, PublishRef, StatusAnswer } from "./publish";
 
 /**
  * One marketplace, behind the verbs channel-connectors needs (TRD D1). Later subfeatures add their
@@ -61,6 +63,27 @@ export interface MarketplaceProvider {
 
   /** Send our counts for one listing, per marketplace location (inventory-sync D3). */
   setStock(token: TokenSource, externalAccountId: string | null, listing: StockListingRef, counts: readonly LocationCount[]): Promise<void>;
+
+  /** What a listing here may change and its limits (channel-listings D6). */
+  readonly listingRules: ListingRules;
+
+  /** Features and description from a stored read, for "On Amazon now" (channel-listings Q9). */
+  theirsFromRead(read: ListingAttributes): { features?: string[]; description?: string };
+
+  /** Send only what changed on one listing (marketplace-publish D1, D2). */
+  publishListing(token: TokenSource, externalAccountId: string | null, ref: PublishRef, changes: PublishChanges): Promise<PublishAnswer>;
+
+  /** One listing as the marketplace holds it now (marketplace-publish D5). */
+  listingStatus(token: TokenSource, externalAccountId: string | null, ref: PublishRef): Promise<StatusAnswer>;
+
+  /** Pages already on the marketplace for a product; empty where it cannot create (marketplace-publish D6). */
+  findPages(token: TokenSource, externalAccountId: string | null, query: { barcode: string | null; keywords: string }): Promise<PageMatch[]>;
+
+  /** Create a listing, or only check it with `preview` (marketplace-publish D6, Q9). */
+  createListing(token: TokenSource, externalAccountId: string | null, input: CreateListingInput, options: { preview: boolean }): Promise<PublishAnswer>;
+
+  /** The variation themes a type allows, for a family's own page (marketplace-publish D7). */
+  variationThemes(token: TokenSource, externalAccountId: string | null, marketplaceType: string): Promise<string[]>;
 
   /** One listing's title, description and photos, read now (product-merge D1). */
   listingDetail(

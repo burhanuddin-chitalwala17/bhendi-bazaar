@@ -142,6 +142,28 @@ export class ProductsRepository {
     });
   }
 
+  /**
+   * What a marketplace listing is computed from (channel-listings D3, D7), archived included: a
+   * listing of an archived product still opens, and its stock goes to 0 through stock sync.
+   */
+  async forListing(orgId: string, productIds: readonly string[], db: ProductDb = prisma) {
+    return await db.product.findMany({
+      where: { orgId, id: { in: [...productIds] } },
+      select: {
+        id: true, orgId: true, name: true, price: true, description: true, keyFeatures: true,
+        mrpPaise: true, barcode: true, sku: true, archivedAt: true, familyId: true, categoryId: true,
+        productType: true, kind: true, facts: true, weight: true,
+        brand: { select: { name: true, manufacturer: true, packerOrImporter: true, countryOfOrigin: true } },
+        stockLocations: { select: { quantity: true } },
+        media: {
+          where: { kind: "IMAGE" },
+          orderBy: { position: "asc" },
+          select: { id: true, ref: true, asset: { select: { width: true, height: true, mimeType: true } } },
+        },
+      },
+    });
+  }
+
   async checkoutFacts(productIds: string[], db: ProductDb = prisma) {
     return await db.product.findMany({
       where: { id: { in: productIds } },

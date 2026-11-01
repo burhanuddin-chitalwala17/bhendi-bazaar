@@ -114,6 +114,10 @@ export const channelConnectionRepository = {
     return await prisma.channelConnection.findMany({ where: { orgId }, select: ROW });
   },
 
+  async byId(id: string): Promise<ConnectionRow | null> {
+    return await prisma.channelConnection.findUnique({ where: { id }, select: ROW });
+  },
+
   async find(orgId: string, channel: MarketplaceChannel, db: ConnectionDb = prisma): Promise<ConnectionRow | null> {
     return await db.channelConnection.findUnique({
       where: { orgId_channel: { orgId, channel } },

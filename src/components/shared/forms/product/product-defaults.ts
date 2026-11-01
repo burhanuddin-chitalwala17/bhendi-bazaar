@@ -58,6 +58,9 @@ export function productDefaults(
     weight: product?.weight || 0,
     stockLocations: stockRows(locationIds, product),
     sku: product?.sku || "",
+    mrp: product?.mrpPaise != null ? paiseToRupees(product.mrpPaise) : null,
+    barcode: product?.barcode ?? "",
+    keyFeatures: product?.keyFeatures ?? [],
     lowStockThreshold: product?.lowStockThreshold || 10,
   };
 }

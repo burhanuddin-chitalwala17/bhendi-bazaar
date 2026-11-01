@@ -12,6 +12,7 @@ import { SectionForm, SeenBy } from "./section-card";
 import { FIELDS, NAME_SHEET_COPY, SHOP_DETAILS_COPY } from "./shop-details-copy";
 import { useShopDetailsSection } from "./useShopDetailsSection";
 import { useShopNameChange } from "./useShopNameChange";
+import { useSaveAll } from "./useSaveBar";
 
 /** What the owner-only rows are handed: the org's version, read at submit (Q21), and where to report. */
 export interface ContactProps {
@@ -27,6 +28,7 @@ const store = (handle: string) => `/store/${handle}`;
 /** Shop name, with the confirming sheet (org-profile D7, Q15; ux Name change sheet). */
 export function ShopNameRow(props: ContactProps) {
   const { details } = props;
+  const saveAll = useSaveAll();
   const { form, pending, changing, slow, problem, confirm, keep } = useShopNameChange({
     current: details.name,
     save: (name) =>
@@ -36,7 +38,7 @@ export function ShopNameRow(props: ContactProps) {
 
   return (
     <>
-      <form id="shop-name" onSubmit={form.onSubmit} noValidate className="space-y-3">
+      <form id="shop-name" onSubmit={saveAll} noValidate className="space-y-3">
         <FormInput
           label={FIELDS.name.label}
           hint={<SeenBy>{FIELDS.name.hint}</SeenBy>}
@@ -46,9 +48,6 @@ export function ShopNameRow(props: ContactProps) {
           {...form.register("name")}
         />
         {form.formError && <p role="alert" className="text-xs text-destructive">{form.formError}</p>}
-        <Button type="submit" variant="outline" className="h-11 w-full md:w-auto">
-          {SHOP_DETAILS_COPY.save}
-        </Button>
       </form>
 
       <FormDialog open={pending !== null} onOpenChange={(open) => !open && keep()} title={NAME_SHEET_COPY.title}>
@@ -119,18 +118,12 @@ function sectionChrome(
   form: ReturnType<typeof useShopDetailsSection<ShopContactInput>>,
   onLoadLatest: () => void,
 ) {
-  return {
-    onSubmit: form.submit,
-    isSubmitting: form.isSubmitting,
-    slow: form.slow,
-    problem: form.problem,
-    formError: form.formError,
-    onLoadLatest,
-  };
+  return { problem: form.problem, formError: form.formError, onLoadLatest };
 }
 
 function PhoneRow(props: ContactProps) {
   const form = useShopDetailsSection<ShopContactInput>({
+    id: "contact-phone",
     schema: shopContactSchema,
     defaultValues: { phone: props.details.phone ?? "", expectedUpdatedAt: props.details.contactUpdatedAt },
     save: ({ phone }) =>
@@ -153,6 +146,7 @@ function PhoneRow(props: ContactProps) {
 
 function EmailRow(props: ContactProps) {
   const form = useShopDetailsSection<ShopContactInput>({
+    id: "contact-email",
     schema: shopContactSchema,
     defaultValues: { email: props.details.email, expectedUpdatedAt: props.details.contactUpdatedAt },
     save: ({ email }) =>
@@ -176,7 +170,7 @@ function EmailRow(props: ContactProps) {
 }
 
 /**
- * "Only Bhendi Bazaar sees this" (org-profile U3; D7; R5, R6): mobile and email, each saving alone,
+ * "Only Bhendi Bazaar sees this" (org-profile U3; D7; R5, R6): mobile and email, saved by the page's one bar (Q30),
  * and the tax card saying it waits for the first payout.
  */
 export function ShopPrivatePart(props: ContactProps) {

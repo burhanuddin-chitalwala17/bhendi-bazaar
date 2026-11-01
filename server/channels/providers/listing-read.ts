@@ -94,6 +94,11 @@ export function pacer(perSecond: number) {
 }
 
 /** A marketplace's price, in rupees as a number or a decimal string, as paise (Invariant 3). */
+/** Paise as the rupees a marketplace takes: decimals for Amazon, or whole rupees rounded down (channel-listings Q13). */
+export function rupeesFromPaise(paise: number, whole = false): number {
+  return whole ? Math.floor(paise / 100) : Number((paise / 100).toFixed(2));
+}
+
 export function paiseFromRupees(value: unknown): number | null {
   const text = typeof value === "number" ? String(value) : typeof value === "string" ? value.trim().replace(/,/g, "") : "";
   if (!/^\d+(\.\d+)?$/.test(text)) return null;

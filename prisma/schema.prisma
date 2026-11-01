@@ -362,6 +362,13 @@ model Product {
   /// never accepted from a request body (Invariant 4).
   archivedAt      DateTime?
   channelListings ChannelListing[]
+  /// Each connected marketplace's listing as the shop means it (channel-listings D1).
+  platformListings PlatformListing[]
+
+  /// Up to five short points a marketplace shows first, and the product's barcode (EAN, UPC or
+  /// ISBN), a strict field every marketplace shares (channel-listings Q6, parent Q28).
+  keyFeatures String[] @default([])
+  barcode     String?
 
   /// Bumped by every person's save and compared on the next one, so a save from a stale form is
   /// refused rather than undoing someone else's (product-form D6, Q35). Not `updatedAt`: that moves
@@ -2179,6 +2186,8 @@ model ProductFamily {
   updatedAt DateTime  @updatedAt
 
   products Product[]
+  /// The family's own page on a marketplace, under which its members list (marketplace-publish D7).
+  platformListings PlatformListing[]
 
   @@index([orgId])
   @@index([orgId, retiredAt])
@@ -2330,6 +2339,7 @@ model ChannelConnection {
 
   listings  ChannelListing[]
   locations ChannelLocation[]
+  platformListings PlatformListing[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2409,10 +2419,73 @@ model ChannelListing {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  platformListing PlatformListing?
+
   @@unique([connectionId, sku])
   @@index([orgId, channel])
   @@index([productId])
   @@index([orgId, skuKey])
+}
+
+/// A product's listing on one connected marketplace as the shop means it (channel-listings D1):
+/// only the fields changed for that marketplace, and what was last sent. What the marketplace gets
+/// is computed from the product with these laid over it; `ChannelListing` stays the mirror of what
+/// the marketplace has. A family's own page (marketplace-publish D7) has `familyId` instead.
+model PlatformListing {
+  id           String            @id @default(cuid())
+  orgId        String
+  channel      String
+  connectionId String
+  connection   ChannelConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+
+  productId String?
+  product   Product?       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  familyId  String?
+  family    ProductFamily? @relation(fields: [familyId], references: [id], onDelete: Restrict)
+
+  /// The mirror row once the listing exists on the marketplace; null for a draft.
+  channelListingId String?         @unique
+  channelListing   ChannelListing? @relation(fields: [channelListingId], references: [id], onDelete: SetNull)
+
+  /// Only the fields changed for this marketplace, keyed by `LISTING_FIELD` (D2).
+  overrides Json     @default("{}")
+  /// The fields as last accepted by the marketplace (D3); null for a draft never sent.
+  sent      Json?
+  sentAt    DateTime?
+  /// Compared and bumped by every save and publish (D4, marketplace-publish D3).
+  version   Int      @default(0)
+
+  /// `PUBLISH_STATE` (marketplace-publish Q4): what is in flight, never whether it is live.
+  publishState  String    @default("idle")
+  /// The fields and values of the publish in flight, as reviewed.
+  pending       Json?
+  publishedAt   DateTime?
+  checkCount    Int       @default(0)
+  nextCheckAt   DateTime?
+  checkedAt     DateTime?
+  /// The marketplace's complaints, each with our field or none (marketplace-publish D9).
+  issues        Json?
+  /// What the marketplace shows when it differs from what was sent: title, main photo (Q14).
+  showing       Json?
+  /// Whether the marketplace said it is on sale at the last check; null until known.
+  live          Boolean?
+
+  /// `CREATE_MODE` for a listing not yet on the marketplace: an offer on its page, or a new page.
+  createMode       String?
+  /// The page to sell on (ASIN) for an offer.
+  targetExternalId String?
+  /// The marketplace's product type for a new page.
+  marketplaceType  String?
+  /// The SKU it is created under, fixed at the draft.
+  sku              String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([connectionId, productId])
+  @@unique([connectionId, familyId])
+  @@index([orgId, channel])
+  @@index([publishState, nextCheckAt])
 }
 
 /// Which of a channel's categories a product type and kind list under

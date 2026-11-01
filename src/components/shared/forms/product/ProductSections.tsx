@@ -22,6 +22,7 @@ import { ProductFlagsFields } from "./ProductFlagsFields";
 import { ProductOrgShippingFields, type LocationOption } from "./ProductOrgShippingFields";
 import { alsoAsks, willAlsoAsk, type ChannelHint } from "./readiness-hints";
 import { FIELD_STEP, MORE_OPTIONS_FIELDS, type ProductStepKey } from "./product-steps";
+import { KeyFeaturesField } from "./KeyFeaturesField";
 
 export type ProductForm = ReturnType<typeof useServerForm<ProductFormInput>>;
 export type SectionKey = Exclude<ProductStepKey, "review">;
@@ -148,6 +149,7 @@ export function ProductSections({
                 {...register("description")}
                 error={errors.description?.message}
               />
+              <KeyFeaturesField form={form} />
               <MoreOptions open={isMoreOpen("what")} onToggle={() => toggleMore("what")}>
                 <TagsField form={form} />
                 <ProductFlagsFields control={control} />
@@ -189,6 +191,16 @@ export function ProductSections({
                   error={errors.salePrice?.message}
                   hint="Leave empty if it is not on sale."
                 />
+                <FormInput
+                  label="MRP (₹)"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  placeholder="Optional"
+                  {...register("mrp", { valueAsNumber: true })}
+                  error={errors.mrp?.message}
+                  hint="The printed price. Every marketplace shows the same MRP."
+                />
               </div>
               <ProductOrgShippingFields
                 register={register}
@@ -211,6 +223,13 @@ export function ProductSections({
               />
               <MoreOptions open={isMoreOpen("price")} onToggle={() => toggleMore("price")}>
                 <FormInput label="SKU (your own code)" placeholder="e.g., VEK-001" {...register("sku")} error={errors.sku?.message} />
+                <FormInput
+                  label="Barcode (EAN, UPC or ISBN)"
+                  inputMode="numeric"
+                  placeholder="Leave blank if the product has none"
+                  {...register("barcode")}
+                  error={errors.barcode?.message}
+                />
                 <FormInput
                   label="Tell me when stock is below"
                   type="number"

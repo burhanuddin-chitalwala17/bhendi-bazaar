@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { DefaultValues, FieldValues } from "react-hook-form";
 import type { ZodType } from "zod";
 
@@ -8,24 +8,26 @@ import { useServerForm } from "@/hooks/core/useServerForm";
 import { ApiError } from "@/lib/api-error";
 import type { ShopDetailsDto } from "@server/catalog/shop-details.types";
 import { SHOP_DETAILS_COPY } from "./shop-details-copy";
-
-const SLOW_AFTER_MS = 3000;
+import { useSaveBarEntry } from "./useSaveBar";
 
 /** Which banner a failed save shows on its section (ux Retryable error, Stale). */
 export type SectionProblem = { kind: "stale"; message: string } | { kind: "retry" } | null;
 
 /**
- * One Shop details section's save (org-profile D3, R9): the form, the version it read (Q21), and
- * the states the section shows — "Still saving…" after 3 s, a stale banner on a 409, and a
- * retry banner when the save never landed. What was typed stays in every case.
+ * One Shop details section (org-profile D3, Q30): its form, joined to the page's one save bar.
+ * Saved alone with the version the page holds now (Q21); a 409 shows the stale banner, a save that
+ * never landed the retry banner, and what was typed stays in every case.
  */
 export function useShopDetailsSection<T extends FieldValues>({
+  id,
   schema,
   defaultValues,
   save,
   onSaved,
   successMessage = SHOP_DETAILS_COPY.saved,
 }: {
+  /** The section's key on the save bar, and its form's id. */
+  id: string;
   schema: ZodType<T>;
   defaultValues: DefaultValues<T>;
   save: (data: T) => Promise<ShopDetailsDto>;
@@ -33,43 +35,47 @@ export function useShopDetailsSection<T extends FieldValues>({
   successMessage?: string;
 }) {
   const [problem, setProblem] = useState<SectionProblem>(null);
-  const [slow, setSlow] = useState(false);
-  const busy = useRef(false);
+  const landed = useRef(false);
 
   const form = useServerForm<T>({
     schema,
     defaultValues,
     submit: save,
-    successMessage,
-    // The section's own banner says it; a toast would say it twice.
+    // The bar says it once for every section saved; the section's own banner says a failure.
     toastErrors: false,
-    onSuccess: (result) => onSaved(result as ShopDetailsDto),
+    onSuccess: (result) => {
+      landed.current = true;
+      onSaved(result as ShopDetailsDto);
+    },
   });
 
-  useEffect(() => {
-    if (!form.isSubmitting) {
-      setSlow(false);
-      return;
-    }
-    const timer = setTimeout(() => setSlow(true), SLOW_AFTER_MS);
-    return () => clearTimeout(timer);
-  }, [form.isSubmitting]);
-
-  // The button stays tappable (ADR-0053); a second tap while one save is in flight is a no-op.
-  const submit = async (event?: React.BaseSyntheticEvent) => {
-    event?.preventDefault();
-    if (busy.current) return;
-    busy.current = true;
+  const submit = async (): Promise<boolean> => {
+    landed.current = false;
     setProblem(null);
+    // What is sent, as typed: typing during a slow save stays unsaved rather than becoming the baseline.
+    const sent = form.getValues();
     try {
-      await form.onSubmit(event);
+      await form.onSubmit();
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) setProblem({ kind: "stale", message: error.message });
       else if (!(error instanceof ApiError) || error.status >= 500) setProblem({ kind: "retry" });
-    } finally {
-      busy.current = false;
+      return false;
     }
+    // A validation miss resolves without saving; its message is already on the field.
+    if (landed.current) form.reset(sent, { keepValues: true });
+    return landed.current;
   };
 
-  return { ...form, submit, problem, slow };
+  useSaveBarEntry(id, {
+    dirty: form.formState.isDirty,
+    save: submit,
+    discard: () => {
+      setProblem(null);
+      form.clearFormError();
+      form.reset();
+    },
+    message: successMessage,
+  });
+
+  return { ...form, problem };
 }

@@ -1,7 +1,7 @@
 /**
- * Shop details, buyer part (org-profile U2; D2, D3, D4, D6; A2, A5, A6; Q17, Q21).
+ * Shop details, buyer part (org-profile U2; D2, D3, D4, D6; A2, A5, A6; Q17, Q21, Q30).
  * Schemas refuse what is not their section's (Invariant 4); the page says who sees every field;
- * a blank save goes through; stale and failed saves keep what was typed.
+ * one Save sends each changed section alone; a blank save goes through; stale and failed saves keep what was typed.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -51,6 +51,11 @@ const blank: ShopDetailsDto = {
   contactUpdatedAt: VERSION,
 };
 const UNTIL = "2027-04-30T00:00:00.000Z";
+const NEWER = "2026-10-31T10:05:00.000Z";
+const type = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
+const saveAll = () => act(async () => {
+  fireEvent.click(screen.getByRole("button", { name: SHOP_DETAILS_COPY.save }));
+});
 
 describe("shopDetailsSectionSchema (Invariant 4, D3)", () => {
   it("accepts each section with only its own fields", () => {
@@ -149,6 +154,7 @@ describe("Shop details, buyer part", () => {
     saveSection.mockReset();
     refresh.mockReset();
     vi.mocked(toast.success).mockReset();
+    vi.mocked(toast.error).mockReset();
   });
 
   it("says who sees every field, so 'will buyers see this?' is answered on screen (spec A2)", () => {
@@ -183,30 +189,67 @@ describe("Shop details, buyer part", () => {
     expect(screen.getByText(SHOP_DETAILS_COPY.empty)).toBeInTheDocument();
   });
 
-  it("saves a section with every optional field blank (spec A6)", async () => {
-    saveSection.mockResolvedValue({ ...blank, updatedAt: "2026-10-31T10:05:00.000Z" });
-    render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={blank} />);
-    const place = document.getElementById("place") as HTMLFormElement;
-    await act(async () => {
-      fireEvent.submit(place);
-    });
+  it("shows no Save until something changes, and Discard puts the values back (Q30)", () => {
+    render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={{ ...blank, location: "Mumbai" }} />);
+    expect(screen.queryByRole("button", { name: SHOP_DETAILS_COPY.save })).toBeNull();
+    type(FIELDS.location.label, "Crawford Market");
+    expect(screen.getByText(SHOP_DETAILS_COPY.unsaved)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: SHOP_DETAILS_COPY.discard }));
+    expect(screen.getByLabelText(FIELDS.location.label)).toHaveValue("Mumbai");
+    expect(screen.queryByRole("button", { name: SHOP_DETAILS_COPY.save })).toBeNull();
+  });
+
+  it("saves a field cleared to blank (spec A6)", async () => {
+    saveSection.mockResolvedValue({ ...blank, updatedAt: NEWER });
+    render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={{ ...blank, location: "Mumbai" }} />);
+    type(FIELDS.location.label, "");
+    await saveAll();
     await waitFor(() => expect(saveSection).toHaveBeenCalledTimes(1));
     expect(saveSection).toHaveBeenCalledWith("org_1", { section: "place", location: "", expectedUpdatedAt: VERSION });
     expect(toast.success).toHaveBeenCalledWith(SHOP_DETAILS_COPY.saved);
+    expect(screen.queryByRole("button", { name: SHOP_DETAILS_COPY.save })).toBeNull();
   });
 
-  it("carries the newest version to the next save, so a second section after a first is not stale (Q21)", async () => {
-    saveSection.mockResolvedValue({ ...blank, updatedAt: "2026-10-31T10:05:00.000Z" });
+  it("sends only the changed sections, each alone with the newest version, and says so once (Q17, Q21, Q30)", async () => {
+    saveSection.mockResolvedValue({ ...blank, updatedAt: NEWER });
     render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={blank} />);
-    await act(async () => {
-      fireEvent.submit(document.getElementById("place") as HTMLFormElement);
-    });
-    await waitFor(() => expect(saveSection).toHaveBeenCalledTimes(1));
-    await act(async () => {
-      fireEvent.submit(document.getElementById("essentials") as HTMLFormElement);
-    });
+    type(FIELDS.tagline.label, "Hand-made attar since 1962");
+    type(FIELDS.location.label, "Bhendi Bazaar, Mumbai");
+    await saveAll();
     await waitFor(() => expect(saveSection).toHaveBeenCalledTimes(2));
-    expect(saveSection.mock.calls[1][1].expectedUpdatedAt).toBe("2026-10-31T10:05:00.000Z");
+    expect(saveSection.mock.calls.map(([, body]) => body.section)).toEqual(["essentials", "place"]);
+    expect(saveSection.mock.calls[1][1].expectedUpdatedAt).toBe(NEWER);
+    expect(toast.success).toHaveBeenCalledTimes(1);
+    expect(toast.success).toHaveBeenCalledWith(SHOP_DETAILS_COPY.savedAll);
+  });
+
+  it("keeps typing done during a slow save as unsaved, so it is never marked saved unsent (Q30)", async () => {
+    let land: (value: ShopDetailsDto) => void = () => {};
+    saveSection.mockReturnValue(new Promise((resolve) => (land = resolve)));
+    render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={blank} />);
+    type(FIELDS.location.label, "Crawford");
+    await saveAll();
+    type(FIELDS.location.label, "Crawford Market");
+    await act(async () => land({ ...blank, location: "Crawford", updatedAt: NEWER }));
+    expect(screen.getByLabelText(FIELDS.location.label)).toHaveValue("Crawford Market");
+    expect(screen.getByRole("button", { name: SHOP_DETAILS_COPY.save })).toBeInTheDocument();
+  });
+
+  it("saves the rest when one section fails, says not everything saved, and opens the failed row (Q30, ux Partly saved)", async () => {
+    saveSection.mockImplementation(async (_org: string, body: { section: string }) => {
+      if (body.section === "place") throw new TypeError("Failed to fetch");
+      return { ...blank, tagline: "Attar", updatedAt: NEWER };
+    });
+    render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={blank} />);
+    type(FIELDS.tagline.label, "Attar");
+    type(FIELDS.location.label, "Crawford Market");
+    (document.getElementById("place-row") as HTMLDetailsElement).open = false;
+    await saveAll();
+    await waitFor(() => expect(saveSection).toHaveBeenCalledTimes(2));
+    expect(toast.error).toHaveBeenCalledWith(SHOP_DETAILS_COPY.notAllSaved);
+    expect(toast.success).not.toHaveBeenCalled();
+    expect((document.getElementById("place-row") as HTMLDetailsElement).open).toBe(true);
+    expect(screen.getByText(SHOP_DETAILS_COPY.retry)).toBeInTheDocument();
   });
 
   it("shows the stale banner and loads the latest on a conflict, keeping what was typed (ux Stale)", async () => {
@@ -265,19 +308,19 @@ describe("Shop details, buyer part", () => {
     try {
       saveSection.mockReturnValue(new Promise(() => {}));
       render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={blank} />);
-      const form = document.getElementById("place") as HTMLFormElement;
-      const button = within(form).getByRole("button", { name: SHOP_DETAILS_COPY.save });
+      type(FIELDS.location.label, "Crawford Market");
+      const button = screen.getByRole("button", { name: SHOP_DETAILS_COPY.save });
       await act(async () => {
-        fireEvent.submit(form);
+        fireEvent.click(button);
       });
       await act(async () => {
         vi.advanceTimersByTime(3100);
       });
-      expect(within(form).getByRole("button", { name: SHOP_DETAILS_COPY.stillSaving })).toBeEnabled();
+      expect(screen.getByRole("button", { name: SHOP_DETAILS_COPY.stillSaving })).toBeEnabled();
       expect(button).not.toBeDisabled();
       // A second tap while the first is in flight sends nothing more.
       await act(async () => {
-        fireEvent.submit(form);
+        fireEvent.click(button);
       });
       expect(saveSection).toHaveBeenCalledTimes(1);
     } finally {
@@ -290,9 +333,9 @@ describe("a refusal with no banner of its own is still shown (ADR-0013)", () => 
   it("shows a refused save's message on the section, keeping what was typed", async () => {
     saveSection.mockReset().mockRejectedValue(new ApiError("You do not have permission to do that", 403));
     render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={blank} />);
-    await act(async () => {
-      fireEvent.submit(document.getElementById("place") as HTMLFormElement);
-    });
+    type(FIELDS.location.label, "Crawford Market");
+    await saveAll();
     expect(await screen.findByText("You do not have permission to do that")).toBeInTheDocument();
+    expect(screen.getByLabelText(FIELDS.location.label)).toHaveValue("Crawford Market");
   });
 });

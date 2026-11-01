@@ -56,6 +56,7 @@ function saver<T extends ShopDetailsSectionInput>(props: SectionProps) {
 export function EssentialsSection(props: SectionProps) {
   const { details } = props;
   const form = useShopDetailsSection<EssentialsSectionInput>({
+    id: "essentials",
     schema: essentialsSectionSchema,
     defaultValues: {
       section: SHOP_DETAILS_SECTION.ESSENTIALS,
@@ -100,6 +101,7 @@ export function EssentialsSection(props: SectionProps) {
 export function AboutSection(props: SectionProps) {
   const { details } = props;
   const form = useShopDetailsSection<AboutSectionInput>({
+    id: "about",
     schema: aboutSectionSchema,
     defaultValues: {
       section: SHOP_DETAILS_SECTION.ABOUT,
@@ -138,6 +140,7 @@ export function AboutSection(props: SectionProps) {
 export function PlaceSection(props: SectionProps) {
   const { details } = props;
   const form = useShopDetailsSection<PlaceSectionInput>({
+    id: "place",
     schema: placeSectionSchema,
     defaultValues: {
       section: SHOP_DETAILS_SECTION.PLACE,
@@ -167,6 +170,7 @@ export function PlaceSection(props: SectionProps) {
 export function PersonSection(props: SectionProps) {
   const { details } = props;
   const form = useShopDetailsSection<PersonSectionInput>({
+    id: "person",
     schema: personSectionSchema,
     defaultValues: {
       section: SHOP_DETAILS_SECTION.PERSON,
@@ -216,6 +220,7 @@ export function PersonSection(props: SectionProps) {
 export function SocialSection(props: SectionProps) {
   const { details } = props;
   const form = useShopDetailsSection<SocialSectionInput>({
+    id: "social",
     schema: socialSectionSchema,
     defaultValues: {
       section: SHOP_DETAILS_SECTION.SOCIAL,
@@ -245,6 +250,7 @@ export function SocialSection(props: SectionProps) {
 export function PromiseSection(props: SectionProps) {
   const { details } = props;
   const form = useShopDetailsSection<PromiseSectionInput>({
+    id: "promise",
     schema: promiseSectionSchema,
     defaultValues: {
       section: SHOP_DETAILS_SECTION.PROMISE,
@@ -299,22 +305,6 @@ export function PromiseSection(props: SectionProps) {
 }
 
 /** The chrome every section passes to `SectionForm`. */
-function sectionChrome(
-  form: {
-    submit: (event?: React.BaseSyntheticEvent) => Promise<void>;
-    isSubmitting: boolean;
-    slow: boolean;
-    problem: SectionProblem;
-    formError: string | null;
-  },
-  props: SectionProps,
-) {
-  return {
-    onSubmit: form.submit,
-    isSubmitting: form.isSubmitting,
-    slow: form.slow,
-    problem: form.problem,
-    formError: form.formError,
-    onLoadLatest: props.onLoadLatest,
-  };
+function sectionChrome(form: { problem: SectionProblem; formError: string | null }, props: SectionProps) {
+  return { problem: form.problem, formError: form.formError, onLoadLatest: props.onLoadLatest };
 }

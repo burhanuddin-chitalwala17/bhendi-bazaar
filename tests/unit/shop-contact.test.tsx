@@ -190,19 +190,21 @@ describe("Shop details, private part (spec A2, R5, R6)", () => {
   it("saves a new mobile alone with the org's version and the ux toast (spec A3)", async () => {
     h.saveContact.mockResolvedValue({ ...shop, phone: "+919800000000", contactUpdatedAt: NEWER });
     page();
+    fireEvent.change(screen.getByLabelText(FIELDS.phone.label), { target: { value: "98000 00000" } });
     await act(async () => {
-      fireEvent.submit(document.getElementById("contact-phone") as HTMLFormElement);
+      fireEvent.click(screen.getByRole("button", { name: SHOP_DETAILS_COPY.save }));
     });
     await waitFor(() => expect(h.saveContact).toHaveBeenCalledTimes(1));
-    expect(h.saveContact).toHaveBeenCalledWith("org_1", { phone: "+919876543210", expectedUpdatedAt: VERSION });
+    expect(h.saveContact).toHaveBeenCalledWith("org_1", { phone: "+919800000000", expectedUpdatedAt: VERSION });
     expect(toast.success).toHaveBeenCalledWith(SHOP_DETAILS_COPY.phoneSaved);
   });
 
   it("shows a staff member the refusal on the section (ux Refused, Q23)", async () => {
     h.saveContact.mockRejectedValue(new ApiError(SHOP_OWNER_ONLY, 403));
     page();
+    fireEvent.change(screen.getByLabelText(FIELDS.email.label), { target: { value: "orders@noor.in" } });
     await act(async () => {
-      fireEvent.submit(document.getElementById("contact-email") as HTMLFormElement);
+      fireEvent.click(screen.getByRole("button", { name: SHOP_DETAILS_COPY.save }));
     });
     expect(await screen.findByText(SHOP_OWNER_ONLY)).toBeInTheDocument();
   });
@@ -245,6 +247,13 @@ describe("the name change sheet (Q15)", () => {
     page();
     await rename(shop.name);
     expect(screen.queryByText(NAME_SHEET_COPY.change)).toBeNull();
+  });
+
+  it("clears the save bar when the new name only adds a trailing space (Q30)", async () => {
+    page();
+    await rename(`${shop.name} `);
+    expect(screen.queryByText(NAME_SHEET_COPY.change)).toBeNull();
+    expect(screen.queryByText(SHOP_DETAILS_COPY.unsaved)).toBeNull();
   });
 
   it("offers Try again in the sheet when the change never arrived (ux Retryable error)", async () => {

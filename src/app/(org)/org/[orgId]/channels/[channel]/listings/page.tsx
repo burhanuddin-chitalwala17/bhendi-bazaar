@@ -10,6 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ListingList } from "@/components/channel/listing-list";
 import { StockSyncSection } from "@/components/channel/stock-sync-section";
 import { channelStockDAL } from "@/data-access-layer/channel-stock.dal";
+import { platformListingDAL } from "@/data-access-layer/platform-listing.dal";
+import { LISTING, PUBLISH } from "@/components/channel/platform-listing-copy";
 import { SameItemCard } from "@/components/channel/same-item-card";
 import { GroupPicker } from "@/components/channel/group-picker";
 import { GROUP } from "@/components/channel/family-copy";
@@ -47,12 +49,12 @@ export default async function ChannelListingsPage({
 
   const showLeftOff = tab === "notLinked" && search.left === "1";
   const picking = tab === "notLinked" && search.pick === "1";
-  const [data, org, stock] = await Promise.all([channelListingsDAL.page(scope.orgId, channel, {
+  const [data, org, stock, waiting] = await Promise.all([channelListingsDAL.page(scope.orgId, channel, {
     tab: showLeftOff ? "leftOff" : tab,
     search: q,
     pages,
     listingId: search.listing ?? null,
-  }), orgsDAL.getOrgSummary(scope.orgId), channelStockDAL.section(scope.orgId, channel)]);
+  }), orgsDAL.getOrgSummary(scope.orgId), channelStockDAL.section(scope.orgId, channel), platformListingDAL.waitingCount(scope.orgId, channel)]);
   if (!data) notFound();
   const { page, detail } = data;
   const { label, read } = page;
@@ -92,6 +94,14 @@ export default async function ChannelListingsPage({
   return (
     <div className="space-y-4">
       <ReadProgressRefresher running={running} />
+      {waiting > 0 && (
+        <div className="flex flex-col gap-2 rounded-card bg-info/10 p-3 text-sm md:flex-row md:items-center md:justify-between">
+          <p className="font-semibold">{PUBLISH.bar(waiting)}</p>
+          <Button asChild size="sm" className="min-h-10 self-start md:self-auto">
+            <Link href={`/org/${scope.orgId}/channels/${channel}/publish`}>{LISTING.reviewAndPublish}</Link>
+          </Button>
+        </div>
+      )}
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <SectionHeader as="h1" help="channels" title={LISTINGS.title(label)} />
         {canRead && !running && <ReadAgainButton orgId={scope.orgId} channel={page.channel} />}

@@ -38,6 +38,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // `/s` is absent: a result page is followed, never offered for ranking (seo R8).
     { url: origin, changeFrequency: "daily", priority: 1 },
     { url: `${origin}/offers`, changeFrequency: "daily", priority: 0.7 },
+    { url: `${origin}/sell`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${origin}/policies`, changeFrequency: "monthly", priority: 0.3 },
     ...categories.map((category) => ({
       url: `${origin}/category/${category.slug}`,

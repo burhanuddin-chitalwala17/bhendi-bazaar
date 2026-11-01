@@ -1,0 +1,63 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { Lock } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { HandoffSheet, HANDOFF_WIDE } from "@/components/shared/overlays/handoff-sheet";
+import type { ListingScreenDTO } from "@server/channels/platform-listing.types";
+
+import { LISTING, rupees } from "./platform-listing-copy";
+
+/**
+ * "Same everywhere" (channel-listings Q10, parent Q28): strict fields shown, never editable here.
+ * Each explains itself on tap and links to the product, rather than looking disabled.
+ */
+export function ListingLocked({ orgId, screen }: { orgId: string; screen: ListingScreenDTO }) {
+  const rows = [
+    { key: "mrp", name: "MRP", value: screen.locked.mrpPaise !== null ? rupees(screen.locked.mrpPaise) : LISTING.none },
+    { key: "barcode", name: "Barcode", value: screen.locked.barcode ?? LISTING.none },
+    { key: "brand", name: "Brand", value: screen.locked.brand ?? LISTING.none },
+    { key: "stock", name: "Stock", value: LISTING.stock(screen.locked.stock) },
+  ];
+  return (
+    <section className="flex flex-col gap-2 rounded-card border bg-card p-4">
+      <h2 className="text-sm font-semibold">{LISTING.sameEverywhere}</h2>
+      <ul className="flex flex-col">
+        {rows.map((row) => (
+          <li key={row.key}>
+            <LockedRow orgId={orgId} productId={screen.productId} name={row.name} value={row.value} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function LockedRow({ orgId, productId, name, value }: { orgId: string; productId: string; name: string; value: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <HandoffSheet
+      open={open}
+      onOpenChange={setOpen}
+      wide={HANDOFF_WIDE.POPOVER}
+      title={name}
+      closeLabel="Close"
+      description={LISTING.lockedWhy}
+      trigger={
+        <Button type="button" variant="ghost" className="h-auto min-h-10 w-full justify-between whitespace-normal px-0 text-left">
+          <span className="text-sm text-muted-foreground">{name}</span>
+          <span className="flex items-center gap-2 text-sm tabular-nums">
+            {value}
+            <Lock className="size-3.5 text-muted-foreground" aria-hidden />
+          </span>
+        </Button>
+      }
+    >
+      <Button asChild className="min-h-10 w-full">
+        <Link href={`/org/${orgId}/products/${productId}/edit`}>{LISTING.editProduct}</Link>
+      </Button>
+    </HandoffSheet>
+  );
+}

@@ -6,6 +6,7 @@ import { orgChannelReadinessDAL } from "@/data-access-layer/org/channel-readines
 import { ListingReadinessPanel } from "@/components/channel/listing-readiness-panel";
 import { channelListingsDAL } from "@/data-access-layer/channel-listings.dal";
 import { ProductMarketplaces } from "@/components/channel/product-marketplaces";
+import { platformListingDAL } from "@/data-access-layer/platform-listing.dal";
 import { MarketplaceFactsCard } from "@/components/channel/marketplace-facts-card";
 import { TeamEditBadge } from "@/components/product/team/team-edit-badge";
 import { TeamHistory, TeamHistorySkeleton, type TeamHistoryRead } from "@/components/product/team/team-history";
@@ -27,7 +28,7 @@ export default async function OrgProductViewPage({
   if (!product || product.org.id !== orgId) notFound();
 
   // Silent for a shop that sells nowhere else, which is most of them until they say otherwise.
-  const [verdicts, marketplaces, facts] = await Promise.all([
+  const [verdicts, marketplaces, facts, summaries] = await Promise.all([
     orgChannelReadinessDAL.forProduct(orgId, {
       productType: product.productType ?? null,
       kind: product.kind ?? null,
@@ -35,6 +36,7 @@ export default async function OrgProductViewPage({
     }),
     channelListingsDAL.forProduct(orgId, id),
     channelListingsDAL.factsForProduct(orgId, id),
+    platformListingDAL.summaries(orgId, id),
   ]);
 
   return (
@@ -48,7 +50,7 @@ export default async function OrgProductViewPage({
           category={product.category}
           org={product.org}
         />
-        <ProductMarketplaces orgId={orgId} links={marketplaces} />
+        <ProductMarketplaces orgId={orgId} productId={id} links={marketplaces} summaries={summaries} />
         {facts.map((card) => (
           <MarketplaceFactsCard key={card.listingId} orgId={orgId} productId={id} shopName={product.org.name} card={card} />
         ))}

@@ -86,6 +86,18 @@ export interface ProductEditor {
     team: boolean;
 }
 
+/**
+ * MRP, barcode and key features as the form sent them (channel-listings D7), the same on create and
+ * update (Invariant 4). Absent leaves the stored value: a client that never knew the field cannot clear it.
+ */
+function listingIdentity(data: Pick<ProductPersistInput, "mrp" | "barcode" | "keyFeatures">) {
+    return {
+        ...(data.mrp === undefined ? {} : { mrpPaise: data.mrp }),
+        ...(data.barcode === undefined ? {} : { barcode: blankToNull(data.barcode) }),
+        ...(data.keyFeatures === undefined ? {} : { keyFeatures: data.keyFeatures }),
+    };
+}
+
 // ✅ Efficient select - only fetch needed fields
 const PRODUCT_LIST_SELECT = {
     id: true,
@@ -136,6 +148,9 @@ const PRODUCT_DETAILS_SELECT = {
     brandId: true,
     facts: true,
     measurements: true,
+    mrpPaise: true,
+    barcode: true,
+    keyFeatures: true,
     media: MEDIA_SELECT,
     // Who saved last, so the form can say so and refuse a save over it (product-form D6, D7).
     version: true,
@@ -552,6 +567,7 @@ export class AdminProductsRepository {
                 thumbnail: media.thumbnail,
                 media: { create: mediaRows },
                 sku: blankToNull(data.sku),
+                ...listingIdentity(data),
                 lowStockThreshold: data.lowStockThreshold || 10,
                 weight: data.weight,
                 // Resolved on save and server-owned; the form never sends them
@@ -800,6 +816,7 @@ export class AdminProductsRepository {
                     thumbnail: media.thumbnail,
                     media: { create: mediaRows },
                     sku: blankToNull(data.sku),
+                    ...listingIdentity(data),
                     lowStockThreshold: data.lowStockThreshold,
                     weight: data.weight,
                     // Symmetric with create (Invariant 4): an update that whitelists

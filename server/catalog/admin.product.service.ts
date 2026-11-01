@@ -359,6 +359,7 @@ export class ProductsService {
       ...data,
       price: rupeesToPaise(data.price),
       salePrice: data.salePrice === undefined ? undefined : rupeesToPaise(data.salePrice),
+      mrp: data.mrp === undefined || data.mrp === null ? data.mrp : rupeesToPaise(data.mrp),
     };
   }
 }

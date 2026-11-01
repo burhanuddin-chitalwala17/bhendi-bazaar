@@ -12,6 +12,64 @@
 
 ## Entries
 
+## 2026-11-02 — Channel listings and publishing: each marketplace's listing edited here, sent from here [CONTRACT] [MIGRATION]
+
+- **channel-listings.** A product's page shows each connected marketplace's listing status and "Edit
+  Amazon listing". The listing screen holds six fields (title, price, photos, key features,
+  description, on sale), each "Same as product" or "Changed for Amazon" with the product's value and
+  "Use product's", "On Amazon now" with "Use Amazon's", and a locked "Same everywhere" group. Flipkart's
+  screen edits price and on sale; its catalogue's content says to change it in Seller Hub, with
+  "Copy ours". A listing starts with what is live, so nothing waits on first look (Q2). The product
+  form gains MRP, barcode and up to five key features.
+- **marketplace-publish.** "Review and publish" shows every change old above new, each undoable, a
+  price more than 30% away marked; Publish sends only the kept fields at the reviewed version, one job
+  per listing under its lock, and a self-renewing check reads Amazon's answer at about 2 and 10 minutes
+  (then 30, 120, daily while unanswered). Complaints land on their field as "Amazon says: …". "Put on
+  Amazon" looks for the product's page by barcode then name: sell on it, or a new page checked by
+  Amazon's check-only mode first; a family goes up as its page then each member. Pause ends the
+  Amazon offer, never deletes. The Listings page shows "N listings have changes".
+- **[MIGRATION] `20261102000100_platform_listings`:** `PlatformListing`, `Product.keyFeatures` and
+  `Product.barcode`. Adds only; drops nothing.
+- **[CONTRACT]** CONTRACTS.md "Platform listings and publishing".
+- **Mutations recorded:** removing `.strict()` from the save body let `mrp` through (unit red);
+  dropping the version from the save's `where` let a stale save win (integration red); the same in the
+  publish claim let a moved listing publish (red); sending every writable field instead of the kept
+  ones sent the undone price (red); skipping the check-only answer created a page Amazon had refused (red).
+- **Fresh-context review, fixed before handing over:** a send that was skipped, dead-lettered or whose
+  family page was never sent could read "Sent" for ever (now every outcome is recorded, a member without
+  its page is refused, and the daily pass ends a send the queue gave up on); a look that threw never
+  counted, so the check could run for ever (now it counts, refused access asks to reconnect); marketplace
+  calls held a transaction (now outside it, answers guarded on the state read); Flipkart's rounding
+  was not what was recorded; Amazon's fields were recorded as sent before a look confirmed them; MRP
+  could not be cleared. Mutations: removing the missed-look record left a listing checking (red);
+  removing the whole-rupee rounding at the claim sent ₹429.50 (red).
+- **Gates:** `tsc --noEmit`; unit suite; integration `channel-listings`, `marketplace-publish` and the
+  channels suites on `bhendi_bazaar_ci` (en_US, UTC); `lint:boundary`; `docs:check`; `next build`.
+
+## 2026-11-02 — Sell page: one plan, the whole suite, ₹699 a month
+
+- **`/sell`, a pamphlet for sellers.** Hero, the four pillars (own store, photos made ready, sell
+  everywhere, run the business), what is still arriving tagged as such, one pricing card, three
+  steps and three questions. Every word is in `src/components/org/sell/sell-copy.ts`; the price is
+  one paise constant there, display only (subscriptions is still planned in BACKLOG.md, nothing is
+  charged). GST included, no trial, and no commission claim, because own-store orders still carry
+  `Org.commissionBps`. Every action leads to `/org/new`. Its own `(marketing)` route group, so it
+  runs full-bleed without the store's navbar and tab bar; server-rendered; added to the sitemap.
+
+## 2026-11-02 — Shop details has one Save
+
+- **One save bar instead of a Save on every card** (org-profile [Q30](specs/own-store/org-profile/decisions.md),
+  superseding Q17 and R9's per-section save). It shows only while something is unsaved, "Unsaved
+  changes · Discard · Save", on the phone's tab bar and at the foot of the column from md. Save
+  sends each changed section through the same per-section PATCH, one after another with the newest
+  version, so the column whitelist and the conflict check are unchanged; a failed section keeps its
+  banner and its typing. The rename still confirms in its sheet, opened last. No server change.
+- **Partly saved is said, never silent.** The rest save, the toast reads "Not everything saved. The
+  section that didn't says why.", and a collapsed failed row opens and scrolls into view. Typing
+  done during a slow save stays unsaved, and a name that only gains a space clears the bar.
+- Tests: `tests/unit/shop-details.test.tsx` (only changed sections are sent, in turn with the
+  newer version, one toast; Discard restores; mutation-checked) and `shop-contact.test.tsx`.
+
 ## 2026-11-01 — Worker drains a burst at once; stock sync writes only what differs
 
 - **The worker drains a burst.** Production showed stock sync's 43 sends running four every five

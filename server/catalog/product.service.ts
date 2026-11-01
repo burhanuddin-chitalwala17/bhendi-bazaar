@@ -172,6 +172,11 @@ export class ProductService {
     return await productsRepository.stockForPush(productId, db);
   }
 
+  /** What each product's marketplace listings are computed from (channel-listings D3), archived included. */
+  async forListing(orgId: string, productIds: readonly string[], db?: ProductDb) {
+    return await productsRepository.forListing(orgId, productIds, db);
+  }
+
   /** A family's members with what each answers, for adding to it (family-merge Q20). */
   async familyMembers(orgId: string, familyId: string) {
     return await adminProductsRepository.familyMembers(orgId, familyId);

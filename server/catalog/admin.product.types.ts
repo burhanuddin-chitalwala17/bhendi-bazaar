@@ -52,6 +52,10 @@ export interface ProductFormInput {
    */
   stockLocations: Array<{ orgAddressId: string; quantity: number; seenQuantity?: number }>;
   sku?: string;
+  /** Rupees from the form; paise past the service's money seam (Invariant 3). */
+  mrp?: number | null;
+  barcode?: string;
+  keyFeatures?: string[];
   lowStockThreshold?: number;
   weight: number;
   /**
