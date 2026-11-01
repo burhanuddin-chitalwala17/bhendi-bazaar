@@ -1,0 +1,295 @@
+server/shipping/ARCHITECTURE.md
+  8a67ee906addad3b 20
+src/app/(main)/wishlist/page.tsx
+  68efe39b094cb2fd 1,21
+src/lib/format.ts
+  b5d5b3d2b4a32d32 78-88
+src/lib/api-client.ts
+  30c03ec30dc864dc 6,8-9,13-17,34,46,55-65
+  e88cf391993abda9 1,4-5,7,10-12,18-24,32,35-45,47-51
+tests/unit/rate-limit.test.ts
+  s_17ac7f5fca5021::t_a359eaad5747d8 136
+src/instrumentation.ts
+  9a866c74f666e998 2
+src/hooks/cart/useCartSync.ts
+  e88cf391993abda9 17,102-103,105,114
+.env.production.example
+  68efe39b094cb2fd 102-104
+server/identity/account.service.ts
+  8a67ee906addad3b 41-44
+src/app/providers.tsx
+  e88cf391993abda9 6,8,12-15
+src/app/(admin)/admin/shipping/providers/page.tsx
+  b8765fc123466ea2 8
+src/app/api/CLAUDE.md
+  8a67ee906addad3b 13
+src/app/api/reviews/[id]/route.ts
+  8a67ee906addad3b 15,28,50
+src/app/layout.tsx
+  b5d5b3d2b4a32d32 40-41
+tests/unit/contact-email.test.ts
+  68efe39b094cb2fd 8-11,16-19,50,67
+.env.example
+  68efe39b094cb2fd 125-127
+.github/workflows/staging-worker.yml
+  dcc726aea31cfa6e 26-28,34,43-73
+audit-allowlist.json
+  e9fb98525f40bc03 1-4
+server/identity/password.service.ts
+  68efe39b094cb2fd 74-78
+src/app/api/addresses/route.ts
+  8a67ee906addad3b 9,21-23,44-46
+server/catalog/video.jobs.ts
+  c35082ddfd7867e1 19,59-60
+src/app/api/checkout/promotions/quote/route.ts
+  68efe39b094cb2fd 45
+  8a67ee906addad3b 12
+src/app/api/products/[id]/reviews/route.ts
+  8a67ee906addad3b 11,32,49
+.github/workflows/ci.yml
+  dcc726aea31cfa6e 15-18,54,59,145,148,208,211,227,272-273,277,287,290,293,296,303,325-354
+  e9fb98525f40bc03 67-68,70,102-104,108,138-139,141,169,171-172,177-179,184-191,199
+  e88cf391993abda9 105-107,111,162-168,170,173-176,180-183
+  f17fa11d2c13cde6 69,71
+src/app/api/orders/create-with-shipments/route.ts
+  8a67ee906addad3b 13,24-26
+server/shipping/providers/shiprocket/shiprocket.provider.ts
+  9a866c74f666e998 320
+src/app/(main)/page.tsx
+  b5d5b3d2b4a32d32 14-17,32
+src/components/shared/uploadApiClient.ts
+  30c03ec30dc864dc 1,18-22,29-33
+src/components/CLAUDE.md
+  30c03ec30dc864dc 30-31
+docs/OPERATIONS.md
+  8a67ee906addad3b 32
+  1b027920b263dcfc 55
+  a78958dfc0539557 591-603,607-609,614-617,620-622,624-625,629-633
+  c35082ddfd7867e1 56-57,573-575
+  9a866c74f666e998 67
+  2195202e1916f5fd 474
+  81b206576ff6a128 262,588
+  e9fb98525f40bc03 579
+  dcc726aea31cfa6e 484,576
+  4f50ca680282ff4a 604-606,610-613,618-619,623,626-628
+  47f149d0c2267181 577-578
+src/components/checkout/index.tsx
+  30c03ec30dc864dc 167
+  e88cf391993abda9 10,33,166,168
+src/app/(main)/product/[slug]/page.tsx
+  47f149d0c2267181 94,96,101-102,109
+  b5d5b3d2b4a32d32 14-15,32-35,39-41,52,61
+  b8765fc123466ea2 81-84
+  1b027920b263dcfc 103-108
+src/store/cartStore.ts
+  e88cf391993abda9 13-18,100,202,210-211
+  30c03ec30dc864dc 192-201
+.env.worker.example
+  2195202e1916f5fd 1-4,42-53
+server/shipping/courier-token.ts
+  s_17ac7f5fca5021::t_31ddb248dc7719 12
+tests/unit/review-routes.test.ts
+  68efe39b094cb2fd 11,13-16,24-27,63,77,128,138
+src/app/(main)/orders/page.tsx
+  68efe39b094cb2fd 3,17
+package-lock.json
+  e9fb98525f40bc03 53,2082-2097,13026-13054
+  f17fa11d2c13cde6 14-15,34,38,46,49,66,1042-1044,1050,1083-1085,1089,1095-1096,1107-1109,1310-1312,1328,1332-1334,1350,1354-1356,1363,1373-1375,1389-1391,1405-1407,1421-1423,1437-1439,1453-1455,1469-1471,1485-1487,1501-1503,1517-1519,1533-1535,1551,1555-1557,1573,1577-1579,1595,1599-1601,1617,1621-1623,1639,1643-1645,1661,1665-1667,1683,1687-1689,1705,1709-1711,1725-1727,1734,1744-1746,1763-1765,1782-1784,1881-1883,1887-1889,1898-1900,1914-1916,1930-1932,1946-1948,1962-1964,1978-1980,1994-1996,2010-2012,2106-2108,2111,2118-2120,2123,2142-2144,2148-2150,2154,2160-2162,2195-2197,2200,2204-2206,2210-2213,2217-2219,2223-2225,2228,2232-2234,2237-2239,2243-2245,2248,6852-6854,6858-6863,6865,6875-6877,6881-6883,6891-6893,6897-6901,6911-6912,6916-6918,6922-6924,6934,6938-6940,6944-6945,6956-6958,6969,6973-6975,6979-6983,6993-6994,6998-7000,7012-7014,7018-7024,7026,7036-7046,7050-7052,7056-7059,7063-7065,7067,7069,7072,7079-7081,7092-7094,7098-7101,7111-7112,7116-7118,7122-7123,7133-7145,9099-9111,9114,9640-9643,9649,9652-9653,9659,9678,9701-9703,9707,9713,9715,9933-9935,9949,10105-10107,10217-10219,10674-10676,10811-10813,12102-12104,12298-12300,12303,12305-12309,12313-12315,12372-12374,12377,12391-12399,13010-13012,13016,13021-13023,13191-13193,13197,13199,13201,13671-13673,14172-14174,14188-14212,14368-14370,14385-14388,14391-14397,14834-14836,15072-15074,15078-15081,15091-15092,15336-15338,15804-15806
+src/components/storefront/brand-page/brand-hero.tsx
+  b5d5b3d2b4a32d32 34
+  b8765fc123466ea2 31
+src/app/(main)/bid/[slug]/page.tsx
+  68efe39b094cb2fd 13,89
+  b5d5b3d2b4a32d32 108
+src/app/api/bidding/[slug]/bids/route.ts
+  8a67ee906addad3b 16,31
+src/lib/auth-config.ts
+  68efe39b094cb2fd 9,118-119,143
+  8a67ee906addad3b 98-100,102
+vercel.json
+  dcc726aea31cfa6e 3-5
+src/components/product/review-media.tsx
+  1b027920b263dcfc 6,94
+src/components/shared/button-groups/ProductActions.tsx
+  e88cf391993abda9 54-55,58,63-64
+src/components/home/hero-banner.tsx
+  b5d5b3d2b4a32d32 64
+docs/CHANGELOG.md
+  4f50ca680282ff4a 1494-1513
+  47f149d0c2267181 1564-1579
+  e88cf391993abda9 1728-1761
+  dcc726aea31cfa6e 1820-1841
+  b5d5b3d2b4a32d32 1611-1632
+  9a866c74f666e998 1709-1727
+  81b206576ff6a128 1484-1493
+  30c03ec30dc864dc 1681-1708
+  b8765fc123466ea2 1532-1563
+  1b027920b263dcfc 1514-1531
+  68efe39b094cb2fd 1580-1610
+  e9fb98525f40bc03 1762-1784
+  f17fa11d2c13cde6 1785-1805
+  8a67ee906addad3b 1655-1680
+  2195202e1916f5fd 1806-1819
+  c35082ddfd7867e1 1633-1654
+src/types/next-auth.d.ts
+  68efe39b094cb2fd 24-25,34
+src/components/cart/cart-line-items.tsx
+  e88cf391993abda9 10,38-42
+src/lib/config.ts
+  b5d5b3d2b4a32d32 88-94
+src/components/bulk-upload/bulkImportApiClient.ts
+  30c03ec30dc864dc 1,51,62-66,73,78-82
+src/data-access-layer/orders.dal.ts
+  68efe39b094cb2fd 3,44
+src/app/api/contact/route.ts
+  8a67ee906addad3b 1
+  68efe39b094cb2fd 22
+server/payments/providers/razorpay/razorpay.repository.ts
+  9a866c74f666e998 19,75,209
+docs/DEPENDENCIES.md
+  e9fb98525f40bc03 3,21,23-24,28,32,54-55
+server/identity/profile.repository.ts
+  68efe39b094cb2fd 207,228,247-248,320
+  8a67ee906addad3b 246,249-257
+docs/BACKLOG.md
+  81b206576ff6a128 317
+package.json
+  e9fb98525f40bc03 64
+  f17fa11d2c13cde6 25-26,45,49,57,60,77
+src/data-access-layer/profile.dal.ts
+  68efe39b094cb2fd 3,22
+src/app/api/addresses/[id]/route.ts
+  8a67ee906addad3b 10,25-27,68-70
+tests/unit/checkout-sign-in.test.tsx
+  e88cf391993abda9 84-85
+src/app/(main)/checkout/page.tsx
+  30c03ec30dc864dc 8-10,21-34,57-58
+tests/unit/admin-auth.test.ts
+  68efe39b094cb2fd 5-8,16,22
+playwright.config.ts
+  e9fb98525f40bc03 1-3,8-16,18-33
+  e88cf391993abda9 4-7,17
+docs/ARCHITECTURE.md
+  1b027920b263dcfc 77
+  9a866c74f666e998 18
+tests/unit/same-origin.test.ts
+  81b206576ff6a128 136
+src/app/(main)/order/[orderId]/page.tsx
+  68efe39b094cb2fd 1,16
+infra/worker/compose-env.sh
+  dcc726aea31cfa6e 4,6-9,15-23,34-35
+  2195202e1916f5fd 27-28
+src/data-access-layer/reviews.dal.ts
+  68efe39b094cb2fd 1,18,24
+src/lib/admin-auth.ts
+  68efe39b094cb2fd 7,20-26,28-29,31-34,38-41,44,48-51
+  8a67ee906addad3b 37,42-43,45-47,52
+src/app/api/cart/route.ts
+  8a67ee906addad3b 3,22,55
+  68efe39b094cb2fd 68
+src/app/api/wishlist/route.ts
+  8a67ee906addad3b 1,24,55
+.gitignore
+  e9fb98525f40bc03 56-60
+tests/unit/courier-token.test.ts
+  s_17ac7f5fca5021::t_a3e02e2375da68 12,18,37-44,48,60
+server/shipping/CLAUDE.md
+  8a67ee906addad3b 30
+src/components/product/product-gallery.tsx
+  1b027920b263dcfc 8,282-283,423
+src/data-access-layer/wishlist.dal.ts
+  68efe39b094cb2fd 3,24,41
+tests/unit/route-reachability.test.ts
+  81b206576ff6a128 28
+  9a866c74f666e998 33
+src/app/api/cart/sync/route.ts
+  8a67ee906addad3b 3,16
+  68efe39b094cb2fd 4,40
+docs/INTEGRATIONS.md
+  81b206576ff6a128 42
+e2e/global-setup.ts
+  e9fb98525f40bc03 1-5
+src/app/(main)/category/[slug]/page.tsx
+  b5d5b3d2b4a32d32 14-15,69-74
+  s_414b3c3c698246::t_151e8f95f3efe0 35-36,47
+server/notifications/email.service.ts
+  9a866c74f666e998 33,57-60,66-70
+src/components/layout/navbar/Navbar.tsx
+  b8765fc123466ea2 43-44
+src/app/api/reviews/upload-token/route.ts
+  8a67ee906addad3b 17,28
+src/components/ui/button.tsx
+  e88cf391993abda9 4,9,40-41,47-49,54-56,59-60,69-74,76-85
+  30c03ec30dc864dc 57-58
+src/app/(main)/profile/loading.tsx
+  e88cf391993abda9 1-7
+src/lib/same-origin.ts
+  81b206576ff6a128 24
+server/shared/prisma.ts
+  1b027920b263dcfc 3,18-19
+server/shared/deployment.ts
+  c35082ddfd7867e1 1-5
+docs/TESTING.md
+  e9fb98525f40bc03 3-4,49-50,172,175-179,196-198
+next.config.ts
+  b5d5b3d2b4a32d32 6,13-15
+src/hooks/core/useMutation.ts
+  e88cf391993abda9 3,42,80-81,85,87,89-93
+  30c03ec30dc864dc 37-40,82-84,86,88,107-116
+src/app/api/payments/abandon/route.ts
+  68efe39b094cb2fd 18
+  8a67ee906addad3b 9
+server/catalog/object-store.ts
+  c35082ddfd7867e1 16,88,128-131,134
+  9a866c74f666e998 113-116,132-133,135,145-148
+tests/unit/vocabulary.test.ts
+  s_0972fb7ac9c18b::t_4bb3d3694e0054 20,27
+  b5d5b3d2b4a32d32 25
+  b8765fc123466ea2 21
+src/hooks/core/useServerForm.ts
+  e88cf391993abda9 3,74,112-129
+src/app/(admin)/admin/products/page.tsx
+  b8765fc123466ea2 17
+tests/integration/courier-updates.test.ts
+  s_17ac7f5fca5021::t_15404c82bf2a60 30,46,50,125
+src/lib/env.ts
+  68efe39b094cb2fd 24
+  9a866c74f666e998 22,25-29,39-40,43,49
+  c35082ddfd7867e1 2-3
+server/shipping/services/provider-auth.ts
+  9a866c74f666e998 10,55
+README.md
+  81b206576ff6a128 524
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "2b7015c6c669ee15acf61b69ebc56d6d8269b50e",
+  "prompts": {},
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    },
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    },
+    "s_414b3c3c698246": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "57154fb9-e852-42f0-b23e-94c606e33061",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
