@@ -12,6 +12,12 @@
 
 ## Entries
 
+## 2026-11-01 — storefront fonts: the build refuses a named fallback list
+
+- `next build` failed on `src/components/storefront/theme-fonts.ts`: the font loader reads its options at build time and
+  refuses a constant ("Font loader values must be explicitly written literals"). Each call now writes its fallback list
+  out. Tests and `tsc` never run the loader, so only a build shows this; `npm run build` passes locally.
+
 ## 2026-11-01 — inventory-sync: the preview refuses to show counts before locations are matched [CONTRACT]
 
 - On production the Amazon preview showed all 43 listings "1 → 0": the shop's stock (Bangalore

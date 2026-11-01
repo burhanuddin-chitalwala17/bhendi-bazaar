@@ -4,15 +4,14 @@ import { THEME, type ThemeKey } from "@server/catalog/storefront-themes";
 
 // `preload: false` on every face: a layout otherwise preloads each of its fonts on every child
 // route, so all six would ride every themed page (storefront-themes D5, Q30). Self-hosted by the
-// loader, so CSP's `font-src 'self'` is unchanged.
-const SANS_FALLBACK = ["system-ui", "Arial", "sans-serif"];
-const MONO_FALLBACK = ["ui-monospace", "Menlo", "monospace"];
+// loader, so CSP's `font-src 'self'` is unchanged. Options are written out in each call: the
+// loader reads them at build time and refuses a named constant.
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   display: "swap",
   preload: false,
-  fallback: SANS_FALLBACK,
+  fallback: ["system-ui", "Arial", "sans-serif"],
   variable: "--font-space-grotesk",
 });
 
@@ -20,7 +19,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
   display: "swap",
   preload: false,
-  fallback: MONO_FALLBACK,
+  fallback: ["ui-monospace", "Menlo", "monospace"],
   variable: "--font-geist-mono",
 });
 
@@ -28,7 +27,7 @@ const jost = Jost({
   subsets: ["latin"],
   display: "swap",
   preload: false,
-  fallback: SANS_FALLBACK,
+  fallback: ["system-ui", "Arial", "sans-serif"],
   variable: "--font-jost",
 });
 
@@ -46,7 +45,7 @@ const dmMono = DM_Mono({
   weight: ["400", "500"],
   display: "swap",
   preload: false,
-  fallback: MONO_FALLBACK,
+  fallback: ["ui-monospace", "Menlo", "monospace"],
   variable: "--font-dm-mono",
 });
 
@@ -54,7 +53,7 @@ const mulish = Mulish({
   subsets: ["latin"],
   display: "swap",
   preload: false,
-  fallback: SANS_FALLBACK,
+  fallback: ["system-ui", "Arial", "sans-serif"],
   variable: "--font-mulish",
 });
 
