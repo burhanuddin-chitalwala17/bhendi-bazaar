@@ -2,13 +2,20 @@
  * The theme registry and the CSS that renders it agree (storefront-themes A1, R1–R3; D1, D2, D5).
  *
  * A key in code with no scope renders the platform look under a theme's name; a scope with no
- * key is a palette no shop can reach. Compositions join this file in U2.
+ * key is a palette no shop can reach. A composition naming a section or variant the library
+ * does not draw renders a hole in a shop's page (U2; D1, D8, Q8).
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 
 import {
+  CARD_STYLE,
+  COMPOSITIONS,
   FACE_VARIABLE,
+  HIDEABLE_SECTIONS,
+  SECTION,
+  SECTION_KEYS,
+  SECTION_VARIANTS,
   PALETTE,
   THEME,
   THEMES,
@@ -126,5 +133,63 @@ describe("stored keys are parsed on read (D1)", () => {
       theme: THEME.DAILY,
       palette: PALETTE.COBALT,
     });
+  });
+});
+
+describe("compositions (U2; R2, A1, Q8)", () => {
+  const variantsOf = (section: string) =>
+    (SECTION_VARIANTS as Record<string, readonly string[]>)[section] ?? [];
+
+  it.each(THEME_KEYS)("%s names only declared sections, each in one of its variants", (theme) => {
+    for (const { section, variant } of COMPOSITIONS[theme].sections) {
+      expect(SECTION_KEYS, `${theme}: ${section}`).toContain(section);
+      expect(variantsOf(section), `${theme}: ${section}.${variant}`).toContain(variant);
+    }
+  });
+
+  it.each(THEME_KEYS)("%s draws each section once, and opens on the hero", (theme) => {
+    const sections = COMPOSITIONS[theme].sections.map((e) => e.section);
+    expect(new Set(sections).size).toBe(sections.length);
+    expect(sections[0]).toBe(SECTION.HERO);
+  });
+
+  it.each(THEME_KEYS)("%s carries the goods, deals and proof every theme owes (spec Theme cards)", (theme) => {
+    const sections = COMPOSITIONS[theme].sections.map((e) => e.section);
+    for (const owed of [SECTION.BEST_SELLING, SECTION.NEW_IN, SECTION.DEALS, SECTION.WHY_BUY, SECTION.VISIT]) {
+      expect(sections, `${theme} lacks ${owed}`).toContain(owed);
+    }
+  });
+
+  it("every declared variant is drawn by some theme — none is dead code", () => {
+    const used = new Set(
+      THEME_KEYS.flatMap((t) => COMPOSITIONS[t].sections.map((e) => `${e.section}.${e.variant}`)),
+    );
+    const declared = SECTION_KEYS.flatMap((s) => variantsOf(s).map((v) => `${s}.${v}`));
+    expect(declared.filter((v) => !used.has(v))).toEqual([]);
+  });
+
+  it("each theme has its own card style", () => {
+    const styles = THEME_KEYS.map((t) => COMPOSITIONS[t].cardStyle);
+    expect(new Set(styles).size).toBe(THEME_KEYS.length);
+    expect(styles.sort()).toEqual(Object.values(CARD_STYLE).sort());
+  });
+
+  it("themes differ in layout, not colour alone: at least three sections drawn differently, pairwise (A1)", () => {
+    const drawn = (t: (typeof THEME_KEYS)[number]) =>
+      new Map<string, string>(COMPOSITIONS[t].sections.map((e) => [e.section, e.variant]));
+    for (const a of THEME_KEYS) {
+      for (const b of THEME_KEYS) {
+        if (a >= b) continue;
+        const [da, db] = [drawn(a), drawn(b)];
+        const differing = SECTION_KEYS.filter((s) => da.get(s) !== db.get(s));
+        expect(differing.length, `${a} vs ${b}`).toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
+
+  it("a shop may hide only its own words and picks, never proof or goods (Q9)", () => {
+    expect([...HIDEABLE_SECTIONS].sort()).toEqual(
+      [SECTION.COLLECTIONS, SECTION.STORY, SECTION.VISIT].sort(),
+    );
   });
 });

@@ -128,8 +128,8 @@ Each starts one step before the screen.
 - Publish sheet: "Publish {theme}?" · "Your shop will look like this for everyone. You can switch back any time." · "Publish" · "Not yet"
 - Toasts: "Your new look is live." · "Saved" · "Switched back to {theme}."
 - Buyer: "Visit {Shop name}" / "Visit shop" · "Shop all {n}" · "Shop the deal" · "Ends {Sun 3 Nov}" · "Ends today" · "Code {CODE} · tap to copy" · "Copied" · "Sold on Bhendi Bazaar" · "Shop all of Bhendi Bazaar"
-- Why buy from us (facts; claims shown apart, e.g. "BIS hallmarked — every piece, card in the box"): "★ 4.8 from 212 reviews" · "1,400+ orders delivered" · "On Bhendi Bazaar since 2024" · "Ships in {n} days" · "{n}-day returns"
-- Visit & contact: "{Area}, {City}" · "Open today 10:30 am – 9 pm" · "Contact us" (platform; no shop phone, Q22) · "Dispatch in {n} days" · "{n}-day returns" + the shop's note
+- Why buy from us (facts; claims shown apart, e.g. "BIS hallmarked — every piece, card in the box"): "★ 4.8 from 212 reviews" · "1,400+ orders delivered" · "On Bhendi Bazaar since 2024" · "Ships in {n} days" ("1 day", "today", Q38) · "{n}-day returns" (shown as the returns preset label, Q37)
+- Visit & contact: "{Area}, {City}" · "Open today 10:30 am – 9 pm" · "Contact us" (platform; no shop phone, Q22) · "Dispatch in {n} days" (Q38) · "{n}-day returns" (preset label, Q37) + the shop's note
 - Errors: as in the matrices. No disabled buttons; an unavailable action explains on tap.
 
 ## Sign-off

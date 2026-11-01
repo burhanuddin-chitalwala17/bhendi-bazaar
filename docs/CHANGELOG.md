@@ -12,6 +12,40 @@
 
 ## Entries
 
+## 2026-11-01 — storefront-themes unit 2: sections and compositions [MIGRATION]
+
+- **Registry (D1, D8; Q8, Q9):** `server/catalog/storefront-themes.ts` gains the one section library (`SECTION`,
+  `SECTION_VARIANTS`: hero 4, collections 3, deals 3, best selling 3, new in 2, why buy 3, story 3, reviews 2,
+  visit 2), `HIDEABLE_SECTIONS` (collections, story, visit — the shop's own words and picks), `CARD_STYLE` and each
+  theme's `COMPOSITIONS` in the spec's section order. The footer is chrome (D7, unit 3), not a composed section.
+- **Sections (D8; R2, R10, R11, Q17, Q23, Q34):** new `src/components/storefront/themed/` — server components for
+  hero, collections, a shared product shelf (grid, rail, rails by category), why buy, story, reviews, visit, one
+  product card in four styles, and `ThemedSections`, which renders a theme's composition and closes up empty
+  sections. `page-data.ts` holds the slice functions (best selling needs 4, shelves cap at 8, collections at 6;
+  since-when and the returns preset never open "Why buy from us" alone; claims drawn apart from facts). A missing
+  photo draws the theme's pattern: new `--pattern-image`/`--pattern-size` per `[data-theme]` and
+  `bg-theme-pattern` (registered in `cn`). Empty shop: "{Shop name} is setting up. Check back soon." The deals
+  section renders nothing until unit 4 (D10). Nothing mounts any of it yet (unit 3).
+- **Schema (D11; Q4, Q19, Q31):** migration `20261101170100_storefront_look` adds `OrgProfile.themeKey`,
+  `paletteKey`, `lookVersion` (default 0), `lookPublishedAt`, `lookPublishedByUserId` (Restrict, ADR-0020),
+  `previousThemeKey`, `previousPaletteKey`, `previousLookUntil`. Additive, no backfill; nothing writes them yet. The
+  publisher FK is indexed (`OrgProfile_lookPublishedByUserId_idx`) so Restrict does not scan `OrgProfile`.
+- **Review fixes:** hero text over a photo uses `bg-photo-scrim` at the strength the D4 contrast gate tests (no
+  `/60` modifier); the rating count is grouped ("1,212 reviews"); the Edge card's spec line shows the category's
+  name or nothing, never a slug. Q37 rewords signed-off copy and is flagged for the owner to confirm.
+- **Naming:** the section is keyed `bestSelling` and titled "Best selling": "bestsellers" trips the retired-word
+  gate (`tests/unit/vocabulary.test.ts`), and a word inside a compound is not worth an allowlist edit.
+- **Tests:** `storefront-themes-registry.test.ts` (compositions name only declared sections and variants, each once,
+  hero first; every theme carries goods, deals, proof and visit; no undrawn variant; four card styles; themes
+  differ pairwise in ≥3 section variants — A1; hideable set pinned). New `storefront-themed-sections.test.tsx`
+  (A4 per theme: name, logo, one product → pattern in the hero, no blank section, no "undefined"; product without a
+  photo → pattern; empty shop copy; hidden sections; Q34 floor; why-buy wording and claims apart). New integration
+  `storefront-look-columns.test.ts` (unthemed at version 0; publisher cannot be deleted).
+- **Mutations recorded:** a composition variant cast to `"carousel"` → two registry tests red; pattern test id
+  removed → 8 render tests red; `MIN_BEST_SELLING` 3 → red; empty sections kept as wrappers → 4 red; hero count
+  always "products" → the singular test red. All restored.
+- `docs/ARCHITECTURE.md` counts: 113 → 114 migrations, 293 → 295 test files. Decisions Q8, Q17 → implemented
+  (unit 2); Q37 (returns read as the preset label) and Q38 ("1 day", "today") logged and implemented. Suites: `tsc`, `vitest tests/unit`, the new integration file, `lint:boundary`, `docs:check`.
 ## 2026-11-01 — own-store/bulk-sheet unit 5: the team uploads a shop's sheet, recorded once [CONTRACT]
 
 - **Admin twins (D11; R9; Q17, Q18):** `GET /api/admin/orgs/:id/products/bulk/sample`, `POST …/validate`, `POST

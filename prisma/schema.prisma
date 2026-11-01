@@ -610,6 +610,7 @@ model User {
 
   settlementsCreated       Settlement[] @relation("SettlementCreatedBy")
   promotionLossesConfirmed Promotion[]  @relation("PromotionLossConfirmedBy")
+  orgLooksPublished        OrgProfile[] @relation("OrgLookPublishedBy")
   settlementsUpdated       Settlement[] @relation("SettlementUpdatedBy")
 
   bids                 Bid[]               @relation("UserBids")
@@ -775,8 +776,24 @@ model OrgProfile {
   /// One optional line beside the preset, at most 280 letters (org-profile Q19).
   promiseNote   String?       @db.Text
 
+  /// The published look (storefront-themes D1, D11): keys into code, parsed on read, so a key
+  /// retired from code reads as unthemed. Null theme is today's pages (Q19). `lookVersion` is
+  /// what a publish compares-and-sets on (Q31); the previous look is kept until
+  /// `previousLookUntil` so "Switch back" works for 30 days (Q4).
+  themeKey              String?
+  paletteKey            String?
+  lookVersion           Int       @default(0)
+  lookPublishedAt       DateTime?
+  lookPublishedByUserId String?
+  lookPublishedBy       User?     @relation("OrgLookPublishedBy", fields: [lookPublishedByUserId], references: [id], onDelete: Restrict)
+  previousThemeKey      String?
+  previousPaletteKey    String?
+  previousLookUntil     DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([lookPublishedByUserId])
 }
 
 /// Mirrored by `RETURNS_PRESET` in server/catalog/shop-details.types.ts.

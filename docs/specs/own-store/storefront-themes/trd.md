@@ -1,6 +1,6 @@
 # TRD — own-store/storefront-themes
 
-- **Status:** Accepted — unit 1 implemented 2026-11-01
+- **Status:** Accepted — units 1–2 implemented 2026-11-01
 - **Domain:** catalog (storefront), promotions (one column, one read)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-10-30
@@ -154,7 +154,7 @@ D13's fields; `PromotionFormInput` gains `showOnStorefront`.
 
 ## Delivery (PRs)
 1. **U1** tokens, palettes, fonts, contrast gate — no visible change. *Implemented 2026-11-01.*
-2. **U2** sections and compositions [MIGRATION] — nothing renders them yet.
+2. **U2** sections and compositions [MIGRATION] — nothing renders them yet. *Implemented 2026-11-01.*
 3. **U3** themed chrome, landing/shop split, redirects — only themed shops, and none exist yet.
 4. **U4** deals and badges [MIGRATION] [CONTRACT].
 5. **U5** picker, preview, publish, revert [CONTRACT] — **changes behaviour**: a shop can publish.

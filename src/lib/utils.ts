@@ -31,6 +31,8 @@ const twMerge = extendTailwindMerge({
       // `deal` and `feature` are fills only: as text on the page they fall below AA.
       "text-color": [{ text: ["deal-foreground", "feature-foreground", "on-photo"] }],
       "bg-color": [{ bg: ["deal", "feature", "photo-scrim"] }],
+      // a theme's drawn pattern where a photo is missing (Q17)
+      "bg-image": [{ bg: ["theme-pattern"] }],
       "max-w": [{ "max-w": ["store"] }],
       "duration": [{ duration: ["theme"] }],
       "ease": [{ ease: ["theme"] }],

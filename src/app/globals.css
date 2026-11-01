@@ -477,6 +477,9 @@
   --shadow-tile-value: 0 0 #0000;
   --motion-duration: 300ms;
   --ease-theme: cubic-bezier(0.2, 0, 0, 1);
+  /* What fills a missing photo (Q17). */
+  --pattern-image: radial-gradient(circle, color-mix(in oklab, var(--foreground) 14%, transparent) 1px, transparent 1.5px);
+  --pattern-size: 1rem 1rem;
 }
 
 [data-theme="darbar"] {
@@ -502,6 +505,9 @@
   --shadow-tile-value: 0 0 #0000;
   --motion-duration: 500ms;
   --ease-theme: cubic-bezier(0.45, 0, 0.55, 1);
+  /* What fills a missing photo (Q17). */
+  --pattern-image: repeating-linear-gradient(45deg, color-mix(in oklab, var(--foreground) 14%, transparent) 0 1px, transparent 1px 1rem), repeating-linear-gradient(-45deg, color-mix(in oklab, var(--foreground) 14%, transparent) 0 1px, transparent 1px 1rem);
+  --pattern-size: auto;
 }
 
 [data-theme="bloom"] {
@@ -526,6 +532,9 @@
   --shadow-tile-value: 0 0 #0000;
   --motion-duration: 250ms;
   --ease-theme: cubic-bezier(0, 0, 0.2, 1);
+  /* What fills a missing photo (Q17). */
+  --pattern-image: radial-gradient(circle at 25% 30%, color-mix(in oklab, var(--feature) 22%, transparent) 0 28%, transparent 29%), radial-gradient(circle at 75% 72%, color-mix(in oklab, var(--primary) 14%, transparent) 0 24%, transparent 25%);
+  --pattern-size: 100% 100%;
 }
 
 [data-theme="daily"] {
@@ -551,6 +560,9 @@
   --shadow-tile-value: 0 1px 4px 0 rgb(0 0 0 / 0.12);
   --motion-duration: 150ms;
   --ease-theme: cubic-bezier(0.4, 0, 0.2, 1);
+  /* What fills a missing photo (Q17). */
+  --pattern-image: repeating-linear-gradient(0deg, color-mix(in oklab, var(--foreground) 14%, transparent) 0 1px, transparent 1px 1.75rem), repeating-linear-gradient(90deg, color-mix(in oklab, var(--foreground) 14%, transparent) 0 1px, transparent 1px 1.75rem);
+  --pattern-size: auto;
 }
 
 /* Reduced motion stops every theme's motion (storefront-themes D14, R12). */
@@ -949,6 +961,13 @@
 /* Sits a fixed element directly on top of the tab bar (sticky product CTA, toasts). */
 @utility bottom-tabbar {
   bottom: calc(var(--tab-bar-h) + env(safe-area-inset-bottom));
+}
+
+/* A theme's drawn pattern where a photo is missing (storefront-themes Q17, R10). */
+@utility bg-theme-pattern {
+  background-color: var(--muted);
+  background-image: var(--pattern-image);
+  background-size: var(--pattern-size);
 }
 
 /* A theme's transition length; zeroed under reduced motion. */

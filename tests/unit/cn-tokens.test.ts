@@ -57,6 +57,8 @@ describe("cn resolves custom tokens", () => {
     ["gap-grid", "gap-2"],
     ["duration-theme", "duration-0"],
     ["ease-theme", "ease-linear"],
+    // storefront-themes Q17
+    ["bg-theme-pattern", "bg-none"],
   ])("%s is dropped when %s overrides it", (token, override) => {
     expect(classes(cn(token, override))).toEqual([override]);
   });
