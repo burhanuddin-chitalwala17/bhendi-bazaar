@@ -12,6 +12,24 @@
 
 ## Entries
 
+## 2026-11-01 — own-store/bulk-sheet unit 4: problems marked in the shop's own file [CONTRACT]
+
+- **Marker (D7; R6, A4; Q11, Q12, Q30):** `POST /api/org/:orgId/products/bulk/marker` takes the same file again,
+  re-runs the whole check and answers the shop's own workbook (`server/catalog/bulk/sheet-marker.ts`): each problem
+  cell filled red with a note, the row's Problems cell holding its lines joined by " · ", nothing else written; a
+  file marked before has only our own red and note lines cleared — a red cell is ours only if its note holds a line
+  its row's Problems listed, since our red is also Excel's "Bad" style. A .csv comes back as an .xlsx with Problems first.
+  Re-uploading the marked file reads the same rows and stamp.
+- **One check (D8, D9):** `checkProductSheet` (`bulk-check.service.ts`) is what validate and the marker both run;
+  all-or-nothing is unchanged (Q19). A row the shape refuses is still checked against the catalogue, so "Price
+  missing · Colour 'Emrald' isn't in the list…" arrive together; a cell already refused is not named twice.
+- **Screen:** "Download your sheet with problems marked" is the docked action when rows have problems, with "Fix
+  the red cells and upload the same file again." above the list; never disabled — the tap shows "Marking your
+  sheet…" at once, a second tap says so again, and a refusal about the file shows its own words (retry copy only for
+  a network or server fault).
+- **Tests:** `tests/unit/bulk-sheet-marker.test.ts`, `tests/integration/bulk-sheet-marker.test.ts`. Mutation-tested:
+  clearing any fill, not clearing last round, not writing Problems, not shifting a .csv, not checking drafts, and
+  naming a refused cell twice, and clearing a red cell whose note is not ours each fail a test.
 ## 2026-11-01 — order-fulfilment unit 5: cancel, fee and its setting, cancellation count, refund owed on cancel [CONTRACT] [MIGRATION]
 
 - **One cancel, three doors** (R10, R11, R15, A7, A8; D12; Q9, Q13, Q28, Q31): `server/checkout/fulfilment-cancel.ts`

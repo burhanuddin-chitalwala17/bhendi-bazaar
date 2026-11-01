@@ -44,6 +44,11 @@ export const bulkImportApiClient = {
     });
   },
 
+  /** The shop's own file back with its problems marked; checked again on the server, never sent as errors (D7). */
+  downloadMarkedProducts(orgId: string, sheet: File, filenames: string[]) {
+    return apiDownload(`/api/org/${orgId}/products/bulk/marker`, { method: "POST", body: sheetForm(sheet, filenames) });
+  },
+
   createProducts(
     orgId: string,
     rows: (BulkProductRow & { imageUrls: Record<string, string>; rowNumber: number; tab?: string })[],

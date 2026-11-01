@@ -18,6 +18,9 @@ const COLUMN_OF_FIELD: Record<string, string> = {
 
 const STOCK_PREFIX = "stock:";
 
+/** The column key a problem's field sits in — what both the screen and the returned file name it by. */
+export const columnKeyOf = (field: string): string => COLUMN_OF_FIELD[field.toLowerCase()] ?? field.toLowerCase();
+
 /** A sheet without key rows (a .csv, an old .xlsx) is named in the words today's sheet uses. */
 const STANDARD_HEADINGS = new Map(
   tabColumns(null, [], { brands: true }).map((column) => [column.key.toLowerCase(), column.heading]),
@@ -29,7 +32,7 @@ export function nameColumns(errors: readonly RowError[], raw: Pick<RawSheet, "ta
   );
   return errors.map((error) => {
     if (error.row === 0) return error;
-    const key = COLUMN_OF_FIELD[error.field.toLowerCase()] ?? error.field.toLowerCase();
+    const key = columnKeyOf(error.field);
     const column =
       (error.tab ? headings.get(error.tab)?.get(key) : undefined) ||
       STANDARD_HEADINGS.get(key) ||

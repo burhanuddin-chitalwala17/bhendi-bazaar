@@ -10,7 +10,8 @@ import { useProblemList } from "./useProblemList";
 
 /**
  * What the check found (own-store/bulk-sheet ux.md, Upload and Check and create): the sheet's age
- * first, then its problems grouped by row, or the clean summary with its counts (R4, R7, R8).
+ * first, then its problems grouped by row, or the clean summary with its counts (R4, R7, R8). The
+ * marked-file download is the wizard's docked action (R6).
  */
 export function CheckReport({
   report,
@@ -58,6 +59,7 @@ function Problems({ report, onPickFile }: { report: ProductBulkReport; onPickFil
   return (
     <section className="space-y-3 rounded-card border border-destructive/40 bg-card p-4">
       <p className="text-sm font-semibold text-destructive">{CHECK_COPY.problems(report.errors.length, list.rowCount)}</p>
+      {list.rowCount > 0 && <p className="text-sm text-muted-foreground">{CHECK_COPY.fixAndReupload}</p>}
       {list.columns.length > 1 && (
         <Select aria-label="Filter by column" value={list.column} onChange={(event) => list.setColumn(event.target.value)}>
           <option value="">{CHECK_COPY.allColumns}</option>

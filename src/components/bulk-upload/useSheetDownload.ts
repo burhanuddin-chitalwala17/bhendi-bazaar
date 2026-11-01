@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { bulkImportApiClient } from "./bulkImportApiClient";
+import { saveBlob } from "./files";
 
 export type SheetDownloadStatus = "idle" | "making" | "failed";
 
@@ -31,16 +32,6 @@ function writeLast(orgId: string, iso: string) {
   } catch {
     // The nudge is lost on this device; the download itself succeeded.
   }
-}
-
-function save(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  // Revoking at once can cancel the download on iOS Safari.
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /** The Get the sheet step's state: ticks, the download, and when this device last downloaded. */
@@ -78,7 +69,7 @@ export function useSheetDownload(orgId: string, soldIds: string[], onDownloaded:
     setStatus("making");
     const timer = setTimeout(() => setSlow(true), SLOW_MS);
     try {
-      save(await bulkImportApiClient.downloadProductSheet(orgId, [...ticked]), "bulk-products-sheet.xlsx");
+      saveBlob(await bulkImportApiClient.downloadProductSheet(orgId, [...ticked]), "bulk-products-sheet.xlsx");
       const now = new Date().toISOString();
       writeLast(orgId, now);
       setLastDownloaded(now);

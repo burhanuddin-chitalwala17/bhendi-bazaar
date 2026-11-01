@@ -5,6 +5,7 @@ import { parseYoutubeRef, MAX_MEDIA_PER_PRODUCT } from "@server/catalog/media";
 import { FACT_DECLARATIONS, MEASURES } from "@server/listing/listing-facts";
 import type { RawSheetRow } from "@server/catalog/bulk/sheet";
 import type { BulkProductRow, RowError } from "@server/catalog/bulk/bulk.types";
+import { DomainError } from "@server/shared/domain-error";
 
 /**
  * One sheet row → one typed product row (bulk-catalog-upload D1).
@@ -47,7 +48,10 @@ const numberCell = (raw: string | undefined): number | undefined => {
 const rowShape = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(255),
   description: z.string().trim().min(1, "Description is required").max(5000),
-  price: rupeeAmount("Price"),
+  // "Price missing" is the returned file's own words (own-store/bulk-sheet A4); the rest are the form's.
+  price: z
+    .number({ error: (issue) => (issue.input === undefined ? "Price missing" : "Price must be a number") })
+    .pipe(rupeeAmount("Price")),
   categorySlug: z.string().trim().min(1, "Category is required"),
   sku: z.string().trim().max(64).optional(),
   weight: z
@@ -75,13 +79,16 @@ const rowShape = z.object({
 });
 
 /**
- * Parse one raw sheet row. Returns the typed row or the row's errors — never both.
+ * Parse one raw sheet row. Returns the typed row or the row's errors — never both. A row with
+ * errors also returns its `draft`, the cells as read, so the checks that need the database can
+ * name every other problem on the same row at once (own-store/bulk-sheet A4). A draft is only
+ * ever checked, never created.
  */
 export function parseBulkProductRow(
   raw: RawSheetRow,
   /** The sheet's column keys: a Brand column left blank clears the brand; no Brand column leaves it. */
   headers: readonly string[] = [],
-): { row: BulkProductRow } | { errors: RowError[] } {
+): { row: BulkProductRow } | { errors: RowError[]; draft: BulkProductRow } {
   const errors: RowError[] = [];
   const cells = raw.cells;
 
@@ -168,7 +175,10 @@ export function parseBulkProductRow(
       });
     }
   }
-  if (errors.length) return { errors };
+  if (errors.length) {
+    const draft: BulkProductRow = { ...candidate, price: candidate.price ?? NaN, weight: candidate.weight ?? NaN };
+    return { errors, draft };
+  }
   return { row: parsed.data as BulkProductRow };
 }
 
@@ -207,3 +217,20 @@ export const bulkProductCreateSchema = z.object({
 });
 
 export type BulkProductCreatePayload = z.infer<typeof bulkProductCreateSchema>;
+
+const uploadedNames = z.array(z.string().max(1024)).max(20000);
+
+/** The check's and the marker's form: the sheet itself and the names of the photos picked beside it. */
+export function readSheetUpload(form: FormData): { sheet: File; filenames: string[] } {
+  const sheet = form.get("sheet");
+  if (!(sheet instanceof File)) throw new DomainError("Attach the filled-in sheet.");
+  let names: unknown;
+  try {
+    names = JSON.parse(String(form.get("filenames") ?? "[]"));
+  } catch {
+    names = null;
+  }
+  const filenames = uploadedNames.safeParse(names);
+  if (!filenames.success) throw new DomainError("filenames must be a JSON array of the dropped image names.");
+  return { sheet, filenames: filenames.data };
+}

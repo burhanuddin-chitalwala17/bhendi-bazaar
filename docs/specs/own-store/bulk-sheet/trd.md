@@ -1,6 +1,6 @@
 # TRD — own-store/bulk-sheet
 
-- **Status:** Accepted — 2026-10-30 (UX signed off 2026-10-30; Q19 decided by the owner) · U1, U2, U3 built 2026-11-01
+- **Status:** Accepted — 2026-10-30 (UX signed off 2026-10-30; Q19 decided by the owner) · U1, U2, U3, U4 built 2026-11-01
 - **Domain:** catalog (bulk), with listing (vocabulary) and shared (audit)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-11-01
@@ -62,6 +62,8 @@ for a shop through admin routes.
   workbook with each problem cell filled red with a note and its row's Problems cell filled.
   Nothing else is written. A .csv comes back as an .xlsx of its own cells. Re-uploading it works,
   because Problems is ignored and the fills are formatting.
+  Marking again clears only our red: a cell whose note holds a line its row's Problems listed,
+  since our red is also Excel's "Bad" style; the shop's own red and note lines stay.
 - **D8 — Problems on screen and counts (R7, R8).** The validate answer gains each problem's tab
   and heading, the create and update counts from `planProductRows`
   (`server/catalog/bulk/bulk-product.service.ts`), and the sheet's age. Lines are grouped by row,
@@ -159,6 +161,14 @@ U3 judges in `server/catalog/bulk/sheet-stamp.ts` (pure) through `bulkSheetServi
 U5's admin validate calls unchanged (Q18); the stamp also carries the ticked ids, so today's sheet is
 rebuilt for the same ticks. A sheet with no stamp date and no creation date is warned without a date.
 The marker download and "Fix the red cells…" line stay with U4.
+U4 marks in `server/catalog/bulk/sheet-marker.ts` (pure) from `checkProductSheet`
+(`bulk-check.service.ts`), the one check validate and the marker share and U5's admin twins call; the row
+schema is handed in, since `server/` never imports `src/`. For A4's two problems on one row, a row the
+shape refuses is still checked against the catalogue as a draft, a cell already refused not named twice;
+a blank price reads "Price missing". Marking again clears only our own red (`FFFFC7CE`) and notes on it;
+a deleted Problems column, or an old unkeyed .xlsx, gets Problems after its last column, never shifting
+the file. The marked download is the docked action; while it runs a tap says "Marking your sheet…", and
+a failure "Couldn't mark your sheet. Try again." (ux.md's Retryable error, for this action).
 
 ## Open questions
 None. Q27–Q30 are Claude · reversible.

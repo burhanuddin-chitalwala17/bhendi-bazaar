@@ -14,6 +14,10 @@ export const CHECK_COPY = {
   problems: (problems: number, rows: number) =>
     `${plural(problems, "problem")}${rows > 0 ? ` in ${plural(rows, "row")}` : ""} · nothing created yet`,
   pickAnother: "Pick another file",
+  downloadMarked: "Download your sheet with problems marked",
+  fixAndReupload: "Fix the red cells and upload the same file again.",
+  marking: "Marking your sheet…",
+  markFailed: "Couldn't mark your sheet. Try again.",
   showAll: (problems: number) => `Show all ${problems} problems`,
   allColumns: "All columns",
   done: (total: number, created: number, updated: number) =>

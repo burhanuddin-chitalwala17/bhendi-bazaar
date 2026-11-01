@@ -44,3 +44,14 @@ export const sanitizePath = (path: string): string =>
     )
     .filter((segment) => segment && segment !== "." && segment !== "..")
     .join("/");
+
+/** Hands a file our API made to the browser's own download. */
+export function saveBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  // Revoking at once can cancel the download on iOS Safari.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

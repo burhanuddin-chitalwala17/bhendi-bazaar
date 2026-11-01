@@ -36,7 +36,7 @@ export interface RawSheet {
 }
 
 /** exceljs cell values can be rich objects; a sheet cell is a string to us. */
-function cellText(value: ExcelJS.CellValue): string {
+export function cellText(value: ExcelJS.CellValue): string {
   if (value === null || value === undefined) return "";
   if (typeof value === "object") {
     if ("text" in value && typeof value.text === "string") return value.text.trim();
@@ -121,7 +121,7 @@ function readStamp(workbook: ExcelJS.Workbook): SheetStamp | null {
  * A tab of the downloaded workbook: visible, with the hidden key row under its headings (D2).
  * Known by its keys anywhere in that row, so deleting the Problems column does not unrecognise it.
  */
-function isKeyedTab(sheet: ExcelJS.Worksheet): boolean {
+export function isKeyedTab(sheet: ExcelJS.Worksheet): boolean {
   if (sheet.state !== "visible") return false;
   const keys = new Set<string>();
   sheet.getRow(KEY_ROW).eachCell({ includeEmpty: false }, (cell) => {

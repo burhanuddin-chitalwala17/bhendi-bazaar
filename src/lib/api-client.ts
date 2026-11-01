@@ -23,8 +23,8 @@ export async function apiRequest<T = void>(url: string, init: ApiRequestInit = {
 }
 
 /** A file our API makes, as bytes — a download whose failure still arrives as an `ApiError`. */
-export async function apiDownload(url: string): Promise<Blob> {
-  const response = await fetch(url);
+export async function apiDownload(url: string, init?: Pick<RequestInit, "method" | "body">): Promise<Blob> {
+  const response = await fetch(url, init);
   if (!response.ok) throw await readApiError(response);
   return await response.blob();
 }

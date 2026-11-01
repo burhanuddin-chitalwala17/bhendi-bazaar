@@ -12,6 +12,12 @@ export const SHEET_AGE_COPY = {
   fresh: "Download a fresh sheet",
 } as const;
 
+/** "bulk sheet.xlsx" → "bulk-sheet-problems-marked.xlsx" (D7): ASCII only, so the header needs no encoding. */
+export function markedFileName(uploaded: string): string {
+  const base = uploaded.replace(/\.(xlsx|csv)$/i, "").replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
+  return `${base || "sheet"}-problems-marked.xlsx`;
+}
+
 /** What the check found about the file itself, beside its rows (TRD D4, D8). */
 export interface SheetAge {
   /** ISO: the stamp's made-on date, or an unstamped .xlsx's own creation date (Q28); null when neither says. */

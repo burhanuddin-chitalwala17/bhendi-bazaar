@@ -65,5 +65,5 @@ export function useBulkImport<TReport extends { ok: boolean }>(
     }
   };
 
-  return { step, setSheet, images, setImages, report, created, updated, providedPaths, check, run, reset };
+  return { step, sheet, setSheet, images, setImages, report, created, updated, providedPaths, check, run, reset };
 }

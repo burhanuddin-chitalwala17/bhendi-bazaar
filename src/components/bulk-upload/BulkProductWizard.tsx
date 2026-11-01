@@ -18,9 +18,10 @@ import { matchingPaths } from "@server/catalog/bulk/image-match";
 import { imagesOnly, sanitizePath } from "./files";
 import { bulkImportApiClient } from "./bulkImportApiClient";
 import { useBulkImport } from "./useBulkImport";
+import { useMarkedSheet } from "./useMarkedSheet";
 import { GetTheSheet } from "./GetTheSheet";
 import { CheckReport } from "./CheckReport";
-import { CHECK_COPY } from "./check-copy";
+import { CHECK_COPY, rowsWithProblems } from "./check-copy";
 import { SHEET_AGE_COPY } from "@server/catalog/bulk/sheet-copy";
 import { downscaleImage, storedPathFor } from "@/lib/image/downscale";
 import { uploadDirect } from "@/lib/image/upload-direct";
@@ -43,10 +44,11 @@ function Steps({ current }: { current: number }) {
 
 export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: SheetChoicesDTO }) {
   const [stage, setStage] = useState<Stage>("get");
-  const { step, setSheet, images, setImages, report, created, updated, providedPaths, check, run, reset } = useBulkImport(
+  const { step, sheet, setSheet, images, setImages, report, created, updated, providedPaths, check, run, reset } = useBulkImport(
     (sheet, filenames) => bulkImportApiClient.validateProducts(orgId, sheet, filenames),
   );
   const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const downloadMarked = useMarkedSheet(orgId, sheet, providedPaths);
   // A stale sheet is accepted once the shop says to go on with it (own-store Q10); a new check asks again.
   const [continued, setContinued] = useState(false);
   const sheetInputRef = useRef<HTMLInputElement>(null);
@@ -70,6 +72,8 @@ export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: 
   };
   const sheetAge = step === "report" ? report?.sheet : undefined;
   const waitingOnAge = !!sheetAge && (!!sheetAge.refusedColumn || (sheetAge.stale && !continued));
+  // Rows with problems come back in the shop's own file (R6); a problem with the file itself does not.
+  const rowProblems = step === "report" && !!report && !report.ok && rowsWithProblems(report.errors) > 0;
 
   const createAll = async () => {
     if (!report?.ok || !report.orgCode) return;
@@ -250,6 +254,15 @@ export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: 
           <Button className="w-full md:w-auto" onClick={() => setContinued(true)}>
             {SHEET_AGE_COPY.continue}
           </Button>
+        ) : rowProblems ? (
+          <div className="flex flex-col gap-2 md:flex-row">
+            <Button className="w-full md:w-auto" onClick={downloadMarked}>
+              {CHECK_COPY.downloadMarked}
+            </Button>
+            <Button variant="outline" className="w-full md:w-auto" onClick={checkSheet}>
+              Check the sheet
+            </Button>
+          </div>
         ) : step === "report" && report?.ok ? (
           <Button className="w-full md:w-auto" onClick={createAll}>
             {CHECK_COPY.createAction(report.plan.creates, report.plan.updates)}
