@@ -12,6 +12,51 @@
 
 ## Entries
 
+## 2026-11-01 — storefront-themes unit 3: themed chrome, the landing/shop split, redirects [CONTRACT]
+
+- **Routes (D6; Q3, Q19, Q35; R13):** `src/app/(store)/store/layout.tsx` keeps only the wishlist; a new
+  `[handle]/layout.tsx` draws a themed shop's chrome or the marketplace's (`src/components/layout/marketplace-chrome.tsx`,
+  which the directory now wraps itself in). Themed: `/store/{handle}` is the landing page (`ThemedSections` over the
+  page DTO), new `/store/{handle}/shop` lists the goods in the theme's card and density (category chips, Deals as
+  `?deals=1` on `offerOnly`, search within the shop, sort, "Visit {Shop name}"), `/about` 308s to the landing page, and
+  a link into today's filtered grid 307s to `/shop`. Unthemed: today's pages unchanged, `/shop` 307s home; a retired
+  handle on `/shop` follows to the moved shop page. `src/app/sitemap.ts` lists a themed shop's `/shop` instead of `/about`.
+- **Chrome (D7; R5, A5, Q6, own-store Q22, Q23):** new `src/components/storefront/themed/chrome/` — `ThemedShell` (theme
+  and palette scopes plus the theme's faces over header, page, footer and tab bar), a header (mark and name to the
+  landing page, logo alone past 24 characters, search within the shop, the shared cart count), a phone tab bar (Home ·
+  Shop · Deals · Cart · More; More holds the account, orders and "Shop all of Bhendi Bazaar"), and a footer with the
+  shop's links and the platform band ("Sold on Bhendi Bazaar", Contact us, policies). Every themed product link adds
+  `?shop={handle}` (`storefrontProductHref`); `src/middleware.ts` forwards it with the slug as request headers
+  (`src/lib/storefront-chrome.ts`, always cleared first) and the `(main)` layout draws that shop's chrome only when the
+  product is the shop's (`productsRepository.orgIdForSlug`). Leaving that product refetches the tree, since a layout is
+  not re-rendered on a client navigation (Q40). `PaginatedProductGrid` takes an optional themed card style.
+- **Page DTO (D9; Q34, Q38, Q39):** `StorefrontPageDto` from `storefrontService.storefrontPage`, null until a look is
+  published; best selling by units in paid orders over 90 days (`orderService.bestSellingProductIdsForOrg`, a grouped
+  count in `order.repository.ts`), dispatch time as the median from paid to ready over recent parcels
+  (`server/checkout/dispatch-time.ts`, through shipping's `readyTimesForOrg`), left out under three parcels. The DAL
+  prices the goods (`getStorefrontPage`) and adds new in, categories and `productCountFor`. Hero line, claims, hours,
+  chosen collections and hidden themed sections stay empty until unit 6; the deals section until unit 4.
+- **Contract:** `Storefront` gains `themeKey`, `paletteKey`; `ShopListing` gains `themed`; `ProductFilter` gains
+  server-resolved `ids`; `PUBLIC_PROFILE_SELECT` reads the look columns. `docs/CONTRACTS.md` moves with it.
+- **Tests:** new `storefront-themed-routes.test.ts` (308/307 redirects, filtered-link forward, Deals as `offerOnly`,
+  sitemap), `storefront-chrome.test.ts` (forwarded header cleared and validated; a foreign product draws the marketplace's
+  chrome), `storefront-themed-chrome.test.tsx` (A5 tab bar and More, header, footer band, `?shop=` on cards, "Visit
+  shop"), integration `storefront-landing.test.ts` (unpaid, refunded, cancelled, stale and other shops' sales do not rank;
+  dispatch floor and median; no DTO before publish or for a retired key). Censuses moved: `org-scoping` (orgIdForSlug
+  public), `product-visibility` (25 → 27 reads, both spread `AVAILABLE` and `FROM_ACTIVE_ORG`), `storefront-public-dto`.
+- **Mutations recorded:** paid filter dropped from best selling → 2 red; order-status filter dropped → 2 red; dispatch
+  floor 3 → 1 → 2 red; forwarded headers not cleared → spoof test red; chrome shop without the org check → red; `/about`
+  as 307 → red; unthemed `/shop` redirect removed → red; sitemap `themed` ignored → red; `offers` not mapped to `deals` →
+  red; "Shop all of" removed from More → red; card without `?shop=` → red; platform band copy changed → red. All restored.
+- **Review fixes:** a malformed or non-ASCII product slug forwards no chrome headers instead of a middleware 500; best
+  selling counts only goods still on sale (an archived one no longer crowds the shelf); dispatch time skips parcels of
+  cancelled or expired orders (the order statuses passed in by checkout). New `[handle]/error.tsx` ("Something went wrong.
+  Try again.", `retry`) inside the shop's chrome, and `/shop` streams its goods under a `ThemedGridSkeleton` in the
+  theme's card shape, shown after 300 ms. Mutations: archived filter dropped → red; cancelled-order filter dropped → red.
+- `docs/ARCHITECTURE.md`: 295 → 299 test files. Decisions Q3, Q6, Q33, Q34, Q35 → implemented (unit 3); Q39, Q40 logged
+  and implemented. Suites: `tsc`, `vitest tests/unit`, the storefront and parcel integration files, `lint:boundary`,
+  `docs:check`.
+
 ## 2026-11-01 — order-fulfilment Q37 accepted: the cancel give-back seam
 
 - The owner accepted the `server/checkout/cancel-give-back.ts` entry in `tests/unit/file-cohesion.test.ts` (ADR-0056):

@@ -172,6 +172,15 @@ no longer reads the column, `"pillars"` leaves `BRAND_PAGE_SECTION_ORDER` and `H
 hidden key is dropped on read), and `storefrontSettingsSchema` is narrowed, strictly, to `heroUrl`, `accent`,
 `hiddenSections`, so a `pillars` key is refused. `OrgProfile.pillars` and its data are kept.
 
+Since storefront-themes unit 3 `Storefront` (`storefront.dal.ts`) gains **`themeKey`** and **`paletteKey`**, the
+published look parsed by `readStorefrontLook` (both null for an unthemed shop or a key retired from code);
+`PUBLIC_PROFILE_SELECT` reads the two columns and its allowlist test moves with it. **`StorefrontPageDto`**
+(`server/catalog/storefront.types.ts`) is `BrandPageDto` plus `themeKey`, `paletteKey`, `bestSellingIds` (by units
+in paid orders over 90 days, Q34) and `dispatchDays` (median whole days from paid to ready, null under three
+parcels, Q39), from `storefrontService.storefrontPage` — null until the shop publishes a look (Q19). The DAL widens
+it to **`StorefrontPage`** with priced `bestSelling`, `newIn`, `categories` and `productCount`. `ShopListing` gains
+`themed`. Read-only: no route handler and no wire shape; `ProductFilter` gains server-resolved `ids`.
+
 Since order-fulfilment unit 2 a shop's orders read as **`ShopOrderView`** / **`ShopParcelView`**
 (`server/checkout/shop-parcel.types.ts`): only the shop's own parcels on paid orders, each with `status`,
 its lines and `parcelValue`, `position`/`ofCount` ("Parcel 1 of 2"), and the buyer as **`ShopBuyer`

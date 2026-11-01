@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ProductGrid } from "@/components/shared/product-grid";
+import { ThemedProductGrid, type ThemedGridStyle } from "@/components/storefront/themed/themed-product-grid";
 import { Button } from "@/components/ui/button";
 import type { Product } from "@/domain/product";
 import { PRODUCT_PAGE_SIZE, type ProductPageQuery } from "@/lib/product-paging";
@@ -32,6 +33,7 @@ export function PaginatedProductGrid({
   initiallyDone,
   query,
   emptyLabel,
+  themed,
 }: {
   initial: Product[];
   /** The server already knows whether its first page was the last one. */
@@ -40,6 +42,8 @@ export function PaginatedProductGrid({
   query: ProductPageQuery;
   /** Announced to a screen reader with the running count. */
   emptyLabel?: string;
+  /** A themed shop's page draws its theme's card (storefront-themes D8); the fetching is the same. */
+  themed?: ThemedGridStyle;
 }) {
   // Every caller builds `query` inline, so its identity changes on each render and
   // `initial` is a fresh array from each RSC payload. Depending on either directly
@@ -123,7 +127,7 @@ export function PaginatedProductGrid({
 
   return (
     <div className="space-y-4">
-      <ProductGrid products={products} />
+      {themed ? <ThemedProductGrid products={products} {...themed} /> : <ProductGrid products={products} />}
 
       <div ref={sentinel} aria-hidden className="h-px" />
 

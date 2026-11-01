@@ -60,11 +60,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "daily" as const,
         priority: 0.8,
       },
-      {
-        url: `${origin}/store/${shop.handle}/about`,
-        changeFrequency: "monthly" as const,
-        priority: 0.4,
-      },
+      // A themed shop's /about is a permanent redirect to its landing page; its goods are at /shop (D6).
+      shop.themed
+        ? { url: `${origin}/store/${shop.handle}/shop`, changeFrequency: "daily" as const, priority: 0.7 }
+        : { url: `${origin}/store/${shop.handle}/about`, changeFrequency: "monthly" as const, priority: 0.4 },
     ]),
   ];
 }

@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { contentSecurityPolicy } from "@/lib/security-headers";
 import { CROSS_SITE_REFUSED, isCrossSiteMutation } from "@/lib/same-origin";
+import { forwardStorefrontShop } from "@/lib/storefront-chrome";
 
 /**
  * Edge gate for the two portals.
@@ -85,6 +86,9 @@ export async function middleware(request: NextRequest) {
   if (isCrossSiteMutation(request)) {
     return NextResponse.json(CROSS_SITE_REFUSED, { status: 403 });
   }
+
+  // A product reached from a themed shop keeps its chrome (storefront-themes Q33).
+  forwardStorefrontShop(request.headers, request.nextUrl);
 
   // Rebuilt with the mutated headers so the nonce reaches the render, not just the client.
   const proceed = () =>

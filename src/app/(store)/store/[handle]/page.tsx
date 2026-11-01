@@ -17,7 +17,10 @@ import type { Product } from "@/domain/product";
 import { productsDAL } from "@/data-access-layer/products.dal";
 import { storefrontDAL } from "@/data-access-layer/storefront.dal";
 import { appUrl } from "@server/shared/app-url";
+import { ThemedSections } from "@/components/storefront/themed/themed-sections";
+import { themedPageData } from "@/components/storefront/themed/landing-data";
 import { resolveStorefront } from "./resolve";
+import { notFound, redirect } from "next/navigation";
 
 interface StorefrontPageProps {
   params: Promise<{ handle: string }>;
@@ -73,6 +76,14 @@ export default async function StorefrontPage({
 }: StorefrontPageProps) {
   const [{ handle }, query] = await Promise.all([params, searchParams]);
   const shop = await resolveStorefront(handle);
+
+  // A shop that published a look has a landing page here and its goods at /shop (Q3); a link
+  // into today's filtered grid follows the goods there (R13: no URL a shop shared breaks).
+  if (shop.themeKey) {
+    const filter = themedShopQuery(query);
+    if (filter) redirect(`/store/${shop.handle}/shop${filter}`);
+    return <ThemedLanding handle={shop.handle} />;
+  }
 
   // Scoped by id, resolved here from the handle — the client never supplies an org
   // (ADR-0030 decision 6), so no query parameter can widen this past one shop.
@@ -203,6 +214,23 @@ export default async function StorefrontPage({
       </div>
     </StorefrontTheme>
   );
+}
+
+/** A themed shop's landing page: its theme's composition over its own data (D8, D9). */
+async function ThemedLanding({ handle }: { handle: string }) {
+  const page = await storefrontDAL.getStorefrontPage(handle);
+  if (!page) notFound();
+  return <ThemedSections theme={page.themeKey} page={themedPageData(page)} />;
+}
+
+/** Today's grid filters as the shop page names them (`offers` became `deals`, D10), or null. */
+function themedShopQuery(query: { category?: string; offers?: string; sort?: string }): string | null {
+  const next = new URLSearchParams();
+  if (query.category) next.set("category", query.category);
+  if (query.offers === "1") next.set("deals", "1");
+  if (query.sort) next.set("sort", query.sort);
+  const text = next.toString();
+  return text ? `?${text}` : null;
 }
 
 /**

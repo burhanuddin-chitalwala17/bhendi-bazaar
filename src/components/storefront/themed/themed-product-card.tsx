@@ -4,10 +4,11 @@ import { effectivePrice, hasOffer, type Product } from "@/domain/product";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CARD_STYLE, type CardStyle } from "@server/catalog/storefront-themes";
+import { storefrontProductHref } from "./section-heading";
 import { ThemePhoto } from "./theme-photo";
 
 /** Each style's image shape (spec Theme cards, "Card"). */
-const ASPECT: Record<CardStyle, string> = {
+export const ASPECT: Record<CardStyle, string> = {
   [CARD_STYLE.TILE]: "aspect-[4/5]",
   [CARD_STYLE.TALL]: "aspect-[3/4]",
   [CARD_STYLE.SQUARE]: "aspect-square",
@@ -21,11 +22,14 @@ const ASPECT: Record<CardStyle, string> = {
  */
 export function ThemedProductCard({
   product,
+  shopHandle,
   cardStyle,
   sizes,
   categoryName,
 }: {
   product: Product;
+  /** The shop the card sits in, so the product page keeps its chrome (Q33). */
+  shopHandle: string;
   cardStyle: CardStyle;
   sizes: string;
   /** The category's shown name; a slug is never buyer text, so no name means no spec line. */
@@ -38,7 +42,7 @@ export function ThemedProductCard({
 
   return (
     <Link
-      href={`/product/${product.slug}`}
+      href={storefrontProductHref(product.slug, shopHandle)}
       prefetch={false}
       className={cn(
         "group block h-full overflow-hidden rounded-card bg-card text-card-foreground shadow-tile",

@@ -181,6 +181,9 @@ export const HIDEABLE_SECTIONS = [
 ] as const satisfies readonly SectionKey[];
 export type HideableSection = (typeof HIDEABLE_SECTIONS)[number];
 
+/** Q23: a landing page sells the shop; the grid lives one tap away. */
+export const LANDING_SHELF_LIMIT = 8;
+
 /** One product card, four styles (D8; spec Theme cards, "Card"). */
 export const CARD_STYLE = {
   /** Edge: flat tile, mono spec line, no shadow. */

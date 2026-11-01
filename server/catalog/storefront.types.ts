@@ -7,6 +7,7 @@ import {
   type HideableBrandPageSection,
 } from "@server/catalog/brand-page-sections";
 import type { ReturnsPreset } from "@server/catalog/shop-details.types";
+import type { PaletteKey, ThemeKey } from "@server/catalog/storefront-themes";
 
 /**
  * The brand page's payload (brand-page D1): the public face, and nothing that is not.
@@ -58,6 +59,19 @@ export interface BrandPageDto {
    * the shop's own panel can say "hidden" rather than "one fact away".
    */
   hiddenSections: HideableBrandPageSection[];
+}
+
+/**
+ * A themed shop's landing page (storefront-themes D9): the brand page's public face and proof,
+ * the published look, and what a landing page derives. Goods travel as ids, priced by the DAL.
+ */
+export interface StorefrontPageDto extends BrandPageDto {
+  themeKey: ThemeKey;
+  paletteKey: PaletteKey;
+  /** By units sold in paid orders over 90 days, most first (Q34); the section needs four. */
+  bestSellingIds: string[];
+  /** Median whole days from paid to ready; null under the floor (Q38, Q39). */
+  dispatchDays: number | null;
 }
 
 export interface BrandProof {

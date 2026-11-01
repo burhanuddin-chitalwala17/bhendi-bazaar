@@ -1,6 +1,6 @@
 # TRD — own-store/storefront-themes
 
-- **Status:** Accepted — units 1–2 implemented 2026-11-01
+- **Status:** Accepted — units 1–3 implemented 2026-11-01
 - **Domain:** catalog (storefront), promotions (one column, one read)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-10-30
@@ -56,7 +56,8 @@ stores a theme key, a palette key and its content. Pages stay server components 
 - **D7 — Themed chrome (Q6, Q33).** Header, tab bar (Home · Shop · Deals · Cart · More) and footer with
   the platform band, on the shared cart count and the `--tab-bar-h` utilities (ADR-0016). Links into a
   product add `?shop={handle}`; middleware forwards it as a header and the `(main)` layout draws that
-  shop's chrome only if the product is the shop's. The canonical stays `/product/{slug}` (ADR-0030 D5).
+  shop's chrome only if the product is the shop's; leaving that product refetches the tree (Q40). The
+  canonical stays `/product/{slug}` (ADR-0030 D5).
 - **D8 — Sections.** Q8's sections are server components under `src/components/storefront`; each takes
   a DTO slice and renders nothing when it is empty. A missing photo draws the theme's pattern (Q17) from
   tokens. The registry declares each section's variants, editor fields and hideability. One product
@@ -155,7 +156,7 @@ D13's fields; `PromotionFormInput` gains `showOnStorefront`.
 ## Delivery (PRs)
 1. **U1** tokens, palettes, fonts, contrast gate — no visible change. *Implemented 2026-11-01.*
 2. **U2** sections and compositions [MIGRATION] — nothing renders them yet. *Implemented 2026-11-01.*
-3. **U3** themed chrome, landing/shop split, redirects — only themed shops, and none exist yet.
+3. **U3** themed chrome, landing/shop split, redirects — only themed shops, and none exist yet. *Implemented 2026-11-01.* Review fixes: shop error and loading states, best selling on-sale only, dispatch skips cancelled orders.
 4. **U4** deals and badges [MIGRATION] [CONTRACT].
 5. **U5** picker, preview, publish, revert [CONTRACT] — **changes behaviour**: a shop can publish.
 6. **U6** point-of-need editor and theme suggestion [MIGRATION] [CONTRACT] — after org-profile U2;

@@ -23,6 +23,11 @@ export async function resolveStorefront(handle: string): Promise<Storefront> {
   return await resolveOrLeave(handle, storefrontDAL.getByHandle, (current) => `/store/${current}`);
 }
 
+/** The shop page's resolve (storefront-themes D6): a retired handle lands on the moved shop page. */
+export async function resolveShopPage(handle: string): Promise<Storefront> {
+  return await resolveOrLeave(handle, storefrontDAL.getByHandle, (current) => `/store/${current}/shop`);
+}
+
 /** The brand page's resolve: same three answers, the redirect landing on the moved page. */
 export async function resolveBrandPage(handle: string): Promise<BrandPage> {
   return await resolveOrLeave(

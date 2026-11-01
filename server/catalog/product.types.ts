@@ -34,6 +34,8 @@ export interface ProductFilter {
   /** Resolved server-side from a storefront's handle — never client input, the same
    *  rule `categoryIds` follows. A storefront listing is this filter plus nothing. */
   orgId?: string;
+  /** Resolved server-side (a shop's best selling, storefront-themes D9) — never client input. */
+  ids?: string[];
   categorySlug?: string;
   /** Resolved server-side from categorySlug's subtree — never client input. */
   categoryIds?: string[];

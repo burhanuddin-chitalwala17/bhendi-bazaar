@@ -25,7 +25,12 @@ import {
   proofFrom,
 } from "@server/catalog/brand-page-proof";
 import type { OrgRating } from "@server/catalog/review-rating";
-import { toBrandPageDto, type BrandPageDto } from "@server/catalog/storefront.types";
+import {
+  toBrandPageDto,
+  type BrandPageDto,
+  type StorefrontPageDto,
+} from "@server/catalog/storefront.types";
+import { LANDING_SHELF_LIMIT, readStorefrontLook } from "@server/catalog/storefront-themes";
 import { Prisma } from "@prisma/client";
 import type { HideableBrandPageSection } from "@server/catalog/brand-page-sections";
 import {
@@ -96,6 +101,29 @@ async function linkTaken(handle: string): Promise<ConflictError> {
   return new ConflictError(free ? `That link is taken. Try ${free}.` : "That link is taken.", { field: "handle" });
 }
 
+/** Q34: units sold in paid orders over this many days. */
+export const BEST_SELLING_DAYS = 90;
+
+type PublicProfile = NonNullable<Awaited<ReturnType<typeof orgProfileRepository.findPublicByHandle>>>;
+
+async function brandPageOf(profile: PublicProfile): Promise<BrandPageDto> {
+  const orgId = profile.org.id;
+  const [brands, rating, recent, paidOrders] = await Promise.all([
+    brandService.list(orgId),
+    reviewService.ratingForOrg(orgId),
+    reviewService.recentForOrg(orgId, BUYERS_SAY_COUNT),
+    orderService.paidOrderCountForOrg(orgId),
+  ]);
+  return toBrandPageDto(profile, brands, {
+    proof: proofFrom({
+      ratingAverage: rating.average,
+      ratingCount: rating.count,
+      paidOrders,
+    }),
+    buyersSay: buyersSayFrom(recent, rating.count),
+  });
+}
+
 export const storefrontService = {
   /**
    * The brand page of the shop at this handle, or null (brand-page D1).
@@ -110,22 +138,26 @@ export const storefrontService = {
    */
   async brandPage(handle: string): Promise<BrandPageDto | null> {
     const profile = await orgProfileRepository.findPublicByHandle(handle);
-    if (!profile) return null;
+    return profile ? await brandPageOf(profile) : null;
+  },
+
+  /**
+   * A themed shop's landing page (storefront-themes D9), or null when the shop has published no
+   * look: an unthemed shop keeps today's pages (Q19). The brand page's face and proof, plus best
+   * selling by units in paid orders over 90 days (Q34) and the derived dispatch time, both asked
+   * of checkout. Ids only: the DAL prices the goods (ADR-0018).
+   */
+  async storefrontPage(handle: string): Promise<StorefrontPageDto | null> {
+    const profile = await orgProfileRepository.findPublicByHandle(handle);
+    const look = profile ? readStorefrontLook(profile.themeKey, profile.paletteKey) : null;
+    if (!profile || !look) return null;
     const orgId = profile.org.id;
-    const [brands, rating, recent, paidOrders] = await Promise.all([
-      brandService.list(orgId),
-      reviewService.ratingForOrg(orgId),
-      reviewService.recentForOrg(orgId, BUYERS_SAY_COUNT),
-      orderService.paidOrderCountForOrg(orgId),
+    const [brand, bestSellingIds, dispatchDays] = await Promise.all([
+      brandPageOf(profile),
+      orderService.bestSellingProductIdsForOrg(orgId, BEST_SELLING_DAYS, LANDING_SHELF_LIMIT),
+      orderService.dispatchDaysForOrg(orgId),
     ]);
-    return toBrandPageDto(profile, brands, {
-      proof: proofFrom({
-        ratingAverage: rating.average,
-        ratingCount: rating.count,
-        paidOrders,
-      }),
-      buyersSay: buyersSayFrom(recent, rating.count),
-    });
+    return { ...brand, themeKey: look.theme, paletteKey: look.palette, bestSellingIds, dispatchDays };
   },
 
   /**

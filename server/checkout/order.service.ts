@@ -8,6 +8,7 @@
  */
 
 import { orderRepository } from "@server/checkout/order.repository";
+import { dispatchDaysForOrg } from "@server/checkout/dispatch-time";
 import { generateOrderCode } from "@server/checkout/order-code";
 import { prisma, toJsonColumn } from "@server/shared/prisma";
 import {
@@ -76,6 +77,18 @@ export class OrderService {
    */
   async paidOrderCountForOrg(orgId: string): Promise<number> {
     return await orderRepository.countPaidForOrg(orgId);
+  }
+
+  /** Median whole days from paid to ready over recent parcels, or null under the floor (storefront-themes D9). */
+  async dispatchDaysForOrg(orgId: string): Promise<number | null> {
+    return await dispatchDaysForOrg(orgId);
+  }
+
+  /** Product ids by units sold in paid orders over the last `days`, most first (storefront-themes D9, Q34). */
+  async bestSellingProductIdsForOrg(orgId: string, days: number, limit: number): Promise<string[]> {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const rows = await orderRepository.unitsSoldForOrg(orgId, since, limit);
+    return rows.filter((row) => row.units > 0).map((row) => row.productId);
   }
 
   async getOrderById(

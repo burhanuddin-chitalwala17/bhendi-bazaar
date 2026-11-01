@@ -156,6 +156,29 @@ export class OrderRepository {
   }
 
   /**
+   * The shop's goods by units sold in paid orders since `since`, most first (storefront-themes
+   * Q34). Grouped in the database: a shop's order lines are not loaded to be counted here.
+   */
+  async unitsSoldForOrg(orgId: string, since: Date, limit: number) {
+    const rows = await prisma.orderItem.groupBy({
+      by: ["productId"],
+      where: {
+        // Only goods still on sale: an archived best-selling product must not crowd out the shelf.
+        product: { orgId, archivedAt: null },
+        order: {
+          paymentStatus: PAYMENT_STATUS.PAID,
+          paidAt: { gte: since },
+          status: { notIn: [ORDER_STATUS.EXPIRED, ORDER_STATUS.CANCELLED] },
+        },
+      },
+      _sum: { quantity: true },
+      orderBy: [{ _sum: { quantity: "desc" } }, { productId: "asc" }],
+      take: limit,
+    });
+    return rows.map((row) => ({ productId: row.productId, units: row._sum.quantity ?? 0 }));
+  }
+
+  /**
    * Find order by ID
    */
   async findById(orderId: string) {

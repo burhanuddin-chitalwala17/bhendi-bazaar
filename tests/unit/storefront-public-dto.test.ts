@@ -48,6 +48,8 @@ const PUBLIC_PROFILE_FIELDS = [
   "ownerQuote",
   "ownerPhotoUrl",
   "hiddenSections",
+  "themeKey",
+  "paletteKey",
 ].sort();
 const PUBLIC_IDENTITY_FIELDS = ["id", "handle", "name", "joinedAt"].sort();
 
@@ -185,6 +187,8 @@ describe("storefrontDAL.getByHandle after the profile split", () => {
       logoUrl: "https://img.example/logo.webp",
       heroUrl: "https://img.example/hero.webp",
       accent: "primary",
+      themeKey: null,
+      paletteKey: null,
     });
   });
 

@@ -395,6 +395,7 @@ export class ProductsRepository {
   async getProducts(filter: ProductFilter) {
     const {
       orgId,
+      ids,
       categorySlug,
       categoryIds,
       search,
@@ -417,6 +418,7 @@ export class ProductsRepository {
           // Scoped to one shop when a storefront asks; resolved server-side from the
           // handle, so no query parameter can widen it (ADR-0030 decision 6).
           ...(orgId ? { orgId } : {}),
+          ...(ids ? { id: { in: ids } } : {}),
           ...(categoryIds
             ? { categoryId: { in: categoryIds } }
             : { category: { slug: categorySlug } }),
@@ -451,6 +453,10 @@ export class ProductsRepository {
    * fragments every buyer-facing read does, so an archived product and a withdrawn
    * shop's product are equally unreviewable.
    */
+  async countOnSaleForOrg(orgId: string): Promise<number> {
+    return await prisma.product.count({ where: { orgId, ...AVAILABLE, ...FROM_ACTIVE_ORG } });
+  }
+
   async isOnSale(id: string): Promise<boolean> {
     const count = await prisma.product.count({
       where: { id, ...AVAILABLE, ...FROM_ACTIVE_ORG },
@@ -471,6 +477,15 @@ export class ProductsRepository {
     } catch (error) {
       throw new NotFoundError("Product not found");
     }
+  }
+
+  /** Whose a product on sale is, by slug: the one column a product page's chrome needs (storefront-themes D7). */
+  async orgIdForSlug(slug: string): Promise<string | null> {
+    const row = await prisma.product.findFirst({
+      where: { slug, ...AVAILABLE, ...FROM_ACTIVE_ORG },
+      select: { orgId: true },
+    });
+    return row?.orgId ?? null;
   }
 
   async getProductBySlug(slug: string) {

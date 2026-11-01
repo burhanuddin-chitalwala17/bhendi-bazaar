@@ -3,7 +3,7 @@ import type { ShopReviewDto } from "@server/catalog/review.types";
 import type { BrandOwner } from "@server/catalog/brand-page-sections";
 import { RETURNS_PRESET_LABEL, type ReturnsPreset } from "@server/catalog/shop-details.types";
 import type { BrandProof } from "@server/catalog/storefront.types";
-import { SECTION, type HideableSection } from "@server/catalog/storefront-themes";
+import { LANDING_SHELF_LIMIT, SECTION, type HideableSection } from "@server/catalog/storefront-themes";
 import { formatCount } from "@/lib/format";
 import { APP_NAME } from "@/lib/config";
 
@@ -52,8 +52,7 @@ export interface ShopClaim {
   detail: string | null;
 }
 
-/** Q23: a landing page sells the shop; the grid lives one tap away. */
-export const LANDING_SHELF_LIMIT = 8;
+export { LANDING_SHELF_LIMIT };
 /** Q34: too few is not "best". */
 export const MIN_BEST_SELLING = 4;
 export const COLLECTIONS_LIMIT = 6;
@@ -98,6 +97,7 @@ export interface StorySlice {
 }
 
 export interface ReviewsSlice {
+  handle: string;
   reviews: ShopReviewDto[];
 }
 
@@ -178,7 +178,7 @@ export const storySlice = (page: ThemedPageData): StorySlice | null =>
     : null;
 
 export const reviewsSlice = (page: ThemedPageData): ReviewsSlice | null =>
-  page.reviews?.length ? { reviews: page.reviews } : null;
+  page.reviews?.length ? { handle: page.handle, reviews: page.reviews } : null;
 
 /** Never empty while shown: "Contact us" always has somewhere to go (Q22). */
 export const visitSlice = (page: ThemedPageData): VisitSlice | null =>

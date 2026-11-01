@@ -43,3 +43,14 @@ export function SectionHeading({
 
 export const shopHref = (handle: string) => `/store/${handle}/shop`;
 export const shopAllLabel = (count: number) => `Shop all ${formatCount(count)}`;
+export const landingHref = (handle: string) => `/store/${handle}`;
+export const dealsHref = (handle: string) => `${shopHref(handle)}?deals=1`;
+
+/** Q33: a product reached from a shop keeps that shop's chrome; the canonical stays `/product/{slug}`. */
+export const storefrontProductHref = (slug: string, handle: string) =>
+  `/product/${slug}?shop=${encodeURIComponent(handle)}`;
+
+/** Past this many characters the button reads "Visit shop" (own-store Q23). */
+export const VISIT_NAME_MAX = 20;
+export const visitLabel = (name: string) =>
+  name.length > VISIT_NAME_MAX ? "Visit shop" : `Visit ${name}`;

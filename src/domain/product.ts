@@ -71,6 +71,8 @@ export interface ProductSibling {
 
 export interface ProductFilter {
   orgId?: string;
+  /** Resolved server-side (a shop's best selling, storefront-themes D9) — never client input. */
+  ids?: string[];
   categorySlug?: string;
   search?: string;
   minPrice?: number;

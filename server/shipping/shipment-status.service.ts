@@ -192,6 +192,11 @@ export async function parcelsReadySince(readyBefore: Date, noticeKind: string, l
   return await shipmentRepository.listReadyBefore(SHIPMENT_STATUS.READY_FOR_PICKUP, readyBefore, noticeKind, limit);
 }
 
+/** When a shop's recent paid parcels were paid for and marked ready, newest first (storefront-themes D9). */
+export async function readyTimesForOrg(orgId: string, paidStatus: string, notOrderStatuses: string[], since: Date, limit: number) {
+  return await shipmentRepository.readyTimesForOrg(orgId, SHIPMENT_STATUS.READY_FOR_PICKUP, paidStatus, notOrderStatuses, since, limit);
+}
+
 /** The booking as it stands, on the caller's transaction when given. */
 export async function bookingOf(shipmentId: string, tx?: Prisma.TransactionClient) {
   return await shipmentRepository.bookingOf(shipmentId, tx);

@@ -28,6 +28,9 @@ export const PUBLIC_PROFILE_SELECT = {
   ownerPhotoUrl: true,
   // `pillars` is retired and kept (org-profile D5): never read for a buyer again.
   hiddenSections: true,
+  // The published look (storefront-themes D1): keys into code, parsed on read.
+  themeKey: true,
+  paletteKey: true,
 } as const satisfies Prisma.OrgProfileSelect;
 
 /**
@@ -93,7 +96,7 @@ export class OrgProfileRepository {
   async listPublicShops() {
     const rows = await prisma.orgProfile.findMany({
       where: { org: { isActive: true, products: { some: { archivedAt: null } } } },
-      select: { tagline: true, logoUrl: true, org: { select: { handle: true, name: true } } },
+      select: { tagline: true, logoUrl: true, themeKey: true, org: { select: { handle: true, name: true } } },
       orderBy: { org: { name: "asc" } },
     });
     return rows.map((row) => ({
@@ -101,6 +104,7 @@ export class OrgProfileRepository {
       name: row.org.name,
       tagline: row.tagline,
       logoUrl: row.logoUrl,
+      themeKey: row.themeKey,
     }));
   }
 

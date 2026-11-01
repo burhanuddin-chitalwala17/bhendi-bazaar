@@ -9,6 +9,7 @@ import { storefrontDAL } from "@/data-access-layer/storefront.dal";
 import { APP_NAME } from "@/lib/config";
 import { renditionUrlForRef } from "@server/content/renditions.service";
 import { appUrl } from "@server/shared/app-url";
+import { permanentRedirect } from "next/navigation";
 import { resolveBrandPage } from "../resolve";
 
 interface BrandPageProps {
@@ -68,6 +69,9 @@ export async function generateMetadata({
  */
 export default async function StorefrontAboutPage({ params }: BrandPageProps) {
   const { handle } = await params;
+  // A themed shop's story is its landing page (Q3): a permanent move, so printed links still arrive.
+  const shop = await storefrontDAL.getByHandle(handle);
+  if (shop?.themeKey) permanentRedirect(`/store/${shop.handle}`);
   const page = await resolveBrandPage(handle);
 
   return (

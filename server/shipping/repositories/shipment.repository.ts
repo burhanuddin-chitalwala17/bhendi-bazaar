@@ -212,6 +212,27 @@ export class ShipmentRepository {
     return prisma.shipment.count({ where: packingPaidBeforeWhere(statusPacking, paidStatus, window, null) });
   }
 
+  /**
+   * When each of a shop's recent paid parcels was paid for and marked ready, newest first:
+   * the storefront's derived dispatch time (storefront-themes D9, org-profile Q19).
+   */
+  async readyTimesForOrg(orgId: string, statusReady: string, paidStatus: string, notOrderStatuses: string[], since: Date, limit: number) {
+    const rows = await prisma.parcelEvent.findMany({
+      where: {
+        toStatus: statusReady,
+        createdAt: { gte: since },
+        shipment: { orgId, order: { paymentStatus: paidStatus, paidAt: { not: null }, status: { notIn: notOrderStatuses } } },
+      },
+      orderBy: { createdAt: "desc" },
+      distinct: ["shipmentId"],
+      take: limit,
+      select: { createdAt: true, shipment: { select: { order: { select: { paidAt: true } } } } },
+    });
+    return rows.flatMap(({ createdAt, shipment }) =>
+      shipment.order.paidAt ? [{ paidAt: shipment.order.paidAt, readyAt: createdAt }] : [],
+    );
+  }
+
   /** Parcels in `statusReady` that entered it at or before `readyBefore` and have no `kind` notice yet. */
   async listReadyBefore(statusReady: string, readyBefore: Date, noticeKind: string, limit: number) {
     return prisma.shipment.findMany({

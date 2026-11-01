@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { SectionVariant } from "@server/catalog/storefront-themes";
 import type { ReviewsSlice } from "./page-data";
-import { SectionHeading } from "./section-heading";
+import { SectionHeading, storefrontProductHref } from "./section-heading";
 
 /**
  * What buyers said, as quotes or one highlighted (Q8). Under the rating's floor the slice is
@@ -11,6 +11,7 @@ import { SectionHeading } from "./section-heading";
  */
 export function ThemedReviews({
   variant,
+  handle,
   reviews,
 }: ReviewsSlice & { variant: SectionVariant<"reviews"> }) {
   const shown = variant === "highlight" ? reviews.slice(0, 1) : reviews;
@@ -35,7 +36,7 @@ export function ThemedReviews({
             )}
             <p className="text-tag">
               {review.authorName} · on{" "}
-              <Link href={`/product/${review.product.slug}`} prefetch={false} className="underline underline-offset-4">
+              <Link href={storefrontProductHref(review.product.slug, handle)} prefetch={false} className="underline underline-offset-4">
                 {review.product.name}
               </Link>
             </p>

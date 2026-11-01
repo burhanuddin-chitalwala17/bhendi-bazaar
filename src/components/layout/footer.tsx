@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const POLICY_LINKS = [
+export const POLICY_LINKS = [
   { href: "/policies#shipping", label: "Shipping" },
   { href: "/policies#returns", label: "Returns & refunds" },
   { href: "/policies#privacy", label: "Privacy" },

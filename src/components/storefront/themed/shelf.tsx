@@ -8,7 +8,7 @@ import { ThemedProductCard } from "./themed-product-card";
 export type ShelfLayout = "grid" | "rail" | "byCategory";
 
 /** Grid columns by phone density (Daily 3-up, others 2-up; spec Theme cards, "Grid"). */
-const GRID: Record<2 | 3, { cols: string; sizes: string }> = {
+export const GRID: Record<2 | 3, { cols: string; sizes: string }> = {
   2: { cols: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4", sizes: "(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw" },
   3: { cols: "grid-cols-3 md:grid-cols-4 lg:grid-cols-5", sizes: "(min-width: 1024px) 20vw, (min-width: 768px) 25vw, 33vw" },
 };
@@ -54,7 +54,7 @@ export function ProductShelf({
             <ul className={cn("grid gap-grid", GRID[columns].cols)}>
               {row.products.map((p) => (
                 <li key={p.id}>
-                  <ThemedProductCard product={p} cardStyle={cardStyle} sizes={GRID[columns].sizes} categoryName={categoryNames?.[p.categorySlug]} />
+                  <ThemedProductCard product={p} shopHandle={handle} cardStyle={cardStyle} sizes={GRID[columns].sizes} categoryName={categoryNames?.[p.categorySlug]} />
                 </li>
               ))}
             </ul>
@@ -62,7 +62,7 @@ export function ProductShelf({
             <ul className="no-scrollbar -mx-gutter flex snap-x gap-grid overflow-x-auto px-gutter">
               {row.products.map((p) => (
                 <li key={p.id} className={cn("shrink-0 snap-start", RAIL_ITEM[columns].width)}>
-                  <ThemedProductCard product={p} cardStyle={cardStyle} sizes={RAIL_ITEM[columns].sizes} categoryName={categoryNames?.[p.categorySlug]} />
+                  <ThemedProductCard product={p} shopHandle={handle} cardStyle={cardStyle} sizes={RAIL_ITEM[columns].sizes} categoryName={categoryNames?.[p.categorySlug]} />
                 </li>
               ))}
             </ul>
