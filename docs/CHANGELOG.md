@@ -12,6 +12,17 @@
 
 ## Entries
 
+## 2026-11-01 — the shop portal's sidebar sticks again
+
+- From `md:` the shop sidebar scrolled away with the page. Its bottom anchor reset all four edges with `md:inset-auto`,
+  and `cn` (tailwind-merge) treats that as overriding `md:top-0`, so it dropped it: `sticky` with no `top` does nothing.
+  `src/components/layout/PortalSidebar.tsx` now resets only the edges the phone sheet set (`md:inset-x-auto
+  md:bottom-auto`). `tests/unit/portal-sidebar-sticky.test.tsx` fails on the old classes.
+- The list scrolls inside the sidebar at every width (the md icon rail no longer overflows the screen on a short
+  window), and `overscroll-contain` keeps the page still when the list reaches its end. The rail's drawn hover label
+  would be clipped by that scroll, so the rail shows the browser's own tooltip (`title`); the label stays the link's
+  accessible name.
+
 ## 2026-11-01 — storefront fonts: the build refuses a named fallback list
 
 - `next build` failed on `src/components/storefront/theme-fonts.ts`: the font loader reads its options at build time and

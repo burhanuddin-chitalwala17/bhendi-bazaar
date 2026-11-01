@@ -46,7 +46,7 @@ Mirror the source path: `server/checkout/order.service.ts` → `tests/unit/order
 ```
 tests/
 ├── setup.ts            # referenced by vitest.config.ts
-├── unit/               # 248 files: pure logic, plus every source-scanning guard
+├── unit/               # 249 files: pure logic, plus every source-scanning guard
 ├── integration/        # 71 files: crosses module boundaries, needs a disposable database
 └── helpers/            # test-db.ts — the one predicate deciding whether a database is disposable
 ```
