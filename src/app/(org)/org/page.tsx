@@ -66,7 +66,7 @@ export default async function OrgIndexPage() {
                       {org.name}
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      {org.code} · {org.role.toLowerCase()}
+                      {org.role.toLowerCase()}
                     </span>
                   </span>
                 </Link>

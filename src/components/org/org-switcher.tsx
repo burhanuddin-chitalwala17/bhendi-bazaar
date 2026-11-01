@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 export interface SwitcherOrg {
   id: string;
   name: string;
-  code: string;
   /** Its public shop address, `/store/<handle>` — the portal header links there. */
   handle: string;
   role: string;
@@ -72,7 +71,7 @@ export function OrgSwitcher({
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">{org.name}</span>
                 <span className="text-xs text-muted-foreground">
-                  {org.code} · {org.role.toLowerCase()}
+                  {org.role.toLowerCase()}
                 </span>
               </span>
               {org.id === currentOrgId && (

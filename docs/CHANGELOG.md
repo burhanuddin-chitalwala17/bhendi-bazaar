@@ -12,6 +12,30 @@
 
 ## Entries
 
+## 2026-11-01 — org-profile unit 5: copy sweep, the org code hidden from the shop
+
+- **Code hidden** (R8; D9): the shop switcher and the `/org` "Choose a shop" list show the shop's name and the
+  person's role, no longer `Org.code`. `orgMemberRepository.listOrgsForUser` stops selecting `code`, so it no
+  longer reaches the switcher's client props. The coupon prefix on the offer form still names the code
+  (promotions D13); kept by Q28, a ratchet entry pointing at it. The product form is still sent the code as its
+  photo upload folder, never rendered for one shop (Q29).
+- **Copy sweep** (A4; D9; Q12): the portal copy scan (seller-onboarding D14) now refuses "Description",
+  "Introduction", "Business Name", "Accent", "Contact Person", "Block 1 heading" and the old placeholders
+  ("John Doe", "org@example.com", "ABC Traders") anywhere in the seller portal, and any rendered org code. No
+  portal file needed a copy change; units 1–4 had already moved them. Admin forms are out of scope (Q22). The
+  code scan matches any `*.code`/`orgCode` in a JSX text child or a `${...}` interpolation, not only `{org.code}`;
+  a prop such as `orgCode={org.code}` (a storage path) is not shown.
+- **ux states:** no new screen; the switcher and chooser keep their states with one line less.
+- Decisions Q1, Q12 implemented; Q28, Q29 logged from review; spec and TRD Implemented.
+- **Mutations** (each made a test fail, then restored): M1 `{org.code}` back in the switcher → two tests failed.
+  M2 `{org?.code}` in the chooser → the code test failed. M3 "John Doe" in a portal form → the retired-words
+  test failed. M4 the swatch label back to "Accent" → the retired-words test failed. M5 the coupon prefix removed
+  from an allowlisted page → the stale-allowlist check failed. M6 `` {`${org.name} · ${org.code}`} `` in the
+  chooser → the code test failed. M7 `{currentOrg.code}` in the switcher → both code tests failed.
+- **Tests:** `tests/unit/portal-copy.test.ts` (three new cases). Ran `tsc`, `vitest run tests/unit`,
+  `vitest run tests/integration/shop-details.test.ts tests/integration/shop-contact.test.ts` (local disposable DB),
+  `lint:boundary`, `docs:check`.
+
 ## 2026-11-01 — org-profile unit 4: Looks — "How you work" retired, accent as swatches [CONTRACT]
 
 - **"How you work" retired, text kept** (R7; D5; Q6): the three Block heading/line pairs leave the storefront

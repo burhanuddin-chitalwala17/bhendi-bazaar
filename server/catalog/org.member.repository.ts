@@ -34,7 +34,6 @@ export class OrgMemberRepository {
         org: {
           select: {
             id: true,
-            code: true,
             name: true,
             handle: true,
             isActive: true,

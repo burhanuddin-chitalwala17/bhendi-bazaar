@@ -1,6 +1,6 @@
 # TRD — own-store/org-profile
 
-- **Status:** Accepted — 2026-10-30 (UX signed off 2026-10-30; all decisions closed)
+- **Status:** Implemented — 2026-11-01 (units 1–5; accepted 2026-10-30, UX signed off 2026-10-30)
 - **Domain:** catalog (Org, OrgProfile); notifications (one email)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-11-01
@@ -72,7 +72,8 @@ forward.
   "Colour". storefront-themes' editor replaces all of them.
 - **D9 — Code hidden, copy swept (R8; A4; Q12, Q13).** `org-switcher.tsx` and the `/org` chooser stop
   rendering `Org.code`. seller-onboarding's portal copy test (its D14) gains A4's words and the old
-  placeholders ("John Doe", "org@example.com", "ABC Traders Pvt Ltd").
+  placeholders ("John Doe", "org@example.com", "ABC Traders Pvt Ltd"). The coupon prefix stays (Q28); the
+  product form carries the code only as its upload folder (Q29).
 - **D10 — Desktop preview (R10; Q24).** At `lg:`, a client leaf renders the storefront's own header and
   about components from `src/components/storefront/`, fed the form's current values, never an iframe.
 

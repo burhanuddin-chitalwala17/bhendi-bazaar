@@ -1,10 +1,10 @@
 # Spec — own-store/org-profile
 
 - **Summary:** A shop edits its own facts on one page that asks only what is needed, in plain words, each field saying who sees it and where
-- **Status:** Accepted
+- **Status:** Implemented — 2026-11-01 (units 1–5)
 - **Domain:** catalog (Org, OrgProfile)
 - **Phase:** 12 — The shop's own store
-- **Verified:** 2026-10-30
+- **Verified:** 2026-11-01
 - **References:** [decisions.md](decisions.md), [ux.md](ux.md), [own-store](../spec.md) (Q14, Q15), [seller-onboarding](../seller-onboarding/) (asks these fields), [seller-profile](../../seller-profile/) (R1, R2, R5, R12), [brand-page](../../seller-profile/brand-page/), [org-storefront](../../org-storefront/), [ADR-0030](../../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md (written after UX sign-off).
@@ -66,7 +66,8 @@ Judged on a ~360px phone first.
 - A3 — A shop changes its mobile number and its name itself, and the next order email and the
   shop page use the new values.
 - A4 — "Description", "Introduction", "Business Name", "Accent", "Contact Person", "Block 1
-  heading" and the org code appear nowhere in the seller portal.
+  heading" and the org code appear nowhere in the seller portal, except the offer form's coupon
+  prefix (Q28); the product form carries the code only as its upload folder (Q29).
 - A5 — A shop that typed an introduction and a longer story before this ships sees both, in
   "About your shop", unchanged in meaning (Q4).
 - A6 — Leaving every optional field blank never blocks a save or a sale.
