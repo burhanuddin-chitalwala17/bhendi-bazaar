@@ -39,6 +39,7 @@ export default async function NewBiddingEventPage({
   return (
     <PageShell width="narrow">
       <PageHeader
+        help="bidding"
         title="Set up bidding"
         description={facts.name}
         back={{ href: `/org/${scope.orgId}/bidding`, label: "Back to bidding" }}

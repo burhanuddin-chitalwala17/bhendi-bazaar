@@ -74,6 +74,7 @@ export default async function OrgNewProductPage({
 
   return (
     <ProductAddContainer
+      help="products"
       categories={categories}
       productTypes={productTypes}
       families={families}

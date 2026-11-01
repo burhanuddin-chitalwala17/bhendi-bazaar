@@ -1,5 +1,5 @@
 import { orgOrdersDAL } from "@/data-access-layer/org/orders.dal";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageHeader } from "@/components/shared/page-shell";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,7 @@ export default async function OrgOrdersPage({
     const { orders, hasMore } = await channelStockDAL.orders(orgId, more);
     return (
       <div className="space-y-6">
-        <SectionHeader as="h1" title="Orders" description="Sales on your connected marketplaces, as they reported them" />
+        <PageHeader help="orders" title="Orders" description="Sales on your connected marketplaces, as they reported them" />
         {tabs("marketplace")}
         <MarketplaceOrders orders={orders} hasMore={hasMore} moreHref={`/org/${orgId}/orders?tab=marketplace&more=${more + 1}`} />
       </div>
@@ -66,7 +66,7 @@ export default async function OrgOrdersPage({
 
   return (
     <div className="space-y-4">
-      <SectionHeader as="h1" title={SHOP_ORDERS_COPY.title} />
+      <PageHeader help="orders" title={SHOP_ORDERS_COPY.title} />
       {tabs("store")}
       <nav className="flex gap-2 overflow-x-auto" aria-label="Parcels">
         {Object.values(SHOP_PARCEL_TAB).map((t) => (

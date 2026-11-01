@@ -19,6 +19,7 @@ export default async function OrgBiddingPage({
   return (
     <PageShell width="wide">
       <PageHeader
+        help="bidding"
         title="Bidding"
         description="Put one item up for timed bidding and share the link. While it runs, that item stays on the site but cannot be bought directly."
         actions={

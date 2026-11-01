@@ -12,6 +12,28 @@
 
 ## Entries
 
+## 2026-11-01 — seller-onboarding unit 4: hints the seller opens, and "?" on every portal page
+
+- **Hints (R4, A5; D9):** each setup step on Home is now a button that opens its hint — 1–3 cards, one at a time with
+  dots and "{i} of {n}", "Next", and a last card whose button starts the task ("Add product", "Add pickup address",
+  "Add logo and line", "Share your shop"), still carrying `from=home`. Nothing opens by itself; a hint closed mid-way
+  reopens at card 1. Copy is ux.md's deck, in `src/components/layout/portal-hints.ts` beside `PORTAL_NAV`.
+- **"?" (R5; Q11):** `PageHeader` takes an optional `help` key (a `PORTAL_NAV` key) and renders "?", which opens the
+  page's name, its purpose line from the navigation and, for Products, Pickup addresses, Shop details and Shop, the
+  matching step's cards, ending "Got it". `help` is typed `PortalNavKey`, so an unknown key does not compile.
+  Every portal page carries it — sub-pages take their section's key (a product form or bulk sheet "products", an order
+  "orders", a channel's listings, stock, family and settle pages "channels"); `SectionHeader` and the shared product
+  containers pass `help` through, and the admin console passes none.
+- **Hand-off close:** the sheet's close control is the shadcn `Button` inside `SheetClose asChild`, labelled from
+  `HINT_COPY.close`.
+- **Hand-off surface (D10; ADR-0040 case 4):** `src/components/shared/overlays/handoff-sheet.tsx` — a bottom sheet
+  below `lg:`, from `lg:` a popover beside its control (hint, share) or a 28rem side sheet (address, for unit 5). One
+  `MAY_USE_SHEET` entry.
+- **Status:** spec and TRD stay Accepted; units 5–6 remain.
+- **Tests:** `tests/unit/portal-hints.test.ts`, `tests/unit/hint-sheet.test.tsx`. Mutation-tested: a fourth card, a
+  three-sentence card, a navigation page without `help`, a sub-page without `help`, the next step's hint opening on render, "?" opening on render,
+  and a card index kept across reopening each fail a test.
+
 ## 2026-11-01 — storefront-themes unit 2: sections and compositions [MIGRATION]
 
 - **Registry (D1, D8; Q8, Q9):** `server/catalog/storefront-themes.ts` gains the one section library (`SECTION`,

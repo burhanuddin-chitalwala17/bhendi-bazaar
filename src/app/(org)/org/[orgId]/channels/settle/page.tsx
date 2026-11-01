@@ -39,6 +39,7 @@ export default async function SettleListingPage({
     <PageShell width="narrow">
       <SectionHeader
         as="h1"
+        help="channels"
         title={detail.product ? SETTLE.titleMatch(detail.product.name) : SETTLE.titleNew}
         description={[detail.primary.label, detail.primary.sku].join(" · ")}
       />

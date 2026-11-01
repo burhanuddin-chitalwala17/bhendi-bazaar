@@ -3,6 +3,8 @@ import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { PageHelp } from "@/components/layout/page-help";
+import type { PortalNavKey } from "@/components/layout/portal-nav";
 import { cn } from "@/lib/utils";
 
 /**
@@ -41,6 +43,7 @@ export function PageHeader({
   description,
   back,
   actions,
+  help,
   className,
 }: {
   title: ReactNode;
@@ -48,6 +51,8 @@ export function PageHeader({
   /** Renders the back affordance to the left of the title. */
   back?: { href: string; label?: string };
   actions?: ReactNode;
+  /** A portal navigation key: renders "?", which says what the page is for (onboarding D9). */
+  help?: PortalNavKey;
   className?: string;
 }) {
   return (
@@ -70,9 +75,12 @@ export function PageHeader({
           </Button>
         )}
         <div className="min-w-0">
-          <h1 className="font-heading text-3xl font-bold text-foreground">
-            {title}
-          </h1>
+          <div className="flex items-center gap-1">
+            <h1 className="font-heading text-3xl font-bold text-foreground">
+              {title}
+            </h1>
+            {help && <PageHelp help={help} />}
+          </div>
           {description && (
             <p className="mt-1 text-muted-foreground">{description}</p>
           )}

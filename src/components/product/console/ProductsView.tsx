@@ -12,7 +12,10 @@ import { useProductsBasePath } from "@/components/product/console/useProductsBas
 import type { OrgSummary } from "@/domain/org";
 
 import { PageHeader } from "@/components/shared/page-shell";
+import type { PortalNavKey } from "@/components/layout/portal-nav";
 interface ProductViewProps {
+  /** The shop portal's "?" key; the admin console passes none. */
+  help?: PortalNavKey;
   product: ProductDetails;
   /** False on the platform's support view — editing happens in the owning org's portal. */
   canEdit?: boolean;
@@ -25,6 +28,7 @@ export function ProductsView({
   category,
   org,
   canEdit = true,
+  help,
 }: ProductViewProps) {
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
@@ -34,6 +38,7 @@ export function ProductsView({
   return (
     <div className="space-y-8">
       <PageHeader
+        help={help}
         back={{ href: productsBasePath, label: "Back to products" }}
         title={product.name}
         description="Product Details"

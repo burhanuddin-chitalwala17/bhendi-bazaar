@@ -31,6 +31,8 @@ const MAY_USE_SHEET: Record<string, string> = {
     "Decision 4: a short flow the page hands off to. Signing in is a passage, not a place.",
   "src/components/support/contact-sheet.tsx":
     "Decision 4: the same, for writing to support.",
+  "src/components/shared/overlays/handoff-sheet.tsx":
+    "Decision 4: the shared hand-off surface — hints, share, a pickup address (seller-onboarding D10). A popover or 28rem side sheet from lg.",
 };
 
 function tsxFiles(dir: string): string[] {

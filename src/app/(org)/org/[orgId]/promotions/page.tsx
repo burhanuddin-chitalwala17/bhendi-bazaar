@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OfferList, type OfferRow } from "@/components/promotions/OfferList";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageHeader } from "@/components/shared/page-shell";
 
 export default async function OrgPromotionsPage({
   params,
@@ -25,7 +25,7 @@ export default async function OrgPromotionsPage({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <SectionHeader as="h1" title="Offers" description="Your own offers, on your own goods. You bear what they cost — and if the platform runs something deeper, it pays the difference rather than you." />
+        <PageHeader help="promotions" title="Offers" description="Your own offers, on your own goods. You bear what they cost — and if the platform runs something deeper, it pays the difference rather than you." />
         <Button asChild>
           <Link href={`/org/${scope.orgId}/promotions/new`} prefetch={false}>
             <Plus className="size-4" aria-hidden /> New offer

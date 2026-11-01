@@ -52,8 +52,13 @@ export type PortalNavTarget =
   | { href: string }
   | { action: PortalAction };
 
+/** Every navigation key, closed so a page's "?" (help=…) cannot name one that does not exist. */
+export type PortalNavKey =
+  | "home" | "orders" | "products" | "shop" | "listing" | "library" | "storefront" | "locations"
+  | "reviews" | "promotions" | "channels" | "bidding" | "earnings" | "details" | "setup" | "help" | "switch";
+
 export interface PortalNavEntry {
-  key: string;
+  key: PortalNavKey;
   label: string;
   /** One line, shown under the label wherever the item is listed (R5). */
   purpose: string;

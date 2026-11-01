@@ -11,7 +11,7 @@ import { ProductsTableSkeleton } from "@/components/product/console/productsList
 import { Button } from "@/components/ui/button";
 import type { ProductShelf } from "@server/catalog/product.visibility";
 import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageHeader } from "@/components/shared/page-shell";
 
 export const metadata: Metadata = {
   title: "Products",
@@ -51,7 +51,7 @@ export default async function OrgProductsPage({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <SectionHeader as="h1" title="Products" description="Add and edit what you sell" />
+        <PageHeader help="products" title="Products" description="Add and edit what you sell" />
         <div className="flex gap-2">
           <Button asChild variant="outline">
             <Link href={`/org/${orgId}/products/bulk`} prefetch={false}>

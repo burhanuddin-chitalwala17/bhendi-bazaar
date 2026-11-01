@@ -1,6 +1,6 @@
 import { requireOrgMember } from "@/lib/org-auth";
 import { channelsDAL } from "@/data-access-layer/channels.dal";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageHeader } from "@/components/shared/page-shell";
 import { ChannelCardList } from "@/components/channel/channel-card-list";
 import { ConnectResultNote } from "@/components/channel/connect-result-note";
 import { PAGE_INTRO } from "@/components/channel/channel-copy";
@@ -29,7 +29,7 @@ export default async function OrgChannelsPage({
 
   return (
     <div className="space-y-6">
-      <SectionHeader as="h1" title="Channels" description={PAGE_INTRO} />
+      <PageHeader help="channels" title="Channels" description={PAGE_INTRO} />
       {outcome && (
         <ConnectResultNote
           orgId={scope.orgId}

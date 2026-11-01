@@ -29,6 +29,7 @@ export default async function NewOrgOfferPage({
   return (
     <PageShell width="narrow">
       <PageHeader
+        help="promotions"
         title="New offer"
         description={`You bear what this costs, up to ${(org?.maxDiscountBps ?? 5000) / 100}%. If the platform runs something deeper on the same item, it pays the difference.`}
       />

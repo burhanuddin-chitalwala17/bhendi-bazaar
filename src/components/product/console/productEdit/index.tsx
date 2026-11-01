@@ -14,7 +14,10 @@ import type { LocationOption } from "@/components/shared/forms/product/ProductOr
 import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 import { PageHeader } from "@/components/shared/page-shell";
+import type { PortalNavKey } from "@/components/layout/portal-nav";
 interface ProductEditContainerProps {
+  /** The shop portal's "?" key; the admin console passes none. */
+  help?: PortalNavKey;
   product: ProductDetails;
   categories: {
     id: string;
@@ -51,6 +54,7 @@ export function ProductEditContainer({
   sellsElsewhere = false,
   team,
   backHref,
+  help,
 }: ProductEditContainerProps) {
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
@@ -64,6 +68,7 @@ export function ProductEditContainer({
   return (
     <div className="space-y-8">
       <PageHeader
+        help={help}
         back={{ href: back, label: team ? "Back to product" : "Back to products" }}
         title={`Edit Product: ${product.name}`}
       />

@@ -3,6 +3,8 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { PageHelp } from "@/components/layout/page-help";
+import type { PortalNavKey } from "@/components/layout/portal-nav";
 
 interface SectionHeaderProps {
   overline?: string; // "BHENDI BAZAAR"
@@ -14,6 +16,8 @@ interface SectionHeaderProps {
     onClick?: () => void;
   };
   as?: "h1" | "h2" | "h3";
+  /** A portal navigation key: renders "?" beside the title (onboarding R5). */
+  help?: PortalNavKey;
   className?: string;
 }
 
@@ -23,6 +27,7 @@ export function SectionHeader({
   description,
   action,
   className,
+  help,
   as: Heading = "h2",
 }: SectionHeaderProps) {
   return (
@@ -34,9 +39,12 @@ export function SectionHeader({
       )}
       <div className="flex items-baseline justify-between gap-3 sm:gap-4">
         <div className="space-y-0.5 sm:space-y-1">
-          <Heading className="font-heading text-base font-semibold tracking-tight sm:text-2xl">
-            {title}
-          </Heading>
+          <div className="flex items-center gap-1">
+            <Heading className="font-heading text-base font-semibold tracking-tight sm:text-2xl">
+              {title}
+            </Heading>
+            {help && <PageHelp help={help} />}
+          </div>
           {description && (
             <p className="text-2xs text-muted-foreground sm:text-sm">
               {description}

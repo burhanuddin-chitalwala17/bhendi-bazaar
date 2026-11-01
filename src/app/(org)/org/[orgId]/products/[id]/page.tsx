@@ -41,6 +41,7 @@ export default async function OrgProductViewPage({
         {/* The team's mark stays until the shop next saves this product (product-form R12, Q14). */}
         {product.teamEditedAt && <TeamEditBadge at={product.teamEditedAt} historyHref={`#${TEAM_HISTORY_ANCHOR}`} />}
         <ProductsView
+          help="products"
           product={product}
           category={product.category}
           org={product.org}

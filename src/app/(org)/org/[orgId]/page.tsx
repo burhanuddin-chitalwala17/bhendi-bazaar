@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardWidgets } from "@/components/dashboard/DashboardWidgets";
+import { PageHelp } from "@/components/layout/page-help";
 import { RefreshButton } from "@/components/channel/refresh-button";
 import { attentionLines } from "@/components/org/home/attention-lines";
 import { HOME_COPY, doneToast } from "@/components/org/home/home-copy";
@@ -50,7 +51,10 @@ async function HomeBody({ orgId, done }: { orgId: string; done: unknown }) {
       {doneStep && setup && <DoneToast message={doneToast(doneStep, setup.doneCount)} />}
 
       <header className="space-y-1">
-        <h1 className="line-clamp-2 font-heading text-2xl font-semibold text-foreground">{shop?.name ?? "Home"}</h1>
+        <div className="flex items-start gap-1">
+          <h1 className="line-clamp-2 min-w-0 font-heading text-2xl font-semibold text-foreground">{shop?.name ?? "Home"}</h1>
+          <PageHelp help="home" />
+        </div>
         {shop && (
           <Link href={shop.path} target="_blank" className="block truncate text-sm text-primary underline-offset-4 hover:underline">
             {shop.url}

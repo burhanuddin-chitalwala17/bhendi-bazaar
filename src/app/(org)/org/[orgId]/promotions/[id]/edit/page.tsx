@@ -35,6 +35,7 @@ export default async function EditOrgOfferPage({
   return (
     <PageShell width="narrow">
       <PageHeader
+        help="promotions"
         title="Edit offer"
         description="Changes apply from now on. Discounts already given keep the terms they were given under."
       />

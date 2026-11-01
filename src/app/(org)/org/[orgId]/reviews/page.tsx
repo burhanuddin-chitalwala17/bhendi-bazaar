@@ -6,7 +6,7 @@ import { ReviewMedia } from "@/components/product/review-media";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageHeader } from "@/components/shared/page-shell";
 import { formatShortDate } from "@/lib/format";
 
 export const metadata = {
@@ -36,7 +36,7 @@ export default async function OrgReviewsPage({
 
   return (
     <div className="max-w-3xl space-y-6">
-      <SectionHeader as="h1" title="Reviews" description="What buyers say about your products. Moderation is handled by the platform." />
+      <PageHeader help="reviews" title="Reviews" description="What buyers say about your products. Moderation is handled by the platform." />
 
       {reviews.length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-10 text-center text-muted-foreground">

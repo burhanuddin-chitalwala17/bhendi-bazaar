@@ -28,7 +28,7 @@ export default async function ShopDetailsPage({
 
   return (
     <PageShell width="wide">
-      <PageHeader title={SHOP_DETAILS_COPY.title} description={SHOP_DETAILS_COPY.help} />
+      <PageHeader help="details" title={SHOP_DETAILS_COPY.title} description={SHOP_DETAILS_COPY.help} />
       {/* Keyed on the version read, so "Load latest" (a refresh) remounts with the newer values. */}
       <ShopDetailsEditor
         key={`${details.updatedAt}/${details.contactUpdatedAt}`}

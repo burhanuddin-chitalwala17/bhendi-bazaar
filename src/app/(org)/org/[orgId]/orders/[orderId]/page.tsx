@@ -33,7 +33,7 @@ export default async function OrgOrderDetailPage({ params }: { params: Promise<{
   return (
     <div className="max-w-4xl space-y-4 pb-24 lg:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <SectionHeader as="h1" title={order.code} />
+        <SectionHeader as="h1" help="orders" title={order.code} />
         <Link href={`/org/${orgId}/orders`} className="min-h-10 text-sm text-primary hover:underline" prefetch={false}>
           {SHOP_PARCEL_COPY.allOrders}
         </Link>

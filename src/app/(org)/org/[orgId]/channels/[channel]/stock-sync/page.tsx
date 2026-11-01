@@ -20,7 +20,7 @@ export default async function StockSyncPreviewPage({ params }: { params: Promise
   if (!preview) notFound();
   return (
     <PageShell width="narrow">
-      <SectionHeader as="h1" title={PREVIEW.title} description={PREVIEW.subtitle(preview.label)} />
+      <SectionHeader as="h1" help="channels" title={PREVIEW.title} description={PREVIEW.subtitle(preview.label)} />
       <StockPreview orgId={scope.orgId} preview={preview} backHref={`/org/${scope.orgId}/channels/${preview.channel}/listings`} />
     </PageShell>
   );

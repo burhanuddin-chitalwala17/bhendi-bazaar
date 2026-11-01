@@ -1,7 +1,7 @@
 import { requireOrgMember } from "@/lib/org-auth";
 import { orgAddressService } from "@server/catalog/org.address.service";
 import { LocationsManager } from "@/components/org/locations-manager";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageHeader } from "@/components/shared/page-shell";
 import { returnHref } from "@/components/org/home/return-to";
 import { ONBOARDING_STEP } from "@server/catalog/org-onboarding.types";
 
@@ -24,7 +24,7 @@ export default async function OrgLocationsPage({
 
   return (
     <div className="space-y-6">
-      <SectionHeader as="h1" title="Pickup addresses" description="Where couriers collect from" />
+      <PageHeader help="locations" title="Pickup addresses" description="Where couriers collect from" />
       <LocationsManager
         orgId={scope.orgId}
         locations={locations}

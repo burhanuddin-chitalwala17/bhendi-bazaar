@@ -16,7 +16,7 @@ export default async function BulkUploadPage({
 
   return (
     <div className="space-y-6">
-      <SectionHeader as="h1" title="Add many at once" description="One sheet and a folder of photos" />
+      <SectionHeader as="h1" help="products" title="Add many at once" description="One sheet and a folder of photos" />
       <BulkProductWizard orgId={scope.orgId} choices={choices} />
     </div>
   );

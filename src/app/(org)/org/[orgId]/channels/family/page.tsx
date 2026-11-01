@@ -35,6 +35,7 @@ export default async function FamilyPage({
     <PageShell width="narrow">
       <SectionHeader
         as="h1"
+        help="channels"
         title={detail.family ? FAMILY.titleAdd(detail.family.name) : FAMILY.titleNew}
         description={FAMILY.subtitle(detail.label, detail.members.length, word)}
       />

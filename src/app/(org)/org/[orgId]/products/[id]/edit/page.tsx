@@ -63,6 +63,7 @@ export default async function OrgEditProductPage({
     <PageShell>
       <Suspense fallback={<LoadingSkeleton />}>
         <ProductEditContainer
+          help="products"
           product={product}
           categories={categories}
           productTypes={productTypes}

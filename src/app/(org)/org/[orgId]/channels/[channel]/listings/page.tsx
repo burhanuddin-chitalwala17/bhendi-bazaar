@@ -93,7 +93,7 @@ export default async function ChannelListingsPage({
     <div className="space-y-4">
       <ReadProgressRefresher running={running} />
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <SectionHeader as="h1" title={LISTINGS.title(label)} />
+        <SectionHeader as="h1" help="channels" title={LISTINGS.title(label)} />
         {canRead && !running && <ReadAgainButton orgId={scope.orgId} channel={page.channel} />}
         {!canRead && (
           <Button asChild variant="outline" className="min-h-10 w-full md:w-auto">

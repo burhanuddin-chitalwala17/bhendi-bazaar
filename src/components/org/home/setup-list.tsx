@@ -5,18 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RefreshButton } from "@/components/channel/refresh-button";
 import { cn } from "@/lib/utils";
+import { STEP_HINT } from "@/components/layout/portal-hints";
 import type { OnboardingStatus } from "@server/catalog/org-onboarding.types";
 import type { HomeRead } from "@/data-access-layer/org/home.dal";
 import { HOME_COPY, STEP_TITLE } from "./home-copy";
 import { taskHref } from "./return-to";
 import { HideSetupButton, ShowSetupButton } from "./setup-list-actions";
+import { SetupStepHint } from "./setup-step-hint";
 
 /** The id More → "Setup list" lands on (portal-nav). */
 export const SETUP_LIST_ID = "setup-list";
 
 /**
  * Home's setup list (R3, A6): ticks from facts, never from a tap on the list; hidden per shop and
- * reachable again here; collapses to one line once all five are done.
+ * reachable again here; collapses to one line once all five are done. A step opens its hint (R4).
  */
 export function SetupList({ orgId, setup, shopPath }: { orgId: string; setup: HomeRead<OnboardingStatus>; shopPath: string | null }) {
   if (!setup.ok) {
@@ -71,6 +73,7 @@ export function SetupList({ orgId, setup, shopPath }: { orgId: string; setup: Ho
           {status.steps.map((step) => {
             const href = step.done ? null : taskHref(orgId, step.key);
             const isNext = step.key === status.next;
+            const hint = STEP_HINT[step.key];
             const body = (
               <>
                 {step.done ? (
@@ -86,14 +89,10 @@ export function SetupList({ orgId, setup, shopPath }: { orgId: string; setup: Ho
             );
             return (
               <li key={step.key}>
-                {href ? (
-                  <Link
-                    href={href}
-                    aria-current={isNext ? "step" : undefined}
-                    className={cn("flex min-h-11 items-center gap-3 rounded-card px-2 transition-colors hover:bg-muted/60", isNext && "bg-muted")}
-                  >
+                {href && hint ? (
+                  <SetupStepHint title={STEP_TITLE[step.key]} hint={hint} href={href} isNext={isNext}>
                     {body}
-                  </Link>
+                  </SetupStepHint>
                 ) : (
                   <div className="flex min-h-11 items-center gap-3 px-2">{body}</div>
                 )}

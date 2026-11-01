@@ -10,7 +10,7 @@ import { payoutsDAL } from "@/data-access-layer/payouts.dal";
 import { formatCurrency, formatShortDate } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageHeader } from "@/components/shared/page-shell";
 
 export default async function OrgEarningsPage({
   params,
@@ -32,7 +32,7 @@ export default async function OrgEarningsPage({
 
   return (
     <div className="space-y-5">
-      <SectionHeader as="h1" title="Money you'll receive" description="What you earned and when it's paid" />
+      <PageHeader help="earnings" title="Money you'll receive" description="What you earned and when it's paid" />
 
       {/* Leads with the figure they came for. */}
       <Card className="p-5">

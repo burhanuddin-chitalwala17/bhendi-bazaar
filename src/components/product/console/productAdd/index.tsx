@@ -18,8 +18,11 @@ import type {
 import { CopyFromPicker } from "./CopyFromPicker";
 
 import { PageHeader } from "@/components/shared/page-shell";
+import type { PortalNavKey } from "@/components/layout/portal-nav";
 import type { ProductTypeRecord } from "@server/listing/product-type.types";
 interface ProductAddContainerProps {
+  /** The shop portal's "?" key; the admin console passes none. */
+  help?: PortalNavKey;
   categories: {
     id: string;
     name: string;
@@ -60,6 +63,7 @@ export function ProductAddContainer({
   sellsElsewhere = false,
   returnTo = null,
   team,
+  help,
 }: ProductAddContainerProps) {
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
@@ -85,6 +89,7 @@ export function ProductAddContainer({
   return (
     <div className="space-y-6">
       <PageHeader
+        help={help}
         back={{ href: productsBasePath, label: "Back to products" }}
         title={team ? "Add product for this shop" : "Add product"}
       />
