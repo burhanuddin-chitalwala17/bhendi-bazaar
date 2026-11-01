@@ -111,10 +111,11 @@ describe("shopDetailsSectionSchema (Invariant 4, D3)", () => {
 
 describe("storefrontSettingsSchema is narrowed to looks (D3)", () => {
   it("refuses every fact Shop details owns, so two editors never write one column", () => {
+    const expectedUpdatedAt = new Date().toISOString();
     for (const fact of ["tagline", "description", "logoUrl", "story", "location", "social", "ownerName", "ownerRole", "ownerQuote", "ownerPhotoUrl", "deliveryPolicy", "returnsPolicy"]) {
-      expect(storefrontSettingsSchema.safeParse({ [fact]: "x" }).success, fact).toBe(false);
+      expect(storefrontSettingsSchema.safeParse({ [fact]: "x", expectedUpdatedAt }).success, fact).toBe(false);
     }
-    expect(storefrontSettingsSchema.safeParse({ accent: "primary", heroUrl: "", hiddenSections: ["story"] }).success).toBe(true);
+    expect(storefrontSettingsSchema.safeParse({ expectedUpdatedAt, heroUrl: "", hiddenSections: ["story"] }).success).toBe(true);
   });
 });
 

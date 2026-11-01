@@ -50,6 +50,10 @@ const PUBLIC_PROFILE_FIELDS = [
   "hiddenSections",
   "themeKey",
   "paletteKey",
+  "heroLine",
+  "claims",
+  "openingHours",
+  "storefrontHiddenSections",
 ].sort();
 const PUBLIC_IDENTITY_FIELDS = ["id", "handle", "name", "joinedAt"].sort();
 

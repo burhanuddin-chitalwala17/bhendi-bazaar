@@ -187,6 +187,18 @@ export class ProductsRepository {
     return rows.map((row) => row.categoryId);
   }
 
+  /** The product type most of this org's goods on sale carry, or null (storefront-themes Q44). */
+  async mainProductTypeForOrg(orgId: string): Promise<string | null> {
+    const rows = await prisma.product.groupBy({
+      by: ["productType"],
+      where: { orgId, productType: { not: null }, ...AVAILABLE, ...FROM_ACTIVE_ORG },
+      _count: { _all: true },
+      orderBy: [{ _count: { productType: "desc" } }, { productType: "asc" }],
+      take: 1,
+    });
+    return rows[0]?.productType ?? null;
+  }
+
   /**
    * Which of these products belong to a withdrawn organisation, by name.
    *

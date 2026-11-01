@@ -20,6 +20,7 @@ import { appUrl } from "@server/shared/app-url";
 import { ThemedSections } from "@/components/storefront/themed/themed-sections";
 import { themedPageData } from "@/components/storefront/themed/landing-data";
 import { storePreview } from "@/lib/store-preview";
+import { renditionUrlForRef } from "@server/content/renditions.service";
 import { resolveStorefront } from "./resolve";
 import { notFound, redirect } from "next/navigation";
 
@@ -47,6 +48,10 @@ export async function generateMetadata({
 
   const preview = storePreview(shop);
   const url = `${appUrl()}/store/${shop.handle}`;
+  // A themed shop's link preview is its first hero photo (Q10, D14), at the one size every
+  // social host agrees on; the page reads the same memoised landing page.
+  const hero = shop.themeKey ? (await storefrontDAL.getStorefrontPage(handle))?.heroPhotos[0] : undefined;
+  if (hero) preview.image = await renditionUrlForRef(shop.id, hero, "preview");
 
   return {
     title: preview.title,

@@ -6,7 +6,9 @@
 import { OrgRole } from "@prisma/client";
 
 import { orgProfileRepository } from "@server/catalog/org-profile.repository";
-import { THEME_KEYS, THEMES, type PaletteKey } from "@server/catalog/storefront-themes";
+import { THEME_KEYS, THEMES, suggestedTheme, type PaletteKey } from "@server/catalog/storefront-themes";
+import { SHOP_KINDS } from "@server/catalog/storefront-claims";
+import { productsRepository } from "@server/catalog/product.read.repository";
 import {
   LOOK_KEPT_DAYS,
   LOOK_NOT_KEPT,
@@ -97,8 +99,10 @@ async function writeLook(orgId: string, actor: Actor, expectedVersion: number, n
 
 export const storefrontLookService = {
   async getLook(orgId: string): Promise<StorefrontLookState> {
-    const row = await readRow(orgId);
+    const [row, productType] = await Promise.all([readRow(orgId), productsRepository.mainProductTypeForOrg(orgId)]);
+    const theme = suggestedTheme(productType);
     return {
+      suggested: theme && productType ? { theme, label: SHOP_KINDS[productType]?.label ?? productType } : null,
       orgId: row.org.id,
       handle: row.org.handle,
       name: row.org.name,

@@ -79,15 +79,16 @@ model MediaAsset {
   updatedAt DateTime @updatedAt
 
   productMedia     ProductMedia[]
-  categoryHeroes   Category[]     @relation("CategoryHero")
-  profileLogos     OrgProfile[]   @relation("ProfileLogo")
-  profileHeroes    OrgProfile[]   @relation("ProfileHero")
-  profileOwners    OrgProfile[]   @relation("ProfileOwnerPhoto")
-  orgBanners       OrgBanner[]    @relation("OrgBannerImage")
-  banners          Banner[]       @relation("BannerImage")
+  categoryHeroes   Category[]          @relation("CategoryHero")
+  profileLogos     OrgProfile[]        @relation("ProfileLogo")
+  profileHeroes    OrgProfile[]        @relation("ProfileHero")
+  profileOwners    OrgProfile[]        @relation("ProfileOwnerPhoto")
+  orgBanners       OrgBanner[]         @relation("OrgBannerImage")
+  storefrontSlots  OrgStorefrontSlot[] @relation("StorefrontSlotImage")
+  banners          Banner[]            @relation("BannerImage")
   /// The enhancements asked of this photograph, and the one this photograph was accepted from (image-enhancement trd D1).
-  enhancementsFrom Enhancement[]  @relation("EnhancementSource")
-  enhancementOf    Enhancement[]  @relation("EnhancementResult")
+  enhancementsFrom Enhancement[]       @relation("EnhancementSource")
+  enhancementOf    Enhancement[]       @relation("EnhancementResult")
 
   @@index([orgId, state])
   @@index([orgId, contentHash])
@@ -241,6 +242,7 @@ model Category {
 
   promotionTargets PromotionTarget[]
   commissionRules  OrgCommissionRule[]
+  storefrontSlots  OrgStorefrontSlot[]
 
   @@index([slug])
   @@index([order])
@@ -611,6 +613,7 @@ model User {
   settlementsCreated       Settlement[] @relation("SettlementCreatedBy")
   promotionLossesConfirmed Promotion[]  @relation("PromotionLossConfirmedBy")
   orgLooksPublished        OrgProfile[] @relation("OrgLookPublishedBy")
+  orgContentEdited         OrgProfile[] @relation("OrgStorefrontContentEditedBy")
   settlementsUpdated       Settlement[] @relation("SettlementUpdatedBy")
 
   bids                 Bid[]               @relation("UserBids")
@@ -665,6 +668,7 @@ model Org {
   // Everything a buyer may see lives on the profile; everything else stays here
   // (org-profile spec R1/R2, trd D1). A leak now needs a join nobody wrote.
   profile           OrgProfile?
+  storefrontSlots   OrgStorefrontSlot[]
   listingDefaults   OrgListingDefaults?
   brands            Brand[]
   mediaAssets       MediaAsset[]
@@ -790,10 +794,48 @@ model OrgProfile {
   previousPaletteKey    String?
   previousLookUntil     DateTime?
 
+  /// What the themed page's editor writes (storefront-themes D13): the hero's one line, up to three
+  /// claim keys from the shop's list (Q21), opening hours, and the themed sections it hides. Json
+  /// is parsed on read. `contentEditedByUserId` names who saved it last, for "Changed by {Name}" —
+  /// only while `contentEditedAt` equals `updatedAt`, since Shop details and look saves share the version.
+  heroLine                 String?
+  claims                   Json?
+  openingHours             Json?
+  storefrontHiddenSections Json?
+  contentEditedByUserId    String?
+  contentEditedBy          User?   @relation("OrgStorefrontContentEditedBy", fields: [contentEditedByUserId], references: [id], onDelete: Restrict)
+  contentEditedAt          DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([lookPublishedByUserId])
+  @@index([contentEditedByUserId])
+}
+
+/// A photo or a picked category a themed page draws (storefront-themes D13, Q10): the hero's up
+/// to three photos, the collections' up to six categories. A row, not a Json list, so a photo's
+/// use stays a query over a referencing column (ADR-0058).
+model OrgStorefrontSlot {
+  id         String             @id @default(cuid())
+  orgId      String
+  org        Org                @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  kind       StorefrontSlotKind
+  position   Int
+  categoryId String?
+  category   Category?          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  assetId    String?
+  asset      MediaAsset?        @relation("StorefrontSlotImage", fields: [assetId], references: [id], onDelete: Restrict)
+  createdAt  DateTime           @default(now())
+
+  @@unique([orgId, kind, position])
+  @@index([categoryId])
+  @@index([assetId])
+}
+
+enum StorefrontSlotKind {
+  HERO
+  COLLECTION
 }
 
 /// Mirrored by `RETURNS_PRESET` in server/catalog/shop-details.types.ts.

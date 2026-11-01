@@ -14,6 +14,7 @@ export function ThemeCard({
   theme,
   palette,
   live,
+  suggestedFor,
   onPalette,
   onPreview,
 }: {
@@ -22,6 +23,8 @@ export function ThemeCard({
   palette: PaletteKey;
   /** This theme is what buyers see now. */
   live: boolean;
+  /** What the shop mostly sells, when this is the theme suggested for it (Q19). */
+  suggestedFor?: string;
   onPalette: (palette: PaletteKey) => void;
   onPreview: () => void;
 }) {
@@ -34,7 +37,10 @@ export function ThemeCard({
           <h2 className="font-medium text-foreground">{definition.label}</h2>
           <p className="text-sm text-muted-foreground">{definition.description}</p>
         </div>
-        {live && <Badge>{LOOK_COPY.liveNow}</Badge>}
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {live && <Badge>{LOOK_COPY.liveNow}</Badge>}
+          {suggestedFor && <Badge variant="outline">{LOOK_COPY.suggestedFor(suggestedFor)}</Badge>}
+        </div>
       </div>
       <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
         <PaletteDots theme={theme} value={palette} onChange={onPalette} />

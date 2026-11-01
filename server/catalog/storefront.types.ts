@@ -7,7 +7,9 @@ import {
   type HideableBrandPageSection,
 } from "@server/catalog/brand-page-sections";
 import type { ReturnsPreset } from "@server/catalog/shop-details.types";
-import type { PaletteKey, ThemeKey } from "@server/catalog/storefront-themes";
+import type { HideableSection, PaletteKey, ThemeKey } from "@server/catalog/storefront-themes";
+import type { OpeningHours } from "@server/catalog/storefront-hours";
+import type { ClaimKey } from "@server/catalog/storefront-claims";
 
 /**
  * The brand page's payload (brand-page D1): the public face, and nothing that is not.
@@ -72,6 +74,27 @@ export interface StorefrontPageDto extends BrandPageDto {
   bestSellingIds: string[];
   /** Median whole days from paid to ready; null under the floor (Q38, Q39). */
   dispatchDays: number | null;
+  /** The editor's content (D13). A hidden section's content is left out, as on the brand page. */
+  heroLine: string | null;
+  /** Up to three, the first being what a link preview shows (Q10). */
+  heroPhotos: string[];
+  /** The categories the shop picked, in its order; empty means it picked none. */
+  collections: StorefrontCollectionDto[];
+  /** From the shop's fixed list, labels resolved (Q21); never a figure. */
+  claims: StorefrontClaimDto[];
+  openingHours: OpeningHours | null;
+  themedHiddenSections: HideableSection[];
+}
+
+export interface StorefrontCollectionDto {
+  slug: string;
+  name: string;
+  photoUrl: string | null;
+}
+
+export interface StorefrontClaimDto {
+  label: string;
+  detail: string | null;
 }
 
 export interface BrandProof {
@@ -169,4 +192,27 @@ export function toBrandPageDto(
     owner: shown("story", brandOwnerFrom(row)),
     hiddenSections,
   };
+}
+
+/**
+ * The storefront editor's read (storefront-themes D13): the looks, the themed page's content, the
+ * version a save compares-and-sets on, and what the section sheets offer.
+ */
+export interface StorefrontSettingsDto {
+  handle: string;
+  name: string;
+  heroUrl: string | null;
+  hiddenSections: unknown;
+  /** ISO; sent back as `expectedUpdatedAt`. */
+  updatedAt: string;
+  heroLine: string | null;
+  heroPhotos: string[];
+  collections: Array<{ categoryId: string; photoUrl: string | null }>;
+  claims: Array<{ key: ClaimKey; detail: string | null }>;
+  openingHours: OpeningHours | null;
+  storefrontHiddenSections: HideableSection[];
+  /** The shop's own claim list (Q21): its kind's, then the general ones. */
+  claimOptions: Array<{ key: ClaimKey; label: string }>;
+  /** The categories it sells in, the only ones a collection may be. */
+  categoryOptions: Array<{ id: string; name: string }>;
 }

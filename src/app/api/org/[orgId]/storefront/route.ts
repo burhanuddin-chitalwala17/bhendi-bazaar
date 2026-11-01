@@ -18,6 +18,6 @@ export const PATCH = withOrg(async (request, scope) => {
   // the schema carries no `handle` — that is its own operation next door.
   const body = storefrontSettingsSchema.parse(await request.json());
   return NextResponse.json(
-    await storefrontService.saveSettings(scope.orgId, body),
+    await storefrontService.saveSettings(scope.orgId, scope.userId, body),
   );
 });

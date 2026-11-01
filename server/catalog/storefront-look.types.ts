@@ -38,6 +38,8 @@ export interface StorefrontLookState {
   publishedAt: string | null;
   /** The look Switch back restores, while it is kept; null when there is none. */
   previous: (LookKeys & { until: string }) | null;
+  /** The theme for what the shop mostly sells, and that word (Q19, Q44); null without a match. */
+  suggested: { theme: ThemeKey; label: string } | null;
 }
 
 /** "Edge", or "your old page" for the shop's page before any theme (Q42). */

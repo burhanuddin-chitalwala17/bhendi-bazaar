@@ -5,6 +5,7 @@ export const LOOK_COPY = {
   title: "Your shop's look",
   intro: "Choose how your shop looks. You can change it any time.",
   liveNow: "Live now",
+  suggestedFor: (kind: string) => `Suggested for ${kind}`,
   preview: "Preview",
   previewUnavailable: "Preview unavailable",
   previewFailed: "Couldn't load your preview.",

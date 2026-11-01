@@ -15,6 +15,7 @@ describe.skipIf(!isDisposableDb)("seller profile (local db)", () => {
   let storefrontService: typeof import("@server/catalog/storefront.service").storefrontService;
   const stamp = Date.now().toString(36);
   let orgId: string;
+  let userId: string;
 
   beforeAll(async () => {
     ({ prisma } = await import("@server/shared/prisma"));
@@ -31,11 +32,13 @@ describe.skipIf(!isDisposableDb)("seller profile (local db)", () => {
       description: "Typed at creation",
     });
     orgId = org.id;
+    userId = (await prisma.user.create({ data: { email: `profile-editor-${stamp}@example.invalid` } })).id;
   });
 
   afterAll(async () => {
     // Brands, profile and defaults cascade with the org; this is the one place an org row goes.
     await prisma.org.delete({ where: { id: orgId } });
+    await prisma.user.delete({ where: { id: userId } });
   });
 
   it("creates the profile and the defaults with the org, and the introduction lands on the profile", async () => {
@@ -48,12 +51,13 @@ describe.skipIf(!isDisposableDb)("seller profile (local db)", () => {
   });
 
   it("round-trips storefront looks through the profile, leaving the facts alone (org-profile Q17)", async () => {
-    const saved = await storefrontService.saveSettings(orgId, { accent: "primary", heroUrl: "" });
-    expect(saved.accent).toBe("primary");
+    const { updatedAt } = await storefrontService.getSettings(orgId);
+    const saved = await storefrontService.saveSettings(orgId, userId, { expectedUpdatedAt: updatedAt, hiddenSections: ["brands"], heroUrl: "" });
+    expect(saved.hiddenSections).toEqual(["brands"]);
     expect(saved.heroUrl).toBeNull();
-    expect(saved.description).toBe("Typed at creation");
+    expect((saved as unknown as { description: string }).description).toBe("Typed at creation");
     const publicRead = await orgProfileRepository.findPublicByHandle(`profile-test-${stamp}`);
-    expect(publicRead?.accent).toBe("primary");
+    expect(publicRead?.hiddenSections).toEqual(["brands"]);
     expect(publicRead?.org.name).toBe(`Profile Test ${stamp}`);
     expect(publicRead && "email" in publicRead.org).toBe(false);
   });

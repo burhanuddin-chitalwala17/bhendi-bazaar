@@ -54,6 +54,7 @@ export const MEDIA_USE_KINDS = [
   "category",
   "storefront-logo",
   "storefront-hero",
+  "storefront-collection",
   "storefront-banner",
   "home-banner",
   "video-poster",
@@ -79,6 +80,8 @@ export interface ReferenceCounts {
   categoryHeroes: number;
   profileLogos: number;
   profileHeroes: number;
+  /** A themed page's hero photos and collection pictures (storefront-themes D13, ADR-0058). */
+  storefrontSlots: number;
   orgBanners: number;
   banners: number;
   /** The videos this photograph stands in for (spec R8): a poster in use is a photograph in use. */
@@ -147,6 +150,7 @@ const USE_NOUNS: Record<MediaUseKind, [singular: string, plural: string]> = {
   category: ["category", "categories"],
   "storefront-logo": ["storefront logo", "storefront logos"],
   "storefront-hero": ["storefront hero", "storefront heroes"],
+  "storefront-collection": ["storefront collection", "storefront collections"],
   "storefront-banner": ["storefront banner", "storefront banners"],
   "home-banner": ["home banner", "home banners"],
   "video-poster": ["video poster", "video posters"],

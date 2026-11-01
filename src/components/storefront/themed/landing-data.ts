@@ -1,35 +1,42 @@
 import type { StorefrontPage } from "@/data-access-layer/storefront.dal";
+import { hoursToday } from "@server/catalog/storefront-hours";
+import { SECTION } from "@server/catalog/storefront-themes";
 import type { ThemedPageData } from "./page-data";
 
 /**
- * A themed landing page's DTO as its sections read it (D8, D9). The hero line, claims, opening
- * hours, chosen collections and hidden themed sections arrive with the editor (unit 6); until
- * then each is empty, so its section closes up or draws the pattern (R10).
+ * A themed landing page's DTO as its sections read it (D8, D9). What the shop left empty stays
+ * empty, so its section closes up or draws the pattern (R10); collections it never picked are the
+ * categories it sells in, unless it hid the section.
  */
-export function themedPageData(page: StorefrontPage): ThemedPageData {
+export function themedPageData(page: StorefrontPage, now: Date = new Date()): ThemedPageData {
+  const picked = page.collections.length > 0;
+  const collectionsHidden = page.themedHiddenSections.includes(SECTION.COLLECTIONS);
   return {
     handle: page.handle,
     name: page.name,
     logoUrl: page.logoUrl,
-    heroPhotos: page.heroUrl ? [page.heroUrl] : [],
-    heroLine: null,
+    // A cover chosen before the editor existed still fills the hero (Q11: nothing a shop gave is lost).
+    heroPhotos: page.heroPhotos.length ? page.heroPhotos : page.heroUrl ? [page.heroUrl] : [],
+    heroLine: page.heroLine,
     tagline: page.tagline,
     productCount: page.productCount,
     bestSelling: page.bestSelling,
     newIn: page.newIn,
     offers: page.offers,
     dealProducts: page.dealProducts,
-    collections: page.categories.map((category) => ({ slug: category.slug, name: category.name, photoUrl: null })),
+    collections: picked || collectionsHidden
+      ? page.collections
+      : page.categories.map((category) => ({ slug: category.slug, name: category.name, photoUrl: null })),
     proof: page.proof,
     since: page.since,
     dispatchDays: page.dispatchDays,
     returns: page.returns,
-    claims: [],
+    claims: page.claims,
     about: page.about,
     owner: page.owner,
     reviews: page.buyersSay,
     area: page.location,
-    hoursToday: null,
-    hiddenSections: [],
+    hoursToday: hoursToday(page.openingHours, now),
+    hiddenSections: page.themedHiddenSections,
   };
 }

@@ -3,7 +3,17 @@ import { z } from "zod";
 import { SLUG_PATTERN } from "@server/shared/slug";
 import { SOCIAL_NETWORK_KEYS, normaliseHandle } from "@server/catalog/social-networks";
 import { HIDEABLE_BRAND_PAGE_SECTIONS } from "@server/catalog/brand-page-sections";
-import { PALETTE_KEYS, THEME_KEYS, THEMES } from "@server/catalog/storefront-themes";
+import {
+  COLLECTIONS_MAX,
+  HERO_LINE_MAX,
+  HERO_PHOTOS_MAX,
+  HIDEABLE_SECTIONS,
+  PALETTE_KEYS,
+  THEME_KEYS,
+  THEMES,
+} from "@server/catalog/storefront-themes";
+import { CLAIM_DETAIL_MAX, CLAIM_KEYS, MAX_CLAIMS } from "@server/catalog/storefront-claims";
+import { TIME_PATTERN } from "@server/catalog/storefront-hours";
 
 /**
  * What an org may send about its own shop.
@@ -60,14 +70,49 @@ export const socialSchema = z
     }
   });
 
+/** ux.md section sheet, Terminal error: the words a too-long field is refused with. */
+const tooLong = (max: number) => `Too long — ${max} letters at most.`;
+const limitedText = (max: number) => z.string().trim().max(max, tooLong(max)).or(z.literal("")).nullish();
+
+/** ux.md section sheet, Refused: a fourth claim (Q21). */
+export const CLAIMS_REFUSED = "Up to three. Remove one to add this.";
+
+const distinct = <T>(key: (item: T) => string) => (items: readonly T[] | null | undefined) =>
+  !items || new Set(items.map(key)).size === items.length;
+
+/** One opening and closing time and the days the shop is shut (Q45). */
+export const openingHoursSchema = z.strictObject({
+  open: z.string().regex(TIME_PATTERN, "Use a time like 10:30."),
+  close: z.string().regex(TIME_PATTERN, "Use a time like 21:00."),
+  closedDays: z.array(z.number().int().min(0).max(6)).max(7),
+});
+export type OpeningHoursInput = z.infer<typeof openingHoursSchema>;
+
 /**
  * Looks only (org-profile D3): the shop's facts are written by Shop details, so a fact sent here
- * is refused rather than silently landing in a column two editors share. `pillars` is retired (D5).
+ * is refused rather than silently landing in a column two editors share. `pillars` and `accent`
+ * are retired (D5, storefront-themes D13). Strict, so no proof figure has a key to arrive under
+ * (A7). Whether a claim is on the shop's own list, and a category one it sells, is the service's.
  */
 export const storefrontSettingsSchema = z.strictObject({
+  /** The version the editor read: the save is a compare-and-set on it (D13). */
+  expectedUpdatedAt: z.string().datetime(),
   heroUrl: z.string().url().or(z.literal("")).nullish(),
-  accent: z.enum(STOREFRONT_ACCENTS).or(z.literal("")).nullish(),
   hiddenSections: z.array(z.enum(HIDEABLE_BRAND_PAGE_SECTIONS)).nullish(),
+  heroLine: limitedText(HERO_LINE_MAX),
+  heroPhotos: z.array(z.string().url()).max(HERO_PHOTOS_MAX, `Up to ${HERO_PHOTOS_MAX} photos.`).nullish(),
+  collections: z
+    .array(z.strictObject({ categoryId: z.string().min(1), photoUrl: z.string().url().or(z.literal("")).nullish() }))
+    .max(COLLECTIONS_MAX, `Up to ${COLLECTIONS_MAX} collections.`)
+    .refine(distinct((c) => c.categoryId), "Each category once.")
+    .nullish(),
+  claims: z
+    .array(z.strictObject({ key: z.enum(CLAIM_KEYS), detail: limitedText(CLAIM_DETAIL_MAX) }))
+    .max(MAX_CLAIMS, CLAIMS_REFUSED)
+    .refine(distinct((c) => c.key), "Each claim once.")
+    .nullish(),
+  openingHours: openingHoursSchema.nullish(),
+  storefrontHiddenSections: z.array(z.enum(HIDEABLE_SECTIONS)).nullish(),
 });
 
 export type StorefrontSettingsInput = z.infer<typeof storefrontSettingsSchema>;

@@ -200,6 +200,19 @@ server's record. Both answer **`StorefrontLookState`** (`server/catalog/storefro
 "{Name} published {theme} {n} min ago." (Q31); a switch back after the 30 days is 410 "Your previous look is no
 longer kept."; a member who is not the owner gets 403.
 
+Since storefront-themes unit 6 **`StorefrontSettingsInput`** (`storefrontSettingsSchema`, `PATCH
+/api/org/[orgId]/storefront`) loses `accent` and gains a required **`expectedUpdatedAt`** (ISO; the save is a
+compare-and-set on it, a miss 409 "Changed by {Name} just now. Load theirs?") and the editor's optional
+`heroLine` (≤120), `heroPhotos` (≤3 URLs of the shop's own ready photos), `collections` (≤6 `{ categoryId,
+photoUrl? }`, categories it sells in), `claims` (≤3 `{ key, detail? }`, keys on its own list in
+`server/catalog/storefront-claims.ts`, else 400 on `claims`), `openingHours` (`{ open, close, closedDays }`) and
+`storefrontHiddenSections`; strict, so no proof figure has a key (A7). Only fields sent change. `GET` answers
+**`StorefrontSettingsDto`** (`server/catalog/storefront.types.ts`): those values parsed, `updatedAt`, and the
+sheet's `claimOptions` and `categoryOptions`. **`StorefrontPageDto`** gains `heroLine`, `heroPhotos`, `collections`
+(`{ slug, name, photoUrl }`), `claims` (`{ label, detail }`), `openingHours` and `themedHiddenSections`; a hidden
+section's content is left out (story's `about` and `owner` too). **`StorefrontLookState`** gains `suggested: { theme,
+label } | null`. `MediaUseDto.kind` gains `storefront-collection`; `ReferenceCounts` gains `storefrontSlots`.
+
 Since order-fulfilment unit 2 a shop's orders read as **`ShopOrderView`** / **`ShopParcelView`**
 (`server/checkout/shop-parcel.types.ts`): only the shop's own parcels on paid orders, each with `status`,
 its lines and `parcelValue`, `position`/`ofCount` ("Parcel 1 of 2"), and the buyer as **`ShopBuyer`

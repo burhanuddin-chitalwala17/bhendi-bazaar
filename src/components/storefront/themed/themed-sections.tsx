@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { ImagePlus } from "lucide-react";
 
 import { APP_NAME } from "@/lib/config";
 import {
@@ -30,6 +31,7 @@ import { ProductShelf } from "./shelf";
 import { ThemedStory } from "./story";
 import { ThemedVisit } from "./visit";
 import { ThemedWhyBuy } from "./why-buy";
+import { PREVIEW_COPY } from "../preview/preview-copy";
 
 interface Context {
   page: ThemedPageData;
@@ -127,8 +129,12 @@ function render<E extends CompositionEntry>(entry: E, context: Context): ReactNo
   return renderer(entry, context);
 }
 
-/** A theme's landing sections in its own order and variants (D1, D8; ADR-0064). */
-export function ThemedSections({ theme, page }: { theme: ThemeKey; page: ThemedPageData }) {
+/**
+ * A theme's landing sections in its own order and variants (D1, D8; ADR-0064). `preview` is the
+ * owner's view (D12, D13): a hero with no photo carries "Add a photo", and a hidden section stays
+ * as a slim line to tap, so the sheet that hid it can show it again (Q43). Buyers get neither.
+ */
+export function ThemedSections({ theme, page, preview = false }: { theme: ThemeKey; page: ThemedPageData; preview?: boolean }) {
   const empty = page.productCount === 0;
   const entries = COMPOSITIONS[theme].sections.filter((e) => !empty || WHILE_EMPTY.has(e.section));
   const context = { page, theme };
@@ -136,11 +142,27 @@ export function ThemedSections({ theme, page }: { theme: ThemeKey; page: ThemedP
   return (
     <>
       {entries.map((entry) => {
+        if (preview && (page.hiddenSections as readonly string[]).includes(entry.section)) {
+          return (
+            <div key={entry.section} data-section={entry.section} className="mx-auto max-w-store px-gutter py-3">
+              <p className="rounded-field border border-dashed border-border p-3 text-center font-label text-tag text-muted-foreground">
+                {PREVIEW_COPY.hidden}
+              </p>
+            </div>
+          );
+        }
         const node = render(entry, context);
         if (!node) return null;
+        const askPhoto = preview && entry.section === SECTION.HERO && page.heroPhotos.length === 0;
         return (
-          <div key={entry.section} data-section={entry.section}>
+          <div key={entry.section} data-section={entry.section} className={askPhoto ? "relative" : undefined}>
             {node}
+            {askPhoto && (
+              <span className="absolute right-gutter top-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-3 py-1.5 font-label text-tag text-foreground shadow-overlay">
+                <ImagePlus className="size-3.5" aria-hidden />
+                {PREVIEW_COPY.addPhoto}
+              </span>
+            )}
             {empty && entry.section === SECTION.HERO && <SettingUp name={page.name} />}
           </div>
         );

@@ -29,8 +29,23 @@ import {
   toBrandPageDto,
   type BrandPageDto,
   type StorefrontPageDto,
+  type StorefrontSettingsDto,
 } from "@server/catalog/storefront.types";
-import { LANDING_SHELF_LIMIT, readStorefrontLook, type StorefrontLook } from "@server/catalog/storefront-themes";
+import {
+  LANDING_SHELF_LIMIT,
+  SECTION,
+  readHiddenSections,
+  readStorefrontLook,
+  type HideableSection,
+  type StorefrontLook,
+} from "@server/catalog/storefront-themes";
+import { CLAIM_LABEL, claimsFor, readClaims, type ClaimKey } from "@server/catalog/storefront-claims";
+import { readOpeningHours, type OpeningHours } from "@server/catalog/storefront-hours";
+import { orgStorefrontSlotRepository, StorefrontSlotKind } from "@server/catalog/org-storefront-slot.repository";
+import { categoryRepository } from "@server/catalog/category.read.repository";
+import { mediaAssetService } from "@server/catalog/media-asset.service";
+import { prisma } from "@server/shared/prisma";
+import { NOT_A_PHOTO, changedBy } from "@server/catalog/storefront-copy";
 import { Prisma } from "@prisma/client";
 import type { HideableBrandPageSection } from "@server/catalog/brand-page-sections";
 import {
@@ -47,12 +62,22 @@ import {
 } from "@server/shared/domain-error";
 import { isValidSlug } from "@server/shared/slug";
 
-/** Looks only since org-profile U2 (D3): the facts are Shop details', so two editors never share a column. */
+/**
+ * Looks only since org-profile U2 (D3): the facts are Shop details', so two editors never share a
+ * column. The themed page's content joins them (storefront-themes D13); the accent is retired.
+ */
 export interface StorefrontSettingsInput {
+  expectedUpdatedAt: string;
   heroUrl?: string | null;
-  accent?: string | null;
   hiddenSections?: HideableBrandPageSection[] | null;
+  heroLine?: string | null;
+  heroPhotos?: string[] | null;
+  collections?: Array<{ categoryId: string; photoUrl?: string | null }> | null;
+  claims?: Array<{ key: ClaimKey; detail?: string | null }> | null;
+  openingHours?: OpeningHours | null;
+  storefrontHiddenSections?: HideableSection[] | null;
 }
+
 
 export interface BannerInput {
   title?: string | null;
@@ -154,12 +179,34 @@ export const storefrontService = {
     const look = profile ? (preview ?? readStorefrontLook(profile.themeKey, profile.paletteKey)) : null;
     if (!profile || !look) return null;
     const orgId = profile.org.id;
-    const [brand, bestSellingIds, dispatchDays] = await Promise.all([
+    const [brand, bestSellingIds, dispatchDays, slots, productType] = await Promise.all([
       brandPageOf(profile),
       orderService.bestSellingProductIdsForOrg(orgId, BEST_SELLING_DAYS, LANDING_SHELF_LIMIT),
       orderService.dispatchDaysForOrg(orgId),
+      orgStorefrontSlotRepository.listForOrg(orgId),
+      productsRepository.mainProductTypeForOrg(orgId),
     ]);
-    return { ...brand, themeKey: look.theme, paletteKey: look.palette, bestSellingIds, dispatchDays };
+    // Hiding is subtraction at the source (brand-page R7): a hidden section's content never travels.
+    const hidden = readHiddenSections(profile.storefrontHiddenSections);
+    const shown = (section: HideableSection) => !hidden.includes(section);
+    return {
+      ...brand,
+      ...(!shown(SECTION.STORY) && { about: null, owner: null }),
+      themeKey: look.theme,
+      paletteKey: look.palette,
+      bestSellingIds,
+      dispatchDays,
+      heroLine: profile.heroLine?.trim() || null,
+      heroPhotos: slots.filter((s) => s.kind === StorefrontSlotKind.HERO && s.asset).map((s) => s.asset!.ref),
+      collections: shown(SECTION.COLLECTIONS)
+        ? slots
+            .filter((s) => s.kind === StorefrontSlotKind.COLLECTION && s.category)
+            .map((s) => ({ slug: s.category!.slug, name: s.category!.name, photoUrl: s.asset?.ref ?? null }))
+        : [],
+      claims: readClaims(profile.claims, productType).map((c) => ({ label: CLAIM_LABEL[c.key], detail: c.detail })),
+      openingHours: shown(SECTION.VISIT) ? readOpeningHours(profile.openingHours) : null,
+      themedHiddenSections: hidden,
+    };
   },
 
   /**
@@ -179,26 +226,123 @@ export const storefrontService = {
     return toBrandPageDto(profile, brands, { proof: null, buyersSay: buyersSayFrom(recent, rating.count) });
   },
 
-  /** This org's storefront as it stands, for its own editor. */
-  async getSettings(orgId: string) {
-    const settings = await orgProfileRepository.findSettings(orgId);
+  /**
+   * This org's storefront as it stands, for its own editor: the version it read (D13), the themed
+   * page's content parsed, and what its sheets offer — the shop's claim list and its categories.
+   */
+  async getSettings(orgId: string): Promise<StorefrontSettingsDto> {
+    const [settings, slots, productType, categoryIds, categories] = await Promise.all([
+      orgProfileRepository.findSettings(orgId),
+      orgStorefrontSlotRepository.listForOrg(orgId),
+      productsRepository.mainProductTypeForOrg(orgId),
+      productsRepository.categoryIdsForOrg(orgId),
+      categoryRepository.listIdentifiers(),
+    ]);
     if (!settings) throw new NotFoundError("Organisation not found");
-    return settings;
+    const { updatedAt, claims, openingHours, storefrontHiddenSections, ...rest } = settings;
+    const sold = new Set(categoryIds);
+    return {
+      ...rest,
+      updatedAt: updatedAt.toISOString(),
+      claims: readClaims(claims, productType),
+      openingHours: readOpeningHours(openingHours),
+      storefrontHiddenSections: readHiddenSections(storefrontHiddenSections),
+      heroPhotos: slots.filter((s) => s.kind === StorefrontSlotKind.HERO && s.asset).map((s) => s.asset!.ref),
+      collections: slots
+        .filter((s) => s.kind === StorefrontSlotKind.COLLECTION && s.category)
+        .map((s) => ({ categoryId: s.category!.id, photoUrl: s.asset?.ref ?? null })),
+      claimOptions: claimsFor(productType).map((key) => ({ key, label: CLAIM_LABEL[key] })),
+      categoryOptions: categories
+        .filter((c) => sold.has(c.id))
+        .map(({ id, name }) => ({ id, name }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    };
   },
 
   /**
-   * Save the shop's looks. Whitelisted by name, and a field not sent is left as it is, so this
-   * save can never clear a column Shop details owns (org-profile D3, Q17).
+   * Save the shop's looks and its themed page's content (D13). Whitelisted by name, and a field not
+   * sent is left as it is, so this save can never clear a column Shop details owns (org-profile
+   * D3, Q17). Conditional on the version the editor read: a miss is "Changed by {Name}". A claim
+   * must be on the shop's own list (Q21), a collection a category it sells, a photo one of its own
+   * ready pictures, so the page draws nothing the shop could not have picked.
    */
-  async saveSettings(orgId: string, input: StorefrontSettingsInput) {
-    await orgProfileRepository.updateLooks(orgId, {
-      ...(input.heroUrl !== undefined && { heroUrl: orNull(input.heroUrl) }),
-      ...(input.accent !== undefined && { accent: orNull(input.accent) }),
-      // JSON is cleared with `JsonNull`; `null` is Prisma's "leave this alone".
-      ...(input.hiddenSections !== undefined && {
-        hiddenSections: jsonOrNull(input.hiddenSections?.length ? input.hiddenSections : null),
-      }),
+  async saveSettings(orgId: string, userId: string, input: StorefrontSettingsInput) {
+    const [productType, categoryIds] = await Promise.all([
+      input.claims?.length ? productsRepository.mainProductTypeForOrg(orgId) : Promise.resolve(null),
+      input.collections?.length ? productsRepository.categoryIdsForOrg(orgId) : Promise.resolve([]),
+    ]);
+    if (input.claims?.length) {
+      const allowed = new Set<string>(claimsFor(productType));
+      if (input.claims.some((claim) => !allowed.has(claim.key))) {
+        throw new DomainError("That claim isn't on your shop's list.", { status: 400, field: "claims" });
+      }
+    }
+    if (input.collections?.length) {
+      const sold = new Set(categoryIds);
+      if (input.collections.some((c) => !sold.has(c.categoryId))) {
+        throw new DomainError("Pick a category your shop sells in.", { status: 400, field: "collections" });
+      }
+    }
+    const assetOf = async (url: string | null | undefined, field: string) => {
+      if (!url) return null;
+      const asset = await mediaAssetService.findReadyImage(orgId, { ref: url });
+      if (!asset) throw new DomainError(NOT_A_PHOTO, { status: 400, field });
+      return asset.id;
+    };
+    const hero =
+      input.heroPhotos == null
+        ? input.heroPhotos
+        : await Promise.all(input.heroPhotos.map(async (url) => ({ categoryId: null, assetId: await assetOf(url, "heroPhotos") })));
+    const collections =
+      input.collections == null
+        ? input.collections
+        : await Promise.all(
+            input.collections.map(async (c) => ({ categoryId: c.categoryId, assetId: await assetOf(c.photoUrl, "collections") })),
+          );
+
+    const now = new Date();
+    const saved = await prisma.$transaction(async (tx) => {
+      const written = await orgProfileRepository.updateLooksIfUnchanged(
+        orgId,
+        new Date(input.expectedUpdatedAt),
+        {
+          contentEditedByUserId: userId,
+          contentEditedAt: now,
+          updatedAt: now,
+          ...(input.heroUrl !== undefined && { heroUrl: orNull(input.heroUrl) }),
+          // JSON is cleared with `JsonNull`; `null` is Prisma's "leave this alone".
+          ...(input.hiddenSections !== undefined && {
+            hiddenSections: jsonOrNull(input.hiddenSections?.length ? input.hiddenSections : null),
+          }),
+          ...(input.heroLine !== undefined && { heroLine: orNull(input.heroLine) }),
+          ...(input.claims !== undefined && {
+            claims: jsonOrNull(
+              input.claims?.length ? input.claims.map((c) => ({ key: c.key, detail: orNull(c.detail) })) : null,
+            ),
+          }),
+          ...(input.openingHours !== undefined && { openingHours: jsonOrNull(input.openingHours) }),
+          ...(input.storefrontHiddenSections !== undefined && {
+            storefrontHiddenSections: jsonOrNull(
+              input.storefrontHiddenSections?.length ? [...new Set(input.storefrontHiddenSections)] : null,
+            ),
+          }),
+        },
+        tx,
+      );
+      if (!written) return false;
+      if (hero !== undefined) await orgStorefrontSlotRepository.replaceKind(orgId, StorefrontSlotKind.HERO, hero ?? [], tx);
+      if (collections !== undefined) {
+        await orgStorefrontSlotRepository.replaceKind(orgId, StorefrontSlotKind.COLLECTION, collections ?? [], tx);
+      }
+      return true;
     });
+    if (!saved) {
+      const current = await orgProfileRepository.findContentEditor(orgId);
+      if (!current) throw new NotFoundError("Organisation not found");
+      // The version is shared with Shop details and look publish; only a content save names its editor.
+      const lastSaveWasContent = current.contentEditedAt?.getTime() === current.updatedAt.getTime();
+      throw new ConflictError(changedBy(lastSaveWasContent ? (current.contentEditedBy?.name ?? null) : null));
+    }
     return await this.getSettings(orgId);
   },
 

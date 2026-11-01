@@ -138,6 +138,7 @@ describe("the source says so too", () => {
     listByIds: "admin/org promotion editor",
     listForPricing: "prices ids already held; the order transaction is the refusal",
     categoryIdsForOrg: "carries the clause, and is scoped by orgId besides",
+    mainProductTypeForOrg: "carries the clause, and is scoped by orgId besides (storefront-themes Q44)",
     isAvailable: "wishlist's save check; AVAILABLE only, as wishlist read it before the read moved here",
     listForAllocation: "a parcel preview of ids already held; the order transaction is the refusal",
     listForStockCheck: "a cart's stock check of ids already held; reports archived lines by name",

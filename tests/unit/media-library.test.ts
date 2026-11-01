@@ -50,6 +50,7 @@ const counts = (overrides: Partial<Record<string, number>> = {}) => ({
   categoryHeroes: 0,
   profileLogos: 0,
   profileHeroes: 0,
+  storefrontSlots: 0,
   orgBanners: 0,
   banners: 0,
   derivatives: 0,

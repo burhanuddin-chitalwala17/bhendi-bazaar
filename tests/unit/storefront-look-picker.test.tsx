@@ -39,6 +39,7 @@ const LIVE_EDGE: StorefrontLookState = {
   lookVersion: 3,
   publishedAt: "2026-11-01T09:00:00.000Z",
   previous: { theme: "darbar", palette: "navy", until: "2026-12-01T09:00:00.000Z" },
+  suggested: null,
 };
 
 const press = (name: string) => fireEvent.click(screen.getAllByRole("button", { name }).at(-1)!);

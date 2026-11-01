@@ -31,6 +31,11 @@ export const PUBLIC_PROFILE_SELECT = {
   // The published look (storefront-themes D1): keys into code, parsed on read.
   themeKey: true,
   paletteKey: true,
+  // The themed page's content (D13): parsed on read, never shown raw.
+  heroLine: true,
+  claims: true,
+  openingHours: true,
+  storefrontHiddenSections: true,
 } as const satisfies Prisma.OrgProfileSelect;
 
 /**
@@ -44,11 +49,23 @@ export const PUBLIC_ORG_IDENTITY_SELECT = {
   joinedAt: true,
 } as const satisfies Prisma.OrgSelect;
 
-/** The storefront editor's columns since org-profile U2: looks, never facts (D3). */
+type JsonWrite = Prisma.InputJsonValue | typeof Prisma.JsonNull;
+
+/**
+ * The storefront editor's columns since org-profile U2: looks, never facts (D3), plus the themed
+ * page's content and who saved it (storefront-themes D13).
+ */
 export interface StorefrontLooksData {
   heroUrl?: string | null;
-  accent?: string | null;
-  hiddenSections?: Prisma.InputJsonValue | typeof Prisma.JsonNull;
+  hiddenSections?: JsonWrite;
+  heroLine?: string | null;
+  claims?: JsonWrite;
+  openingHours?: JsonWrite;
+  storefrontHiddenSections?: JsonWrite;
+  contentEditedByUserId: string;
+  /** Written with `updatedAt` as one instant, so a later Shop details or look save is told apart. */
+  contentEditedAt: Date;
+  updatedAt: Date;
 }
 
 /**
@@ -151,6 +168,11 @@ export class OrgProfileRepository {
         ownerQuote: true,
         ownerPhotoUrl: true,
         hiddenSections: true,
+        heroLine: true,
+        claims: true,
+        openingHours: true,
+        storefrontHiddenSections: true,
+        updatedAt: true,
         org: { select: { handle: true, name: true } },
       },
     });
@@ -170,15 +192,24 @@ export class OrgProfileRepository {
   }
 
   /**
-   * Upsert rather than update: every org gets its row at creation, but a row is the kind of
-   * thing a repair could lose, and the editor should heal it rather than 404.
+   * The editor's columns, only if nobody saved since `expectedUpdatedAt` (storefront-themes D13,
+   * built on org-profile Q21's compare-and-set). False is a stale write or a missing row.
    */
-  async updateLooks(orgId: string, data: StorefrontLooksData) {
-    return await prisma.orgProfile.upsert({
+  async updateLooksIfUnchanged(
+    orgId: string,
+    expectedUpdatedAt: Date,
+    data: StorefrontLooksData,
+    db: Pick<Prisma.TransactionClient, "orgProfile"> = prisma,
+  ): Promise<boolean> {
+    const { count } = await db.orgProfile.updateMany({ where: { orgId, updatedAt: expectedUpdatedAt }, data });
+    return count === 1;
+  }
+
+  /** The row's version and the last content save, for "Changed by {Name}"; null without a row. */
+  async findContentEditor(orgId: string) {
+    return await prisma.orgProfile.findUnique({
       where: { orgId },
-      create: { orgId, ...data },
-      update: data,
-      select: { orgId: true },
+      select: { updatedAt: true, contentEditedAt: true, contentEditedBy: { select: { name: true } } },
     });
   }
 

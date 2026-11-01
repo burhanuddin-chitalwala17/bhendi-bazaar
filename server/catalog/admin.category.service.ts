@@ -5,6 +5,7 @@
 
 import { adminCategoryRepository } from "@server/catalog/category.repository";
 import { categoryRepository } from "@server/catalog/category.read.repository";
+import { orgStorefrontSlotRepository } from "@server/catalog/org-storefront-slot.repository";
 import { wouldCreateCycle } from "@server/catalog/category.tree";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
 import type {
@@ -139,6 +140,14 @@ export class AdminCategoryService {
     if (childCount > 0) {
       throw new DomainError(
         `Cannot delete a category with ${childCount} subcategor${childCount === 1 ? "y" : "ies"}. Move or delete them first.`
+      );
+    }
+
+    // A shop's collection slot restricts the delete (storefront-themes D13); name it rather than raise P2003.
+    const shops = await orgStorefrontSlotRepository.countShopsShowingCategory(id);
+    if (shops > 0) {
+      throw new DomainError(
+        `Cannot delete a category ${shops} shop${shops === 1 ? "" : "s"} show${shops === 1 ? "s" : ""} as a collection on their storefront. Ask them to pick another first.`
       );
     }
 

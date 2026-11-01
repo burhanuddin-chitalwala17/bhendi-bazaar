@@ -4,16 +4,19 @@ import type { OrgBannerFormInput } from "@/lib/validation/schemas/org-banner.sch
 import type { ManagedBanner } from "@/components/org/storefront-banners-manager";
 import type { StorefrontLookPayload } from "@/lib/validation/schemas/storefront.schema";
 import type { StorefrontLookState } from "@server/catalog/storefront-look.types";
-
-/** The cover is managed by `ImageUpload` outside the form, so it travels beside its fields. */
-type StorefrontSave = StorefrontSettingsInput & { heroUrl: string };
+import type { StorefrontSettingsDto } from "@server/catalog/storefront.types";
 
 const banners = (orgId: string) => `/api/org/${orgId}/storefront/banners`;
 
 /** An org's storefront: its settings, its public address, and its promotions. */
 export const orgStorefrontApiClient = {
-  saveSettings: (orgId: string, data: StorefrontSave) =>
-    apiRequest<unknown>(`/api/org/${orgId}/storefront`, { method: "PATCH", body: data }),
+  /** What the editor and the section sheets edit, with the version a save compares on (D13). */
+  getSettings: (orgId: string, signal?: AbortSignal) =>
+    apiRequest<StorefrontSettingsDto>(`/api/org/${orgId}/storefront`, { signal }),
+
+  /** Only the fields sent change; conditional on `expectedUpdatedAt` (D13). */
+  saveSettings: (orgId: string, data: StorefrontSettingsInput) =>
+    apiRequest<StorefrontSettingsDto>(`/api/org/${orgId}/storefront`, { method: "PATCH", body: data }),
 
   changeHandle: (orgId: string, data: HandleChangeInput) =>
     apiRequest<unknown>(`/api/org/${orgId}/storefront/handle`, { method: "PATCH", body: data }),

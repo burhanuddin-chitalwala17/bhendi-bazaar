@@ -12,9 +12,7 @@ import { ImageUpload } from "@/components/shared/image-upload";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { orgStorefrontApiClient } from "@/components/org/orgStorefrontApiClient";
 import {
-  STOREFRONT_ACCENTS,
   storefrontSettingsSchema,
-  type StorefrontAccent,
   type StorefrontSettingsInput,
 } from "@/lib/validation/schemas/storefront.schema";
 import { HandleChangeDialog } from "@/components/org/handle-change-dialog";
@@ -28,8 +26,9 @@ export interface StorefrontSettings {
   handle: string;
   name: string;
   heroUrl: string | null;
-  accent: string | null;
   hiddenSections: unknown;
+  /** The version read, which the save compares-and-sets on (storefront-themes D13). */
+  updatedAt: string;
 }
 
 /** What a shop calls each part it may switch off; the keys are for the code. */
@@ -39,21 +38,6 @@ const SECTION_LABELS: Record<HideableBrandPageSection, string> = {
   policies: "Delivery and returns",
   social: "Ways to follow you",
 };
-
-/**
- * Unnamed until storefront-themes ships palettes (org-profile Q20): a shop sees colours, never the
- * token names. Static classes so Tailwind can scan them; each is a semantic token (ADR-0022).
- * `hover:` repeats the colour so the ghost variant's `hover:bg-accent` cannot hide it.
- */
-const SWATCH_CLASS: Record<StorefrontAccent, string> = {
-  primary: "bg-primary hover:bg-primary dark:hover:bg-primary",
-  success: "bg-success hover:bg-success dark:hover:bg-success",
-  warning: "bg-warning hover:bg-warning dark:hover:bg-warning",
-  info: "bg-info hover:bg-info dark:hover:bg-info",
-};
-
-const isAccent = (value: string | null): value is StorefrontAccent =>
-  (STOREFRONT_ACCENTS as readonly (string | null)[]).includes(value);
 
 function storedHidden(value: unknown): HideableBrandPageSection[] {
   const keys: readonly string[] = HIDEABLE_BRAND_PAGE_SECTIONS;
@@ -67,8 +51,8 @@ function storedHidden(value: unknown): HideableBrandPageSection[] {
  *
  * Fields, not a page builder: an org fills in what a shop has and cannot arrange
  * blocks, so nothing it supplies can break the layout on any screen (R6, ADR-0031's
- * reasoning applied to content). The accent is a token name picked as an unnamed swatch,
- * never a colour value (ADR-0022, org-profile D8).
+ * reasoning applied to content). The accent is retired (storefront-themes D13): a theme's
+ * palettes replace it, and an unthemed page still reads what is stored.
  *
  * Single column throughout, which is the phone layout and also fine on a desktop for a
  * form this short — an org running a shop from a phone has to be able to run its
@@ -88,24 +72,26 @@ export function StorefrontEditor({
 
   const {
     register,
+    reset,
     onSubmit,
     formError,
-    setValue,
-    watch,
     formState: { errors, isSubmitting },
   } = useServerForm<StorefrontSettingsInput>({
     schema: storefrontSettingsSchema,
     defaultValues: {
-      accent: isAccent(settings.accent) ? settings.accent : "",
+      expectedUpdatedAt: settings.updatedAt,
       hiddenSections: storedHidden(settings.hiddenSections),
     },
     successMessage: "Storefront saved.",
     // The cover is managed outside the form's state by ImageUpload, so it is merged in here.
-    submit: (data) => orgStorefrontApiClient.saveSettings(orgId, { ...data, heroUrl }),
+    submit: async (data) => {
+      const saved = await orgStorefrontApiClient.saveSettings(orgId, { ...data, heroUrl });
+      // The form keeps its first defaults across a refresh, so the next save must carry this version.
+      reset({ ...data, expectedUpdatedAt: saved.updatedAt });
+      return saved;
+    },
     onSuccess: () => router.refresh(),
   });
-  // No accent stored is the platform primary on the page, so that swatch reads as chosen.
-  const accent = watch("accent") || "primary";
 
   return (
     <div className="space-y-6">
@@ -161,29 +147,6 @@ export function StorefrontEditor({
               maxImages={1}
               endpoint={`/api/org/${orgId}/upload`}
             />
-
-            <div className="space-y-2">
-              <p id="colour-label" className="text-sm font-medium text-foreground">Colour</p>
-              <div role="radiogroup" aria-labelledby="colour-label" className="flex flex-wrap gap-3">
-                {STOREFRONT_ACCENTS.map((value, index) => (
-                  <Button
-                    key={value}
-                    type="button"
-                    variant="ghost"
-                    role="radio"
-                    aria-checked={accent === value}
-                    aria-label={`Colour ${index + 1}`}
-                    onClick={() => setValue("accent", value, { shouldDirty: true })}
-                    className={`size-11 rounded-full p-0 ring-offset-2 ring-offset-background ${SWATCH_CLASS[value]} ${
-                      accent === value ? "ring-2 ring-foreground" : "ring-1 ring-border"
-                    }`}
-                  ></Button>
-                ))}
-              </div>
-              {errors.accent?.message && (
-                <p className="text-sm text-destructive">{errors.accent.message}</p>
-              )}
-            </div>
           </CardContent>
         </Card>
 

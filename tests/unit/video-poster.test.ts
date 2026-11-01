@@ -28,7 +28,7 @@ const derivatives = [
   { ref: "https://img.test/clip-1080p.mp4", width: 1920, height: 1080, transform: { kind: VIDEO_TRANSFORM.RENDITION, key: "1080p" } },
 ];
 
-const counts = { productMedia: 0, categoryHeroes: 0, profileLogos: 0, profileHeroes: 0, orgBanners: 0, banners: 0, derivatives: 0, postersFor: 0 };
+const counts = { productMedia: 0, categoryHeroes: 0, profileLogos: 0, profileHeroes: 0, storefrontSlots: 0, orgBanners: 0, banners: 0, derivatives: 0, postersFor: 0 };
 
 const libraryRow = (overrides: Record<string, unknown> = {}) => ({
   id: "v1",

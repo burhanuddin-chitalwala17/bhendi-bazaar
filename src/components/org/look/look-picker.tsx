@@ -116,6 +116,7 @@ export function LookPicker({ look, share }: { look: StorefrontLookState; share: 
               theme={theme}
               palette={palettes[theme]}
               live={look.live.theme === theme}
+              suggestedFor={look.suggested?.theme === theme ? look.suggested.label : undefined}
               onPalette={setPalette(theme)}
               onPreview={() => {
                 setView(PREVIEW_VIEW.LANDING);

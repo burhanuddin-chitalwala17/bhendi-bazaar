@@ -20,6 +20,7 @@ const USE_RELATIONS = [
   "categoryHeroes",
   "profileLogos",
   "profileHeroes",
+  "storefrontSlots",
   "orgBanners",
   "banners",
   "postersFor",
@@ -474,6 +475,7 @@ export class MediaAssetRepository {
         categoryHeroes: { select: { id: true, name: true } },
         profileLogos: { select: { orgId: true } },
         profileHeroes: { select: { orgId: true } },
+        storefrontSlots: { select: { orgId: true, kind: true, category: { select: { name: true } } } },
         orgBanners: { select: { id: true, title: true } },
         banners: { select: { id: true, title: true } },
         derivatives: { select: { id: true, source: true } },
@@ -486,6 +488,11 @@ export class MediaAssetRepository {
       ...asset.categoryHeroes.map((row) => ({ kind: "category" as const, id: row.id, label: row.name, slot: null })),
       ...asset.profileLogos.map((row) => ({ kind: "storefront-logo" as const, id: row.orgId, label: "Storefront logo", slot: null })),
       ...asset.profileHeroes.map((row) => ({ kind: "storefront-hero" as const, id: row.orgId, label: "Storefront hero", slot: null })),
+      ...asset.storefrontSlots.map((row) =>
+        row.category
+          ? { kind: "storefront-collection" as const, id: row.orgId, label: row.category.name, slot: null }
+          : { kind: "storefront-hero" as const, id: row.orgId, label: "Storefront hero", slot: null },
+      ),
       ...asset.orgBanners.map((row) => ({ kind: "storefront-banner" as const, id: row.id, label: row.title ?? "Storefront banner", slot: null })),
       ...asset.banners.map((row) => ({ kind: "home-banner" as const, id: row.id, label: row.title ?? "Home banner", slot: null })),
       ...asset.postersFor.map((row) => ({ kind: "video-poster" as const, id: row.id, label: "Video poster", slot: null })),

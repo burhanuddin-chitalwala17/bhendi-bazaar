@@ -67,6 +67,8 @@ export interface ThemeDefinition {
   phoneColumns: 2 | 3;
   /** Exactly three, the first being the default (own-store Q15). */
   palettes: readonly [PaletteDefinition, PaletteDefinition, PaletteDefinition];
+  /** Product types this theme is suggested for (Q19, Q44); a type sits under one theme at most. */
+  suggestedFor: readonly string[];
 }
 
 export const THEMES: Record<ThemeKey, ThemeDefinition> = {
@@ -76,6 +78,7 @@ export const THEMES: Record<ThemeKey, ThemeDefinition> = {
     description: "Fancy & futuristic",
     faces: { display: "Space Grotesk", body: "Space Grotesk", label: "Geist Mono" },
     phoneColumns: 2,
+    suggestedFor: ["bag", "travel-pouch"],
     palettes: [
       { key: PALETTE.CARBON, label: "Carbon", tone: PALETTE_TONE.DARK },
       { key: PALETTE.GRAPHITE, label: "Graphite", tone: PALETTE_TONE.DARK },
@@ -88,6 +91,7 @@ export const THEMES: Record<ThemeKey, ThemeDefinition> = {
     description: "Royal & traditional",
     faces: { display: "Jost", body: "Jost", label: "Cormorant Garamond" },
     phoneColumns: 2,
+    suggestedFor: ["jewellery", "islamic-wear", "prayer-mat", "fragrance"],
     palettes: [
       { key: PALETTE.EMERALD, label: "Ivory & emerald", tone: PALETTE_TONE.LIGHT },
       { key: PALETTE.NAVY, label: "Ivory & navy", tone: PALETTE_TONE.LIGHT },
@@ -100,6 +104,7 @@ export const THEMES: Record<ThemeKey, ThemeDefinition> = {
     description: "Young & beautiful",
     faces: { display: "DM Sans", body: "DM Sans", label: "DM Mono" },
     phoneColumns: 2,
+    suggestedFor: ["combo"],
     palettes: [
       { key: PALETTE.BLUSH, label: "Blush", tone: PALETTE_TONE.LIGHT },
       { key: PALETTE.PEACH, label: "Peach", tone: PALETTE_TONE.LIGHT },
@@ -112,6 +117,7 @@ export const THEMES: Record<ThemeKey, ThemeDefinition> = {
     description: "Affordable & everyday",
     faces: { display: "Mulish", body: "Mulish", label: "Mulish" },
     phoneColumns: 3,
+    suggestedFor: ["socks", "trousers"],
     palettes: [
       { key: PALETTE.FRESH, label: "Fresh", tone: PALETTE_TONE.LIGHT },
       { key: PALETTE.BAZAAR, label: "Bazaar", tone: PALETTE_TONE.LIGHT },
@@ -119,6 +125,12 @@ export const THEMES: Record<ThemeKey, ThemeDefinition> = {
     ],
   },
 };
+
+/** The theme a shop that mostly sells this product type is shown as "Suggested" (Q19). */
+export function suggestedTheme(productType: string | null): ThemeKey | null {
+  if (!productType) return null;
+  return THEME_KEYS.find((theme) => THEMES[theme].suggestedFor.includes(productType)) ?? null;
+}
 
 export interface StorefrontLook {
   theme: ThemeKey;
@@ -181,6 +193,46 @@ export const HIDEABLE_SECTIONS = [
   SECTION.VISIT,
 ] as const satisfies readonly SectionKey[];
 export type HideableSection = (typeof HIDEABLE_SECTIONS)[number];
+
+/** What a section's sheet asks (D13; Q9, Q10): the registry's editor fields, nothing else. */
+export const EDITOR_FIELD = {
+  HERO_PHOTOS: "heroPhotos",
+  HERO_LINE: "heroLine",
+  COLLECTIONS: "collections",
+  CLAIMS: "claims",
+  OPENING_HOURS: "openingHours",
+} as const;
+export type EditorField = (typeof EDITOR_FIELD)[keyof typeof EDITOR_FIELD];
+
+/**
+ * Each section's own fields. Story and visit draw facts Shop details owns (org-profile's
+ * boundary), so their sheets link there; a section listed with none is one the shop can only hide.
+ */
+export const SECTION_FIELDS: Partial<Record<SectionKey, readonly EditorField[]>> = {
+  [SECTION.HERO]: [EDITOR_FIELD.HERO_PHOTOS, EDITOR_FIELD.HERO_LINE],
+  [SECTION.COLLECTIONS]: [EDITOR_FIELD.COLLECTIONS],
+  [SECTION.WHY_BUY]: [EDITOR_FIELD.CLAIMS],
+  [SECTION.STORY]: [],
+  [SECTION.VISIT]: [EDITOR_FIELD.OPENING_HOURS],
+};
+
+/** A tap opens a sheet only on a section the shop has something to change in. */
+export function isEditableSection(section: string): section is SectionKey {
+  return section in SECTION_FIELDS;
+}
+
+export const isHideableSection = (section: string): section is HideableSection =>
+  (HIDEABLE_SECTIONS as readonly string[]).includes(section);
+
+/** Stored hidden-section keys parsed on read: an unknown key is dropped. */
+export function readHiddenSections(value: unknown): HideableSection[] {
+  return Array.isArray(value) ? [...new Set(value.filter((k): k is HideableSection => typeof k === "string" && isHideableSection(k)))] : [];
+}
+
+/** Q10: up to three hero photos, up to six collections. */
+export const HERO_PHOTOS_MAX = 3;
+export const COLLECTIONS_MAX = 6;
+export const HERO_LINE_MAX = 120;
 
 /** Q23: a landing page sells the shop; the grid lives one tap away. */
 export const LANDING_SHELF_LIMIT = 8;

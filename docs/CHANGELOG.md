@@ -12,6 +12,48 @@
 
 ## Entries
 
+## 2026-11-01 — storefront-themes unit 6: point-of-need editor and theme suggestion [CONTRACT] [MIGRATION]
+
+- **Migration `20261101171600_storefront_content` (additive):** `OrgProfile` gains `heroLine`, `claims`, `openingHours`,
+  `storefrontHiddenSections` (Json, parsed on read) and `contentEditedByUserId` (Restrict, ADR-0020). New
+  `OrgStorefrontSlot` (org, kind HERO/COLLECTION, position; category and asset both Restrict) with its own repository
+  `server/catalog/org-storefront-slot.repository.ts`, so a hero or collection photo is a use the media library reads
+  (`storefrontSlots` joins its use relations; `storefront-collection` its use kinds; ADR-0058).
+- **Editor (D13; R9, R10; Q9, Q10):** in the full-screen preview a tapped section opens its sheet
+  (`src/components/org/look/section-sheet.tsx`: bottom sheet on a phone, side panel from `md:`), asking only the fields
+  the registry's new `SECTION_FIELDS` names: hero photos (≤3) and one line, collections (≤6 of the shop's categories,
+  a photo each, search past 8), claims, opening hours, and "Hide this section" on collections, story and visit. Story and
+  visit link to Shop details for the facts. Saves are live at once and redraw the preview; only the look waits for
+  Publish. ux.md states: "Saved", "Saving…" after 3 s and never disabled, "Couldn't save. Your words are kept here.",
+  "Changed by {Name} just now. Load theirs?" with Load / Keep mine, "Up to three. Remove one to add this.", "112 / 120"
+  from 80%, "Uploading…", "{n} photo didn't upload." with Try again, "Use a photo, not a PDF.".
+- **Save (D13):** `PATCH /api/org/[orgId]/storefront` is now a compare-and-set on the `updatedAt` the editor read, in
+  one transaction with the slots; only fields sent change. A claim must be on the shop's list, a collection a category
+  it sells, a photo one of its own ready pictures. The accent is no longer offered (still stored and read by unthemed
+  pages); the Shop page's editor sends its version too.
+- **Claims and suggestion (Q19, Q21, Q44, new):** `server/catalog/storefront-claims.ts` declares the claim keys, labels and
+  per-product-type lists; the shop's kind is its main product type. Each theme declares the product types it is
+  suggested for; the picker marks that card "Suggested for {kind}".
+- **Buyer page:** hero photos, line, picked collections (else the categories it sells in), claims, today's hours in
+  India (Q45, new) and hidden sections reach the themed page; a hidden section's words leave the payload. A cover from
+  before the editor still fills the hero (Q11). A themed shop's link preview is its first hero photo's preview rendition
+  (D14). The preview alone draws "Add a photo" on an empty hero and a hidden section as a line to tap (Q43, new);
+  "Tap any part to change it." shows once.
+- **Contract:** `StorefrontSettingsInput`, new `StorefrontSettingsDto`, `StorefrontPageDto`, `StorefrontLookState`,
+  `MediaUseDto`; `docs/CONTRACTS.md` moves with them. No new public route, so the rate-limit registry is unchanged.
+- **Tests:** integration `storefront-editor.test.ts` (stale save names the member; claims off the list refused and
+  labels shown; suggestion; unsold collection and foreign photo refused; slots are library uses and block retiring;
+  hidden content left out; a section's save leaves the rest); unit `storefront-editor.test.tsx` (no proof key, fourth
+  claim, line length, limits, claims read, suggestion, hours in India, preview-only chip and hidden line, sheet's
+  Stale / Refused / Retryable / counter states). Mutation-tested, each caught: the version in the save's `where`; the
+  claim-list and sold-category checks; `storefrontSlots` as a use; `readClaims`' list filter; the strict schema; the
+  preview-only chip; story subtraction when hidden.
+- **Review fixes:** the Shop page's editor resets its form to the version each save returns, so a second save without a
+  reload is not refused as stale (unit test saves twice). Migration `20261101171700_storefront_content_edited_at` adds
+  `OrgProfile.contentEditedAt`, written as one instant with `updatedAt`, so "Changed by {Name}" names the editor only
+  when theirs was the last save, else "another member" (integration: Shop details then sheet). Deleting a category a
+  shop shows as a collection is refused with a named reason instead of the foreign-key error. Each mutation-tested.
+
 ## 2026-11-01 — storefront-themes unit 5: picker, preview, publish, switch back [CONTRACT]
 
 - **Publish (D11; R4, A2, A9; Q4, Q31):** new `server/catalog/storefront-look.service.ts` publishes a theme and palette at

@@ -1,7 +1,7 @@
 # Spec — own-store/storefront-themes
 
 - **Summary:** A shop picks one of four themes and one of its three palettes on its phone, sees its own landing page and shop redrawn live, and publishes a store that looks like its own brand — offers, deals and earned proof included
-- **Status:** Accepted
+- **Status:** Implemented — 2026-11-01
 - **Domain:** catalog (storefront), with promotions (read only)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-10-30

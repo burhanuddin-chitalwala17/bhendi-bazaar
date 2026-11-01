@@ -427,6 +427,7 @@ function UseLine({ use }: { use: MediaUseDto }) {
     category: "Category",
     "storefront-logo": "Storefront",
     "storefront-hero": "Storefront",
+    "storefront-collection": "Storefront",
     "storefront-banner": "Storefront banner",
     "home-banner": "Home banner",
     "video-poster": "Video",

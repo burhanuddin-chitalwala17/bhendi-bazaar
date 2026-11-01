@@ -19,6 +19,10 @@ vi.mock("@server/catalog/category.repository", () => ({
     deleteCategory: (id: string) => deleteCategory(id),
   },
 }));
+const countShopsShowingCategory = vi.fn(async (_id: string) => 0);
+vi.mock("@server/catalog/org-storefront-slot.repository", () => ({
+  orgStorefrontSlotRepository: { countShopsShowingCategory: (id: string) => countShopsShowingCategory(id) },
+}));
 vi.mock("@server/catalog/category.read.repository", () => ({
   categoryRepository: { listTree: async () => [] },
 }));
@@ -141,6 +145,14 @@ describe("an admin mutation whose trail write fails", () => {
     await expect(
       adminCategoryService.deleteCategory("cat-1", "admin-1")
     ).rejects.toThrow(/3 products/);
+    expect(deleteCategory).not.toHaveBeenCalled();
+  });
+
+  it("names the shops showing it as a collection instead of raising the foreign key", async () => {
+    getCategoryById.mockResolvedValue({ id: "cat-1", name: "Abayas", slug: "abayas", productsCount: 0 });
+    countShopsShowingCategory.mockResolvedValueOnce(2);
+
+    await expect(adminCategoryService.deleteCategory("cat-1", "admin-1")).rejects.toThrow(/2 shops show as a collection/);
     expect(deleteCategory).not.toHaveBeenCalled();
   });
 });

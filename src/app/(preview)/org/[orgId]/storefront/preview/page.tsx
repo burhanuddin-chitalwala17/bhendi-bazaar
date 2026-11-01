@@ -57,7 +57,7 @@ export default async function LookPreviewPage({
             products={sample ? sampleGoods(page) : goods}
           />
         ) : (
-          <ThemedSections theme={look.theme} page={data} />
+          <ThemedSections theme={look.theme} page={data} preview />
         )}
       </div>
     </ThemedShell>

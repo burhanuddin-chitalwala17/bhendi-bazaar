@@ -14,6 +14,7 @@ describe.skipIf(!isDisposableDb)("shop details (local db)", () => {
   const stamp = Date.now().toString(36);
   const handle = `details-test-${stamp}`;
   let orgId: string;
+  let userId: string;
 
   beforeAll(async () => {
     ({ prisma } = await import("@server/shared/prisma"));
@@ -45,6 +46,7 @@ describe.skipIf(!isDisposableDb)("shop details (local db)", () => {
 
   afterAll(async () => {
     await prisma.org.delete({ where: { id: orgId } });
+    if (userId) await prisma.user.delete({ where: { id: userId } });
   });
 
   it("opens with the introduction and the longer story joined, and the buyer page reads the same (spec A5)", async () => {
@@ -124,9 +126,11 @@ describe.skipIf(!isDisposableDb)("shop details (local db)", () => {
   });
 
   it("the narrowed storefront save writes looks and leaves every fact alone (D3)", async () => {
-    await storefrontService.saveSettings(orgId, { accent: "info" });
+    userId = (await prisma.user.create({ data: { email: `details-editor-${stamp}@example.invalid` } })).id;
+    const { updatedAt } = await storefrontService.getSettings(orgId);
+    await storefrontService.saveSettings(orgId, userId, { expectedUpdatedAt: updatedAt, hiddenSections: ["social"] });
     const row = await prisma.orgProfile.findUnique({ where: { orgId } }).then((r) => r!);
-    expect(row.accent).toBe("info");
+    expect(row.hiddenSections).toEqual(["social"]);
     expect(row.tagline).toBe("Hand-made attar");
     expect(row.description).toBe("Who we are, and how it began.");
     expect(row.pillars).toEqual([{ title: "Woven near by", text: "Three looms." }]);

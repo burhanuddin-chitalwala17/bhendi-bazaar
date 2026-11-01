@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { TaskDialog } from "@/components/shared/overlays/task-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +17,51 @@ import {
 import { LOOK_COPY } from "./look-copy";
 import { FRAME_DEVICE, LookFrame } from "./look-frame";
 import { PaletteDots } from "./palette-dots";
+import { PREVIEW_MESSAGE } from "@/components/storefront/preview/preview-frame-guard";
+import { isEditableSection, type SectionKey } from "@server/catalog/storefront-themes";
+import { SECTION_COPY } from "./section-copy";
+import { SectionSheet } from "./section-sheet";
+
+const TAP_HINT_KEY = "bb.look.tap-hint-seen";
+
+/** ux.md preview, First use: "Tap any part to change it." once per browser; storage may be missing. */
+function useTapHintOnce() {
+  // The dialog opens only on a tap, so this first render is always in the browser.
+  const [show] = useState(() => {
+    try {
+      return !window.localStorage.getItem(TAP_HINT_KEY);
+    } catch {
+      return true; // No storage: show it, and accept showing it again next time.
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(TAP_HINT_KEY, "1");
+    } catch {
+      // Nothing to remember it in.
+    }
+  }, []);
+  return show;
+}
+
+/**
+ * A tapped section in the preview frame (D12, D13), from our own origin only: the frame posts its
+ * key, and a section with something to change opens its sheet.
+ */
+function useTappedSection() {
+  const [section, setSection] = useState<SectionKey | null>(null);
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as { type?: unknown; section?: unknown } | null;
+      if (data?.type !== PREVIEW_MESSAGE.SECTION || typeof data.section !== "string") return;
+      if (isEditableSection(data.section)) setSection(data.section);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+  return [section, setSection] as const;
+}
 
 /**
  * The full-screen preview (ux.md: live preview & publish; ADR-0040 case 2): the shop's own page in
@@ -41,7 +88,10 @@ export function LookPreviewDialog({
   onPublish: () => void;
   onClose: () => void;
 }) {
-  const src = lookPreviewHref(orgId, theme, palette, view);
+  const [section, setSection] = useTappedSection();
+  const [revision, setRevision] = useState(0);
+  const tapHint = useTapHintOnce();
+  const src = lookPreviewHref(orgId, theme, palette, view, revision);
   const name = THEMES[theme].label;
   return (
     <TaskDialog
@@ -72,6 +122,7 @@ export function LookPreviewDialog({
               </Button>
             ))}
           </div>
+          {tapHint && <p className="basis-full text-sm text-muted-foreground">{SECTION_COPY.tapToChange}</p>}
         </div>
         <div className="flex min-h-0 flex-1 items-start justify-center gap-4 overflow-y-auto md:col-start-1 md:row-span-2 md:row-start-1">
           <LookFrame
@@ -101,6 +152,17 @@ export function LookPreviewDialog({
           {LOOK_COPY.publishThisLook}
         </Button>
       </div>
+      {section && (
+        <SectionSheet
+          orgId={orgId}
+          section={section}
+          onClose={() => setSection(null)}
+          onSaved={() => {
+            setSection(null);
+            setRevision((n) => n + 1);
+          }}
+        />
+      )}
     </TaskDialog>
   );
 }

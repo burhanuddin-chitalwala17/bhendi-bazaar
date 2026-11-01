@@ -1,7 +1,7 @@
 /**
  * Looks on the Shop page (org-profile U4; R7, A4; D5, D8; Q6, Q20).
  * "How you work" is retired from every input and from what buyers get, its text kept; the
- * accent is four unnamed swatches labelled "Colour", so no token name reaches a shop.
+ * accent, once four unnamed swatches, is no longer offered (storefront-themes D13).
  */
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -33,8 +33,8 @@ const settings = {
   handle: "noor-attar",
   name: "Noor Attar House",
   heroUrl: null,
-  accent: "info",
   hiddenSections: [],
+  updatedAt: "2026-11-01T10:00:00.000Z",
 };
 
 const editor = () =>
@@ -82,31 +82,37 @@ describe("the Shop page shows looks without token names (D8, A4, Q20)", () => {
     expect(container.querySelector("#pillars")).toBeNull();
   });
 
-  it("offers the four existing values as unnamed swatches labelled Colour", () => {
+  it("no longer offers the accent: a theme's palettes replace it (storefront-themes D13)", () => {
     editor();
-    const group = screen.getByRole("radiogroup", { name: "Colour" });
-    const swatches = screen.getAllByRole("radio");
-    expect(swatches).toHaveLength(STOREFRONT_ACCENTS.length);
-    for (const swatch of swatches) {
-      expect(group.contains(swatch)).toBe(true);
-      const name = swatch.getAttribute("aria-label") ?? "";
-      for (const token of STOREFRONT_ACCENTS) expect(name.toLowerCase()).not.toContain(token);
-      expect(swatch).not.toBeDisabled();
-    }
-    expect(swatches.filter((s) => s.getAttribute("aria-checked") === "true")).toHaveLength(1);
-    expect(swatches[STOREFRONT_ACCENTS.indexOf("info")]).toHaveAttribute("aria-checked", "true");
+    expect(screen.queryByRole("radiogroup")).toBeNull();
+    expect(screen.queryAllByRole("radio")).toHaveLength(0);
+    const expectedUpdatedAt = settings.updatedAt;
+    expect(storefrontSettingsSchema.safeParse({ expectedUpdatedAt, accent: "success" }).success).toBe(false);
   });
 
-  it("saves the swatch picked, and nothing about blocks", async () => {
-    saveSettings.mockResolvedValue({});
+  it("saves at the version it read, with nothing about blocks or the accent", async () => {
+    saveSettings.mockReset();
+    saveSettings.mockResolvedValue({ updatedAt: settings.updatedAt });
     editor();
-    const swatches = screen.getAllByRole("radio");
-    fireEvent.click(swatches[STOREFRONT_ACCENTS.indexOf("success")]);
-    expect(swatches[STOREFRONT_ACCENTS.indexOf("success")]).toHaveAttribute("aria-checked", "true");
     fireEvent.submit(document.querySelector("form") as HTMLFormElement);
     await waitFor(() => expect(saveSettings).toHaveBeenCalled());
     const [, body] = saveSettings.mock.calls[0];
-    expect(body.accent).toBe("success");
+    expect(body.expectedUpdatedAt).toBe(settings.updatedAt);
+    expect("accent" in body).toBe(false);
     expect("pillars" in body).toBe(false);
+  });
+
+  it("saves twice in a row, the second at the version the first returned", async () => {
+    saveSettings.mockReset();
+    saveSettings.mockResolvedValueOnce({ updatedAt: "2026-11-01T10:05:00.000Z" });
+    saveSettings.mockResolvedValueOnce({ updatedAt: "2026-11-01T10:06:00.000Z" });
+    editor();
+    const form = document.querySelector("form") as HTMLFormElement;
+    fireEvent.submit(form);
+    await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByRole("button", { name: /save/i })).not.toBeDisabled());
+    fireEvent.submit(form);
+    await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
+    expect(saveSettings.mock.calls[1][1].expectedUpdatedAt).toBe("2026-11-01T10:05:00.000Z");
   });
 });
