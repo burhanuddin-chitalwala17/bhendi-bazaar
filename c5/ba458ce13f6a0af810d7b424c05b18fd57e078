@@ -1,0 +1,23 @@
+tests/unit/storefront-offers.test.ts
+  s_17ac7f5fca5021::t_def7152f03434a 1-8,10-26,28-45,47-83,86-113
+tests/integration/storefront-deals.test.ts
+  s_17ac7f5fca5021::t_2bfd37e3a5797f 1-39,42-114,116-144
+server/promotions/storefront-offers.ts
+  s_17ac7f5fca5021::t_33c1f537d8486c 1-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "c5ba458ce13f6a0af810d7b424c05b18fd57e078",
+  "prompts": {},
+  "sessions": {
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
