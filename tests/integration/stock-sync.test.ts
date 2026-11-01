@@ -332,7 +332,7 @@ describe.skipIf(!isDisposableDb)("stock sync (local db)", () => {
     await orders.check(connectionId);
     const { marketplaceOrderRepository } = await import("@server/channels/marketplace-order.repository");
     const claim = vi.spyOn(marketplaceOrderRepository, "claim");
-    const cursor = vi.spyOn((await import("@server/channels/channel-connection.repository")).channelConnectionRepository, "setOrdersCursor");
+    const cursor = vi.spyOn((await import("@server/channels/channel-connection.repository")).channelConnectionRepository, "setOrdersCursors");
     await orders.check(connectionId);
     expect(claim).not.toHaveBeenCalled();
     expect(cursor).not.toHaveBeenCalled();

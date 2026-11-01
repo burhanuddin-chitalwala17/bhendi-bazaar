@@ -4,7 +4,7 @@
 - **Status:** Implemented
 - **Domain:** channels, with catalog and checkout
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-10-29
+- **Verified:** 2026-11-01
 - **References:** [decisions.md](decisions.md), parent [marketplace-integration](../spec.md) (Q24, Q30–Q32, Q35, Q38–Q40), [INTEGRATIONS.md](../../../INTEGRATIONS.md) "Detecting a sale", [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [ADR-0044](../../../adr/0044-a-marketplace-orders-money-is-reported-not-computed.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md. Subfeature 7 of
@@ -23,7 +23,7 @@ it twice means a cancellation, a penalty and an unhappy buyer. One figure, sent 
 ## Requirements
 - R1 — Bhendi Bazaar's stock is the one figure (parent Q24). Marketplaces show it; no per-marketplace
   count, cap or buffer (parent Q35).
-- R2 — A sale on a connected marketplace is found within about five minutes (parent Q30) and lowers
+- R2 — A sale on a connected marketplace is found within about ten minutes (Q26, superseding parent Q30's five) and lowers
   the product's stock once, however many times the marketplace reports it.
 - R3 — A marketplace sale of stock already gone is recorded and flagged oversold, never refused
   (parent Q32); the shop sees which product and which order.
@@ -31,7 +31,7 @@ it twice means a cancellation, a penalty and an unhappy buyer. One figure, sent 
 - R5 — Any change to a product's stock (a sale anywhere, a cancellation, the shop's own edit) is
   sent to every other marketplace listing linked to it at once, the moment it is known, each change
   on its own; a count that reaches 0 goes first (Q19). A marketplace sale is known when the order
-  check finds it, every five minutes (parent Q30).
+  check finds it, every ten minutes (Q26).
 - R6 — Once a day every linked listing's count is read and compared with ours; a different count is
   put right at once and the correction is recorded for the shop to see (parent Q31, Q40).
 - R7 — A marketplace order is recorded with its amounts as the marketplace reports them (ADR-0044),
@@ -59,7 +59,7 @@ it twice means a cancellation, a penalty and an unhappy buyer. One figure, sent 
   the shop must see what will change before it happens (Q4). *Answered by D6.*
 
 ## Product acceptance
-- A1 — An item sold on Amazon shows one less on Bhendi Bazaar and on Flipkart within about five minutes (the order check).
+- A1 — An item sold on Amazon shows one less on Bhendi Bazaar and on Flipkart within about ten minutes (the order check, Q26).
 - A2 — An item sold on Bhendi Bazaar shows one less on Amazon and Flipkart within a minute.
 - A3 — The shop changes a count on its phone; both marketplaces show it within a minute.
 - A4 — The last item sold on two marketplaces at once shows 0 stock and one sale flagged oversold.

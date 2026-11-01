@@ -25,7 +25,7 @@ export const SELL_COPY = {
   },
 
   hero: {
-    eyebrow: "For shops and sellers",
+    eyebrow: "For shops and brands",
     title: "Your shop.",
     titleAccent: "Online everywhere.",
     lead: "Your own store, studio-grade photos and every marketplace — run from the phone in your hand.",
@@ -105,7 +105,7 @@ export const SELL_COPY = {
   pricing: {
     eyebrow: "Pricing",
     title: "One plan. Nothing held back.",
-    planName: "Bhendi Bazaar for sellers",
+    planName: "Bhendi Bazaar for shops",
     perMonth: "per month",
     taxNote: "GST included · billed monthly",
     cta: "Open your shop",
@@ -130,7 +130,7 @@ export const SELL_COPY = {
       },
       {
         q: "I already sell on Amazon or Flipkart.",
-        a: "Connect your seller account and your listings arrive in one inbox, matched to your products by SKU.",
+        a: "Connect your Amazon or Flipkart account and your listings arrive in one inbox, matched to your products by SKU.",
       },
       {
         q: "Do I need to be good with technology?",

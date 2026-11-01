@@ -66,10 +66,17 @@ export const marketplaceOrderRepository = {
     return { row, created: count === 1 };
   },
 
-  /** The lines already recorded for these orders, in one read, so an unchanged one costs nothing (Q23). */
-  async known(connectionId: string, orderIds: readonly string[]) {
-    if (orderIds.length === 0) return [];
-    return await prisma.marketplaceOrder.findMany({ where: { connectionId, orderId: { in: [...orderIds] } }, select: { orderId: true, lineId: true, state: true } });
+  /**
+   * The lines already recorded for every connection's reported orders, in one read, so an unchanged
+   * one costs nothing (Q23) and the read costs the same however many shops (Q26).
+   */
+  async knownForMany(byConnection: ReadonlyMap<string, readonly string[]>) {
+    const clauses = [...byConnection].filter(([, ids]) => ids.length > 0).map(([connectionId, ids]) => ({ connectionId, orderId: { in: [...ids] } }));
+    if (clauses.length === 0) return [];
+    return await prisma.marketplaceOrder.findMany({
+      where: { OR: clauses },
+      select: { connectionId: true, orderId: true, lineId: true, state: true },
+    });
   },
 
   async recordTaken(db: Db, id: string, taken: number, oversold: boolean): Promise<void> {

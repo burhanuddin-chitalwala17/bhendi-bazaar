@@ -70,6 +70,54 @@
 - Tests: `tests/unit/shop-details.test.tsx` (only changed sections are sent, in turn with the
   newer version, one toast; Discard restores; mutation-checked) and `shop-contact.test.tsx`.
 
+## 2026-11-01 — Dependency updates: Dependabot #68–#73, two of them fixed
+
+- **Taken as raised:** GitHub Actions (8, still pinned to commit SHAs), `pg` + `@types/pg` 8.23,
+  `cn` 0.5, `@radix-ui/react-dialog` 1.3.
+- **#72 fixed:** it moved `react` to 19.3.1 and left `react-dom` at 19.2.1; React refuses mismatched
+  versions, so both are now pinned exactly at 19.3.1.
+- **#71 fixed:** `@vitejs/plugin-react` 6 needs Vite 8 (the suite would not start on Vite 7); Vite moves
+  to 8, which Vitest 4 supports.
+- **Checked:** tsc, the full suite, the production build and the Playwright journeys, all green.
+
+## 2026-11-01 — inventory-sync Q26, review: one shop's token or a moved cursor cannot spoil the run
+
+- **Found in review** of the batched order check, fixed before merge:
+  - a shop whose stored token cannot be read is now that shop's failure, logged, not the whole run's;
+    the token is read when the marketplace asks for it, and renewed once at most per shop per run;
+  - an access refusal is logged as one, not swallowed;
+  - the batched cursor write is a compare-and-set against the cursor the run claimed, so a cursor
+    reset while the run was reading (sync turned off and on) is never overwritten, and a quiet run
+    writes nothing;
+  - unused single-shop reads and writes removed.
+- **Tests:** `tests/integration/order-check-budget.test.ts` now measures more shops than are read at
+  once, drives the token path on every shop, and proves an unreadable token and a moved cursor.
+  Mutations recorded: reading the token before the guarded read (2 red), dropping the cursor
+  compare-and-set (1 red).
+
+## 2026-11-01 — inventory-sync Q26: the marketplace order check costs the same for one shop or thousands
+
+- **Why:** each syncing shop cost about six database statements every five minutes (read its
+  connection, a locking transaction for its token, a read of its recorded lines): about 1,700 a day per
+  shop, so 20–30 shops would have outgrown Prisma's operations allowance on their own.
+- **Now (owner decision Q26, superseding Q23 and, for the interval, parent Q30):** the check is a
+  safety net every **ten** minutes, since a change made on Bhendi Bazaar already pushes at once (Q19).
+  One statement claims every due connection and returns what each check needs, sealed token included;
+  each shop's marketplace is read (at most four at a time); one statement reads the recorded lines of
+  all of them; a transaction is spent only on a line that is new or moved; one statement writes every
+  moved cursor. **A quiet run is two statements for one shop or six** (measured). Only an expiring
+  token goes through the locked renewal, about hourly per shop on Amazon.
+- **One shop's failure is that shop's:** the others are still checked and recorded, and its own cursor
+  stays, so its next run reads the same span.
+- **Unchanged:** per-line handling (stock taken once, oversold, cancellations put back once), and the
+  immediate push after any change on Bhendi Bazaar.
+- **Docs:** inventory-sync decisions (Q26; Q23 superseded), parent Q30 superseded, spec R2/A1 and TRD
+  D4 now say ten minutes, `server/channels/CLAUDE.md`.
+- **Mutation-tested:** the recorded-lines read put back per shop (one shop 2 statements, six 7) and a
+  per-shop connection re-read (3 vs 4): each red, each restored.
+- **Tests:** `order-check-budget.test.ts` (3, against the database): one shop and six cost the same, at
+  most three statements; one shop failing leaves the others recorded and its cursor unmoved.
+  `stock-sync.test.ts` (21) unchanged apart from watching the batched cursor write.
 ## 2026-11-01 — Worker drains a burst at once; stock sync writes only what differs
 
 - **The worker drains a burst.** Production showed stock sync's 43 sends running four every five

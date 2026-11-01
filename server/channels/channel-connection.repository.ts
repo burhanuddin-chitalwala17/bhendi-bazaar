@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
 
 import {
@@ -107,6 +108,20 @@ export interface SealedGrant {
   accessTokenExpiresAt: Date;
   refreshToken: string;
   refreshTokenExpiresAt: Date | null;
+}
+
+/** What an order check needs of a connection: its state, where to read from, and its sealed token. */
+export interface OrdersCheckRow {
+  id: string;
+  orgId: string;
+  channel: string;
+  state: string;
+  externalAccountId: string | null;
+  stockSync: string;
+  stockSyncChangedAt: Date | null;
+  ordersCursor: string | null;
+  accessToken: string | null;
+  accessTokenExpiresAt: Date | null;
 }
 
 export const channelConnectionRepository = {
@@ -263,23 +278,40 @@ export const channelConnectionRepository = {
   },
 
   /**
-   * Claim every connection due an order check, in one statement (inventory-sync Q23): sync on and
-   * none checked in the last `gapMs`. A second chain of checks finds none claimed and stops.
+   * Claim every connection due an order check, in one statement (inventory-sync Q23, Q26): sync on
+   * and none checked in the last `gapMs`. Returns what each check needs, sealed token included, so
+   * a run's reads cost the same for one shop or thousands. A second chain finds none and stops.
    */
-  async claimDueOrdersChecks(now: Date, gapMs: number): Promise<string[]> {
-    const rows = await prisma.$queryRaw<{ id: string }[]>`
+  async claimDueOrdersChecks(now: Date, gapMs: number): Promise<OrdersCheckRow[]> {
+    return await prisma.$queryRaw<OrdersCheckRow[]>`
       UPDATE "ChannelConnection" SET "ordersCheckedAt" = ${now}
       WHERE "state" = ${CONNECTION_STATE.CONNECTED} AND "stockSync" = ${STOCK_SYNC.ON}
         AND ("ordersCheckedAt" IS NULL OR "ordersCheckedAt" < ${new Date(now.getTime() - gapMs)})
-      RETURNING "id"`;
-    return rows.map((r) => r.id);
+      RETURNING "id", "orgId", "channel", "state", "externalAccountId", "stockSync", "stockSyncChangedAt",
+        "ordersCursor", "accessToken", "accessTokenExpiresAt"`;
+  },
+
+  /**
+   * Every moved cursor of a run, in one statement (inventory-sync Q26). Compare-and-set on the cursor
+   * the run read, and only while sync is on: sync turned off or on mid-run keeps the cursor it wrote.
+   */
+  async setOrdersCursors(updates: ReadonlyArray<{ id: string; cursor: string; from: string | null }>): Promise<void> {
+    if (updates.length === 0) return;
+    const values = Prisma.join(updates.map((u) => Prisma.sql`(${u.id}::text, ${u.cursor}::text, ${u.from}::text)`));
+    await prisma.$executeRaw`
+      UPDATE "ChannelConnection" AS c SET "ordersCursor" = v.cursor
+      FROM (VALUES ${values}) AS v(id, cursor, prior)
+      WHERE c."id" = v.id AND c."ordersCursor" IS NOT DISTINCT FROM v.prior AND c."stockSync" = ${STOCK_SYNC.ON}`;
   },
 
   /** What one order check needs of its connection, in one read (inventory-sync D4). */
-  async forOrders(id: string) {
+  async forOrders(id: string): Promise<OrdersCheckRow | null> {
     return await prisma.channelConnection.findUnique({
       where: { id },
-      select: { id: true, orgId: true, channel: true, state: true, externalAccountId: true, stockSync: true, stockSyncChangedAt: true, ordersCursor: true },
+      select: {
+        id: true, orgId: true, channel: true, state: true, externalAccountId: true, stockSync: true,
+        stockSyncChangedAt: true, ordersCursor: true, accessToken: true, accessTokenExpiresAt: true,
+      },
     });
   },
 
@@ -292,11 +324,6 @@ export const channelConnectionRepository = {
   async syncedConnections(): Promise<string[]> {
     const rows = await prisma.channelConnection.findMany({ where: { state: CONNECTION_STATE.CONNECTED, stockSync: STOCK_SYNC.ON }, select: { id: true } });
     return rows.map((r) => r.id);
-  },
-
-  /** Where the next order check starts (inventory-sync D4). */
-  async setOrdersCursor(id: string, cursor: string): Promise<void> {
-    await prisma.channelConnection.updateMany({ where: { id }, data: { ordersCursor: cursor } });
   },
 
   async touchStock(db: Pick<typeof prisma, "channelConnection">, id: string, field: "stockSentAt" | "stockCheckedAt", now: Date): Promise<void> {

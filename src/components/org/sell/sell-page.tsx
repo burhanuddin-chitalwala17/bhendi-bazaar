@@ -14,7 +14,7 @@ import { SELL_COPY as COPY, SUBSCRIPTION_MONTHLY_PAISE, type SellPillar } from "
 const OPEN_SHOP_HREF = "/org/new";
 const PRICE = formatCurrency(SUBSCRIPTION_MONTHLY_PAISE);
 
-/** The seller pricing pamphlet, full-bleed and outside the store chrome: one plan, the whole suite, one action. */
+/** The shop pricing pamphlet, full-bleed and outside the store chrome: one plan, the whole suite, one action. */
 export function SellPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">

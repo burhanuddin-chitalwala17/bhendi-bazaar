@@ -47,7 +47,7 @@ Channels owns a shop's authorised connection to a marketplace: the consent round
 | `family-plan.ts` | A family's axes, each member's values, what all share, and what stops a save; pure |
 | `channel-location.service.ts`, `channel-location.repository.ts` | A marketplace's pickup locations, read on connect and Read again, and the shop's match for each (inventory-sync D1) |
 | `channel-stock.service.ts`, `channel-stock.types.ts`, `stock-plan.ts` | Sending our counts per matched location under a lock per product, the switch and its preview, the daily check; `stock-plan.ts` is pure |
-| `channel-orders.service.ts`, `marketplace-order.repository.ts` | The five-minute order check: each line once, stock taken or the line flagged oversold, a cancellation restocked once; the Marketplace orders tab |
+| `channel-orders.service.ts`, `marketplace-order.repository.ts` | The ten-minute order check, batched across shops (inventory-sync Q26): each line once, stock taken or the line flagged oversold, a cancellation restocked once; the Marketplace orders tab |
 | `stock-checks.job.ts` | The order check's and daily check's job specs: the order check enqueues its next run only while a connection has sync on (inventory-sync Q23) |
 | `stock-correction.repository.ts` | The one writer of `StockCorrection`, the daily check's record |
 | `fact-fill.ts` | Which type a listing is and which facts it fills or asks; pure, the same for every marketplace |

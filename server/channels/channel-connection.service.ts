@@ -323,6 +323,16 @@ export const channelConnectionService = {
   },
 
   /**
+   * A still-valid access token from a row already read, or null when it must be renewed, which only
+   * `accessToken` does, under its lock. Lets a batch read many connections' tokens in one query.
+   */
+  unexpiredAccessToken(row: { accessToken: string | null; accessTokenExpiresAt: Date | null }, now = new Date()): string | null {
+    if (!row.accessToken || !row.accessTokenExpiresAt) return null;
+    if (row.accessTokenExpiresAt.getTime() - now.getTime() <= ACCESS_TOKEN_MARGIN_MS) return null;
+    return decryptSecret(row.accessToken);
+  },
+
+  /**
    * A valid access token for one connection, renewed first if it is about to lapse (D8). Inside
    * the domain only: later subfeatures call marketplace verbs through here, never with a token.
    */
