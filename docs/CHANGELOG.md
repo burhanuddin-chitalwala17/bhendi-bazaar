@@ -12,6 +12,30 @@
 
 ## Entries
 
+## 2026-11-01 — inventory-sync Q26: the marketplace order check costs the same for one shop or thousands
+
+- **Why:** each syncing shop cost about six database statements every five minutes (read its
+  connection, a locking transaction for its token, a read of its recorded lines): about 1,700 a day per
+  shop, so 20–30 shops would have outgrown Prisma's operations allowance on their own.
+- **Now (owner decision Q26, superseding Q23 and, for the interval, parent Q30):** the check is a
+  safety net every **ten** minutes, since a change made on Bhendi Bazaar already pushes at once (Q19).
+  One statement claims every due connection and returns what each check needs, sealed token included;
+  each shop's marketplace is read (at most four at a time); one statement reads the recorded lines of
+  all of them; a transaction is spent only on a line that is new or moved; one statement writes every
+  moved cursor. **A quiet run is two statements for one shop or six** (measured). Only an expiring
+  token goes through the locked renewal, about hourly per shop on Amazon.
+- **One shop's failure is that shop's:** the others are still checked and recorded, and its own cursor
+  stays, so its next run reads the same span.
+- **Unchanged:** per-line handling (stock taken once, oversold, cancellations put back once), and the
+  immediate push after any change on Bhendi Bazaar.
+- **Docs:** inventory-sync decisions (Q26; Q23 superseded), parent Q30 superseded, spec R2/A1 and TRD
+  D4 now say ten minutes, `server/channels/CLAUDE.md`.
+- **Mutation-tested:** the recorded-lines read put back per shop (one shop 2 statements, six 7) and a
+  per-shop connection re-read (3 vs 4): each red, each restored.
+- **Tests:** `order-check-budget.test.ts` (3, against the database): one shop and six cost the same, at
+  most three statements; one shop failing leaves the others recorded and its cursor unmoved.
+  `stock-sync.test.ts` (21) unchanged apart from watching the batched cursor write.
+
 ## 2026-11-01 — storefront fonts: the build refuses a named fallback list
 
 - `next build` failed on `src/components/storefront/theme-fonts.ts`: the font loader reads its options at build time and

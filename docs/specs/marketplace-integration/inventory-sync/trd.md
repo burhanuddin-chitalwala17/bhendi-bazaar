@@ -3,7 +3,7 @@
 - **Status:** Implemented
 - **Domain:** channels, with catalog (stock) and checkout (orders, unchanged)
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-10-29
+- **Verified:** 2026-11-01
 - **References:** [spec.md](spec.md), [ux.md](ux.md), [decisions.md](decisions.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md) "Detecting a sale", [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0044](../../../adr/0044-a-marketplace-orders-money-is-reported-not-computed.md), [ADR-0021](../../../adr/0021-audit-trail-never-fails-the-action.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -13,7 +13,7 @@
 Our stock rows stay the one figure. Every write to them already goes through catalog's stock
 repository (Invariant 6); each write now also enqueues "this product's stock changed" in the same
 transaction. A worker job sends the product's current count per matched location to every linked
-listing. Sales on a marketplace come in through a five-minute order check that records each order once
+listing. Sales on a marketplace come in through a ten-minute order check (a safety net, Q26) that records each order once
 and moves our stock through the same conditional commands. A daily read puts back any count changed
 by hand on a marketplace. Locations are matched once per account. Nothing runs until the shop turns
 sync on for that marketplace, after seeing what will change.
@@ -48,7 +48,7 @@ sync on for that marketplace, after seeing what will change.
   FBA listings (Q5), unlinked or left-off listings (Q11), locations not matched or not used, paused
   connections. A busy marketplace throws and the queue retries; nothing is lost because the retry
   reads the count again.
-- **D4 — Sales come in by a scheduled check.** `channels.check-orders` every five minutes per
+- **D4 — Sales come in by a scheduled check.** `channels.check-orders` every ten minutes (Q26, batched: a quiet run is two statements however many shops) per
   connection with sync on (parent Q30), a job that enqueues its next run only while one has sync on
   (Q23): Amazon's Orders API v0 from a stored cursor (Q21); Flipkart `shipments/filter`, waiting,
   cancelled and dispatched. A sale from before sync was on is recorded without taking stock (Q24). A quiet
