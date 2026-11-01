@@ -41,6 +41,7 @@ export function StockSyncSection({ orgId, section, locations }: { orgId: string;
         </>
       );
     }
+    if (!section.locationsRead) return <p className="text-sm text-muted-foreground">{STOCK.readingLocations(l)}</p>;
     if (section.locationsToMatch) {
       return (
         <>

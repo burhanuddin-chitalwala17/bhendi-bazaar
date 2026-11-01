@@ -16,12 +16,13 @@ export const metadata = {
 export default async function StockSyncPreviewPage({ params }: { params: Promise<{ orgId: string; channel: string }> }) {
   const { orgId, channel } = await params;
   const scope = await requireOrgMember(orgId);
-  const preview = await channelStockDAL.preview(scope.orgId, channel);
-  if (!preview) notFound();
+  const read = await channelStockDAL.preview(scope.orgId, channel);
+  if (!read) notFound();
+  const { preview, locations } = read;
   return (
     <PageShell width="narrow">
       <SectionHeader as="h1" help="channels" title={PREVIEW.title} description={PREVIEW.subtitle(preview.label)} />
-      <StockPreview orgId={scope.orgId} preview={preview} backHref={`/org/${scope.orgId}/channels/${preview.channel}/listings`} />
+      <StockPreview orgId={scope.orgId} preview={preview} locations={locations} backHref={`/org/${scope.orgId}/channels/${preview.channel}/listings`} />
     </PageShell>
   );
 }

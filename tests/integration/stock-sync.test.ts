@@ -341,4 +341,30 @@ describe.skipIf(!isDisposableDb)("stock sync (local db)", () => {
     claim.mockRestore();
     cursor.mockRestore();
   });
+
+  it("reads no counts and offers only the match while a location is unmatched, or none is read yet (Q16)", async () => {
+    await prisma.channelConnection.update({ where: { id: connectionId }, data: { stockSync: "off" } });
+    await product("UNM", 5);
+    await prisma.channelLocation.updateMany({ where: { connectionId }, data: { orgAddressId: null, matchedAt: null } });
+    const unmatched = await stock.preview(orgId, "amazon");
+    expect(unmatched).toMatchObject({ locationsToMatch: true, locationsRead: true, rows: [] });
+    await prisma.channelLocation.deleteMany({ where: { connectionId } });
+    const none = await stock.preview(orgId, "amazon");
+    expect(none).toMatchObject({ locationsToMatch: true, locationsRead: false, rows: [] });
+    expect((await stock.section(orgId, "amazon")).locationsToMatch).toBe(true);
+    await expect(stock.turnOn(orgId, "amazon")).rejects.toThrow(/Match your locations/);
+    expect(fake.state.sent).toEqual([]);
+  });
+
+  it("calls out a listing in stock there that our count would send to 0", async () => {
+    await prisma.channelConnection.update({ where: { id: connectionId }, data: { stockSync: "off" } });
+    await product("ZERO", 0);
+    fake.state.theirs.set(`SS-${stamp}-ZERO`, 1);
+    await product("SAME", 1);
+    fake.state.theirs.set(`SS-${stamp}-SAME`, 1);
+    const preview = await stock.preview(orgId, "amazon");
+    expect(preview.toZero).toBe(1);
+    expect(preview.rows[0]).toMatchObject({ title: "Stock ZERO", theirs: 1, ours: 0, toZero: true });
+    expect(preview.rows.find((r) => r.title === "Stock SAME")).toMatchObject({ changes: false, toZero: false });
+  });
 });

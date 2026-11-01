@@ -19,9 +19,11 @@ export const channelStockDAL = {
     }
   },
 
-  async preview(orgId: string, channel: string): Promise<StockPreviewDTO | null> {
+  /** The preview, and the matches it needs first when a location is unmatched. */
+  async preview(orgId: string, channel: string): Promise<{ preview: StockPreviewDTO; locations: LocationMatchDTO } | null> {
     try {
-      return await channelStockService.preview(orgId, channel);
+      const preview = await channelStockService.preview(orgId, channel);
+      return { preview, locations: await channelLocationService.matches(orgId, channel) };
     } catch (error) {
       console.error("[StockSync] preview read failed:", error instanceof Error ? error.name : error);
       return null;

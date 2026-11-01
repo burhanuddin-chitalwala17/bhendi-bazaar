@@ -46,8 +46,10 @@ export interface StockSyncSectionDTO {
   sending: { sent: number; total: number } | null;
   /** Listings whose last send the marketplace turned down; sent again on their next change. */
   refused: number;
-  /** A live marketplace location is unmatched: nothing is sent until it is (Q16). */
+  /** A live marketplace location is unmatched, or none is read yet: nothing is sent until matched (Q16). */
   locationsToMatch: boolean;
+  /** The marketplace's locations have been read; false just after connecting, before the read ends. */
+  locationsRead: boolean;
   /** One that appeared since the last match, named for the section's line. */
   newLocation: { name: string; pincode: string | null } | null;
   sentAt: string | null;
@@ -66,6 +68,8 @@ export interface StockPreviewRowDTO {
   theirs: number | null;
   ours: number;
   changes: boolean;
+  /** In stock there now, 0 once sent: it will show out of stock. */
+  toZero: boolean;
   heldByMarketplace: boolean;
 }
 
@@ -75,7 +79,11 @@ export interface StockPreviewDTO {
   rows: StockPreviewRowDTO[];
   changing: number;
   matching: number;
+  /** Rows going from in stock to 0, called out before sending. */
+  toZero: number;
+  /** Locations still to match: no counts were read and nothing can be sent. */
   locationsToMatch: boolean;
+  locationsRead: boolean;
   /** Listings that could not be read now; sent anyway once sync is on. */
   unread: number;
 }

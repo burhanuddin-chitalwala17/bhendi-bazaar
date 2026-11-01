@@ -94,3 +94,9 @@ matched again.
 After self-review, 2026-10-29: the section adds "Amazon turned down n listings; their count there
 stays as it is until the next change"; an order whose listing had no product reads "Not linked to a
 product: stock not taken"; Save matches with nothing picked says "Pick a location first."
+After the owner's first try, 2026-11-01: the preview opened with every Amazon row "1 → 0" because
+Amazon's pickup address was not yet matched. Now the preview reads nothing and shows only "Match
+your locations before stock can be sent." with Match locations, until every location is matched;
+before the marketplace's locations are read it says "Reading your Amazon locations…". A listing in
+stock there that would be sent 0 is listed first, marked "goes out of stock", under a line naming
+how many will show out of stock.

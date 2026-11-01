@@ -52,7 +52,7 @@ export const channelLocationService = {
       label: CHANNEL_LABELS[channel as MarketplaceChannel],
       locations,
       shopLocations: shop.map((l) => ({ id: l.id, name: l.name, pincode: l.pincode, isActive: l.isActive })),
-      complete: locations.filter((l) => !l.gone).every((l) => (l.orgAddressId !== null && !l.closed) || l.notUsed),
+      complete: locations.some((l) => !l.gone) && locations.filter((l) => !l.gone).every((l) => (l.orgAddressId !== null && !l.closed) || l.notUsed),
     };
   },
 

@@ -8,6 +8,7 @@ export const STOCK = {
   off: (l: string) => `Stock sync is off. ${l} keeps its own count.`,
   turnOn: "Turn on stock sync",
   locationsToMatch: (l: string) => `Match your ${l} locations before stock can be sent.`,
+  readingLocations: (l: string) => `Reading your ${l} locations… refresh in a minute to match them.`,
   matchLocations: "Match locations",
   on: "Stock sync on",
   onLine: (sent: string | null, checked: string | null) =>
@@ -67,6 +68,9 @@ export const PREVIEW = {
   sent: (l: string) => `Stock sync on for ${l}.`,
   pausedToast: (l: string) => `Stock sync paused for ${l}.`,
   matchFirst: "Match your locations before stock can be sent.",
+  matchFirstHint: (l: string) => `Each ${l} pickup address gets the stock of the location you pick. Until then there's no count of ours to compare.`,
+  toZero: (n: number, l: string) => `${n} ${n === 1 ? "listing" : "listings"} will show out of stock on ${l}: we have 0 for ${n === 1 ? "it" : "them"}. Check ${n === 1 ? "its" : "their"} stock first if that's not right.`,
+  outOfStock: "goes out of stock",
 } as const;
 
 export const PRODUCT_STOCK = {

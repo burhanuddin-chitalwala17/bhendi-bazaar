@@ -12,6 +12,20 @@
 
 ## Entries
 
+## 2026-11-01 — inventory-sync: the preview refuses to show counts before locations are matched [CONTRACT]
+
+- On production the Amazon preview showed all 43 listings "1 → 0": the shop's stock (Bangalore
+  Home) was there, but Amazon's pickup address, read on reconnecting, was never matched, so there
+  was no count of ours and the preview printed 0. Sending was already refused; the page said
+  nothing useful and invited the tap.
+- The preview now reads no counts while a location is unmatched and offers only Match locations;
+  a connection whose locations are not read yet counts as unmatched (it was counted as matched),
+  in the section, the preview and turn-on alike, and says "Reading your Amazon locations…".
+- A listing in stock on the marketplace that would be sent 0 is listed first, marked "goes out of
+  stock", under a line naming how many.
+- **Mutation-tested:** the no-locations rule removed → the new test red; the preview reading counts
+  while unmatched → red. Each restored.
+- **Tests:** `stock-sync.test.ts` (20).
 ## 2026-11-01 — Merge main into org-portal: one courier webhook, timeouts beside rate limits
 
 - **Courier webhook:** main moved the old handler to `POST /api/webhooks/shipping/courier` with `SHIPROCKET_WEBHOOK_TOKEN`;

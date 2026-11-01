@@ -501,11 +501,12 @@ server, from `server/channels/channel-stock.types.ts`: **`StockSyncSectionDTO`**
 `state` from `STOCK_SYNC`, whether locations need matching and which one is new, last sent and checked
 times, whether every listing is stocked by the marketplace, today's corrections), **`StockPreviewDTO`**
 (a **`StockPreviewRowDTO`** per linked listing: their count or null when unread, ours, whether it
-changes), **`LocationMatchDTO`** (each **`ChannelLocationDTO`** with its match, "not used", a
+changes, `toZero` when in stock there and 0 here; `toZero` counts them; `locationsToMatch` with no rows
+while a location is unmatched; `locationsRead`), **`LocationMatchDTO`** (each **`ChannelLocationDTO`** with its match, "not used", a
 pincode suggestion, gone and closed flags, plus the shop's locations) and **`MarketplaceOrderDTO`**
 (order and SKU, quantity, the amount in paise as reported, `state` from `ORDER_LINE_STATE`,
 oversold, `locationGuessed`, `beforeSync`, `unlinked`). The section also carries `problem` (`STOCK_PROBLEM`: busy
-or refused), `sending` (sent of total since sync went on) and `refused` (listings turned down). A product's marketplace link gains
+or refused), `locationsRead`, `sending` (sent of total since sync went on) and `refused` (listings turned down). A product's marketplace link gains
 `stock`: last sent, when, `heldByMarketplace`, and an oversold order still waiting to ship, or null
 while sync is off.
 

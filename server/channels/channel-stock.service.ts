@@ -32,8 +32,12 @@ const ref = (l: { sku: string; externalId: string | null; attributes: unknown })
   marketplaceType: storedRead(l.attributes)?.type ?? null,
 });
 
-/** A live location with no match, or matched to a shop location since closed: the owner must match it (Q16). */
-const unmatched = (locations: Locations) => locations.some((l) => l.goneAt === null && ((!l.orgAddressId && !l.notUsed) || l.closed));
+/**
+ * The owner must match before anything is sent (Q16): a live location with no match, one matched to a
+ * shop location since closed, or none read yet, which is not the same as all matched.
+ */
+const unmatched = (locations: Locations) =>
+  !locations.some((l) => l.goneAt === null) || locations.some((l) => l.goneAt === null && ((!l.orgAddressId && !l.notUsed) || l.closed));
 
 const live = (l: { channel: string; connection: { state: string; stockSync: string } }) =>
   isMarketplaceChannel(l.channel) && l.connection.state === CONNECTION_STATE.CONNECTED && l.connection.stockSync === STOCK_SYNC.ON;
@@ -184,7 +188,12 @@ export const channelStockService = {
   /** The turn-on preview (Q4): every linked listing's count there now beside ours; nothing is sent. */
   async preview(orgId: string, channelName: string): Promise<StockPreviewDTO> {
     const { connection, channel } = await connectionOf(orgId, channelName);
-    const [locations, listings] = await Promise.all([channelLocationRepository.forConnection(connection.id), channelListingRepository.linkedOn(connection.id)]);
+    const locations = await channelLocationRepository.forConnection(connection.id);
+    // Until every location is matched there is no count of ours to compare: say so, read nothing.
+    if (unmatched(locations)) {
+      return { channel, label: CHANNEL_LABELS[channel], rows: [], changing: 0, matching: 0, toZero: 0, locationsToMatch: true, locationsRead: locations.some((l) => l.goneAt === null), unread: 0 };
+    }
+    const listings = await channelListingRepository.linkedOn(connection.id);
     const provider = providerFor(channel);
     const token = () => channelConnectionService.accessToken(connection.id);
     const rows: StockPreviewRowDTO[] = [];
@@ -210,20 +219,23 @@ export const channelStockService = {
             theirs: theirsTotal,
             ours: oursTotal,
             changes: !theirs?.heldByMarketplace && (theirs === null || !sameCounts(theirs.counts, ours ?? [])),
+            toZero: theirsTotal !== null && theirsTotal > 0 && oursTotal === 0,
             heldByMarketplace: theirs?.heldByMarketplace === true,
           };
         }),
       );
       rows.push(...batch);
     }
-    rows.sort((a, b) => Number(b.changes) - Number(a.changes) || a.title.localeCompare(b.title));
+    rows.sort((a, b) => Number(b.toZero) - Number(a.toZero) || Number(b.changes) - Number(a.changes) || a.title.localeCompare(b.title));
     return {
       channel,
       label: CHANNEL_LABELS[channel],
       rows,
       changing: rows.filter((r) => r.changes).length,
       matching: rows.filter((r) => !r.changes && !r.heldByMarketplace).length,
-      locationsToMatch: unmatched(locations),
+      toZero: rows.filter((r) => r.toZero).length,
+      locationsToMatch: false,
+      locationsRead: true,
       unread,
     };
   },
@@ -271,6 +283,7 @@ export const channelStockService = {
       sending: sendingOf(connection.stockSync, listings),
       refused: connection.stockSync === STOCK_SYNC.ON ? refusedOf(listings) : 0,
       locationsToMatch: unmatched(locations),
+      locationsRead: locations.some((l) => l.goneAt === null),
       newLocation: fresh ? { name: fresh.name, pincode: fresh.pincode } : null,
       sentAt: connection.stockSentAt?.toISOString() ?? null,
       checkedAt: connection.stockCheckedAt?.toISOString() ?? null,
