@@ -172,6 +172,19 @@ no longer reads the column, `"pillars"` leaves `BRAND_PAGE_SECTION_ORDER` and `H
 hidden key is dropped on read), and `storefrontSettingsSchema` is narrowed, strictly, to `heroUrl`, `accent`,
 `hiddenSections`, so a `pillars` key is refused. `OrgProfile.pillars` and its data are kept.
 
+Since order-fulfilment unit 2 a shop's orders read as **`ShopOrderView`** / **`ShopParcelView`**
+(`server/checkout/shop-parcel.types.ts`): only the shop's own parcels on paid orders, each with `status`,
+its lines and `parcelValue`, `position`/`ofCount` ("Parcel 1 of 2"), and the buyer as **`ShopBuyer`
+`{ name, city, pincode }`** — no phone, street, landmark or email, and no basket totals (D7, Q22, A10).
+`OrgOrderView` is gone. **`POST /api/org/[orgId]/shipments/[id]/ready`** (`withOrg`, no body) moves a paid
+parcel of that shop from `packing` to `ready_for_pickup` and answers `{ ok: true }`; another shop's parcel,
+or an unpaid one, is `404`; a cancelled one is `409` "This parcel was cancelled by {the buyer / you / us} on
+{date}. Don't send it."; one already moved on is `409` "This parcel is already …". **`PATCH
+/api/org/[orgId]/orders/[orderId]/transition` is deleted** (Q36). **`POST
+/api/admin/shipments/[id]/email-shop`** (platform admin, no body) answers `{ message: "Email sent to {shop}." }`
+for a paid parcel 36 h+ unpacked; `404` once it left the list, `409` if already emailed. `PATCH
+/api/admin/shipments/[id]/tracking` now refuses a parcel the shop has not marked ready (`409`).
+
 ### Listing vocabulary
 
 Since PR-243 `ProductFormInput` (`server/catalog/admin.product.types.ts`) accepts five more

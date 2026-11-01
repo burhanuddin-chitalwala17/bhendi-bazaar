@@ -99,12 +99,12 @@ describe("the admin console", () => {
 
 describe("the org panel", () => {
   it("excludes abandoned checkouts from an org's order list", async () => {
-    await adminOrderRepository.getOrdersForOrg("org-1");
+    await adminOrderRepository.listShopOrders("org-1", ["packing"], { page: 1, limit: 20, oldestFirst: true });
     expect(excludesExpired(findMany.mock.calls[0][0].where)).toBe(true);
   });
 
   it("does not return one to an org by direct id", async () => {
-    await adminOrderRepository.getOrderForOrg("order-1", "org-1");
+    await adminOrderRepository.getShopOrder("order-1", "org-1");
     expect(excludesExpired(findFirst.mock.calls[0][0].where)).toBe(true);
   });
 });

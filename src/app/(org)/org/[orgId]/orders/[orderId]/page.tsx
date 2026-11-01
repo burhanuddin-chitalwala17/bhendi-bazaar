@@ -1,139 +1,54 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
 import { orgOrdersDAL } from "@/data-access-layer/org/orders.dal";
-import { formatCurrency, formatDateTime } from "@/lib/format";
-import { formatPhone } from "@server/shared/phone";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { SectionHeader } from "@/components/shared/SectionHeader";
-import { OrgOrderPackButton } from "@/components/org/org-order-pack-button";
-import { ORDER_STATUS } from "@server/checkout/order.types";
+import { ShopParcelCard } from "@/components/org/parcels/shop-parcel-card";
+import { SHOP_PARCEL_COPY } from "@/components/org/parcels/parcel-copy";
+import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
+import { ShopOrdersRefused } from "@/components/org/parcels/shop-orders-refused";
+import { shopScopeOrRefused } from "../shop-scope";
 
 export const metadata = { robots: { index: false, follow: false } };
 
-const PAYMENT_BADGE = {
-  paid: "paid",
-  pending: "pending",
-  failed: "failed",
-} as const;
-
-export default async function OrgOrderDetailPage({
-  params,
-}: {
-  params: Promise<{ orgId: string; orderId: string }>;
-}) {
-  const { orgId, orderId } = await params;
-
-  // Not-found rather than forbidden when the order has no parcel from this org:
-  // whether the order exists for someone else is not this caller's business.
+/**
+ * One order, as the shop sees it (order-fulfilment ux.md "Shop parcel"): only its own parcels,
+ * the buyer as name, city and pincode (D7, Q22). Not-found when no parcel of this shop is in it.
+ */
+export default async function OrgOrderDetailPage({ params }: { params: Promise<{ orgId: string; orderId: string }> }) {
+  const { orgId: pathOrgId, orderId } = await params;
+  const scope = await shopScopeOrRefused(pathOrgId);
+  if (!scope) return <ShopOrdersRefused />;
+  const orgId = scope.orgId;
   const order = await orgOrdersDAL.getOrder(orderId, orgId);
   if (!order) notFound();
 
+  const { total: shopOrders } = await orgOrdersDAL.list(orgId, "all", 1);
+  const packing = order.parcels.filter((p) => p.status === SHIPMENT_STATUS.PACKING);
+
   return (
-    <div className="max-w-4xl space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <SectionHeader as="h1" title={order.code} />
-          <StatusBadge
-            status={
-              PAYMENT_BADGE[
-                order.paymentStatus as keyof typeof PAYMENT_BADGE
-              ] ?? "default"
-            }
-          >
-            {order.paymentStatus}
-          </StatusBadge>
-        </div>
-        <Link
-          href={`/org/${orgId}/orders`}
-          className="text-sm text-primary hover:underline"
-          prefetch={false}
-        >
-          ← All orders
+    <div className="max-w-4xl space-y-4 pb-24 lg:pb-0">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <SectionHeader as="h1" title={order.code} />
+        <Link href={`/org/${orgId}/orders`} className="min-h-10 text-sm text-primary hover:underline" prefetch={false}>
+          {SHOP_PARCEL_COPY.allOrders}
         </Link>
       </div>
-      <p className="text-muted-foreground">
-        Placed {formatDateTime(order.createdAt)}
+      <p className="text-sm text-muted-foreground">
+        {order.buyer.name} · {order.buyer.city}, {order.buyer.pincode}
       </p>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Deliver to
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="font-medium">{order.address.fullName}</p>
-          <p className="text-sm text-muted-foreground">
-            {order.address.addressLine1}
-            {order.address.addressLine2
-              ? `, ${order.address.addressLine2}`
-              : ""}
-            <br />
-            {order.address.city}, {order.address.state} —{" "}
-            {order.address.pincode}
-            <br />
-            {formatPhone(order.address.mobile)}
-          </p>
-        </CardContent>
-      </Card>
-
-      {order.shipments.map((shipment, index) => (
-        <Card key={shipment.id}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">
-              {order.shipments.length > 1 ? `Parcel ${index + 1} — ` : ""}
-              {shipment.code}
-            </CardTitle>
-            <StatusBadge status="default">{shipment.status}</StatusBadge>
-          </CardHeader>
-          <CardContent>
-            <ul className="divide-y">
-              {shipment.items.map((item) => (
-                <li
-                  key={`${item.productId}-${item.size ?? ""}-${item.color ?? ""}`}
-                  className="flex items-center justify-between py-2 text-sm"
-                >
-                  <span>
-                    {item.productName}{" "}
-                    {(item.size || item.color) && (
-                      <span className="text-muted-foreground">
-                        ({[item.size, item.color].filter(Boolean).join(", ")}
-                        ){" "}
-                      </span>
-                    )}
-                    <span className="text-muted-foreground">
-                      × {item.quantity}
-                    </span>
-                  </span>
-                  <span>
-                    {formatCurrency(
-                      (item.salePrice ?? item.price) * item.quantity,
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-3 flex justify-between border-t pt-3 text-sm text-muted-foreground">
-              <span>
-                {shipment.courierName
-                  ? `${shipment.courierName}${shipment.trackingNumber ? ` · ${shipment.trackingNumber}` : ""}`
-                  : "Not yet booked with a courier"}
-              </span>
-              <span>Shipping {formatCurrency(shipment.shippingCost)}</span>
-            </div>
-          </CardContent>
-        </Card>
+      {order.parcels.map((parcel) => (
+        <ShopParcelCard
+          key={parcel.id}
+          orgId={orgId}
+          parcel={parcel}
+          firstOrder={shopOrders <= 1}
+          docked={packing.length === 1}
+        />
       ))}
 
-      {(order.status === ORDER_STATUS.CONFIRMED || order.status === ORDER_STATUS.PROCESSING) && (
-        <OrgOrderPackButton orgId={orgId} orderId={orderId} />
-      )}
-
-      <p className="text-xs text-muted-foreground">
-        You see only the parcels that ship from your shop. The
-        buyer&apos;s full order may contain more.
-      </p>
+      <p className="text-xs text-muted-foreground">{SHOP_PARCEL_COPY.partial}</p>
     </div>
   );
 }

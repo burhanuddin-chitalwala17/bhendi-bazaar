@@ -1,22 +1,30 @@
+import Link from "next/link";
+
 import { orgOrdersDAL } from "@/data-access-layer/org/orders.dal";
-import { OrgOrdersTable } from "@/components/org/org-orders-table";
-import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
+import { ShopOrderList } from "@/components/org/parcels/shop-order-list";
+import { Button } from "@/components/ui/button";
+import { SHOP_ORDERS_COPY } from "@/components/org/parcels/parcel-copy";
 
 interface Props {
   orgId: string;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
+/** An org's parcels, as the shop sees them, in the admin's org console; rows open the admin order. */
 export async function AdminOrgOrders({ orgId, searchParams }: Props) {
   const params = await searchParams;
-  const page = Array.isArray(params.page) ? params.page[0] : params.page;
-  const limit = Array.isArray(params.limit) ? params.limit[0] : params.limit;
+  const raw = Array.isArray(params.more) ? params.more[0] : params.more;
+  const pages = Math.max(1, Number.parseInt(raw ?? "1", 10) || 1);
+  const { orders, hasMore } = await orgOrdersDAL.list(orgId, "all", pages);
 
-  const { orders, pagination } = await orgOrdersDAL.getOrders(
-    orgId,
-    resolvePageNumber(page),
-    resolvePageSize(limit),
+  return (
+    <div className="space-y-3">
+      <ShopOrderList orders={orders} orderHref={(orderId) => `/admin/orders/${orderId}`} />
+      {hasMore && (
+        <Button asChild variant="outline" className="min-h-10 w-full">
+          <Link href={`/admin/orgs/${orgId}?tab=orders&more=${pages + 1}`} scroll={false}>{SHOP_ORDERS_COPY.loadMore}</Link>
+        </Button>
+      )}
+    </div>
   );
-
-  return <OrgOrdersTable orders={orders} pagination={pagination} orgId={orgId} />;
 }

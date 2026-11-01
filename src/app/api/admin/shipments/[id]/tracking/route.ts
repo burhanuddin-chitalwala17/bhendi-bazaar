@@ -14,11 +14,10 @@ import { trackingService } from "@server/shipping/tracking.service";
 import { PARCEL_ACTOR, SHIPMENT_STATUS, alreadyMessage } from "@server/shipping/domain/shipping.types";
 import { ConflictError } from "@server/shared/domain-error";
 import { updateTrackingSchema } from "@/lib/validation/schemas/shipment-tracking.schema";
-import { ORDER_STATUS } from "@server/checkout/order.types";
 import { moveParcel } from "@server/checkout/fulfilment.service";
 
-/** Until unit 2's per-parcel "ready", the org's order-wide "packed" is the only signal that it is. */
-const TRACKABLE = new Set<string>([ORDER_STATUS.PACKED, ORDER_STATUS.SHIPPED, ORDER_STATUS.DELIVERED]);
+/** The shop's per-parcel "ready" is the signal a parcel can be booked (order-fulfilment D6). */
+const NOT_READY_MESSAGE = "The shop hasn't marked this parcel ready yet.";
 
 export async function PATCH(
   request: NextRequest,
@@ -62,21 +61,12 @@ export async function PATCH(
       );
     }
 
-    if (shipment.status === SHIPMENT_STATUS.PACKING && !TRACKABLE.has(shipment.order?.status ?? "")) {
-      return NextResponse.json(
-        { error: "Tracking can only be added after the org marks the order as packed" },
-        { status: 400 },
-      );
-    }
+    if (shipment.status === SHIPMENT_STATUS.PACKING) throw new ConflictError(NOT_READY_MESSAGE);
 
     // An AWB means a pickup is booked, not that the courier came (order-fulfilment Q4). Unit 3
-    // replaces this route with booking; until then it walks the parcel there through the one
-    // guarded move. A courier's later event moves it on; a parcel already past is left alone.
-    if (shipment.status === SHIPMENT_STATUS.PACKING) {
-      await moveParcel(shipmentId, SHIPMENT_STATUS.READY_FOR_PICKUP, { actor: PARCEL_ACTOR.ADMIN, refuse: true });
-    }
-    // A cancelled parcel is refused (409) rather than given an AWB; one the courier already has keeps its status.
-    if (shipment.status === SHIPMENT_STATUS.PACKING || shipment.status === SHIPMENT_STATUS.READY_FOR_PICKUP) {
+    // replaces this route with booking. A cancelled parcel is refused (409) rather than given an
+    // AWB; one the courier already has keeps its status.
+    if (shipment.status === SHIPMENT_STATUS.READY_FOR_PICKUP) {
       await moveParcel(shipmentId, SHIPMENT_STATUS.PICKUP_BOOKED, { actor: PARCEL_ACTOR.ADMIN, refuse: true });
     } else if (shipment.status === SHIPMENT_STATUS.CANCELLED) {
       throw new ConflictError(alreadyMessage(SHIPMENT_STATUS.CANCELLED));

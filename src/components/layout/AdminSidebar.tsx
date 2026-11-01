@@ -33,6 +33,11 @@ const navItems = [
     icon: ShoppingCart,
   },
   {
+    title: "Pickups",
+    href: "/admin/orders/pickups",
+    icon: Truck,
+  },
+  {
     title: "Products",
     href: "/admin/products",
     icon: Package,

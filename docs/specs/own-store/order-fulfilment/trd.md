@@ -1,9 +1,9 @@
 # TRD — own-store/order-fulfilment
 
-- **Status:** Accepted — 2026-10-30 (UX signed off; owner asked to build). Building: U1 done 2026-10-30
+- **Status:** Accepted — 2026-10-30 (UX signed off; owner asked to build). Building: U1 done 2026-10-30, U2 done 2026-11-01
 - **Domain:** cross-domain — checkout (orchestrates), shipping, payments, promotions, payouts, notifications
 - **Phase:** 12 — The shop's own store
-- **Verified:** 2026-10-31
+- **Verified:** 2026-11-01
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), [shipment-lifecycle](../../shipment-lifecycle/trd.md), [offers-hardening](../offers-hardening/trd.md), [rate-limiting](../../rate-limiting/trd.md), [ADR-0003](../../../adr/0003-one-repository-per-aggregate.md), [ADR-0005](../../../adr/0005-payment-state-server-only.md), [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [ADR-0020](../../../adr/0020-money-bearing-records-never-cascade.md), [ADR-0021](../../../adr/0021-audit-trail-never-fails-the-action.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0046](../../../adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md), [ADR-0055](../../../adr/0055-an-admin-surface-reads-through-projections-and-writes-through-the-aggregates-one-repository.md), [ADR-0060](../../../adr/0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md)
 
 > Technical approach and decisions. No code — references to existing code only.

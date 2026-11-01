@@ -1,7 +1,7 @@
 # UX — own-store/order-fulfilment
 
 - **Status:** Signed off
-- **Verified:** 2026-10-30
+- **Verified:** 2026-11-01
 - **Prototype:** https://claude.ai/artifact/Kc2hoehEDTCsduV695V4sH (private)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [src/components/CLAUDE.md](../../../../src/components/CLAUDE.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
@@ -257,6 +257,7 @@ Each starts one step before the screen, as the owner asked.
 | Retryable error | Banner | "Couldn't load parcels." | Try again |
 | Terminal error | n/a — read, email or cancel only | — | — |
 | Refused | Not a platform admin | "This page is for Bhendi Bazaar staff only." | Go to home |
+| Refused: emailed already | Toast on a second "Email shop" (once per parcel) | "You emailed {shop} on {time}. Call them on the number shown." | — |
 | Stale | Age counts up; over 72 h red | "Paid 3 days ago, not ready." | Cancel parcel |
 | Long content | Shop name wraps; city and phone of the shop shown | — | — |
 | Many items | Oldest first; filter by shop | — | — |

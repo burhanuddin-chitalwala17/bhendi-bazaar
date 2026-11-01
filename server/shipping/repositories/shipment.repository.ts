@@ -6,6 +6,27 @@ import { prisma } from "@server/shared/prisma";
 type ShipmentDb = Pick<typeof prisma, "shipment" | "shipmentItem">;
 type ParcelEventDb = Pick<typeof prisma, "parcelEvent">;
 
+/** Paid in (`paidAfter`, `paidBefore`]; one shop, or one parcel, when named. */
+type PackingWindow = { paidBefore: Date; paidAfter: Date | null; orgId?: string; shipmentId?: string };
+
+function packingPaidBeforeWhere(
+  statusPacking: string,
+  paidStatus: string,
+  window: PackingWindow,
+  noticeKind: string | null,
+): Prisma.ShipmentWhereInput {
+  return {
+    status: statusPacking,
+    ...(window.orgId ? { orgId: window.orgId } : {}),
+    ...(window.shipmentId ? { id: window.shipmentId } : {}),
+    order: {
+      paymentStatus: paidStatus,
+      paidAt: { lte: window.paidBefore, ...(window.paidAfter ? { gt: window.paidAfter } : {}) },
+    },
+    ...(noticeKind ? { notices: { none: { kind: noticeKind } } } : {}),
+  };
+}
+
 /**
  * The Shipment table's repository (Invariant 5). `status` is written only on
  * `shipment-status.service.ts`'s say-so — `recordTransition` is its statement, moved here so the
@@ -15,7 +36,71 @@ export class ShipmentRepository {
   async findStatus(id: string, db: ShipmentDb = prisma) {
     return db.shipment.findUnique({
       where: { id },
-      select: { id: true, orderId: true, status: true },
+      select: { id: true, orderId: true, orgId: true, status: true },
+    });
+  }
+
+  /** What a notice about this parcel names: its code, shop, origin city and order (order-fulfilment D8). */
+  async noticeContext(id: string, db: ShipmentDb = prisma) {
+    return db.shipment.findUnique({
+      where: { id },
+      select: { id: true, code: true, orgId: true, fromCity: true, order: { select: { id: true, code: true } } },
+    });
+  }
+
+  /** The last time this parcel moved into `status`, and who moved it — the timeline answers. */
+  async lastMoveInto(id: string, status: string, db: ParcelEventDb = prisma) {
+    return db.parcelEvent.findFirst({
+      where: { shipmentId: id, toStatus: status },
+      orderBy: { createdAt: "desc" },
+      select: { actor: true, createdAt: true },
+    });
+  }
+
+  /**
+   * Paid parcels still `packing` whose order was paid in (`paidAfter`, `paidBefore`], lacking a
+   * `noticeKind` notice when one is named: the sweep's worklist and the admin's not-packed list
+   * (order-fulfilment D18). Oldest first, capped.
+   */
+  async listPackingPaidBefore(
+    statusPacking: string,
+    paidStatus: string,
+    window: PackingWindow,
+    noticeKind: string | null,
+    limit: number,
+  ) {
+    return prisma.shipment.findMany({
+      where: packingPaidBeforeWhere(statusPacking, paidStatus, window, noticeKind),
+      orderBy: { order: { paidAt: "asc" } },
+      take: limit,
+      select: {
+        id: true, code: true, orgId: true, fromCity: true,
+        org: { select: { name: true, phone: true, email: true } },
+        order: { select: { id: true, code: true, paidAt: true } },
+      },
+    });
+  }
+
+  /** How many parcels match `listPackingPaidBefore`, uncapped — the tab's count, not the page's length. */
+  async countPackingPaidBefore(statusPacking: string, paidStatus: string, window: PackingWindow) {
+    return prisma.shipment.count({ where: packingPaidBeforeWhere(statusPacking, paidStatus, window, null) });
+  }
+
+  /** Parcels in `statusReady` that entered it at or before `readyBefore` and have no `kind` notice yet. */
+  async listReadyBefore(statusReady: string, readyBefore: Date, noticeKind: string, limit: number) {
+    return prisma.shipment.findMany({
+      where: {
+        status: statusReady,
+        parcelEvents: { some: { toStatus: statusReady, createdAt: { lte: readyBefore } } },
+        notices: { none: { kind: noticeKind } },
+      },
+      orderBy: { updatedAt: "asc" },
+      take: limit,
+      select: {
+        id: true, code: true, orgId: true, fromCity: true,
+        order: { select: { id: true, code: true } },
+        parcelEvents: { where: { toStatus: statusReady }, orderBy: { createdAt: "desc" }, take: 1, select: { createdAt: true } },
+      },
     });
   }
 

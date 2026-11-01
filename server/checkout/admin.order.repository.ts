@@ -19,6 +19,7 @@ import type {
   OrderStats,
 } from "@server/checkout/admin.order.types";
 import type { ShipmentStatus } from "@server/shipping/domain/shipping.types";
+import { toShopBuyer, type ShopOrderView, type ShopParcelView } from "@server/checkout/shop-parcel.types";
 
 /**
  * The sort keys the API offers, mapped to the columns they actually name.
@@ -261,99 +262,100 @@ export class AdminOrderRepository {
   }
 
   /**
-   * Orders visible to one org: those with a shipment from it, carrying only that org's
-   * shipments. The `include` filter is the scope — a cross-vendor basket's other parcels
-   * never leave the database. Read-only; an org mutates its shipments, never the order.
+   * One shop's parcels on paid orders, by tab (order-fulfilment D7; ux.md "Shop orders"): an
+   * order appears when it has a parcel of this org in `statuses`, with only those parcels. The
+   * address is selected for the trim in `toShopBuyer` and never leaves this module whole.
    */
-  async getOrdersForOrg(
+  async listShopOrders(
     orgId: string,
-    page = 1,
-    limit = 20,
-    filters?: { search?: string; status?: string },
+    statuses: readonly string[],
+    options: { page: number; limit: number; search?: string; oldestFirst: boolean },
   ) {
-    const where = {
+    const shipmentWhere = { orgId, status: { in: [...statuses] } };
+    const where: Prisma.OrderWhereInput = {
       ...VISIBLE_ORDER_WHERE,
-      shipments: { some: { orgId } },
-      ...(filters?.search ? { code: { contains: filters.search, mode: "insensitive" as const } } : {}),
-      ...(filters?.status ? { status: filters.status } : {}),
+      paymentStatus: PAYMENT_STATUS.PAID,
+      shipments: { some: shipmentWhere },
+      ...(options.search ? { code: { contains: options.search, mode: "insensitive" as const } } : {}),
     };
-    const [orders, total] = await Promise.all([
+    const [rows, total] = await Promise.all([
       prisma.order.findMany({
         where,
         select: {
-          id: true,
-          code: true,
-          status: true,
-          paymentStatus: true,
-          createdAt: true,
-          address: true,
-          shipments: {
-            where: { orgId },
-            select: {
-              id: true,
-              code: true,
-              status: true,
-              shippingCost: true,
-              items: SHIPMENT_LINES_INCLUDE.items,
-            },
-          },
+          ...SHOP_ORDER_SELECT,
+          shipments: { ...SHOP_ORDER_SELECT.shipments, where: { orgId } },
         },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
-        // Order + its org-scoped shipments + their lines in one LATERAL JOIN rather
-        // than a statement per nested relation (matches the storefront order reads).
+        orderBy: [{ paidAt: options.oldestFirst ? "asc" : "desc" }, { createdAt: options.oldestFirst ? "asc" : "desc" }],
+        skip: (options.page - 1) * options.limit,
+        take: options.limit,
         relationLoadStrategy: "join",
       }),
       prisma.order.count({ where }),
     ]);
-    return {
-      orders: orders.map((order) => ({
-        ...order,
-        shipments: order.shipments.map((s) => ({ ...s, items: toWireShipmentItems(s.items) })),
-      })),
-      total,
-      page,
-      limit,
-    };
+    return { rows: rows.map((row) => toShopOrderView(row, new Set(statuses))), total };
   }
 
-  /** One order, only if this org has a shipment in it — otherwise null (not-found, never forbidden). */
-  async getOrderForOrg(orderId: string, orgId: string) {
-    const order = await prisma.order.findFirst({
-      where: { id: orderId, ...VISIBLE_ORDER_WHERE, shipments: { some: { orgId } } },
-      select: {
-        id: true,
-        code: true,
-        status: true,
-        paymentStatus: true,
-        createdAt: true,
-        address: true,
-        notes: true,
-        shipments: {
-          where: { orgId },
-          select: {
-            id: true,
-            code: true,
-            status: true,
-            shippingCost: true,
-            courierName: true,
-            trackingNumber: true,
-            trackingUrl: true,
-            fromPincode: true,
-            fromCity: true,
-            items: SHIPMENT_LINES_INCLUDE.items,
-          },
-        },
-      },
+  /** One paid order, only if this org has a parcel in it — otherwise null (not-found, never forbidden). */
+  async getShopOrder(orderId: string, orgId: string) {
+    const row = await prisma.order.findFirst({
+      where: { id: orderId, ...VISIBLE_ORDER_WHERE, paymentStatus: PAYMENT_STATUS.PAID, shipments: { some: { orgId } } },
+      select: { ...SHOP_ORDER_SELECT, shipments: { ...SHOP_ORDER_SELECT.shipments, where: { orgId } } },
       relationLoadStrategy: "join",
     });
-    if (!order) return null;
-    return {
-      ...order,
-      shipments: order.shipments.map((s) => ({ ...s, items: toWireShipmentItems(s.items) })),
-    };
+    return row ? toShopOrderView(row, null) : null;
   }
+}
+
+/** What a shop read selects. `address` only for the trim; `phone`, street and email never reach the view. */
+const SHOP_ORDER_SELECT = {
+  id: true,
+  code: true,
+  paidAt: true,
+  address: true,
+  shipments: {
+    orderBy: { code: "asc" as const },
+    select: {
+      id: true,
+      code: true,
+      status: true,
+      shippingCost: true,
+      courierName: true,
+      trackingNumber: true,
+      items: SHIPMENT_LINES_INCLUDE.items,
+    },
+  },
+} satisfies Prisma.OrderSelect;
+
+type ShopOrderRow = Prisma.OrderGetPayload<{ select: typeof SHOP_ORDER_SELECT }>;
+
+/**
+ * Exported for tests. The query already scopes parcels to the org; `only` narrows to a tab's
+ * states, while "Parcel 1 of 2" still counts every parcel of this shop in the order.
+ */
+export function toShopOrderView(row: ShopOrderRow, only: Set<string> | null): ShopOrderView {
+  const buyer = toShopBuyer(row.address);
+  const paidAt = row.paidAt ? row.paidAt.toISOString() : null;
+  const parcels: ShopParcelView[] = row.shipments.map((s, i) => {
+    const items = toWireShipmentItems(s.items);
+    return {
+      id: s.id,
+      code: s.code,
+      status: s.status as ShipmentStatus,
+      orderId: row.id,
+      orderCode: row.code,
+      paidAt,
+      buyer,
+      items,
+      parcelValue: items.reduce((sum, item) => sum + (item.salePrice ?? item.price) * item.quantity, 0),
+      itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
+      shippingCost: s.shippingCost,
+      courierName: s.courierName,
+      trackingNumber: s.trackingNumber,
+      position: i + 1,
+      ofCount: row.shipments.length,
+    };
+  });
+  return { id: row.id, code: row.code, paidAt, buyer, parcels: only ? parcels.filter((p) => only.has(p.status)) : parcels };
 }
 
 export const adminOrderRepository = new AdminOrderRepository();

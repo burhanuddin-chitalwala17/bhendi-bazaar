@@ -116,9 +116,43 @@ export async function applyStatus(
   return { kind: "moved", from, to };
 }
 
-/** Which order a parcel belongs to — what the caller locks before moving it. Never changes. */
-export async function parcelOrderId(shipmentId: string): Promise<string | null> {
-  return (await shipmentRepository.findStatus(shipmentId))?.orderId ?? null;
+/** Which order and shop a parcel belongs to — what the caller locks and scopes by. Never changes. */
+export async function parcelRefs(shipmentId: string): Promise<{ orderId: string; orgId: string } | null> {
+  const row = await shipmentRepository.findStatus(shipmentId);
+  return row ? { orderId: row.orderId, orgId: row.orgId } : null;
+}
+
+/** The parcel's code, shop, origin and order, for a notice written on the caller's transaction. */
+export async function parcelNoticeContext(shipmentId: string, tx: Prisma.TransactionClient) {
+  return await shipmentRepository.noticeContext(shipmentId, tx);
+}
+
+/** Who last moved the parcel into `status`, and when; null if it never was. */
+export async function lastMoveInto(shipmentId: string, status: ShipmentStatus) {
+  return await shipmentRepository.lastMoveInto(shipmentId, status);
+}
+
+/**
+ * Parcels still being packed on orders in `paidStatus` (checkout's constant, passed in so shipping
+ * holds no payment vocabulary), paid in (`paidAfter`, `paidBefore`], with no `noticeKind` notice
+ * when one is named.
+ */
+export async function parcelsAwaitingPacking(
+  window: { paidStatus: string; paidBefore: Date; paidAfter: Date | null; orgId?: string; shipmentId?: string },
+  noticeKind: string | null,
+  limit: number,
+) {
+  return await shipmentRepository.listPackingPaidBefore(SHIPMENT_STATUS.PACKING, window.paidStatus, window, noticeKind, limit);
+}
+
+/** How many parcels `parcelsAwaitingPacking` would find with no cap and no notice filter. */
+export async function countParcelsAwaitingPacking(window: { paidStatus: string; paidBefore: Date; paidAfter: Date | null; orgId?: string }) {
+  return await shipmentRepository.countPackingPaidBefore(SHIPMENT_STATUS.PACKING, window.paidStatus, window);
+}
+
+/** Parcels ready since at least `readyBefore` and still unbooked, with no `noticeKind` notice. */
+export async function parcelsReadySince(readyBefore: Date, noticeKind: string, limit: number) {
+  return await shipmentRepository.listReadyBefore(SHIPMENT_STATUS.READY_FOR_PICKUP, readyBefore, noticeKind, limit);
 }
 
 /** Every parcel status of an order, on the caller's transaction — the input to its summary. */

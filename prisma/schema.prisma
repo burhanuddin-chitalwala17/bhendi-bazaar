@@ -864,6 +864,8 @@ model Order {
   paymentMethod  String? // "razorpay"
   paymentStatus  String? @default("pending") // pending, paid, failed
   paymentId      String? // the CONFIRMED gateway payment id — the idempotency key (payment-confirmation D2)
+  /// When the money became real: stamped by `confirmPaid`, the clock the packing nudges run on (order-fulfilment D18).
+  paidAt         DateTime?
   gatewayOrderId String? // the gateway order this order was charged through; created with amount = grandTotal
 
   // Overall order status. The values live in ORDER_STATUS
@@ -1010,6 +1012,7 @@ model Shipment {
   shippingEvents ShippingEvent[]
   ledgerEntries  OrgLedgerEntry[]
   parcelEvents   ParcelEvent[]
+  notices        Notice[]
 
   @@index([orderId])
   @@index([orgId])
@@ -1119,6 +1122,26 @@ model ParcelEvent {
   createdAt  DateTime @default(now())
 
   @@index([shipmentId, createdAt])
+}
+
+/// One email about one parcel, written in the transaction that earned it and sent by the worker
+/// (order-fulfilment D8). The unique key is what makes a repeated move or sweep email once.
+model Notice {
+  id         String    @id @default(cuid())
+  shipmentId String
+  shipment   Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  /// One of NOTICE_KIND (server/notifications/notice.types.ts).
+  kind       String
+  /// One of NOTICE_AUDIENCE: who it is for, so a changed shop email cannot send it twice.
+  audience   String
+  /// The address resolved when the notice was written.
+  recipient  String
+  /// What the email says, captured at the time; parsed by kind before sending.
+  data       Json
+  sentAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@unique([shipmentId, kind, audience])
 }
 
 model ShippingEvent {

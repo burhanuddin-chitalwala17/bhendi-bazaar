@@ -3,12 +3,18 @@
 - **Verified:** 2026-11-01
 - **Covers:** `server/notifications/**`
 
-Transactional email. One provider (Resend, in `email.service.ts`), one shell, seven templates.
+Transactional email. One provider (Resend, in `email.service.ts`), one shell, eight templates.
 
 **A send from a job is keyed on the job.** `notifications.jobs.ts` holds the worker's handlers (today
 `org.email-changed`, org-profile Q25); each passes an `idempotencyKey` derived from the job id, so a
 redelivered job is one email (ADR-0038 D4). The job's spec lives in `server/shared/jobs/`, so the
 domain that enqueues it never imports this one.
+
+**A parcel email is a row first** ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/trd.md) D8).
+`notice.service.ts` writes a `Notice` on the caller's transaction, unique per (parcel, kind,
+audience), and only a newly written row enqueues `notify.send`; the handler skips a row already
+sent and keys Resend on the notice id. Kinds and wording: `notice.types.ts`, `templates/parcelNoticeEmail.ts`.
+A notice's data never holds a buyer phone or address (spec A10).
 
 `contactMessageEmail.ts` is the one addressed to the store, not a buyer: Contact us delivers
 a message to `SUPPORT_INBOX` with the sender as Reply-To and stores nothing, so its route

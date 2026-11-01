@@ -12,6 +12,50 @@
 
 ## Entries
 
+## 2026-11-01 — order-fulfilment unit 2: ready, trimmed buyer details, nudges, 36 h flag [CONTRACT] [MIGRATION]
+
+- **Ready** (R3, A1; D6): `POST /api/org/[orgId]/shipments/[id]/ready` → `markParcelReady`
+  (`server/checkout/fulfilment.service.ts`), through `moveParcel` with `paidOnly`. Another shop's parcel or an
+  unpaid one is 404; a cancelled one is ux.md's "This parcel was cancelled by {who} on {date}. Don't send it."
+  (India day, `server/shared/india-time.ts`); one already moved is "This parcel is already …". The shop parcel
+  page shows only the shop's parcels, "Ready for pickup" docked above the tab bar (in the card header at `lg:`),
+  the confirm sheet ("Is everything packed and sealed?" / "Yes, it's ready"), the toast, the retry toast,
+  the first-order hint and "Show all {n} items" past 30 lines (`src/components/org/parcels/`). Never disabled.
+- **Trimmed buyer** (R3, A10; D7; Q22): org reads are `ShopOrderView`/`ShopParcelView`
+  (`server/checkout/shop-parcel.types.ts`) through `adminOrderRepository.listShopOrders`/`getShopOrder`; the
+  address is trimmed to name, city, pincode by `toShopBuyer`. The shop list has tabs To pack · Ready · On the
+  way · Done · Cancelled (one row per parcel, "Parcel 1 of 2 · Ready"), "Search order number", Load more by
+  20, "Updated {n} min ago" with Refresh past five minutes, and ux.md's empty, first-use and error lines. The
+  admin org console's Orders tab uses the same list. Deleted (Q36): the org transition route, its button and
+  client, `transitionForOrg`, `OrgOrderView`, `org-orders-table`/`-filters`. The admin tracking form now needs
+  the shop's "ready" (409 otherwise) instead of the order-wide "packed".
+- **Notices** (R4, A2; D8; Q8): `Notice` (notifications), unique on (parcel, kind, audience), written on the
+  move's transaction by `noticeService.write`; only a new row enqueues `notify.send`. The handler
+  (`notifications.jobs.ts`) skips a sent row and keys Resend on the notice id. `parcel-moved.ts` writes the
+  admin's "Parcel ready to book — {shop}, {city}" when the shop (not an admin) marks ready.
+- **Nudges and the 36 h flag** (R3a, A11; D18; Q24): `fulfilment.sweep` (`server/checkout/fulfilment.jobs.ts`,
+  hourly, the 4th of 4 schedules) writes "1 parcel waiting to be packed" at 12 h and 24 h after `paidAt` (a parcel
+  already past 24 h gets only the 24 h one) and "Waiting 24 h: parcel {code}" for a parcel ready 24 h. New
+  `/admin/orders/pickups` (admin nav "Pickups") holds the "Not packed" tab: paid parcels unready 36 h on, oldest
+  first, filter by shop, the shop's city and phone, "Shop emailed at 12 h and 24 h" / "+ you emailed {n} h ago",
+  "Paid 3 days ago, not ready." red past 72 h, and "Email shop" (`POST /api/admin/shipments/[id]/email-shop`,
+  once per parcel, toast "Email sent to {shop}.").
+- **[MIGRATION] `20261101100100_fulfilment_notices`** drops nothing: adds `Order.paidAt` (stamped by
+  `confirmPaid`; backfilled from `createdAt` for paid orders) and `Notice`, and pre-fills sent notices for parcels
+  already waiting so the first sweep emails no one. A `packing` parcel of a paid order the shop had already
+  marked `packed` moves to `ready_for_pickup` (seeded `system` ParcelEvent, `ready`/`ready_24h` pre-filled), so
+  the stricter tracking form does not send it back to the shop.
+- **Review fixes**: both shop order pages run their own `requireOrgMember` and render ux.md's Refused ("You
+  don't have access to this shop's orders." · "Go to my shops") on 403; "Email shop" finds its one parcel by id
+  and the "Not packed · N" count is uncapped (`countNotPacked`); the not-packed list is a table at `lg:`
+  (`not-packed-list.tsx`); the second-press refusal is added to ux.md's matrix.
+- **Mutations** (each made a test fail, then restored): M1 shop scope dropped from `markParcelReady`; M2 `paidOnly`
+  check removed; M3 `insertOnce` answers a row on a duplicate; M4 the shop-only condition on the ready notice
+  removed; M5 the buyer trim bypassed; M6 the sent-row skip removed; M7 the 12 h window's lower bound removed;
+  M8 the 36 h threshold set to zero; M9 `paidAt` not stamped; M10 the tracking route's `packing` refusal
+  disabled (the D6 tracking-form case fails). Tests: `tests/integration/parcel-ready.test.ts`,
+  `tests/unit/parcel-ready.test.tsx`.
+
 ## 2026-11-01 — seller-onboarding unit 2: the create screen shows the link it makes
 
 - **Create screen (D4; R1, A1; Q21, Q27):** `/org/new` previews "Your link: {host}/store/{handle}" as the name is typed,

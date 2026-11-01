@@ -241,6 +241,8 @@ export class OrderRepository {
         paymentStatus: PAYMENT_STATUS.PAID,
         status: ORDER_STATUS.CONFIRMED,
         paymentId,
+        // The clock the packing nudges run on (order-fulfilment D18).
+        paidAt: new Date(),
       },
     });
     return result.count === 1;

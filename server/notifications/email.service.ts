@@ -205,6 +205,11 @@ class EmailService {
     });
   }
 
+  /** A parcel notice the worker sends (order-fulfilment D8); throws so the job retries. */
+  async sendNotice(options: SendEmailOptions & { idempotencyKey: string }): Promise<void> {
+    await this.sendEmail(options);
+  }
+
   /**
    * Tell a bidder they have lost the lead (bidding spec R28).
    *
