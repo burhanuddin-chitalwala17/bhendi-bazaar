@@ -12,6 +12,30 @@
 
 ## Entries
 
+## 2026-11-01 — org-profile unit 4: Looks — "How you work" retired, accent as swatches [CONTRACT]
+
+- **"How you work" retired, text kept** (R7; D5; Q6): the three Block heading/line pairs leave the storefront
+  editor, `storefrontSettingsSchema` (strict, so a `pillars` key is refused), `storefrontService.saveSettings`,
+  `PUBLIC_PROFILE_SELECT`, `BrandPageDto`, the section order, the hideable set and the "What your page shows"
+  panel. `brand-pillars.tsx` and `pillarsFrom` are gone. `OrgProfile.pillars` and its data are untouched; no
+  migration. "Why buy from us" is storefront-themes' (its R8, Q21).
+- **Accent as swatches** (A4; D8; Q20): the Shop page's "Accent" select of token names becomes four unnamed
+  colour swatches labelled "Colour" (a radio group of `Button`s, "Colour 1"–"Colour 4", each a semantic token
+  class; none disabled). No stored accent shows the first swatch as chosen, which is what buyers see then.
+- **ux states:** no new screen; the looks card keeps the editor's existing save, refresh and error states.
+- **[CONTRACT]** `BrandPageDto.pillars` removed; `storefrontSettingsSchema` narrowed to `heroUrl`, `accent`,
+  `hiddenSections`; `"pillars"` leaves `BRAND_PAGE_SECTION_ORDER`/`HIDEABLE_BRAND_PAGE_SECTIONS`. CONTRACTS.md
+  updated. Decisions Q6, Q20 implemented.
+- **Mutations** (each made a test fail, then restored): M1 `pillars` back in the looks schema → the schema
+  refusal test failed. M2 `pillars` back in `PUBLIC_PROFILE_SELECT` → the buyer-payload and select-allowlist
+  tests failed. M3 swatch labelled with its token name → the unnamed-swatch test failed. M4 `aria-checked` never
+  true → two swatch tests failed. M5 swatch click not setting the value → the save test failed.
+- **Tests:** `tests/unit/storefront-looks.test.tsx` (new); `storefront-public-dto`, `brand-page-sections`,
+  `brand-page-standing`, `brand-page-render` (pillars removed); `tests/integration/shop-details.test.ts` (column
+  kept, buyer page without it). Ran `tsc`, `vitest run tests/unit`, `vitest run tests/integration/shop-details.test.ts
+  tests/integration/seller-profile.test.ts tests/integration/brand-page-proof.test.ts` (local disposable DB),
+  `lint:boundary`, `docs:check`.
+
 ## 2026-11-01 — seller-onboarding unit 1: a phone tab bar, one grouped navigation, a Shop tab, plain names
 
 - **Navigation (D1, D2; Q9, Q10, Q28):** `src/components/layout/portal-nav.ts` declares the shop portal's list once — five

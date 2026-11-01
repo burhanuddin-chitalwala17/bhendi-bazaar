@@ -12,7 +12,6 @@ export const BRAND_PAGE_SECTION_ORDER = [
   "hero",
   "story",
   "categories",
-  "pillars",
   "brands",
   "buyersSay",
   "newest",
@@ -26,29 +25,20 @@ export type BrandPageSection = (typeof BRAND_PAGE_SECTION_ORDER)[number];
  * What a shop may hide: the sections it writes itself.
  *
  * R7 lets a shop hide "any optional section", and the line drawn here is between what the
- * shop asserts and what others established. A shop may withhold its own story, blocks,
- * brands, terms and handles. It may not hide what buyers said, how many orders it has
+ * shop asserts and what others established. A shop may withhold its own story, brands,
+ * terms and handles. It may not hide what buyers said, how many orders it has
  * filled, or the goods themselves — proof is derived and never typed (R4), and a page whose
  * reviews disappear when they turn unflattering is not proof at all. Hero and newest are
  * what make the page a shop rather than a leaflet, so neither is optional either.
  */
 export const HIDEABLE_BRAND_PAGE_SECTIONS = [
   "story",
-  "pillars",
   "brands",
   "policies",
   "social",
 ] as const satisfies ReadonlyArray<BrandPageSection>;
 
 export type HideableBrandPageSection = (typeof HIDEABLE_BRAND_PAGE_SECTIONS)[number];
-
-/** At most three, because a page of blocks is a page nobody reads (R1). */
-export const MAX_BRAND_PILLARS = 3;
-
-export interface BrandPillar {
-  title: string;
-  text: string;
-}
 
 /**
  * A real person behind the shop (R5). Invited, never required — a shop with none of this
@@ -77,20 +67,6 @@ function isHideable(value: unknown): value is HideableBrandPageSection {
 export function hiddenSectionsFrom(value: unknown): HideableBrandPageSection[] {
   if (!Array.isArray(value)) return [];
   return [...new Set(value.filter(isHideable))];
-}
-
-/** The same treatment for the blocks: a shape the platform defined, read back defensively. */
-export function pillarsFrom(value: unknown): BrandPillar[] | null {
-  if (!Array.isArray(value)) return null;
-  const pillars = value
-    .filter((entry): entry is Record<string, unknown> => typeof entry === "object" && entry !== null)
-    .map((entry) => ({
-      title: typeof entry.title === "string" ? entry.title.trim() : "",
-      text: typeof entry.text === "string" ? entry.text.trim() : "",
-    }))
-    .filter((pillar) => pillar.title !== "" && pillar.text !== "")
-    .slice(0, MAX_BRAND_PILLARS);
-  return pillars.length ? pillars : null;
 }
 
 /**

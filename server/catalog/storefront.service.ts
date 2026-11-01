@@ -27,7 +27,7 @@ import {
 import type { OrgRating } from "@server/catalog/review-rating";
 import { toBrandPageDto, type BrandPageDto } from "@server/catalog/storefront.types";
 import { Prisma } from "@prisma/client";
-import type { BrandPillar, HideableBrandPageSection } from "@server/catalog/brand-page-sections";
+import type { HideableBrandPageSection } from "@server/catalog/brand-page-sections";
 import {
   handleCandidates,
   holdCutoff,
@@ -46,7 +46,6 @@ import { isValidSlug } from "@server/shared/slug";
 export interface StorefrontSettingsInput {
   heroUrl?: string | null;
   accent?: string | null;
-  pillars?: BrandPillar[] | null;
   hiddenSections?: HideableBrandPageSection[] | null;
 }
 
@@ -71,14 +70,6 @@ const jsonOrNull = (value: unknown) =>
   value === null || value === undefined
     ? Prisma.JsonNull
     : (value as Prisma.InputJsonValue);
-
-/** The editor shows three slots; an untouched one is not a block. Both halves or neither
- * is the schema's rule, so anything arriving here with one half is already refused. */
-function pillarsKept(pillars: { title: string; text: string }[] | null | undefined) {
-  if (!pillars) return null;
-  const kept = pillars.filter((pillar) => pillar.title.trim() !== "" && pillar.text.trim() !== "");
-  return kept.length ? kept : null;
-}
 
 /** Whitelisted field by field — the payload is never spread into a write. */
 function normaliseBanner(input: BannerInput): OrgBannerInput {
@@ -170,7 +161,6 @@ export const storefrontService = {
       ...(input.heroUrl !== undefined && { heroUrl: orNull(input.heroUrl) }),
       ...(input.accent !== undefined && { accent: orNull(input.accent) }),
       // JSON is cleared with `JsonNull`; `null` is Prisma's "leave this alone".
-      ...(input.pillars !== undefined && { pillars: jsonOrNull(pillarsKept(input.pillars)) }),
       ...(input.hiddenSections !== undefined && {
         hiddenSections: jsonOrNull(input.hiddenSections?.length ? input.hiddenSections : null),
       }),

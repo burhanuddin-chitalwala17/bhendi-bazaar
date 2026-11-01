@@ -3,9 +3,7 @@ import { socialLinksFrom, type SocialLink } from "@server/catalog/social-network
 import {
   brandOwnerFrom,
   hiddenSectionsFrom,
-  pillarsFrom,
   type BrandOwner,
-  type BrandPillar,
   type HideableBrandPageSection,
 } from "@server/catalog/brand-page-sections";
 import type { ReturnsPreset } from "@server/catalog/shop-details.types";
@@ -54,8 +52,6 @@ export interface BrandPageDto {
   buyersSay: ShopReviewDto[] | null;
   /** The person behind the shop, when one is named (R5). Null is "the story stands alone". */
   owner: BrandOwner | null;
-  /** Up to three blocks on how or why (R1). Null rather than an empty list, as every slice is. */
-  pillars: BrandPillar[] | null;
   /**
    * What the shop has chosen not to show (R7). The content of a hidden section is left out of
    * this payload entirely, so a buyer's page cannot render it by mistake; the keys travel so
@@ -86,7 +82,6 @@ export interface PublicProfileRow {
   ownerRole: string | null;
   ownerQuote: string | null;
   ownerPhotoUrl: string | null;
-  pillars: unknown;
   hiddenSections: unknown;
   org: { id: string; handle: string; name: string; joinedAt: Date };
 }
@@ -158,7 +153,6 @@ export function toBrandPageDto(
     proof: derived.proof,
     buyersSay: derived.buyersSay,
     owner: shown("story", brandOwnerFrom(row)),
-    pillars: shown("pillars", pillarsFrom(row.pillars)),
     hiddenSections,
   };
 }

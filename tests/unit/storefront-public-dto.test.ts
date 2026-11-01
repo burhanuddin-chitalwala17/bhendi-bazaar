@@ -25,10 +25,8 @@ import {
 import { PROOF_FLOORS } from "@server/catalog/brand-page-proof";
 import {
   HIDEABLE_BRAND_PAGE_SECTIONS,
-  MAX_BRAND_PILLARS,
   brandOwnerFrom,
   hiddenSectionsFrom,
-  pillarsFrom,
 } from "@server/catalog/brand-page-sections";
 import type { ShopReviewDto } from "@server/catalog/review.types";
 
@@ -49,7 +47,6 @@ const PUBLIC_PROFILE_FIELDS = [
   "ownerRole",
   "ownerQuote",
   "ownerPhotoUrl",
-  "pillars",
   "hiddenSections",
 ].sort();
 const PUBLIC_IDENTITY_FIELDS = ["id", "handle", "name", "joinedAt"].sort();
@@ -89,7 +86,6 @@ const BRAND_PAGE_FIELDS = [
   "proof",
   "buyersSay",
   "owner",
-  "pillars",
   "hiddenSections",
 ].sort();
 
@@ -133,7 +129,6 @@ const fixture = {
   ownerRole: "Second generation",
   ownerQuote: "My father chose every bolt himself.",
   ownerPhotoUrl: "https://img.example/anisa.webp",
-  pillars: [{ title: "Woven near by", text: "Every metre from three looms we visit." }],
   hiddenSections: null,
   org: { id: "org_1", handle: "silks", name: "Silks & Co", joinedAt: new Date("2021-03-04") },
 };
@@ -446,16 +441,14 @@ describe("what a shop chose not to show", () => {
   it("leaves the hidden section's content out of the payload, not merely unrendered", () => {
     // Subtraction at the source (R7): a flag the page is trusted to honour is honoured by
     // whichever renderer remembers to check it, and a link preview is a renderer too.
-    const page = dto(["story", "policies", "brands", "social", "pillars"]);
+    const page = dto(["story", "policies", "brands", "social"]);
     expect(page.story).toBeNull();
     expect(page.owner).toBeNull();
     expect(page.about).toBeNull();
     expect(page.returns).toBeNull();
     expect(page.brands).toBeNull();
     expect(page.social).toBeNull();
-    expect(page.pillars).toBeNull();
     expect(JSON.stringify(page)).not.toContain("Anisa Merchant");
-    expect(JSON.stringify(page)).not.toContain("Woven near by");
   });
 
   it("hides the introduction with the story, because they are one section", () => {
@@ -484,15 +477,6 @@ describe("what a shop chose not to show", () => {
 });
 
 describe("the shapes the platform defined, read back from JSON", () => {
-  it("keeps only whole blocks, and never more than the limit", () => {
-    const many = Array.from({ length: 5 }, (_, i) => ({ title: `T${i}`, text: `X${i}` }));
-    expect(pillarsFrom(many)).toHaveLength(MAX_BRAND_PILLARS);
-    expect(pillarsFrom([{ title: "Only a heading", text: "  " }])).toBeNull();
-    expect(pillarsFrom([{ title: " ", text: "Only words" }])).toBeNull();
-    expect(pillarsFrom("not a list")).toBeNull();
-    expect(pillarsFrom([])).toBeNull();
-  });
-
   it("hangs the person on a name, and keeps the rest optional", () => {
     const row = { ownerName: "A", ownerRole: null, ownerQuote: null, ownerPhotoUrl: null };
     expect(brandOwnerFrom(row)).toEqual({ name: "A", role: null, quote: null, photoUrl: null });

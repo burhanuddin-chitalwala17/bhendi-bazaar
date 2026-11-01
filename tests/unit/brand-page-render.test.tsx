@@ -71,7 +71,6 @@ const bare = (overrides: Partial<BrandPage> = {}): BrandPage => ({
   proof: null,
   buyersSay: null,
   owner: null,
-  pillars: null,
   hiddenSections: [],
   categories: [],
   newest: [],

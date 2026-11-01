@@ -56,7 +56,6 @@ const full = (overrides: Partial<BrandPage> = {}): BrandPage => ({
     quote: "My father chose every bolt himself.",
     photoUrl: "https://img.example/anisa.webp",
   },
-  pillars: [{ title: "Woven near by", text: "Every metre from three looms we visit." }],
   hiddenSections: [],
   categories: [category],
   newest: [product],
@@ -77,7 +76,6 @@ const bare = (): BrandPage =>
     social: null,
     buyersSay: null,
     owner: null,
-    pillars: null,
     categories: [],
     newest: [],
   });
@@ -124,16 +122,9 @@ describe("brandPageSections", () => {
     expect(storySlice(full({ owner: null }))?.owner).toBeNull();
   });
 
-  it("places the blocks between what they sell and the brands they carry (R1)", () => {
+  it("places the brands they carry straight after what they sell (D5: the blocks between are retired)", () => {
     const order: readonly string[] = BRAND_PAGE_SECTION_ORDER;
-    expect(order.indexOf("pillars")).toBe(order.indexOf("categories") + 1);
-    expect(order.indexOf("brands")).toBe(order.indexOf("pillars") + 1);
-  });
-
-  it("omits the blocks when there are none, and shows them when there are", () => {
-    expect(brandPageSections(full({ pillars: null }))).not.toContain("pillars");
-    expect(brandPageSections(full({ pillars: [] }))).not.toContain("pillars");
-    expect(brandPageSections(full())).toContain("pillars");
+    expect(order.indexOf("brands")).toBe(order.indexOf("categories") + 1);
   });
 
   it("omits the categories when the shop sells in none", () => {

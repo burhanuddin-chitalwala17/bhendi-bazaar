@@ -128,7 +128,7 @@ with the organisation filter widened; it is read through a server component and 
 Since PR-208 the DTO carries the shop's own additions and its choice of what to leave out.
 **`owner`** is `{ name, role, quote, photoUrl } | null`, null unless a name is given — a face
 with no name is not an introduction, so the other three are kept in the column and not shown.
-**`pillars`** is `{ title, text }[] | null`, at most three, each with both halves or neither.
+**`pillars`** was `{ title, text }[] | null`; it left the DTO in org-profile unit 4 (below).
 **`hiddenSections`** is the keys the shop has switched off, from
 `HIDEABLE_BRAND_PAGE_SECTIONS` in `server/catalog/brand-page-sections.ts` — where the section
 order, the hideable subset and the defensive readers for both JSON columns are declared once,
@@ -166,6 +166,11 @@ field. It answers `ShopDetailsDto`, which gains `phone`, `email` and `contactUpd
 with the same copy. An email change enqueues **`org.email-changed`** (`server/shared/jobs/org-email-changed.job.ts`:
 `orgId`, `shopName`, `oldEmail`) in the same transaction. A refused handle change now reads "That link is taken."
 plus "Try {suggestion}." when a numbered variant is free.
+
+Since org-profile unit 4, "How you work" is retired (D5): `BrandPageDto` loses `pillars`, `PUBLIC_PROFILE_SELECT`
+no longer reads the column, `"pillars"` leaves `BRAND_PAGE_SECTION_ORDER` and `HIDEABLE_BRAND_PAGE_SECTIONS` (a stored
+hidden key is dropped on read), and `storefrontSettingsSchema` is narrowed, strictly, to `heroUrl`, `accent`,
+`hiddenSections`, so a `pillars` key is refused. `OrgProfile.pillars` and its data are kept.
 
 ### Listing vocabulary
 

@@ -35,7 +35,6 @@ const LABELS: Record<BrandPageSection, string> = {
   hero: "The top of the page",
   story: "About the shop",
   categories: "What you sell",
-  pillars: "How you work",
   brands: "Brands you carry",
   buyersSay: "What buyers say",
   newest: "Your newest goods",
@@ -56,10 +55,6 @@ const WAITING: Partial<Record<BrandPageSection, { fact: string; to?: (orgId: str
   categories: {
     fact: "a product on sale, so there is a category to show",
     to: (orgId) => `/org/${orgId}/products`,
-  },
-  pillars: {
-    fact: "at least one block, with a heading and a line under it",
-    to: (orgId) => `/org/${orgId}/storefront#pillars`,
   },
   brands: {
     fact: "a second brand — one brand is not a range worth a section",

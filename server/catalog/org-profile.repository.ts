@@ -26,7 +26,7 @@ export const PUBLIC_PROFILE_SELECT = {
   ownerRole: true,
   ownerQuote: true,
   ownerPhotoUrl: true,
-  pillars: true,
+  // `pillars` is retired and kept (org-profile D5): never read for a buyer again.
   hiddenSections: true,
 } as const satisfies Prisma.OrgProfileSelect;
 
@@ -45,7 +45,6 @@ export const PUBLIC_ORG_IDENTITY_SELECT = {
 export interface StorefrontLooksData {
   heroUrl?: string | null;
   accent?: string | null;
-  pillars?: Prisma.InputJsonValue | typeof Prisma.JsonNull;
   hiddenSections?: Prisma.InputJsonValue | typeof Prisma.JsonNull;
 }
 
@@ -124,7 +123,6 @@ export class OrgProfileRepository {
         ownerRole: true,
         ownerQuote: true,
         ownerPhotoUrl: true,
-        pillars: true,
         hiddenSections: true,
         org: { select: { handle: true, name: true } },
       },

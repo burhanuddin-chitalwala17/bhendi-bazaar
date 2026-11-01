@@ -131,4 +131,12 @@ describe.skipIf(!isDisposableDb)("shop details (local db)", () => {
     expect(row.description).toBe("Who we are, and how it began.");
     expect(row.pillars).toEqual([{ title: "Woven near by", text: "Three looms." }]);
   });
+
+  it("retires How you work: the text stays in its column and the buyer page never carries it (D5, Q6)", async () => {
+    const page = await storefrontService.brandPage(handle);
+    expect(page).not.toBeNull();
+    expect(JSON.stringify(page)).not.toContain("Woven near by");
+    const row = await prisma.orgProfile.findUnique({ where: { orgId } }).then((r) => r!);
+    expect(row.pillars).toEqual([{ title: "Woven near by", text: "Three looms." }]);
+  });
 });

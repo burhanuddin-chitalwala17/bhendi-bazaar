@@ -45,7 +45,6 @@ const full = (overrides: Partial<BrandPage> = {}): BrandPage =>
     proof: null,
     buyersSay: null,
     owner: { name: "Anisa", role: null, quote: null, photoUrl: null },
-    pillars: [{ title: "Woven near by", text: "Three looms we visit." }],
     hiddenSections: [],
     categories: [category],
     newest: [product],
@@ -64,7 +63,7 @@ describe("what your page shows", () => {
 
   it("agrees with the page itself about what is showing, section for section", () => {
     // The property that matters: no section can be promised here and absent there.
-    for (const page of [full(), full({ about: null, story: null, owner: null }), full({ pillars: null, social: null })]) {
+    for (const page of [full(), full({ about: null, story: null, owner: null }), full({ brands: null, social: null })]) {
       const showing = brandPageStanding(page, ORG)
         .filter((status) => status.standing === "showing")
         .map((status) => status.section);
@@ -73,10 +72,10 @@ describe("what your page shows", () => {
   });
 
   it("names the one fact a waiting section needs, and where to supply it", () => {
-    const waiting = standingOf(full({ pillars: null }), "pillars");
+    const waiting = standingOf(full({ social: null }), "social");
     expect(waiting?.standing).toBe("waiting");
-    expect(waiting?.waitingFor).toMatch(/heading/);
-    expect(waiting?.href).toBe(`/org/${ORG}/storefront#pillars`);
+    expect(waiting?.waitingFor).toMatch(/handle/);
+    expect(waiting?.href).toBe(`/org/${ORG}/shop/details#social`);
   });
 
   it("sends nobody to a form for a fact no form collects", () => {
@@ -89,9 +88,9 @@ describe("what your page shows", () => {
 
   it("says hidden, not waiting, for a section the shop switched off", () => {
     // Telling a shop to write the thing it just chose to withhold is advice to undo itself.
-    const page = full({ pillars: null, hiddenSections: ["pillars"] });
-    expect(standingOf(page, "pillars")?.standing).toBe("hidden");
-    expect(standingOf(page, "pillars")?.waitingFor).toBeUndefined();
+    const page = full({ social: null, hiddenSections: ["social"] });
+    expect(standingOf(page, "social")?.standing).toBe("hidden");
+    expect(standingOf(page, "social")?.waitingFor).toBeUndefined();
   });
 
   it("counts only what is showing, so the number matches the page", () => {
@@ -108,7 +107,6 @@ describe("what your page shows", () => {
       about: null,
       story: null,
       owner: null,
-      pillars: null,
       brands: null,
       social: null,
       buyersSay: null,
