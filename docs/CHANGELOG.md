@@ -12,6 +12,15 @@
 
 ## Entries
 
+## 2026-11-02 — Dependency updates: Dependabot #74–#78, CI on Node 22
+
+- **Taken as raised:** `tailwind-merge` 3.7, `@radix-ui/react-switch` 1.4, `@radix-ui/react-popover` 1.3,
+  ESLint 10 (same 60 errors as ESLint 9, rule for rule; Next's bundled plugins still declare ESLint 9
+  as their peer, and run).
+- **#76 fixed:** Vitest 5 needs Node 22 or later, so CI moves from Node 20 to 22 (the worker image was
+  already on 22), with `@types/node` 22 and `@vitest/ui` / `@vitest/coverage-v8` moved in step.
+- **Checked:** tsc, the full suite, the production build and the Playwright journeys, all green.
+
 ## 2026-11-02 — Channel listings and publishing: each marketplace's listing edited here, sent from here [CONTRACT] [MIGRATION]
 
 - **channel-listings.** A product's page shows each connected marketplace's listing status and "Edit
