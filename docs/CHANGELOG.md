@@ -12,6 +12,48 @@
 
 ## Entries
 
+## 2026-11-03 — Fix what keeps products off a channel, many at once [CONTRACT] [MIGRATION]
+
+- **The card names each gap** (readiness-fix [spec](specs/channel-registry/readiness-fix/)): under each
+  channel, "79 need a colour · Fix them" for each missing compulsory fact, and "3 have no Google
+  category · Ask the admin" for types with no category there.
+- **One page per gap** (`/org/[orgId]/products/fix`): only the products missing it, each with its
+  photo, a picker that saves as it is used, and the marketplace's own word as evidence. Tick several
+  and set one answer; only empty answers are written and the rest are named. Done below, with Undo
+  while the answer is still the one given.
+- **[CONTRACT]** CONTRACTS.md "Readiness gaps and fixing them"; `file-cohesion` records the fix page's DAL.
+- Tests: `readiness-fix.test.ts`. Mutations: writing without `onlyIfEmpty` replaced a typed answer
+  (red); dropping the offered-answer check stored a value no list has (red).
+- **Fresh-context review, fixed before handing over:** a listing whose read kept failing was queued
+  again every day, and "Read again" plus the daily pass queued it twice; now a fill is marked when
+  queued (`ChannelListing.attributesTriedAt`, [MIGRATION] `20261103000100_listing_fill_tried`, adds a
+  column) and queued again only a week later (mutation: dropping the mark queued it twice, red). "All
+  done" no longer claims how many a channel takes; the bulk button reads "Set" and says "Pick an answer
+  first"; a refused undo says why; the card's "and N more" opens the rest; the fix page has its loading
+  state and computes readiness once; a category's type change records how many products it typed.
+
+## 2026-11-03 — Listings linked by SKU fill their products; a category's new type reaches its untyped products
+
+- **Facts fill for SKU links** (marketplace-facts [Q36](specs/marketplace-integration/marketplace-facts/decisions.md),
+  superseding Q5). A production check on 2026-11-03 found 40 of the shop's 43 Amazon links made by SKU
+  and never read, so 79 products had no colour and Google would take 1 of 83. Every linked listing
+  never read now gets the same one fill a settle gives: after each listing read, and in the daily
+  pass. A fill still writes only what is empty, and unclear answers still wait for the owner (parent Q42).
+  Test: `marketplace-facts.test.ts` "fills once every listing linked by its SKU…"; mutation: dropping
+  the never-read filter queued a listing already read (red).
+- **A category's type reaches its products with none** (categories D1b, R7, the safe case). Pointing
+  an untyped category at a type now gives that type to its products with no type, in its subtree
+  wherever it is what they resolve to; a product with a type, or under a child with its own, is left
+  alone. Test: `category-type-adoption.test.ts`; mutation: dropping `productType: null` retyped a
+  typed product (red). For the shop: Admin → Categories → "LADIES MASALLA BAG" → type Bag brings 18
+  products into readiness.
+
+## 2026-11-02 — "Where you sell" on the products page goes to Channels
+
+- The readiness panel's link still pointed at the retired "Where you sell" page, which now opens
+  Brands and defaults; it goes to the Channels page that replaced it (parent Q6). Link only; no test,
+  nothing else changed.
+
 ## 2026-11-02 — Channel listings and publishing: each marketplace's listing edited here, sent from here [CONTRACT] [MIGRATION]
 
 - **channel-listings.** A product's page shows each connected marketplace's listing status and "Edit

@@ -50,3 +50,15 @@ export const listingDraftSchema = z
   .object({ mode: z.enum(["offer", "new"]), targetExternalId: z.string().trim().min(1).max(20).nullable().default(null) })
   .refine((d) => d.mode === "new" || d.targetExternalId !== null, "Pick the page to sell on.");
 export type ListingDraftInput = z.input<typeof listingDraftSchema>;
+
+/** One answer for many products from a fix page (readiness-fix R3, R4); undo takes back one product's. */
+export const readinessFixSchema = z
+  .object({
+    fact: z.string().trim().min(1).max(60),
+    value: z.string().trim().min(1, "Pick an answer").max(80),
+    productIds: z.array(z.string().min(1).max(64)).min(1).max(100),
+    undo: z.boolean().default(false),
+  })
+  .strict()
+  .refine((d) => !d.undo || d.productIds.length === 1, "Undo one product at a time.");
+export type ReadinessFixInput = z.input<typeof readinessFixSchema>;

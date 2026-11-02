@@ -177,6 +177,11 @@ export class ProductService {
     return await productsRepository.forListing(orgId, productIds, db);
   }
 
+  /** Undo an answer while it is still the one given (readiness-fix R3). */
+  async clearFactIf(orgId: string, id: string, key: string, value: string): Promise<boolean> {
+    return await adminProductsRepository.clearFactIf(orgId, id, key, value);
+  }
+
   /** A family's members with what each answers, for adding to it (family-merge Q20). */
   async familyMembers(orgId: string, familyId: string) {
     return await adminProductsRepository.familyMembers(orgId, familyId);

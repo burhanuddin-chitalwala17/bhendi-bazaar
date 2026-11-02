@@ -41,6 +41,14 @@ const FREE_REACH = 2;
  * own header, which is the better home for that.
  */
 const RECORDED: Record<string, { domains: string[]; why: string }> = {
+  "src/data-access-layer/org/readiness-fix.dal.ts": {
+    domains: ["catalog", "channels", "listing"],
+    why:
+      "A read for one page, where three answers meet by definition (readiness-fix R2, Q6): listing " +
+      "says which products a channel would refuse for want of a fact and what may answer it, catalog " +
+      "supplies each product's name and photo, and channels the marketplace's own word as evidence. " +
+      "A DAL composes reads; no write happens here, so none of the three gains a reason to change.",
+  },
   "server/checkout/payment-confirmed.ts": {
     domains: ["identity", "notifications", "payouts"],
     why:

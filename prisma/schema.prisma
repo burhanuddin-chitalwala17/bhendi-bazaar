@@ -2393,6 +2393,9 @@ model ChannelListing {
   /// The marketplace's last read of this listing's type, attributes and details (marketplace-facts D6).
   attributes       Json?
   attributesReadAt DateTime?
+  /// When a fill was last queued for a listing never read (marketplace-facts Q36): queued once, and
+  /// again only a week later if the read keeps failing, never every day.
+  attributesTriedAt DateTime?
   /// Facts the owner chose to skip for now on this listing's card (marketplace-facts D6).
   attributeSkips   String[]  @default([])
 

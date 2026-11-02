@@ -219,6 +219,29 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
     await prisma.$executeRawUnsafe(`DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->'payload'->>'listingId' = $2`, JOBS_QUEUE, listing.id);
   });
 
+  it("fills once every listing linked by its SKU that was never read, and never one already read (Q36)", async () => {
+    const { JOBS_QUEUE, JOBS_SCHEMA } = await import("@server/shared/jobs/jobs.config");
+    const { channelFactsService } = await import("@server/channels/channel-facts.service");
+    const { id: unreadProduct } = await product();
+    const { id: readProduct } = await product();
+    const unread = await linked(unreadProduct);
+    const read = await linked(readProduct);
+    await prisma.channelListing.update({ where: { id: read.id }, data: { attributesReadAt: new Date() } });
+    await channelFactsService.fillUnread(connectionId);
+    const queued = async (listingId: string) =>
+      Number((await prisma.$queryRawUnsafe<{ n: bigint }[]>(
+        `SELECT count(*)::bigint AS n FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->>'type' = 'channels.fill-facts' AND data->'payload'->>'listingId' = $2`,
+        JOBS_QUEUE,
+        listingId,
+      ))[0].n);
+    expect(await queued(unread.id)).toBe(1);
+    expect(await queued(read.id)).toBe(0);
+    // "Read again" and the same day's pass queue it once between them; a failing read waits a week.
+    await channelFactsService.fillUnread(connectionId);
+    expect(await queued(unread.id)).toBe(1);
+    for (const id of [unread.id, read.id]) await prisma.$executeRawUnsafe(`DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->'payload'->>'listingId' = $2`, JOBS_QUEUE, id);
+  });
+
   describe("the card and its commands (D6, D8)", () => {
     const filledOnce = async () => {
       const { id } = await product();

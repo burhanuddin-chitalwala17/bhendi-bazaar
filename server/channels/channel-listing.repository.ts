@@ -6,6 +6,9 @@ import { uniqueViolationFields } from "@server/shared/constraint";
 import { LINK_SOURCE, LISTING_STATUS, type LeftOffReason, type MarketplaceChannel } from "./channel-connection.types";
 import type { ListingAttributes } from "./providers/listing-read";
 
+/** A fill whose read failed is queued again a week later, never daily (marketplace-facts Q36). */
+const FILL_RETRY_MS = 7 * 86_400_000;
+
 /**
  * The one way to reach `ChannelListing` (Invariant 5). A read-only mirror of what a marketplace
  * reported, plus one link to the shop's product (channel-import D1). Rows are never deleted.
@@ -427,6 +430,30 @@ export const channelListingRepository = {
       update: {},
       select: { id: true },
     });
+  },
+
+  /** The stored reads of these products' linked listings, for a marketplace's word on a fact (readiness-fix Q6). */
+  async readsFor(orgId: string, productIds: readonly string[]) {
+    return await prisma.channelListing.findMany({
+      where: { orgId, productId: { in: [...productIds] }, goneAt: null, attributesReadAt: { not: null } },
+      select: { productId: true, channel: true, attributes: true },
+    });
+  },
+
+  /** Linked listings on a connection whose attributes were never read, for their one fill (marketplace-facts Q36). */
+  async linkedUnread(connectionId: string, now: Date, take = 500): Promise<string[]> {
+    const retryBefore = new Date(now.getTime() - FILL_RETRY_MS);
+    const rows = await prisma.channelListing.findMany({
+      where: { connectionId, productId: { not: null }, goneAt: null, attributesReadAt: null, OR: [{ attributesTriedAt: null }, { attributesTriedAt: { lt: retryBefore } }] },
+      select: { id: true },
+      take,
+    });
+    return rows.map((r) => r.id);
+  },
+
+  /** Marks a fill queued (Q36), so "Read again" and the same day's pass queue it once between them. */
+  async markFillTried(ids: readonly string[], now: Date): Promise<void> {
+    if (ids.length > 0) await prisma.channelListing.updateMany({ where: { id: { in: [...ids] } }, data: { attributesTriedAt: now } });
   },
 
   /** Linked mirror rows on a connection with no `PlatformListing` yet, for seeding (channel-listings D3). */

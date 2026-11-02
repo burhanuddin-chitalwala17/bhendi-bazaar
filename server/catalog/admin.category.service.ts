@@ -6,7 +6,9 @@
 import { adminCategoryRepository } from "@server/catalog/category.repository";
 import { categoryRepository } from "@server/catalog/category.read.repository";
 import { orgStorefrontSlotRepository } from "@server/catalog/org-storefront-slot.repository";
-import { wouldCreateCycle } from "@server/catalog/category.tree";
+import { collectSubtreeIds, wouldCreateCycle } from "@server/catalog/category.tree";
+import { adminProductsRepository } from "@server/catalog/product.repository";
+import { resolveProductType } from "@server/listing/product-type";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
 import type {
   CategoryListFilters,
@@ -105,13 +107,24 @@ export class AdminCategoryService {
 
     const category = await adminCategoryRepository.updateCategory(id, data);
 
+    // A category given a type: its products with none take it, so readiness and listing see them.
+    // Within its subtree, only categories that now resolve to this type (a child with its own keeps it).
+    // Categories are the platform's, so this reaches every shop's untyped products in them; safe,
+    // since an untyped product holds no type's answers, and the count is recorded (categories R7).
+    let typedProducts = 0;
+    if (category && data.productType) {
+      const tree = await categoryRepository.listTree();
+      const reached = collectSubtreeIds(tree, id).filter((cid) => resolveProductType(cid, tree) === data.productType);
+      typedProducts = await adminProductsRepository.adoptTypeWhereNone(reached, data.productType);
+    }
+
     if (category) {
       await recordAdminAction({
         adminId,
         action: "CATEGORY_UPDATED",
         resource: "Category",
         resourceId: id,
-        metadata: { changes: data, categoryName: category.name },
+        metadata: { changes: data, categoryName: category.name, typedProducts },
       });
     }
 

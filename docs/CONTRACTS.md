@@ -549,6 +549,20 @@ Routes, all `withOrg`; bodies in `platform-listing.schema.ts`:
 
 The product form gains `mrp` (rupees), `barcode` (8–14 digits or blank) and `keyFeatures` (up to five).
 
+### Readiness gaps and fixing them
+
+Since readiness-fix ([spec](specs/channel-registry/readiness-fix/)) the products card reads
+`ChannelSummaryRow` from `server/listing/channel-readiness.service.ts`: per channel `ready`, `warned`,
+`incomplete`, `noCategory` (products whose type has no category there) and `gaps` (each missing
+compulsory fact: `fact`, `label`, `count`, `fixable` when a picker answers it), most common first. The
+fix page reads **`FixPageDTO`** (`server/listing/readiness-fix.types.ts`): channel and fact with their
+labels, the offered `options`, **`FixRowDTO`** rows (product, name, SKU, photo, a marketplace's `said`
+word or null), and `wouldGo` of `total`.
+
+- `PUT /api/org/[orgId]/products/facts` (`withOrg`) — `readinessFixSchema`: `{ fact, value, productIds
+  (1–100), undo }`, strict. Answers **`FixAnswerResultDTO`** `{ set, skipped }`, or `{ undone }` for an
+  undo (one product); 400 for an answer not offered.
+
 ### Image enhancement
 
 Since PR-185 the org portal speaks **`EnhancementDto`** (`server/content/enhancement.types.ts`): `id`, `tool`, `preset`, `state`, `sourceAssetId`, `sourceRef`, `proposalUrl` (null unless the state is `PROPOSED`), `resultAssetId`, `resultRef`, `error`, `costPaise` (integer paise, [Invariant 3](../CLAUDE.md)), `createdAt`, `proposedAt`, `decidedAt` — beside **`EnhancementUsage`** (`used`, `allowance`, `paused`, `pauseReason`), which every answer carries so the sheet can say where the shop stands. Four routes, all `withOrg` and parsed by `src/lib/validation/schemas/enhancement.schema.ts`: `POST /api/org/:orgId/enhancements` (`{ sourceAssetId? | sourceRef?, tool, preset?, slot?, slotRole? }`, exactly one of the first two: the library names a photo by its asset id, the gallery editor knows only the URL of one it has just put up, and a request carrying both or neither is a 400) → `{ enhancement, usage }`; `GET …/:id` → `{ enhancement }`, which the sheet polls while the worker runs; `POST …/:id/accept` → `{ enhancement }` with `resultRef`, the derived image's URL; `POST …/:id/discard` → `{ enhancement }`. A refusal is a `DomainError` with the reason the org member reads ([image-enhancement](specs/image-enhancement/) R7, R10). Since PR-198 `preset` is **not free text**: it is one of the keys in `server/content/scene-presets.ts`, required when `tool` is `SCENE` and refused on every other tool, so a request carrying a description nobody approved is a 400 rather than a row (R11).

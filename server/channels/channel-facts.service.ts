@@ -13,6 +13,7 @@ import { storedFactSchema } from "@server/listing/listing-facts";
 import { CONNECTION_STATE, isMarketplaceChannel, type MarketplaceChannel } from "./channel-connection.types";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
+import { channelConnectionRepository } from "./channel-connection.repository";
 import { SAID_MAX, mappingIsStale, planFill, typeFor, type FillPlan } from "./fact-fill";
 import {
   FACTS_STATE,
@@ -83,6 +84,50 @@ export const channelFactsService = {
       const payload: ListingFactsPayload = { orgId, listingId };
       await enqueue(tx, listingFactsSpec, payload);
     }
+  },
+
+  /**
+   * One fill for every linked listing on a connection never read (Q36): links made by SKU never pass
+   * the Settle page, so without this their products never learn a colour. Each fill writes only what
+   * is empty; the read is the same one "Fill from" makes.
+   */
+  async fillUnread(connectionId: string): Promise<number> {
+    const connection = await channelConnectionRepository.byId(connectionId);
+    if (!connection || connection.state !== CONNECTION_STATE.CONNECTED) return 0;
+    const now = new Date();
+    const ids = await channelListingRepository.linkedUnread(connectionId, now);
+    if (ids.length === 0) return 0;
+    await channelListingRepository.markFillTried(ids, now);
+    await this.enqueue(connection.orgId, ids);
+    return ids.length;
+  },
+
+  /**
+   * What each product's marketplace listings wrote for one fact, as evidence beside a picker
+   * (readiness-fix Q6): never an answer, never pre-picked (parent Q42).
+   */
+  async saidFor(orgId: string, productIds: readonly string[], fact: string): Promise<Record<string, { channel: string; said: string }>> {
+    if (productIds.length === 0) return {};
+    const reads = await channelListingRepository.readsFor(orgId, productIds);
+    const out: Record<string, { channel: string; said: string }> = {};
+    const mappings = new Map<string, Awaited<ReturnType<typeof channelMapService.forFill>>>();
+    for (const row of reads) {
+      if (!row.productId || out[row.productId] || !isMarketplaceChannel(row.channel)) continue;
+      const read = storedRead(row.attributes);
+      if (!read?.type) continue;
+      if (!mappings.has(row.channel)) mappings.set(row.channel, await channelMapService.forFill(row.channel));
+      const attribute = mappings.get(row.channel)!.attributes.find((a) => a.theirCategory === read.type && a.fact === fact)?.theirAttribute;
+      const said = attribute ? read.attributes[attribute]?.[0] : undefined;
+      if (said) out[row.productId] = { channel: row.channel, said: said.slice(0, 80) };
+    }
+    return out;
+  },
+
+  /** The daily pass over every live connection (Q36). */
+  async fillUnreadAll(): Promise<number> {
+    let queued = 0;
+    for (const connection of await channelConnectionRepository.live()) queued += await this.fillUnread(connection.id);
+    return queued;
   },
 
   async enqueue(orgId: string, listingIds: readonly string[]): Promise<void> {

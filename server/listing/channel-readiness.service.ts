@@ -1,6 +1,7 @@
 import { CHANNELS, type Channel } from "@server/shared/channels";
 
 import {
+  LISTING_PROBLEM,
   LISTING_READINESS,
   enabledChannels,
   readinessByChannel,
@@ -34,6 +35,18 @@ export interface ReadinessSubject {
   kind: string | null;
   /** The product's stored fact tail, as read off the row. */
   facts: unknown;
+}
+
+/** One channel's line on the products card: how many would go, and what keeps the rest off (readiness-fix R1). */
+export interface ChannelSummaryRow {
+  channel: Channel;
+  ready: number;
+  warned: number;
+  incomplete: number;
+  /** Products whose type has no category on this channel: the admin's to map, not the shop's. */
+  noCategory: number;
+  /** Compulsory facts missing, most common first; `fixable` when a picker answers it. */
+  gaps: Array<{ fact: FactKey; label: string; count: number; fixable: boolean }>;
 }
 
 export interface ChannelVerdict {
@@ -143,31 +156,58 @@ export const channelReadinessService = {
    * and that would be a round trip for a read the server already does. The number answers the
    * question a shop actually has — how much is left — and the product itself says what.
    */
-  async summaryForOrg(
-    orgId: string,
-  ): Promise<{ channel: Channel; ready: number; warned: number; incomplete: number }[]> {
+  async summaryForOrg(orgId: string): Promise<ChannelSummaryRow[]> {
+    return (await this.readinessOf(orgId)).rows;
+  },
+
+  /**
+   * The products card's rows and, for one channel and fact, the products missing it, from one
+   * computation of the catalogue's verdicts (readiness-fix D1): the card and a fix page agree.
+   */
+  async readinessOf(orgId: string, missing?: { channel: Channel; fact: FactKey }): Promise<{ rows: ChannelSummaryRow[]; missing: string[] }> {
     const channels = enabledChannels(await orgChannelRepository.forOrg(orgId));
-    if (channels.length === 0) return [];
-
+    if (channels.length === 0) return { rows: [], missing: [] };
     const products = await productReadinessRepository.subjectsFor(orgId);
-    if (products.length === 0) return [];
-
+    if (products.length === 0) return { rows: [], missing: [] };
     const verdicts = await this.forProducts(orgId, products);
-    const tally = new Map(
-      channels.map((channel) => [channel, { channel, ready: 0, warned: 0, incomplete: 0 }]),
-    );
-    for (const list of verdicts.values()) {
-      for (const { channel, report } of list) {
-        const row = tally.get(channel);
-        if (!row) continue;
-        if (report.state === LISTING_READINESS.READY) row.ready += 1;
-        else if (report.state === LISTING_READINESS.WARNED) row.warned += 1;
-        else row.incomplete += 1;
-      }
-    }
-    return [...tally.values()];
+    return { rows: summarise(channels, verdicts.values()), missing: missing ? missingIn(verdicts, missing.channel, missing.fact) : [] };
+  },
+
+  /** The shop's products a channel would refuse for want of one fact, for its fix page (readiness-fix R2). */
+  async missingFact(orgId: string, channel: Channel, fact: FactKey): Promise<string[]> {
+    return (await this.readinessOf(orgId, { channel, fact })).missing;
   },
 };
+
+/** Each channel's counts and what keeps products off it (readiness-fix R1): each compulsory fact, or no category. */
+function summarise(channels: readonly Channel[], verdicts: Iterable<ChannelVerdict[]>): ChannelSummaryRow[] {
+  const tally = new Map(channels.map((channel) => [channel, { channel, ready: 0, warned: 0, incomplete: 0, facts: new Map<FactKey, number>(), noCategory: 0 }]));
+  for (const list of verdicts) {
+    for (const { channel, report } of list) {
+      const row = tally.get(channel);
+      if (!row) continue;
+      if (report.state === LISTING_READINESS.READY) row.ready += 1;
+      else if (report.state === LISTING_READINESS.WARNED) row.warned += 1;
+      else row.incomplete += 1;
+      for (const problem of report.problems) {
+        if (problem.problem === LISTING_PROBLEM.MISSING_FACT) row.facts.set(problem.fact, (row.facts.get(problem.fact) ?? 0) + 1);
+        if (problem.problem === LISTING_PROBLEM.NO_CATEGORY) row.noCategory += 1;
+      }
+    }
+  }
+  return [...tally.values()].map(({ facts, ...counts }) => ({
+    ...counts,
+    gaps: [...facts.entries()]
+      .map(([fact, count]) => ({ fact, label: FACT_DECLARATIONS[fact]?.label ?? fact, count, fixable: FACT_DECLARATIONS[fact]?.answer === ANSWER.CHOICE }))
+      .sort((a, b) => b.count - a.count),
+  }));
+}
+
+function missingIn(verdicts: Map<string, ChannelVerdict[]>, channel: Channel, fact: FactKey): string[] {
+  return [...verdicts.entries()]
+    .filter(([, list]) => list.some((v) => v.channel === channel && v.report.problems.some((p) => p.problem === LISTING_PROBLEM.MISSING_FACT && p.fact === fact)))
+    .map(([id]) => id);
+}
 
 const subjectOf = (subject: ReadinessSubject): ListingSubject => ({
   kind: subject.kind,

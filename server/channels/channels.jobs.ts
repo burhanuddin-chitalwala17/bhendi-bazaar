@@ -28,6 +28,10 @@ export const listingReadJob = registerJob({
   ...listingReadSpec,
   handler: async ({ jobId, payload }) => {
     const outcome = await channelImportService.runRead(payload.connectionId);
+    // A listing linked by its SKU fills its product once, like one settled by hand (marketplace-facts Q36).
+    await channelFactsService.fillUnread(payload.connectionId).catch((error: unknown) => {
+      console.error(`[channels] facts fill not queued for ${payload.connectionId}: ${error instanceof Error ? error.name : "error"}`);
+    });
     // Each newly linked listing gets its platform listing with what is live (channel-listings D3).
     await platformListingService.ensureForConnection(payload.connectionId).catch((error: unknown) => {
       console.error(`[channels] platform listings not made for ${payload.connectionId}: ${error instanceof Error ? error.name : "error"}`);
@@ -62,6 +66,7 @@ export const channelsMaintainJob = registerJob({
     // Platform listings for anything linked since, and one more look at listings still waiting (marketplace-publish D5).
     await platformListingService.ensureForAll().catch((error: unknown) => console.error(`[channels] platform listings pass failed: ${error instanceof Error ? error.name : "error"}`));
     await listingPublishService.daily();
+    await channelFactsService.fillUnreadAll().catch((error: unknown) => console.error(`[channels] facts fill pass failed: ${error instanceof Error ? error.name : "error"}`));
     console.log(
       `[jobs] channels.maintain ${jobId}: checked ${summary.checked}, renewed ${summary.renewed}, ` +
         `resealed ${summary.resealed}, needs reconnect ${summary.needsReconnect}, ` +
