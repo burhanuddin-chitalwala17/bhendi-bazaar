@@ -12,6 +12,11 @@
 
 ## Entries
 
+## 2026-11-03 — CI: two living docs re-verified
+
+- `src/components/CLAUDE.md` and `src/app/api/CLAUDE.md` re-read against the fix page's components and
+  `PUT /api/org/[orgId]/products/facts`; both follow the rules as written, so only `Verified:` moved.
+
 ## 2026-11-03 — Fix what keeps products off a channel, many at once [CONTRACT] [MIGRATION]
 
 - **The card names each gap** (readiness-fix [spec](specs/channel-registry/readiness-fix/)): under each
