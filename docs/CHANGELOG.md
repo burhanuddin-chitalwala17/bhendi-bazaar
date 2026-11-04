@@ -12,6 +12,16 @@
 
 ## Entries
 
+## 2026-11-05 — E2E: the checkout check reads the line a buyer can see
+
+- CI's smoke journey failed on both projects at `/checkout`: since the summary folds its lines on a
+  phone (StoreCheckout), the product's name is in the page twice — inside the phone's closed fold
+  and in the tablet-up column, one of them always `display: none` — and `.first()` found the hidden
+  one. The test now opens the fold where it shows, as a buyer would, and asserts the name that is on
+  screen (`filter({ visible: true })`). It still fails if checkout snapshots an empty bag: there is
+  then no fold and no name.
+- E2E 12/12 locally against `bhendi_bazaar_ci` from a clean build.
+
 ## 2026-11-05 — Docs: five living docs re-verified against yesterday's code
 
 - CI's docs gate: `CONTRACTS.md`, `server/checkout/CLAUDE.md`, `server/channels/CLAUDE.md`,

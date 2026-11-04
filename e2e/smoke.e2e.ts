@@ -35,7 +35,11 @@ test("browse a category, open the product, add it to the cart", async ({ page })
 
   // Checkout snapshots the cart once; it must wait for the saved cart, not snapshot nothing.
   await page.goto("/checkout");
-  await expect(page.getByText(E2E_PRODUCT.name).first()).toBeVisible();
+  // A phone folds the summary's lines (StoreCheckout); open it as a buyer would. The name is in the
+  // page twice (the phone's fold and the tablet's open column), so look for the one on screen.
+  const fold = page.locator("summary", { hasText: /order summary/i });
+  if (await fold.isVisible()) await fold.click();
+  await expect(page.getByText(E2E_PRODUCT.name).filter({ visible: true })).toBeVisible();
   await expect(page.getByText(/your bag is empty/i)).toHaveCount(0);
 });
 
