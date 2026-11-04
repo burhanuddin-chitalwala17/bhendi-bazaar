@@ -136,12 +136,12 @@ export const publishListingJob = registerJob({
   },
 });
 
-/** The marketplaces' answers to what was sent (marketplace-publish D5): runs again only while one is waiting. */
+/** The marketplaces' answers to what was sent (marketplace-publish D5, Q22): runs again when the next look falls due. */
 export const checkListingsJob = registerJob({
   ...checkListingsSpec,
   handler: async ({ jobId }) => {
-    const checked = await listingPublishService.checkDue(() =>
-      enqueueLater(prisma, checkListingsSpec, {}, { afterSeconds: LISTING_CHECK_EVERY_SECONDS, onePerSeconds: LISTING_CHECK_EVERY_SECONDS }),
+    const checked = await listingPublishService.checkDue((afterSeconds) =>
+      enqueueLater(prisma, checkListingsSpec, {}, { afterSeconds, onePerSeconds: LISTING_CHECK_EVERY_SECONDS }),
     );
     if (checked > 0) console.log(`[jobs] channels.check-listings ${jobId}: ${checked} listings`);
   },

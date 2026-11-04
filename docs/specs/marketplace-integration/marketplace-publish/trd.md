@@ -3,7 +3,7 @@
 - **Status:** Implemented
 - **Domain:** channels, with listing (mappings) and catalog (photos, stock)
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-02
+- **Verified:** 2026-11-04
 - **References:** [spec.md](spec.md), [ux.md](ux.md), [decisions.md](decisions.md), [channel-listings trd](../channel-listings/trd.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md) "Editing and creating a listing", [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0045](../../../adr/0045-channel-mappings-are-versioned-data.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -42,8 +42,8 @@ looking for the product's page on Amazon so it is never duplicated.
   grouped per org (ADR-0038's fairness); a busy marketplace throws and the queue retries; listings
   calls are 5 a second per seller, so fifty listings take seconds.
 - **D5 — The check renews itself** (inventory-sync Q23): after a send, each listing is due at 2, 10,
-  30 and 120 minutes, and one `channels.check-listings` job claims what is due and re-enqueues only
-  while something waits. The answer is a complaint at any look, or the listing found clean at the
+  30 and 120 minutes, and one `channels.check-listings` job claims what is due and re-enqueues for when
+  the next look falls due, only while something waits (Q22). The answer is a complaint at any look, or the listing found clean at the
   second look;
   the daily maintain pass checks anything still pending, and after the last check the listing reads
   "Amazon hasn't answered". Flipkart's answer is the send's own, so it needs no check.

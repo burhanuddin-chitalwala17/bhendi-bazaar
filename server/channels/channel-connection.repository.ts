@@ -315,6 +315,18 @@ export const channelConnectionRepository = {
     });
   },
 
+  /** Several connections with their sealed tokens, in one read: a batched check's half of `forOrders`. */
+  async withTokens(ids: readonly string[]): Promise<OrdersCheckRow[]> {
+    if (ids.length === 0) return [];
+    return await prisma.channelConnection.findMany({
+      where: { id: { in: [...ids] } },
+      select: {
+        id: true, orgId: true, channel: true, state: true, externalAccountId: true, stockSync: true,
+        stockSyncChangedAt: true, ordersCursor: true, accessToken: true, accessTokenExpiresAt: true,
+      },
+    });
+  },
+
   /** The last problem a send met, or null once one goes (D7). */
   async setStockProblem(db: Pick<typeof prisma, "channelConnection">, id: string, problem: StockProblem | null): Promise<void> {
     await db.channelConnection.updateMany({ where: { id, stockProblem: problem === null ? { not: null } : { not: problem } }, data: { stockProblem: problem } });

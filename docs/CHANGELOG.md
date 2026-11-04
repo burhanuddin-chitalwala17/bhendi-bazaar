@@ -12,6 +12,24 @@
 
 ## Entries
 
+## 2026-11-04 — The listing answer check runs when a look is due; one new job wakes one worker loop
+
+- **Why (the ops review):** after a publish the worker looks for the marketplace's answer at 2, 10, 30
+  and 120 minutes, but the check ran every two minutes while anything waited (about sixty runs for four
+  looks) and read each listing piece by piece: up to ~4,300 statements a day. Separately, pg-boss woke
+  all four worker loops for every new job, three of them to fetch nothing.
+- **Answer check (marketplace-publish Q22):** the next run is enqueued for when the next look falls
+  due, never sooner than two minutes apart, and none once nothing waits. A run claims what is due and
+  reads those listings, their connections with sealed tokens, and missing SKUs in one statement each;
+  a look then costs only its own write. The looks and the chain (inventory-sync Q23) are unchanged.
+- **Worker wake (worker-foundation trd.md D3):** a new job wakes one idle loop; a loop that takes a job
+  wakes one idle sibling, so a burst still spreads. Measured on the real worker: 8 statements per job
+  before, 4 after; 40 jobs in one transaction drained in 1.5 s at about 2 each.
+- **Tests:** `tests/integration/marketplace-publish.test.ts` gains the schedule (mutation: a fixed two
+  minutes went red) and the cost, one write per extra listing (mutation: a per-listing SKU read went
+  red); `tests/unit/jobs-wake.test.ts` holds the wake rule (mutations: no override, no sibling wake
+  each went red) and fails if a pg-boss upgrade moves the internals it relies on.
+
 ## 2026-11-04 — Storefront cache, review: bounded age, a clear after commit, only cached tables, input cannot fill it
 
 - **Found in review** of the entry below, fixed before merge:

@@ -8,6 +8,17 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
 
+// Counted by the answer check's budget test below; every statement is swallowed so the run stays quiet.
+process.env.PRISMA_LOG_QUERIES = "1";
+let counting = false;
+let statements = 0;
+vi.spyOn(console, "log").mockImplementation((...args) => {
+  if (typeof args[0] === "string" && args[0].startsWith("prisma:query")) {
+    if (counting) statements++;
+    return;
+  }
+});
+
 const fake = vi.hoisted(() => {
   const state = {
     published: [] as Array<{ sku: string; changes: Record<string, unknown> }>,
@@ -302,5 +313,61 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
     const after = await row(a);
     expect(after.publishState).toBe("attention");
     expect((after.issues as Array<{ code: string }>)[0].code).toBe("no_parent");
+  });
+
+  describe("the answer check's schedule and cost (Q22)", () => {
+    /** A listing sent, waiting on its marketplace's answer, its next look due now. */
+    const waitingAndDue = async (s: string) => {
+      const id = await product(s, "amazon");
+      await editAndPublish(id, "amazon", { title: `Waiting ${s}` });
+      const listingId = (await row(id)).id;
+      await publish.send(listingId);
+      await prisma.platformListing.update({ where: { id: listingId }, data: { nextCheckAt: new Date(Date.now() - 1000) } });
+      return listingId;
+    };
+    const quiet = () => prisma.platformListing.updateMany({ where: { orgId, publishState: { in: ["sent", "checking"] } }, data: { publishState: "idle", nextCheckAt: null } });
+
+    beforeEach(async () => {
+      fake.state.statusError = null;
+      fake.state.status = { found: false, live: true, issues: [], showing: { title: null, mainImageUrl: null } };
+      await quiet();
+    });
+
+    it("runs again when the next look falls due, not on a fixed two minutes", async () => {
+      const listingId = await waitingAndDue("SCHED");
+      const asked: number[] = [];
+      await publish.checkDue(async (after) => void asked.push(after));
+      const after = await prisma.platformListing.findUniqueOrThrow({ where: { id: listingId } });
+      expect(after.checkCount).toBe(1);
+      const untilNext = Math.ceil((after.nextCheckAt!.getTime() - Date.now()) / 1000);
+      expect(asked).toHaveLength(1);
+      expect(asked[0]).toBeGreaterThan(300); // the second look is ten minutes after the send
+      expect(Math.abs(asked[0] - untilNext)).toBeLessThanOrEqual(2);
+    });
+
+    it("asks for no further run once nothing waits", async () => {
+      const asked: number[] = [];
+      await publish.checkDue(async (after) => void asked.push(after));
+      expect(asked).toEqual([]);
+    });
+
+    it("costs one write more per listing looked at, not a read per listing", async () => {
+      await waitingAndDue("COST1");
+      counting = true;
+      statements = 0;
+      await publish.checkDue(async () => {});
+      const one = statements;
+      counting = false;
+
+      await quiet();
+      for (const s of ["COST2", "COST3", "COST4", "COST5"]) await waitingAndDue(s);
+      counting = true;
+      statements = 0;
+      await publish.checkDue(async () => {});
+      const four = statements;
+      counting = false;
+
+      expect(four - one, `one listing cost ${one}, four cost ${four}`).toBe(3);
+    });
   });
 });

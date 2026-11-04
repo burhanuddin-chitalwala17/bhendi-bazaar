@@ -20,11 +20,14 @@ const noPayload = z.object({});
 type NoPayload = z.infer<typeof noPayload>;
 
 /**
- * The answer check (D5, inventory-sync Q23): claims listings whose next look is due and runs again
- * only while one is still waiting for its answer. A send starts it; the daily pass restarts it.
+ * The answer check (D5, Q22, inventory-sync Q23): claims listings whose next look is due and runs again
+ * when the next one falls due, only while one is still waiting. A send starts it; the daily pass restarts it.
  */
 export const checkListingsSpec: JobSpec<NoPayload> = { type: "channels.check-listings", schema: noPayload };
 
-/** How often the answer check runs while anything waits, and when each listing is looked at after its send. */
+/**
+ * The shortest gap between two answer checks, and the slot in which only one may be queued: a check
+ * runs when the next look falls due (Q22), never sooner than this. And when each listing is looked at.
+ */
 export const LISTING_CHECK_EVERY_SECONDS = 120;
 export const LISTING_CHECK_AFTER_SECONDS = [120, 600, 1800, 7200] as const;

@@ -1,6 +1,6 @@
 # CLAUDE.md — channels domain
 
-- **Verified:** 2026-11-02
+- **Verified:** 2026-11-04
 - **Covers:** `server/channels/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md). This file covers **channels** only. Requirements are in [docs/specs/marketplace-integration/](../../docs/specs/marketplace-integration/); every decision, with who made it, is in each spec's `decisions.md`.
@@ -55,6 +55,6 @@ Channels owns a shop's authorised connection to a marketplace: the consent round
 | `listing-photos.ts`, `listing-photos.job.ts` | Which photo addresses a copy may fetch; the copy job's spec |
 | `listing-read.job.ts` | The read job's spec, enqueued on connect and by Read again; its handler is in `channels.jobs.ts` |
 | `platform-listing.service.ts`, `platform-listing.repository.ts`, `platform-listing.types.ts`, `listing-plan.ts` | Each product's listing per marketplace: made with what is live, computed from the product, saved as its own values; `listing-plan.ts` is pure (channel-listings) |
-| `listing-publish.service.ts`, `listing-publish.job.ts` | The review, the publish claimed at the reviewed version, the send under a lock per listing, and the self-renewing answer check (marketplace-publish D3–D5) |
+| `listing-publish.service.ts`, `listing-publish.job.ts` | The review, the publish claimed at the reviewed version, the send under a lock per listing, and the answer check, run when the next look falls due and batched across shops (marketplace-publish D3–D5, Q22) |
 | `listing-create.service.ts`, `listing-create.ts` | Putting a product or a family on a marketplace: looking for its page, the draft, the check-only answer, the create; `listing-create.ts` (mapping forwards, theme, SKU) is pure (marketplace-publish D6–D8) |
 | `providers/` | `MarketplaceProvider`, one folder per marketplace (`*.listings.ts` reads its listings, `*.stock.ts` its locations, counts and orders, `*.publish.ts` its listing rules, publish, status and create; `stock.ts` and `publish.ts` the shared shapes), and `listing-read.ts`'s shared sink, retry and paise helpers |
