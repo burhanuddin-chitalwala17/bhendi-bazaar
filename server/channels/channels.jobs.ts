@@ -11,6 +11,7 @@ import { listingPhotosSpec } from "./listing-photos.job";
 import { channelFactsService } from "./channel-facts.service";
 import { listingFactsSpec } from "./listing-facts.job";
 import { pushStockSpec } from "@server/shared/jobs/push-stock.job";
+import { stockChangedSpec } from "@server/shared/jobs/stock-changed.job";
 import { channelStockService } from "./channel-stock.service";
 import { channelOrdersService } from "./channel-orders.service";
 import { platformListingService } from "./platform-listing.service";
@@ -96,6 +97,15 @@ export const listingFactsJob = registerJob({
 });
 
 /** A product's stock changed: its count goes to every marketplace with sync on (inventory-sync D2, D3). */
+/** A stock change, kept to the products a marketplace with sync on lists (inventory-sync Q27). */
+export const stockChangedJob = registerJob({
+  ...stockChangedSpec,
+  handler: async ({ jobId, payload }) => {
+    const queued = await channelStockService.pushChanged(payload.products);
+    if (queued > 0) console.log(`[jobs] channels.stock-changed ${jobId}: ${queued} of ${payload.products.length} products to push`);
+  },
+});
+
 export const pushStockJob = registerJob({
   ...pushStockSpec,
   handler: async ({ jobId, payload }) => {

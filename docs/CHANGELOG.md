@@ -12,6 +12,23 @@
 
 ## Entries
 
+## 2026-11-04 — A stock change is one read and one job, and only listed products are pushed
+
+- **Why:** every stock change (an order, an edit, a bulk import) read each touched product's total and
+  queued a marketplace push per product, whether or not any marketplace listed it; each push job then
+  cost the worker a fetch and a read to find nothing to send. A 30-product change was 63 statements in
+  its transaction; a 500-product import about 3,000 in all.
+- **Now (inventory-sync Q27):** catalog reads every total in one statement and enqueues one
+  `channels.stock-changed` job naming the products, each with whether it sold out. Channels keeps the
+  products a live listing on a marketplace with sync on would send, in one read, and queues the
+  unchanged `channels.push-stock` for each. Measured: 63 → 5 statements for 30 products.
+- **Unchanged:** the push (lock per product, counts already sent skipped, busy marketplace retried), a
+  sold-out product going first (Q19), catalog never importing channels, and `channels.push-stock`'s
+  payload, so jobs already queued at deploy still run.
+- **Tests:** `tests/integration/stock-sync.test.ts`: one job per change naming each product and which
+  sold out (mutations: a job per product, the flag lost, each went red); only listed products pushed,
+  none with sync off (mutation: no filter went red).
+
 ## 2026-11-04 — Answer check and worker wake, review: a first look is never merged into a later run
 
 - **Found in review** of the entry below, fixed before merge:

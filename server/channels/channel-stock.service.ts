@@ -124,6 +124,21 @@ export const channelStockService = {
     );
   },
 
+  /**
+   * A stock change, fanned out (inventory-sync D2, Q27): a push job for each product a live listing
+   * would send, none for the rest. The push is unchanged: its lock, its skip of counts already sent,
+   * its retry when a marketplace is busy, and a sold-out product going first (Q19).
+   */
+  async pushChanged(products: ReadonlyArray<{ productId: string; soldOut: boolean }>): Promise<number> {
+    const live = await channelListingRepository.productsToPush(products.map((p) => p.productId));
+    const toPush = products.filter((p) => live.has(p.productId));
+    if (toPush.length === 0) return 0;
+    await prisma.$transaction(async (tx) => {
+      for (const p of toPush) await enqueue(tx, pushStockSpec, { productId: p.productId, soldOut: p.soldOut });
+    });
+    return toPush.length;
+  },
+
   /** Every linked product on a connection sent again, after sync goes on or locations are matched (D3, Q16). */
   async pushAllIn(tx: EnqueueTx, connectionId: string): Promise<void> {
     const products = new Set((await channelListingRepository.linkedOn(connectionId)).map((l) => l.productId!));
