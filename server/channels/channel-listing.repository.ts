@@ -379,7 +379,6 @@ export const channelListingRepository = {
     });
   },
 
-  /** Every live listing linked to a product, with what a stock push needs (inventory-sync D3). */
   /**
    * Of these products, the ones some live listing would send a count for: linked, not gone, on a
    * connected marketplace with stock sync on. One read for a whole stock change (inventory-sync Q27);
@@ -399,6 +398,7 @@ export const channelListingRepository = {
     return new Set(rows.filter((r) => r.productId !== null && isMarketplaceChannel(r.channel)).map((r) => r.productId as string));
   },
 
+  /** Every live listing linked to a product, with what a stock push needs (inventory-sync D3). */
   async linkedForPush(productId: string, db: Pick<typeof prisma, "channelListing"> = prisma) {
     return await db.channelListing.findMany({
       where: { productId, goneAt: null },

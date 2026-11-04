@@ -3,7 +3,7 @@
 - **Status:** Implemented
 - **Domain:** channels, with catalog (stock) and checkout (orders, unchanged)
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-01
+- **Verified:** 2026-11-04
 - **References:** [spec.md](spec.md), [ux.md](ux.md), [decisions.md](decisions.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md) "Detecting a sale", [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0044](../../../adr/0044-a-marketplace-orders-money-is-reported-not-computed.md), [ADR-0021](../../../adr/0021-audit-trail-never-fails-the-action.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -35,9 +35,10 @@ sync on for that marketplace, after seeing what will change.
   named by us. New ones arrive unmatched; ones not seen are marked gone; a deactivated shop location
   flags its match. Suggestions compare pincodes, then addresses.
 - **D2 — A stock change is enqueued where it happens.** Each `stockRepository` write (reserve,
-  release, restock, setCounted, takeOne, create and import) enqueues `channels.push-stock`
-  `{ productId }` in its own transaction, through a job spec in `server/shared/jobs`, so catalog does
-  not import channels. Each push runs under a lock per product and sends the count when it runs; a
+  release, restock, setCounted, takeOne, create and import) enqueues one `channels.stock-changed`
+  naming every product it touched, with whether each sold out, in its own transaction, through a job
+  spec in `server/shared/jobs`, so catalog does not import channels (Q27). Channels keeps the products
+  a marketplace with sync on lists and enqueues `channels.push-stock` `{ productId }` for each. Each push runs under a lock per product and sends the count when it runs; a
   send of the counts already sent is skipped, so a burst of changes costs one call (Q22). A product
   whose count reaches 0 is enqueued at a higher priority (Q19). Archiving and restoring push too (Q6).
 - **D3 — The push sends what is true now.** The handler reads the product's current counts per

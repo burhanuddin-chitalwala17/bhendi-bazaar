@@ -84,8 +84,8 @@ describe.skipIf(!isDisposableDb)("stock sync (local db)", () => {
   /** "Stock changed" jobs naming this product, and each one's flag for it (inventory-sync Q27). */
   const changedJobs = async (productId: string) => {
     const { JOBS_QUEUE, JOBS_SCHEMA } = await import("@server/shared/jobs/jobs.config");
-    return await prisma.$queryRawUnsafe<{ products: Array<{ productId: string; soldOut: boolean }> }[]>(
-      `SELECT data->'payload'->'products' AS products FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->>'type' = 'channels.stock-changed' AND data->'payload'->'products' @> $2::jsonb`,
+    return await prisma.$queryRawUnsafe<{ products: Array<{ productId: string; soldOut: boolean }>; priority: number; retryLimit: number; retryDelay: number; retryBackoff: boolean }[]>(
+      `SELECT data->'payload'->'products' AS products, priority, retry_limit AS "retryLimit", retry_delay AS "retryDelay", retry_backoff AS "retryBackoff" FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->>'type' = 'channels.stock-changed' AND data->'payload'->'products' @> $2::jsonb`,
       JOBS_QUEUE,
       JSON.stringify([{ productId }]),
     );
@@ -167,6 +167,17 @@ describe.skipIf(!isDisposableDb)("stock sync (local db)", () => {
     expect(job.products.map((p) => p.productId).sort()).toEqual([...ids].sort());
     expect(Object.fromEntries(job.products.map((p) => [p.productId, p.soldOut]))).toEqual({ [ids[0]]: false, [ids[1]]: true, [ids[2]]: false });
     expect(await changedJobs(ids[1])).toHaveLength(1);
+    expect(job.priority).toBeGreaterThan(0); // one of them sold out (Q19)
+  });
+
+  it("a stock change outlasts a deploy whose worker does not know it yet: hours of retries (Q27)", async () => {
+    const id = await product("RETRY", 4);
+    await prisma.$transaction(async (tx) => stockService.takeOne(id, locationId, tx));
+    const [job] = await changedJobs(id);
+    expect(job.retryBackoff).toBe(true);
+    // Backed off from the first delay, each capped at the queue's hour: well past a worker deploy.
+    const windowSeconds = Array.from({ length: job.retryLimit }, (_, i) => Math.min(job.retryDelay * 2 ** i, 3600)).reduce((a, b) => a + b, 0);
+    expect(windowSeconds).toBeGreaterThan(3 * 3600);
   });
 
   it("pushes only what a marketplace with sync on lists, and keeps the sold-out flag (Q27)", async () => {

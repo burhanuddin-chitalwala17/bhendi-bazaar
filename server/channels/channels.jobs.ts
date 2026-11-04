@@ -96,7 +96,6 @@ export const listingFactsJob = registerJob({
   },
 });
 
-/** A product's stock changed: its count goes to every marketplace with sync on (inventory-sync D2, D3). */
 /** A stock change, kept to the products a marketplace with sync on lists (inventory-sync Q27). */
 export const stockChangedJob = registerJob({
   ...stockChangedSpec,
@@ -106,6 +105,7 @@ export const stockChangedJob = registerJob({
   },
 });
 
+/** A product's stock changed: its count goes to every marketplace with sync on (inventory-sync D2, D3). */
 export const pushStockJob = registerJob({
   ...pushStockSpec,
   handler: async ({ jobId, payload }) => {

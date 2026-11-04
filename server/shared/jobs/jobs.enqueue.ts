@@ -27,6 +27,7 @@ export async function enqueue<T>(
     db: fromPrisma(tx),
     ...(group ? { group: { id: group } } : {}),
     ...(priority !== undefined ? { priority } : {}),
+    ...(definition.retry ? { retryLimit: definition.retry.limit, retryDelay: definition.retry.delaySeconds, retryBackoff: true } : {}),
   });
   if (!id) throw new Error(`Job "${definition.type}" was not accepted by the queue`);
   return id;

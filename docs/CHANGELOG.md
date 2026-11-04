@@ -12,6 +12,19 @@
 
 ## Entries
 
+## 2026-11-04 — Stock change, review: survives the deploy that introduces it
+
+- **Found in review** of the entry below, fixed before merge: a deploy ships the site before the
+  worker, so the running worker could meet `channels.stock-changed` before it knows the type, fail it
+  through its five default retries (~15 minutes) and park it, losing that change's marketplace push.
+  One shop has stock sync on. A job spec may now carry its own `retry` (`jobs.types.ts`), stored on the
+  job when sent; `channels.stock-changed` retries ten times backing off from a minute (about six hours
+  to the queue's one-hour cap), so it waits for the new worker instead. No deploy order to remember.
+- Also: TRD D2 describes the new flow; two doc comments moved back to their functions; the batch
+  job's sold-out priority is tested.
+- **Tests:** the retry window exceeds three hours (mutation: no `retry` went red); the priority
+  (mutation: none went red).
+
 ## 2026-11-04 — A stock change is one read and one job, and only listed products are pushed
 
 - **Why:** every stock change (an order, an edit, a bulk import) read each touched product's total and
