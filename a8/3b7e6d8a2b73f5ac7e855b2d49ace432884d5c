@@ -1,0 +1,117 @@
+server/catalog/product.read.repository.ts
+  s_70578559cabf14::t_b50250bd844548 9,87,91
+docs/CONTRACTS.md
+  s_70578559cabf14::t_b50250bd844548 599
+src/components/channel/read-progress-refresher.tsx
+  s_70578559cabf14::t_b50250bd844548 4-7,9-27,29-53
+src/data-access-layer/products.dal.ts
+  s_70578559cabf14::t_b50250bd844548 23,29,37,40-63,173-174,181-183,186,197-198,213-217,225-226,255-257,267-268,271,343-344,346
+server/shared/table-writes.ts
+  s_70578559cabf14::t_b50250bd844548 1-41
+src/components/channel/listingsApiClient.ts
+  s_70578559cabf14::t_b50250bd844548 5,24-26
+src/components/channel/useReadProgress.ts
+  s_70578559cabf14::t_b50250bd844548 1-64
+server/catalog/review-rating.ts
+  s_70578559cabf14::t_b50250bd844548 18,145,148,151-152,158-163
+docs/specs/worker-foundation/trd.md
+  s_70578559cabf14::t_b50250bd844548 6,20
+docs/specs/marketplace-integration/marketplace-publish/decisions.md
+  s_70578559cabf14::t_b50250bd844548 3,35
+server/bidding/CLAUDE.md
+  s_70578559cabf14::t_b50250bd844548 3,19,30
+server/bidding/bidding.repository.ts
+  s_70578559cabf14::t_b50250bd844548 20,112-122
+src/app/api/org/[orgId]/channels/[channel]/listings/read/route.ts
+  s_70578559cabf14::t_b50250bd844548 3,16-18
+docs/specs/marketplace-integration/marketplace-publish/trd.md
+  s_70578559cabf14::t_b50250bd844548 6,47-48
+server/shared/read-cache.ts
+  s_70578559cabf14::t_b50250bd844548 1-68
+server/channels/channel-listing.repository.ts
+  s_70578559cabf14::t_b50250bd844548 425-426
+server/channels/channel-connection.repository.ts
+  s_70578559cabf14::t_b50250bd844548 318-329
+docs/specs/marketplace-integration/channel-import/decisions.md
+  s_70578559cabf14::t_b50250bd844548 3,33
+server/shared/jobs/jobs.work.ts
+  s_70578559cabf14::t_b50250bd844548 2,5-35,39-40,48,50-53,66-74
+tests/unit/jobs-wake.test.ts
+  s_70578559cabf14::t_b50250bd844548 1-91
+server/channels/channel-import.service.ts
+  s_70578559cabf14::t_b50250bd844548 124-136,145-153,280
+server/bidding/bidding-lock.ts
+  s_70578559cabf14::t_b50250bd844548 17-18,40-53
+tests/unit/org-scoping.test.ts
+  s_70578559cabf14::t_b50250bd844548 35
+docs/adr/0018-one-effective-price-function.md
+  s_70578559cabf14::t_b50250bd844548 4
+server/promotions/price-context.ts
+  s_70578559cabf14::t_b50250bd844548 9,11-12,19,47-76
+tests/unit/read-cache.test.ts
+  s_70578559cabf14::t_b50250bd844548 1-79
+tests/unit/read-progress.test.ts
+  s_70578559cabf14::t_b50250bd844548 1-70
+server/channels/listing-publish.service.ts
+  s_70578559cabf14::t_b50250bd844548 3,6-7,11,107-156,268-271,273,276-284,286-287,289-290,293-294,298,303-305
+server/channels/channels.jobs.ts
+  s_70578559cabf14::t_b50250bd844548 18,139,143-144
+server/shared/prisma.ts
+  s_70578559cabf14::t_b50250bd844548 5,30-31,36,39-43
+src/data-access-layer/reviews.dal.ts
+  s_70578559cabf14::t_b50250bd844548 19-20
+server/channels/listing-publish.job.ts
+  s_70578559cabf14::t_b50250bd844548 3,24-25,29-32,35-44
+tests/integration/read-cache-tables.test.ts
+  s_70578559cabf14::t_b50250bd844548 1-114
+server/promotions/promotion.repository.ts
+  s_70578559cabf14::t_b50250bd844548 67-77
+src/app/api/search/suggestions/route.ts
+  s_70578559cabf14::t_b50250bd844548 5,22
+docs/specs/marketplace-integration/channel-import/trd.md
+  s_70578559cabf14::t_b50250bd844548 6,72
+docs/adr/0065-storefront-reads-are-shared-across-requests-and-cleared-by-the-tables-a-write-touches.md
+  s_70578559cabf14::t_b50250bd844548 1-23
+server/catalog/category.read.repository.ts
+  s_70578559cabf14::t_b50250bd844548 9,18-19,21-27
+server/channels/platform-listing.repository.ts
+  s_70578559cabf14::t_b50250bd844548 215-230
+src/instrumentation.ts
+  s_70578559cabf14::t_b50250bd844548 15-16
+src/data-access-layer/banners.dal.ts
+  s_70578559cabf14::t_b50250bd844548 3,8-9,35-39
+docs/specs/marketplace-integration/channel-import/ux.md
+  s_70578559cabf14::t_b50250bd844548 4,44,99
+server/shared/jobs/jobs.enqueue.ts
+  s_70578559cabf14::t_b50250bd844548 44,52-54
+tests/integration/marketplace-publish.test.ts
+  s_70578559cabf14::t_b50250bd844548 11-21,34-35,61-63,121-122,124-125,135,362-460
+src/components/channel/listing-copy.ts
+  s_70578559cabf14::t_b50250bd844548 90-91
+src/lib/storefront-cache.ts
+  s_70578559cabf14::t_b50250bd844548 1-107
+src/app/(org)/org/[orgId]/channels/[channel]/listings/page.tsx
+  s_70578559cabf14::t_b50250bd844548 22,112
+tests/unit/display-price-context.test.ts
+  s_70578559cabf14::t_b50250bd844548 1-38
+server/catalog/review.service.ts
+  s_70578559cabf14::t_b50250bd844548 37-39,143,147-148,153-160
+tests/unit/read-cache-money.test.ts
+  s_70578559cabf14::t_b50250bd844548 1-54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "a83b7e6d8a2b73f5ac7e855b2d49ace432884d5c",
+  "prompts": {},
+  "sessions": {
+    "s_70578559cabf14": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3d8c5e99-123d-451a-b57d-7876f27849f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
