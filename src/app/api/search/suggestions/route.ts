@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { productService } from "@server/catalog/product.service";
 import { categoryService } from "@server/catalog/category.service";
-import { loadPriceContext } from "@server/promotions/price-context";
+import { loadDisplayPriceContext } from "@server/promotions/price-context";
 import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function GET(request: NextRequest) {
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     // Get matching products (limit to 5 for suggestions)
     const [products, priceContext] = await Promise.all([
       productService.searchProducts(query, 5),
-      loadPriceContext(),
+      loadDisplayPriceContext(),
     ]);
 
     // A list price here and an offer price one click later is the drift ADR-0018

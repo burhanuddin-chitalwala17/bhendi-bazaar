@@ -1,7 +1,7 @@
 # ADR-0018: One effective-price function serves display and charge
 
 - **Date:** 2026-08-16
-- **Status:** Accepted
+- **Status:** Accepted (decision 3 narrowed for display reads by [ADR-0065](0065-storefront-reads-are-shared-across-requests-and-cleared-by-the-tables-a-write-touches.md))
 - **Context:** Until now the only way to reduce a price was `Product.salePrice`, read independently wherever a price is shown. Those readings already disagree: `src/components/shared/PriceDisplay.tsx` treats a sale price as an offer only when it is positive and below the regular price — matching `effectiveUnitPrice` in `server/checkout/pricing.ts` — while the cart line, the checkout summary, the shipping-rate hook and five other sites simply fall back with `??`. A sale price of zero, or one above the regular price, renders differently depending on where the buyer is looking.
 
   [promotions](../specs/promotions/) multiplies that surface. Offers are time-boxed and reduce the price shown on listings, the product page and the cart, so a price is now derived from a catalogue row, a set of live offers, and a clock — at every read path in the storefront rather than at one. The force is not malice but arithmetic: a storefront that advertises a price the server will not honour is exactly the failure [ADR-0002](0002-server-holds-pricing-authority.md) exists to prevent, and it arrives through two implementations drifting apart, which is what nine of them have already done over one nullable column.

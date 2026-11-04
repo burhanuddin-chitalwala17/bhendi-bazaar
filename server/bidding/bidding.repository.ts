@@ -120,6 +120,17 @@ export class BiddingRepository {
    * and therefore awaiting an outcome. An event that expired with no bids drops out
    * on its own, which is why spec R33 needs no cleanup step.
    */
+  /**
+   * Every open event with what decides whether it still holds its product: the cacheable half of
+   * `lockedProducts`, whose clock the caller applies at its own instant (ADR-0065).
+   */
+  async openEvents(db: Db = prisma): Promise<Array<BiddingLock & { endAt: Date; bidCount: number }>> {
+    return await db.biddingEvent.findMany({
+      where: { status: "OPEN" },
+      select: { productId: true, slug: true, endAt: true, bidCount: true },
+    });
+  }
+
   async lockedProducts(now: Date, db: Db = prisma): Promise<BiddingLock[]> {
     return await db.biddingEvent.findMany({
       where: {

@@ -20,13 +20,13 @@ import {
 import { toProductMediaDto } from "@server/catalog/media";
 import { LOGO } from "@/lib/config";
 import {
-  loadPriceContext,
+  loadDisplayPriceContext,
   resolveProductPrice,
   type PriceContext,
 } from "@server/promotions/price-context";
 import {
   biddingLockFor,
-  loadBiddingLockContext,
+  loadDisplayBiddingLockContext,
   type BiddingLockContext,
 } from "@server/bidding/bidding-lock";
 import {
@@ -34,7 +34,23 @@ import {
   ratingFor,
   type RatingContext,
 } from "@server/catalog/review-rating";
+import { cachedRead, CACHED_READ_EXPIRY } from "@server/shared/read-cache";
 export { NotFoundError };
+
+/**
+ * The tables a product row is read from; held to them by tests/integration/read-cache-tables.test.ts.
+ * Rows are shared across requests (ADR-0065); prices are not: every row is priced per request.
+ */
+export const PRODUCT_ROW_TABLES = ["Product", "Category", "Org", "ProductStock", "OrgAddress", "Address", "ProductMedia", "MediaAsset"] as const;
+
+const catalogueRead = <T>(key: string, args: readonly unknown[], read: () => Promise<T>): Promise<T> =>
+  cachedRead(key, args, { tables: PRODUCT_ROW_TABLES, seconds: CACHED_READ_EXPIRY.catalogue }, read);
+
+/** Which products are on offer moves with the clock, so an offer-filtered list is read live. */
+const productRows = (filter: ProductFilter) =>
+  filter.offerOnly
+    ? productService.getProducts(filter)
+    : catalogueRead("product-rows", [filter], () => productService.getProducts(filter));
 
 const mapProduct = (
   product: ProductWithRelations,
@@ -153,9 +169,9 @@ export const productsDAL = {
     try {
       // Through the service, which expands a category slug to its subtree.
       const [products, context, locks] = await Promise.all([
-        productService.getProducts(filter),
-        loadPriceContext(),
-        loadBiddingLockContext(),
+        productRows(filter),
+        loadDisplayPriceContext(),
+        loadDisplayBiddingLockContext(),
       ]);
       const rows = products.filter((p) => p !== null);
       const ratings = await ratingsFor(rows);
@@ -169,8 +185,8 @@ export const productsDAL = {
     try {
       const [product, context, locks] = await Promise.all([
         productsRepository.getProductById(id),
-        loadPriceContext(),
-        loadBiddingLockContext(),
+        loadDisplayPriceContext(),
+        loadDisplayBiddingLockContext(),
       ]);
       if (!product) {
         throw new NotFoundError(`No product with id ${JSON.stringify(id)}`);
@@ -185,9 +201,9 @@ export const productsDAL = {
   getProductBySlug: async (slug: string): Promise<Product> => {
     try {
       const [product, context, locks] = await Promise.all([
-        productsRepository.getProductBySlug(slug),
-        loadPriceContext(),
-        loadBiddingLockContext(),
+        catalogueRead("product-by-slug", [slug], () => productsRepository.getProductBySlug(slug)),
+        loadDisplayPriceContext(),
+        loadDisplayBiddingLockContext(),
       ]);
       if (!product) {
         throw new NotFoundError(`No product with slug ${JSON.stringify(slug)}`);
@@ -195,7 +211,8 @@ export const productsDAL = {
       const mapped = mapProduct(product, context, locks, await ratingsFor([product]));
 
       if (product.familyId) {
-        const siblings = await productsRepository.getFamilySiblings(product.familyId);
+        const familyId = product.familyId;
+        const siblings = await catalogueRead("family-siblings", [familyId], () => productsRepository.getFamilySiblings(familyId));
         mapped.siblings = siblings.map((s): ProductSibling => {
           const resolved = resolveProductPrice(
             { id: s.id, price: s.price, categoryId: s.categoryId, orgId: s.orgId },
@@ -224,9 +241,9 @@ export const productsDAL = {
     count: number,
   ): Promise<Product[]> => {
     const [products, context, locks] = await Promise.all([
-      productsRepository.getSimilarProducts(slug, count),
-      loadPriceContext(),
-      loadBiddingLockContext(),
+      catalogueRead("similar-products", [slug, count], () => productsRepository.getSimilarProducts(slug, count)),
+      loadDisplayPriceContext(),
+      loadDisplayBiddingLockContext(),
     ]);
     const rows = products.filter((p) => p !== null);
     const ratings = await ratingsFor(rows);
@@ -236,8 +253,8 @@ export const productsDAL = {
   getOfferProducts: async (limit: number): Promise<Product[]> => {
     const [products, context, locks] = await Promise.all([
       productsRepository.getOfferProducts(limit),
-      loadPriceContext(),
-      loadBiddingLockContext(),
+      loadDisplayPriceContext(),
+      loadDisplayBiddingLockContext(),
     ]);
     const rows = products.filter((p) => p !== null);
     const ratings = await ratingsFor(rows);
@@ -312,8 +329,8 @@ export const productsDAL = {
   listForChannelFeed: async (orgIds: string[]): Promise<ChannelFeedProduct[]> => {
     const [rows, context, locks] = await Promise.all([
       productsRepository.listForChannelFeed(orgIds),
-      loadPriceContext(),
-      loadBiddingLockContext(),
+      loadDisplayPriceContext(),
+      loadDisplayBiddingLockContext(),
     ]);
     const ratings = await ratingsFor(rows);
     return rows.map((row) => ({

@@ -93,7 +93,7 @@ export default async function ChannelListingsPage({
 
   return (
     <div className="space-y-4">
-      <ReadProgressRefresher running={running} />
+      <ReadProgressRefresher orgId={scope.orgId} channel={page.channel} running={running} />
       {waiting > 0 && (
         <div className="flex flex-col gap-2 rounded-card bg-info/10 p-3 text-sm md:flex-row md:items-center md:justify-between">
           <p className="font-semibold">{PUBLISH.bar(waiting)}</p>

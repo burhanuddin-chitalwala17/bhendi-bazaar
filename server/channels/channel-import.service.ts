@@ -129,6 +129,23 @@ async function connectionFor(orgId: string, channel: string) {
 }
 
 export const channelImportService = {
+  /**
+   * Just the read's progress, for the listings page to poll while a read runs: one row, where a
+   * re-render of the page re-ran every read on it every four seconds.
+   */
+  async readProgress(orgId: string, channel: string): Promise<ChannelReadDTO> {
+    const { row } = await connectionFor(orgId, channel);
+    return {
+      state: (row.readState as ReadState | null) ?? null,
+      total: row.readTotal,
+      done: row.readDone,
+      startedAt: row.readStartedAt?.toISOString() ?? null,
+      finishedAt: row.readFinishedAt?.toISOString() ?? null,
+      error: (row.readErrorCode as ReadError | null) ?? null,
+      stalled: isStalled(row),
+    };
+  },
+
   /** "Read again" (R2): queue a read; the job claims it, so a second tap does nothing extra (D3). */
   async requestRead(orgId: string, channel: string): Promise<void> {
     const { row } = await connectionFor(orgId, channel);

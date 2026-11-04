@@ -34,6 +34,9 @@ import type {
 } from "@server/catalog/review.types";
 import { REVIEWS_PAGE_SIZE } from "@server/catalog/review.types";
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
+import { cachedRead, CACHED_READ_EXPIRY } from "@server/shared/read-cache";
+
+export const REVIEW_PAGE_TABLES = ["Review", "ReviewMedia", "MediaAsset"] as const;
 
 /** "New" on Home is the last week, not a per-person "seen" mark (own-store onboarding Q24). */
 const NEW_REVIEW_DAYS = 7;
@@ -145,7 +148,10 @@ export class ReviewService {
     const take = REVIEWS_PAGE_SIZE;
     const skip = (Math.max(1, page) - 1) * take;
     const [{ rows, total }, ratings] = await Promise.all([
-      reviewRepository.listPublished(productId, skip, take),
+      // The rows are the same for every viewer (isMine is resolved below), so they are shared (ADR-0065).
+      cachedRead("review-page", [productId, skip, take], { tables: REVIEW_PAGE_TABLES, seconds: CACHED_READ_EXPIRY.slow }, () =>
+        reviewRepository.listPublished(productId, skip, take),
+      ),
       loadRatingContext([productId]),
     ]);
     return {

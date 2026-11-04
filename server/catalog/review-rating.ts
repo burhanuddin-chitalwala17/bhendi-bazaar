@@ -15,6 +15,7 @@
 
 import { cache } from "react";
 import { reviewRepository } from "@server/catalog/review.repository";
+import { cachedRead, CACHED_READ_EXPIRY } from "@server/shared/read-cache";
 import {
   STAR_VALUES,
   type ProductRating,
@@ -147,8 +148,13 @@ export async function loadRatingContext(productIds: readonly string[]): Promise<
   return loadByKey(unique.join(","));
 }
 
+export const RATING_TABLES = ["Review"] as const;
+
+// Shared across requests as well (ADR-0065): a review written or moderated clears it.
 const loadByKey = cache(async (key: string): Promise<RatingContext> => {
-  const rows = await reviewRepository.publishedRatingRows(key.split(","));
+  const rows = await cachedRead("rating-rows", [key], { tables: RATING_TABLES, seconds: CACHED_READ_EXPIRY.slow }, () =>
+    reviewRepository.publishedRatingRows(key.split(",")),
+  );
   return { byProduct: summariseRatings(rows) };
 });
 

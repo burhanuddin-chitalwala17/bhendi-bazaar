@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { poolMax } from "@server/shared/pool-size";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { noteStatement } from "@server/shared/table-writes";
 
 // The pool is cached alongside the client, not just the client. Caching only the
 // client means every hot reload builds a new Pool whose connections are never
@@ -26,20 +27,20 @@ const pool =
 // the billed-operations work. Dev-only diagnostics; never set in a deployment.
 const logQueries = process.env.PRISMA_LOG_QUERIES === "1";
 
+// The query event is always on: every statement is reported to `noteStatement`, which is how a
+// write clears the storefront cache entries reading that table (ADR-0065).
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     adapter: new PrismaPg(pool),
-    log: logQueries
-      ? [{ emit: "event", level: "query" }, "error", "warn"]
-      : ["error", "warn"],
+    log: [{ emit: "event", level: "query" }, "error", "warn"],
   });
 
-if (logQueries && !globalForPrisma.prisma) {
-  (prisma as PrismaClient<{ log: [{ emit: "event"; level: "query" }] }>).$on(
-    "query",
-    (e) => console.log(`prisma:query ${e.query}`)
-  );
+if (!globalForPrisma.prisma) {
+  (prisma as PrismaClient<{ log: [{ emit: "event"; level: "query" }] }>).$on("query", (e) => {
+    if (logQueries) console.log(`prisma:query ${e.query}`);
+    noteStatement(e.query);
+  });
 }
 
 if (process.env.NODE_ENV !== "production") {

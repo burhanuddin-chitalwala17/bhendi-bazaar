@@ -12,6 +12,30 @@
 
 ## Entries
 
+## 2026-11-04 — Storefront page views stop re-reading the database; the listings page stops re-rendering itself
+
+- **Why:** the database meters every statement, and the store was spending about 15,000 a day. Each
+  query was already lean, but nothing was kept between requests: every page view cost 5–9 statements,
+  a missing product 5, so crawlers cost as much as shoppers.
+- **Storefront reads are shared across requests ([ADR-0065](adr/0065-storefront-reads-are-shared-across-requests-and-cleared-by-the-tables-a-write-touches.md)):**
+  offers, auction locks, categories, ratings, banners, review lists and product rows come from Next's
+  data cache. Each cached read declares the tables it reads; any write to one of them through the site
+  clears it at once (checked: an admin banner switch shows on the very next view). The worker's writes
+  fall back to an expiry: 5 minutes for product rows (stock), an hour for the rest.
+- **Prices stay exact:** offers that have not ended are cached, and which have started is decided per
+  request, so a sale starts and ends to the second (ADR-0018's boundary). Lists chosen *by* being on
+  offer are read live. Checkout, cart and payment still read live (Invariants 1, 2, 6).
+- **Measured on a production build** (statements per repeat view): home 8 → 1, category 7 → 0,
+  product 9 → 0, search 6 → 0, offers 5 → 1, missing product 5 → 0.
+- **Listings page:** while a marketplace read runs, the page used to re-render all its reads every
+  4 seconds. It now asks only for the read's progress (new `GET …/listings/read`), refreshes when the
+  read ends or every 30 seconds of progress, and stops on its own after 15 minutes.
+- **Tests:** `tests/integration/read-cache-tables.test.ts` fails if a cached read touches a table it
+  did not declare (mutation: dropping `ProductStock` and `PromotionTarget` went red);
+  `tests/unit/display-price-context.test.ts` holds the offer boundary (mutation: dropping the start
+  check went red); `tests/unit/read-cache.test.ts` (write detection, Date/Map round trip);
+  `tests/unit/read-progress.test.ts` (mutation: dropping the time limit went red).
+
 ## 2026-11-03 — CI: two living docs re-verified
 
 - `src/components/CLAUDE.md` and `src/app/api/CLAUDE.md` re-read against the fix page's components and

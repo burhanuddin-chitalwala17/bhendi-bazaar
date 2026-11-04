@@ -2,7 +2,7 @@ import { apiRequest } from "@/lib/api-client";
 import type { ListingDraftInput, ListingPublishInput, ListingSaveInput } from "@/lib/validation/schemas/platform-listing.schema";
 import type { PublishResultDTO } from "@server/channels/platform-listing.types";
 import type { PageMatch } from "@server/channels/providers/publish";
-import type { MarketplaceChannel } from "@server/channels/channel-connection.types";
+import type { ChannelReadDTO, MarketplaceChannel } from "@server/channels/channel-connection.types";
 
 /** A product's marketplace listing: saving it (channel-listings) and publishing it (marketplace-publish). */
 export const listingsApiClient = {
@@ -19,6 +19,11 @@ export const listingsApiClient = {
   /** Pages already on the marketplace for a product (marketplace-publish D6). */
   findPages(orgId: string, productId: string, channel: MarketplaceChannel, signal?: AbortSignal) {
     return apiRequest<{ pages: PageMatch[] }>(`/api/org/${orgId}/products/${productId}/listings/${channel}/pages`, { signal });
+  },
+
+  /** Where a running read of the shop's listings has got to (channel-import D10). */
+  readProgress(orgId: string, channel: string, signal?: AbortSignal) {
+    return apiRequest<ChannelReadDTO>(`/api/org/${orgId}/channels/${channel}/listings/read`, { signal });
   },
 
   /** Start a draft: on a page found, or a new page (marketplace-publish Q7). */
