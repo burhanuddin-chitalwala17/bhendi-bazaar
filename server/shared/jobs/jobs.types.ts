@@ -15,6 +15,11 @@ export interface JobDefinition<TPayload> {
   group?: (payload: TPayload) => string | undefined;
   /** Higher runs first; omit for the queue's default order. */
   priority?: (payload: TPayload) => number | undefined;
+  /**
+   * Retries past the queue's default, stored on the job when it is sent: a job type the running
+   * worker may not know yet (a deploy ships the site first) keeps retrying until the new worker is up.
+   */
+  retry?: { limit: number; delaySeconds: number };
   handler: (job: { jobId: string; payload: TPayload }) => Promise<void>;
 }
 
@@ -24,7 +29,7 @@ export interface JobDefinition<TPayload> {
  * registers the spec plus a handler only where the worker imports it, so the web process runs
  * no handler code and registers nothing.
  */
-export type JobSpec<TPayload> = Pick<JobDefinition<TPayload>, "type" | "schema" | "group" | "priority">;
+export type JobSpec<TPayload> = Pick<JobDefinition<TPayload>, "type" | "schema" | "group" | "priority" | "retry">;
 
 /** What travels inside a queue row: the type, and the payload the type's schema owns. */
 export interface JobEnvelope {

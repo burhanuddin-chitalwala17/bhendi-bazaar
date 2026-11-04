@@ -81,6 +81,15 @@ describe.skipIf(!isDisposableDb)("stock sync (local db)", () => {
     );
     return Number(rows[0].n);
   };
+  /** "Stock changed" jobs naming this product, and each one's flag for it (inventory-sync Q27). */
+  const changedJobs = async (productId: string) => {
+    const { JOBS_QUEUE, JOBS_SCHEMA } = await import("@server/shared/jobs/jobs.config");
+    return await prisma.$queryRawUnsafe<{ products: Array<{ productId: string; soldOut: boolean }>; priority: number; retryLimit: number; retryDelay: number; retryBackoff: boolean }[]>(
+      `SELECT data->'payload'->'products' AS products, priority, retry_limit AS "retryLimit", retry_delay AS "retryDelay", retry_backoff AS "retryBackoff" FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->>'type' = 'channels.stock-changed' AND data->'payload'->'products' @> $2::jsonb`,
+      JOBS_QUEUE,
+      JSON.stringify([{ productId }]),
+    );
+  };
   const line = (orderId: string, sku: string, quantity: number, state = "open", orderedAt = new Date()) => ({
     orderId,
     lineId: `${orderId}-1`,
@@ -100,7 +109,7 @@ describe.skipIf(!isDisposableDb)("stock sync (local db)", () => {
     await prisma.productStock.deleteMany({ where: { productId: { in: products.map((p) => p.id) } } });
     await prisma.product.deleteMany({ where: { id: { in: products.map((p) => p.id) } } });
     const { JOBS_QUEUE, JOBS_SCHEMA } = await import("@server/shared/jobs/jobs.config");
-    await prisma.$executeRawUnsafe(`DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->>'type' IN ('channels.push-stock', 'channels.check-orders')`, JOBS_QUEUE);
+    await prisma.$executeRawUnsafe(`DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->>'type' IN ('channels.push-stock', 'channels.stock-changed', 'channels.check-orders')`, JOBS_QUEUE);
   };
 
   beforeAll(async () => {
@@ -134,18 +143,64 @@ describe.skipIf(!isDisposableDb)("stock sync (local db)", () => {
     await prisma.channelConnection.deleteMany({ where: { orgId } });
   });
 
-  it("enqueues a push in the transaction that changes stock, and none when it rolls back (D2)", async () => {
+  it("enqueues the change in the transaction that changes stock, and none when it rolls back (D2)", async () => {
     const id = await product("TX", 5);
-    const before = await pushJobs(id);
+    const before = (await changedJobs(id)).length;
     await prisma.$transaction(async (tx) => stockService.takeOne(id, locationId, tx));
-    expect(await pushJobs(id)).toBe(before + 1);
+    expect((await changedJobs(id)).length).toBe(before + 1);
     await expect(
       prisma.$transaction(async (tx) => {
         await stockService.takeOne(id, locationId, tx);
         throw new Error("rolled back");
       }),
     ).rejects.toThrow(/rolled back/);
-    expect(await pushJobs(id)).toBe(before + 1);
+    expect((await changedJobs(id)).length).toBe(before + 1);
+  });
+
+  it("one change of many products is one job naming each, with which sold out (Q27, Q19)", async () => {
+    const ids = [await product("MANY1", 3), await product("MANY2", 0), await product("MANY3", 7)];
+    const { stockRepository } = await import("@server/catalog/stock.repository");
+    await prisma.$transaction(async (tx) =>
+      stockRepository.setForImport(ids, ids.map((productId, i) => ({ productId, orgAddressId: locationId, quantity: [3, 0, 7][i] })), tx),
+    );
+    const [job] = await changedJobs(ids[0]);
+    expect(job.products.map((p) => p.productId).sort()).toEqual([...ids].sort());
+    expect(Object.fromEntries(job.products.map((p) => [p.productId, p.soldOut]))).toEqual({ [ids[0]]: false, [ids[1]]: true, [ids[2]]: false });
+    expect(await changedJobs(ids[1])).toHaveLength(1);
+    expect(job.priority).toBeGreaterThan(0); // one of them sold out (Q19)
+  });
+
+  it("a stock change outlasts a deploy whose worker does not know it yet: hours of retries (Q27)", async () => {
+    const id = await product("RETRY", 4);
+    await prisma.$transaction(async (tx) => stockService.takeOne(id, locationId, tx));
+    const [job] = await changedJobs(id);
+    expect(job.retryBackoff).toBe(true);
+    // Backed off from the first delay, each capped at the queue's hour: well past a worker deploy.
+    const windowSeconds = Array.from({ length: job.retryLimit }, (_, i) => Math.min(job.retryDelay * 2 ** i, 3600)).reduce((a, b) => a + b, 0);
+    expect(windowSeconds).toBeGreaterThan(3 * 3600);
+  });
+
+  it("pushes only what a marketplace with sync on lists, and keeps the sold-out flag (Q27)", async () => {
+    const listed = await product("LISTED", 0);
+    const unlisted = await prisma.product.create({
+      data: { name: "Stock UNLISTED", slug: `ss-${stamp}-UNLISTED`, description: "", price: 1000, categoryId, thumbnail: "/brand/bhendi-bazaar.png", orgId, sku: `SS-${stamp}-UNLISTED` },
+      select: { id: true },
+    });
+    const [listedBefore, unlistedBefore] = [await pushJobs(listed), await pushJobs(unlisted.id)];
+    expect(await stock.pushChanged([{ productId: listed, soldOut: true }, { productId: unlisted.id, soldOut: false }])).toBe(1);
+    expect(await pushJobs(listed)).toBe(listedBefore + 1);
+    expect(await pushJobs(unlisted.id)).toBe(unlistedBefore);
+    const { JOBS_QUEUE, JOBS_SCHEMA } = await import("@server/shared/jobs/jobs.config");
+    const [push] = await prisma.$queryRawUnsafe<{ soldOut: string; priority: number }[]>(
+      `SELECT data->'payload'->>'soldOut' AS "soldOut", priority FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->>'type' = 'channels.push-stock' AND data->'payload'->>'productId' = $2 ORDER BY created_on DESC LIMIT 1`,
+      JOBS_QUEUE,
+      listed,
+    );
+    expect(push.soldOut).toBe("true");
+    expect(push.priority).toBeGreaterThan(0);
+
+    await prisma.channelConnection.update({ where: { id: connectionId }, data: { stockSync: "off" } });
+    expect(await stock.pushChanged([{ productId: listed, soldOut: false }])).toBe(0);
   });
 
   it("sends the count as it is now, and sends the same count only once (D3, spec A2, A3)", async () => {

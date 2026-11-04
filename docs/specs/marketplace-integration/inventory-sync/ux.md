@@ -9,7 +9,7 @@
 > string below is the string that ships.
 
 ## Journeys
-1. **Sync starts on connecting** (Q27). Connect Amazon → the listings and locations are read → match
+1. **Sync starts on connecting** (Q28). Connect Amazon → the listings and locations are read → match
    locations if asked (one Amazon location: one tap) → sync starts by itself; the Channels card reads
    "Stock sync on". Pausing is there too, beside Disconnect.
 2. **Matching locations at connection.** Connect Flipkart → the listings are read → "Match your
@@ -23,15 +23,15 @@
 ## Screens
 | Screen | Route / place | New or changed | Serves |
 |---|---|---|---|
-| Stock sync section | Marketplace's Listings page, top, only when it needs the shop (Q27) | New | R5, R6, R9 |
+| Stock sync section | Marketplace's Listings page, top, only when it needs the shop (Q28) | New | R5, R6, R9 |
 | Match locations | Sheet from the section, and after connecting | New | R11 |
-| Channels card | Channels page: "Stock sync on" or "Stock sync paused", Pause / Turn back on beside Disconnect | Changed (Q27) | R9 |
-| Home | "Needs you now": a location match sync waits on; listings our send put out of stock | Changed (Q27) | R9 |
+| Channels card | Channels page: "Stock sync on" or "Stock sync paused", Pause / Turn back on beside Disconnect | Changed (Q28) | R9 |
+| Home | "Needs you now": a location match sync waits on; listings our send put out of stock | Changed (Q28) | R9 |
 | Product: On marketplaces | Product page | Changed: stock line per marketplace | R3, R5 |
 | Marketplace orders | `/org/[orgId]/orders?tab=marketplace` | New tab | R7 (Q10) |
 
 ## State matrix — Stock sync section
-Shown only when it needs the shop (Q27); a healthy sync shows nothing here.
+Shown only when it needs the shop (Q28); a healthy sync shows nothing here.
 
 | State | What the person sees | Action |
 |---|---|---|
@@ -45,7 +45,7 @@ Shown only when it needs the shop (Q27); a healthy sync shows nothing here.
 | Not allowed (Flipkart today, if refused) | "Flipkart doesn't let us send stock yet. Its own count stays as it is." | — |
 | Phone / tablet / desktop | Stacked / same, wider / same, beside the listings tabs | — |
 
-## State matrix — Channels card and Home (Q27)
+## State matrix — Channels card and Home (Q28)
 | State | What the person sees | Action |
 |---|---|---|
 | Card, sync on | Line "Stock sync on" | Pause |
@@ -99,7 +99,7 @@ your locations before stock can be sent." with Match locations, until every loca
 before the marketplace's locations are read it says "Reading your Amazon locations…". A listing in
 stock there that would be sent 0 is listed first, marked "goes out of stock", under a line naming
 how many will show out of stock.
-Owner, 2026-11-04 (Q27): connecting turns sync on, so the "Turn on stock sync" switch and the
+Owner, 2026-11-04 (Q28): connecting turns sync on, so the "Turn on stock sync" switch and the
 turn-on preview are gone. The Listings page shows stock sync only when it needs the shop; Pause and
 Turn back on move to the Channels card; Home names listings our send put out of stock and asks for
 a location match sync waits on.

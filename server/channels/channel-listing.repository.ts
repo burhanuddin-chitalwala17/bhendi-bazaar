@@ -3,8 +3,9 @@ import { prisma } from "@server/shared/prisma";
 
 import { uniqueViolationFields } from "@server/shared/constraint";
 
-import { LINK_SOURCE, LISTING_STATUS, type LeftOffReason, type MarketplaceChannel } from "./channel-connection.types";
+import { CONNECTION_STATE, isMarketplaceChannel, LINK_SOURCE, LISTING_STATUS, type LeftOffReason, type MarketplaceChannel } from "./channel-connection.types";
 import type { ListingAttributes } from "./providers/listing-read";
+import { STOCK_SYNC } from "./channel-stock.types";
 
 /** A fill whose read failed is queued again a week later, never daily (marketplace-facts Q36). */
 const FILL_RETRY_MS = 7 * 86_400_000;
@@ -376,6 +377,25 @@ export const channelListingRepository = {
       select: { id: true, parentSku: true, productId: true, product: { select: { familyId: true, family: { select: { id: true, name: true } } } } },
       orderBy: [{ title: "asc" }, { sku: "asc" }],
     });
+  },
+
+  /**
+   * Of these products, the ones some live listing would send a count for: linked, not gone, on a
+   * connected marketplace with stock sync on. One read for a whole stock change (inventory-sync Q27);
+   * the push itself re-reads under its lock, so this only decides who is worth a push job.
+   */
+  async productsToPush(productIds: readonly string[]): Promise<Set<string>> {
+    if (productIds.length === 0) return new Set();
+    const rows = await prisma.channelListing.findMany({
+      where: {
+        productId: { in: [...productIds] },
+        goneAt: null,
+        connection: { state: CONNECTION_STATE.CONNECTED, stockSync: STOCK_SYNC.ON },
+      },
+      select: { productId: true, channel: true },
+      distinct: ["productId", "channel"],
+    });
+    return new Set(rows.filter((r) => r.productId !== null && isMarketplaceChannel(r.channel)).map((r) => r.productId as string));
   },
 
   /** Every live listing linked to a product, with what a stock push needs (inventory-sync D3). */

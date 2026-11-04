@@ -14,7 +14,7 @@ const stockUpsert = vi.fn();
 const tx = {
   order: { updateMany: orderUpdateMany },
   shipment: { findMany: shipmentFindMany },
-  productStock: { upsert: stockUpsert, findFirst: vi.fn(), aggregate: vi.fn(async () => ({ _sum: { quantity: 1 } })) },
+  productStock: { upsert: stockUpsert, findFirst: vi.fn(), groupBy: vi.fn(async () => [] as Array<{ productId: string; _sum: { quantity: number } }>) },
 };
 
 // A restock enqueues the new count for the marketplaces (inventory-sync D2); not under test here.

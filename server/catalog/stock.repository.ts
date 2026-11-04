@@ -15,7 +15,7 @@ import type { Prisma } from "@prisma/client";
 import { ConflictError } from "@server/shared/domain-error";
 import { uniqueViolationFields } from "@server/shared/constraint";
 import { enqueue } from "@server/shared/jobs/jobs.enqueue";
-import { pushStockSpec } from "@server/shared/jobs/push-stock.job";
+import { stockChangedSpec } from "@server/shared/jobs/stock-changed.job";
 import { STOCK_FIELD } from "@server/catalog/product-edit";
 
 /** `prisma`, or the `tx` of a `$transaction` — enough of either to move stock. */
@@ -28,10 +28,13 @@ export type ShipmentStockDb = Pick<typeof prisma, "productStock" | "shipment" | 
  * goes first (Q19). Products not linked anywhere cost one empty job.
  */
 async function stockChanged(db: ProductStockDb, productIds: Iterable<string>): Promise<void> {
-  for (const productId of new Set(productIds)) {
-    const total = await db.productStock.aggregate({ where: { productId }, _sum: { quantity: true } });
-    await enqueue(db, pushStockSpec, { productId, soldOut: (total._sum.quantity ?? 0) === 0 });
-  }
+  const ids = [...new Set(productIds)];
+  if (ids.length === 0) return;
+  // One read of every total and one job, however many products moved (inventory-sync Q27): a bulk
+  // import no longer pays a read and a job per product, most of which no marketplace lists.
+  const totals = await db.productStock.groupBy({ by: ["productId"], where: { productId: { in: ids } }, _sum: { quantity: true } });
+  const held = new Map(totals.map((t) => [t.productId, t._sum.quantity ?? 0]));
+  await enqueue(db, stockChangedSpec, { products: ids.map((productId) => ({ productId, soldOut: (held.get(productId) ?? 0) === 0 })) });
 }
 
 export interface StockLine {
