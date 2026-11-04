@@ -1,0 +1,21 @@
+e2e/smoke.e2e.ts
+  s_70578559cabf14::t_b4fa0df3e7aa82 38-42
+docs/CHANGELOG.md
+  s_70578559cabf14::t_7c6f5faccf0961 15-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "4df15c7ef32d80cac90fecac7deb977ca09caba2",
+  "prompts": {},
+  "sessions": {
+    "s_70578559cabf14": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3d8c5e99-123d-451a-b57d-7876f27849f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
