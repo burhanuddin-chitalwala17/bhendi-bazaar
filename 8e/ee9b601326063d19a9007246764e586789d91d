@@ -1,0 +1,23 @@
+e2e/smoke.e2e.ts
+  s_70578559cabf14::t_bfbf671f5ee754 28-30,34,39,42,44
+playwright.config.ts
+  s_70578559cabf14::t_bfbf671f5ee754 28-31
+docs/CHANGELOG.md
+  s_70578559cabf14::t_293e4d55118c01 15-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "8eee9b601326063d19a9007246764e586789d91d",
+  "prompts": {},
+  "sessions": {
+    "s_70578559cabf14": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3d8c5e99-123d-451a-b57d-7876f27849f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
