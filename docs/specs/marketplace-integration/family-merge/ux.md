@@ -45,7 +45,7 @@
 | Loading | Header; skeleton rows; after 3 s "Still reading Amazon…" | — |
 | Ready | Family name (from the parent's title), description, category with the type question (marketplace-facts Q35), "Shared by all 4" facts, and one row per member: colour (or bottle size, plating, pack), title, SKU, price, stock, photo | Make family of 4 |
 | Colour to confirm | Member row: "Amazon says Colour: Ink. Which fits?" with our colours | Choose one |
-| A member left out | Row toggle "Include" off; the save button counts only included rows | Include |
+| A member left out | The row's button reads "Exclude" while it is in and "Include" once left out (owner, 2026-11-03); the save button counts only included rows | Exclude / Include |
 | Member already a product | Row reads "Already Nida Abaya – Olive" with its own SKU, price and stock, read-only | — |
 | Member in another family | Row reads "In family Rida Set. Move it here?" | Move here · Leave out |
 | Varies by more than the type's usual axis (Q16) | "This family varies by Colour and Length (the listings differ on both)." Each member reads by its values, "Red · 17 in" | Remove an axis |
@@ -70,7 +70,7 @@
 
 ## Copy deck
 Buttons: "Settle as one family", "Add to family", "Add {n} to family", "Settle all {n} as one family", "Pick category", "Make one family", "Group them", "Not one item", "Group listings",
-"Continue", "Cancel", "Make family of {n}", "Include", "Move here", "Leave out", "See family",
+"Continue", "Cancel", "Make family of {n}", "Include", "Exclude", "Move here", "Leave out", "See family",
 "Back to listings", "Try again", "Show all". Headings: "Family", "Shared by all {n}", "Members".
 Lines: "{title} · {n} {difference}s on {marketplace}" (colours, bottle sizes, platings), "{n} products, not a family yet", "{k} of {n} settled",
 "Looks like one item: {n} listings", "{n} picked". Toast: "Made {name} with {n} {difference}s."

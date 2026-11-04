@@ -13,7 +13,7 @@ const master = masterValues({
   price: 129_900,
   description: "An everyday abaya.",
   keyFeatures: ["Soft Nida"],
-  media: [{ id: "m1" }, { id: "m2" }],
+  media: [{ id: "m1", ref: "https://cdn/a.webp" }, { id: "m2", ref: "https://cdn/b.webp" }],
 });
 
 describe("a listing computed from its product", () => {
@@ -22,8 +22,8 @@ describe("a listing computed from its product", () => {
   });
 
   it("drops a photo the product no longer has, and falls back when none is left (D8)", () => {
-    expect(computeListing(master, { photos: ["m2", "gone"] }).photos).toEqual(["m2"]);
-    expect(computeListing(master, { photos: ["gone"] }).photos).toEqual(["m1", "m2"]);
+    expect(computeListing(master, { photos: ["https://cdn/b.webp", "gone"] }).photos).toEqual(["https://cdn/b.webp"]);
+    expect(computeListing(master, { photos: ["gone"] }).photos).toEqual(["https://cdn/a.webp", "https://cdn/b.webp"]);
   });
 
   it("waits on a field only where the marketplace takes it and it differs from what was sent (R8, R10)", () => {
@@ -32,6 +32,16 @@ describe("a listing computed from its product", () => {
     expect(waitingFields(changed, sent, LISTING_FIELDS)).toEqual([LISTING_FIELD.DESCRIPTION]);
     expect(waitingFields(changed, sent, [LISTING_FIELD.PRICE, LISTING_FIELD.LISTED])).toEqual([]);
     expect(waitingFields(master, null, [LISTING_FIELD.PRICE])).toEqual([LISTING_FIELD.PRICE]);
+  });
+});
+
+describe("photos kept by address (a product save renews media ids)", () => {
+  it("reads old stored ids as addresses, and an id no longer held in what was sent as the product's photos", async () => {
+    const { parseOverrides, parseSent } = await import("@server/channels/listing-plan");
+    const media = [{ id: "m1", ref: "https://cdn/a.webp" }, { id: "m2", ref: "https://cdn/b.webp" }];
+    expect(parseOverrides({ photos: ["m2", "m1"] }, media).photos).toEqual(["https://cdn/b.webp", "https://cdn/a.webp"]);
+    expect(parseSent({ photos: ["gone-1"] }, media)?.photos).toEqual(["https://cdn/a.webp", "https://cdn/b.webp"]);
+    expect(parseOverrides({ photos: ["gone-1", "m1"] }, media).photos).toEqual(["https://cdn/a.webp"]);
   });
 });
 

@@ -12,13 +12,13 @@ import { ReviewStars } from "@/components/product/review-stars";
 // category overline, the "SALE" word badge — is dropped below `sm` rather than
 // truncated, and the discount is carried by the corner chip instead.
 /**
- * What the tile actually occupies, matching PRODUCT_GRID_CLASSES: 3-up on a phone,
- * 2-up from `md`, 3-up from `lg` inside the 72rem page. Declared next to the tile and
+ * What the tile actually occupies, matching PRODUCT_GRID_CLASSES: 2-up on a phone and
+ * from `md`, 3-up from `lg` inside the 72rem page. Declared next to the tile and
  * shared with the wishlist grid so the two cannot drift — a `sizes` that overstates the
  * slot is how a 105px tile ends up downloading a 1600px image (ADR-0026).
  */
 export const PRODUCT_TILE_SIZES =
-  "(min-width: 1024px) 384px, (min-width: 768px) 50vw, 33vw";
+  "(min-width: 1024px) 384px, 50vw";
 
 export function ProductCard(product: Product) {
   const discountPercent = percentOff(product);

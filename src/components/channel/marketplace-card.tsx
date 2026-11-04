@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CARD_STATE, type ChannelCardDTO } from "@server/channels/channel-connection.types";
+import { STOCK_SYNC } from "@server/channels/channel-stock.types";
 import type { MarketplaceChannel } from "@server/channels/channel-connection.types";
 
 import { ChannelCardShell } from "./channel-card-shell";
@@ -10,6 +11,7 @@ import { CARD, CHIP, MARKETPLACE_PITCH, REASON, lastChecked } from "./channel-co
 import { ExpandableLine } from "./expandable-line";
 import { LISTINGS, cardReadLine } from "./listing-copy";
 import { MarketplaceCardActions } from "./marketplace-card-actions";
+import { STOCK } from "./stock-copy";
 
 const chipFor = (card: ChannelCardDTO) => {
   switch (card.state) {
@@ -52,6 +54,8 @@ export function MarketplaceCard({ orgId, card }: { orgId: string; card: ChannelC
             {card.reapproveBy && card.state === CARD_STATE.CONNECTED ? ` · ${CARD.reapproveBy(card.reapproveBy)}` : ""}
           </p>
         )}
+        {live && card.stockSync === STOCK_SYNC.ON && <p>{STOCK.cardOn}</p>}
+        {live && card.stockSync === STOCK_SYNC.PAUSED && <p className="font-medium text-warning">{STOCK.paused}</p>}
         {reading && (
           <div className="flex flex-col gap-1">
             <p className={cn(reading.tone === "warning" && "font-medium text-warning", reading.tone === "error" && "font-medium text-destructive")}>
@@ -79,6 +83,7 @@ export function MarketplaceCard({ orgId, card }: { orgId: string; card: ChannelC
         label={card.label}
         state={card.state}
         stale={card.stale}
+        stockSync={card.stockSync}
       />
     </ChannelCardShell>
   );

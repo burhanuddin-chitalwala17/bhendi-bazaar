@@ -65,17 +65,10 @@ export function HeroBanner({
             sizes="(min-width: 1024px) 72rem, 100vw"
             className="-z-10 object-cover"
           />
-          {/* Reading happens on the left, so the scrim is heaviest there rather than
-              flat across — a flat dim costs the photograph more than it needs to.
-              With no words there is nothing to make legible, so it is not rendered at
-              all rather than faded: on a phone it has no hover to hide behind. */}
+          {/* Heaviest on the left where the words sit; absent with no words. Always shown: words
+              revealed only on hover went unread by every desktop visitor who didn't point at them. */}
           {hasWords && (
-            <div
-              className={cn(
-                "pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-scrim/85 via-scrim/55 to-scrim/20",
-                "transition-opacity duration-300 motion-reduce:transition-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
-              )}
-            />
+            <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-scrim/85 via-scrim/55 to-scrim/20" />
           )}
         </>
       ) : (
@@ -86,13 +79,7 @@ export function HeroBanner({
       )}
 
       {hasWords && (
-        <div
-          className={cn(
-            "relative max-w-xl space-y-2 sm:space-y-4",
-            image &&
-              "transition-opacity duration-300 motion-reduce:transition-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
-          )}
-        >
+        <div className="relative max-w-xl space-y-2 sm:space-y-4">
           {eyebrow && (
             <p className="text-4xs font-semibold uppercase tracking-eyebrow-wide text-hero-foreground/70 sm:text-2xs sm:tracking-display">
               {eyebrow}

@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-11-02
+- **Verified:** 2026-11-04
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -373,7 +373,8 @@ Since channel-connectors ([spec](specs/marketplace-integration/channel-connector
 reads **`ChannelsOverviewDTO`** (`server/channels/channel-connection.types.ts`) on the server: `cards`
 (one **`ChannelCardDTO`** per channel — `channel`, `label`, `state` from `CARD_STATE`, who connected
 or disconnected and when, `lastCheckedAt`, `stale`, `reapproveBy`, `reason` from `CONNECTION_ERROR`)
-and `attention` for the dashboard banner. **No token, external account id or marketplace text is
+and `attention` for the dashboard banner. Since inventory-sync Q27 a card also carries `stockSync`
+(`STOCK_SYNC`, null unless connected). **No token, external account id or marketplace text is
 in any of them** ([server/channels/CLAUDE.md](../server/channels/CLAUDE.md)).
 
 Four routes, none with a request body:
@@ -499,10 +500,9 @@ Routes, both `withOrg`:
 Since inventory-sync ([spec](specs/marketplace-integration/inventory-sync/)) channels reads, on the
 server, from `server/channels/channel-stock.types.ts`: **`StockSyncSectionDTO`** (the marketplace's
 `state` from `STOCK_SYNC`, whether locations need matching and which one is new, last sent and checked
-times, whether every listing is stocked by the marketplace, today's corrections), **`StockPreviewDTO`**
-(a **`StockPreviewRowDTO`** per linked listing: their count or null when unread, ours, whether it
-changes, `toZero` when in stock there and 0 here; `toZero` counts them; `locationsToMatch` with no rows
-while a location is unmatched; `locationsRead`), **`LocationMatchDTO`** (each **`ChannelLocationDTO`** with its match, "not used", a
+times, whether every listing is stocked by the marketplace, today's corrections), **`StockAttentionDTO`**
+(Home's line, since Q27: `channel`, `label`, `kind` from `STOCK_ATTENTION` — match or outOfStock — and
+`count`), **`LocationMatchDTO`** (each **`ChannelLocationDTO`** with its match, "not used", a
 pincode suggestion, gone and closed flags, plus the shop's locations) and **`MarketplaceOrderDTO`**
 (order and SKU, quantity, the amount in paise as reported, `state` from `ORDER_LINE_STATE`,
 oversold, `locationGuessed`, `beforeSync`, `unlinked`). The section also carries `problem` (`STOCK_PROBLEM`: busy
@@ -512,8 +512,8 @@ while sync is off.
 
 Routes, both `withOrg`:
 - `PUT /api/org/[orgId]/channels/[channel]/stock-sync` — body `stock-sync.schema.ts`
-  (`stockSyncChangeSchema`): `{ action: "on" | "pause" | "off" }`; "on" is sent from the preview and
-  enqueues a send for every linked product. Answers `{ ok: true }`; 409 when not connected.
+  (`stockSyncChangeSchema`): `{ action: "on" | "pause" }`, from the Channels card (Q27); "on" turns a
+  paused sync back on and enqueues a send for every linked product. Sync starts by itself on connecting. Answers `{ ok: true }`; 409 when not connected.
 - `PUT /api/org/[orgId]/channels/[channel]/locations` — `locationMatchSchema`: `matches`, each
   marketplace location to one of the shop's active locations or not used, never both. `{ ok: true }`;
   400 for a location not the shop's or closed.

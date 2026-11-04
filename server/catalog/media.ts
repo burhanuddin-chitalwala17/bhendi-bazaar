@@ -223,6 +223,8 @@ export const MEDIA_SURFACES = {
   preview: { width: 1200, height: 630, fit: "cover", quality: 82 },
   /** A marketplace main image: square on white, at the size that turns their zoom on. */
   marketplace: { width: 1600, height: 1600, fit: "inside", quality: 85 },
+  /** The same, as a JPEG on white, for a marketplace that refuses WebP (Amazon; marketplace-publish D2). */
+  marketplaceJpeg: { width: 1600, height: 1600, fit: "inside", quality: 85, format: "jpeg" },
   /** A feed post, composed square and delivered at 1080 (channel-rules). */
   social: { width: 1080, height: 1080, fit: "cover", quality: 82 },
 } as const satisfies Record<string, MediaSurface>;
@@ -234,6 +236,8 @@ export interface MediaSurface {
   fit: "cover" | "inside";
   /** Whole-number quality as sharp takes it, not the 0-1 fraction `IMAGE_QUALITY` uses. */
   quality: number;
+  /** WebP unless a destination refuses it; a JPEG is flattened onto white, having no transparency. */
+  format?: "jpeg";
 }
 
 export type MediaSurfaceKey = keyof typeof MEDIA_SURFACES;

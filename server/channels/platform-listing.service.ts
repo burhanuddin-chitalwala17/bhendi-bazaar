@@ -114,10 +114,10 @@ const issuesOf = (raw: unknown): ListingIssue[] => (Array.isArray(raw) ? (raw as
 
 /** Where a row stands, against its product (publish Q4). */
 export function statusOf(row: PlatformListingRow, product: Product, rules: ListingRules): { status: ListingStatusDTO; values: ListingValues; waiting: ReturnType<typeof waitingFields> } {
-  const computed = computeListing(masterValues(product), parseOverrides(row.overrides));
+  const computed = computeListing(masterValues(product), parseOverrides(row.overrides, product.media));
   // A whole-rupee marketplace holds the rounded price, so that is what is compared and sent (channel-listings Q13).
   const values = rules.wholeRupees ? { ...computed, price: toWholeRupees(computed.price) } : computed;
-  const sent = parseSent(row.sent);
+  const sent = parseSent(row.sent, product.media);
   const waiting = waitingFields(values, sent, rules.writable);
   return {
     values,
@@ -138,8 +138,10 @@ export function statusOf(row: PlatformListingRow, product: Product, rules: Listi
 function photosOf(product: Product, rules: ListingRules): ListingPhotoDTO[] {
   return product.media.map((m) => {
     const small = rules.photo.minPx !== null && m.asset?.width && m.asset.height ? Math.max(m.asset.width, m.asset.height) < rules.photo.minPx : false;
-    const format = rules.photo.formats.length > 0 && !!m.asset?.mimeType && !rules.photo.formats.includes(m.asset.mimeType);
-    return { id: m.id, url: m.ref, width: m.asset?.width ?? null, height: m.asset?.height ?? null, warning: format ? "format" : small ? "small" : null };
+    // A format the marketplace refuses is converted at the send (listing-photos-out), so it warns of size only.
+    // A photo with no stored asset cannot be converted and goes only where its format is taken.
+    const format = !m.assetId && rules.photo.formats.length > 0 && !!m.asset?.mimeType && !rules.photo.formats.includes(m.asset.mimeType);
+    return { id: m.ref, url: m.ref, width: m.asset?.width ?? null, height: m.asset?.height ?? null, warning: format ? "format" : small ? "small" : null };
   });
 }
 
@@ -161,7 +163,7 @@ export const platformListingService = {
     ]);
     if (!row) throw new NotFoundError("Listing");
     const rules = providerFor(channel).listingRules;
-    const overrides = parseOverrides(row.overrides);
+    const overrides = parseOverrides(row.overrides, product.media);
     const { status, values, waiting } = statusOf(row, product, rules);
     return {
       id: row.id,
@@ -203,12 +205,12 @@ export const platformListingService = {
     if (!row) throw new NotFoundError("Listing");
     const rules = providerFor(channel).listingRules;
     const own = writableOnly(input.overrides, rules);
-    if (own.photos) own.photos = own.photos.filter((id) => product.media.some((m) => m.id === id));
+    if (own.photos) own.photos = own.photos.filter((ref) => product.media.some((m) => m.ref === ref));
     if (own.photos?.length === 0) delete own.photos;
     const saved = await platformListingRepository.saveOverrides(row.id, orgId, input.seenVersion, own);
     if (!saved) throw new ConflictError("This listing changed since you opened it. Reload to see it; your text is kept below.");
     const values = computeListing(masterValues(product), own);
-    return { version: input.seenVersion + 1, waiting: waitingFields(values, parseSent(row.sent), rules.writable).length };
+    return { version: input.seenVersion + 1, waiting: waitingFields(values, parseSent(row.sent, product.media), rules.writable).length };
   },
 
   /** Each connected marketplace on the product's On marketplaces block (ux.md). */

@@ -3,6 +3,7 @@
 // task says the step and the new count (R7).
 import { describe, expect, it } from "vitest";
 import { CARD_STATE } from "@server/channels/channel-connection.types";
+import { STOCK_ATTENTION } from "@server/channels/channel-stock.types";
 import { ONBOARDING_STEP } from "@server/catalog/org-onboarding.types";
 import type { HomeAttentionDto } from "@/data-access-layer/org/home.dal";
 import { attentionLines } from "@/components/org/home/attention-lines";
@@ -13,6 +14,7 @@ const quiet = (): HomeAttentionDto => ({
   parcels: { ok: true, value: 0 },
   reviews: { ok: true, value: { count: 0, productId: null } },
   channel: { ok: true, value: null },
+  stock: { ok: true, value: null },
   photos: { ok: true, value: 0 },
   auction: { ok: true, value: null },
   teamEdits: { ok: true, value: { count: 0, productId: null } },
@@ -36,6 +38,11 @@ describe("needs you now", () => {
     expect(many[0]).toMatchObject({ href: "/org/o1/reviews" });
   });
 
+  it("asks for the location match that stock sync waits on, on that marketplace's Listings (inventory-sync Q27)", () => {
+    const lines = attentionLines("o1", { ...quiet(), stock: { ok: true, value: { channel: "amazon", label: "Amazon", kind: STOCK_ATTENTION.MATCH, count: 0 } } }, now);
+    expect(lines[0]).toMatchObject({ text: "Match your Amazon locations so stock can be sent", href: "/org/o1/channels/amazon/listings" });
+  });
+
   it("says what each area needs, in order (Q22)", () => {
     const lines = attentionLines(
       "o1",
@@ -43,6 +50,7 @@ describe("needs you now", () => {
         parcels: { ok: true, value: 1 },
         reviews: { ok: true, value: { count: 0, productId: null } },
         channel: { ok: true, value: { channel: "amazon" as never, label: "Amazon", state: CARD_STATE.NEEDS_RECONNECT, reapproveBy: null } },
+        stock: { ok: true, value: { channel: "amazon", label: "Amazon", kind: STOCK_ATTENTION.OUT_OF_STOCK, count: 2 } },
         photos: { ok: true, value: 3 },
         auction: { ok: true, value: { productName: "Shawl", endsAt: new Date(now.getTime() + 2 * 3_600_000).toISOString() } },
         teamEdits: { ok: true, value: { count: 0, productId: null } },
@@ -52,6 +60,7 @@ describe("needs you now", () => {
     expect(lines.map((line) => line.text)).toEqual([
       "1 order to pack",
       "Amazon needs you to reconnect",
+      "2 listings now out of stock on Amazon: we have 0",
       "3 photos can be improved",
       "Auction ends in 2 h",
     ]);

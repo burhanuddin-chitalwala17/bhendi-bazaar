@@ -409,6 +409,15 @@ export const channelListingRepository = {
     });
   },
 
+  /** Linked listings the marketplace last showed in stock and that we have sent to since: Home's out-of-stock check (inventory-sync Q27). */
+  async sentAfterRead(connectionId: string) {
+    const rows = await prisma.channelListing.findMany({
+      where: { connectionId, productId: { not: null }, goneAt: null, quantity: { gt: 0 }, stockSentAt: { not: null } },
+      select: { stockSent: true, stockSentAt: true, lastSeenAt: true },
+    });
+    return rows.filter((r) => r.stockSentAt! > r.lastSeenAt);
+  },
+
   /** The live linked mirror rows of these products on a connection: what a listing screen shows as "On Amazon now" (channel-listings D3, D5). */
   async mirrorsFor(connectionId: string, productIds: readonly string[]) {
     return await prisma.channelListing.findMany({

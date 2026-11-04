@@ -16,6 +16,7 @@ import { channelConnectionRepository } from "./channel-connection.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
 import { forwardAttributes, listsOf, pickTheme, skuFor } from "./listing-create";
+import { marketplacePhotoUrls } from "./listing-photos-out";
 import { checkListingsSpec, LISTING_CHECK_AFTER_SECONDS, LISTING_CHECK_EVERY_SECONDS } from "./listing-publish.job";
 import { computeListing, listingStatus, masterValues, parseOverrides, parseSent } from "./listing-plan";
 import { platformListingRepository, type PlatformListingRow } from "./platform-listing.repository";
@@ -53,17 +54,10 @@ async function readinessOf(orgId: string, product: Product, channel: Marketplace
   return { theirCategory: report?.theirCategory ?? null, stillNeeds };
 }
 
-const photoUrls = (product: Product, ids: readonly string[], formats: readonly string[]) =>
-  ids.flatMap((id) => {
-    const m = product.media.find((media) => media.id === id);
-    if (!m) return [];
-    return m.asset?.mimeType && formats.length > 0 && !formats.includes(m.asset.mimeType) ? [] : [m.ref];
-  });
-
 /** Everything a create sends for one product (D8): its listing, its mapped facts, the brand and shop's compliance. */
 async function inputFor(orgId: string, row: PlatformListingRow, product: Product, channel: MarketplaceChannel, family: CreateListingInput["family"]): Promise<CreateListingInput> {
   const rules = providerFor(channel).listingRules;
-  const values = computeListing(masterValues(product), parseOverrides(row.overrides));
+  const values = computeListing(masterValues(product), parseOverrides(row.overrides, product.media));
   let attributes: Record<string, string> = {};
   if (row.createMode === CREATE_MODE.NEW && row.marketplaceType && product.productType) {
     const register = await channelMapRepository.registersFor({ channels: [channel], productTypes: [product.productType], lists: listsOf(product.facts) });
@@ -80,7 +74,7 @@ async function inputFor(orgId: string, row: PlatformListingRow, product: Product
     title: values.title,
     price: values.price,
     mrpPaise: product.mrpPaise,
-    photoUrls: photoUrls(product, values.photos, rules.photo.formats),
+    photoUrls: await marketplacePhotoUrls(orgId, product.media, values.photos, rules.photo.formats),
     features: values.features,
     description: values.description,
     barcode: product.barcode,

@@ -3,67 +3,31 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { STOCK_PROBLEM, STOCK_SYNC, type LocationMatchDTO, type StockSyncSectionDTO } from "@server/channels/channel-stock.types";
 
-import { ago } from "./listing-copy";
 import { LocationMatchSheet } from "./location-match-sheet";
 import { STOCK } from "./stock-copy";
-import { StockSyncActions } from "./stock-sync-actions";
 
 /**
- * Stock sync on a marketplace's Listings page (inventory-sync ux.md "Stock sync section"): where it
- * stands, and the one thing to do next. Rendered on the server; the actions are client leaves.
+ * Stock sync on a marketplace's Listings page, only when it needs the shop (inventory-sync Q27): sync
+ * runs on its own once connected, so a healthy sync shows nothing. Pause lives on the Channels card.
  */
 export function StockSyncSection({ orgId, section, locations }: { orgId: string; section: StockSyncSectionDTO; locations: LocationMatchDTO }) {
   const l = section.label;
-  const now = Date.now();
   const matchButton = (text: string) => (
     <LocationMatchSheet orgId={orgId} match={locations} trigger={<Button variant="outline" size="sm" className="min-h-10 self-start">{text}</Button>} />
   );
+  const toChannels = (
+    <Button asChild variant="outline" size="sm" className="min-h-10 self-start">
+      <Link href={`/org/${orgId}/channels`}>{STOCK.goToChannels}</Link>
+    </Button>
+  );
+  const on = section.state === STOCK_SYNC.ON;
 
   const body = () => {
     if (section.needsReconnect) {
       return (
         <>
           <p className="text-sm font-medium text-destructive">{STOCK.reconnect(l)}</p>
-          <Button asChild variant="outline" size="sm" className="min-h-10 self-start">
-            <Link href={`/org/${orgId}/channels`}>{STOCK.goToChannels}</Link>
-          </Button>
-        </>
-      );
-    }
-    if (section.problem === STOCK_PROBLEM.REFUSED && section.state === STOCK_SYNC.ON) return <p className="text-sm font-medium text-warning">{STOCK.notAllowed(l)}</p>;
-    if (section.allHeldByMarketplace) return <p className="text-sm text-muted-foreground">{STOCK.allHeld(l)}</p>;
-    if (section.newLocation && section.state === STOCK_SYNC.ON) {
-      return (
-        <>
-          <p className="text-sm text-muted-foreground">{STOCK.onLine(section.sentAt && ago(section.sentAt, now), section.checkedAt && ago(section.checkedAt, now))}</p>
-          <p className="text-sm font-medium text-warning">{STOCK.newLocation(l, section.newLocation.name, section.newLocation.pincode)}</p>
-          {matchButton(STOCK.matchIt)}
-        </>
-      );
-    }
-    if (!section.locationsRead) return <p className="text-sm text-muted-foreground">{STOCK.readingLocations(l)}</p>;
-    if (section.locationsToMatch) {
-      return (
-        <>
-          <p className="text-sm font-medium text-warning">{STOCK.locationsToMatch(l)}</p>
-          {matchButton(STOCK.matchLocations)}
-        </>
-      );
-    }
-    if (section.state === STOCK_SYNC.ON) {
-      return (
-        <>
-          <p className="text-sm text-muted-foreground">
-            {section.sending ? STOCK.sending(l, section.sending.sent, section.sending.total) : STOCK.onLine(section.sentAt && ago(section.sentAt, now), section.checkedAt && ago(section.checkedAt, now))}
-          </p>
-          {section.problem === STOCK_PROBLEM.BUSY && <p className="text-sm text-warning">{STOCK.busy(l)}</p>}
-          {section.refused > 0 && <p className="text-sm text-warning">{STOCK.refused(l, section.refused)}</p>}
-          {section.corrections.length > 0 && (
-            <p className="text-sm">
-              {STOCK.corrected(section.corrections.length, STOCK.correctedOne(section.corrections[0].title, section.corrections[0].theirs, section.corrections[0].ours))}
-            </p>
-          )}
-          <StockSyncActions orgId={orgId} channel={section.channel} label={l} state={STOCK_SYNC.ON} />
+          {toChannels}
         </>
       );
     }
@@ -71,22 +35,41 @@ export function StockSyncSection({ orgId, section, locations }: { orgId: string;
       return (
         <>
           <p className="text-sm">{STOCK.pausedLine(l)}</p>
-          <StockSyncActions orgId={orgId} channel={section.channel} label={l} state={STOCK_SYNC.PAUSED} />
+          {toChannels}
         </>
       );
     }
-    return (
-      <>
-        <p className="text-sm">{STOCK.off(l)}</p>
-        <StockSyncActions orgId={orgId} channel={section.channel} label={l} state={STOCK_SYNC.OFF} />
-      </>
-    );
+    if (on && section.problem === STOCK_PROBLEM.REFUSED) return <p className="text-sm font-medium text-warning">{STOCK.notAllowed(l)}</p>;
+    if (on && section.newLocation) {
+      return (
+        <>
+          <p className="text-sm font-medium text-warning">{STOCK.newLocation(l, section.newLocation.name, section.newLocation.pincode)}</p>
+          {matchButton(STOCK.matchIt)}
+        </>
+      );
+    }
+    if (section.locationsRead && section.locationsToMatch) {
+      return (
+        <>
+          <p className="text-sm font-medium text-warning">{STOCK.locationsToMatch(l)}</p>
+          {matchButton(STOCK.matchLocations)}
+        </>
+      );
+    }
+    if (!on) return null;
+    const lines = [
+      section.problem === STOCK_PROBLEM.BUSY ? STOCK.busy(l) : null,
+      section.refused > 0 ? STOCK.refused(l, section.refused) : null,
+    ].filter((t): t is string => t !== null);
+    return lines.length > 0 ? lines.map((t) => <p key={t} className="text-sm text-warning">{t}</p>) : null;
   };
 
+  const content = body();
+  if (!content) return null;
   return (
     <section className="flex flex-col gap-2 rounded-card border bg-card p-4">
-      <h2 className="text-base font-semibold">{section.state === STOCK_SYNC.ON ? STOCK.on : section.state === STOCK_SYNC.PAUSED ? STOCK.paused : STOCK.title}</h2>
-      {body()}
+      <h2 className="text-base font-semibold">{section.state === STOCK_SYNC.PAUSED ? STOCK.paused : STOCK.title}</h2>
+      {content}
     </section>
   );
 }

@@ -2,10 +2,8 @@ import type { Product } from "@/domain/product";
 import { ProductCard } from "@/components/shared/product-card";
 import { cn } from "@/lib/utils";
 
-/** The one product grid. 3-up on a phone (ADR-0016) — a shopper scanning a category
- *  compares tiles against each other, and one-per-screen makes that impossible —
- *  widening to the roomier desktop layout from `md`. Declared once so a lane, a
- *  category listing, and a search result can't drift apart. */
+/** The one product grid, so a lane, a category and a search result can't drift apart: 2-up on a
+ *  phone and tablet, 3-up from `lg` (2-up on phones since b2c4ce46). PRODUCT_TILE_SIZES moves with it. */
 export const PRODUCT_GRID_CLASSES =
   "grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-2 md:gap-5 lg:grid-cols-3";
 

@@ -5,11 +5,11 @@ import { ACTION } from "@/components/channel/channel-copy";
 import { LISTINGS } from "@/components/channel/listing-copy";
 
 /** The Listings page could not load. */
-export default function ChannelListingsError({ reset }: { error: Error; reset: () => void }) {
+export default function ChannelListingsError({ retry }: { error: unknown; retry: () => void }) {
   return (
     <div role="alert" className="flex flex-col gap-3 rounded-card border border-destructive bg-destructive/10 p-4 text-sm">
       <p>{LISTINGS.loadFailed}</p>
-      <Button variant="outline" className="min-h-10 self-start" onClick={reset}>
+      <Button variant="outline" className="min-h-10 self-start" onClick={() => retry()}>
         {ACTION.tryAgain}
       </Button>
     </div>

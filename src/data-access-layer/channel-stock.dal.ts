@@ -1,12 +1,12 @@
 /**
- * What a marketplace's stock sync screens read (inventory-sync D6): the section, the location
- * matches and the turn-on preview. Each fails alone: a read that throws costs its block, not the page.
+ * What a marketplace's stock sync screens read (inventory-sync D6): the section and the location
+ * matches. Each fails alone: a read that throws costs its block, not the page.
  */
 
 import { channelStockService } from "@server/channels/channel-stock.service";
 import { channelLocationService } from "@server/channels/channel-location.service";
 import { channelOrdersService } from "@server/channels/channel-orders.service";
-import type { LocationMatchDTO, MarketplaceOrderDTO, StockPreviewDTO, StockSyncSectionDTO } from "@server/channels/channel-stock.types";
+import type { LocationMatchDTO, MarketplaceOrderDTO, StockSyncSectionDTO } from "@server/channels/channel-stock.types";
 
 export const channelStockDAL = {
   async section(orgId: string, channel: string): Promise<{ section: StockSyncSectionDTO; locations: LocationMatchDTO } | null> {
@@ -15,17 +15,6 @@ export const channelStockDAL = {
       return { section, locations };
     } catch (error) {
       console.error("[Listings] stock sync section read failed:", error instanceof Error ? error.name : error);
-      return null;
-    }
-  },
-
-  /** The preview, and the matches it needs first when a location is unmatched. */
-  async preview(orgId: string, channel: string): Promise<{ preview: StockPreviewDTO; locations: LocationMatchDTO } | null> {
-    try {
-      const preview = await channelStockService.preview(orgId, channel);
-      return { preview, locations: await channelLocationService.matches(orgId, channel) };
-    } catch (error) {
-      console.error("[StockSync] preview read failed:", error instanceof Error ? error.name : error);
       return null;
     }
   },

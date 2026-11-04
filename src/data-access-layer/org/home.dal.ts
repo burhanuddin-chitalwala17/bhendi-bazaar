@@ -5,6 +5,8 @@ import { shopDetailsService } from "@server/catalog/shop-details.service";
 import { DASHBOARD_WIDGETS, fetchWidget, type WidgetContext, type WidgetData } from "@server/analytics/widgets";
 import { channelConnectionService } from "@server/channels/channel-connection.service";
 import type { ChannelAttentionDTO } from "@server/channels/channel-connection.types";
+import { channelStockService } from "@server/channels/channel-stock.service";
+import type { StockAttentionDTO } from "@server/channels/channel-stock.types";
 import { enhancementService } from "@server/content/enhancement.service";
 import { biddingService } from "@server/bidding/bidding.service";
 import { isAcceptingBids } from "@server/bidding/bidding-window";
@@ -29,6 +31,8 @@ export interface HomeAttentionDto {
   parcels: HomeRead<number>;
   reviews: HomeRead<NewReviews>;
   channel: HomeRead<ChannelAttentionDTO | null>;
+  /** Stock sync waiting on a location match, or listings it put out of stock (inventory-sync Q27). */
+  stock: HomeRead<StockAttentionDTO | null>;
   photos: HomeRead<number>;
   auction: HomeRead<HomeAuction | null>;
   /** Products the team changed, until the shop next saves each (product-form Q23). */
@@ -76,12 +80,13 @@ async function endingAuction(orgId: string, now: Date): Promise<HomeAuction | nu
 export const homeDAL = {
   async forOrg(orgId: string, now: Date = new Date()): Promise<HomeData> {
     const ctx: WidgetContext = { audience: "org", orgId };
-    const [shop, setup, parcels, reviews, channel, photos, auction, teamEdits, paidOrders] = await Promise.all([
+    const [shop, setup, parcels, reviews, channel, stock, photos, auction, teamEdits, paidOrders] = await Promise.all([
       settle("shop", async () => shareShopFor(await shopDetailsService.get(orgId))),
       settle("setup", () => orgOnboardingService.status(orgId)),
       settle("parcels", () => widgetData(WIDGET.PARCELS, ctx)),
       settle("reviews", () => reviewService.newForOrg(orgId, now)),
       settle("channel", async () => (await channelConnectionService.overview(orgId)).attention[0] ?? null),
+      settle("stock", () => channelStockService.attention(orgId)),
       settle("photos", () => enhancementService.countAwaitingDecision(orgId)),
       settle("auction", () => endingAuction(orgId, now)),
       settle("team edits", () => productTeamService.teamEditedSummary(orgId)),
@@ -90,7 +95,7 @@ export const homeDAL = {
     return {
       shop,
       setup,
-      attention: { parcels: valueOf(parcels), reviews, channel, photos, auction, teamEdits },
+      attention: { parcels: valueOf(parcels), reviews, channel, stock, photos, auction, teamEdits },
       hasPaidOrder: paidOrders.ok ? { ok: true, value: paidOrders.value.value > 0 } : paidOrders,
       widgets: {
         ...(parcels.ok ? { [WIDGET.PARCELS]: parcels.value } : {}),

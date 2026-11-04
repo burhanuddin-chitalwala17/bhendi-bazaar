@@ -67,6 +67,7 @@ export function PortalSidebar({
   );
   const bottom = anchor === "bottom";
   const sections: PortalNavGroup[] = groups ?? [{ items: items ?? [] }];
+  const current = activeNavHref(sections.flatMap((section) => section.items), pathname);
 
   useEffect(() => {
     if (!open) return;
@@ -137,7 +138,7 @@ export function PortalSidebar({
                   key={item.href ?? item.title}
                   item={item}
                   rail={bottom}
-                  active={item.active ?? isHrefActive(item, pathname)}
+                  active={item.active ?? (item.href !== undefined && item.href === current)}
                   onNavigate={() => setOpen(false)}
                 />
               ))}
@@ -159,9 +160,19 @@ export function PortalSidebar({
   );
 }
 
-function isHrefActive(item: PortalNavItem, pathname: string): boolean {
+function matches(item: PortalNavItem, pathname: string): boolean {
   if (!item.href) return false;
-  return item.exact ? pathname === item.href : pathname.startsWith(item.href);
+  if (pathname === item.href) return true;
+  return !item.exact && pathname.startsWith(`${item.href}/`);
+}
+
+/** The one item the path belongs to: the deepest match, so /orders/pickups lights Pickups and not also Orders. */
+export function activeNavHref(items: readonly PortalNavItem[], pathname: string): string | null {
+  let best: string | null = null;
+  for (const item of items) {
+    if (item.href && matches(item, pathname) && item.href.length > (best?.length ?? -1)) best = item.href;
+  }
+  return best;
 }
 
 /**

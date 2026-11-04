@@ -36,6 +36,7 @@ import { MarketplaceAuthError, MarketplaceUnavailableError, type TokenGrant } fr
 import { providerFor } from "./providers";
 import { channelListingRepository } from "./channel-listing.repository";
 import { listingReadSpec } from "./listing-read.job";
+import type { StockSyncState } from "./channel-stock.types";
 
 /**
  * A shop's connections to the marketplaces (channel-connectors). The only public surface of the
@@ -135,6 +136,7 @@ function marketplaceCard(
       (row?.state === CONNECTION_STATE.DISCONNECTED && row.lastErrorCode === CONNECTION_ERROR.OTHER_SHOP)
         ? (row.lastErrorCode as ConnectionError | null)
         : null,
+    stockSync: live && row ? (row.stockSync as StockSyncState) : null,
   };
 }
 
@@ -153,6 +155,7 @@ function plainCard(channel: Channel, state: CardState): ChannelCardDTO {
     listings: null,
     reapproveBy: null,
     reason: null,
+    stockSync: null,
   };
 }
 

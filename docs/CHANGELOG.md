@@ -12,6 +12,69 @@
 
 ## Entries
 
+## 2026-11-04 — Seven UI defects from the platform audit
+
+- **Checkout:** the phone's Place Order bar was `sticky bottom-0` under the fixed tab bar (z-40), so it
+  was hidden; it now sits at `bottom-tabbar`, with a bleed matching the page gutter (`px-3`, `sm:px-6`).
+- **Order page:** said "Thank you… placed successfully" for every order, unpaid, failed, expired and
+  cancelled included. The headline now follows the status (`order/order-headline.ts`) and is the
+  page's `h1`. The Suspense around already-awaited data, which could never show, is gone.
+- **Admin payout detail:** the header printed the literal text `{org.name}`; the values are code again.
+- **Portal sidebar:** `/admin/orders/pickups` lit Orders and Pickups both, and `/admin/ordersx` lit
+  Orders. One item lights: the deepest whole-segment match.
+- **Error screens:** five boundaries called `reset`, which in Next 16 re-renders without refetching,
+  so "Try again" showed the same error. They call `retry`.
+- **Product tiles:** `sizes` said 33vw on phones while the grid has been 2-up since b2c4ce46, so phone
+  tiles fetched images too small and looked soft. Now 50vw.
+- **Home hero:** on desktop the headline and buttons were hidden until hover; they always show.
+- **Header cart:** was disabled and swallowed the click when empty; it always opens the cart.
+- Tests: `ui-fixes-2026-11.test.ts` (headline per status, one lit item and whole-segment matching,
+  every boundary uses `retry`). Mutation: putting `reset()` back in the pickups boundary failed it.
+  Suites: unit, tsc.
+
+## 2026-11-04 — Stock sync starts on connecting; Pause moves to the Channels card [CONTRACT]
+
+- **Owner's call (inventory-sync Q27, superseding Q4):** Bhendi Bazaar is the source of truth for every
+  platform, so connecting a marketplace means keeping it synced. No "Turn on stock sync" switch and
+  no turn-on preview: once every marketplace location is matched, sync starts by itself and sends
+  every linked listing (unlinked ones are never touched). A paused connection is never restarted
+  by itself.
+- **Listings page:** the Stock sync card shows only when it needs the shop (match locations, paused,
+  a refusal, Amazon unreachable, reconnect). "Read again" is the page's one button.
+- **Channels card:** "Stock sync on" / "Stock sync paused", with Pause / Turn back on beside Disconnect.
+- **Home:** "Match your Amazon locations so stock can be sent", and "n listings now out of stock on
+  Amazon: we have 0" for linked listings sent 0 since Amazon last showed them in stock, until the
+  next read. The preview's gate becomes this warning (ADR-0053).
+- Removed: the `/channels/[channel]/stock-sync` page, `StockPreview`, `StockPreviewDTO`, the "off"
+  action. Added: `StockAttentionDTO`, `ChannelCardDTO.stockSync`; CONTRACTS.md updated.
+- Tests: `stock-sync.test.ts` (starts on the match and on a read of matched locations; never undoes a
+  pause; waits for a match and Home asks for it; Home flags a listing put to 0 until the next read),
+  `home-attention.test.ts`. Mutations: letting a paused sync restart failed the pause test; dropping
+  the "since the last read" filter failed the out-of-stock test. Suites: unit, integration (stock-sync,
+  order-check-budget, channel-import), tsc.
+
+## 2026-11-03 — Amazon gets JPEGs of our WebP photos; listing photos survive a product save
+
+- **Found by the owner:** a published "Photos" change stayed on Review and publish with nothing under
+  it. Two causes. Our photos are stored as WebP and Amazon refuses WebP, so the publish dropped every
+  photo, sent Amazon nothing for them and recorded nothing as sent; and listings kept photos by
+  media id, which a product save renews, so any save made photos read as changed.
+- **Fixed:** a photo Amazon would refuse goes as a JPEG rendition on white (`marketplaceJpeg`, made
+  once and kept, `server/channels/listing-photos-out.ts`); listings keep photos by address, and ids
+  stored before this are read as addresses (one no longer held reads as the product's photos, as a new
+  listing starts); a photo set with none left to send is refused on Photos instead of read as sent;
+  the review shows the shop's own pictures. Unknown formats go as they are, for Amazon to judge.
+- Tests: `marketplace-publish.test.ts` (a save leaves nothing waiting; a reorder goes as JPEG
+  addresses), `listing-plan.test.ts` (old ids read as addresses), `listing-publish-providers.test.ts`
+  (no photos left is a refusal). Mutations: keeping photos by id again failed two tests; skipping the
+  JPEG sent WebP addresses (red).
+
+## 2026-11-03 — Family page: a member's button says Exclude once it is in
+
+- On the family page each member's button read "Include" whether or not it was in the family. It now
+  names what a tap does: "Exclude" (outlined) while the member is in, "Include" once it is left out.
+  Test: `family-form.test.tsx` (out, count drops, back in, count returns).
+
 ## 2026-11-03 — CI: two living docs re-verified
 
 - `src/components/CLAUDE.md` and `src/app/api/CLAUDE.md` re-read against the fix page's components and

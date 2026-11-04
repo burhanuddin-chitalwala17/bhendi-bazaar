@@ -1,4 +1,5 @@
 import { CHANNEL, type Channel } from "@server/shared/channels";
+import type { StockSyncState } from "./channel-stock.types";
 import type { SettleFactsDTO, SettleTypeDTO } from "./channel-facts.types";
 
 /**
@@ -83,6 +84,8 @@ export interface ChannelCardDTO {
   /** Amazon only: the date its yearly re-approval falls due (ISO). */
   reapproveBy: string | null;
   reason: ConnectionError | null;
+  /** Stock sync, on by itself once connected (inventory-sync Q27); paused only by the shop. Null when not connected. */
+  stockSync: StockSyncState | null;
 }
 
 export interface ChannelAttentionDTO {

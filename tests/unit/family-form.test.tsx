@@ -89,10 +89,13 @@ describe("the family page's form (family-merge ux.md)", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/org/org_1/channels/amazon/listings?tab=linked"));
   });
 
-  it("leaves a member out and counts only those included", () => {
+  it("leaves a member out and counts only those included; the button then offers to put it back", () => {
     renderForm();
-    fireEvent.click(screen.getAllByRole("button", { name: "Include" })[0]);
+    expect(screen.queryAllByRole("button", { name: "Include" })).toHaveLength(0);
+    fireEvent.click(screen.getAllByRole("button", { name: "Exclude" })[0]);
     expect(screen.getByRole("button", { name: "Make family of 2" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Include" }));
+    expect(screen.getByRole("button", { name: "Make family of 3" })).toBeInTheDocument();
   });
 
   it("says when the chosen category has no product type (Q17), and when the group is too large (Q19)", () => {

@@ -134,13 +134,16 @@ async function productTypeOf(token: TokenSource, account: string, ref: PublishRe
 /** Send only what changed, as one `patchListingsItem` (D2); a busy Amazon throws so the queue retries. */
 export async function amazonPublish(token: TokenSource, account: string | null, ref: PublishRef, changes: PublishChanges): Promise<PublishAnswer> {
   if (!account) throw new MarketplaceAuthError("rejected");
-  const sent = fieldsOf(changes);
+  // Photos with none left to send are a refusal on Photos, never a quiet success that leaves them waiting.
+  const noPhotos: ListingIssue[] = changes.photoUrls?.length === 0 ? [{ code: "no_photos", message: "None of these photos could be sent to Amazon. Replace them on the product and publish again.", severity: "error", field: LISTING_FIELD.PHOTOS }] : [];
+  const sent = fieldsOf(changes).filter((f) => !(f === LISTING_FIELD.PHOTOS && noPhotos.length > 0));
   const patches = amazonPatches(changes, new Date());
-  if (patches.length === 0) return { accepted: [], issues: [], decidesLater: false };
+  if (patches.length === 0) return { accepted: [], issues: noPhotos, decidesLater: false };
   try {
     const productType = await productTypeOf(token, account, ref);
     const body = await retryBusy(() => spApi(token, "publish patch", itemPath(account, ref.sku, { includedData: "issues" }), { method: "PATCH", body: JSON.stringify({ productType, patches }) }));
-    return answerOf(body, sent);
+    const answer = answerOf(body, sent);
+    return noPhotos.length > 0 ? { ...answer, issues: [...answer.issues, ...noPhotos], decidesLater: false } : answer;
   } catch (error) {
     if (error instanceof MarketplaceRequestError) return { accepted: [], issues: [refused("request")], decidesLater: false };
     throw error;

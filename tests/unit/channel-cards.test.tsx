@@ -27,6 +27,7 @@ const base: ChannelCardDTO = {
   listings: null,
   reapproveBy: null,
   reason: null,
+  stockSync: null,
 };
 const card = (over: Partial<ChannelCardDTO>) => render(<MarketplaceCard orgId="org_1" card={{ ...base, ...over }} />);
 const NOW = new Date().toISOString();

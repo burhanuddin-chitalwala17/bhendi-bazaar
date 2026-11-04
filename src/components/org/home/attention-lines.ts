@@ -1,4 +1,5 @@
 import { CARD_STATE } from "@server/channels/channel-connection.types";
+import { STOCK_ATTENTION } from "@server/channels/channel-stock.types";
 import type { HomeAttentionDto } from "@/data-access-layer/org/home.dal";
 import { TEAM_HISTORY_ANCHOR } from "@/components/product/team/team-edit-copy";
 import { PRODUCT_REVIEWS_ANCHOR } from "@/components/org/product-reviews-section";
@@ -33,6 +34,13 @@ export function attentionLines(orgId: string, a: HomeAttentionDto, now: Date): A
     const { label, state } = a.channel.value;
     const text = state === CARD_STATE.RENEWAL_DUE ? LINE_COPY.renew(label) : LINE_COPY.reconnect(label);
     lines.push({ key: "channel", ok: true, text, href: `${base}/channels` });
+  }
+
+  if (!a.stock.ok) lines.push(failed("stock"));
+  else if (a.stock.value) {
+    const { channel, label, kind, count } = a.stock.value;
+    const text = kind === STOCK_ATTENTION.MATCH ? LINE_COPY.matchLocations(label) : LINE_COPY.outOfStock(label, count);
+    lines.push({ key: "stock", ok: true, text, href: `${base}/channels/${channel}/listings` });
   }
 
   if (!a.photos.ok) lines.push(failed("photos"));

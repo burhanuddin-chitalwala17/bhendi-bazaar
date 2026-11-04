@@ -15,6 +15,7 @@ import type { ParcelTimelineDto } from "@server/checkout/parcel-timeline";
 import { PARCEL_REFUND } from "@server/checkout/parcel-cancel.types";
 import { ParcelTimeline } from "@/components/order/timeline/parcel-timeline";
 import { TIMELINE_READER } from "@/components/order/timeline/timeline-copy";
+import { orderHeadline } from "./order-headline";
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   [ORDER_STATUS.PENDING_PAYMENT]: { label: "Awaiting Payment", className: "bg-warning text-warning-foreground" },
@@ -131,11 +132,7 @@ export function OrderClient({ order, timelines, cancelView, viewerOwns }: OrderC
   return (
     <div className="space-y-6">
       <header className="space-y-3">
-        <SectionHeader
-          overline="Order"
-          title="Thank you for shopping at Bhendi Bazaar"
-          description="Your order has been placed successfully."
-        />
+        <SectionHeader as="h1" overline="Order" {...orderHeadline(order.status)} />
       </header>
 
       {/* Order status + tracking */}

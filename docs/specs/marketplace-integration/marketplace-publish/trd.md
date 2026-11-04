@@ -30,7 +30,9 @@ looking for the product's page on Amazon so it is never duplicated.
   field; price as a `merge` of `purchasable_offer` with its selectors; pause as the offer's `end_at`
   (Q17). A create is a `putListingsItem`, the one place a whole listing is sent. Flipkart: price by its
   price update in whole rupees, rounded down (channel-listings Q13), with the product's MRP; pause by
-  its listing status. Paise to rupees in one helper beside `paiseFromRupees`.
+  its listing status. Paise to rupees in one helper beside `paiseFromRupees`. Our photos are stored as
+  WebP, which Amazon refuses, so a photo in a refused format goes as a JPEG rendition on white
+  (`marketplaceJpeg`, made once and kept); a photo set with none left to send is refused on Photos.
 - **D3 — The review is a fingerprint.** The review page carries each listing's `version`; Publish
   sends the ids, versions and the fields the shop kept. The service refuses a listing whose version
   moved (Refused state) and records the publish as the computed values of the kept fields, so a later

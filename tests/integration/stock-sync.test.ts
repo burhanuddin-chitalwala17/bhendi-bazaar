@@ -2,7 +2,7 @@
  * One stock figure on every marketplace, against a real schema (inventory-sync D1–D6). The
  * marketplace is a fake that records what it is sent; under test is what we store and decide: a
  * change enqueued with its transaction, the count now sent and sent once, a sale taken once and never
- * below zero, a cancellation put back once, the daily check's correction, and the switch.
+ * below zero, a cancellation put back once, the daily check's correction, and sync starting by itself.
  */
 import "dotenv/config";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -245,15 +245,30 @@ describe.skipIf(!isDisposableDb)("stock sync (local db)", () => {
     expect(section.corrections[0]).toMatchObject({ title: "Stock DAILY", theirs: 7, ours: 5 });
   });
 
-  it("previews what turning on will change, sending nothing, then turns on (spec A7, Q4)", async () => {
+  it("starts sync by itself once every location is matched, sending every linked product (Q27)", async () => {
+    const id = await product("AUTO", 5);
     await prisma.channelConnection.update({ where: { id: connectionId }, data: { stockSync: "off" } });
-    await product("PRE", 5);
-    fake.state.theirs.set(`SS-${stamp}-PRE`, 8);
-    const preview = await stock.preview(orgId, "amazon");
-    expect(preview.rows.find((r) => r.title === "Stock PRE")).toMatchObject({ theirs: 8, ours: 5, changes: true });
-    expect(fake.state.sent).toEqual([]);
+    const [loc] = await prisma.channelLocation.findMany({ where: { connectionId }, select: { id: true } });
+    await prisma.channelLocation.update({ where: { id: loc.id }, data: { orgAddressId: null, matchedAt: null } });
+    await locations.refresh(connectionId);
+    const syncOf = async () => (await prisma.channelConnection.findUniqueOrThrow({ where: { id: connectionId }, select: { stockSync: true } })).stockSync;
+    expect(await syncOf()).toBe("off");
+    const before = await pushJobs(id);
+    await locations.save(orgId, "amazon", [{ id: loc.id, orgAddressId: locationId, notUsed: false }]);
+    expect(await syncOf()).toBe("on");
+    expect(await pushJobs(id)).toBe(before + 1);
+  });
+
+  it("starts on a read of locations already matched, and never undoes the shop's pause (Q27)", async () => {
+    const syncOf = async () => (await prisma.channelConnection.findUniqueOrThrow({ where: { id: connectionId }, select: { stockSync: true } })).stockSync;
+    await prisma.channelConnection.update({ where: { id: connectionId }, data: { stockSync: "off" } });
+    await locations.refresh(connectionId);
+    expect(await syncOf()).toBe("on");
+    await stock.pause(orgId, "amazon");
+    await locations.refresh(connectionId);
+    expect(await syncOf()).toBe("paused");
     await stock.turnOn(orgId, "amazon");
-    expect((await prisma.channelConnection.findUniqueOrThrow({ where: { id: connectionId }, select: { stockSync: true } })).stockSync).toBe("on");
+    expect(await syncOf()).toBe("on");
   });
 
   it("marks a location the marketplace stops reporting as gone, and matches only to the shop's open locations (Q15)", async () => {
@@ -343,30 +358,29 @@ describe.skipIf(!isDisposableDb)("stock sync (local db)", () => {
     cursor.mockRestore();
   });
 
-  it("reads no counts and offers only the match while a location is unmatched, or none is read yet (Q16)", async () => {
+  it("waits for the match while a location is unmatched, and Home asks for it (Q16, Q27)", async () => {
     await prisma.channelConnection.update({ where: { id: connectionId }, data: { stockSync: "off" } });
     await product("UNM", 5);
     await prisma.channelLocation.updateMany({ where: { connectionId }, data: { orgAddressId: null, matchedAt: null } });
-    const unmatched = await stock.preview(orgId, "amazon");
-    expect(unmatched).toMatchObject({ locationsToMatch: true, locationsRead: true, rows: [] });
-    await prisma.channelLocation.deleteMany({ where: { connectionId } });
-    const none = await stock.preview(orgId, "amazon");
-    expect(none).toMatchObject({ locationsToMatch: true, locationsRead: false, rows: [] });
+    await locations.refresh(connectionId);
     expect((await stock.section(orgId, "amazon")).locationsToMatch).toBe(true);
+    expect(await stock.attention(orgId)).toMatchObject({ channel: "amazon", kind: "match" });
     await expect(stock.turnOn(orgId, "amazon")).rejects.toThrow(/Match your locations/);
     expect(fake.state.sent).toEqual([]);
   });
 
-  it("calls out a listing in stock there that our count would send to 0", async () => {
-    await prisma.channelConnection.update({ where: { id: connectionId }, data: { stockSync: "off" } });
-    await product("ZERO", 0);
+  it("flags on Home a listing in stock there that our send put to 0, until the next read (Q27)", async () => {
+    const zero = await product("ZERO", 0);
+    const same = await product("SAME", 1);
+    const read = new Date(Date.now() - 60_000);
+    await prisma.channelListing.updateMany({ where: { connectionId }, data: { quantity: 1, lastSeenAt: read } });
     fake.state.theirs.set(`SS-${stamp}-ZERO`, 1);
-    await product("SAME", 1);
-    fake.state.theirs.set(`SS-${stamp}-SAME`, 1);
-    const preview = await stock.preview(orgId, "amazon");
-    expect(preview.toZero).toBe(1);
-    expect(preview.rows[0]).toMatchObject({ title: "Stock ZERO", theirs: 1, ours: 0, toZero: true });
-    expect(preview.rows.find((r) => r.title === "Stock SAME")).toMatchObject({ changes: false, toZero: false });
+    await stock.push(zero);
+    await stock.push(same);
+    expect(await stock.attention(orgId)).toMatchObject({ kind: "outOfStock", count: 1 });
+    // A read since the send is what the marketplace shows now; the Listings page has it.
+    await prisma.channelListing.updateMany({ where: { connectionId }, data: { lastSeenAt: new Date() } });
+    expect(await stock.attention(orgId)).toBeNull();
   });
 
   it("on turning on, writes only to listings whose count there differs from ours", async () => {

@@ -32,6 +32,12 @@ describe("Amazon's patch carries only what changed (D2)", () => {
     expect(ops).toHaveLength(9);
   });
 
+  it("refuses photos with none left to send rather than reading them as sent", async () => {
+    const { amazonPublish } = await import("@server/channels/providers/amazon/amazon.publish");
+    const answer = await amazonPublish(async () => "t", "ACCT", { sku: "S", externalId: null, marketplaceType: "BAG" }, { photoUrls: [], mrpPaise: null });
+    expect(answer).toEqual({ accepted: [], issues: [expect.objectContaining({ code: "no_photos", field: "photos" })], decidesLater: false });
+  });
+
   it("sends nothing when nothing changed", () => {
     expect(amazonPatches({ mrpPaise: 249_900 }, NOW)).toEqual([]);
   });

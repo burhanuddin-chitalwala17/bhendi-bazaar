@@ -36,6 +36,7 @@ const attention = (productId: string | null): HomeAttentionDto => ({
   parcels: none,
   reviews: { ok: true, value: { count: 2, productId } },
   channel: { ok: true, value: null },
+  stock: { ok: true, value: null },
   photos: none,
   auction: { ok: true, value: null },
   teamEdits: { ok: true, value: { count: 0, productId: null } },

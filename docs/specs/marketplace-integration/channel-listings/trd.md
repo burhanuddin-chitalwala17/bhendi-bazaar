@@ -52,8 +52,10 @@ snapshot, over the fields the marketplace lets us write.
 - **D7 — The product gains `keyFeatures` (up to five) and `barcode`**, and the form asks MRP, which
   until now only a marketplace fill could set; create and update whitelist all three (Invariant 4).
   The master's selling price is `Product.price`; a shop sale price is a store promotion and is not sent.
-- **D8 — Photos are product media ids** in the shop's order; the screen shows the product's photos
-  to choose from. A deleted photo drops out of every override when the listing is computed.
+- **D8 — Photos are the product's photo addresses** in the shop's order; the screen shows the
+  product's photos to choose from. A deleted photo drops out of every override when the listing is
+  computed. Addresses, not media ids: a product save renews its media rows, so an id-kept listing
+  read as changed after every save (fixed 2026-11-03; stored ids are read as addresses).
 
 ## Packages
 None.

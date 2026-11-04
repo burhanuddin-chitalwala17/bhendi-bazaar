@@ -60,32 +60,15 @@ export interface StockSyncSectionDTO {
   corrections: Array<{ title: string; theirs: number; ours: number; at: string }>;
 }
 
-/** One row of the turn-on preview (inventory-sync ux.md "Turn-on preview"). */
-export interface StockPreviewRowDTO {
-  listingId: string;
-  title: string;
-  archived: boolean;
-  theirs: number | null;
-  ours: number;
-  changes: boolean;
-  /** In stock there now, 0 once sent: it will show out of stock. */
-  toZero: boolean;
-  heldByMarketplace: boolean;
-}
+/** Home's stock line (inventory-sync Q27): sync waiting on a location match, or listings we put out of stock. */
+export const STOCK_ATTENTION = { MATCH: "match", OUT_OF_STOCK: "outOfStock" } as const;
+export type StockAttentionKind = (typeof STOCK_ATTENTION)[keyof typeof STOCK_ATTENTION];
 
-export interface StockPreviewDTO {
+export interface StockAttentionDTO {
   channel: MarketplaceChannel;
   label: string;
-  rows: StockPreviewRowDTO[];
-  changing: number;
-  matching: number;
-  /** Rows going from in stock to 0, called out before sending. */
-  toZero: number;
-  /** Locations still to match: no counts were read and nothing can be sent. */
-  locationsToMatch: boolean;
-  locationsRead: boolean;
-  /** Listings that could not be read now; sent anyway once sync is on. */
-  unread: number;
+  kind: StockAttentionKind;
+  count: number;
 }
 
 /** One line on the Marketplace orders tab (inventory-sync Q10): amounts as reported (ADR-0044). */

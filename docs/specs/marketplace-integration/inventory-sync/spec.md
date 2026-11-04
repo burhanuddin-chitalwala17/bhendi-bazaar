@@ -4,7 +4,7 @@
 - **Status:** Implemented
 - **Domain:** channels, with catalog and checkout
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-01
+- **Verified:** 2026-11-04
 - **References:** [decisions.md](decisions.md), parent [marketplace-integration](../spec.md) (Q24, Q30–Q32, Q35, Q38–Q40), [INTEGRATIONS.md](../../../INTEGRATIONS.md) "Detecting a sale", [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [ADR-0044](../../../adr/0044-a-marketplace-orders-money-is-reported-not-computed.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md. Subfeature 7 of
@@ -38,8 +38,8 @@ it twice means a cancellation, a penalty and an unhappy buyer. One figure, sent 
   and never enters what the shop is owed by the platform.
 - R8 — Only linked listings are touched. A listing that is not linked, left off, or held in the
   marketplace's own warehouse is never changed (Q5, Q11).
-- R9 — Sync is per marketplace and can be paused; the shop sees, per marketplace, when stock was last
-  sent and read, and anything that failed (Q4).
+- R9 — Sync is per marketplace, starts on connecting and can be paused; the shop sees, per marketplace,
+  anything that failed or needs it (Q27).
 - R11 — Each marketplace pickup location is matched once to one of the shop's own (Q15); a sale, a
   push and the daily read each act on that matched location's count. A location without a match
   holds sync for that account until the owner matches it or marks it not used (Q16).
@@ -55,8 +55,8 @@ it twice means a cancellation, a penalty and an unhappy buyer. One figure, sent 
 - **Rate limits:** a shop with hundreds of listings must stay within each marketplace's limits. *Answered by D2, D3, D6.*
 - **A sale with no location**, or from a location not matched, must still land on one count and
   say so (Q18). *Answered by D4.*
-- **A wrong first push:** turning sync on for the first time sends our count over every listing's;
-  the shop must see what will change before it happens (Q4). *Answered by D6.*
+- **A wrong first push:** the first send puts our count over every linked listing's; a listing put out
+  of stock must be named to the shop, and an unlinked one never touched (Q27, Q11). *Answered by D6.*
 
 ## Product acceptance
 - A1 — An item sold on Amazon shows one less on Bhendi Bazaar and on Flipkart within about ten minutes (the order check, Q26).

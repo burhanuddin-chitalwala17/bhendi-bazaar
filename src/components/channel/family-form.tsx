@@ -225,15 +225,15 @@ export function FamilyForm({
                   <strong className="text-sm">{heading || m.title || m.sku}</strong>
                   <span className="line-clamp-2 text-xs text-muted-foreground">{m.title ?? m.sku}</span>
                 </div>
+                {/* The button names what a tap does: a member in the family can be left out, one left out put back. */}
                 <Button
                   type="button"
                   size="sm"
-                  variant={state?.include === false ? "outline" : "default"}
-                  aria-pressed={state?.include !== false}
+                  variant={state?.include === false ? "default" : "outline"}
                   className="min-h-10"
                   onClick={() => setMember(index, { include: state?.include === false })}
                 >
-                  {FAMILY.include}
+                  {state?.include === false ? FAMILY.include : FAMILY.exclude}
                 </Button>
               </div>
               {m.readFailed && (

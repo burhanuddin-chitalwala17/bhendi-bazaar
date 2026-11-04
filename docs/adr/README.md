@@ -102,4 +102,5 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0062](0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md) | A decision is replaced until it is implemented, and superseded after | Accepted | 2026-10-20 |
 | [0063](0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md) | Every public route is classified for rate limiting in one registry | Accepted | 2026-10-29 |
 | [0064](0064-a-storefront-theme-is-a-token-set-and-a-section-composition-declared-in-code.md) | A storefront theme is a token set and a section composition declared in code | Accepted | 2026-10-30 |
+| [0065](0065-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md) | The UI is built in tiers, and every icon goes through one seam | Proposed | 2026-11-04 |
 <!-- generated:adr-index:end -->

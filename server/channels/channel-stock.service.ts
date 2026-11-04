@@ -11,7 +11,7 @@ import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
 import { channelLocationRepository } from "./channel-location.repository";
 import { storedRead } from "./channel-facts.service";
-import { STOCK_PROBLEM, STOCK_SYNC, type StockProblem, type StockPreviewDTO, type StockPreviewRowDTO, type StockSyncSectionDTO, type StockSyncState } from "./channel-stock.types";
+import { STOCK_ATTENTION, STOCK_PROBLEM, STOCK_SYNC, type StockProblem, type StockAttentionDTO, type StockSyncSectionDTO, type StockSyncState } from "./channel-stock.types";
 import { providerFor } from "./providers";
 import { MarketplaceAuthError, MarketplaceUnavailableError } from "./providers/marketplace-provider";
 import type { ListingStock, StockListingRef } from "./providers/stock";
@@ -60,6 +60,20 @@ async function connectionOf(orgId: string, channel: string) {
   const connection = await channelConnectionRepository.find(orgId, channel);
   if (!connection) throw new NotFoundError("Connection");
   return { connection, channel: channel as MarketplaceChannel };
+}
+
+/**
+ * Sync on, every linked product sent from scratch, and the order check started from now, so sales from
+ * before sync are not taken again (Q24).
+ */
+async function start(connectionId: string, orgId: string): Promise<void> {
+  await channelListingRepository.resetStockSent(connectionId);
+  const now = new Date();
+  await prisma.$transaction(async (tx) => {
+    if (!(await channelConnectionRepository.setStockSync(tx, connectionId, orgId, STOCK_SYNC.ON, now, now.toISOString()))) throw new NotFoundError("Connection");
+    await channelStockService.pushAllIn(tx, connectionId);
+    await enqueueLater(tx, checkOrdersSpec, {}, { afterSeconds: 0, onePerSeconds: ORDERS_CHECK_EVERY_SECONDS });
+  });
 }
 
 export const channelStockService = {
@@ -190,82 +204,54 @@ export const channelStockService = {
     return ids.length;
   },
 
-  /** The turn-on preview (Q4): every linked listing's count there now beside ours; nothing is sent. */
-  async preview(orgId: string, channelName: string): Promise<StockPreviewDTO> {
-    const { connection, channel } = await connectionOf(orgId, channelName);
-    const locations = await channelLocationRepository.forConnection(connection.id);
-    // Until every location is matched there is no count of ours to compare: say so, read nothing.
-    if (unmatched(locations)) {
-      return { channel, label: CHANNEL_LABELS[channel], rows: [], changing: 0, matching: 0, toZero: 0, locationsToMatch: true, locationsRead: locations.some((l) => l.goneAt === null), unread: 0 };
-    }
-    const listings = await channelListingRepository.linkedOn(connection.id);
-    const provider = providerFor(channel);
-    const token = () => channelConnectionService.accessToken(connection.id);
-    const rows: StockPreviewRowDTO[] = [];
-    let unread = 0;
-    for (let i = 0; i < listings.length; i += 2) {
-      const batch = await Promise.all(
-        listings.slice(i, i + 2).map(async (l) => {
-          const product = await productService.stockForPush(l.productId!);
-          const ours = countsFor(locations, { archived: product?.archivedAt != null, stock: product?.stockLocations ?? [] });
-          let theirs: ListingStock | null = null;
-          try {
-            theirs = await provider.readStock(token, connection.externalAccountId, ref(l));
-          } catch {
-            unread++;
-          }
-          if (theirs?.heldByMarketplace) await channelListingRepository.recordStockSent(l.id, { heldByMarketplace: true }, new Date());
-          const theirsTotal = theirs && !theirs.heldByMarketplace ? theirs.counts.reduce((n, c) => n + c.quantity, 0) : null;
-          const oursTotal = (ours ?? []).reduce((n, c) => n + c.quantity, 0);
-          return {
-            listingId: l.id,
-            title: l.product?.name ?? l.title ?? l.sku,
-            archived: product?.archivedAt != null,
-            theirs: theirsTotal,
-            ours: oursTotal,
-            changes: !theirs?.heldByMarketplace && (theirs === null || !sameCounts(theirs.counts, ours ?? [])),
-            toZero: theirsTotal !== null && theirsTotal > 0 && oursTotal === 0,
-            heldByMarketplace: theirs?.heldByMarketplace === true,
-          };
-        }),
-      );
-      rows.push(...batch);
-    }
-    rows.sort((a, b) => Number(b.toZero) - Number(a.toZero) || Number(b.changes) - Number(a.changes) || a.title.localeCompare(b.title));
-    return {
-      channel,
-      label: CHANNEL_LABELS[channel],
-      rows,
-      changing: rows.filter((r) => r.changes).length,
-      matching: rows.filter((r) => !r.changes && !r.heldByMarketplace).length,
-      toZero: rows.filter((r) => r.toZero).length,
-      locationsToMatch: false,
-      locationsRead: true,
-      unread,
-    };
+  /**
+   * Sync starts on its own (Q27, superseding Q4): connecting means keeping the marketplace's counts
+   * ours, so once every location is matched a connection still off is turned on. Paused stays paused.
+   */
+  async startIfReady(connectionId: string): Promise<boolean> {
+    const connection = await channelConnectionRepository.syncOf(connectionId);
+    if (!connection || connection.state !== CONNECTION_STATE.CONNECTED || connection.stockSync !== STOCK_SYNC.OFF) return false;
+    if (unmatched(await channelLocationRepository.forConnection(connectionId))) return false;
+    await start(connection.id, connection.orgId);
+    return true;
   },
 
-  /**
-   * "Send stock to {marketplace}" (Q4): sync on, every linked product sent from scratch, and the order
-   * check started from now, so sales from before sync are not taken again (Q24).
-   */
+  /** "Turn back on" after a pause, from the Channels card: every linked product sent from scratch. */
   async turnOn(orgId: string, channelName: string): Promise<void> {
     const { connection } = await connectionOf(orgId, channelName);
     if (unmatched(await channelLocationRepository.forConnection(connection.id))) {
       throw new DomainError("Match your locations before stock can be sent.", { status: 409, field: "locations" });
     }
-    await channelListingRepository.resetStockSent(connection.id);
-    const now = new Date();
-    await prisma.$transaction(async (tx) => {
-      if (!(await channelConnectionRepository.setStockSync(tx, connection.id, orgId, STOCK_SYNC.ON, now, now.toISOString()))) throw new NotFoundError("Connection");
-      await this.pushAllIn(tx, connection.id);
-      await enqueueLater(tx, checkOrdersSpec, {}, { afterSeconds: 0, onePerSeconds: ORDERS_CHECK_EVERY_SECONDS });
-    });
+    await start(connection.id, orgId);
   },
 
-  async setState(orgId: string, channelName: string, state: Exclude<StockSyncState, typeof STOCK_SYNC.ON>): Promise<void> {
+  /** Pause, from the Channels card (Q27): nothing is sent until the shop turns it back on. */
+  async pause(orgId: string, channelName: string): Promise<void> {
     const { connection } = await connectionOf(orgId, channelName);
-    if (!(await channelConnectionRepository.setStockSync(prisma, connection.id, orgId, state, new Date()))) throw new NotFoundError("Connection");
+    if (!(await channelConnectionRepository.setStockSync(prisma, connection.id, orgId, STOCK_SYNC.PAUSED, new Date()))) throw new NotFoundError("Connection");
+  },
+
+  /**
+   * What Home flags (Q27): sync waiting on a location match, else listings our sends put out of stock
+   * that the marketplace last showed in stock. A warning, never a gate (ADR-0053).
+   */
+  async attention(orgId: string): Promise<StockAttentionDTO | null> {
+    const connections = (await channelConnectionRepository.forOrg(orgId)).filter(
+      (c) => isMarketplaceChannel(c.channel) && c.state === CONNECTION_STATE.CONNECTED && c.stockSync !== STOCK_SYNC.PAUSED,
+    );
+    const zeroed: StockAttentionDTO[] = [];
+    for (const c of connections) {
+      const channel = c.channel as MarketplaceChannel;
+      const locations = await channelLocationRepository.forConnection(c.id);
+      if (locations.some((l) => l.goneAt === null) && unmatched(locations)) return { channel, label: CHANNEL_LABELS[channel], kind: STOCK_ATTENTION.MATCH, count: 0 };
+      if (c.stockSync !== STOCK_SYNC.ON) continue;
+      const count = (await channelListingRepository.sentAfterRead(c.id)).filter((l) => {
+        const last = lastSent(l.stockSent);
+        return !last.held && last.counts !== null && last.counts.every((x) => x.quantity === 0);
+      }).length;
+      if (count > 0) zeroed.push({ channel, label: CHANNEL_LABELS[channel], kind: STOCK_ATTENTION.OUT_OF_STOCK, count });
+    }
+    return zeroed[0] ?? null;
   },
 
   /** Where sync stands for one marketplace (ux.md "Stock sync section"). */

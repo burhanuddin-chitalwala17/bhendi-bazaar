@@ -1,9 +1,7 @@
 import { optionalActiveSession } from "@/lib/admin-auth";
 import { OrderClient } from "@/components/order/order-client";
-import { ErrorState } from "@/components/shared/states/ErrorState";
-import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { ordersDAL } from "@/data-access-layer/orders.dal";
-import { Suspense } from "react";
+import { ErrorState } from "@/components/shared/states/ErrorState";
 
 interface OrderPageProps {
   params: Promise<{ orderId: string }>;
@@ -15,17 +13,13 @@ export default async function OrderPage({ params }: OrderPageProps) {
   // "not found" so a foreign order id reveals nothing (checkout/CLAUDE.md ownership rule).
   const session = await optionalActiveSession({ onBlocked: "allow" });
   const order = await ordersDAL.getOrderById(orderId, session?.user?.id);
-  if (!order) {
-    return <ErrorState message="Order not found" />;
-  }
+  // In-page, not a 404: loading.tsx has already streamed a 200, and an order page is never indexed.
+  if (!order) return <ErrorState message="Order not found" />;
 
   const [timelines, cancelView] = await Promise.all([ordersDAL.timelinesFor(order), ordersDAL.cancelViewFor(order)]);
   // Only the signed-in owner cancels here; a guest's page is readable by id alone (Q31).
   const viewerOwns = Boolean(session?.user?.id && order.userId === session.user.id);
 
-  return (
-    <Suspense fallback={<LoadingSkeleton />}>
-      <OrderClient order={order} timelines={timelines} cancelView={cancelView} viewerOwns={viewerOwns} />
-    </Suspense>
-  );
+  // No Suspense here: everything is awaited above, so a boundary could never show; loading.tsx covers the wait.
+  return <OrderClient order={order} timelines={timelines} cancelView={cancelView} viewerOwns={viewerOwns} />;
 }

@@ -26,6 +26,7 @@ export const FAMILY = {
   tryAgain: "Try again",
   sharedQuestion: (l: string, fact: string, said: string) => `${l} says ${fact}: ${said}. Which fits this product?`,
   include: "Include",
+  exclude: "Exclude",
   alreadyProduct: (name: string) => `Already ${name}`,
   joinsAsIs: (sku: string | null, price: string) => `${sku ? `SKU ${sku} · ` : ""}${price}. Joins the family as it is.`,
   inOtherFamily: (name: string) => `In family ${name}. Move it here?`,

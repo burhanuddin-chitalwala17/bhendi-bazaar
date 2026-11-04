@@ -71,7 +71,7 @@ export async function renditionUrl(
   assetId: string,
   surfaceKey: MediaSurfaceKey,
 ): Promise<string> {
-  const surface = MEDIA_SURFACES[surfaceKey];
+  const surface: MediaSurface = MEDIA_SURFACES[surfaceKey];
 
   const existing = await mediaAssetService.findRendition(assetId, surfaceKey);
   if (existing) return existing.ref;
@@ -85,8 +85,10 @@ export async function renditionUrl(
       fit: surface.fit,
       withoutEnlargement: true,
     })
-    .webp({ quality: surface.quality })
+    .flatten(surface.format === "jpeg" ? { background: "#ffffff" } : false)
+    .toFormat(surface.format === "jpeg" ? "jpeg" : "webp", { quality: surface.quality })
     .toBuffer();
+  const jpeg = surface.format === "jpeg";
 
   // Recorded against the asset that was asked for, not the one it was rendered from: the
   // caller asked this asset for this surface, and that is the pair the next ask looks up.
@@ -95,8 +97,8 @@ export async function renditionUrl(
     uploaderId: null,
     sourceAssetId: assetId,
     bytes: rendered,
-    fileSuffix: `${surfaceKey}.webp`,
-    contentType: "image/webp",
+    fileSuffix: `${surfaceKey}.${jpeg ? "jpg" : "webp"}`,
+    contentType: jpeg ? "image/jpeg" : "image/webp",
     transform: transformFor(surfaceKey),
   });
 

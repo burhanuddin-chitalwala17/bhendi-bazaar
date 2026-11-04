@@ -109,6 +109,7 @@ describe("Home's line (Q23)", () => {
     parcels: { ok: true, value: 0 },
     reviews: { ok: true, value: { count: 0, productId: null } },
     channel: { ok: true, value: null },
+    stock: { ok: true, value: null },
     photos: { ok: true, value: 0 },
     auction: { ok: true, value: null },
     teamEdits,

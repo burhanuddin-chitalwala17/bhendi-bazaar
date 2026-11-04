@@ -158,7 +158,7 @@ export class ProductsRepository {
         media: {
           where: { kind: "IMAGE" },
           orderBy: { position: "asc" },
-          select: { id: true, ref: true, asset: { select: { width: true, height: true, mimeType: true } } },
+          select: { id: true, ref: true, assetId: true, asset: { select: { width: true, height: true, mimeType: true } } },
         },
       },
     });

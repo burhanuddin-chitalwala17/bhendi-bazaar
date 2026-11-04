@@ -1,6 +1,6 @@
 # CLAUDE.md — channels domain
 
-- **Verified:** 2026-11-02
+- **Verified:** 2026-11-04
 - **Covers:** `server/channels/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md). This file covers **channels** only. Requirements are in [docs/specs/marketplace-integration/](../../docs/specs/marketplace-integration/); every decision, with who made it, is in each spec's `decisions.md`.
@@ -26,6 +26,7 @@ Channels owns a shop's authorised connection to a marketplace: the consent round
 - **A fill never overwrites.** Filling from a listing writes through catalog's and listing's conditional commands, which lock the row and write only what is still empty; the card is computed from the stored read, never stored as questions (marketplace-facts D6, D7).
 - **Stock sync sends what is true when it runs.** A push reads the product's counts under `pg_advisory_xact_lock` and skips counts already sent; never send a delta. An order line is claimed once (unique on connection, order, line) and a restock is claimed by a conditional update. Nothing runs on a short schedule: work that repeats re-enqueues itself only while there is something to do.
 - **A listing is computed, never stored whole.** What a marketplace gets is the product with the `PlatformListing`'s own values over it; the mirror is never repurposed as intent. A save compares on `version`; a publish sends only the reviewed fields at the reviewed version; its claimed state is the lock, so the marketplace is called outside any transaction and the answer is written only while the listing is still Sent. Only what the marketplace took becomes sent (Amazon's after a look confirms it), and every send and look ends in a recorded state.
+- **A listing keeps photos by address, never by media id**: a product save renews its media rows. What a marketplace fetches is made at the send: a format it refuses (our WebP, for Amazon) goes as a `marketplaceJpeg` rendition.
 - **A marketplace's issue message may reach the shop** (marketplace-publish Q6): the issue's own sentence, plain text, cut to 300 characters. Never a response body.
 - **Never call a live marketplace from a test.** Stub `fetch`.
 
@@ -46,7 +47,7 @@ Channels owns a shop's authorised connection to a marketplace: the consent round
 | `channel-family.service.ts`, `channel-family.types.ts` | One family from several listings: the family page's live read and plan, and the save that makes the family and every member or nothing (family-merge) |
 | `family-plan.ts` | A family's axes, each member's values, what all share, and what stops a save; pure |
 | `channel-location.service.ts`, `channel-location.repository.ts` | A marketplace's pickup locations, read on connect and Read again, and the shop's match for each (inventory-sync D1) |
-| `channel-stock.service.ts`, `channel-stock.types.ts`, `stock-plan.ts` | Sending our counts per matched location under a lock per product, the switch and its preview, the daily check; `stock-plan.ts` is pure |
+| `channel-stock.service.ts`, `channel-stock.types.ts`, `stock-plan.ts` | Sending our counts per matched location under a lock per product, starting sync once locations are matched (inventory-sync Q27), Home's stock line, the daily check; `stock-plan.ts` is pure |
 | `channel-orders.service.ts`, `marketplace-order.repository.ts` | The ten-minute order check, batched across shops (inventory-sync Q26): each line once, stock taken or the line flagged oversold, a cancellation restocked once; the Marketplace orders tab |
 | `stock-checks.job.ts` | The order check's and daily check's job specs: the order check enqueues its next run only while a connection has sync on (inventory-sync Q23) |
 | `stock-correction.repository.ts` | The one writer of `StockCorrection`, the daily check's record |
@@ -56,5 +57,6 @@ Channels owns a shop's authorised connection to a marketplace: the consent round
 | `listing-read.job.ts` | The read job's spec, enqueued on connect and by Read again; its handler is in `channels.jobs.ts` |
 | `platform-listing.service.ts`, `platform-listing.repository.ts`, `platform-listing.types.ts`, `listing-plan.ts` | Each product's listing per marketplace: made with what is live, computed from the product, saved as its own values; `listing-plan.ts` is pure (channel-listings) |
 | `listing-publish.service.ts`, `listing-publish.job.ts` | The review, the publish claimed at the reviewed version, the send under a lock per listing, and the self-renewing answer check (marketplace-publish D3–D5) |
+| `listing-photos-out.ts` | The photo addresses a marketplace fetches: as stored where it takes the format, else a JPEG rendition (marketplace-publish D2) |
 | `listing-create.service.ts`, `listing-create.ts` | Putting a product or a family on a marketplace: looking for its page, the draft, the check-only answer, the create; `listing-create.ts` (mapping forwards, theme, SKU) is pure (marketplace-publish D6–D8) |
 | `providers/` | `MarketplaceProvider`, one folder per marketplace (`*.listings.ts` reads its listings, `*.stock.ts` its locations, counts and orders, `*.publish.ts` its listing rules, publish, status and create; `stock.ts` and `publish.ts` the shared shapes), and `listing-read.ts`'s shared sink, retry and paise helpers |

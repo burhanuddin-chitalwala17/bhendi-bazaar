@@ -3,7 +3,7 @@
 - **Status:** Implemented
 - **Domain:** channels, with catalog (stock) and checkout (orders, unchanged)
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-01
+- **Verified:** 2026-11-04
 - **References:** [spec.md](spec.md), [ux.md](ux.md), [decisions.md](decisions.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md) "Detecting a sale", [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0044](../../../adr/0044-a-marketplace-orders-money-is-reported-not-computed.md), [ADR-0021](../../../adr/0021-audit-trail-never-fails-the-action.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -63,10 +63,11 @@ sync on for that marketplace, after seeing what will change.
   details), compares with what was last sent, and where they differ sends again through D3's push
   under its lock and writes a `StockCorrection` row for the section's line (Q9). It is enqueued by
   the daily maintain pass (Q23).
-- **D6 — Sync is a switch per connection** (Q4): `stockSync` off, on or paused, with its last sent
-  and checked times. Turning on reads every linked listing's current counts (paced, like a listing
-  read) into a preview; confirming enqueues D3 for every linked product. Pausing stops D3, D4 and D5
-  for that connection; turning back on re-runs the preview.
+- **D6 — Sync starts on connecting** (Q27, superseding Q4's switch and preview): `stockSync` off, on or
+  paused. A connection still off turns on, enqueuing D3 for every linked product, when a read of its
+  locations or the owner's match leaves every location matched; paused is never undone by itself.
+  Pausing (Channels card) stops D3, D4 and D5 for that connection; Turn back on starts it again.
+  Home names linked listings sent 0 since the marketplace last showed them in stock.
 - **D7 — A refusal is recorded, not predeclared** (Q25). Every capability answered for our app (Q12), so
   no switches are declared; a send the marketplace refuses records `stockProblem` "refused" on the
   connection and the section says "not allowed" (R10); a busy one records "busy" and the queue
@@ -80,7 +81,7 @@ None.
 ## UI approach
 Cites ux.md. Phone first. The stock sync section is a server component at the top of the marketplace's
 Listings page with one client leaf for its action; Match locations is a `ResponsivePicker` sheet per
-ADR-0040 with one select per marketplace location; the preview is a page; the product's On
+ADR-0040 with one select per marketplace location; Pause is on the Channels card (Q27); the product's On
 marketplaces block gains its stock line; Orders gains a Marketplace orders tab. All requests go
 through `channelsApiClient` and `useMutation`. No new token.
 

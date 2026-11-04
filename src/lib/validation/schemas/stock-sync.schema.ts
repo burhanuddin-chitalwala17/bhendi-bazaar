@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-/** Stock sync's switch for one marketplace (inventory-sync D6, Q4): "on" only after the preview. */
-export const stockSyncChangeSchema = z.object({ action: z.enum(["on", "pause", "off"]) });
+/** Pause stock sync for one marketplace, or turn it back on, from the Channels card (inventory-sync Q27). */
+export const stockSyncChangeSchema = z.object({ action: z.enum(["on", "pause"]) });
 export type StockSyncChangeInput = z.input<typeof stockSyncChangeSchema>;
 
 /** The owner's location matches (inventory-sync Q15, Q16): each to one of the shop's, or not used. */

@@ -29,6 +29,7 @@ import {
 import { providerFor } from "./providers";
 import { MarketplaceAuthError, MarketplaceUnavailableError } from "./providers/marketplace-provider";
 import type { PublishChanges } from "./providers/publish";
+import { marketplacePhotoUrls } from "./listing-photos-out";
 
 /**
  * Sending a listing's reviewed changes and following each until the marketplace answers
@@ -40,36 +41,25 @@ type Product = Awaited<ReturnType<typeof productService.forListing>>[number];
 const BIG_CHANGE = 0.3;
 const issuesOf = (raw: unknown): ListingIssue[] => (Array.isArray(raw) ? (raw as ListingIssue[]) : []);
 
-/** Photo ids as the addresses a marketplace fetches, in order, leaving out a format it refuses (channel-listings Q11). */
-export function photoUrls(product: Product, ids: readonly string[], rules: ListingRules): string[] {
-  return ids.flatMap((id) => {
-    const media = product.media.find((m) => m.id === id);
-    if (!media) return [];
-    const mime = media.asset?.mimeType;
-    if (mime && rules.photo.formats.length > 0 && !rules.photo.formats.includes(mime)) return [];
-    return [media.ref];
-  });
-}
+/** Photos show on the review as the shop's own pictures; what the marketplace fetches is made at the send. */
+const display = (value: ListingValues[ListingField]): ReviewValue => value as ReviewValue;
 
-const display = (field: ListingField, value: ListingValues[ListingField], product: Product, rules: ListingRules): ReviewValue =>
-  field === LISTING_FIELD.PHOTOS ? photoUrls(product, value as string[], rules) : (value as ReviewValue);
-
-function changesOf(row: PlatformListingRow, product: Product, rules: ListingRules, waiting: ListingField[], values: ListingValues): ReviewChangeDTO[] {
-  const sent = parseSent(row.sent);
+function changesOf(row: PlatformListingRow, product: Product, waiting: ListingField[], values: ListingValues): ReviewChangeDTO[] {
+  const sent = parseSent(row.sent, product.media);
   return waiting.map((field) => {
     const from = sent?.[field];
     const big =
       field === LISTING_FIELD.PRICE && typeof from === "number" && from > 0 && Math.abs(values.price - from) / from > BIG_CHANGE;
-    return { field, from: from === undefined ? null : display(field, from, product, rules), to: display(field, values[field], product, rules), big };
+    return { field, from: from === undefined ? null : display(from), to: display(values[field]), big };
   });
 }
 
-/** The send's fields as a provider takes them: only what is pending, photos as addresses (D2). */
-function changesFor(pending: ListingOverrides, product: Product, rules: ListingRules): PublishChanges {
+/** The send's fields as a provider takes them: only what is pending, photos as addresses it fetches (D2). */
+async function changesFor(orgId: string, pending: ListingOverrides, product: Product, rules: ListingRules): Promise<PublishChanges> {
   return {
     ...(pending.title !== undefined ? { title: pending.title } : {}),
     ...(pending.price !== undefined ? { price: pending.price } : {}),
-    ...(pending.photos !== undefined ? { photoUrls: photoUrls(product, pending.photos, rules) } : {}),
+    ...(pending.photos !== undefined ? { photoUrls: await marketplacePhotoUrls(orgId, product.media, pending.photos, rules.photo.formats) } : {}),
     ...(pending.features !== undefined ? { features: pending.features } : {}),
     ...(pending.description !== undefined ? { description: pending.description } : {}),
     ...(pending.listed !== undefined ? { listed: pending.listed } : {}),
@@ -137,7 +127,7 @@ export const listingPublishService = {
       const { status, values, waiting } = statusOf(row, product, rules);
       const creating = row.channelListingId === null;
       if (waiting.length === 0) continue;
-      listings.push({ id: row.id, version: row.version, productId: product.id, name: product.name, status, creating, changes: changesOf(row, product, rules, waiting, values) });
+      listings.push({ id: row.id, version: row.version, productId: product.id, name: product.name, status, creating, changes: changesOf(row, product, waiting, values) });
     }
     return { channel, label: CHANNEL_LABELS[channel], listings, totalChanges: listings.reduce((n, l) => n + l.changes.length, 0) };
   },
@@ -159,7 +149,7 @@ export const listingPublishService = {
         if (row.productId) {
           const [product] = await productService.forListing(orgId, [row.productId], tx);
           if (!product) return false;
-          const values = computeListing(masterValues(product), parseOverrides(row.overrides));
+          const values = computeListing(masterValues(product), parseOverrides(row.overrides, product.media));
           pending = pick(snapshot(values, rules.writable), item.fields.filter((f) => rules.writable.includes(f)));
           // What a whole-rupee marketplace will hold, so what is recorded as sent is what it shows (channel-listings Q13).
           if (rules.wholeRupees && pending.price !== undefined) pending.price = toWholeRupees(pending.price);
@@ -198,13 +188,13 @@ export const listingPublishService = {
       return { state: PUBLISH_STATE.ATTENTION };
     }
     const provider = providerFor(channel);
-    const pending = parseOverrides(row.pending);
+    const pending = parseOverrides(row.pending, product.media);
     try {
       const answer = await provider.publishListing(
         () => channelConnectionService.accessToken(connection.id),
         connection.externalAccountId,
         { sku: mirror.sku, externalId: mirror.externalId, marketplaceType: row.marketplaceType ?? (mirror.attributes as { type?: string } | null)?.type ?? null },
-        changesFor(pending, product, provider.listingRules),
+        await changesFor(row.orgId, pending, product, provider.listingRules),
       );
       const failed = answer.issues.some((i) => i.severity === "error");
       // Amazon decides later: what it took stays pending until a look confirms it (D3, publish A2).
@@ -213,7 +203,7 @@ export const listingPublishService = {
         await startChecks();
         return { state: PUBLISH_STATE.CHECKING };
       }
-      const accepted = { ...(parseSent(row.sent) ?? {}), ...pick(pending, answer.accepted) };
+      const accepted = { ...(parseSent(row.sent, product.media) ?? {}), ...pick(pending, answer.accepted) };
       const state = failed ? PUBLISH_STATE.ATTENTION : PUBLISH_STATE.IDLE;
       await platformListingRepository.recordAnswer(row.id, { sent: accepted, publishState: state, issues: answer.issues, nextCheckAt: null, checkCount: 0, live: accepted.listed ?? true }, now, prisma, [PUBLISH_STATE.SENT]);
       return { state };

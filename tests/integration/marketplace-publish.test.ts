@@ -24,6 +24,10 @@ const fake = vi.hoisted(() => {
   return { state };
 });
 
+vi.mock("@server/content/renditions.service", () => ({
+  renditionUrl: async (_org: string, assetId: string, surface: string) => `https://cdn.test/${assetId}.${surface}.jpg`,
+}));
+
 vi.mock("@server/channels/providers", async () => {
   const { AMAZON_LISTING_RULES, amazonTheirsFromRead } = await import("@server/channels/providers/amazon/amazon.publish");
   const { FLIPKART_LISTING_RULES, flipkartTheirsFromRead } = await import("@server/channels/providers/flipkart/flipkart.publish");
@@ -171,6 +175,39 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
     await prisma.platformListing.update({ where: { id: (await row(id)).id }, data: { publishedAt: new Date(Date.now() - 2 * 3_600_000) } });
     await publish.daily();
     expect((await row(id)).publishState).toBe("attention");
+  });
+
+  it("sends a WebP photo to Amazon as a JPEG of it, and a product save leaves nothing waiting (photos by address)", async () => {
+    const id = await product("PHOTO", "amazon");
+    const asset = await prisma.mediaAsset.create({ data: { kind: "IMAGE", ref: `https://cdn.test/${stamp}.webp`, mimeType: "image/webp", source: "UPLOAD", orgId }, select: { id: true } });
+    await prisma.productMedia.create({ data: { productId: id, kind: "IMAGE", ref: `https://cdn.test/${stamp}.webp`, assetId: asset.id, position: 0, isThumbnail: true } });
+    const opened = await listings.screen(orgId, id, "amazon");
+    expect(opened.waitingFields).toEqual([]);
+    // A product save renews its media rows: same address, new id.
+    await prisma.productMedia.deleteMany({ where: { productId: id } });
+    await prisma.productMedia.create({ data: { productId: id, kind: "IMAGE", ref: `https://cdn.test/${stamp}.webp`, assetId: asset.id, position: 0, isThumbnail: true } });
+    expect((await listings.screen(orgId, id, "amazon")).waitingFields).toEqual([]);
+    const { result } = await editAndPublish(id, "amazon", { photos: [`https://cdn.test/${stamp}.webp`], title: "With photo" });
+    expect(result.sent).toBe(1);
+    await publish.send((await row(id)).id);
+    expect(fake.state.published.at(-1)?.changes.photoUrls ?? null).toBeNull();
+    await prisma.productMedia.deleteMany({ where: { productId: id } });
+    await prisma.mediaAsset.delete({ where: { id: asset.id } });
+  });
+
+  it("puts a changed photo order to Amazon as JPEG addresses (marketplace-publish D2)", async () => {
+    const id = await product("ORDER", "amazon");
+    const assets = await Promise.all(["a", "b"].map((k, i) =>
+      prisma.mediaAsset.create({ data: { kind: "IMAGE", ref: `https://cdn.test/${stamp}-${k}.webp`, mimeType: "image/webp", source: "UPLOAD", orgId }, select: { id: true, ref: true } })
+        .then(async (a) => {
+          await prisma.productMedia.create({ data: { productId: id, kind: "IMAGE", ref: a.ref, assetId: a.id, position: i, isThumbnail: i === 0 } });
+          return a;
+        })));
+    await editAndPublish(id, "amazon", { photos: [assets[1].ref, assets[0].ref] });
+    await publish.send((await row(id)).id);
+    expect(fake.state.published.at(-1)?.changes.photoUrls).toEqual([`https://cdn.test/${assets[1].id}.marketplaceJpeg.jpg`, `https://cdn.test/${assets[0].id}.marketplaceJpeg.jpg`]);
+    await prisma.productMedia.deleteMany({ where: { productId: id } });
+    await prisma.mediaAsset.deleteMany({ where: { id: { in: assets.map((a) => a.id) } } });
   });
 
   it("refuses a publish of a listing changed since the review (D3)", async () => {

@@ -89,20 +89,10 @@ export function Navbar() {
           <Button
             asChild={true}
             variant={hasCartItems ? "default" : "outline"}
-            disabled={!hasCartItems}
-            className={cn(
-              "relative hidden items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-eyebrow md:inline-flex",
-              !hasCartItems &&
-                "cursor-not-allowed border-border/80 bg-muted text-muted-foreground",
-            )}
+            className="relative hidden items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-eyebrow md:inline-flex"
           >
-            <Link
-              prefetch={false}
-              href="/cart"
-              onClick={(e) => {
-                if (!hasCartItems) e.preventDefault();
-              }}
-            >
+            {/* Always opens: an empty cart is a page with somewhere to go, not a dead control. */}
+            <Link prefetch={false} href="/cart">
               <ShoppingBag className="mr-1 h-4 w-4" />
               Cart
               {cartCount > 0 && (

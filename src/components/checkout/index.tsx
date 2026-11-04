@@ -249,8 +249,8 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
         />
       </div>
 
-      {/* Sticky on mobile: multi-shipment pages run long and the CTA must stay reachable */}
-      <div className="sticky bottom-0 z-20 -mx-4 bg-background/95 px-4 py-3 backdrop-blur md:static md:z-auto md:m-0 md:col-start-1 md:row-start-2 md:bg-transparent md:p-0 md:backdrop-blur-none">
+      {/* Sticky on mobile, on top of the tab bar (not under it); the bleed matches the page's own gutter. */}
+      <div className="sticky bottom-tabbar z-20 -mx-3 bg-background/95 px-3 py-3 backdrop-blur sm:-mx-6 sm:px-6 md:static md:z-auto md:m-0 md:col-start-1 md:row-start-2 md:bg-transparent md:p-0 md:backdrop-blur-none">
         <CheckoutActions
           canCheckout={canCheckout}
           isProcessing={isProcessing}

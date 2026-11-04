@@ -1,6 +1,6 @@
 # Conventions index
 
-- **Verified:** 2026-11-01
+- **Verified:** 2026-11-04
 - **Covers:** `docs/adr/*.md`, `docs/specs/*/`
 
 The canonical index of *how we work*, moved out of the root `CLAUDE.md` on 2026-11-01 so it is read when
@@ -21,6 +21,7 @@ nothing more; detail lives in the ADR so it has one wording ([ADR-0009](adr/0009
 - **`server/` is organised by domain, not by layer or caller** — no `admin/` tree. [ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md)
 - **A domain is reached through its public surface** — `*.service`, `*.types` and the seams it declares. Never another domain's repository. [ADR-0033](adr/0033-a-domain-is-reached-through-its-public-surface.md)
 - **One components home, by domain; every control through its primitive.** [ADR-0031](adr/0031-one-components-home-organised-by-domain.md)
+- **The UI is built in tiers, and every icon goes through one seam** *(Proposed)* — palette → tokens → bridge → `ui/` primitives → `shared/` composites → domain composites → `layout/` → pages, each with a placement test; icons by meaning through `ui/icon.tsx`; type, motion and depth are role tokens. [ADR-0065](adr/0065-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md)
 - **A component renders, a hook holds state, an API client makes the call** — `fetch` only in a `*ApiClient.ts` beside its domain; props are DTOs, never `@prisma/client`. [ADR-0048](adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)
 - **An overlay's surface follows its content** — picker, canvas task, detail panel, handed-off flow; each carries its own phone form. [ADR-0040](adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md)
 - **The UI is mobile-first** — base = phone, breakpoints add. [ADR-0015](adr/0015-mobile-first-design.md)

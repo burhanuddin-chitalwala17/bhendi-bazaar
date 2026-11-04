@@ -19,20 +19,40 @@ export function masterValues(product: {
   price: number;
   description: string;
   keyFeatures: string[];
-  media: ReadonlyArray<{ id: string }>;
+  media: ReadonlyArray<{ id: string; ref: string }>;
 }): ListingValues {
   return {
     title: product.name,
     price: product.price,
-    photos: product.media.map((m) => m.id),
+    // By address, which survives a product save; the media rows' ids are renewed by each save.
+    photos: product.media.map((m) => m.ref),
     features: product.keyFeatures,
     description: product.description,
     listed: true,
   };
 }
 
+type Media = ReadonlyArray<{ id: string; ref: string }>;
+
+/**
+ * Photos stored before they were kept by address held media ids: an id the product still has becomes
+ * its address; one it no longer has is unknown. Unknown in what was sent means it is read as what the
+ * listing was made with (the product's photos), the same assumption a new listing starts from (Q2).
+ */
+function photosByAddress(o: ListingOverrides, media: Media | undefined, sent: boolean): ListingOverrides {
+  if (!media || !o.photos) return o;
+  const refs = new Set(media.map((m) => m.ref));
+  const mapped = o.photos.map((p) => (refs.has(p) ? p : media.find((m) => m.id === p)?.ref ?? null));
+  if (mapped.every((p): p is string => p !== null)) return { ...o, photos: mapped };
+  return sent ? { ...o, photos: media.map((m) => m.ref) } : { ...o, photos: mapped.filter((p): p is string => p !== null) };
+}
+
 /** Reads a stored overrides column, keeping only well-formed keys: a malformed one inherits rather than breaks. */
-export function parseOverrides(raw: unknown): ListingOverrides {
+export function parseOverrides(raw: unknown, media?: Media): ListingOverrides {
+  return photosByAddress(readOverrides(raw), media, false);
+}
+
+function readOverrides(raw: unknown): ListingOverrides {
   const o = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   const out: ListingOverrides = {};
   if (typeof o.title === "string") out.title = o.title;
@@ -45,8 +65,8 @@ export function parseOverrides(raw: unknown): ListingOverrides {
 }
 
 /** Reads a stored `sent` snapshot the same way; null when never sent. */
-export function parseSent(raw: unknown): ListingOverrides | null {
-  return raw && typeof raw === "object" ? parseOverrides(raw) : null;
+export function parseSent(raw: unknown, media?: Media): ListingOverrides | null {
+  return raw && typeof raw === "object" ? photosByAddress(readOverrides(raw), media, true) : null;
 }
 
 /**

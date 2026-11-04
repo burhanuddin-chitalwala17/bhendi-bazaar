@@ -44,7 +44,9 @@ export default async function AdminOrgPayoutPage({
         >
           ← All payouts
         </Link>
-        <SectionHeader as="h1" title="{org.name}" description="{org.code} · default commission {org.commissionBps / 100}%" />
+        <SectionHeader as="h1" title={org.name}
+          description={`${org.code} · default commission ${org.commissionBps / 100}%`}
+        />
       </div>
 
       {/* Two figures because they differ and both matter (D7). */}

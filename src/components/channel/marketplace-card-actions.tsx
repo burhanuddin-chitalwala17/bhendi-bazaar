@@ -8,10 +8,12 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@/hooks/core/useMutation";
 import { CARD_STATE, type CardState, type MarketplaceChannel } from "@server/channels/channel-connection.types";
+import type { StockSyncState } from "@server/channels/channel-stock.types";
 
 import { channelsApiClient } from "./channelsApiClient";
 import { ACTION, CARD, CHECK_RESULT } from "./channel-copy";
 import { DisconnectDialog } from "./disconnect-dialog";
+import { StockSyncActions } from "./stock-sync-actions";
 
 interface MarketplaceCardActionsProps {
   orgId: string;
@@ -19,13 +21,14 @@ interface MarketplaceCardActionsProps {
   label: string;
   state: CardState;
   stale: boolean;
+  stockSync: StockSyncState | null;
 }
 
 /**
  * The card's one primary action, per ux.md. Never disabled: an action that cannot happen explains
  * itself on tap (ADR-0053). Connect, Renew and Reconnect are links the browser follows.
  */
-export function MarketplaceCardActions({ orgId, channel, label, state, stale }: MarketplaceCardActionsProps) {
+export function MarketplaceCardActions({ orgId, channel, label, state, stale, stockSync }: MarketplaceCardActionsProps) {
   const router = useRouter();
   const [opening, setOpening] = useState(false);
   const [slow, setSlow] = useState(false);
@@ -65,6 +68,9 @@ export function MarketplaceCardActions({ orgId, channel, label, state, stale }: 
     </Button>
   );
 
+  // Pause sits beside Disconnect (inventory-sync Q27): sync runs by itself, so stopping it is the exception.
+  const pauseControl = stockSync ? <StockSyncActions orgId={orgId} channel={channel} label={label} state={stockSync} /> : null;
+
   // Secondary on the states where a reconnect can return a different account: switching is
   // disconnect, then connect (decision Q8), so the way out must be on the card.
   const disconnectControl = (
@@ -87,6 +93,7 @@ export function MarketplaceCardActions({ orgId, channel, label, state, stale }: 
       return (
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
           {goTo(ACTION.renewNow)}
+          {pauseControl}
           {disconnectControl}
         </div>
       );
@@ -123,6 +130,7 @@ export function MarketplaceCardActions({ orgId, channel, label, state, stale }: 
               {ACTION.checkNow}
             </Button>
           )}
+          {pauseControl}
           {disconnectControl}
         </div>
       );

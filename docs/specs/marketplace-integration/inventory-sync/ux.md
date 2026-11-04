@@ -1,7 +1,7 @@
 # UX — inventory-sync
 
 - **Status:** Signed off
-- **Verified:** 2026-10-29
+- **Verified:** 2026-11-04
 - **Prototype:** https://claude.ai/artifact/Y9jppxUqJuAYLd4SpWFmmT (version 20, private to the owner; both features on one canvas, with a flow board per feature and the Channels page they start from)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [channel-import ux](../channel-import/ux.md), [src/components/CLAUDE.md](../../../../src/components/CLAUDE.md)
 
@@ -9,9 +9,9 @@
 > string below is the string that ships.
 
 ## Journeys
-1. **Turning sync on.** Channels → Amazon → "Stock sync: off" → "Turn on stock sync" → match
-   locations (one Amazon location: one tap) → the preview: every listing whose count will change →
-   "Send stock to Amazon" → "Stock sync on".
+1. **Sync starts on connecting** (Q27). Connect Amazon → the listings and locations are read → match
+   locations if asked (one Amazon location: one tap) → sync starts by itself; the Channels card reads
+   "Stock sync on". Pausing is there too, beside Disconnect.
 2. **Matching locations at connection.** Connect Flipkart → the listings are read → "Match your
    Flipkart locations" beside the listings: each Flipkart location with a suggested match → confirm.
 3. **A sale on Amazon.** Nothing to do: within minutes the product shows one less, Flipkart shows it
@@ -23,27 +23,37 @@
 ## Screens
 | Screen | Route / place | New or changed | Serves |
 |---|---|---|---|
-| Stock sync section | Marketplace's Listings page, top | New | R5, R6, R9 |
+| Stock sync section | Marketplace's Listings page, top, only when it needs the shop (Q27) | New | R5, R6, R9 |
 | Match locations | Sheet from the section, and after connecting | New | R11 |
-| Turn-on preview | Page `/org/[orgId]/channels/[channel]/stock-sync` | New | R9 (Q4) |
+| Channels card | Channels page: "Stock sync on" or "Stock sync paused", Pause / Turn back on beside Disconnect | Changed (Q27) | R9 |
+| Home | "Needs you now": a location match sync waits on; listings our send put out of stock | Changed (Q27) | R9 |
 | Product: On marketplaces | Product page | Changed: stock line per marketplace | R3, R5 |
 | Marketplace orders | `/org/[orgId]/orders?tab=marketplace` | New tab | R7 (Q10) |
 
 ## State matrix — Stock sync section
+Shown only when it needs the shop (Q27); a healthy sync shows nothing here.
+
 | State | What the person sees | Action |
 |---|---|---|
-| Off | "Stock sync is off. Amazon keeps its own count." | Turn on stock sync |
-| Locations to match | "Match your Flipkart locations before stock can be sent." | Match locations |
-| On | "Stock sync on · sent 3 min ago · checked today 6:00 am" | Pause |
-| Sending | "Sending stock to Amazon… 40 of 120" | — |
-| Paused | "Stock sync paused. Sales are still counted here; Amazon keeps its own count." | Turn back on |
-| Corrected by the daily check | Line "Today's check put 2 counts back: Black abaya M (Amazon showed 7, now 5)" | See all |
+| On, healthy / starting | Nothing | — |
+| Locations to match | "Match your Flipkart locations so stock can be sent." | Match locations |
+| Paused | "Stock sync paused. Sales are still counted here; Amazon keeps its own count. Turn it back on in Channels." | Go to Channels |
 | New location | "New Flipkart location: Bhiwandi 421302. Match it to send its stock." | Match it |
 | Retryable error | "Couldn't reach Amazon. We'll keep trying; nothing is lost." | — |
+| Turned down | "Amazon turned down 2 listings; their count there stays as it is until the next change." | — |
 | Terminal error | "Amazon stopped accepting our access. Reconnect on Channels." | Go to Channels |
-| Everything stocked by Amazon (FBA, Q20) | "All your Amazon listings are stocked by Amazon, so there's nothing to send." | — |
 | Not allowed (Flipkart today, if refused) | "Flipkart doesn't let us send stock yet. Its own count stays as it is." | — |
 | Phone / tablet / desktop | Stacked / same, wider / same, beside the listings tabs | — |
+
+## State matrix — Channels card and Home (Q27)
+| State | What the person sees | Action |
+|---|---|---|
+| Card, sync on | Line "Stock sync on" | Pause |
+| Card, paused | Line "Stock sync paused" | Turn back on |
+| Card, waiting for a match | No stock line | — |
+| Toasts | "Stock sync paused for Amazon." / "Stock sync on for Amazon." | — |
+| Home, match needed | "Match your Amazon locations so stock can be sent" | Opens Listings |
+| Home, put out of stock | "3 listings now out of stock on Amazon: we have 0" until the next read | Opens Listings |
 
 ## State matrix — Match locations
 | State | What the person sees | Action |
@@ -54,16 +64,6 @@
 | Location gone | "No longer on Flipkart" on the row; nothing is sent to it | Remove |
 | Your location closed | "Mumbai shop is closed here. Pick another." | — |
 | Saved | Toast "Locations matched." | — |
-
-## State matrix — Turn-on preview
-| State | What the person sees | Action |
-|---|---|---|
-| Loading | "Reading Amazon's counts…"; after 3 s "Still reading Amazon…" | — |
-| Changes | "18 listings will change; 102 already match." then rows "Black Nida Abaya – M · Amazon 7 → 5" | Send stock to Amazon · Not now |
-| Nothing changes | "All 120 listings already match. Turn on to keep them that way." | Turn on stock sync |
-| Archived products | Rows "Rida Set · archived · Amazon 3 → 0" | — |
-| Many | Changes first, then "Show all" | Show all |
-| Sent | Toast "Stock sync on for Amazon." | — |
 
 ## State matrix — Product and Marketplace orders
 | State | What the person sees | Action |
@@ -76,9 +76,8 @@
 | Many orders | Newest first, 50 at a time | Show more |
 
 ## Copy deck
-Buttons: "Turn on stock sync", "Match locations", "Use this location", "Save matches", "Not used",
-"Send stock to {marketplace}", "Not now", "Pause", "Turn back on", "Match it", "See all", "See
-order", "Go to Channels", "Show all", "Show more". Toasts: "Locations matched." "Stock sync on for
+Buttons: "Match locations", "Use this location", "Save matches", "Not used", "Pause", "Turn back
+on", "Match it", "See order", "Go to Channels", "Show more". Toasts: "Locations matched." "Stock sync on for
 {marketplace}." "Stock sync paused for {marketplace}." Nothing says "sync" to mean anything but stock.
 
 ## Sign-off
@@ -100,3 +99,7 @@ your locations before stock can be sent." with Match locations, until every loca
 before the marketplace's locations are read it says "Reading your Amazon locations…". A listing in
 stock there that would be sent 0 is listed first, marked "goes out of stock", under a line naming
 how many will show out of stock.
+Owner, 2026-11-04 (Q27): connecting turns sync on, so the "Turn on stock sync" switch and the
+turn-on preview are gone. The Listings page shows stock sync only when it needs the shop; Pause and
+Turn back on move to the Channels card; Home names listings our send put out of stock and asks for
+a location match sync waits on.

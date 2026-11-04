@@ -22,6 +22,7 @@ export const channelLocationService = {
     if (!connection || !isMarketplaceChannel(connection.channel)) return;
     const seen = await providerFor(connection.channel).readLocations(() => channelConnectionService.accessToken(connectionId), connection.externalAccountId);
     await channelLocationRepository.recordSeen({ id: connection.id, orgId: connection.orgId }, seen, now);
+    await channelStockService.startIfReady(connection.id);
   },
 
   /** The Match locations sheet: each location with its match, or a suggestion by pincode. */
@@ -66,7 +67,8 @@ export const channelLocationService = {
       throw new DomainError("Pick one of your open pickup locations.", { status: 400, field: "matches" });
     }
     await channelLocationRepository.saveMatches(orgId, connection.id, input, new Date());
-    // Nothing was sent while a location waited for its match: send everything now (Q16).
+    // Nothing was sent while a location waited for its match: send everything now (Q16), or start (Q27).
     if (connection.stockSync === STOCK_SYNC.ON) await prisma.$transaction((tx) => channelStockService.pushAllIn(tx, connection.id));
+    else await channelStockService.startIfReady(connection.id);
   },
 };
