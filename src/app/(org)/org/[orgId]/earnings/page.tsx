@@ -11,6 +11,7 @@ import { formatCurrency, formatShortDate } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/shared/page-shell";
+import { EARNINGS_COPY } from "@/components/org/earnings-copy";
 
 export default async function OrgEarningsPage({
   params,
@@ -32,26 +33,26 @@ export default async function OrgEarningsPage({
 
   return (
     <div className="space-y-5">
-      <PageHeader help="earnings" title="Money you'll receive" description="What you earned and when it's paid" />
+      <PageHeader help="earnings" title={EARNINGS_COPY.title} description={EARNINGS_COPY.description} />
 
       {/* Leads with the figure they came for. */}
       <Card className="p-5">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">
-          You are owed
+          {EARNINGS_COPY.owed}
         </p>
         <p className="text-3xl font-semibold tabular-nums">
           {formatCurrency(owedPaise)}
         </p>
         <p className="mt-1 text-sm text-muted-foreground tabular-nums">
-          {formatCurrency(unclaimedPaise)} not yet in a settlement
+          {EARNINGS_COPY.unclaimed(formatCurrency(unclaimedPaise))}
         </p>
       </Card>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold">Orders</h2>
+        <h2 className="text-sm font-semibold">{EARNINGS_COPY.orders}</h2>
         {orders.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            Nothing yet — your first sale will appear here.
+            {EARNINGS_COPY.empty}
           </p>
         )}
         <ul className="space-y-3">
@@ -60,7 +61,7 @@ export default async function OrgEarningsPage({
               <Card className="p-4">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <span className="font-mono text-xs text-muted-foreground">
-                    {order.orderId ?? "adjustment"}
+                    {order.orderId ?? EARNINGS_COPY.adjustment}
                   </span>
                   {order.settlementStatus && (
                     <Badge variant="outline" className="text-2xs">
@@ -73,7 +74,7 @@ export default async function OrgEarningsPage({
                 <dl className="space-y-1.5 text-sm">
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted-foreground">
-                      Goods sold, at list
+                      {EARNINGS_COPY.goods}
                     </dt>
                     <dd className="tabular-nums">
                       {formatCurrency(order.grossItemsPaise)}
@@ -81,7 +82,7 @@ export default async function OrgEarningsPage({
                   </div>
                   {order.orgFundedDiscountPaise > 0 && (
                     <div className="flex justify-between gap-4">
-                      <dt className="text-muted-foreground">Your offer</dt>
+                      <dt className="text-muted-foreground">{EARNINGS_COPY.yourOffer}</dt>
                       <dd className="tabular-nums text-primary">
                         −{formatCurrency(order.orgFundedDiscountPaise)}
                       </dd>
@@ -89,7 +90,7 @@ export default async function OrgEarningsPage({
                   )}
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted-foreground">
-                      Commission
+                      {EARNINGS_COPY.commission}
                       {order.rates.length > 0 && (
                         <span className="ml-1 text-xs">
                           (
@@ -107,7 +108,7 @@ export default async function OrgEarningsPage({
                     </dd>
                   </div>
                   <div className="flex justify-between gap-4 border-t border-border pt-2 text-base font-semibold">
-                    <dt>You receive</dt>
+                    <dt>{EARNINGS_COPY.youReceive}</dt>
                     <dd className="tabular-nums text-primary">
                       {formatCurrency(order.payablePaise)}
                     </dd>
@@ -119,10 +120,7 @@ export default async function OrgEarningsPage({
                     to move this organisation's stock. */}
                 {order.platformContributionPaise !== null && (
                   <p className="mt-3 border-t border-dashed border-border pt-3 text-xs text-muted-foreground">
-                    Buyers paid {formatCurrency(order.buyerPaidPaise)} — the
-                    platform funded{" "}
-                    {formatCurrency(order.platformContributionPaise)} of
-                    discount on your goods. Your credit is unaffected.
+                    {EARNINGS_COPY.platformFunded(formatCurrency(order.buyerPaidPaise), formatCurrency(order.platformContributionPaise))}
                   </p>
                 )}
               </Card>
@@ -133,7 +131,7 @@ export default async function OrgEarningsPage({
 
       {settlements.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold">Payments to you</h2>
+          <h2 className="text-sm font-semibold">{EARNINGS_COPY.payments}</h2>
           <ul className="space-y-2">
             {settlements.map((settlement) => (
               <li
@@ -144,7 +142,7 @@ export default async function OrgEarningsPage({
                   <p className="font-mono text-xs">{settlement.code}</p>
                   <p className="text-xs text-muted-foreground">
                     {settlement.status === "PAID" && settlement.paidAt
-                      ? `Paid ${formatShortDate(settlement.paidAt)}`
+                      ? EARNINGS_COPY.paidOn(formatShortDate(settlement.paidAt))
                       : settlement.status.toLowerCase()}
                     {settlement.reference ? ` · ${settlement.reference}` : ""}
                   </p>
@@ -160,10 +158,10 @@ export default async function OrgEarningsPage({
 
       {/* A rate is checked occasionally and read once, so it sits at the foot. */}
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold">Your commission rates</h2>
+        <h2 className="text-sm font-semibold">{EARNINGS_COPY.rates}</h2>
         <div className="rounded-lg border border-border bg-card p-3 text-sm">
           <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Default</span>
+            <span className="text-muted-foreground">{EARNINGS_COPY.defaultRate}</span>
             <span className="tabular-nums">{defaultBps / 100}%</span>
           </div>
           {categoryRates.map((rule) => (

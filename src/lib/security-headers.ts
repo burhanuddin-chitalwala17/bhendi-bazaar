@@ -1,3 +1,5 @@
+// Relative, not `@server/…`: next.config.ts loads this file before path aliases exist.
+import { ROUTES } from "../../server/shared/routes";
 /**
  * Response security headers, and the Content-Security-Policy in particular.
  *
@@ -77,7 +79,7 @@ function uploadHosts(): string[] {
  * iframes so each frame's width drives its breakpoints (storefront-themes D12, Q32). Everything
  * else stays unframeable.
  */
-export const SELF_FRAMED_SOURCE = "/org/:orgId/storefront/preview";
+export const SELF_FRAMED_SOURCE = ROUTES.org.storefrontPreview(":orgId");
 const SELF_FRAMED_PATH = /^\/org\/[^/]+\/storefront\/preview\/?$/;
 export const isSelfFramedPath = (pathname: string) => SELF_FRAMED_PATH.test(pathname);
 

@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { ActionBar } from "@/components/shared/action-bar";
 import { formatCurrency } from "@/lib/format";
+import { CHECKOUT_COPY } from "../checkout-copy";
 
 interface CheckoutActionsProps {
   isProcessing: boolean;
@@ -23,12 +24,12 @@ export function CheckoutActions({ isProcessing, total, onPay }: CheckoutActionsP
       status={
         <span className="flex flex-col md:hidden">
           <span className="text-title font-semibold tabular-nums text-foreground">{formatCurrency(total)}</span>
-          <span>Incl. delivery and taxes</span>
+          <span>{CHECKOUT_COPY.inclDeliveryTaxes}</span>
         </span>
       }
     >
       <Button size="lg" className="rounded-full px-8 md:w-full" pending={isProcessing} onClick={onPay}>
-        Pay {formatCurrency(total)}
+        {CHECKOUT_COPY.payAmount(formatCurrency(total))}
       </Button>
     </ActionBar>
   );

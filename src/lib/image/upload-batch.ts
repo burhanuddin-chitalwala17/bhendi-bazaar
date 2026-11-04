@@ -3,6 +3,7 @@ import { imageFileProblem } from "@server/catalog/image-paths";
 import { uploadDirect } from "@/lib/image/upload-direct";
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import type { DerivedFromInput } from "@/lib/validation/schemas/upload.schema";
+import { UPLOAD_BATCH_COPY } from "@/lib/lib-copy";
 
 /** Bounded, not a stampede: a phone's radio and the presign route both prefer it. */
 export const UPLOAD_CONCURRENCY = 3;
@@ -65,7 +66,7 @@ export async function uploadBatch(files: File[], options: UploadBatchOptions): P
         if (result.reused) reused += 1;
       } catch (error) {
         failed.push(files[job.index].name);
-        firstError ??= error instanceof Error ? error.message : "Upload failed";
+        firstError ??= error instanceof Error ? error.message : UPLOAD_BATCH_COPY.failed;
       }
       done += 1;
       options.onProgress?.(done, prepared.length);

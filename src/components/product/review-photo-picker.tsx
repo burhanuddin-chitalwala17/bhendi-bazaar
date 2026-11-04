@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { downscaleImage, storedPathFor } from "@/lib/image/downscale";
 import { uploadDirect } from "@/lib/image/upload-direct";
 import { MAX_REVIEW_PHOTOS } from "@server/catalog/media";
+import { REVIEW_COPY } from "./product-copy";
 
 /**
  * Photographs on a review, chosen on a phone (review-media R1–R4).
@@ -39,7 +40,7 @@ export function ReviewPhotoPicker({
   const add = async (files: FileList) => {
     const chosen = Array.from(files).slice(0, room);
     if (chosen.length < files.length) {
-      toast.error(`A review can carry ${MAX_REVIEW_PHOTOS} photos.`);
+      toast.error(REVIEW_COPY.photos.tooMany(MAX_REVIEW_PHOTOS));
     }
     setBusy((count) => count + chosen.length);
     const uploaded: string[] = [];
@@ -59,7 +60,7 @@ export function ReviewPhotoPicker({
         toast.error(
           error instanceof Error
             ? error.message
-            : "That photo would not upload. The rest of your review is safe.",
+            : REVIEW_COPY.photos.uploadFailed,
         );
       } finally {
         setBusy((count) => Math.max(0, count - 1));
@@ -75,7 +76,7 @@ export function ReviewPhotoPicker({
           <div key={photo} className="relative size-18 rounded-card">
             <Image
               src={photo}
-              alt="Photo you added to this review"
+              alt={REVIEW_COPY.photos.added}
               fill
               // An honest slot: a 72px thumbnail, never a zoom surface (ADR-0026).
               sizes="72px"
@@ -90,7 +91,7 @@ export function ReviewPhotoPicker({
               type="button"
               variant="ghost"
               shape="icon"
-              aria-label="Remove this photo"
+              aria-label={REVIEW_COPY.photos.remove}
               className="absolute -right-2 -top-2 rounded-full bg-transparent p-0 hover:bg-transparent"
               onClick={() => onChange(photos.filter((kept) => kept !== photo))}
             >
@@ -103,7 +104,7 @@ export function ReviewPhotoPicker({
 
         {busy > 0 && (
           <span className="flex size-18 items-center justify-center rounded-card bg-muted text-2xs text-muted-foreground">
-            Uploading…
+            {REVIEW_COPY.photos.uploading}
           </span>
         )}
 
@@ -112,7 +113,7 @@ export function ReviewPhotoPicker({
             type="button"
             variant="outline"
             shape="icon" size="lg"
-            aria-label="Add a photo of what arrived"
+            aria-label={REVIEW_COPY.photos.add}
             disabled={disabled}
             onClick={() => input.current?.click()}
             className="size-18"
@@ -138,8 +139,7 @@ export function ReviewPhotoPicker({
       />
 
       <p className="text-2xs text-muted-foreground sm:text-2xs">
-        Up to {MAX_REVIEW_PHOTOS} photos of the piece as it arrived. Yours, shown inside
-        your review.
+        {REVIEW_COPY.photos.hint(MAX_REVIEW_PHOTOS)}
       </p>
     </div>
   );

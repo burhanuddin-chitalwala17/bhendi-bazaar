@@ -29,6 +29,7 @@ import {
   type BiddingFormInput,
 } from "@/lib/validation/schemas/bidding.schema";
 import { Icon } from "@/components/ui/icon";
+import { BIDDING_FORM_COPY } from "./bidding-copy";
 
 interface BiddingFormProduct {
   id: string;
@@ -67,7 +68,7 @@ export function BiddingForm({
       quickBids: [50, 100],
     } as never,
     submit: (data) => biddingApiClient.create(action, data),
-    successMessage: "Bidding is set up — share the link",
+    successMessage: BIDDING_FORM_COPY.biddingSetUpShare,
     onSuccess: () => {
       router.push(returnTo);
       router.refresh();
@@ -114,9 +115,7 @@ export function BiddingForm({
       <input type="hidden" {...register("productId")} />
 
       <Card className="space-y-1 p-3 sm:p-4">
-        <p className="text-2xs uppercase tracking-label text-muted-foreground">
-          Currently selling at
-        </p>
+        <p className="text-2xs uppercase tracking-label text-muted-foreground">{BIDDING_FORM_COPY.currentlySelling}</p>
         <p className="font-heading text-2xl font-semibold">
           {formatCurrency(product.pricePaise)}
         </p>
@@ -136,14 +135,14 @@ export function BiddingForm({
 
       <div className="grid gap-4 md:grid-cols-2">
         <FormInput
-          label="Bidding opens"
+          label={BIDDING_FORM_COPY.biddingOpens}
           required
           type="datetime-local"
           error={errors.startAt?.message}
           {...register("startAt")}
         />
         <FormInput
-          label="Bidding closes"
+          label={BIDDING_FORM_COPY.biddingCloses}
           required
           type="datetime-local"
           max={latestEnd}
@@ -155,33 +154,30 @@ export function BiddingForm({
 
       <div className="grid gap-4 md:grid-cols-2">
         <FormInput
-          label="Starting bid (₹)"
+          label={BIDDING_FORM_COPY.startingBid}
           required
           type="number"
           step="1"
           min="1"
           error={errors.startingBid?.message}
-          hint="The first bid is exactly this."
+          hint={BIDDING_FORM_COPY.firstBidExactly}
           {...register("startingBid", { valueAsNumber: true })}
         />
         <FormInput
-          label="Most one bid may add (₹)"
+          label={BIDDING_FORM_COPY.mostOneBidMay}
           required
           type="number"
           step="1"
           min="1"
           error={errors.maxIncrease?.message}
-          hint="Caps a single bid. Someone wanting to go higher simply bids again."
+          hint={BIDDING_FORM_COPY.capsSingleBidSomeone}
           {...register("maxIncrease", { valueAsNumber: true })}
         />
       </div>
 
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">Quick-bid buttons (₹)</legend>
-        <p className="text-2xs text-muted-foreground">
-          What a bidder can add with one tap. The smallest is also the least
-          anyone may add with a custom amount.
-        </p>
+        <legend className="text-sm font-medium">{BIDDING_FORM_COPY.quickBidButtons}</legend>
+        <p className="text-2xs text-muted-foreground">{BIDDING_FORM_COPY.whatBidderCanAdd}</p>
         <div className="space-y-2">
           {quickBids.fields.map((field, index) => (
             <div key={field.id} className="flex items-end gap-2">
@@ -217,9 +213,7 @@ export function BiddingForm({
             size="sm"
             onClick={() => quickBids.append(100 as never)}
           >
-            <Icon name="add" size="sm" />
-            Add a button
-          </Button>
+            <Icon name="add" size="sm" />{BIDDING_FORM_COPY.addButton}</Button>
         )}
         {typeof errors.quickBids?.message === "string" && (
           <p className="text-sm text-destructive">{errors.quickBids.message}</p>
@@ -237,11 +231,9 @@ export function BiddingForm({
           type="button"
           variant="outline"
           onClick={() => router.push(returnTo)}
-        >
-          Cancel
-        </Button>
+        >{BIDDING_FORM_COPY.cancel}</Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Setting up…" : "Open bidding"}
+          {isSubmitting ? BIDDING_FORM_COPY.settingUp : BIDDING_FORM_COPY.openBidding}
         </Button>
       </div>
     </form>

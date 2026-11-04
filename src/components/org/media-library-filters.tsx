@@ -7,6 +7,7 @@ import { DateRangeField } from "@/components/shared/forms/date-range-field";
 import type { DayRange } from "@/lib/date-range";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MEDIA_USAGE, type MediaLibraryFilters as Filters } from "@/lib/validation/schemas/media-library.schema";
+import { MEDIA_FILTERS_COPY } from "./media-library-copy";
 
 export interface FilterOption {
   value: string;
@@ -22,7 +23,7 @@ interface MediaLibraryFiltersProps {
   sources: FilterOption[];
 }
 
-const USAGE_LABELS: Record<Filters["usage"], string> = { all: "Used or not", used: "In use", unused: "Not used" };
+const USAGE_LABELS: Record<Filters["usage"], string> = { all: MEDIA_FILTERS_COPY.usageAll, used: MEDIA_FILTERS_COPY.usageUsed, unused: MEDIA_FILTERS_COPY.usageUnused };
 
 /**
  * The form's fields as the query string the page parses: blanks and the default usage left out.
@@ -70,16 +71,16 @@ export function MediaLibraryFilters({ filters, range, kinds, sources }: MediaLib
       className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
     >
       <label className="flex-1 text-sm sm:max-w-40">
-        <span className="mb-1 block text-muted-foreground">Kind</span>
+        <span className="mb-1 block text-muted-foreground">{MEDIA_FILTERS_COPY.kind}</span>
         <Select name="kind" defaultValue={filters.kind ?? ""}>
-          <option value="">Photos and videos</option>
+          <option value="">{MEDIA_FILTERS_COPY.allKinds}</option>
           {kinds.map((kind) => (
             <option key={kind.value} value={kind.value}>{kind.label}</option>
           ))}
         </Select>
       </label>
       <label className="flex-1 text-sm sm:max-w-40">
-        <span className="mb-1 block text-muted-foreground">Usage</span>
+        <span className="mb-1 block text-muted-foreground">{MEDIA_FILTERS_COPY.usage}</span>
         <Select name="usage" defaultValue={filters.usage}>
           {MEDIA_USAGE.map((usage) => (
             <option key={usage} value={usage}>{USAGE_LABELS[usage]}</option>
@@ -87,21 +88,21 @@ export function MediaLibraryFilters({ filters, range, kinds, sources }: MediaLib
         </Select>
       </label>
       <label className="flex-1 text-sm sm:max-w-44">
-        <span className="mb-1 block text-muted-foreground">Came from</span>
+        <span className="mb-1 block text-muted-foreground">{MEDIA_FILTERS_COPY.source}</span>
         <Select name="source" defaultValue={filters.source ?? ""}>
-          <option value="">Anywhere</option>
+          <option value="">{MEDIA_FILTERS_COPY.anySource}</option>
           {sources.map((source) => (
             <option key={source.value} value={source.value}>{source.label}</option>
           ))}
         </Select>
       </label>
       <div className="flex-1 text-sm sm:max-w-64">
-        <span className="mb-1 block text-muted-foreground">When</span>
+        <span className="mb-1 block text-muted-foreground">{MEDIA_FILTERS_COPY.when}</span>
         <DateRangeField value={range} onChange={apply} />
       </div>
       {filters.productId && <input type="hidden" name="productId" value={filters.productId} />}
       {filters.slot && <input type="hidden" name="slot" value={filters.slot} />}
-      <Checkbox name="retired" value="1" label="Show retired" defaultChecked={filters.retired} />
+      <Checkbox name="retired" value="1" label={MEDIA_FILTERS_COPY.showRetired} defaultChecked={filters.retired} />
     </form>
   );
 }

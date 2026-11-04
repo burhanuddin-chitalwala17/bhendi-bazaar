@@ -7,6 +7,7 @@ import { GROUP_STATE, type ListingGroupDTO } from "@server/channels/channel-conn
 
 import { GROUP } from "./family-copy";
 import { ROW, axisWord } from "./listing-copy";
+import { ROUTES } from "@server/shared/routes";
 
 interface ListingGroupProps {
   orgId: string;
@@ -26,7 +27,7 @@ interface ListingGroupProps {
  * then its children. A native disclosure, so collapsing needs no client code.
  */
 export function ListingGroup({ orgId, title, count, axis, label, group, intro, children }: ListingGroupProps) {
-  const href = group ? `/org/${orgId}/channels/family?listings=${group.listingIds.join(",")}` : null;
+  const href = group ? `${ROUTES.org.channelFamily(orgId)}?listings=${group.listingIds.join(",")}` : null;
   const word = axisWord(axis, group?.total ?? count);
   return (
     <li className="border-b last:border-b-0">
@@ -51,7 +52,7 @@ export function ListingGroup({ orgId, title, count, axis, label, group, intro, c
             {intro && group.state === GROUP_STATE.SETTLE && <p className="text-sm text-muted-foreground">{GROUP.firstTime(label, group.total, word)}</p>}
             {group.state === GROUP_STATE.FAMILY && group.family ? (
               <Button asChild variant="outline" size="sm" className="min-h-10 self-start">
-                <Link href={`/org/${orgId}/products/${group.family.productId}`}>{GROUP.seeFamily}</Link>
+                <Link href={ROUTES.org.product(orgId, group.family.productId)}>{GROUP.seeFamily}</Link>
               </Button>
             ) : (
               <Button asChild variant={group.state === GROUP_STATE.MAKE ? "outline" : "default"} size="sm" className="min-h-10 self-start">

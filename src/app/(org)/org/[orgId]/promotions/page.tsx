@@ -8,6 +8,8 @@ import { OffersBrowser } from "@/components/promotions/offers-browser";
 import { requireOrgMember } from "@/lib/org-auth";
 import { offerListQuerySchema } from "@/lib/validation/schemas/promotion.schema";
 import { adminPromotionService } from "@server/promotions/admin.promotion.service";
+import { ORG_PAGES_COPY } from "@/components/org/pages-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export default async function OrgPromotionsPage({
   params,
@@ -21,18 +23,18 @@ export default async function OrgPromotionsPage({
   const query = offerListQuerySchema.parse(await searchParams);
   const now = new Date();
   const result = await adminPromotionService.listOffers({ scope: "ORG", orgId: scope.orgId }, query, now);
-  const basePath = `/org/${scope.orgId}/promotions`;
+  const basePath = ROUTES.org.promotions(scope.orgId);
 
   return (
     <div className="space-y-5">
       <PageHeader
         help="promotions"
-        title="Offers"
-        description="Your own offers, on your own goods. You bear what they cost — and if the platform runs something deeper, it pays the difference rather than you."
+        title={ORG_PAGES_COPY.offersTitle}
+        description={ORG_PAGES_COPY.offersDescription}
         actions={
           <Button asChild>
-            <Link href={`${basePath}/new`} prefetch={false}>
-              <Icon name="add" size="sm" /> New offer
+            <Link href={ROUTES.org.newPromotion(scope.orgId)} prefetch={false}>
+              <Icon name="add" size="sm" /> {ORG_PAGES_COPY.newOffer}
             </Link>
           </Button>
         }

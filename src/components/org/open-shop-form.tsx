@@ -6,11 +6,12 @@ import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
 import { FormInput, FormPhoneInput } from "@/components/shared/forms/FormField";
 import { orgsApiClient } from "@/components/org/orgsApiClient";
-import { LINK_PREVIEW_MAX, OPEN_SHOP_COPY as COPY, SLOW_AFTER_MS } from "@/components/org/open-shop-copy";
+import { LINK_PREVIEW_MAX, OPEN_SHOP_COPY as COPY, SLOW_AFTER_MS, OPEN_SHOP_FIELDS_COPY } from "@/components/org/open-shop-copy";
 import { truncateMiddle } from "@/components/org/shop-hub/shop-hub-copy";
 import { ApiError } from "@/lib/api-error";
 import { handleCandidates } from "@server/catalog/org.handle";
 import { openShopSchema, type OpenShopInput } from "@/lib/validation/schemas/org.schema";
+import { ROUTES } from "@server/shared/routes";
 
 /** A failure worth simply sending again: no answer at all, or the server's own fault. */
 const isRetryable = (error: unknown) =>
@@ -45,7 +46,7 @@ export function OpenShopForm({ accountEmail, storeBase }: { accountEmail?: strin
     fallbackMessage: COPY.retryable,
     onSuccess: (org) => {
       opened.current = true;
-      router.push(`/org/${(org as { id: string }).id}`);
+      router.push(ROUTES.org.home((org as { id: string }).id));
       router.refresh();
     },
   });
@@ -90,9 +91,9 @@ export function OpenShopForm({ accountEmail, storeBase }: { accountEmail?: strin
         </div>
       )}
       <FormInput
-        label="Shop name"
-        hint="Buyers see this on your shop and every product."
-        placeholder="Noor Attar House"
+        label={OPEN_SHOP_FIELDS_COPY.name}
+        hint={OPEN_SHOP_FIELDS_COPY.nameHint}
+        placeholder={OPEN_SHOP_FIELDS_COPY.namePlaceholder}
         autoComplete="organization"
         error={errors.name?.message}
         {...register("name")}
@@ -103,14 +104,14 @@ export function OpenShopForm({ accountEmail, storeBase }: { accountEmail?: strin
       <FormPhoneInput
         name="phone"
         control={control}
-        label="Your mobile number"
-        hint="We'll call or message you about orders and pickups. Buyers never see it."
-        placeholder="98765 43210"
+        label={OPEN_SHOP_FIELDS_COPY.phone}
+        hint={OPEN_SHOP_FIELDS_COPY.phoneHint}
+        placeholder={OPEN_SHOP_FIELDS_COPY.phonePlaceholder}
       />
       <FormInput
-        label="Email for order updates"
-        hint="We send new orders here."
-        placeholder="noorattar@gmail.com"
+        label={OPEN_SHOP_FIELDS_COPY.email}
+        hint={OPEN_SHOP_FIELDS_COPY.emailHint}
+        placeholder={OPEN_SHOP_FIELDS_COPY.emailPlaceholder}
         type="email"
         autoComplete="email"
         error={errors.email?.message}

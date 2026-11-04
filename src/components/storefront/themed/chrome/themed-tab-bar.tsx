@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { dealsHref, landingHref, shopHref } from "../section-heading";
 import { useCartCount } from "./themed-cart-count";
 import { MoreMenu } from "./more-menu";
+import { THEMED_COPY } from "../themed-copy";
+import { ROUTES } from "@server/shared/routes";
 
 const TAB = "flex flex-1 flex-col items-center justify-center gap-0.5 font-label text-2xs transition-colors";
 const tone = (active: boolean) => (active ? "text-primary" : "text-muted-foreground");
@@ -25,23 +27,23 @@ export function ThemedTabBar({ handle }: { handle: string }) {
 
   return (
     <nav
-      aria-label="Shop"
+      aria-label={THEMED_COPY.tabs.region}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-safe md:hidden"
     >
       <div className="mx-auto flex h-tabbar items-stretch">
         <Link href={home} prefetch={false} className={cn(TAB, tone(pathname === home))}>
           <Icon name="home" size="md" />
-          Home
+          {THEMED_COPY.tabs.home}
         </Link>
         <Link href={shopHref(handle)} prefetch={false} className={cn(TAB, tone(pathname === shopHref(handle)))}>
           <Icon name="shop" size="md" />
-          Shop
+          {THEMED_COPY.tabs.shop}
         </Link>
         <Link href={dealsHref(handle)} prefetch={false} className={cn(TAB, tone(false))}>
           <Icon name="offer" size="md" />
-          Deals
+          {THEMED_COPY.tabs.deals}
         </Link>
-        <Link href="/cart" prefetch={false} className={cn(TAB, tone(pathname === "/cart"))}>
+        <Link href={ROUTES.cart} prefetch={false} className={cn(TAB, tone(pathname === ROUTES.cart))}>
           <span className="relative">
             <Icon name="bag" size="md" />
             {count > 0 && (
@@ -50,12 +52,12 @@ export function ThemedTabBar({ handle }: { handle: string }) {
               </span>
             )}
           </span>
-          Cart
+          {THEMED_COPY.tabs.cart}
         </Link>
         <MoreMenu>
           <Button variant="ghost" type="button" className={cn(TAB, "h-auto rounded-none", tone(false))}>
             <Icon name="menu" size="md" />
-            More
+            {THEMED_COPY.tabs.more}
           </Button>
         </MoreMenu>
       </div>

@@ -8,6 +8,8 @@ import { OffersBrowser } from "@/components/promotions/offers-browser";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { offerListQuerySchema } from "@/lib/validation/schemas/promotion.schema";
 import { adminPromotionService } from "@server/promotions/admin.promotion.service";
+import { ADMIN_OFFERS_PAGE_COPY } from "@/components/promotions/promotions-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export default async function AdminPromotionsPage({
   searchParams,
@@ -22,12 +24,12 @@ export default async function AdminPromotionsPage({
   return (
     <PageShell width="wide">
       <PageHeader
-        title="Offers"
-        description="Platform-funded offers. They apply across every shop's goods, and the platform bears whatever a shop's own offer does not already cover."
+        title={ADMIN_OFFERS_PAGE_COPY.title}
+        description={ADMIN_OFFERS_PAGE_COPY.description}
         actions={
           <Button asChild>
-            <Link href="/admin/promotions/new" prefetch={false}>
-              <Icon name="add" /> New offer
+            <Link href={ROUTES.admin.newPromotion} prefetch={false}>
+              <Icon name="add" /> {ADMIN_OFFERS_PAGE_COPY.newOffer}
             </Link>
           </Button>
         }
@@ -36,9 +38,9 @@ export default async function AdminPromotionsPage({
         result={result}
         query={query}
         now={now}
-        basePath="/admin/promotions"
+        basePath={ROUTES.admin.promotions}
         apiPath="/api/admin/promotions"
-        newHref="/admin/promotions/new"
+        newHref={ROUTES.admin.newPromotion}
       />
     </PageShell>
   );

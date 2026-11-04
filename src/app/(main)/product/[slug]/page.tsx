@@ -16,6 +16,8 @@ import { appUrl } from "@server/shared/app-url";
 import { NotFoundError } from "@server/shared/domain-error";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { productJsonLd } from "@/lib/structured-data";
+import { PRODUCT_PAGE_COPY } from "./product-page-copy";
+import { ROUTES } from "@server/shared/routes";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -38,7 +40,7 @@ export async function generateMetadata({
     throw error;
   }
 
-  const url = `${appUrl()}/product/${product.slug}`;
+  const url = `${appUrl()}${ROUTES.product(product.slug)}`;
   // The layout's template adds the brand; the social card states it in full.
   const title = product.name;
   const socialTitle = `${product.name} — ${APP_NAME}`;
@@ -119,7 +121,7 @@ function DockedPrice({ price, salePrice }: { price: number; salePrice?: number }
   return (
     <span className="flex flex-col">
       <PriceDisplay price={price} salePrice={salePrice} size="md" showBadge={false} />
-      <span className="text-caption text-muted-foreground">Inclusive of all taxes</span>
+      <span className="text-caption text-muted-foreground">{PRODUCT_PAGE_COPY.inclusiveOfTaxes}</span>
     </span>
   );
 }

@@ -4,6 +4,8 @@ import { biddingService } from "@server/bidding/bidding.service";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { BiddingList } from "@/components/bidding/BiddingList";
 import { CreateBiddingDialog } from "@/components/bidding/CreateBiddingDialog";
+import { ORG_PAGES_COPY } from "@/components/org/pages-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -20,11 +22,11 @@ export default async function OrgBiddingPage({
     <PageShell width="wide">
       <PageHeader
         help="bidding"
-        title="Bidding"
-        description="Put one item up for timed bidding and share the link. While it runs, that item stays on the site but cannot be bought directly."
+        title={ORG_PAGES_COPY.biddingTitle}
+        description={ORG_PAGES_COPY.biddingDescription}
         actions={
           <CreateBiddingDialog
-            basePath={`/org/${scope.orgId}/bidding`}
+            basePath={ROUTES.org.bidding(scope.orgId)}
             searchPath={`/api/org/${scope.orgId}/bidding/products`}
           />
         }

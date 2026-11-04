@@ -7,6 +7,8 @@ import { useClickOutside } from "@/hooks/useClickOutside";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { ORG_SWITCHER_COPY } from "./org-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export interface SwitcherOrg {
   id: string;
@@ -38,7 +40,7 @@ export function OrgSwitcher({
   useClickOutside(ref as React.RefObject<HTMLElement>, () => setOpen(false));
 
   const current = orgs.find((o) => o.id === currentOrgId);
-  const name = current?.name ?? "Shop";
+  const name = current?.name ?? ORG_SWITCHER_COPY.shop;
   const section = pathname.split("/")[3];
   const suffix = SECTIONS.includes(section) ? `/${section}` : "";
   const bar = variant === "bar";
@@ -50,7 +52,7 @@ export function OrgSwitcher({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-label={bar ? `Shop: ${name}. Switch shop` : undefined}
+        aria-label={bar ? ORG_SWITCHER_COPY.switchLabel(name) : undefined}
         className={cn(
           "flex h-auto min-h-11 items-center gap-2 whitespace-normal text-left hover:bg-muted/60",
           bar ? "max-w-full justify-start px-1" : "w-full justify-between",
@@ -65,7 +67,7 @@ export function OrgSwitcher({
           </>
         ) : (
           <span className="min-w-0">
-            <span className="block text-label uppercase text-muted-foreground">Shop</span>
+            <span className="block text-label uppercase text-muted-foreground">{ORG_SWITCHER_COPY.shop}</span>
             <span className="block truncate text-title font-semibold text-foreground" title={current?.name}>
               {name}
             </span>
@@ -80,7 +82,7 @@ export function OrgSwitcher({
             <Link
               prefetch={false}
               key={org.id}
-              href={`/org/${org.id}${suffix}`}
+              href={`${ROUTES.org.home(org.id)}${suffix}`}
               onClick={() => setOpen(false)}
               className="flex min-h-11 items-center gap-2 rounded-field px-3 py-2 text-small hover:bg-muted/60"
             >
@@ -89,17 +91,17 @@ export function OrgSwitcher({
                 <span className="block truncate font-medium">{org.name}</span>
                 <span className="text-caption text-muted-foreground">{org.role.toLowerCase()}</span>
               </span>
-              {org.id === currentOrgId && <Icon name="done" size="sm" tone="primary" label="Current shop" />}
+              {org.id === currentOrgId && <Icon name="done" size="sm" tone="primary" label={ORG_SWITCHER_COPY.current} />}
             </Link>
           ))}
           <Link
             prefetch={false}
-            href="/org/new"
+            href={ROUTES.org.new}
             onClick={() => setOpen(false)}
             className="mt-1 flex min-h-11 items-center gap-2 rounded-field border-t border-border/60 px-3 py-2 text-small text-primary hover:bg-muted/60"
           >
             <Icon name="add" size="sm" />
-            Open another shop
+            {ORG_SWITCHER_COPY.openAnother}
           </Link>
         </div>
       )}

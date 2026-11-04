@@ -21,6 +21,8 @@ import { storePreview } from "@/lib/store-preview";
 import { renditionUrlForRef } from "@server/content/renditions.service";
 import { resolveStorefront } from "./resolve";
 import { notFound, redirect } from "next/navigation";
+import { STORE_PAGES_COPY } from "../store-pages-copy";
+import { ROUTES } from "@server/shared/routes";
 
 interface StorefrontPageProps {
   params: Promise<{ handle: string }>;
@@ -45,7 +47,7 @@ export async function generateMetadata({
   if (!shop) return {};
 
   const preview = storePreview(shop);
-  const url = `${appUrl()}/store/${shop.handle}`;
+  const url = `${appUrl()}${ROUTES.store(shop.handle)}`;
   // A themed shop's link preview is its first hero photo (Q10, D14), at the one size every
   // social host agrees on; the page reads the same memoised landing page.
   const hero = shop.themeKey ? (await storefrontDAL.getStorefrontPage(handle))?.heroPhotos[0] : undefined;
@@ -76,7 +78,7 @@ export default async function StorefrontPage({
   // into today's filtered grid follows the goods there (R13: no URL a shop shared breaks).
   if (shop.themeKey) {
     const filter = themedShopQuery(query);
-    if (filter) redirect(`/store/${shop.handle}/shop${filter}`);
+    if (filter) redirect(`${ROUTES.storeShop(shop.handle)}${filter}`);
     return <ThemedLanding handle={shop.handle} />;
   }
 
@@ -134,7 +136,7 @@ export default async function StorefrontPage({
             // too. The rest of the view survives the tap: a shopper who searched and
             // then picked a category has not abandoned the search.
             hrefFor={(category) =>
-              `/store/${shop.handle}${storefrontQuery(query, {
+              `${ROUTES.store(shop.handle)}${storefrontQuery(query, {
                 category:
                   query.category === category.slug ? null : category.slug,
               })}`
@@ -149,8 +151,8 @@ export default async function StorefrontPage({
                 ? {
                     // Stays on the shop and narrows the grid below, rather than sending a
                     // shopper to the marketplace's offers page and out of the storefront.
-                    href: `/store/${shop.handle}${storefrontQuery(query, { offers: "1" })}`,
-                    label: "View all",
+                    href: `${ROUTES.store(shop.handle)}${storefrontQuery(query, { offers: "1" })}`,
+                    label: STORE_PAGES_COPY.viewAll,
                   }
                 : undefined
             }
@@ -160,20 +162,20 @@ export default async function StorefrontPage({
             <>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <SectionHeader
-                  overline="The shop"
+                  overline={STORE_PAGES_COPY.overline}
                   title={
                     filtering
-                      ? `Filtered — ${shop.name}`
-                      : `Everything from ${shop.name}`
+                      ? STORE_PAGES_COPY.filteredTitle(shop.name)
+                      : STORE_PAGES_COPY.everythingFrom(shop.name)
                   }
                 />
                 <div className="flex items-center gap-2">
                   {filtering && (
                     <Button asChild variant="ghost" size="sm">
-                      <Link href={`/store/${shop.handle}`}>Clear filters</Link>
+                      <Link href={ROUTES.store(shop.handle)}>{STORE_PAGES_COPY.clearFilters}</Link>
                     </Button>
                   )}
-                  <ProductSortSelect basePath={`/store/${shop.handle}`} />
+                  <ProductSortSelect basePath={ROUTES.store(shop.handle)} />
                 </div>
               </div>
               <PaginatedProductGrid
@@ -189,11 +191,11 @@ export default async function StorefrontPage({
             </>
           ) : (
             <EmptyState
-              title={filtering ? "Nothing matches" : "Nothing here just yet"}
+              title={filtering ? STORE_PAGES_COPY.nothingMatches : STORE_PAGES_COPY.nothingYet}
               description={
                 filtering
-                  ? `Try another category, or browse everything ${shop.name} sells.`
-                  : `${shop.name} has not listed anything for sale. Come back soon.`
+                  ? STORE_PAGES_COPY.tryAnother(shop.name)
+                  : STORE_PAGES_COPY.notListed(shop.name)
               }
             />
           )}
@@ -202,7 +204,7 @@ export default async function StorefrontPage({
         {/* R11: a visitor is never trapped in one shop. */}
         <div className="flex justify-center pt-2">
           <Button asChild variant="outline">
-            <Link href="/">Browse the whole marketplace</Link>
+            <Link href={ROUTES.home}>{STORE_PAGES_COPY.wholeMarketplace}</Link>
           </Button>
         </div>
       </div>

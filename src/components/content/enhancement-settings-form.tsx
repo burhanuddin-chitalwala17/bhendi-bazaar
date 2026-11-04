@@ -14,6 +14,7 @@ import {
   type EnhancementSettingsInput,
 } from "@/lib/validation/schemas/enhancement.schema";
 import type { EnhancementSettingsDto } from "@server/content/enhancement.types";
+import { ENHANCEMENT_COPY } from "./enhancement-copy";
 
 /**
  * The platform's two numbers (image-enhancement spec R7, trd D5): how many enhancements a shop
@@ -36,7 +37,7 @@ export function EnhancementSettingsForm({ settings }: { settings: EnhancementSet
       dailyCapPaise: settings.dailyCapPaise,
     },
     submit: (data) => enhancementsApiClient.saveSettings(data),
-    successMessage: "Saved",
+    successMessage: ENHANCEMENT_COPY.settings.saved,
     onSuccess: () => router.refresh(),
   });
 
@@ -50,21 +51,21 @@ export function EnhancementSettingsForm({ settings }: { settings: EnhancementSet
 
       <div className="grid gap-4 sm:grid-cols-2">
         <FormInput
-          label="Enhancements per shop each month"
+          label={ENHANCEMENT_COPY.settings.monthlyAllowance}
           type="number"
           inputMode="numeric"
           step="1"
           min={1}
           {...register("defaultMonthlyAllowance", { valueAsNumber: true })}
           error={errors.defaultMonthlyAllowance?.message}
-          hint="What a shop gets unless it has a number of its own"
+          hint={ENHANCEMENT_COPY.settings.monthlyAllowanceHint}
         />
         <FormController
           name="dailyCapPaise"
           control={control}
-          label="Daily spend cap (₹)"
+          label={ENHANCEMENT_COPY.settings.dailyCap}
           error={errors.dailyCapPaise?.message}
-          hint="Enhancement stops for everyone once the day's runs have cost this much"
+          hint={ENHANCEMENT_COPY.settings.dailyCapHint}
           render={({ field }) => (
             <RupeeInput
               paise={typeof field.value === "number" ? field.value : 0}
@@ -77,7 +78,7 @@ export function EnhancementSettingsForm({ settings }: { settings: EnhancementSet
 
       <div className="flex justify-end">
         <Button type="submit" size="lg" disabled={isSubmitting}>
-          {isSubmitting ? "Saving…" : "Save"}
+          {isSubmitting ? ENHANCEMENT_COPY.saving : ENHANCEMENT_COPY.save}
         </Button>
       </div>
     </form>
@@ -88,6 +89,11 @@ export function EnhancementSettingsForm({ settings }: { settings: EnhancementSet
  * Rupees in, paise out — the one conversion, at the boundary (ADR-0004). What is typed is kept as
  * typed until it is sent: reformatting a half-typed "50." back into the box fights the person.
  */
+/** What the box shows for an amount, as typed rupees. */
+function rupeesText(paise: number): string {
+  return String(paiseToRupees(paise));
+}
+
 function RupeeInput({
   paise,
   onPaiseChange,
@@ -97,7 +103,7 @@ function RupeeInput({
   onPaiseChange: (paise: number) => void;
   onBlur: () => void;
 }) {
-  const [typed, setTyped] = useState(() => String(paiseToRupees(paise)));
+  const [typed, setTyped] = useState(() => rupeesText(paise));
 
   return (
     <Input

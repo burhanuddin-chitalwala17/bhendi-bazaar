@@ -9,6 +9,7 @@ import {
   PRODUCT_SORT_LABELS,
   type ProductSort,
 } from "@/lib/product-paging";
+import { PRODUCT_SORT_SELECT_COPY } from "./shared-copy";
 
 /**
  * How a listing is ordered, as a control.
@@ -37,7 +38,7 @@ export function ProductSortSelect({ basePath }: { basePath: string }) {
   return (
     <Select
       value={shown}
-      aria-label="Sort products"
+      aria-label={PRODUCT_SORT_SELECT_COPY.sortProducts}
       aria-busy={pending}
       className={`h-9 w-auto py-0 text-sm transition-opacity ${pending ? "opacity-60" : ""}`}
       onChange={(event) => {

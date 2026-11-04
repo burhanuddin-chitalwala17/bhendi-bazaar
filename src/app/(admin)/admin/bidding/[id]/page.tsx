@@ -15,6 +15,8 @@ import { BiddingPhaseBadge } from "@/components/bidding/BiddingPhaseBadge";
 import { BidLadder } from "@/components/bidding/BidLadder";
 import { CopyLinkButton } from "@/components/bidding/CopyLinkButton";
 import { formatCurrency } from "@/lib/format";
+import { ADMIN_BIDDING_COPY } from "../bidding-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -37,11 +39,11 @@ export default async function AdminBiddingDetailPage({
       <PageHeader
         title={event.product.name}
         description={event.orgName}
-        back={{ href: "/admin/bidding", label: "Auctions" }}
+        back={{ href: ROUTES.admin.bidding, label: ADMIN_BIDDING_COPY.back }}
         actions={
           <CopyLinkButton
-            path={`/bid/${event.slug}`}
-            label="Copy public link"
+            path={ROUTES.bid(event.slug)}
+            label={ADMIN_BIDDING_COPY.copyLink}
           />
         }
       />
@@ -59,28 +61,28 @@ export default async function AdminBiddingDetailPage({
             <BiddingPhaseBadge phase={event.phase} />
             <dl className="grid grid-cols-2 gap-3 text-2xs sm:grid-cols-4">
               <Fact
-                label="Usually"
+                label={ADMIN_BIDDING_COPY.usually}
                 value={formatCurrency(event.product.referencePricePaise)}
               />
               <Fact
-                label="Opened at"
+                label={ADMIN_BIDDING_COPY.openedAt}
                 value={formatCurrency(event.startingBidPaise)}
               />
               <Fact
-                label={event.soldAmountPaise !== null ? "Sold for" : "Highest"}
+                label={event.soldAmountPaise !== null ? ADMIN_BIDDING_COPY.soldFor : ADMIN_BIDDING_COPY.highest}
                 value={
                   event.soldAmountPaise !== null
                     ? formatCurrency(event.soldAmountPaise)
                     : event.highestBidPaise !== null
                       ? formatCurrency(event.highestBidPaise)
-                      : "—"
+                      : ADMIN_BIDDING_COPY.none
                 }
               />
-              <Fact label="Bids" value={String(event.bidCount)} />
+              <Fact label={ADMIN_BIDDING_COPY.bids} value={String(event.bidCount)} />
             </dl>
             {event.soldReason && (
               <p className="text-2xs text-muted-foreground">
-                Note: {event.soldReason}
+                {ADMIN_BIDDING_COPY.note(event.soldReason)}
               </p>
             )}
           </div>
@@ -89,12 +91,11 @@ export default async function AdminBiddingDetailPage({
 
       <section className="space-y-3">
         <h2 className="font-heading text-title font-semibold">
-          Bidders, highest first
+          {ADMIN_BIDDING_COPY.bidders}
         </h2>
         {event.phase === "LIVE" && (
           <p className="text-small text-muted-foreground">
-            Bidding is still running — an outcome can be recorded once it
-            closes.
+            {ADMIN_BIDDING_COPY.stillRunning}
           </p>
         )}
         <BidLadder

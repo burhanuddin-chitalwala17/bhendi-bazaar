@@ -8,18 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatShortDate } from "@/lib/format";
 import type { ReviewPageDto } from "@server/catalog/review.types";
+import { PRODUCT_REVIEWS_COPY } from "@/components/org/reviews-copy";
+export { PRODUCT_REVIEWS_COPY } from "@/components/org/reviews-copy";
 
 /** The id Home's "new reviews" line scrolls to (own-store onboarding D12). */
 export const PRODUCT_REVIEWS_ANCHOR = "reviews";
 
-export const PRODUCT_REVIEWS_COPY = {
-  title: "Reviews",
-  none: "No reviews yet. They appear after buyers receive orders.",
-  failed: "Couldn't load. Try again.",
-  tryAgain: "Try again",
-  seeAll: "See all reviews",
-  verified: "Verified purchase",
-} as const;
 
 export type ProductReviewsRead = { ok: true; page: ReviewPageDto } | { ok: false };
 

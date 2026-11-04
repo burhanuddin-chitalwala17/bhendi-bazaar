@@ -13,6 +13,7 @@ import type { ChannelListingDTO } from "@server/channels/channel-connection.type
 
 import { GROUP } from "./family-copy";
 import { ListingImage } from "./listing-image";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * "Group listings" (family-merge ux.md "Flipkart, picking by hand"): tick the listings that are one
@@ -41,7 +42,7 @@ export function GroupPicker({ orgId, listings, cancelHref }: { orgId: string; li
         </Button>
         {picked.length >= 2 ? (
           <Button asChild className="min-h-10">
-            <Link href={`/org/${orgId}/channels/family?listings=${picked.join(",")}`}>{GROUP.continue}</Link>
+            <Link href={`${ROUTES.org.channelFamily(orgId)}?listings=${picked.join(",")}`}>{GROUP.continue}</Link>
           </Button>
         ) : (
           <Button className="min-h-10" onClick={() => toast.error(GROUP.pickTwo)}>

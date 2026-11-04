@@ -15,6 +15,7 @@ import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 import { PageHeader } from "@/components/shared/page-shell";
 import type { PortalNavKey } from "@/components/layout/portal-nav";
+import { PRODUCT_EDIT_HEADER_COPY } from "@/components/product/console/console-copy";
 interface ProductEditContainerProps {
   /** The shop portal's "?" key; the admin console passes none. */
   help?: PortalNavKey;
@@ -69,7 +70,7 @@ export function ProductEditContainer({
     <div className="space-y-8">
       <PageHeader
         help={help}
-        back={{ href: back, label: team ? "Back to product" : "Back to products" }}
+        back={{ href: back, label: team ? PRODUCT_EDIT_HEADER_COPY.backTeam : PRODUCT_EDIT_HEADER_COPY.back }}
         title={`Edit Product: ${product.name}`}
       />
 

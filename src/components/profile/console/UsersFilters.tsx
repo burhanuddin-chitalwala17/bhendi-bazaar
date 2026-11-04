@@ -8,6 +8,7 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { PLATFORM_ROLE } from "@server/identity/admin.user.types";
+import { USERS_FILTERS_COPY } from "./console-copy";
 
 /**
  * The console's user filters, held in the URL rather than in component state.
@@ -40,35 +41,33 @@ export function UsersFilters() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && apply({ search })}
-          placeholder="Search by name, email or mobile…"
-          aria-label="Search users"
+          placeholder={USERS_FILTERS_COPY.searchNameEmailMobile}
+          aria-label={USERS_FILTERS_COPY.searchUsers}
         />
         <Button
           variant="default"
           onClick={() => apply({ search })}
           className="flex items-center gap-2"
         >
-          <Icon name="search" />
-          Search
-        </Button>
+          <Icon name="search" />{USERS_FILTERS_COPY.search}</Button>
       </div>
 
       <Select
         value={params.get("platformRole") ?? ""}
         onChange={(e) => apply({ platformRole: e.target.value })}
       >
-        <option value="">All roles</option>
-        <option value={PLATFORM_ROLE.USER}>User</option>
-        <option value={PLATFORM_ROLE.ADMIN}>Admin</option>
+        <option value="">{USERS_FILTERS_COPY.allRoles}</option>
+        <option value={PLATFORM_ROLE.USER}>{USERS_FILTERS_COPY.user}</option>
+        <option value={PLATFORM_ROLE.ADMIN}>{USERS_FILTERS_COPY.admin}</option>
       </Select>
 
       <Select
         value={params.get("isBlocked") ?? ""}
         onChange={(e) => apply({ isBlocked: e.target.value })}
       >
-        <option value="">All statuses</option>
-        <option value="active">Active</option>
-        <option value="blocked">Blocked</option>
+        <option value="">{USERS_FILTERS_COPY.allStatuses}</option>
+        <option value="active">{USERS_FILTERS_COPY.active}</option>
+        <option value="blocked">{USERS_FILTERS_COPY.blocked}</option>
       </Select>
     </div>
   );

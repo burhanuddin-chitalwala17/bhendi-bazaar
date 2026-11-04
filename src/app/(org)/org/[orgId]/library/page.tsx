@@ -7,23 +7,25 @@ import { MediaLibraryGrid } from "@/components/org/media-library-grid";
 import { MediaLibraryUpload } from "@/components/org/media-library-upload";
 import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { PageHeader } from "@/components/shared/page-shell";
+import { ORG_PAGES_COPY } from "@/components/org/pages-copy";
+import { LIBRARY_FILTER_COPY, ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
 export const metadata = {
-  title: "Photos",
+  title: ORG_PAGE_TITLES.library,
   robots: { index: false, follow: false },
 };
 
 type Search = Record<string, string | string[] | undefined>;
 
 const KIND_OPTIONS: FilterOption[] = [
-  { value: MediaAssetKind.IMAGE, label: "Photos" },
-  { value: MediaAssetKind.VIDEO, label: "Videos" },
-  { value: MediaAssetKind.VIDEO_EMBED, label: "YouTube links" },
+  { value: MediaAssetKind.IMAGE, label: LIBRARY_FILTER_COPY.photos },
+  { value: MediaAssetKind.VIDEO, label: LIBRARY_FILTER_COPY.videos },
+  { value: MediaAssetKind.VIDEO_EMBED, label: LIBRARY_FILTER_COPY.youtubeLinks },
 ];
 const SOURCE_OPTIONS: FilterOption[] = [
-  { value: MediaAssetSource.UPLOAD, label: "Uploaded" },
-  { value: MediaAssetSource.DERIVED, label: "Cropped or made" },
-  { value: MediaAssetSource.EMBED, label: "Video link" },
+  { value: MediaAssetSource.UPLOAD, label: LIBRARY_FILTER_COPY.uploaded },
+  { value: MediaAssetSource.DERIVED, label: LIBRARY_FILTER_COPY.croppedOrMade },
+  { value: MediaAssetSource.EMBED, label: LIBRARY_FILTER_COPY.videoLink },
 ];
 
 /** The filter keys, read by name: the awaited `searchParams` does not enumerate, so a spread sees nothing. */
@@ -60,7 +62,7 @@ export default async function OrgLibraryPage({
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <PageHeader help="library" title="Photos" description="Every photo and video your shop has, where each is used, and what can go." />
+        <PageHeader help="library" title={ORG_PAGES_COPY.libraryTitle} description={ORG_PAGES_COPY.libraryDescription} />
         {org && <MediaLibraryUpload orgId={scope.orgId} orgCode={org.code} />}
       </div>
 

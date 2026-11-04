@@ -17,6 +17,7 @@ import { FieldIssues, FieldLine, FieldShell, OwnerChip } from "./listing-field";
 import { ListingPhotosField } from "./listing-photos-field";
 import { FIELD_NAME, LISTING, rupees } from "./platform-listing-copy";
 import { useListingForm } from "./useListingForm";
+import { ROUTES } from "@server/shared/routes";
 
 const now = () => Date.now();
 
@@ -256,7 +257,7 @@ function SaveBar({ orgId, screen, dirty, pending }: { orgId: string; screen: Lis
         </Button>
       ) : (
         <Button asChild size="sm" className="min-h-10">
-          <Link href={`/org/${orgId}/channels/${screen.channel}/publish?listing=${screen.id}`}>{LISTING.reviewAndPublish}</Link>
+          <Link href={`${ROUTES.org.channelPublish(orgId, screen.channel)}?listing=${screen.id}`}>{LISTING.reviewAndPublish}</Link>
         </Button>
       )}
     </ActionBar>

@@ -22,6 +22,7 @@ import {
   payoutsApiClient,
   type SettlementStatusChange,
 } from "@/components/payouts/payoutsApiClient";
+import { SETTLEMENT_LIST_COPY } from "./payouts-copy";
 
 export interface SettlementRow {
   id: string;
@@ -66,7 +67,7 @@ export function SettlementList({
 
   return (
     <section className="space-y-3">
-      <h2 className="text-small font-semibold">Settlements</h2>
+      <h2 className="text-small font-semibold">{SETTLEMENT_LIST_COPY.title}</h2>
       <ul className="space-y-2">
         {settlements.map((settlement) => (
           <li
@@ -83,9 +84,9 @@ export function SettlementList({
                 </p>
                 <p className="mt-0.5 text-caption text-muted-foreground">
                   {settlement.status === "PAID" && settlement.paidAt
-                    ? `Paid ${formatShortDate(settlement.paidAt)}`
-                    : "Not yet transferred"}
-                  {settlement.reference ? ` · ${settlement.reference}` : ""}
+                    ? SETTLEMENT_LIST_COPY.paidOn(formatShortDate(settlement.paidAt))
+                    : SETTLEMENT_LIST_COPY.notTransferred}
+                  {settlement.reference ? SETTLEMENT_LIST_COPY.reference(settlement.reference) : ""}
                 </p>
               </div>
               <span className="text-small font-semibold tabular-nums">
@@ -96,7 +97,7 @@ export function SettlementList({
             {settlement.status === "PENDING" && recording !== settlement.id && (
               <div className="mt-3 flex gap-2 border-t border-border pt-3">
                 <Button size="sm" onClick={() => setRecording(settlement.id)}>
-                  Mark as paid
+                  {SETTLEMENT_LIST_COPY.markPaid}
                 </Button>
                 <Button
                   size="sm"
@@ -106,11 +107,11 @@ export function SettlementList({
                     send(
                       settlement.id,
                       { status: "CANCELLED" },
-                      "Settlement cancelled",
+                      SETTLEMENT_LIST_COPY.cancelled,
                     )
                   }
                 >
-                  Cancel
+                  {SETTLEMENT_LIST_COPY.cancel}
                 </Button>
               </div>
             )}
@@ -119,21 +120,19 @@ export function SettlementList({
               <div className="mt-3 space-y-2 border-t border-border pt-3">
                 <div>
                   <Label htmlFor={`ref-${settlement.id}`} className="text-caption">
-                    Bank reference
+                    {SETTLEMENT_LIST_COPY.bankReference}
                   </Label>
                   <Input
                     id={`ref-${settlement.id}`}
                     value={reference}
                     onChange={(event) => setReference(event.target.value)}
-                    placeholder="UTR or cheque number"
+                    placeholder={SETTLEMENT_LIST_COPY.referencePlaceholder}
                     className="mt-1"
                   />
                   {/* The reference is what makes the ledger checkable against a bank
                       statement, which is the whole point of recording the transfer. */}
                   <p className="mt-1 text-caption text-muted-foreground">
-                    Recorded against {formatCurrency(settlement.amountPaise)}.
-                    Once saved, the amount and reference are fixed — a
-                    correction is a new entry.
+                    {SETTLEMENT_LIST_COPY.recordedAgainst(formatCurrency(settlement.amountPaise))}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -147,18 +146,18 @@ export function SettlementList({
                           status: "PAID",
                           reference: reference.trim() || undefined,
                         },
-                        `${settlement.code} recorded as paid`,
+                        SETTLEMENT_LIST_COPY.recordedPaid(settlement.code),
                       )
                     }
                   >
-                    Confirm payment
+                    {SETTLEMENT_LIST_COPY.confirm}
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => setRecording(null)}
                   >
-                    Back
+                    {SETTLEMENT_LIST_COPY.back}
                   </Button>
                 </div>
               </div>

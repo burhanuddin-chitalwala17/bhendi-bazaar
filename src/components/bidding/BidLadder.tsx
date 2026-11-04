@@ -39,6 +39,7 @@ import { biddingApiClient } from "@/components/bidding/biddingApiClient";
 import { MarkUnsoldDialog } from "@/components/bidding/MarkUnsoldDialog";
 import type { BidLadderEntry } from "@server/bidding/bidding.types";
 import { formatPhone } from "@server/shared/phone";
+import { BID_LADDER_COPY } from "./bidding-copy";
 
 interface StockLocation {
   orgAddressId: string;
@@ -80,9 +81,7 @@ export function BidLadder({
                 <p className="text-sm font-semibold">
                   {formatCurrency(bid.amountPaise)}
                   {index === 0 && (
-                    <span className="ml-2 text-2xs uppercase tracking-label text-muted-foreground">
-                      Highest
-                    </span>
+                    <span className="ml-2 text-2xs uppercase tracking-label text-muted-foreground">{BID_LADDER_COPY.highest}</span>
                   )}
                 </p>
                 <p className="mt-0.5 truncate text-2xs text-muted-foreground">
@@ -92,7 +91,7 @@ export function BidLadder({
                   {!bid.bidderEmail && " · no email — cannot be emailed"}
                 </p>
                 <p className="mt-0.5 text-2xs text-muted-foreground">
-                  {bid.isRegistered ? "Registered account" : "Guest"} ·{" "}
+                  {bid.isRegistered ? BID_LADDER_COPY.registeredAccount : BID_LADDER_COPY.guest} ·{" "}
                   {new Intl.DateTimeFormat("en-IN", {
                     dateStyle: "medium",
                     timeStyle: "short",
@@ -104,9 +103,7 @@ export function BidLadder({
                   size="sm"
                   variant="outline"
                   onClick={() => setChosen(bid)}
-                >
-                  They bought it
-                </Button>
+                >{BID_LADDER_COPY.theyBought}</Button>
               )}
             </Card>
           </li>
@@ -114,9 +111,7 @@ export function BidLadder({
       </ul>
 
       {canRecordOutcome && (
-        <Button variant="outline" onClick={() => setUnsoldOpen(true)}>
-          Nobody bought it
-        </Button>
+        <Button variant="outline" onClick={() => setUnsoldOpen(true)}>{BID_LADDER_COPY.nobodyBought}</Button>
       )}
 
       {/* Keyed by the bid, so choosing another bidder starts from their figure. */}
@@ -175,7 +170,7 @@ function ConfirmSaleDialog({
         ...data,
         reason: data.reason || undefined,
       }),
-    successMessage: "Sale recorded",
+    successMessage: BID_LADDER_COPY.saleRecorded,
     onSuccess: onDone,
   });
   const {
@@ -196,7 +191,7 @@ function ConfirmSaleDialog({
     <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Record the sale</DialogTitle>
+          <DialogTitle>{BID_LADDER_COPY.recordSale}</DialogTitle>
           <DialogDescription>
             {bid.bidderName} bought this for the amount below. The organisation
             is paid on this figure, one unit leaves stock, and the item goes
@@ -212,9 +207,7 @@ function ConfirmSaleDialog({
           )}
 
           <div>
-            <Label htmlFor="sale-amount" className="text-sm">
-              Sold for (₹)
-            </Label>
+            <Label htmlFor="sale-amount" className="text-sm">{BID_LADDER_COPY.soldFor}</Label>
             <Input
               id="sale-amount"
               type="number"
@@ -239,9 +232,7 @@ function ConfirmSaleDialog({
           </div>
 
           <div>
-            <Label htmlFor="sale-location" className="text-sm">
-              Take the unit from
-            </Label>
+            <Label htmlFor="sale-location" className="text-sm">{BID_LADDER_COPY.takeUnitFrom}</Label>
             <Select
               id="sale-location"
               className="mt-1.5"
@@ -257,10 +248,7 @@ function ConfirmSaleDialog({
               ))}
             </Select>
             {locations.length === 0 && (
-              <p className="mt-1.5 text-sm text-destructive">
-                No location holds stock of this product. The sale cannot be
-                recorded.
-              </p>
+              <p className="mt-1.5 text-sm text-destructive">{BID_LADDER_COPY.noLocationHoldsStock}</p>
             )}
             {errors.orgAddressId?.message && (
               <p className="mt-1.5 text-sm text-destructive">
@@ -279,14 +267,11 @@ function ConfirmSaleDialog({
                 id="sale-reason"
                 className="mt-1.5"
                 rows={2}
-                placeholder="Negotiated down after they saw it in person"
+                placeholder={BID_LADDER_COPY.negotiatedDownAfterThey}
                 aria-invalid={!!errors.reason}
                 {...register("reason")}
               />
-              <p className="mt-1.5 text-2xs text-muted-foreground">
-                Required: this is what explains the figure the organisation is
-                paid on.
-              </p>
+              <p className="mt-1.5 text-2xs text-muted-foreground">{BID_LADDER_COPY.requiredWhatExplainsFigure}</p>
               {errors.reason?.message && (
                 <p className="mt-1.5 text-sm text-destructive">
                   {errors.reason.message}
@@ -297,9 +282,7 @@ function ConfirmSaleDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
+          <Button variant="outline" onClick={onClose}>{BID_LADDER_COPY.cancel}</Button>
           <Button
             onClick={() => void onSubmit().catch(() => {})}
             disabled={
@@ -309,7 +292,7 @@ function ConfirmSaleDialog({
               (differs && !reason.trim())
             }
           >
-            {isSubmitting ? "Recording…" : "Record the sale"}
+            {isSubmitting ? BID_LADDER_COPY.recording : BID_LADDER_COPY.recordSale}
           </Button>
         </DialogFooter>
       </DialogContent>

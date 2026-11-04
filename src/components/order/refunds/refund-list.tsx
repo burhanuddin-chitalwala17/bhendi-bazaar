@@ -8,16 +8,18 @@ import { ResourceList } from "@/components/shared/resource-list";
 import { StatusBadge, type StatusTone } from "@/components/shared/badges/StatusBadge";
 import { StartRefund } from "./start-refund";
 import { REFUNDS_COPY, causeLabel, razorpayPaymentUrl } from "./refunds-copy";
+import { REFUND_LIST_COPY } from "./refunds-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** Owed past 2 days reads amber (ux.md Stale). */
 const STALE_DAYS = 2;
 
 /** One word and one tone per state; the detail line says the rest. */
 function chip(row: RefundRow): { label: string; tone: StatusTone } {
-  if (row.state === REFUND_STATE.STARTED) return { label: "Started", tone: "success" };
-  if (row.state === REFUND_STATE.UNCONFIRMED) return { label: "Unconfirmed", tone: "warning" };
-  if (row.state === REFUND_STATE.FAILED) return { label: "Refused", tone: "destructive" };
-  return { label: "Owed", tone: row.owedDays > STALE_DAYS ? "warning" : "neutral" };
+  if (row.state === REFUND_STATE.STARTED) return { label: REFUND_LIST_COPY.started, tone: "success" };
+  if (row.state === REFUND_STATE.UNCONFIRMED) return { label: REFUND_LIST_COPY.unconfirmed, tone: "warning" };
+  if (row.state === REFUND_STATE.FAILED) return { label: REFUND_LIST_COPY.refused, tone: "destructive" };
+  return { label: REFUND_LIST_COPY.owed, tone: row.owedDays > STALE_DAYS ? "warning" : "neutral" };
 }
 
 /** When it started, what went wrong, or how long it has waited. */
@@ -50,20 +52,20 @@ function Actions({ row }: { row: RefundRow }) {
 export function RefundList({ rows }: { rows: RefundRow[] }) {
   return (
     <ResourceList
-      label="Refunds"
+      label={REFUND_LIST_COPY.refunds}
       rows={rows}
       rowKey={(row) => row.id}
-      rowHref={(row) => `/admin/orders/${row.orderId}`}
+      rowHref={(row) => ROUTES.admin.order(row.orderId)}
       tableFrom="lg"
-      empty={{ title: REFUNDS_COPY.empty, description: "A refund appears here when a paid parcel is cancelled, lost, damaged or returned." }}
+      empty={{ title: REFUNDS_COPY.empty, description: REFUND_LIST_COPY.refundAppearsHereWhen }}
       columns={[
-        { key: "refund", label: "Refund", cell: (row) => REFUNDS_COPY.owed(row.amountPaise), phone: "title" },
-        { key: "parcel", label: "Parcel", cell: (row) => <span className="font-mono">{row.parcelCode}</span>, phone: "meta" },
-        { key: "cause", label: "Why", cell: (row) => causeLabel(row.cause, row.cancelledBy), phone: "meta" },
-        { key: "order", label: "Order", cell: (row) => <span className="font-mono">{row.orderCode}</span>, phone: "meta" },
+        { key: "refund", label: REFUND_LIST_COPY.refund, cell: (row) => REFUNDS_COPY.owed(row.amountPaise), phone: "title" },
+        { key: "parcel", label: REFUND_LIST_COPY.parcel, cell: (row) => <span className="font-mono">{row.parcelCode}</span>, phone: "meta" },
+        { key: "cause", label: REFUND_LIST_COPY.why, cell: (row) => causeLabel(row.cause, row.cancelledBy), phone: "meta" },
+        { key: "order", label: REFUND_LIST_COPY.order, cell: (row) => <span className="font-mono">{row.orderCode}</span>, phone: "meta" },
         {
           key: "state",
-          label: "Status",
+          label: REFUND_LIST_COPY.status,
           cell: (row) => {
             const c = chip(row);
             return <StatusBadge tone={c.tone} dot>{c.label}</StatusBadge>;
@@ -72,10 +74,10 @@ export function RefundList({ rows }: { rows: RefundRow[] }) {
         },
         {
           key: "detail",
-          label: "Detail",
+          label: REFUND_LIST_COPY.detail,
           cell: (row) => <span className="whitespace-normal text-caption text-muted-foreground">{detail(row) ?? "—"}</span>,
         },
-        { key: "actions", label: "Action", cell: (row) => <Actions row={row} />, phone: "trailing", align: "end" },
+        { key: "actions", label: REFUND_LIST_COPY.action, cell: (row) => <Actions row={row} />, phone: "trailing", align: "end" },
       ]}
     />
   );

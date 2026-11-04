@@ -5,9 +5,10 @@ import { platformListingDAL } from "@/data-access-layer/platform-listing.dal";
 import { PageShell, PageHeader } from "@/components/shared/page-shell";
 import { PutOnMarketplace } from "@/components/channel/put-on-marketplace";
 import { CREATE } from "@/components/channel/platform-listing-copy";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
 export const metadata = {
-  title: "Put on a marketplace",
+  title: ORG_PAGE_TITLES.newListing,
   robots: { index: false, follow: false },
 };
 

@@ -30,6 +30,8 @@ import {
   type ProductProblem,
   type ProductStepKey,
 } from "./product-steps";
+import { PRODUCT_STEPS_FORM_COPY } from "./product-copy";
+import { ROUTES } from "@server/shared/routes";
 
 type Form = ReturnType<typeof useServerForm<ProductFormInput>>;
 type Steps = ReturnType<typeof useProductSteps>;
@@ -63,8 +65,8 @@ interface ProductStepsFormProps {
 const isMoreOptionsField = (path: string) => (MORE_OPTIONS_FIELDS as readonly string[]).includes(path.split(".")[0]);
 
 const STEP_INTRO: Partial<Record<ProductStepKey, string>> = {
-  photos: "Start with photos. Tap 'Cover' on the one buyers see first.",
-  review: "This is how buyers will see it.",
+  photos: PRODUCT_STEPS_FORM_COPY.introPhotos,
+  review: PRODUCT_STEPS_FORM_COPY.introReview,
 };
 
 /** Problems from the unsaved values and from the last save, one line each (Review, R3). */
@@ -98,7 +100,7 @@ function useProblems(
 
 /**
  * A new product in five short steps (product-form R1–R4, D1–D3). One form, one schema, one save:
- * the steps only choose which fields are on screen. "Next" never validates; "Put on sale" submits.
+ * the steps only choose which fields are on screen. "Next" never validates; PRODUCT_STEPS_FORM_COPY.save submits.
  */
 export function ProductStepsForm({
   form,
@@ -117,7 +119,7 @@ export function ProductStepsForm({
   created,
   onStartAnother,
   draft,
-  saveLabel = "Put on sale",
+  saveLabel = PRODUCT_STEPS_FORM_COPY.save,
 }: ProductStepsFormProps) {
   const {
     watch,
@@ -208,7 +210,7 @@ export function ProductStepsForm({
 
       <div className="md:grid md:grid-cols-4 md:gap-6 lg:grid-cols-12">
         {/* Chips on a phone, a left rail from md (Q19). */}
-        <nav aria-label="Steps" className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-2 md:col-span-1 md:mx-0 md:flex-col md:overflow-visible md:px-0 lg:col-span-3">
+        <nav aria-label={PRODUCT_STEPS_FORM_COPY.steps} className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-2 md:col-span-1 md:mx-0 md:flex-col md:overflow-visible md:px-0 lg:col-span-3">
           {PRODUCT_STEPS.map((step) => {
             const count = counts[step.key];
             const done = steps.visited.has(step.key) && count === 0 && step.key !== "review";
@@ -264,7 +266,7 @@ export function ProductStepsForm({
                 onOpenDetails={() => steps.goTo("details")}
               />
               {problems.length > 0 && (
-                <ul className="space-y-2" aria-label="Still to fix">
+                <ul className="space-y-2" aria-label={PRODUCT_STEPS_FORM_COPY.stillToFix}>
                   {problems.map((problem) => (
                     <li key={`${problem.path}-${problem.message}`}>
                       <Button
@@ -295,13 +297,13 @@ export function ProductStepsForm({
                   void putOnSale();
                 }}
               >
-                Try again
+                {PRODUCT_STEPS_FORM_COPY.tryAgain}
               </Button>
             </div>
           )}
         </div>
 
-        <aside className="hidden lg:col-span-3 lg:block" aria-label="Buyer preview">
+        <aside className="hidden lg:col-span-3 lg:block" aria-label={PRODUCT_STEPS_FORM_COPY.buyerPreview}>
           {preview}
         </aside>
       </div>
@@ -326,7 +328,7 @@ export function ProductStepsForm({
       >
         {!steps.isFirst && (
           <Button type="button" variant="outline" size="lg" className="flex-1 sm:flex-none" onClick={steps.back}>
-            Back
+            {PRODUCT_STEPS_FORM_COPY.back}
           </Button>
         )}
         {steps.isReview ? (
@@ -335,7 +337,7 @@ export function ProductStepsForm({
           </Button>
         ) : (
           <Button type="button" size="lg" className="flex-1" onClick={steps.next}>
-            Next
+            {PRODUCT_STEPS_FORM_COPY.next}
           </Button>
         )}
       </ActionBar>
@@ -350,7 +352,7 @@ function SuccessScreen({ product, onStartAnother }: { product: ProductDetails; o
   const base = useProductsBasePath();
   const share = () => {
     // Our origin is read from the page, never typed (CLAUDE.md "never hardcode our own origin").
-    const url = new URL(`/product/${product.slug}`, window.location.origin).toString();
+    const url = new URL(ROUTES.product(product.slug), window.location.origin).toString();
     window.open(`https://wa.me/?text=${encodeURIComponent(`${product.name}\n${url}`)}`, "_blank");
   };
   return (
@@ -359,12 +361,12 @@ function SuccessScreen({ product, onStartAnother }: { product: ProductDetails; o
         <Icon name="success" size="xl" tone="success" />
       </div>
       <div className="space-y-1">
-        <h2 className="text-xl font-semibold text-foreground">On sale now</h2>
+        <h2 className="text-xl font-semibold text-foreground">{PRODUCT_STEPS_FORM_COPY.onSaleNow}</h2>
         <p className="text-sm text-muted-foreground">{product.name} is live on your store.</p>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
         <Button type="button" size="lg" onClick={share}>
-          Share on WhatsApp
+          {PRODUCT_STEPS_FORM_COPY.shareOnWhatsapp}
         </Button>
         <Button
           type="button"
@@ -375,7 +377,7 @@ function SuccessScreen({ product, onStartAnother }: { product: ProductDetails; o
             router.push(`${base}/new`);
           }}
         >
-          Add another
+          {PRODUCT_STEPS_FORM_COPY.addAnother}
         </Button>
         <Button
           type="button"
@@ -383,10 +385,10 @@ function SuccessScreen({ product, onStartAnother }: { product: ProductDetails; o
           size="lg"
           onClick={() => router.push(`${base}/new?copyFrom=${encodeURIComponent(product.id)}`)}
         >
-          Copy this one
+          {PRODUCT_STEPS_FORM_COPY.copyThisOne}
         </Button>
         <Button type="button" variant="ghost" size="lg" onClick={() => router.push(`${base}/${product.id}`)}>
-          View product
+          {PRODUCT_STEPS_FORM_COPY.viewProduct}
         </Button>
       </div>
     </div>

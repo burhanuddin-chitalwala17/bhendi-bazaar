@@ -24,6 +24,7 @@ import { formatCurrency } from "@/lib/format";
 import { useMutation } from "@/hooks/core/useMutation";
 import { payoutsApiClient } from "@/components/payouts/payoutsApiClient";
 import { Money } from "@/components/shared/Money";
+import { SETTLE_ENTRIES_COPY } from "./payouts-copy";
 
 export interface LedgerEntryRow {
   id: string;
@@ -65,7 +66,7 @@ export function SettleEntries({
   const { mutate, isLoading: isSaving } = useMutation(
     () => payoutsApiClient.createSettlement(orgId, selected),
     {
-      successMessage: `Settlement created for ${formatCurrency(selectedTotal)}`,
+      successMessage: SETTLE_ENTRIES_COPY.created(formatCurrency(selectedTotal)),
       onSuccess: () => {
         setSelected([]);
         router.refresh();
@@ -79,7 +80,7 @@ export function SettleEntries({
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-small font-semibold">Entries</h2>
+        <h2 className="text-small font-semibold">{SETTLE_ENTRIES_COPY.title}</h2>
         {claimable.length > 0 && (
           <Button
             variant="ghost"
@@ -93,14 +94,14 @@ export function SettleEntries({
             }
           >
             {selected.length === claimable.length
-              ? "Clear selection"
-              : "Select all unclaimed"}
+              ? SETTLE_ENTRIES_COPY.clearSelection
+              : SETTLE_ENTRIES_COPY.selectUnclaimed}
           </Button>
         )}
       </div>
 
       {entries.length === 0 && (
-        <p className="text-small text-muted-foreground">Nothing recorded yet.</p>
+        <p className="text-small text-muted-foreground">{SETTLE_ENTRIES_COPY.nothing}</p>
       )}
 
       <ul className="space-y-3">
@@ -120,11 +121,11 @@ export function SettleEntries({
                       label=""
                       checked={selected.includes(entry.id)}
                       onChange={() => toggle(entry.id)}
-                      aria-label={`Include ${entry.orderId ?? "adjustment"} in a settlement`}
+                      aria-label={SETTLE_ENTRIES_COPY.include(entry.orderId)}
                     />
                   )}
                   <span className="font-mono text-caption text-muted-foreground">
-                    {entry.orderId ?? "manual adjustment"}
+                    {entry.orderId ?? SETTLE_ENTRIES_COPY.manualAdjustment}
                   </span>
                   {entry.settlementStatus && (
                     <StatusBadge tone={SETTLEMENT_STATUS_BADGE[entry.settlementStatus].tone}>
@@ -133,45 +134,45 @@ export function SettleEntries({
                   )}
                   {entry.isManuallyEdited && (
                     <StatusBadge>
-                      <Icon name="edit" size="xs" /> Edited
+                      <Icon name="edit" size="xs" /> {SETTLE_ENTRIES_COPY.edited}
                     </StatusBadge>
                   )}
-                  {entry.deletedAt && <StatusBadge>Removed</StatusBadge>}
+                  {entry.deletedAt && <StatusBadge>{SETTLE_ENTRIES_COPY.removed}</StatusBadge>}
                   {entry.isNegativeMargin && (
                     <StatusBadge tone="warning">
-                      <Icon name="warning" size="xs" /> Below cost
+                      <Icon name="warning" size="xs" /> {SETTLE_ENTRIES_COPY.belowCost}
                     </StatusBadge>
                   )}
                 </div>
 
                 <dl className="space-y-1.5 text-small">
                   <div className="flex justify-between gap-4">
-                    <dt className="text-muted-foreground">Buyer paid</dt>
+                    <dt className="text-muted-foreground">{SETTLE_ENTRIES_COPY.buyerPaid}</dt>
                     <dd className="tabular-nums">
                       <Money paise={entry.buyerPaidPaise} />
                     </dd>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <dt className="text-muted-foreground">Payable</dt>
+                    <dt className="text-muted-foreground">{SETTLE_ENTRIES_COPY.payable}</dt>
                     <dd className="tabular-nums text-primary">
                       −<Money paise={entry.payablePaise} />
                     </dd>
                   </div>
                   <div className="flex justify-between gap-4 border-t border-border pt-1.5 font-medium">
-                    <dt>Platform net</dt>
+                    <dt>{SETTLE_ENTRIES_COPY.platformNet}</dt>
                     <dd className="tabular-nums">
                       <Money paise={entry.platformNetPaise} />
                     </dd>
                   </div>
                   <div className="flex justify-between gap-4 pt-1 text-caption text-muted-foreground">
-                    <dt>Commission</dt>
+                    <dt>{SETTLE_ENTRIES_COPY.commission}</dt>
                     <dd className="tabular-nums">
                       {formatCurrency(entry.commissionPaise)}
                     </dd>
                   </div>
                   {entry.campaignCostPaise > 0 && (
                     <div className="flex justify-between gap-4 text-caption text-muted-foreground">
-                      <dt>Campaign cost</dt>
+                      <dt>{SETTLE_ENTRIES_COPY.campaignCost}</dt>
                       <dd className="tabular-nums">
                         −{formatCurrency(entry.campaignCostPaise)}
                       </dd>
@@ -186,9 +187,9 @@ export function SettleEntries({
 
       <SelectionBar
         count={selected.length}
-        noun={`${selected.length === 1 ? "entry" : "entries"} · ${formatCurrency(selectedTotal)}`}
+        noun={SETTLE_ENTRIES_COPY.noun(selected.length, formatCurrency(selectedTotal))}
         onClear={() => setSelected([])}
-        actions={[{ label: "Create settlement", onClick: settle, pending: isSaving }]}
+        actions={[{ label: SETTLE_ENTRIES_COPY.create, onClick: settle, pending: isSaving }]}
       />
     </section>
   );

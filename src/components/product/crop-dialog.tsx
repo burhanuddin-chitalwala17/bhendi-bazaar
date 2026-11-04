@@ -23,6 +23,7 @@ import {
   type CropRotation,
   type CropTransform,
 } from "@/lib/image/crop-transform";
+import { MEDIA_COPY } from "./media-copy";
 
 /** One photo waiting to be framed. The id is what tells two picks of the same file apart. */
 export interface CropCandidate {
@@ -56,7 +57,7 @@ interface CropDialogProps {
 
 const PRESETS = Object.values(CROP_ASPECTS);
 const labelOf = (aspect: CropAspect) =>
-  aspect === CROP_ASPECTS.FREE ? "Free" : aspect;
+  aspect === CROP_ASPECTS.FREE ? MEDIA_COPY.crop.free : aspect;
 
 /**
  * Rotate and crop before the upload is spent (media-library R8a): aspect presets, quarter turns,
@@ -79,13 +80,13 @@ export function CropDialog({
       onOpenChange={(open) => {
         if (!open && !busy) onCancel();
       }}
-      title="Frame this photo"
+      title={MEDIA_COPY.crop.title}
       description={
         !canUseAsIs
-          ? "Turn and frame it. The photo you started from is kept as it is."
+          ? MEDIA_COPY.crop.keepsOriginal
           : remaining > 0
-            ? `${remaining} more after this one. Turn and frame it, or use it as it is.`
-            : "Turn and frame it, or use it as it is. Colours are never changed."
+            ? MEDIA_COPY.crop.moreAfter(remaining)
+            : MEDIA_COPY.crop.orAsIs
       }
     >
       {/* Keyed by the candidate so each photo starts unframed: a turn chosen for one is rarely
@@ -149,11 +150,11 @@ function CropFrame({
   };
   const applyCrop = whenFree(() => {
     if (!transform) {
-      setHint("Wait for the photo to load");
+      setHint(MEDIA_COPY.crop.waitForLoad);
       return;
     }
     if (isUntouched && canUseAsIs) onUseAsIs();
-    else if (isUntouched) setHint("Turn or move the frame first");
+    else if (isUntouched) setHint(MEDIA_COPY.crop.moveFirst);
     else onUseCrop(transform);
   });
 
@@ -162,7 +163,7 @@ function CropFrame({
       <div
         className="flex shrink-0 flex-wrap gap-2"
         role="group"
-        aria-label="Shape"
+        aria-label={MEDIA_COPY.crop.shape}
       >
         {PRESETS.map((preset) => (
           <Button
@@ -201,7 +202,7 @@ function CropFrame({
             type="button"
             variant="outline"
             shape="icon" size="lg"
-            aria-label="Rotate left"
+            aria-label={MEDIA_COPY.crop.rotateLeft}
             onClick={whenFree(() => setRotation((current) => rotateBy(current, -90)))}
           >
             {/* No counter-clockwise drawing in the registry; the clockwise one, mirrored. */}
@@ -211,14 +212,14 @@ function CropFrame({
             type="button"
             variant="outline"
             shape="icon" size="lg"
-            aria-label="Rotate right"
+            aria-label={MEDIA_COPY.crop.rotateRight}
             onClick={whenFree(() => setRotation((current) => rotateBy(current, 90)))}
           >
             <Icon name="rotate" />
           </Button>
         </div>
         <p className="text-xs text-muted-foreground" role={hint ? "status" : undefined}>
-          {hint ?? "Pinch or scroll to zoom, drag to move."}
+          {hint ?? MEDIA_COPY.crop.gestures}
         </p>
       </div>
 
@@ -231,7 +232,7 @@ function CropFrame({
             onClick={whenFree(onUseAllAsIs)}
             aria-busy={busy}
           >
-            Use all as is
+            {MEDIA_COPY.crop.useAllAsIs}
           </Button>
         )}
         {canUseAsIs && (
@@ -242,7 +243,7 @@ function CropFrame({
             onClick={whenFree(onUseAsIs)}
             aria-busy={busy}
           >
-            Use as is
+            {MEDIA_COPY.crop.useAsIs}
           </Button>
         )}
         <Button
@@ -252,7 +253,7 @@ function CropFrame({
           pending={busy}
         >
           {!busy && <Icon name="done" />}
-          {busy ? "Uploading…" : "Use this crop"}
+          {busy ? MEDIA_COPY.crop.uploading : MEDIA_COPY.crop.useCrop}
         </Button>
       </div>
     </>

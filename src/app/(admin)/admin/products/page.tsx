@@ -6,12 +6,13 @@ import { ProductsTableSkeleton } from "@/components/product/console/productsList
 import type { Metadata } from "next";
 import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
+import { ADMIN_PRODUCTS_COPY } from "./products-copy";
 
 // No `revalidate`: the page reads its searchParams and sits behind the admin session, so it is
 // rendered per request and an ISR window never applied to it.
 export const metadata: Metadata = {
-  title: "Admin: products",
-  description: "Manage your product catalog",
+  title: ADMIN_PRODUCTS_COPY.metaTitle,
+  description: ADMIN_PRODUCTS_COPY.metaDescription,
   robots: { index: false, follow: false }
 };
 
@@ -36,7 +37,7 @@ export default async function ProductsPage({
 }: ProductsPageProps) {
   return (
     <PageShell width="wide">
-      <PageHeader title="Products" description="Every shop's catalogue, for support. Shops manage their products in their own portal." />
+      <PageHeader title={ADMIN_PRODUCTS_COPY.title} description={ADMIN_PRODUCTS_COPY.description} />
 
       <Suspense fallback={<ProductsTableSkeleton />}>
         <ProductsData searchParams={searchParams} />

@@ -13,6 +13,7 @@ import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { EnhancementSettingsForm } from "@/components/content/enhancement-settings-form";
 import { OrgEnhancementPolicyForm } from "@/components/content/org-enhancement-policy-form";
 import { formatCurrency } from "@/lib/format";
+import { ADMIN_ENHANCEMENTS_COPY } from "./enhancements-copy";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -28,35 +29,35 @@ export default async function AdminEnhancementsPage() {
   return (
     <PageShell width="wide">
       <PageHeader
-        title="Enhancements"
-        description="What a shop may improve in a month, and what the platform will spend in a day."
+        title={ADMIN_ENHANCEMENTS_COPY.title}
+        description={ADMIN_ENHANCEMENTS_COPY.description}
       />
 
       <Card className="gap-4 p-4 sm:p-6">
         <div className="space-y-1">
-          <h2 className="font-heading text-title font-semibold">The platform’s numbers</h2>
+          <h2 className="font-heading text-title font-semibold">{ADMIN_ENHANCEMENTS_COPY.platformTitle}</h2>
           <p className="text-small text-muted-foreground">
             {settings.configured
-              ? "Changing these takes effect on the next request — no deploy."
-              : "Nothing has been saved yet, so these are the numbers the code falls back to. Saving makes them the platform's."}
+              ? ADMIN_ENHANCEMENTS_COPY.configured
+              : ADMIN_ENHANCEMENTS_COPY.unconfigured}
           </p>
         </div>
 
         <EnhancementSettingsForm settings={settings} />
 
         <p className={`text-small ${capReached ? "text-destructive" : "text-muted-foreground"}`}>
-          Spent today: <strong>{formatCurrency(spentTodayPaise)}</strong> of{" "}
+          {ADMIN_ENHANCEMENTS_COPY.spentToday} <strong>{formatCurrency(spentTodayPaise)}</strong> {ADMIN_ENHANCEMENTS_COPY.of}{" "}
           {formatCurrency(settings.dailyCapPaise)}
-          {capReached && " — enhancement is stopped for every shop until tomorrow."}
+          {capReached && ADMIN_ENHANCEMENTS_COPY.capReached}
         </p>
       </Card>
 
       <section className="space-y-3">
-        <h2 className="font-heading text-title font-semibold">Shops this month</h2>
+        <h2 className="font-heading text-title font-semibold">{ADMIN_ENHANCEMENTS_COPY.shopsTitle}</h2>
 
         {orgs.length === 0 ? (
           <p className="text-small text-muted-foreground">
-            No shop has improved a photo this month, and none has a rule of its own.
+            {ADMIN_ENHANCEMENTS_COPY.noShops}
           </p>
         ) : (
           <ul className="grid gap-3 md:grid-cols-2">
@@ -70,24 +71,24 @@ export default async function AdminEnhancementsPage() {
                         {org.code}
                       </p>
                     </div>
-                    {org.paused && <StatusBadge tone="destructive">Paused</StatusBadge>}
+                    {org.paused && <StatusBadge tone="destructive">{ADMIN_ENHANCEMENTS_COPY.paused}</StatusBadge>}
                   </div>
 
                   <dl className="grid grid-cols-2 gap-2 text-small">
                     <div>
                       <dt className="text-2xs uppercase tracking-eyebrow text-muted-foreground">
-                        Used
+                        {ADMIN_ENHANCEMENTS_COPY.used}
                       </dt>
                       <dd className="font-medium">
-                        {org.used} of {org.monthlyAllowance}
+                        {ADMIN_ENHANCEMENTS_COPY.usedOf(org.used, org.monthlyAllowance)}
                         {org.monthlyAllowanceOverride !== null && (
-                          <span className="text-muted-foreground"> · its own</span>
+                          <span className="text-muted-foreground">{ADMIN_ENHANCEMENTS_COPY.ownRule}</span>
                         )}
                       </dd>
                     </div>
                     <div>
                       <dt className="text-2xs uppercase tracking-eyebrow text-muted-foreground">
-                        Cost
+                        {ADMIN_ENHANCEMENTS_COPY.cost}
                       </dt>
                       <dd className="font-medium">{formatCurrency(org.spentPaise)}</dd>
                     </div>

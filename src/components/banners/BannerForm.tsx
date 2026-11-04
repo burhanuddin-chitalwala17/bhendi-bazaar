@@ -21,6 +21,8 @@ import { ImageSlotField } from "@/components/shared/image-slot/image-slot-field"
 import { uploadApiClient } from "@/components/shared/uploadApiClient";
 import { IMAGE_SLOT } from "@server/catalog/image-slots";
 import { bannersApiClient } from "./bannersApiClient";
+import { BANNER_FORM_COPY } from "./banner-copy";
+import { ROUTES } from "@server/shared/routes";
 
 const EMPTY: BannerFormSchemaInput = {
   title: null,
@@ -46,10 +48,10 @@ export function BannerForm({
   const form = useServerForm<BannerFormSchemaInput>({
     schema: bannerFormSchema,
     defaultValues: initial ?? EMPTY,
-    successMessage: "Banner saved",
+    successMessage: BANNER_FORM_COPY.saved,
     submit: (data) => bannersApiClient.save(action, method, data),
     onSuccess: () => {
-      router.push("/admin/banners");
+      router.push(ROUTES.admin.banners);
       router.refresh();
     },
   });
@@ -75,38 +77,38 @@ export function BannerForm({
 
       <FormField
         id={fieldId("eyebrow")}
-        label="Eyebrow"
+        label={BANNER_FORM_COPY.eyebrow}
         error={errors.eyebrow?.message}
-        hint="The small line above the headline."
+        hint={BANNER_FORM_COPY.eyebrowHint}
       >
-        <Input id={fieldId("eyebrow")} {...form.register("eyebrow")} placeholder="The Abaya Edit" />
+        <Input id={fieldId("eyebrow")} {...form.register("eyebrow")} placeholder={BANNER_FORM_COPY.eyebrowPlaceholder} />
       </FormField>
 
       <FormField
         id={fieldId("title")}
-        label="Headline"
+        label={BANNER_FORM_COPY.headline}
         error={errors.title?.message}
-        hint="Leave it blank for artwork that already carries its own words — the banner then shows the picture alone, with no shading over it."
+        hint={BANNER_FORM_COPY.headlineHint}
       >
         <Input
           id={fieldId("title")}
           {...form.register("title")}
-          placeholder="Cut for the everyday…"
+          placeholder={BANNER_FORM_COPY.headlinePlaceholder}
         />
       </FormField>
 
       <FormField
         id={fieldId("description")}
-        label="Description"
+        label={BANNER_FORM_COPY.description}
         error={errors.description?.message}
-        hint="Two lines on a phone, three on desktop — anything longer is clipped."
+        hint={BANNER_FORM_COPY.descriptionHint}
       >
         <Textarea id={fieldId("description")} rows={3} {...form.register("description")} />
       </FormField>
 
       <ImageSlotField
         slot={IMAGE_SLOT.HOME_BANNER}
-        label="Background picture"
+        label={BANNER_FORM_COPY.picture}
         value={image ?? null}
         onChange={(next) => form.setValue("image", next, { shouldDirty: true })}
         upload={async (file) => {
@@ -119,9 +121,9 @@ export function BannerForm({
       {image && (
         <FormField
           id={fieldId("imageAlt")}
-          label="Image description"
+          label={BANNER_FORM_COPY.imageAlt}
           error={errors.imageAlt?.message}
-          hint="What the picture shows, for a shopper using a screen reader."
+          hint={BANNER_FORM_COPY.imageAltHint}
         >
           <Input id={fieldId("imageAlt")} {...form.register("imageAlt")} />
         </FormField>
@@ -129,7 +131,7 @@ export function BannerForm({
 
       <fieldset className="space-y-3">
         <legend className="text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground">
-          Buttons
+          {BANNER_FORM_COPY.buttons}
         </legend>
         {fields.map((field, index) => (
           <div
@@ -138,7 +140,7 @@ export function BannerForm({
           >
             <FormField
               id={fieldId(`actions-${index}-label`)}
-              label="Label"
+              label={BANNER_FORM_COPY.buttonLabel}
               required
               className="sm:flex-1"
               error={errors.actions?.[index]?.label?.message}
@@ -146,12 +148,12 @@ export function BannerForm({
               <Input
                 id={fieldId(`actions-${index}-label`)}
                 {...form.register(`actions.${index}.label`)}
-                placeholder="Shop Abayas"
+                placeholder={BANNER_FORM_COPY.buttonLabelPlaceholder}
               />
             </FormField>
             <FormField
               id={fieldId(`actions-${index}-href`)}
-              label="Destination"
+              label={BANNER_FORM_COPY.destination}
               required
               className="sm:flex-1"
               error={errors.actions?.[index]?.href?.message}
@@ -159,25 +161,23 @@ export function BannerForm({
               <Input
                 id={fieldId(`actions-${index}-href`)}
                 {...form.register(`actions.${index}.href`)}
-                // What an admin will actually paste. Stored as the path, so the origin
-                // in this example never reaches the database.
-                placeholder="https://bhendi-bazaar.com/category/abayas"
+                placeholder={BANNER_FORM_COPY.destinationPlaceholder}
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
               />
             </FormField>
-            <FormField id={fieldId(`actions-${index}-variant`)} label="Style" className="sm:w-40">
+            <FormField id={fieldId(`actions-${index}-variant`)} label={BANNER_FORM_COPY.style} className="sm:w-40">
               <Select id={fieldId(`actions-${index}-variant`)} {...form.register(`actions.${index}.variant`)}>
-                <option value="PRIMARY">Filled</option>
-                <option value="SECONDARY">Outlined</option>
+                <option value="PRIMARY">{BANNER_FORM_COPY.styleFilled}</option>
+                <option value="SECONDARY">{BANNER_FORM_COPY.styleOutlined}</option>
               </Select>
             </FormField>
             <Button
               type="button"
               variant="outline"
               shape="icon"
-              aria-label={`Remove button ${index + 1}`}
+              aria-label={BANNER_FORM_COPY.removeButton(index + 1)}
               onClick={() => remove(index)}
               className="h-10 w-full sm:h-9 sm:w-9"
             >
@@ -192,7 +192,7 @@ export function BannerForm({
             onClick={() => append({ label: "", href: "", variant: "PRIMARY" })}
             className="h-10 w-full rounded-full text-2xs font-semibold uppercase tracking-eyebrow sm:w-auto"
           >
-            <Icon name="add" /> Add button
+            <Icon name="add" /> {BANNER_FORM_COPY.addButton}
           </Button>
         )}
         {errors.actions?.message && (
@@ -202,8 +202,8 @@ export function BannerForm({
 
       <FormField
         id={fieldId("isActive")}
-        label="Live on the storefront"
-        hint="Turn off to take it down without losing it."
+        label={BANNER_FORM_COPY.live}
+        hint={BANNER_FORM_COPY.liveHint}
       >
         <Switch
           id={fieldId("isActive")}
@@ -215,9 +215,9 @@ export function BannerForm({
       </FormField>
 
       <FormActions
-        onCancel={() => router.push("/admin/banners")}
+        onCancel={() => router.push(ROUTES.admin.banners)}
         isSubmitting={form.isSubmitting}
-        submitLabel="Save banner"
+        submitLabel={BANNER_FORM_COPY.save}
       />
     </form>
   );

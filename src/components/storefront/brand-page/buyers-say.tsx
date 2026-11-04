@@ -4,6 +4,8 @@ import { ReviewStars } from "@/components/product/review-stars";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Badge } from "@/components/ui/badge";
 import type { BuyersSaySlice } from "./sections";
+import { BRAND_PAGE_COPY } from "./brand-page-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * The shop's newest published reviews, as the product pages show them (brand-page R1, A3a):
@@ -17,7 +19,7 @@ import type { BuyersSaySlice } from "./sections";
 export function BuyersSay({ reviews }: BuyersSaySlice) {
   return (
     <section className="space-y-3">
-      <SectionHeader overline="The shop" title="What buyers say" />
+      <SectionHeader overline={BRAND_PAGE_COPY.overline} title={BRAND_PAGE_COPY.buyersSay} />
       <ul className="grid gap-3 md:grid-cols-3">
         {reviews.map((review) => (
           <li
@@ -29,7 +31,7 @@ export function BuyersSay({ reviews }: BuyersSaySlice) {
               <p className="text-2xs font-medium sm:text-xs">{review.authorName}</p>
               {review.isVerifiedPurchase && (
                 <Badge variant="secondary" className="text-2xs sm:text-2xs">
-                  Verified purchase
+                  {BRAND_PAGE_COPY.verifiedPurchase}
                 </Badge>
               )}
             </div>
@@ -41,7 +43,7 @@ export function BuyersSay({ reviews }: BuyersSaySlice) {
             <p className="text-2xs text-muted-foreground">
               On{" "}
               <Link
-                href={`/product/${review.product.slug}`}
+                href={ROUTES.product(review.product.slug)}
                 prefetch={false}
                 className="font-medium text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
               >

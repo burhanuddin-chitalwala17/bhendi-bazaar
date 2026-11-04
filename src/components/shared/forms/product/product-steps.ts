@@ -1,13 +1,15 @@
 import type { FieldErrors } from "react-hook-form";
 import { PRODUCT_FORM_FIELDS } from "@/lib/validation/schemas/product.schema";
+import { PRODUCT_STEP_COPY } from "@/components/shared/forms/product/product-copy";
+export { FIELD_LABEL } from "@/components/shared/forms/product/product-copy";
 
 /** The five steps of a new product, in order (product-form Q2, Q20). */
 export const PRODUCT_STEPS = [
-  { key: "photos", label: "Photos and video" },
-  { key: "what", label: "What it is" },
-  { key: "price", label: "Price & stock" },
-  { key: "details", label: "Details" },
-  { key: "review", label: "Review" },
+  { key: "photos", label: PRODUCT_STEP_COPY.photos },
+  { key: "what", label: PRODUCT_STEP_COPY.what },
+  { key: "price", label: PRODUCT_STEP_COPY.price },
+  { key: "details", label: PRODUCT_STEP_COPY.details },
+  { key: "review", label: PRODUCT_STEP_COPY.review },
 ] as const;
 
 export type ProductStepKey = (typeof PRODUCT_STEPS)[number]["key"];
@@ -90,36 +92,9 @@ export function firstStepWithError(errors: FieldErrors): ProductStepKey | null {
 
 /** "1 thing to fix" / "2 things to fix" (ux.md copy deck). */
 export function thingsToFix(count: number): string {
-  return `${count} ${count === 1 ? "thing" : "things"} to fix`;
+  return PRODUCT_STEP_COPY.thingsToFix(count);
 }
 
-/** Each field as the shop reads it, for "your changes to …" (product-form D8, D10). Typed like FIELD_STEP. */
-export const FIELD_LABEL: Record<FormField, string> = {
-  media: "Photos and video",
-  name: "Name",
-  description: "Description",
-  categoryId: "Category",
-  tags: "Tags",
-  flags: "Flags",
-  familyId: "Family",
-  price: "Price",
-  salePrice: "Sale price",
-  currency: "Currency",
-  orgId: "Shop",
-  stockLocations: "Stock",
-  weight: "Packed weight",
-  sku: "SKU",
-  mrp: "MRP",
-  barcode: "Barcode",
-  keyFeatures: "Key features",
-  lowStockThreshold: "Low-stock alert",
-  kind: "Kind",
-  brandId: "Brand",
-  facts: "Details",
-  measurements: "Measurements",
-  sizes: "Sizes",
-  colors: "Colours",
-};
 
 /** The form's own fields among some top-level keys, in schema order (a dirty map, a set of re-applied fields). */
 export function formFieldsIn(keys: Iterable<string>): FormField[] {
@@ -133,7 +108,7 @@ export function stepsOf(fields: readonly FormField[]): Exclude<ProductStepKey, "
   return PRODUCT_STEPS.map((step) => step.key).filter((key): key is Exclude<ProductStepKey, "review"> => held.has(key as never));
 }
 
-/** "Price & stock", "Price & stock and Details", "Photos and video, Price & stock and Details". */
+/** PRODUCT_STEP_COPY.price, "Price & stock and Details", "Photos and video, Price & stock and Details". */
 export function joinWords(words: readonly string[]): string {
   if (words.length <= 1) return words[0] ?? "";
   return `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;

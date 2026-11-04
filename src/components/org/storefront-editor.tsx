@@ -21,6 +21,8 @@ import {
   HIDEABLE_BRAND_PAGE_SECTIONS,
   type HideableBrandPageSection,
 } from "@server/catalog/brand-page-sections";
+import { STOREFRONT_EDITOR_COPY } from "./storefront-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export interface StorefrontSettings {
   handle: string;
@@ -33,10 +35,10 @@ export interface StorefrontSettings {
 
 /** What a shop calls each part it may switch off; the keys are for the code. */
 const SECTION_LABELS: Record<HideableBrandPageSection, string> = {
-  story: "About the shop",
-  brands: "Brands you carry",
-  policies: "Delivery and returns",
-  social: "Ways to follow you",
+  story: STOREFRONT_EDITOR_COPY.sectionStory,
+  brands: STOREFRONT_EDITOR_COPY.sectionBrands,
+  policies: STOREFRONT_EDITOR_COPY.sectionPolicies,
+  social: STOREFRONT_EDITOR_COPY.sectionSocial,
 };
 
 function storedHidden(value: unknown): HideableBrandPageSection[] {
@@ -82,7 +84,7 @@ export function StorefrontEditor({
       expectedUpdatedAt: settings.updatedAt,
       hiddenSections: storedHidden(settings.hiddenSections),
     },
-    successMessage: "Storefront saved.",
+    successMessage: STOREFRONT_EDITOR_COPY.saved,
     // The cover is managed outside the form's state by ImageUpload, so it is merged in here.
     submit: async (data) => {
       const saved = await orgStorefrontApiClient.saveSettings(orgId, { ...data, heroUrl });
@@ -97,21 +99,18 @@ export function StorefrontEditor({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Your address</CardTitle>
+          <CardTitle>{STOREFRONT_EDITOR_COPY.address}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            This is the link you share. It works on a card, in a message, or in
-            an advertisement.
-          </p>
+          <p className="text-sm text-muted-foreground">{STOREFRONT_EDITOR_COPY.addressHint}</p>
           <div className="flex flex-wrap items-center gap-2">
             <code className="rounded-field bg-muted px-2 py-1 text-sm">
-              /store/{settings.handle}
+              {ROUTES.store(settings.handle)}
             </code>
             <Button asChild variant="ghost" size="sm">
-              <Link href={`/store/${settings.handle}`} target="_blank">
+              <Link href={ROUTES.store(settings.handle)} target="_blank">
                 <Icon name="external" />
-                Open
+                {STOREFRONT_EDITOR_COPY.open}
               </Link>
             </Button>
             <HandleChangeDialog
@@ -125,9 +124,8 @@ export function StorefrontEditor({
 
       <form onSubmit={onSubmit} className="space-y-6">
         <p className="text-2xs text-muted-foreground">
-          Everything below is saved together by the button at the end. Your logo, the line about
-          your shop and everything buyers read about you are on{" "}
-          <Link href={`/org/${orgId}/shop/details`} className="underline">Shop details</Link>.
+          {STOREFRONT_EDITOR_COPY.savedTogether}{" "}
+          <Link href={ROUTES.org.shopDetails(orgId)} className="underline">{STOREFRONT_EDITOR_COPY.shopDetails}</Link>.
         </p>
         {formError && (
           <p className="rounded-field bg-destructive/10 p-3 text-sm text-destructive">
@@ -137,11 +135,11 @@ export function StorefrontEditor({
 
         <Card>
           <CardHeader>
-            <CardTitle>Your shop&apos;s look</CardTitle>
+            <CardTitle>{STOREFRONT_EDITOR_COPY.look}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <ImageUpload
-              label="Cover image — the picture at the top of your About page"
+              label={STOREFRONT_EDITOR_COPY.cover}
               value={heroUrl ? [heroUrl] : []}
               onChange={(urls) => setHeroUrl(urls[0] ?? "")}
               maxImages={1}
@@ -152,18 +150,14 @@ export function StorefrontEditor({
 
         <Card>
           <CardHeader>
-            <CardTitle>What to leave out</CardTitle>
+            <CardTitle>{STOREFRONT_EDITOR_COPY.leaveOut}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-2xs text-muted-foreground">
-              Anything you have written is yours to withhold. What buyers said, what you
-              have sold and the goods themselves are not switched off here — those are
-              their account of you, not your claim about yourself.
-            </p>
+            <p className="text-2xs text-muted-foreground">{STOREFRONT_EDITOR_COPY.leaveOutHint}</p>
             {HIDEABLE_BRAND_PAGE_SECTIONS.map((section) => (
               <Checkbox
                 key={section}
-                label={`Hide “${SECTION_LABELS[section]}”`}
+                label={STOREFRONT_EDITOR_COPY.hide(SECTION_LABELS[section])}
                 value={section}
                 {...register("hiddenSections")}
               />
@@ -178,7 +172,7 @@ export function StorefrontEditor({
 
         <FormActions
           isSubmitting={isSubmitting}
-          submitLabel="Save storefront"
+          submitLabel={STOREFRONT_EDITOR_COPY.save}
           onCancel={() => router.refresh()}
         />
       </form>

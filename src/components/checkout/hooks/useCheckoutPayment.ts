@@ -11,6 +11,8 @@ import type { CartItem, CartTotals } from "@/domain/cart";
 import type { ShippingGroup } from "@/domain/shipping";
 import { DeliveryAddress } from "@/domain/profile";
 import { ApiError } from "@/lib/api-error";
+import { ROUTES } from "@server/shared/routes";
+import { CHECKOUT_PAYMENT_ERROR_COPY } from "@/components/checkout/checkout-copy";
 
 interface ProcessPaymentInput {
   items: CartItem[];
@@ -71,7 +73,7 @@ export function useCheckoutPayment() {
         shippingGroups: orderData.shippingGroups.map((group) => {
           if (!group.selectedRate) {
             throw new Error(
-              "Select a shipping option for every parcel before paying.",
+              CHECKOUT_PAYMENT_ERROR_COPY.noRate,
             );
           }
           return {
@@ -114,7 +116,7 @@ export function useCheckoutPayment() {
       if (amountInMinorUnit <= 0) {
         await paymentGatewayApiClient.confirmFreeOrder(order.id);
         useCartStore.getState().removeLines(allItems);
-        router.push(`/order/${order.id}`);
+        router.push(ROUTES.order(order.id));
         return order;
       }
 
@@ -155,7 +157,7 @@ export function useCheckoutPayment() {
             // included — anything else in the cart stays (seamless-sign-in D12).
             useCartStore.getState().removeLines(allItems);
 
-            router.push(`/order/${order.id}`);
+            router.push(ROUTES.order(order.id));
           } catch (error) {
             console.error("Failed to process after payment:", error);
             setError(
@@ -208,7 +210,7 @@ export function useCheckoutPayment() {
       if (error instanceof Error && error.message.includes("Too many")) {
         setError(error.message);
       } else {
-        setError(error instanceof Error ? error.message : "Checkout failed");
+        setError(error instanceof Error ? error.message : CHECKOUT_PAYMENT_ERROR_COPY.failed);
       }
 
       setIsProcessing(false);

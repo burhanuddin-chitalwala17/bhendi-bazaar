@@ -9,6 +9,7 @@ import { SkeletonTiles } from "@/components/shared/states/skeletons";
 import { useState } from "react";
 import { ConnectProviderModal } from "./component/ConnectProviderModal";
 import type { ConnectionRequestBody } from "./types";
+import { PROVIDERS_CONSOLE_COPY } from "./providers-console-copy";
 /**
  * Container Component
  *
@@ -76,7 +77,7 @@ export function ProvidersContainer() {
 
   if (isLoading) {
     return (
-      <div role="status" aria-label="Loading shipping providers">
+      <div role="status" aria-label={PROVIDERS_CONSOLE_COPY.loadingShippingProviders}>
         <SkeletonTiles count={3} />
       </div>
     );
@@ -85,7 +86,7 @@ export function ProvidersContainer() {
   if (error && providers.length === 0) {
     return (
       <ErrorState
-        title="Shipping providers didn't load"
+        title={PROVIDERS_CONSOLE_COPY.shippingProvidersDidnT}
         description={error}
         onRetry={refreshProviders}
       />
@@ -95,8 +96,8 @@ export function ProvidersContainer() {
   if (providers.length === 0) {
     return (
       <EmptyState
-        title="No shipping providers yet"
-        description="A provider is registered by a data migration; once one exists, connect its account here."
+        title={PROVIDERS_CONSOLE_COPY.noShippingProvidersYet}
+        description={PROVIDERS_CONSOLE_COPY.providerRegisteredDataMigration}
       />
     );
   }

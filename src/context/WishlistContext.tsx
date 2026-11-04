@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useAuthSheet } from "@/context/AuthSheetContext";
 import { wishlistApiClient } from "@/components/wishlist/wishlistApiClient";
+import { WISHLIST_CONTEXT_COPY } from "./context-copy";
 
 interface WishlistContextValue {
   isSaved: (productId: string) => boolean;
@@ -75,7 +76,7 @@ export function WishlistProvider({
       // The save finishes after sign-in as a save, never this toggle (seamless-sign-in D6, D8).
       if (status === "guest") {
         openAuthSheet({
-          reason: "Sign in to save this",
+          reason: WISHLIST_CONTEXT_COPY.signInToSave,
           intent: { kind: "wishlist.save", productId },
         });
         return;
@@ -100,7 +101,7 @@ export function WishlistProvider({
         // After the write, not alongside the optimistic fill: a toast that says
         // "Added" and is followed by an error toast when the write fails has told
         // the user two contradictory things about the same tap.
-        if (!wasSaved) toast.success("Added to wishlist");
+        if (!wasSaved) toast.success(WISHLIST_CONTEXT_COPY.addedToWishlist);
       } catch (error) {
         setSaved((current) => {
           const next = new Set(current);
@@ -111,7 +112,7 @@ export function WishlistProvider({
         toast.error(
           error instanceof Error
             ? error.message
-            : "Could not update your wishlist. Please try again.",
+            : WISHLIST_CONTEXT_COPY.couldNotUpdate,
         );
       } finally {
         setPending((current) => {

@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { MORE_TAB, PORTAL_NAV, activeTabKey, portalHref, type PortalNavKey } from "@/components/layout/portal-nav";
+import { ORG_TAB_BAR_COPY } from "./layout-copy";
+import { ROUTES } from "@server/shared/routes";
 
 // The shop's phone navigation: Home · Products · Orders · Earnings, then More, which opens the
 // grouped list. Same shape as the storefront's bar; hidden from md.
@@ -38,7 +40,7 @@ export function OrgTabBar({
 
   return (
     <nav
-      aria-label="Shop"
+      aria-label={ORG_TAB_BAR_COPY.shop}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 pb-safe backdrop-blur md:hidden"
     >
       <div className="flex h-tabbar items-stretch">
@@ -50,7 +52,7 @@ export function OrgTabBar({
             <Link
               key={tab.key}
               prefetch={false}
-              href={portalHref(tab, orgId) ?? `/org/${orgId}`}
+              href={portalHref(tab, orgId) ?? ROUTES.org.home(orgId)}
               aria-current={isActive ? "page" : undefined}
               aria-label={count > 0 ? `${label}, ${count} waiting` : undefined}
               className={cn(TAB_CLASSES, tabTone(isActive))}
@@ -78,7 +80,7 @@ export function OrgTabBar({
           className={cn(TAB_CLASSES, tabTone(moreOpen || active === MORE_TAB))}
         >
           <Icon name="menu" size="md" />
-          More
+          {ORG_TAB_BAR_COPY.more}
         </Button>
       </div>
     </nav>

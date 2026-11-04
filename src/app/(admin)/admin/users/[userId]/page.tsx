@@ -7,6 +7,8 @@ import { Money } from "@/components/shared/Money";
 import { UserBlockToggle } from "@/components/profile/console/UserBlockToggle";
 import { formatDay } from "@/lib/format";
 import { PLATFORM_ROLE } from "@server/identity/admin.user.types";
+import { ADMIN_USERS_COPY } from "../users-copy";
+import { ROUTES } from "@server/shared/routes";
 
 function Fact({ icon, label, children }: { icon: IconName; label: string; children: React.ReactNode }) {
   return (
@@ -30,39 +32,39 @@ export default async function AdminUserDetailPage({
   return (
     <PageShell width="default">
       <PageHeader
-        title={user.name || "Unnamed user"}
+        title={user.name || ADMIN_USERS_COPY.unnamed}
         description={user.email || user.mobile || user.id}
-        back={{ href: "/admin/users", label: "Users" }}
+        back={{ href: ROUTES.admin.users, label: ADMIN_USERS_COPY.back }}
       />
 
       <div className="grid gap-6 md:grid-cols-2">
         <section className="space-y-4 rounded-card border border-border bg-card p-6">
           <h2 className="text-label uppercase text-muted-foreground">
-            Profile
+            {ADMIN_USERS_COPY.profile}
           </h2>
           <dl className="space-y-3 text-small">
-            <Fact icon="account" label="Name">{user.name || "—"}</Fact>
-            <Fact icon="email" label="Email">{user.email || "—"}</Fact>
-            <Fact icon="phone" label="Mobile">{user.mobile || "—"}</Fact>
-            <Fact icon="secure" label="Role">
+            <Fact icon="account" label={ADMIN_USERS_COPY.name}>{user.name || ADMIN_USERS_COPY.none}</Fact>
+            <Fact icon="email" label={ADMIN_USERS_COPY.email}>{user.email || ADMIN_USERS_COPY.none}</Fact>
+            <Fact icon="phone" label={ADMIN_USERS_COPY.mobile}>{user.mobile || ADMIN_USERS_COPY.none}</Fact>
+            <Fact icon="secure" label={ADMIN_USERS_COPY.role}>
               <StatusBadge tone={user.platformRole === PLATFORM_ROLE.ADMIN ? "info" : "neutral"}>
-                {user.platformRole === PLATFORM_ROLE.ADMIN ? "Admin" : "Buyer"}
+                {user.platformRole === PLATFORM_ROLE.ADMIN ? ADMIN_USERS_COPY.admin : ADMIN_USERS_COPY.buyer}
               </StatusBadge>
             </Fact>
-            <Fact icon="calendar" label="Joined">{formatDay(user.createdAt)}</Fact>
+            <Fact icon="calendar" label={ADMIN_USERS_COPY.joined}>{formatDay(user.createdAt)}</Fact>
           </dl>
         </section>
 
         <div className="space-y-6">
           <section className="space-y-4 rounded-card border border-border bg-card p-6">
             <h2 className="text-label uppercase text-muted-foreground">
-              Activity
+              {ADMIN_USERS_COPY.activity}
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
                   <Icon name="orders" />
-                  <span className="text-caption">Orders</span>
+                  <span className="text-caption">{ADMIN_USERS_COPY.orders}</span>
                 </div>
                 <p className="mt-1 font-heading text-headline font-semibold tabular-nums">
                   {user.ordersCount ?? 0}
@@ -70,7 +72,7 @@ export default async function AdminUserDetailPage({
               </div>
               <div className="text-center">
                 <span className="text-caption text-muted-foreground">
-                  Total spent
+                  {ADMIN_USERS_COPY.totalSpent}
                 </span>
                 <div className="mt-1">
                   <Money paise={user.totalSpent ?? 0} className="font-heading text-headline font-semibold" />
@@ -78,14 +80,14 @@ export default async function AdminUserDetailPage({
               </div>
             </div>
             <div className="text-caption text-muted-foreground">
-              Last active:{" "}
+              {ADMIN_USERS_COPY.lastActive}{" "}
               {formatDay(user.lastActiveAt)}
             </div>
           </section>
 
           <section className="space-y-4 rounded-card border border-border bg-card p-6">
             <h2 className="text-label uppercase text-muted-foreground">
-              Actions
+              {ADMIN_USERS_COPY.actions}
             </h2>
             <UserBlockToggle userId={user.id} isBlocked={user.isBlocked} />
           </section>

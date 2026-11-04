@@ -7,6 +7,7 @@
 
 import { useState } from "react";
 import { Icon } from "./icon";
+import { MULTI_SELECT_COPY } from "@/components/ui/ui-copy";
 
 interface MultiSelectProps {
   label: string;
@@ -19,7 +20,7 @@ export function MultiSelect({
   label,
   value,
   onChange,
-  placeholder = "Type and press Enter",
+  placeholder = MULTI_SELECT_COPY.placeholder,
 }: MultiSelectProps) {
   const [inputValue, setInputValue] = useState("");
 

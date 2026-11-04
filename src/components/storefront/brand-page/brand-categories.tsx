@@ -1,6 +1,8 @@
 import { CategoryLanes } from "@/components/category/category-lanes";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import type { CategoriesSlice } from "./sections";
+import { BRAND_PAGE_COPY } from "./brand-page-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * What they sell, as the storefront's own category rail (brand-page D5). A tile narrows
@@ -10,10 +12,10 @@ import type { CategoriesSlice } from "./sections";
 export function BrandCategories({ handle, categories }: CategoriesSlice) {
   return (
     <section className="space-y-3">
-      <SectionHeader overline="The shop" title="What they sell" />
+      <SectionHeader overline={BRAND_PAGE_COPY.overline} title={BRAND_PAGE_COPY.whatTheySell} />
       <CategoryLanes
         categories={categories}
-        hrefFor={(category) => `/store/${handle}?category=${category.slug}`}
+        hrefFor={(category) => `${ROUTES.store(handle)}?category=${category.slug}`}
       />
     </section>
   );

@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 import { GoogleIcon } from "@/components/shared/GoogleIcon";
+import { AUTH_COPY } from "./auth-copy";
 
 /**
  * Continue with Google. The trip leaves the page, so a host with something to finish
@@ -27,7 +28,7 @@ export function GoogleSignInButton({
       className="h-10 w-full rounded-full text-caption font-semibold uppercase tracking-eyebrow"
     >
       <GoogleIcon />
-      Continue with Google
+      {AUTH_COPY.continueWithGoogle}
     </Button>
   );
 }

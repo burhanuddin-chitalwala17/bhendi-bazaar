@@ -18,6 +18,7 @@ import { AskAdminPicker } from "./ask-admin-picker";
 import { ASK_ADMIN } from "./facts-copy";
 import { PROBLEMS } from "./platform-listing-copy";
 import { Button } from "@/components/ui/button";
+import { ROUTES } from "@server/shared/routes";
 
 interface ListingRowProps {
   orgId: string;
@@ -75,7 +76,7 @@ export function ListingRow({ orgId, shopName, channel, label, listing, href, ind
       {/* The fix is the listing screen's: the reason on its field, then Review and publish (Q23). */}
       {!listing.gone && listing.product && listing.problems && (
         <Button asChild size="sm" className="min-h-10">
-          <Link href={`/org/${orgId}/products/${listing.product.id}/listings/${channel}`}>{PROBLEMS.fix}</Link>
+          <Link href={ROUTES.org.productListing(orgId, listing.product.id, channel)}>{PROBLEMS.fix}</Link>
         </Button>
       )}
       {!listing.gone && listing.product && (

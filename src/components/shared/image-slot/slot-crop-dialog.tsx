@@ -9,6 +9,8 @@ import { Icon } from "@/components/ui/icon";
 import { TaskDialog } from "@/components/shared/overlays/task-dialog";
 import type { FractionRect } from "@server/catalog/image-slots";
 import { optimizedUrl } from "./measure";
+import { SLOT_CROP_DIALOG_COPY } from "./image-slot-copy";
+import { SLOT_CROP_HINT_COPY } from "@/components/shared/image-slot/image-slot-copy";
 
 /** Wide enough to frame by eye; fractions survive any width (trd D4). */
 const FRAME_SOURCE_WIDTH = 1200;
@@ -38,7 +40,7 @@ export function SlotCropDialog({
     <TaskDialog
       open={src !== null}
       onOpenChange={(open) => !open && onCancel()}
-      title="Keep it exact"
+      title={SLOT_CROP_DIALOG_COPY.keepItExact}
       description={`Crop to ${shapeLabel}. Drag to choose what stays.`}
     >
       {src && <Frame key={src} src={src} aspect={aspect} initial={initial} onUse={onUse} />}
@@ -84,18 +86,18 @@ function Frame({
       </div>
       <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-small text-muted-foreground" role={hint ? "status" : undefined}>
-          {hint ?? "Drag the picture to choose what stays."}
+          {hint ?? SLOT_CROP_HINT_COPY.drag}
         </p>
         <Button
           type="button"
           size="lg"
           onClick={() => {
-            if (!area) return setHint("Wait for the picture to load");
+            if (!area) return setHint(SLOT_CROP_HINT_COPY.wait);
             onUse({ x: area.x / 100, y: area.y / 100, width: area.width / 100, height: area.height / 100 });
           }}
         >
           <Icon name="done" />
-          Use this crop
+          {SLOT_CROP_DIALOG_COPY.useThisCrop}
         </Button>
       </div>
     </>

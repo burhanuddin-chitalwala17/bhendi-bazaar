@@ -14,6 +14,7 @@ import { TEAM_HISTORY_ANCHOR } from "@/components/product/team/team-edit-copy";
 import { productTeamDAL } from "@/data-access-layer/org/product-team.dal";
 import { reviewsDAL } from "@/data-access-layer/reviews.dal";
 import { ProductReviewsSection, ProductReviewsSkeleton, type ProductReviewsRead } from "@/components/org/product-reviews-section";
+import { ROUTES } from "@server/shared/routes";
 
 export default async function OrgProductViewPage({
   params,
@@ -87,5 +88,5 @@ async function ProductReviewsData({ productId, orgId }: { productId: string; org
     console.error("[product] reviews read failed", { productId, error });
     read = { ok: false };
   }
-  return <ProductReviewsSection read={read} allReviewsHref={`/org/${orgId}/reviews`} />;
+  return <ProductReviewsSection read={read} allReviewsHref={ROUTES.org.reviews(orgId)} />;
 }

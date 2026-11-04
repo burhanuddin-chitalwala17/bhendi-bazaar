@@ -6,6 +6,7 @@
 
 import type { CartItem } from "@/domain/cart";
 import { ShippingGroup } from "@/domain/shipping";
+import { SHIPPING_METHOD_COPY } from "@/domain/shipping-copy";
 import { formatDate } from "@/lib/format";
 
 /**
@@ -44,13 +45,7 @@ export function formatDeliveryDate(date: Date): string {
  * Get shipping method display name
  */
 export function getShippingMethodName(mode: string): string {
-  const names: Record<string, string> = {
-    STANDARD: "Standard Delivery",
-    EXPRESS: "Express Delivery",
-    ECONOMY: "Economy Delivery",
-    SAME_DAY: "Same Day Delivery",
-  };
-  return names[mode] || mode;
+  return SHIPPING_METHOD_COPY[mode] || mode;
 }
 
 

@@ -5,6 +5,8 @@ import { percentOff, type Product } from "@/domain/product";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { WishlistButton } from "@/components/wishlist/wishlist-button";
 import { PriceDisplay } from "./PriceDisplay";
+import { PRODUCT_CARD_COPY } from "./shared-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * The slot a tile occupies, per PRODUCT_GRID_CLASSES: half a phone, a third of a tablet, a quarter
@@ -22,7 +24,7 @@ export function ProductCard(product: Product) {
     <div className="group relative flex flex-col gap-2.5">
       <div className="relative aspect-4/5 overflow-hidden rounded-field bg-muted">
         {/* Prefetch off: a grid puts a dozen in view and a dynamic route's prefetch is discarded unused. */}
-        <Link href={`/product/${product.slug}`} prefetch={false} className="absolute inset-0">
+        <Link href={ROUTES.product(product.slug)} prefetch={false} className="absolute inset-0">
           <Image
             src={product.thumbnail}
             alt={product.name}
@@ -32,7 +34,7 @@ export function ProductCard(product: Product) {
           />
           {soldOut && (
             <span className="absolute inset-x-0 bottom-0 bg-photo-scrim py-1.5 text-center text-caption font-semibold text-on-photo">
-              Sold out
+              {PRODUCT_CARD_COPY.soldOut}
             </span>
           )}
         </Link>
@@ -47,7 +49,7 @@ export function ProductCard(product: Product) {
         </div>
       </div>
 
-      <Link href={`/product/${product.slug}`} prefetch={false} className="flex flex-col gap-0.5">
+      <Link href={ROUTES.product(product.slug)} prefetch={false} className="flex flex-col gap-0.5">
         {product.org?.name && <span className="truncate text-caption text-muted-foreground">{product.org.name}</span>}
         <h3 className="line-clamp-2 text-small font-medium text-foreground">{product.name}</h3>
         <PriceDisplay price={product.price} salePrice={product.salePrice} size="sm" showBadge={false} className="mt-0.5" />

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { StateActionButton, type StateAction } from "./state-action";
+import { ERROR_STATE_COPY } from "@/components/shared/shared-copy";
 
 export interface ErrorStateProps {
   /** What happened, in the viewer's words: "Orders didn't load". */
@@ -21,10 +22,10 @@ export interface ErrorStateProps {
 
 /** Something failed: what happened, and one thing to do about it. */
 export function ErrorState({
-  title = "Something went wrong",
+  title = ERROR_STATE_COPY.title,
   description,
   onRetry,
-  retryLabel = "Try again",
+  retryLabel = ERROR_STATE_COPY.retry,
   action,
   as: Heading = "h2",
   className,

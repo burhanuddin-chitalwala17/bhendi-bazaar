@@ -133,3 +133,7 @@ export function timelineLine(reader: TimelineReader, entry: ParcelTimelineEntry,
   if (entry.kind === PARCEL_EVENT_KIND.ETA_CHANGED) return ETA_LINES[reader]?.(ctx, timeline) ?? null;
   return MOVE_LINES[reader][entry.status]?.(ctx) ?? label(entry.status);
 }
+
+export const PARCEL_TIMELINE_COPY = {
+  parcelTimeline: "Parcel timeline",
+} as const;

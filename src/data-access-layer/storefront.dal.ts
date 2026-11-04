@@ -7,6 +7,7 @@
  * layer, which is why nothing downstream has to remember not to print it.
  */
 
+import { STOREFRONT_DAL_COPY } from "./dal-copy";
 import { cache } from "react";
 import { orgRepository } from "@server/catalog/org.repository";
 import { orgProfileRepository } from "@server/catalog/org-profile.repository";
@@ -228,7 +229,7 @@ export const storefrontDAL = {
       image: toResponsiveImage(row, row.imageAlt ?? row.title ?? "") ?? undefined,
       // One action, labelled generically: an org sets where a promotion points, not
       // the words on the button, so there is one less field to get wrong.
-      actions: row.href ? [{ label: "Shop now", href: row.href }] : undefined,
+      actions: row.href ? [{ label: STOREFRONT_DAL_COPY.shopNow, href: row.href }] : undefined,
     }));
   }),
 

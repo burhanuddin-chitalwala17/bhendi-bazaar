@@ -17,6 +17,8 @@ import { previewOf, type ImageSlotSideValue, type ImageSlotValue } from "@server
 import { SlotCropDialog } from "./slot-crop-dialog";
 import { SlotPreview } from "./slot-preview";
 import { SlotSideCard } from "./slot-side-card";
+import { IMAGE_SLOT_FIELD_COPY } from "./image-slot-copy";
+import { IMAGE_SLOT_FIELD_LABEL_COPY } from "@/components/shared/image-slot/image-slot-copy";
 
 const STEP = 0.05;
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
@@ -63,7 +65,7 @@ export function ImageSlotField({
     <fieldset className="space-y-4">
       <legend className="text-label uppercase text-muted-foreground">{label}</legend>
       <p className="text-small text-muted-foreground">
-        Upload one or both. If a picture is a little off the shape, choose: keep it exact by cropping, or fit it in.
+        {IMAGE_SLOT_FIELD_COPY.uploadOneOrBothIf}
       </p>
 
       <div className="grid gap-3 md:grid-cols-2">
@@ -75,7 +77,7 @@ export function ImageSlotField({
           onChange={(side) => setSide(FORM_FACTOR.DESKTOP, side)}
           onCrop={() => setCropping(FORM_FACTOR.DESKTOP)}
           upload={upload}
-          uploadLabel="Upload desktop picture"
+          uploadLabel={IMAGE_SLOT_FIELD_LABEL_COPY.desktop}
         />
         <SlotSideCard
           title={`Phone · ${shapes.phone.label}`}
@@ -85,7 +87,7 @@ export function ImageSlotField({
           onChange={(side) => setSide(FORM_FACTOR.PHONE, side)}
           onCrop={() => setCropping(FORM_FACTOR.PHONE)}
           upload={upload}
-          uploadLabel="Add a phone version"
+          uploadLabel={IMAGE_SLOT_FIELD_LABEL_COPY.phone}
           emptyHint={
             current.desktop && (
               <FocusPicker
@@ -101,20 +103,20 @@ export function ImageSlotField({
       </div>
 
       {showPreview && preview && (
-        <section aria-label="Preview, before you save" className="space-y-2">
-          <h3 className="text-label uppercase text-muted-foreground">Preview, before you save</h3>
+        <section aria-label={IMAGE_SLOT_FIELD_COPY.previewBeforeYouSave} className="space-y-2">
+          <h3 className="text-label uppercase text-muted-foreground">{IMAGE_SLOT_FIELD_COPY.previewBeforeYouSave}</h3>
           <div className="grid grid-cols-3 items-end gap-3">
             <figure className="space-y-1">
               <SlotPreview side={preview.desktop} aspect={ratioOf(shapes.desktop)} sizes="(min-width: 768px) 16rem, 33vw" />
-              <figcaption className="text-caption text-muted-foreground">Desktop, 1280 wide</figcaption>
+              <figcaption className="text-caption text-muted-foreground">{IMAGE_SLOT_FIELD_COPY.desktop1280Wide}</figcaption>
             </figure>
             <figure className="space-y-1">
               <SlotPreview side={preview.desktop} aspect={ratioOf(shapes.desktop)} sizes="(min-width: 768px) 12rem, 33vw" />
-              <figcaption className="text-caption text-muted-foreground">Tablet, 834 wide</figcaption>
+              <figcaption className="text-caption text-muted-foreground">{IMAGE_SLOT_FIELD_COPY.tablet834Wide}</figcaption>
             </figure>
             <figure className="mx-auto w-2/3 space-y-1">
               <SlotPreview side={preview.phone} aspect={ratioOf(shapes.phone)} sizes="(min-width: 768px) 8rem, 22vw" />
-              <figcaption className="text-caption text-muted-foreground">Phone, 390 wide</figcaption>
+              <figcaption className="text-caption text-muted-foreground">{IMAGE_SLOT_FIELD_COPY.phone390Wide}</figcaption>
             </figure>
           </div>
         </section>
@@ -193,7 +195,7 @@ function FocusPicker({
           style={{ left: `${value.x * 100}%`, top: `${value.y * 100}%` }}
         />
       </Button>
-      <p className="text-caption text-muted-foreground">Pick the focus point</p>
+      <p className="text-caption text-muted-foreground">{IMAGE_SLOT_FIELD_COPY.pickTheFocusPoint}</p>
     </div>
   );
 }

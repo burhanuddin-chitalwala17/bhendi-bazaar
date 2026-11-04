@@ -9,6 +9,8 @@ import { EmptyState } from "../shared/states/EmptyState";
 import { PageHeader } from "../shared/page-shell";
 import { PriceDisplay } from "../shared/PriceDisplay";
 import { formatDate } from "@/lib/format";
+import { ORDERS_CLIENT_COPY } from "./order-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** The list and the search box that filters it; orders arrive as props from the server page (ADR-0034). */
 export function OrdersClient({ orders }: { orders: Order[] }) {
@@ -27,12 +29,12 @@ export function OrdersClient({ orders }: { orders: Order[] }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <PageHeader title="Your orders" back={{ href: "/profile", label: "Account" }} />
+        <PageHeader title={ORDERS_CLIENT_COPY.yourOrders} back={{ href: ROUTES.profile, label: ORDERS_CLIENT_COPY.account }} />
         <div className="w-full md:max-w-xs">
           <Input
             type="search"
-            aria-label="Search your orders"
-            placeholder="Search by order ID or name"
+            aria-label={ORDERS_CLIENT_COPY.searchOrders}
+            placeholder={ORDERS_CLIENT_COPY.searchOrderIdName}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="h-10"
@@ -41,12 +43,12 @@ export function OrdersClient({ orders }: { orders: Order[] }) {
       </div>
       {filtered.length === 0 ? (
         query.trim() ? (
-          <EmptyState title="No orders match" description="Try the order ID from your confirmation email." />
+          <EmptyState title={ORDERS_CLIENT_COPY.noOrdersMatch} description={ORDERS_CLIENT_COPY.tryOrderIdFrom} />
         ) : (
           <EmptyState
-            title="No orders yet"
-            description="Once you place an order, it shows up here with every parcel's progress."
-            action={{ label: "Start shopping", href: "/shop" }}
+            title={ORDERS_CLIENT_COPY.noOrdersYet}
+            description={ORDERS_CLIENT_COPY.oncePlaceOrderShows}
+            action={{ label: ORDERS_CLIENT_COPY.startShopping, href: ROUTES.shopAll }}
           />
         )
       ) : (
@@ -61,7 +63,7 @@ export function OrdersClient({ orders }: { orders: Order[] }) {
               <Link
                 prefetch={false}
                 key={order.id}
-                href={`/order/${order.id}`}
+                href={ROUTES.order(order.id)}
                 className="flex items-center justify-between gap-3 rounded-card border border-border bg-card p-4 text-small transition-colors duration-fast hover:border-primary/40"
               >
                 <div className="space-y-1">

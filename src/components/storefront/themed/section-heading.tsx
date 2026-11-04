@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import { formatCount } from "@/lib/format";
+import { ROUTES } from "@server/shared/routes";
+import { VISIT_COPY } from "@/components/storefront/themed/themed-copy";
 
 /** A themed section's title: the theme's display face and tracking, its label face above. */
 export function SectionHeading({
@@ -41,16 +43,16 @@ export function SectionHeading({
   );
 }
 
-export const shopHref = (handle: string) => `/store/${handle}/shop`;
+export const shopHref = (handle: string) => ROUTES.storeShop(handle);
 export const shopAllLabel = (count: number) => `Shop all ${formatCount(count)}`;
-export const landingHref = (handle: string) => `/store/${handle}`;
+export const landingHref = (handle: string) => ROUTES.store(handle);
 export const dealsHref = (handle: string) => `${shopHref(handle)}?deals=1`;
 
 /** Q33: a product reached from a shop keeps that shop's chrome; the canonical stays `/product/{slug}`. */
 export const storefrontProductHref = (slug: string, handle: string) =>
-  `/product/${slug}?shop=${encodeURIComponent(handle)}`;
+  `${ROUTES.product(slug)}?shop=${encodeURIComponent(handle)}`;
 
-/** Past this many characters the button reads "Visit shop" (own-store Q23). */
+/** Past this many characters the button reads VISIT_COPY.short (own-store Q23). */
 export const VISIT_NAME_MAX = 20;
 export const visitLabel = (name: string) =>
-  name.length > VISIT_NAME_MAX ? "Visit shop" : `Visit ${name}`;
+  name.length > VISIT_NAME_MAX ? VISIT_COPY.short : VISIT_COPY.named(name);

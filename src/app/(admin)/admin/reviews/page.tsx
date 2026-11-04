@@ -23,6 +23,7 @@ import {
   resolveSortBy,
   resolveSortOrder,
 } from "@server/shared/pagination";
+import { ADMIN_REVIEWS_COPY } from "./reviews-copy";
 
 /** The columns this listing may be ordered by — the same set `ReviewListFilters` declares. */
 const SORTABLE = ["createdAt", "rating"] as const;
@@ -61,8 +62,8 @@ export default async function AdminReviewsPage({
   return (
     <PageShell width="wide">
       <PageHeader
-        title="Reviews"
-        description="Read, withdraw and restore customer reviews. Nothing here is deleted."
+        title={ADMIN_REVIEWS_COPY.title}
+        description={ADMIN_REVIEWS_COPY.description}
       />
 
       <ReviewsFilters />

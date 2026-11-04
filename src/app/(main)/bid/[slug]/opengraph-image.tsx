@@ -15,11 +15,12 @@ import { biddingService } from "@server/bidding/bidding.service";
 import { NotFoundError } from "@server/shared/domain-error";
 import { APP_NAME } from "@/lib/config";
 import { formatCurrency } from "@/lib/format";
+import { BID_SHARE_IMAGE_COPY } from "./bid-page-copy";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const revalidate = 60;
-export const alt = "Live bidding";
+export const alt = BID_SHARE_IMAGE_COPY.alt;
 
 export default async function Image({ params }: { params: { slug: string } }) {
   const event = await biddingService.publicView(params.slug).catch((error) => {
@@ -49,19 +50,19 @@ export default async function Image({ params }: { params: { slug: string } }) {
 
   const isLive = event.phase === "LIVE";
   const headline = isLive
-    ? "LIVE BIDDING"
+    ? BID_SHARE_IMAGE_COPY.live
     : event.phase === "SCHEDULED"
-      ? "BIDDING OPENS SOON"
-      : "BIDDING CLOSED";
+      ? BID_SHARE_IMAGE_COPY.opensSoon
+      : BID_SHARE_IMAGE_COPY.closed;
 
   const amount =
     event.soldAmountPaise ?? event.highestBidPaise ?? event.startingBidPaise;
   const amountLabel =
     event.soldAmountPaise !== null
-      ? "Sold for"
+      ? BID_SHARE_IMAGE_COPY.soldFor
       : event.highestBidPaise !== null
-        ? "Current bid"
-        : "Opening bid";
+        ? BID_SHARE_IMAGE_COPY.currentBid
+        : BID_SHARE_IMAGE_COPY.openingBid;
 
   const when = new Intl.DateTimeFormat("en-IN", {
     dateStyle: "medium",
@@ -156,7 +157,7 @@ export default async function Image({ params }: { params: { slug: string } }) {
             marginTop: 24,
           }}
         >
-          {event.phase === "SCHEDULED" ? "Opens" : "Closes"} {when}
+          {event.phase === "SCHEDULED" ? BID_SHARE_IMAGE_COPY.opens : BID_SHARE_IMAGE_COPY.closes} {when}
         </div>
 
         <div

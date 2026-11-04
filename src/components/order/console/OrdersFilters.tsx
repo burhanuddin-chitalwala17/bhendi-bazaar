@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { PAYMENT_STATUS } from "@server/checkout/order.types";
 import { paymentChip } from "./order-status";
+import { ORDERS_FILTERS_COPY } from "./console-copy";
 
 /**
  * The console's order filters, held in the URL so the server can answer the question the URL
@@ -41,21 +42,19 @@ export function OrdersFilters() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && apply({ search })}
-          placeholder="Order code, buyer or email"
-          aria-label="Search orders"
+          placeholder={ORDERS_FILTERS_COPY.orderCodeBuyerEmail}
+          aria-label={ORDERS_FILTERS_COPY.searchOrders}
         />
         <Button variant="default" onClick={() => apply({ search })}>
-          <Icon name="search" />
-          Search
-        </Button>
+          <Icon name="search" />{ORDERS_FILTERS_COPY.search}</Button>
       </div>
 
       <Select
         value={params.get("paymentStatus") ?? ""}
         onChange={(e) => apply({ paymentStatus: e.target.value })}
-        aria-label="Payment"
+        aria-label={ORDERS_FILTERS_COPY.payment}
       >
-        <option value="">Any payment</option>
+        <option value="">{ORDERS_FILTERS_COPY.anyPayment}</option>
         {Object.values(PAYMENT_STATUS).map((status) => (
           <option key={status} value={status}>{paymentChip(status).label}</option>
         ))}

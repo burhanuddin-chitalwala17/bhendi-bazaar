@@ -6,6 +6,8 @@ import { CartItem } from "@/domain/cart";
 import { uuidv4 } from "zod";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { NotFoundError } from "@server/shared/domain-error";
+import { CHECKOUT_COPY } from "@/components/checkout/checkout-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export default async function CheckoutPage({
   searchParams,
@@ -24,9 +26,9 @@ export default async function CheckoutPage({
     if (!buyNowProduct) {
       return (
         <EmptyState
-          title="That piece is no longer available"
-          description="It may have sold out or been taken down. Your bag is unchanged."
-          action={{ label: "Back to the shop", href: "/shop" }}
+          title={CHECKOUT_COPY.buyNowGoneTitle}
+          description={CHECKOUT_COPY.buyNowGoneBody}
+          action={{ label: CHECKOUT_COPY.backToShop, href: ROUTES.shopAll }}
         />
       );
     }
@@ -49,12 +51,12 @@ export default async function CheckoutPage({
     <div className="space-y-6">
       {/* StoreCheckout's bar: the way back to the bag, the page's name, and that payment is secure. */}
       <PageHeader
-        title="Checkout"
-        back={{ href: "/cart", label: "Your bag" }}
+        title={CHECKOUT_COPY.title}
+        back={{ href: ROUTES.cart, label: CHECKOUT_COPY.backToBag }}
         actions={
           <span className="inline-flex items-center gap-1.5 text-caption font-medium text-success">
             <Icon name="secure" size="sm" />
-            Secure
+            {CHECKOUT_COPY.secure}
           </span>
         }
       />

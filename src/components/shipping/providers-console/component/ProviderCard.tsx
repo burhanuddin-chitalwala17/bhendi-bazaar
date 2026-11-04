@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/icon";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import type { ShippingProvider } from "../types";
 import Image from "next/image";
+import { PROVIDER_CARD_COPY } from "../providers-console-copy";
 
 interface ProviderCardProps {
   provider: ShippingProvider;
@@ -45,7 +46,7 @@ export function ProviderCard({
               <h3 className="text-title font-semibold">{provider.name}</h3>
             </div>
             <StatusBadge tone={provider.isConnected ? "success" : "neutral"} dot>
-              {provider.isConnected ? "Connected" : "Not connected"}
+              {provider.isConnected ? PROVIDER_CARD_COPY.connected : PROVIDER_CARD_COPY.notConnected}
             </StatusBadge>
           </div>
 
@@ -70,14 +71,10 @@ export function ProviderCard({
                   size="sm"
                   onClick={onDisconnect}
                   pending={isDisconnecting}
-                >
-                  Disconnect
-                </Button>
+                >{PROVIDER_CARD_COPY.disconnect}</Button>
               </div>
             ) : (
-              <Button size="sm" onClick={onConnect} pending={isConnecting}>
-                Connect account
-              </Button>
+              <Button size="sm" onClick={onConnect} pending={isConnecting}>{PROVIDER_CARD_COPY.connectAccount}</Button>
             )}
           </div>
 
@@ -88,9 +85,7 @@ export function ProviderCard({
               target="_blank"
               rel="noopener noreferrer"
               className="mt-2 inline-flex min-h-10 items-center gap-1 text-small text-info hover:underline"
-            >
-              Visit website
-              <Icon name="external" size="xs" />
+            >{PROVIDER_CARD_COPY.visitWebsite}<Icon name="external" size="xs" />
             </a>
           )}
         </div>

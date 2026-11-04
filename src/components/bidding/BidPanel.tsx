@@ -28,6 +28,7 @@ import {
   type BidStateView,
 } from "@/components/bidding/biddingApiClient";
 import type { PlaceBidInputBody } from "@/lib/validation/schemas/bidding.schema";
+import { BID_PANEL_COPY } from "./bidding-copy";
 
 
 export function BidPanel({
@@ -64,7 +65,7 @@ export function BidPanel({
       showToast: false,
       onError: (error) => {
         if (!(error instanceof ApiError)) {
-          toast.error("Could not place your bid. Please try again.");
+          toast.error(BID_PANEL_COPY.couldNotPlaceBid);
           return;
         }
         // A refusal means this page is behind the event — the price moved, or it
@@ -100,7 +101,7 @@ export function BidPanel({
       setPlaced(amountPaise);
       setCustomIncrease("");
       setIsBehind(false);
-      toast.success("Your bid is in");
+      toast.success(BID_PANEL_COPY.yourBidIsIn);
     } catch {
       // Reported by onError above.
     }
@@ -109,10 +110,8 @@ export function BidPanel({
   if (hasExpired) {
     return (
       <div className="rounded-card border border-border bg-card p-4 text-center">
-        <p className="text-sm font-medium">Bidding has closed</p>
-        <p className="mt-1 text-2xs text-muted-foreground">
-          Reload the page to see the final result.
-        </p>
+        <p className="text-sm font-medium">{BID_PANEL_COPY.biddingHasClosed}</p>
+        <p className="mt-1 text-2xs text-muted-foreground">{BID_PANEL_COPY.reloadPageSeeFinal}</p>
       </div>
     );
   }
@@ -130,14 +129,14 @@ export function BidPanel({
     <div className="space-y-4">
       <div className="rounded-card border border-border bg-card p-4">
         <p className="text-2xs uppercase tracking-label text-muted-foreground">
-          {isOpeningBid ? "Opening bid" : "Highest bid"}
+          {isOpeningBid ? BID_PANEL_COPY.openingBid : BID_PANEL_COPY.highestBid}
         </p>
         <p className="mt-1 font-heading text-3xl font-bold sm:text-4xl">
           {formatCurrency(state.highestBidPaise ?? state.minBidPaise)}
         </p>
         <p className="mt-1 text-2xs text-muted-foreground">
           {state.bidCount === 0
-            ? "No bids yet — be the first"
+            ? BID_PANEL_COPY.noBidsYetFirst
             : `${state.bidCount} bid${state.bidCount === 1 ? "" : "s"} so far`}
         </p>
         <p className="mt-3 text-sm font-medium tabular-nums">
@@ -154,19 +153,14 @@ export function BidPanel({
 
       {isBehind && (
         <div className="space-y-2 rounded-card border border-warning/40 bg-warning/10 p-3">
-          <p className="text-sm font-medium">This page is behind</p>
-          <p className="text-2xs text-muted-foreground">
-            Someone bid while you were deciding, or bidding has closed. Reload
-            for the current price.
-          </p>
+          <p className="text-sm font-medium">{BID_PANEL_COPY.pageBehind}</p>
+          <p className="text-2xs text-muted-foreground">{BID_PANEL_COPY.someoneBidWhileWere}</p>
           <Button
             variant="outline"
             size="sm"
             className="w-full"
             onClick={() => window.location.reload()}
-          >
-            Reload
-          </Button>
+          >{BID_PANEL_COPY.reload}</Button>
         </div>
       )}
 
@@ -177,20 +171,16 @@ export function BidPanel({
             <p className="text-sm font-medium">
               Your bid of {formatCurrency(placed)} is in
             </p>
-            <p className="text-2xs opacity-90">
-              You can keep bidding for as long as this stays open.
-            </p>
+            <p className="text-2xs opacity-90">{BID_PANEL_COPY.canKeepBiddingLong}</p>
           </div>
         </div>
       )}
 
       {!isSignedIn && (
         <div className="space-y-3 rounded-card border border-border bg-card p-4">
-          <p className="text-2xs uppercase tracking-label text-muted-foreground">
-            Your details
-          </p>
+          <p className="text-2xs uppercase tracking-label text-muted-foreground">{BID_PANEL_COPY.yourDetails}</p>
           <FormInput
-            label="Name"
+            label={BID_PANEL_COPY.name}
             required
             value={guest.name}
             onChange={(event) =>
@@ -199,7 +189,7 @@ export function BidPanel({
             error={fieldErrors.guestName}
             autoComplete="name"
           />
-          <FormField id="bid-phone" label="Phone" required error={fieldErrors.guestPhone}>
+          <FormField id="bid-phone" label={BID_PANEL_COPY.phone} required error={fieldErrors.guestPhone}>
             <PhoneInput
               id="bid-phone"
               value={guest.phone}
@@ -209,9 +199,7 @@ export function BidPanel({
             />
           </FormField>
           <div>
-            <Label htmlFor="bid-email" className="text-sm">
-              Email
-            </Label>
+            <Label htmlFor="bid-email" className="text-sm">{BID_PANEL_COPY.email}</Label>
             <Input
               id="bid-email"
               type="email"
@@ -228,11 +216,7 @@ export function BidPanel({
             <p
               id="bid-email-hint"
               className="mt-1.5 text-2xs text-muted-foreground"
-            >
-              Optional — but without it there is no way to tell you if someone
-              outbids you. Add one and we will let you know so you can bid
-              again.
-            </p>
+            >{BID_PANEL_COPY.optionalButWithoutThere}</p>
             {fieldErrors.guestEmail && (
               <p className="mt-1 text-sm text-destructive">
                 {fieldErrors.guestEmail}
@@ -251,7 +235,7 @@ export function BidPanel({
             onClick={() => place(state.minBidPaise)}
           >
             {isPlacing
-              ? "Placing…"
+              ? BID_PANEL_COPY.placing
               : `Bid ${formatCurrency(state.minBidPaise)}`}
           </Button>
         ) : (
@@ -277,9 +261,7 @@ export function BidPanel({
 
         {!isOpeningBid && (
           <div className="rounded-card border border-border bg-card p-3">
-            <Label htmlFor="bid-custom" className="text-sm">
-              Or add your own amount
-            </Label>
+            <Label htmlFor="bid-custom" className="text-sm">{BID_PANEL_COPY.addOwnAmount}</Label>
             <div className="mt-1.5 flex gap-2">
               <Input
                 id="bid-custom"
@@ -300,9 +282,7 @@ export function BidPanel({
                 className="shrink-0 rounded-full"
                 disabled={isPlacing || !canSubmitCustom}
                 onClick={() => place(customTotal)}
-              >
-                Bid
-              </Button>
+              >{BID_PANEL_COPY.bid}</Button>
             </div>
             <p className="mt-1.5 text-2xs text-muted-foreground">
               Add between {formatCurrency(minIncrease)} and{" "}

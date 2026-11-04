@@ -18,8 +18,10 @@ import { CONFLICTS_PAGE } from "@server/shipping/courier-conflict.service";
 import { PICKUP_QUEUE_PAGE, PICKUP_QUEUE_TAB, isPickupQueueTab, type PickupQueueTab } from "@server/checkout/pickup-queue";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { PageTabs } from "@/components/shared/page-tabs";
+import { ADMIN_ORDERS_COPY } from "../orders-copy";
+import { ADMIN_SHELL_COPY } from "../../admin-copy";
 
-export const metadata = { title: "Pickups", robots: { index: false, follow: false } };
+export const metadata = { title: ADMIN_ORDERS_COPY.pickupsMetaTitle, robots: { index: false, follow: false } };
 
 
 /**
@@ -58,9 +60,9 @@ export default async function AdminPickupsPage({
 
   return (
     <PageShell width="wide">
-      <PageHeader title={NOT_PACKED_COPY.title} description="Parcels to book with a courier, pickups booked, and parcels a shop hasn't packed." />
+      <PageHeader title={NOT_PACKED_COPY.title} description={ADMIN_ORDERS_COPY.pickupsDescription} />
       <PageTabs
-        label="Pickups"
+        label={ADMIN_ORDERS_COPY.pickupsTabs}
         current={tab}
         tabs={tabs.map((t) => ({
           key: t.key,
@@ -130,7 +132,7 @@ async function Queue({ tab, page, shop, city, total }: { tab: PickupQueueTab; pa
     <>
       <PickupQueueList rows={rows} tab={tab} filter={{ shop, city }} />
       {(page > 1 || to < total) && (
-        <nav className="flex flex-wrap items-center justify-between gap-2 text-small" aria-label="Pages">
+        <nav className="flex flex-wrap items-center justify-between gap-2 text-small" aria-label={ADMIN_SHELL_COPY.pages}>
           <span className="text-muted-foreground">{QUEUE_COPY.showing(from, to, total)}</span>
           <span className="flex gap-2">
             {page > 1 && (

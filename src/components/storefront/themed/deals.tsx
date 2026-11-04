@@ -8,8 +8,9 @@ import type { DealsSlice } from "./page-data";
 import { SectionHeading, dealsHref } from "./section-heading";
 import { RAIL_ITEM } from "./shelf";
 import { ThemedProductCard } from "./themed-product-card";
+import { THEMED_COPY } from "./themed-copy";
 
-const SHOP_THE_DEAL = "Shop the deal";
+const SHOP_THE_DEAL = THEMED_COPY.sections.shopTheDeal;
 
 /**
  * The shop's offers and the goods they reduce (R7; Q12, Q13, Q20). Every word on a card is
@@ -27,7 +28,7 @@ export function ThemedDeals({
   const href = dealsHref(handle);
   return (
     <section className="mx-auto max-w-store space-y-6 px-gutter py-section">
-      <SectionHeading title="Deals" action={offers.length ? undefined : { label: SHOP_THE_DEAL, href }} />
+      <SectionHeading title={THEMED_COPY.sections.deals} action={offers.length ? undefined : { label: SHOP_THE_DEAL, href }} />
       {offers.length > 0 && (
         <ul
           className={cn(
@@ -51,7 +52,7 @@ export function ThemedDeals({
         </ul>
       )}
       {products.length > 0 && (
-        <ul aria-label="On offer" className="no-scrollbar -mx-gutter flex snap-x gap-grid overflow-x-auto px-gutter">
+        <ul aria-label={THEMED_COPY.sections.onOffer} className="no-scrollbar -mx-gutter flex snap-x gap-grid overflow-x-auto px-gutter">
           {products.map((p) => (
             <li key={p.id} className={cn("shrink-0 snap-start", RAIL_ITEM[columns].width)}>
               <ThemedProductCard product={p} shopHandle={handle} cardStyle={cardStyle} sizes={RAIL_ITEM[columns].sizes} />

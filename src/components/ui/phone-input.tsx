@@ -13,6 +13,7 @@ import {
   type PhoneParts,
 } from "@server/shared/phone";
 import { Icon } from "./icon";
+import { PHONE_INPUT_COPY } from "./ui-copy";
 
 interface PhoneInputProps {
   /** E.164, a legacy bare Indian number, or "". */
@@ -96,7 +97,7 @@ export function PhoneInput({
         </span>
         <Icon name="expand" size="sm" className="text-muted-foreground" />
         <select
-          aria-label="Country code"
+          aria-label={PHONE_INPUT_COPY.countryCode}
           value={parts.country}
           disabled={disabled}
           onChange={(event) => changeCountry(event.target.value)}

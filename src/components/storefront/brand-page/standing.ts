@@ -5,6 +5,9 @@ import {
   type BrandPageSection,
 } from "./sections";
 import { HIDEABLE_BRAND_PAGE_SECTIONS } from "@server/catalog/brand-page-sections";
+import { BRAND_PAGE_COPY } from "./brand-page-copy";
+import { ROUTES } from "@server/shared/routes";
+import { STANDING_LABEL_COPY } from "@/components/storefront/brand-page/brand-page-copy";
 
 /**
  * What a shop's own page currently shows, and what each missing section is waiting for
@@ -32,14 +35,14 @@ export interface BrandPageSectionStatus {
 
 /** Named here because a shop reads these, and the keys are for the code. */
 const LABELS: Record<BrandPageSection, string> = {
-  hero: "The top of the page",
-  story: "About the shop",
-  categories: "What you sell",
-  brands: "Brands you carry",
-  buyersSay: "What buyers say",
-  newest: "Your newest goods",
-  policies: "Delivery and returns",
-  social: "Ways to follow you",
+  hero: STANDING_LABEL_COPY.hero,
+  story: STANDING_LABEL_COPY.story,
+  categories: STANDING_LABEL_COPY.categories,
+  brands: STANDING_LABEL_COPY.brands,
+  buyersSay: STANDING_LABEL_COPY.buyersSay,
+  newest: STANDING_LABEL_COPY.newest,
+  policies: STANDING_LABEL_COPY.policies,
+  social: STANDING_LABEL_COPY.social,
 };
 
 /**
@@ -49,25 +52,25 @@ const LABELS: Record<BrandPageSection, string> = {
  */
 const WAITING: Partial<Record<BrandPageSection, { fact: string; to?: (orgId: string) => string }>> = {
   story: {
-    fact: "a few lines about the shop, or the name of the person behind it",
-    to: (orgId) => `/org/${orgId}/shop/details#about`,
+    fact: BRAND_PAGE_COPY.waiting.story,
+    to: (orgId) => `${ROUTES.org.shopDetails(orgId)}#about`,
   },
   categories: {
-    fact: "a product on sale, so there is a category to show",
-    to: (orgId) => `/org/${orgId}/products`,
+    fact: BRAND_PAGE_COPY.waiting.categories,
+    to: (orgId) => ROUTES.org.products(orgId),
   },
   brands: {
-    fact: "a second brand — one brand is not a range worth a section",
-    to: (orgId) => `/org/${orgId}/listing`,
+    fact: BRAND_PAGE_COPY.waiting.brands,
+    to: (orgId) => ROUTES.org.listing(orgId),
   },
-  buyersSay: { fact: "enough published reviews to be worth quoting" },
+  buyersSay: { fact: BRAND_PAGE_COPY.waiting.buyersSay },
   policies: {
-    fact: "your delivery and returns promise",
-    to: (orgId) => `/org/${orgId}/shop/details#promise`,
+    fact: BRAND_PAGE_COPY.waiting.policies,
+    to: (orgId) => `${ROUTES.org.shopDetails(orgId)}#promise`,
   },
   social: {
-    fact: "a handle on one of the networks we link to",
-    to: (orgId) => `/org/${orgId}/shop/details#social`,
+    fact: BRAND_PAGE_COPY.waiting.social,
+    to: (orgId) => `${ROUTES.org.shopDetails(orgId)}#social`,
   },
 };
 

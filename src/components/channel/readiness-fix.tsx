@@ -15,6 +15,7 @@ import type { FixPageDTO, FixRowDTO } from "@server/listing/readiness-fix.types"
 
 import { FIX } from "./readiness-fix-copy";
 import { useReadinessFix } from "./useReadinessFix";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * A fix page (readiness-fix ux.md): the products missing one fact for one channel, each with its photo
@@ -23,7 +24,7 @@ import { useReadinessFix } from "./useReadinessFix";
 export function ReadinessFix({ orgId, page }: { orgId: string; page: FixPageDTO }) {
   const fix = useReadinessFix(orgId, page);
   const [bulkValue, setBulkValue] = useState("");
-  const back = `/org/${orgId}/products`;
+  const back = ROUTES.org.products(orgId);
 
   if (fix.rows.length === 0) {
     return (

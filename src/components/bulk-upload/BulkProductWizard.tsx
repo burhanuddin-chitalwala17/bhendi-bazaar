@@ -30,8 +30,10 @@ import { teamReasonField } from "@/lib/validation/schemas/product.schema";
 import { downscaleImage, storedPathFor } from "@/lib/image/downscale";
 import { uploadDirect } from "@/lib/image/upload-direct";
 import { orgUploadEndpoints, teamUploadEndpoints } from "@/lib/image/upload-endpoints";
+import { BULK_PRODUCT_COPY } from "./bulk-copy";
+import { ROUTES } from "@server/shared/routes";
 
-const STEPS = ["Get the sheet", "Fill it", "Upload", "Check and create"] as const;
+const STEPS = BULK_PRODUCT_COPY.steps;
 type Stage = "get" | "fill" | "upload";
 
 function Steps({ current }: { current: number }) {
@@ -39,7 +41,7 @@ function Steps({ current }: { current: number }) {
     <ol className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
       {STEPS.map((label, index) => (
         <li key={label} aria-current={index === current ? "step" : undefined} className={index === current ? "font-semibold text-foreground" : ""}>
-          {index + 1} · {label}
+          {BULK_PRODUCT_COPY.step(index + 1, label)}
         </li>
       ))}
     </ol>
@@ -72,7 +74,7 @@ export function BulkProductWizard({
   const checkSheet = () => {
     // Never disabled (owner rule): a tap while busy says what is happening instead.
     if (step === "checking" || step === "uploading" || step === "creating") {
-      toast(step === "checking" ? CHECK_COPY.reading : `Uploading photos ${progress.done}/${progress.total}… keep this page open`);
+      toast(step === "checking" ? CHECK_COPY.reading : BULK_PRODUCT_COPY.uploadingToast(progress.done, progress.total));
       return;
     }
     setContinued(false);
@@ -118,7 +120,7 @@ export function BulkProductWizard({
           // Validation already proved each reference names exactly one file.
           const [path] = matchingPaths(reference, providedPaths);
           const file = path ? filesByPath.get(path) : undefined;
-          if (!file) throw new Error(`Missing file "${reference}"`);
+          if (!file) throw new Error(BULK_PRODUCT_COPY.missingFile(reference));
           // Downscaled here because these bytes never pass through a function, so the
           // server's normalisation cannot reach them (ADR-0026).
           const downscaled = await downscaleImage(file);
@@ -171,7 +173,7 @@ export function BulkProductWizard({
         <Steps current={0} />
         <GetTheSheet orgId={orgId} base={base} choices={choices} onDownloaded={() => setStage("fill")} />
         <Button variant="link" className="px-0" onClick={() => setStage("upload")}>
-          I already have a filled sheet
+          {BULK_PRODUCT_COPY.haveSheet}
         </Button>
       </div>
     );
@@ -183,11 +185,11 @@ export function BulkProductWizard({
         {banner}
         <Steps current={1} />
         <section className="space-y-3 rounded-card border border-border bg-card p-4">
-          <p className="text-sm">Fill the sheet on your laptop or phone, then come back.</p>
+          <p className="text-sm">{BULK_PRODUCT_COPY.fillIt}</p>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setStage("upload")}>I&apos;ve filled it</Button>
+            <Button onClick={() => setStage("upload")}>{BULK_PRODUCT_COPY.filled}</Button>
             <Button variant="outline" onClick={() => setStage("get")}>
-              Download sheet
+              {BULK_PRODUCT_COPY.downloadSheet}
             </Button>
           </div>
         </section>
@@ -205,9 +207,9 @@ export function BulkProductWizard({
         </p>
         <Button asChild>
           {team ? (
-            <a href={`/admin/orgs/${orgId}?tab=products`}>{TEAM_BULK_COPY.viewProducts(team.shopName)}</a>
+            <a href={`${ROUTES.admin.org(orgId)}?tab=products`}>{TEAM_BULK_COPY.viewProducts(team.shopName)}</a>
           ) : (
-            <a href={`/org/${orgId}/products`}>View products</a>
+            <a href={ROUTES.org.products(orgId)}>{BULK_PRODUCT_COPY.viewProducts}</a>
           )}
         </Button>
       </div>
@@ -220,9 +222,9 @@ export function BulkProductWizard({
       <Steps current={step === "pick" || step === "checking" ? 2 : 3} />
       <section className="space-y-3 rounded-xl border border-border bg-card p-4">
         <div className="space-y-1">
-          <p className="text-sm font-medium">Your filled sheet (.xlsx or .csv)</p>
+          <p className="text-sm font-medium">{BULK_PRODUCT_COPY.yourSheet}</p>
           <Button variant="link" size="sm" className="px-0" onClick={getFreshSheet}>
-            Download a fresh sheet
+            {BULK_PRODUCT_COPY.freshSheet}
           </Button>
         </div>
         <input
@@ -237,16 +239,15 @@ export function BulkProductWizard({
         />
 
         <div className="space-y-1 pt-2">
-          <p className="text-sm font-medium">Your photos — a folder keeps each product&apos;s photos apart</p>
+          <p className="text-sm font-medium">{BULK_PRODUCT_COPY.photosTitle}</p>
           <p className="text-xs text-muted-foreground">
-            Two products can both have a <code>front.jpg</code> — write the
-            folder in the sheet as <code>emerald-abaya/front.jpg</code>. A flat selection works too
-            when every filename is different.
+            {BULK_PRODUCT_COPY.photosHintBefore} <code>{BULK_PRODUCT_COPY.photosExampleFile}</code> {BULK_PRODUCT_COPY.photosHintMiddle}{" "}
+            <code>{BULK_PRODUCT_COPY.photosExamplePath}</code>{BULK_PRODUCT_COPY.photosHintAfter}
           </p>
         </div>
         <div className="space-y-2">
           <label className="block text-xs font-medium text-muted-foreground">
-            Choose a folder
+            {BULK_PRODUCT_COPY.chooseFolder}
             <input
               type="file"
               webkitdirectory=""
@@ -256,7 +257,7 @@ export function BulkProductWizard({
             />
           </label>
           <label className="block text-xs font-medium text-muted-foreground">
-            …or pick photos individually
+            {BULK_PRODUCT_COPY.pickIndividually}
             <input
               type="file"
               accept="image/*"
@@ -268,10 +269,7 @@ export function BulkProductWizard({
         </div>
         {images.length > 0 && (
           <p className="text-xs text-muted-foreground">
-            {images.length} files selected
-            {providedPaths.some((path) => path.includes("/"))
-              ? ", with folders"
-              : ""}
+            {BULK_PRODUCT_COPY.filesSelected(images.length, providedPaths.some((path) => path.includes("/")))}
           </p>
         )}
       </section>
@@ -290,8 +288,8 @@ export function BulkProductWizard({
         <section className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm">
           <Spinner />
           {step === "uploading"
-            ? `Uploading photos… ${progress.done}/${progress.total}`
-            : "Creating products…"}
+            ? BULK_PRODUCT_COPY.uploading(progress.done, progress.total)
+            : BULK_PRODUCT_COPY.creating}
         </section>
       )}
 
@@ -307,7 +305,7 @@ export function BulkProductWizard({
         ) : rowProblems ? (
           <>
             <Button variant="outline" className="flex-1 md:flex-none" onClick={checkSheet}>
-              Check the sheet
+              {BULK_PRODUCT_COPY.check}
             </Button>
             <Button className="flex-1 md:flex-none" onClick={downloadMarked}>
               {CHECK_COPY.downloadMarked}
@@ -323,7 +321,7 @@ export function BulkProductWizard({
             onClick={checkSheet}
             pending={step === "checking"}
           >
-            {step === "checking" ? CHECK_COPY.reading : "Check the sheet"}
+            {step === "checking" ? CHECK_COPY.reading : BULK_PRODUCT_COPY.check}
           </Button>
         )}
       </ActionBar>

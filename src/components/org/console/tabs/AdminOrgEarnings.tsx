@@ -3,6 +3,7 @@ import { formatCurrency, formatShortDate } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { SETTLEMENT_STATUS_BADGE } from "@/components/payouts/settlement-status";
+import { ORG_EARNINGS_COPY } from "../org-console-copy";
 
 interface Props {
   orgId: string;
@@ -22,21 +23,21 @@ export async function AdminOrgEarnings({ orgId }: Props) {
     <div className="space-y-5">
       <Card className="p-5">
         <p className="text-label uppercase tracking-label text-muted-foreground">
-          Shop is owed
+          {ORG_EARNINGS_COPY.owed}
         </p>
         <p className="text-headline font-semibold tabular-nums">
           {formatCurrency(owedPaise)}
         </p>
         <p className="mt-1 text-small text-muted-foreground tabular-nums">
-          {formatCurrency(unclaimedPaise)} not yet in a settlement
+          {ORG_EARNINGS_COPY.unclaimed(formatCurrency(unclaimedPaise))}
         </p>
       </Card>
 
       <section className="space-y-3">
-        <h2 className="text-small font-semibold">Commission</h2>
+        <h2 className="text-small font-semibold">{ORG_EARNINGS_COPY.commission}</h2>
         <Card className="p-4">
           <p className="text-small">
-            Default rate:{" "}
+            {ORG_EARNINGS_COPY.defaultRate}{" "}
             <span className="font-semibold">{(defaultBps / 100).toFixed(1)}%</span>
           </p>
           {categoryRates.length > 0 && (
@@ -53,10 +54,10 @@ export async function AdminOrgEarnings({ orgId }: Props) {
 
       <section className="space-y-3">
         <h2 className="text-small font-semibold">
-          Orders ({orders.length})
+          {ORG_EARNINGS_COPY.orders(orders.length)}
         </h2>
         {orders.length === 0 && (
-          <p className="text-small text-muted-foreground">No orders yet.</p>
+          <p className="text-small text-muted-foreground">{ORG_EARNINGS_COPY.noOrders}</p>
         )}
         <div className="space-y-2">
           {orders.slice(0, 20).map((order) => (
@@ -68,7 +69,7 @@ export async function AdminOrgEarnings({ orgId }: Props) {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-caption text-muted-foreground">
-                  Commission: {formatCurrency(order.commissionPaise)}
+                  {ORG_EARNINGS_COPY.orderCommission(formatCurrency(order.commissionPaise))}
                 </span>
                 <span className="font-semibold">{formatCurrency(order.payablePaise)}</span>
               </div>
@@ -79,7 +80,7 @@ export async function AdminOrgEarnings({ orgId }: Props) {
 
       {settlements.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-small font-semibold">Settlements</h2>
+          <h2 className="text-small font-semibold">{ORG_EARNINGS_COPY.settlements}</h2>
           <div className="space-y-2">
             {settlements.map((s) => (
               <Card key={s.id} className="flex items-center justify-between p-3 text-small">

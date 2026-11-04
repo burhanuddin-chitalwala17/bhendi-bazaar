@@ -35,15 +35,15 @@ export function DisconnectDialog({ orgId, channel, label, open, onOpenChange }: 
     <FormDialog open={open} onOpenChange={onOpenChange} title={DISCONNECT.title(label)}>
       <div className="flex flex-col gap-3 text-sm">
         <p>
-          <span className="font-semibold">Stops: </span>
+          <span className="font-semibold">{DISCONNECT.stopsLabel}</span>
           {DISCONNECT.stops(label)}
         </p>
         <p>
-          <span className="font-semibold">Stays: </span>
+          <span className="font-semibold">{DISCONNECT.staysLabel}</span>
           {DISCONNECT.stays(label)}
         </p>
         <p className="text-warning">
-          <span className="font-semibold">Watch out: </span>
+          <span className="font-semibold">{DISCONNECT.watchOutLabel}</span>
           {DISCONNECT.watchOut(label)}
         </p>
         <p className="text-muted-foreground">{DISCONNECT.revoke(channel, label)}</p>

@@ -9,6 +9,7 @@ import { CartItem } from "@/domain/cart";
 import { PAYMENT_STATUS } from "@server/checkout/order.types";
 import { stockApiClient } from "@/components/product/stockApiClient";
 import { cartApiClient } from "@/components/cart/cartApiClient";
+import { CHECKOUT_VALIDATION_COPY } from "@/components/checkout/checkout-copy";
 
 interface UseCheckoutProps {
   items: CartItem[];
@@ -82,11 +83,11 @@ export function useCheckout({
     const errors: string[] = [];
 
     if (items.length === 0) {
-      errors.push("Cart is empty");
+      errors.push(CHECKOUT_VALIDATION_COPY.emptyCart);
     }
 
     if (!selectedAddress) {
-      errors.push("Please select a delivery address");
+      errors.push(CHECKOUT_VALIDATION_COPY.noAddress);
     }
 
     return errors;

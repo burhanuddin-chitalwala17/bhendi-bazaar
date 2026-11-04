@@ -5,6 +5,7 @@ import { useMutation } from "@/hooks/core/useMutation";
 import { orgApiClient } from "@/components/org/console/orgApiClient";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { ORG_CONSOLE_COPY } from "./org-console-copy";
 
 interface Props {
   orgId: string;
@@ -20,7 +21,7 @@ export function OrgBlockToggle({ orgId, isBlocked }: Props) {
         ? orgApiClient.unblockOrg(orgId)
         : orgApiClient.blockOrg(orgId),
     {
-      successMessage: isBlocked ? "Shop unblocked" : "Shop blocked",
+      successMessage: isBlocked ? ORG_CONSOLE_COPY.unblocked : ORG_CONSOLE_COPY.blocked,
       onSuccess: () => router.refresh(),
     },
   );
@@ -35,12 +36,12 @@ export function OrgBlockToggle({ orgId, isBlocked }: Props) {
       {isBlocked ? (
         <>
           <Icon name="secure" />
-          Unblock
+          {ORG_CONSOLE_COPY.unblock}
         </>
       ) : (
         <>
           <Icon name="block" />
-          Block
+          {ORG_CONSOLE_COPY.block}
         </>
       )}
     </Button>

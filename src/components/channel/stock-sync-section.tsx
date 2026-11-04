@@ -5,6 +5,7 @@ import { STOCK_PROBLEM, STOCK_SYNC, type LocationMatchDTO, type StockSyncSection
 
 import { LocationMatchSheet } from "./location-match-sheet";
 import { STOCK } from "./stock-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * Stock sync on a marketplace's Listings page, only when it needs the shop (inventory-sync Q28): sync
@@ -17,7 +18,7 @@ export function StockSyncSection({ orgId, section, locations }: { orgId: string;
   );
   const toChannels = (
     <Button asChild variant="outline" size="sm" className="min-h-10 self-start">
-      <Link href={`/org/${orgId}/channels`}>{STOCK.goToChannels}</Link>
+      <Link href={ROUTES.org.channels(orgId)}>{STOCK.goToChannels}</Link>
     </Button>
   );
   const on = section.state === STOCK_SYNC.ON;

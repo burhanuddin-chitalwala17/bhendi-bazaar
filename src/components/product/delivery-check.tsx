@@ -7,6 +7,8 @@ import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { isPincode, useDeliveryCheck } from "@/hooks/product/useDeliveryCheck";
 import { formatDeliveryDate, getEstimatedDeliveryDate } from "@/utils/shipping";
+import { PRODUCT_PAGE_COPY } from "./product-copy";
+import { DELIVERY_CHECK_ERROR_COPY } from "@/components/product/product-copy";
 
 /** "Fri, 8 Nov" for an estimate in days; the courier's estimate, so it reads as "arrives by". */
 export const arrivesBy = (days: number) => formatDeliveryDate(getEstimatedDeliveryDate(days));
@@ -26,12 +28,12 @@ export function DeliveryCheck({ fromPincode, weight }: { fromPincode: string; we
         <p className="flex-1 text-small" aria-live="polite">
           {answer.kind === "delivers" ? (
             <>
-              Delivers to <b className="font-semibold">{answer.pincode}</b> · arrives by{" "}
+              {PRODUCT_PAGE_COPY.delivery.deliversTo} <b className="font-semibold">{answer.pincode}</b> {PRODUCT_PAGE_COPY.delivery.arrivesBy}{" "}
               <b className="font-semibold">{arrivesBy(answer.days)}</b>
             </>
           ) : (
             <>
-              This shop doesn&apos;t deliver to <b className="font-semibold">{answer.pincode}</b> yet.
+              {PRODUCT_PAGE_COPY.delivery.noDeliveryTo} <b className="font-semibold">{answer.pincode}</b> {PRODUCT_PAGE_COPY.delivery.noDeliveryYet}
             </>
           )}
         </p>
@@ -45,7 +47,7 @@ export function DeliveryCheck({ fromPincode, weight }: { fromPincode: string; we
             clear();
           }}
         >
-          Change
+          {PRODUCT_PAGE_COPY.delivery.change}
         </Button>
       </div>
     );
@@ -63,7 +65,7 @@ export function DeliveryCheck({ fromPincode, weight }: { fromPincode: string; we
     >
       <label htmlFor="delivery-pincode" className="flex items-center gap-2 text-small font-medium">
         <Icon name="location" size="md" tone="muted" />
-        Check delivery
+        {PRODUCT_PAGE_COPY.delivery.title}
       </label>
       <div className="flex gap-2">
         <Input
@@ -71,7 +73,7 @@ export function DeliveryCheck({ fromPincode, weight }: { fromPincode: string; we
           inputMode="numeric"
           autoComplete="postal-code"
           maxLength={6}
-          placeholder="6-digit PIN code"
+          placeholder={PRODUCT_PAGE_COPY.delivery.placeholder}
           value={shown}
           aria-invalid={invalid || undefined}
           aria-describedby={invalid || failed ? "delivery-pincode-error" : undefined}
@@ -79,12 +81,12 @@ export function DeliveryCheck({ fromPincode, weight }: { fromPincode: string; we
           className="max-w-44"
         />
         <Button type="submit" variant="outline" pending={checking}>
-          Check
+          {PRODUCT_PAGE_COPY.delivery.check}
         </Button>
       </div>
       {(invalid || failed) && (
         <p id="delivery-pincode-error" className="text-caption text-destructive">
-          {invalid ? "Enter a 6-digit PIN code." : "Couldn't check just now. Try again in a moment."}
+          {invalid ? DELIVERY_CHECK_ERROR_COPY.invalid : DELIVERY_CHECK_ERROR_COPY.failed}
         </p>
       )}
     </form>

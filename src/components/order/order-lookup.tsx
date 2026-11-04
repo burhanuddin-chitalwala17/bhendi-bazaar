@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { OrderSummary } from "./order-summary";
 import { PageHeader } from "@/components/shared/page-shell";
+import { ORDER_LOOKUP_COPY } from "./order-copy";
 
 export function OrderLookup() {
   const [code, setCode] = useState("");
@@ -35,15 +36,13 @@ export function OrderLookup() {
 
   return (
     <div className="flex max-w-md flex-col gap-6 text-small">
-      <PageHeader title="Track an order" description="Enter the order ID from your confirmation email." />
+      <PageHeader title={ORDER_LOOKUP_COPY.trackOrder} description={ORDER_LOOKUP_COPY.enterOrderIdFrom} />
       <form onSubmit={handleSubmit} noValidate className="space-y-4 rounded-card border border-border bg-card p-5">
         <div className="space-y-2">
-          <Label htmlFor={codeId}>
-            Order ID
-          </Label>
+          <Label htmlFor={codeId}>{ORDER_LOOKUP_COPY.orderId}</Label>
           <Input
             id={codeId}
-            placeholder="e.g. BB-7KQ4MNZP"
+            placeholder={ORDER_LOOKUP_COPY.eGBb7kq4mnzp}
             value={code}
             onChange={(e) => setCode(e.target.value.trim())}
             autoCapitalize="characters"
@@ -52,10 +51,8 @@ export function OrderLookup() {
             className="h-10"
           />
         </div>
-        <Button type="submit" size="lg" pending={isLoading} className="w-full rounded-full">
-          Find order
-        </Button>
-        {missing && <p role="alert" className="text-caption text-destructive">Enter your order ID first.</p>}
+        <Button type="submit" size="lg" pending={isLoading} className="w-full rounded-full">{ORDER_LOOKUP_COPY.findOrder}</Button>
+        {missing && <p role="alert" className="text-caption text-destructive">{ORDER_LOOKUP_COPY.enterOrderIdFirst}</p>}
         {error && <p role="alert" className="text-caption text-destructive">{error}</p>}
       </form>
 

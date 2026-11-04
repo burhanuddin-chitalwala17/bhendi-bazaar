@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { BID_COUNTDOWN_COPY } from "./bidding-copy";
 
 /**
  * Time left, counted against the platform's clock rather than the device's (spec R17).
@@ -42,7 +43,7 @@ export function BidCountdown({
   }, [endAt, serverNow, onExpire]);
 
   if (remaining === 0) {
-    return <span className={className}>Bidding has closed</span>;
+    return <span className={className}>{BID_COUNTDOWN_COPY.biddingHasClosed}</span>;
   }
 
   const totalSeconds = Math.floor(remaining / 1000);

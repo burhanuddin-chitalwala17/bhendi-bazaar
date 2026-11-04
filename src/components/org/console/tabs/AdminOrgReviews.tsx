@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatShortDate } from "@/lib/format";
+import { ORG_REVIEWS_COPY } from "../org-console-copy";
 
 interface Props {
   orgId: string;
@@ -22,8 +23,8 @@ export async function AdminOrgReviews({ orgId, searchParams }: Props) {
   if (reviews.length === 0) {
     return (
       <EmptyState
-        title="No reviews yet"
-        description="Reviews of this shop's products appear here once buyers write them."
+        title={ORG_REVIEWS_COPY.empty}
+        description={ORG_REVIEWS_COPY.emptyHint}
       />
     );
   }
@@ -35,7 +36,7 @@ export async function AdminOrgReviews({ orgId, searchParams }: Props) {
           <CardContent className="space-y-2 p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-0.5">
-                <span className="sr-only">Rated {review.rating} of 5</span>
+                <span className="sr-only">{ORG_REVIEWS_COPY.rated(review.rating)}</span>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Icon
                     key={i}
@@ -55,9 +56,9 @@ export async function AdminOrgReviews({ orgId, searchParams }: Props) {
             <div className="flex items-center gap-2 text-caption text-muted-foreground">
               <span>{review.reviewerName}</span>
               {review.isVerified && (
-                <StatusBadge tone="success">Verified buyer</StatusBadge>
+                <StatusBadge tone="success">{ORG_REVIEWS_COPY.verified}</StatusBadge>
               )}
-              <span>on {review.product.name}</span>
+              <span>{ORG_REVIEWS_COPY.on(review.product.name)}</span>
             </div>
             {review.media && review.media.length > 0 && (
               <ReviewMedia media={review.media} authorName={review.reviewerName} />

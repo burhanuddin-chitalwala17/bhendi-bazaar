@@ -3,6 +3,8 @@
 import { UseFormRegister, FieldErrors } from "react-hook-form";
 import { FormInput, FormSelect, FormTextarea } from "../FormField";
 import type { CreateCategoryInput } from "@/domain/admin";
+import { CATEGORY_BASIC_FIELDS_COPY } from "./category-copy";
+import { CATEGORY_BASIC_RULES_COPY } from "@/components/shared/forms/category/category-copy";
 
 
 interface CategoryBasicFieldsProps {
@@ -26,37 +28,37 @@ export function CategoryBasicFields({
   return (
     <div className="rounded-card border border-border bg-card p-6">
       <h2 className="text-title font-semibold text-foreground mb-4">
-        Basic Information
+        {CATEGORY_BASIC_FIELDS_COPY.basicInformation}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormInput
-          label="Category Name"
+          label={CATEGORY_BASIC_FIELDS_COPY.categoryName}
           required
-          placeholder="e.g., Kurtas"
-          {...register("name", { required: "Category name is required" })}
+          placeholder={CATEGORY_BASIC_FIELDS_COPY.eGKurtas}
+          {...register("name", { required: CATEGORY_BASIC_RULES_COPY.name })}
           error={errors.name?.message}
         />
 
         <div className="md:col-span-2">
           <FormTextarea
-            label="Description"
+            label={CATEGORY_BASIC_FIELDS_COPY.description}
             required
-            placeholder="Detailed category description..."
+            placeholder={CATEGORY_BASIC_FIELDS_COPY.detailedCategoryDescription}
             rows={4}
             {...register("description", {
-              required: "Description is required",
+              required: CATEGORY_BASIC_RULES_COPY.description,
             })}
             error={errors.description?.message}
           />
         </div>
 
         <FormSelect
-          label="Parent Category"
+          label={CATEGORY_BASIC_FIELDS_COPY.parentCategory}
           {...register("parentId")}
           error={errors.parentId?.message}
-          hint="Leave empty for a top-level category"
+          hint={CATEGORY_BASIC_FIELDS_COPY.leaveEmptyForATop}
         >
-          <option value="">None — top level</option>
+          <option value="">{CATEGORY_BASIC_FIELDS_COPY.noneTopLevel}</option>
           {parentOptions.map((option) => (
             <option key={option.id} value={option.id}>
               {option.name}
@@ -71,16 +73,16 @@ export function CategoryBasicFields({
           (listing-vocabulary/categories D1a).
         */}
         <FormSelect
-          label="Product type"
+          label={CATEGORY_BASIC_FIELDS_COPY.productType}
           {...register("productType")}
           error={errors.productType?.message}
           hint={
             watchedProductType
-              ? "Decides which listing questions its products are asked."
-              : "Decides which listing questions its products are asked. Left empty, this category inherits from its parent — and if no ancestor sets one either, products here save and sell on the storefront but cannot be published to a marketplace."
+              ? CATEGORY_BASIC_RULES_COPY.typeHintRoot
+              : CATEGORY_BASIC_RULES_COPY.typeHintChild
           }
         >
-          <option value="">Inherit from parent</option>
+          <option value="">{CATEGORY_BASIC_FIELDS_COPY.inheritFromParent}</option>
           {productTypeOptions.map((option) => (
             <option key={option.key} value={option.key}>
               {option.label}
@@ -89,13 +91,13 @@ export function CategoryBasicFields({
         </FormSelect>
 
         <FormInput
-          label="Display Order"
+          label={CATEGORY_BASIC_FIELDS_COPY.displayOrder}
           type="number"
           min="0"
           placeholder="0"
           {...register("order", { valueAsNumber: true })}
           error={errors.order?.message}
-          hint="Lower numbers appear first"
+          hint={CATEGORY_BASIC_FIELDS_COPY.lowerNumbersAppearFirst}
         />
       </div>
     </div>

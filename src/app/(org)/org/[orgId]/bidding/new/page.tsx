@@ -14,6 +14,8 @@ import { biddingService } from "@server/bidding/bidding.service";
 import { NotFoundError } from "@server/shared/domain-error";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { BiddingForm } from "@/components/bidding/BiddingForm";
+import { ORG_PAGES_COPY } from "@/components/org/pages-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -40,13 +42,13 @@ export default async function NewBiddingEventPage({
     <PageShell width="narrow">
       <PageHeader
         help="bidding"
-        title="Set up bidding"
+        title={ORG_PAGES_COPY.newBidding}
         description={facts.name}
-        back={{ href: `/org/${scope.orgId}/bidding`, label: "Bidding" }}
+        back={{ href: ROUTES.org.bidding(scope.orgId), label: ORG_PAGES_COPY.biddingTitle }}
       />
       <BiddingForm
         action={`/api/org/${scope.orgId}/bidding`}
-        returnTo={`/org/${scope.orgId}/bidding`}
+        returnTo={ROUTES.org.bidding(scope.orgId)}
         product={facts}
       />
     </PageShell>

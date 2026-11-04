@@ -5,9 +5,11 @@ import { channelFamilyDAL } from "@/data-access-layer/channel-family.dal";
 import { PageShell, PageHeader } from "@/components/shared/page-shell";
 import { FamilyForm } from "@/components/channel/family-form";
 import { FAMILY } from "@/components/channel/family-copy";
+import { ROUTES } from "@server/shared/routes";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
 export const metadata = {
-  title: "Make one family",
+  title: ORG_PAGE_TITLES.family,
   robots: { index: false, follow: false },
 };
 
@@ -27,7 +29,7 @@ export default async function FamilyPage({
   const data = await channelFamilyDAL.page(scope.orgId, ids);
   if (!data) notFound();
   const { detail } = data;
-  const backHref = `/org/${scope.orgId}/channels/${detail.channel}/listings?tab=notLinked`;
+  const backHref = `${ROUTES.org.channelListings(scope.orgId, detail.channel)}?tab=notLinked`;
   const word = detail.members.length === 1 ? "listing" : "listings";
 
   return (

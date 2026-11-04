@@ -10,6 +10,7 @@ import {
   type WidgetData,
   type WidgetDefinition,
 } from "@server/analytics/widgets";
+import { DASHBOARD_COPY } from "./dashboard-copy";
 
 /** The registry's icon keys, by meaning (ADR-0066). */
 const ICONS: Record<WidgetDefinition["icon"], IconName> = {
@@ -64,7 +65,7 @@ export async function DashboardWidgets({
                   {widget.title}
                 </p>
                 <p className="mt-1 text-small text-destructive">
-                  Couldn’t load this figure
+                  {DASHBOARD_COPY.widgetFailed}
                 </p>
               </CardContent>
             </Card>

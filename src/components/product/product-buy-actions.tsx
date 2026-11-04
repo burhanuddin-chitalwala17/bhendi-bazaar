@@ -7,6 +7,9 @@ import { Icon } from "@/components/ui/icon";
 import type { Product } from "@/domain/product";
 import { useProductActions } from "@/hooks/product/useProductActions";
 import { cn } from "@/lib/utils";
+import { PRODUCT_PAGE_COPY } from "./product-copy";
+import { ROUTES } from "@server/shared/routes";
+import { BUY_ACTIONS_LABEL_COPY } from "@/components/product/product-copy";
 
 /**
  * Add to bag, and Buy now beside it from a tablet up. Never disabled (ADR-0053): a sold-out or
@@ -18,11 +21,11 @@ export function ProductBuyActions({ product, className }: { product: Product; cl
   if (product.biddingSlug) {
     return (
       <div className={cn("flex flex-col gap-2", className)}>
-        <p className="text-caption text-muted-foreground">This piece is up for bidding, so it can&apos;t be bought directly right now.</p>
+        <p className="text-caption text-muted-foreground">{PRODUCT_PAGE_COPY.buy.inBidding}</p>
         <Button asChild size="lg" className="w-full rounded-full">
-          <Link href={`/bid/${product.biddingSlug}`}>
+          <Link href={ROUTES.bid(product.biddingSlug)}>
             <Icon name="auction" size="sm" />
-            Go to bidding
+            {PRODUCT_PAGE_COPY.buy.goToBidding}
           </Link>
         </Button>
       </div>
@@ -39,7 +42,7 @@ export function ProductBuyActions({ product, className }: { product: Product; cl
         aria-disabled={isOutOfStock || undefined}
         onClick={handleBuyNow}
       >
-        Buy now
+        {PRODUCT_PAGE_COPY.buy.buyNow}
       </Button>
       <Button
         size="lg"
@@ -49,7 +52,7 @@ export function ProductBuyActions({ product, className }: { product: Product; cl
         onClick={handleAddToCart}
       >
         {!isAddingToCart && <Icon name="bag" size="sm" motion={justAdded} />}
-        {isOutOfStock ? "Sold out" : "Add to bag"}
+        {isOutOfStock ? BUY_ACTIONS_LABEL_COPY.soldOut : BUY_ACTIONS_LABEL_COPY.add}
       </Button>
     </div>
   );

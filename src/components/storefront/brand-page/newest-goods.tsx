@@ -2,6 +2,8 @@ import { ProductGrid } from "@/components/shared/product-grid";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import type { NewestSlice } from "./sections";
+import { BRAND_PAGE_COPY } from "./brand-page-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * The newest goods, as the marketplace's own tiles (brand-page R6, D5): same price, same
@@ -15,11 +17,11 @@ export function NewestGoods({ handle, name, products }: NewestSlice) {
   return (
     <section className="space-y-3">
       <SectionHeader
-        overline="The shop"
-        title={`Newest from ${name}`}
+        overline={BRAND_PAGE_COPY.overline}
+        title={BRAND_PAGE_COPY.newest(name)}
         action={
           products.length
-            ? { label: "See all", href: `/store/${handle}` }
+            ? { label: BRAND_PAGE_COPY.seeAll, href: ROUTES.store(handle) }
             : undefined
         }
       />
@@ -27,8 +29,8 @@ export function NewestGoods({ handle, name, products }: NewestSlice) {
         <ProductGrid products={products} />
       ) : (
         <EmptyState
-          title="Nothing here just yet"
-          description={`${name} has not listed anything for sale. Come back soon.`}
+          title={BRAND_PAGE_COPY.emptyTitle}
+          description={BRAND_PAGE_COPY.emptyDescription(name)}
         />
       )}
     </section>

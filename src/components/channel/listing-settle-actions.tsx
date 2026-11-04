@@ -11,6 +11,7 @@ import type { MarketplaceChannel } from "@server/channels/channel-connection.typ
 import { channelsApiClient } from "./channelsApiClient";
 import { MatchPicker } from "./match-picker";
 import { SETTLE_ACTION, SETTLE_TOAST } from "./settle-copy";
+import { ROUTES } from "@server/shared/routes";
 
 interface ListingSettleActionsProps {
   orgId: string;
@@ -22,7 +23,7 @@ interface ListingSettleActionsProps {
 /** The details panel's three choices for an unsettled listing (product-merge R1). Never disabled. */
 export function ListingSettleActions({ orgId, channel, label, listingId }: ListingSettleActionsProps) {
   const router = useRouter();
-  const addNewHref = `/org/${orgId}/channels/settle?listing=${listingId}`;
+  const addNewHref = `${ROUTES.org.channelSettle(orgId)}?listing=${listingId}`;
 
   const bringBack = useMutation(() => channelsApiClient.bringBackListing(orgId, channel, listingId), {
     showToast: false,

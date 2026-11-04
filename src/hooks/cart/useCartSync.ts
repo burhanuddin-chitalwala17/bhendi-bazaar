@@ -6,6 +6,7 @@ import { cartApiClient } from "@/components/cart/cartApiClient";
 import { useDebounce } from "@/hooks/core/useDebounce";
 import { ApiError } from "@/lib/api-error";
 import { toast } from "sonner";
+import { USE_CART_SYNC_COPY } from "./cart-copy";
 
 const LAST_CLEANUP_KEY = "cart-last-cleanup";
 const CLEANUP_INTERVAL = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -41,9 +42,9 @@ export function useCartSync() {
       const merged = await cartApiClient.syncCart(items).catch((error) => {
         // A failed sync keeps this device's lines rather than losing them.
         console.error("[useCartSync] syncCart failed:", error);
-        toast.error("Failed to sync your cart with the server", {
+        toast.error(USE_CART_SYNC_COPY.failedToSyncYourCart, {
           description:
-            "Your local cart is still safe. We'll retry when you're back online.",
+            USE_CART_SYNC_COPY.localCartSafe,
         });
         return { items, version: 0 };
       });
@@ -92,7 +93,7 @@ export function useCartSync() {
       // An order this tab just placed bumps the version too, and merges to exactly
       // what the tab holds — so only a merge that changed something is announced.
       if (error instanceof ApiError && error.status === 409) {
-        if (await syncCart()) toast.info("Your cart was updated in another tab — merged.");
+        if (await syncCart()) toast.info(USE_CART_SYNC_COPY.yourCartWasUpdatedIn);
         return;
       }
       console.error("[useCartSync] Background sync failed:", error);

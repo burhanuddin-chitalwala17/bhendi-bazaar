@@ -9,6 +9,8 @@ import { OfferForm } from "@/components/promotions/OfferForm";
 import { toInitialValues } from "@/components/promotions/toInitialValues";
 
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
+import { ORG_PAGES_COPY } from "@/components/org/pages-copy";
+import { ROUTES } from "@server/shared/routes";
 export default async function EditOrgOfferPage({
   params,
 }: {
@@ -36,14 +38,14 @@ export default async function EditOrgOfferPage({
     <PageShell width="narrow">
       <PageHeader
         help="promotions"
-        title="Edit offer"
-        description="Changes apply from now on. Discounts already given keep the terms they were given under."
+        title={ORG_PAGES_COPY.editOffer}
+        description={ORG_PAGES_COPY.editOfferDescription}
       />
       <OfferForm
         action={`/api/org/${scope.orgId}/promotions/${id}`}
         method="PATCH"
         initial={toInitialValues(offer)}
-        returnTo={`/org/${scope.orgId}/promotions`}
+        returnTo={ROUTES.org.promotions(scope.orgId)}
         categories={categories}
         products={products.products}
         productTotal={products.total}

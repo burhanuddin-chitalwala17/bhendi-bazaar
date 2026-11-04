@@ -18,6 +18,8 @@ import { CHANNEL_LABELS, type Channel } from "@server/shared/channels";
 import type { ProductListScope } from "@/lib/validation/schemas/product-list.schema";
 import { ChannelFilterNote, ChannelPills } from "./components/ChannelFilter";
 import { CHANNEL_FILTER } from "./channel-filter-copy";
+import { PRODUCT_CONSOLE_COPY } from "../console-copy";
+import { PRODUCTS_LIST_EMPTY_COPY } from "@/components/product/console/console-copy";
 
 interface ProductsContainerProps {
   readOnly?: boolean;
@@ -29,7 +31,7 @@ interface ProductsContainerProps {
   locations?: BulkLocation[];
   /** Marketplaces the shop is connected to, for "Send to marketplace". */
   marketplaces?: BulkMarketplace[];
-  /** Where "Add a product" goes from an empty list; absent on the read-only views. */
+  /** Where PRODUCTS_LIST_EMPTY_COPY.add goes from an empty list; absent on the read-only views. */
   addHref?: string;
   /** Each channel the shop sells on and how much of the catalogue it would take (Q35); absent off the shop's own page. */
   channelRows?: readonly ChannelSummaryRow[];
@@ -201,7 +203,7 @@ export function ProductsContainer({
 
   return (
     <div className="space-y-4">
-      <PageTabs tabs={tabs} current={current} label="Which products" />
+      <PageTabs tabs={tabs} current={current} label={PRODUCT_CONSOLE_COPY.list.tabs} />
       <ChannelPills rows={channelRows} current={initialFilters.notReadyOn} hrefFor={channelHref} />
       <ProductsFilters filters={initialFilters} categories={categories} onFilterChange={updateFilters} />
       {filteredRow && channelsHref && (
@@ -224,8 +226,8 @@ export function ProductsContainer({
         notReadyChannel={filteredRow ? CHANNEL_LABELS[filteredRow.channel] : undefined}
         empty={
           current === "all" && !initialFilters.search && addHref
-            ? { title: "No products yet", description: "Add your first product and it goes on sale in your shop.", action: { label: "Add a product", href: addHref } }
-            : { title: "Nothing here", description: "No product matches this view. Try another tab or search." }
+            ? { title: PRODUCTS_LIST_EMPTY_COPY.noneTitle, description: PRODUCTS_LIST_EMPTY_COPY.noneBody, action: { label: PRODUCTS_LIST_EMPTY_COPY.add, href: addHref } }
+            : { title: PRODUCTS_LIST_EMPTY_COPY.filteredTitle, description: PRODUCTS_LIST_EMPTY_COPY.filteredBody }
         }
       />
       {!readOnly && (

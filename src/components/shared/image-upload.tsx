@@ -14,6 +14,7 @@ import { useMutation } from "@/hooks/core/useMutation";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { uploadApiClient } from "@/components/shared/uploadApiClient";
+import { IMAGE_UPLOAD_COPY } from "./shared-copy";
 
 interface ImageUploadProps {
   label: string;
@@ -48,7 +49,7 @@ export function ImageUpload({
 
     // Check max images limit
     if (value.length + files.length > maxImages) {
-      toast.error(`Maximum ${maxImages} images allowed`);
+      toast.error(IMAGE_UPLOAD_COPY.maxImages(maxImages));
       return;
     }
 
@@ -153,7 +154,7 @@ export function ImageUpload({
             {/* Thumbnail badge */}
             {index === 0 && (
               <div className="absolute top-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-xs rounded">
-                Thumbnail
+                {IMAGE_UPLOAD_COPY.thumbnail}
               </div>
             )}
           </div>
@@ -179,7 +180,7 @@ export function ImageUpload({
               <>
                 <Icon name="upload" size="xl" className="text-muted-foreground/70" />
                 <span className="text-sm text-muted-foreground">
-                  Upload Image
+                  {IMAGE_UPLOAD_COPY.uploadImage}
                 </span>
               </>
             )}

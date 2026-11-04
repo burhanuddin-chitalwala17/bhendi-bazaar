@@ -1,0 +1,58 @@
+/** The admin's product-type screens (ADR-0067). */
+export const PRODUCT_TYPE_PAGE_COPY = {
+  title: "Product types",
+  description: "What a product is asked about. A category points at one; the questions follow.",
+  newType: "New type",
+  back: "Product types",
+  newTitle: "New product type",
+  newDescription: "The questions a product line is asked. A category points at one; the questions follow.",
+  editDescription: (categories: number, products: number) =>
+    `Used by ${categories} categories and ${products} products. Changing what it asks never rewrites an answer already given.`,
+} as const;
+
+export const PRODUCT_TYPES_TABLE_COPY = {
+  label: "Product types",
+  usedBy: (categories: string, products: string) => `${categories} categories · ${products} products`,
+  emptyTitle: "No product types yet",
+  emptyDescription: "A category with no type asks only the shared questions, and its products cannot be published to a marketplace.",
+  newType: "New type",
+  type: "Type",
+  key: "Key",
+  questions: "Questions",
+  measures: "Measurements",
+  kinds: "Kinds",
+  usedByColumn: "Used by",
+} as const;
+
+export const PRODUCT_TYPE_FORM_COPY = {
+  saveFailed: "Could not save the product type",
+  whatItIs: "What it is",
+  name: "Name",
+  namePlaceholder: "e.g. Islamic wear",
+  nameHint: "What an admin picks it by",
+  key: "Key",
+  keyPlaceholder: "e.g. islamic-wear",
+  keyFrozen: "Frozen after creation — products and categories store it",
+  keyRule: "Lowercase letters, digits and hyphens. It cannot be changed later.",
+  whatItAsks: "What it asks",
+  whatItAsksHint: "Each line says which marketplaces mark it compulsory somewhere. Leaving one out is allowed; it means a listing there will be refused until it is answered.",
+  requiredBy: (channels: string) => `Required by ${channels}`,
+  requiredByNobody: "Required by nobody — useful on your own storefront",
+  whatItMeasures: "What it measures",
+  whatItMeasuresHint: "The unit is fixed for the type, never chosen per product — a free unit is how centimetres and inches end up in one column.",
+  unitFor: (measure: string) => `Unit for ${measure}`,
+  required: "Required",
+  axisTitle: "What makes two sell separately",
+  axisHint: "Only something the type asks about. An abaya varies by colour; an attar by its bottle size.",
+  axisEmpty: "Choose a question or a measurement first.",
+  kindsTitle: "The kinds it holds",
+  kindsHintBefore: "One per line, as",
+  kindsFormat: "key:Label",
+  kindsHintAfter: ". A kind decides which category a marketplace lists it under — abaya, burqa and rida are kinds, not types of their own.",
+  kinds: "Kinds",
+  kindsPlaceholder: "abaya:Abaya\nrida:Rida",
+  saving: "Saving…",
+  saveChanges: "Save changes",
+  create: "Create type",
+  cancel: "Cancel",
+} as const;

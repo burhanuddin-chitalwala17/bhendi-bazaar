@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 
 import { ContactSheet } from "@/components/support/contact-sheet";
 import { Button } from "@/components/ui/button";
+import { CONTACT_LAUNCHER_COPY } from "./support-copy";
 
 /**
  * A Contact us trigger plus the sheet it opens. The header (desktop) and the tab bar

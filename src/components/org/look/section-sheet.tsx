@@ -30,6 +30,7 @@ import { SlotPhotos } from "./slot-photos";
 import { IMAGE_SLOT } from "@server/catalog/image-slots";
 import type { ImageSlotValue } from "@server/catalog/image-framing";
 import { useSectionSave, useSlow } from "./useSectionSave";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * One section's sheet over the preview (storefront-themes D13; Q9, Q10): only that section's
@@ -195,7 +196,7 @@ function SectionForm({
       {(section === SECTION.STORY || section === SECTION.VISIT) && (
         <p className="text-sm text-muted-foreground">
           {section === SECTION.STORY ? SECTION_COPY.storyHelp : SECTION_COPY.visitHelp}{" "}
-          <Link prefetch={false} href={`/org/${orgId}/shop/details`} className="underline underline-offset-4">
+          <Link prefetch={false} href={ROUTES.org.shopDetails(orgId)} className="underline underline-offset-4">
             {SECTION_COPY.shopDetails}
           </Link>
         </p>

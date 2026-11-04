@@ -32,6 +32,7 @@ Each layer reads only from the one above. A component that skips a layer is the 
 
 ## Appearance
 
+- **Words and our own paths are constants.** What a person reads (JSX text, `title`/`label`/`placeholder`/`aria-label`/`alt`, toasts) lives in the area's `*-copy.ts`; a link to one of our pages is `ROUTES.…` from `server/shared/routes.ts`. `tests/unit/hardcoded-copy.test.ts` ([ADR-0067](../../docs/adr/0067-words-live-in-copy-modules-and-our-own-paths-in-one-routes-table.md))
 - **Every control is a `ui/` primitive.** No raw `<button>`, `<select>` or text `<input>`; `type="file"` and `type="hidden"` are the only exceptions. Appearance comes from a variant, with only layout classes at the call site. `tests/unit/ui-primitives.test.ts`
 - **Every icon is `<Icon name size>` from `ui/icon.tsx`**, named for its meaning (`close`, `success`, `bag`); only `ui/icons/` imports a library or holds a drawing. Without `label` it is decoration; an icon-only button carries `aria-label`. A busy button is `Button pending`, inline progress is `Spinner`, a loading page is a skeleton. `tests/unit/icons.test.ts` ([ADR-0066](../../docs/adr/0066-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md))
 - **Variants are one `cva` map per primitive, one prop per axis** (`variant`, `size`, `shape`, `tone`, `density`); combinations are `compoundVariants`; a composite passes axes through, never restyles. Adding a variant is one entry. *Review checks it.* ([ADR-0066](../../docs/adr/0066-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md) D8)

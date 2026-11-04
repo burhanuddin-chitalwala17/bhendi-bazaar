@@ -16,9 +16,20 @@ import { APP_DESCRIPTION, APP_NAME, BRAND_PROFILES } from "@/lib/config";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/structured-data";
 import { appUrl } from "@server/shared/app-url";
+import { HOME_PAGE_COPY } from "./home-page-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** One row of the desktop's 4-up grid, two of the phone's. */
 const NEW_IN = 4;
+
+function isTopLevel(category: { parentId: string | null }) {
+  return category.parentId === null;
+}
+
+/** Top-level categories in the order the admin set. */
+function byAdminOrder(a: { order: number }, b: { order: number }) {
+  return a.order - b.order;
+}
 
 export default async function HomePage() {
   // Independent reads, together. The whole category tree because home has no ancestor to descend from.
@@ -29,7 +40,7 @@ export default async function HomePage() {
     categoriesDAL.getDescendants(null),
   ]);
 
-  const topLevel = lanes.filter((category) => category.parentId === null).sort((a, b) => a.order - b.order);
+  const topLevel = lanes.filter(isTopLevel).sort(byAdminOrder);
 
   return (
     <div className="space-y-8 md:space-y-12">
@@ -41,7 +52,7 @@ export default async function HomePage() {
       <CategoryArches categories={topLevel} />
       <OffersStrip
         offers={offers.slice(0, OFFERS_IN_STRIP)}
-        viewAll={offers.length > OFFERS_IN_STRIP ? { href: "/offers", label: "View more" } : undefined}
+        viewAll={offers.length > OFFERS_IN_STRIP ? { href: ROUTES.offers, label: HOME_PAGE_COPY.offersMore } : undefined}
       />
       {/* Below the fold: streamed, so the hero paints without waiting for either grid. */}
       <Suspense fallback={<SkeletonProductGrid count={NEW_IN} />}>
@@ -62,9 +73,9 @@ async function NewIn() {
   return (
     <section className="space-y-4">
       <SectionHeader
-        title="New this week"
-        description="Fresh from the shops of the bazaar"
-        action={{ label: total > products.length ? `See all ${formatCount(total)}` : "See all", href: "/shop" }}
+        title={HOME_PAGE_COPY.newTitle}
+        description={HOME_PAGE_COPY.newDescription}
+        action={{ label: total > products.length ? HOME_PAGE_COPY.seeAllCount(formatCount(total)) : HOME_PAGE_COPY.seeAll, href: ROUTES.shopAll }}
       />
       <ProductGrid products={products} />
     </section>

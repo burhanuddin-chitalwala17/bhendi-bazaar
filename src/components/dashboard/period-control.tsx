@@ -3,11 +3,12 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { SalesPeriod } from "@server/analytics/sales.types";
 import { PERIOD_OPTIONS } from "./period";
+import { DASHBOARD_COPY } from "./dashboard-copy";
 
 /** The period, as links: the URL holds it, so a view can be shared and the server reads it. */
 export function PeriodControl({ current, basePath }: { current: SalesPeriod; basePath: string }) {
   return (
-    <nav aria-label="Period" className="inline-flex rounded-field border border-border bg-card p-0.5">
+    <nav aria-label={DASHBOARD_COPY.period} className="inline-flex rounded-field border border-border bg-card p-0.5">
       {PERIOD_OPTIONS.map(({ period, label }) => {
         const active = period === current;
         return (

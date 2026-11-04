@@ -12,6 +12,8 @@ import { Icon } from "@/components/ui/icon";
 import { adminProductTypesDAL } from "@/data-access-layer/admin/product-types.dal";
 import { ProductTypesTable } from "@/components/product-type/console/ProductTypesTable";
 import { Button } from "@/components/ui/button";
+import { PRODUCT_TYPE_PAGE_COPY } from "@/components/product-type/product-type-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export default async function AdminProductTypesPage() {
   const types = await adminProductTypesDAL.getProductTypes(true);
@@ -20,13 +22,13 @@ export default async function AdminProductTypesPage() {
   return (
     <PageShell width="wide">
       <PageHeader
-        title="Product types"
-        description="What a product is asked about. A category points at one; the questions follow."
+        title={PRODUCT_TYPE_PAGE_COPY.title}
+        description={PRODUCT_TYPE_PAGE_COPY.description}
         actions={
           <Button asChild>
-            <Link href="/admin/product-types/new" prefetch={false}>
+            <Link href={ROUTES.admin.newProductType} prefetch={false}>
               <Icon name="add" />
-              New type
+              {PRODUCT_TYPE_PAGE_COPY.newType}
             </Link>
           </Button>
         }

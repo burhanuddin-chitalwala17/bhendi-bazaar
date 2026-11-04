@@ -7,11 +7,12 @@ import {
 import { OrgForm } from "@/components/shared/forms/orgs";
 import type { Org } from "@/domain/org";
 import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
+import { ADD_ORG_TITLE_COPY } from "@/components/org/console/org-console-copy";
 
 interface AddOrgModalProps {
   open: boolean;
-  onClose: () => void;
-  onSubmit: (data: OrgFormInput) => Promise<void>;
+  onClose(): void;
+  onSubmit(data: OrgFormInput): Promise<void>;
   org?: Org; // For edit mode
   isSubmitting?: boolean;
   mode?: "create" | "edit" | "view";
@@ -34,10 +35,10 @@ export function AddOrgModal({
         <DialogHeader>
           <DialogTitle>
             {isEdit
-              ? `Edit Org: ${org?.name || ""}`
+              ? ADD_ORG_TITLE_COPY.edit(org?.name || "")
               : isView
-                ? `View Org: ${org?.name || ""}`
-                : "Add New Organisation"}
+                ? ADD_ORG_TITLE_COPY.view(org?.name || "")
+                : ADD_ORG_TITLE_COPY.add}
           </DialogTitle>
         </DialogHeader>
 

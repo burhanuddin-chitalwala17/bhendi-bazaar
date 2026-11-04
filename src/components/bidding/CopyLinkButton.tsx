@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { COPY_LINK_COPY } from "./bidding-copy";
 
 /**
  * The whole point of an event is the link (spec R9), so copying it is a first-class
@@ -15,7 +16,7 @@ import { Icon } from "@/components/ui/icon";
  */
 export function CopyLinkButton({
   path,
-  label = "Copy link",
+  label = COPY_LINK_COPY.copyLink,
   className,
 }: {
   path: string;
@@ -29,7 +30,7 @@ export function CopyLinkButton({
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      toast.success("Link copied");
+      toast.success(COPY_LINK_COPY.linkCopied);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // A denied clipboard is not a failure the org can act on, so show the URL
@@ -47,7 +48,7 @@ export function CopyLinkButton({
       className={className}
     >
       <Icon name={copied ? "done" : "copy"} />
-      {copied ? "Copied" : label}
+      {copied ? COPY_LINK_COPY.copied : label}
     </Button>
   );
 }

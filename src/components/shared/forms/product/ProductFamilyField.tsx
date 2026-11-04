@@ -9,6 +9,7 @@ import { ApiError } from "@/lib/api-error";
 import { useListingPrefix } from "./useListingPrefix";
 import { listingApiClient } from "@/components/product/listingApiClient";
 import type { ProductFormInput } from "@/components/product/console/types";
+import { PRODUCT_FAMILY_FIELD_COPY } from "./product-copy";
 
 export interface FamilyOption {
   id: string;
@@ -84,13 +85,13 @@ export function ProductFamilyField({
   return (
     <div className="space-y-3">
       <FormSelect
-        label="Part of a family"
+        label={PRODUCT_FAMILY_FIELD_COPY.partOfAFamily}
         {...register("familyId")}
         error={errors.familyId?.message}
         disabled={readOnly}
-        hint="For the same thing in several colours or sizes. Most products need none."
+        hint={PRODUCT_FAMILY_FIELD_COPY.forTheSameThingIn}
       >
-        <option value="">On its own</option>
+        <option value="">{PRODUCT_FAMILY_FIELD_COPY.onItsOwn}</option>
         {options.map((family) => (
           <option key={family.id} value={family.id}>
             {family.name}
@@ -100,19 +101,19 @@ export function ProductFamilyField({
 
       {!readOnly && !creating && (
         <Button type="button" variant="outline" size="sm" onClick={() => setCreating(true)}>
-          Start a new family
+          {PRODUCT_FAMILY_FIELD_COPY.startANewFamily}
         </Button>
       )}
 
       {creating && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <FormInput
-            label="Family name"
-            placeholder="e.g. Nida Matte Abaya"
+            label={PRODUCT_FAMILY_FIELD_COPY.familyName}
+            placeholder={PRODUCT_FAMILY_FIELD_COPY.eGNidaMatteAbaya}
             value={name}
             onChange={(event) => setName(event.target.value)}
             error={error ?? undefined}
-            hint="What the colours have in common, not one of them"
+            hint={PRODUCT_FAMILY_FIELD_COPY.whatTheColoursHaveIn}
           />
           <div className="flex gap-2">
             <Button type="button" onClick={onCreate} aria-busy={busy}>
@@ -126,7 +127,7 @@ export function ProductFamilyField({
                 setError(null);
               }}
             >
-              Cancel
+              {PRODUCT_FAMILY_FIELD_COPY.cancel}
             </Button>
           </div>
         </div>

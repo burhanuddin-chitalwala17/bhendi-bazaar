@@ -3,6 +3,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useCartStore } from "@/store/cartStore";
 import type { Product } from "@/domain/product";
+import { USE_PRODUCT_ACTIONS_COPY } from "./product-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export function useProductActions(product: Product) {
   const router = useRouter();
@@ -26,19 +28,17 @@ export function useProductActions(product: Product) {
 
   const handleAddToCart = () => {
     if (isUpForBidding) {
-      toast.warning("This item is up for bidding and cannot be bought directly");
+      toast.warning(USE_PRODUCT_ACTIONS_COPY.thisItemIsUpFor);
       return;
     }
 
     if (isOutOfStock) {
-      toast.warning("This item is out of stock");
+      toast.warning(USE_PRODUCT_ACTIONS_COPY.thisItemIsOutOf);
       return;
     }
 
     if (currentCartQty + 1 > product.stock) {
-      toast.warning(
-        `Only ${product.stock} available, and ${currentCartQty} already in your bag`
-      );
+      toast.warning(USE_PRODUCT_ACTIONS_COPY.onlyAvailable(product.stock, currentCartQty));
       return;
     }
     setJustAdded(false);
@@ -58,7 +58,7 @@ export function useProductActions(product: Product) {
               shippingFromPincode: product.shippingFromPincode,
               org: product.org,
             });
-            toast.success("Added to your bag");
+            toast.success(USE_PRODUCT_ACTIONS_COPY.addedToYourBag);
             setJustAdded(true);
             resolve(undefined);
           }, 300);
@@ -68,24 +68,22 @@ export function useProductActions(product: Product) {
 
   const handleBuyNow = () => {
     if (isUpForBidding) {
-      toast.error("This item is up for bidding and cannot be bought directly");
+      toast.error(USE_PRODUCT_ACTIONS_COPY.thisItemIsUpFor);
       return;
     }
 
     if (isOutOfStock) {
-      toast.error("This item is out of stock");
+      toast.error(USE_PRODUCT_ACTIONS_COPY.thisItemIsOutOf);
       return;
     }
 
     if (currentCartQty >= product.stock) {
-      toast.error(
-        `You already have all ${currentCartQty} available in your bag`
-      );
+      toast.error(USE_PRODUCT_ACTIONS_COPY.allInBag(currentCartQty));
       return;
     }
 
     startBuyNow(() => {
-      router.push(`/checkout?buyNow=${product.slug}`);
+      router.push(`${ROUTES.checkout}?buyNow=${product.slug}`);
     });
   };
 

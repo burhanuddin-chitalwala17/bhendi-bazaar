@@ -9,6 +9,7 @@ import {
   type GuestContactMessageFormValues,
 } from "@/lib/validation/schemas/contact.schema";
 import { sendContactMessage } from "@/components/support/contactApiClient";
+import { CONTACT_MESSAGE_FORM_COPY } from "./support-copy";
 
 interface ContactMessageFormProps {
   /** True when a session with an email exists — the reply address is then the account's. */
@@ -41,9 +42,9 @@ export function ContactMessageForm({
       sendContactMessage(
         signedIn ? { subject, message } : { subject, message, email },
       ),
-    successMessage: "Message sent — we will get back to you.",
+    successMessage: CONTACT_MESSAGE_FORM_COPY.messageSentWeWill,
     onSuccess: onSent,
-    fallbackMessage: "Could not send your message. Please try again.",
+    fallbackMessage: CONTACT_MESSAGE_FORM_COPY.couldNotSendMessage,
   });
 
   return (
@@ -59,29 +60,29 @@ export function ContactMessageForm({
 
       {!signedIn && (
         <FormInput
-          label="Your email"
+          label={CONTACT_MESSAGE_FORM_COPY.yourEmail}
           required
           type="email"
-          placeholder="you@example.com"
-          hint="So we can reply to you."
+          placeholder={CONTACT_MESSAGE_FORM_COPY.exampleCom}
+          hint={CONTACT_MESSAGE_FORM_COPY.soWeCanReply}
           {...register("email")}
           error={errors.email?.message}
         />
       )}
 
       <FormInput
-        label="Subject"
+        label={CONTACT_MESSAGE_FORM_COPY.subject}
         required
-        placeholder="Order, sizing, something else"
+        placeholder={CONTACT_MESSAGE_FORM_COPY.orderSizingSomethingElse}
         {...register("subject")}
         error={errors.subject?.message}
       />
 
       <FormTextarea
-        label="Message"
+        label={CONTACT_MESSAGE_FORM_COPY.message}
         required
         rows={5}
-        placeholder="Tell us what you need help with."
+        placeholder={CONTACT_MESSAGE_FORM_COPY.tellUsWhatNeed}
         {...register("message")}
         error={errors.message?.message}
       />
@@ -89,8 +90,8 @@ export function ContactMessageForm({
       <FormActions
         onCancel={onCancel}
         isSubmitting={isSubmitting}
-        submitLabel="Send message"
-        cancelLabel="Back"
+        submitLabel={CONTACT_MESSAGE_FORM_COPY.sendMessage}
+        cancelLabel={CONTACT_MESSAGE_FORM_COPY.back}
       />
     </form>
   );

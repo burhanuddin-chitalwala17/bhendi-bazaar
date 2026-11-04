@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { appUrl } from "@server/shared/app-url";
 import { crawlersBlocked } from "@/lib/crawl-block";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * Crawlers had no statement of what this site is, so they were still working a list
@@ -26,18 +27,18 @@ export default function robots(): MetadataRoute.Robots {
       // the line below, and the two read alike. Adding it there would silently
       // de-index every storefront (ADR-0030 decision 3).
       disallow: [
-        "/admin",
-        "/org",
+        ROUTES.admin.home,
+        ROUTES.org.root,
         "/api/",
-        "/profile",
-        "/orders",
-        "/order/",
-        "/checkout",
-        "/cart",
-        "/signin",
-        "/signup",
-        "/reset-password",
-        "/forgot-password",
+        ROUTES.profile,
+        ROUTES.orders,
+        ROUTES.order(""),
+        ROUTES.checkout,
+        ROUTES.cart,
+        ROUTES.signIn,
+        ROUTES.signUp,
+        ROUTES.resetPassword,
+        ROUTES.forgotPassword,
       ],
     },
     sitemap: `${appUrl()}/sitemap.xml`,

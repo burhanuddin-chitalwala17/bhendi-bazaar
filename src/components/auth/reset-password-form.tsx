@@ -13,6 +13,8 @@ import {
   type ResetPasswordInput,
 } from "@/lib/validation/schemas/auth.schemas";
 import { authApiClient } from "@/components/auth/authApiClient";
+import { AUTH_COPY } from "./auth-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * Set a new password against an emailed token.
@@ -37,7 +39,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
     submit: (data) => authApiClient.resetPassword(data),
     onSuccess: () => {
       setDone(true);
-      setTimeout(() => router.push("/signin"), 3000);
+      setTimeout(() => router.push(ROUTES.signIn), 3000);
     },
     defaultValues: { token, password: "", confirmPassword: "" },
   });
@@ -47,10 +49,8 @@ export function ResetPasswordForm({ token }: { token: string }) {
       <div className="space-y-4 rounded-card border border-success/30 bg-success/10 p-6 text-center">
         <Icon name="success" size="2xl" tone="success" className="mx-auto" />
         <div className="space-y-2">
-          <h2 className="font-semibold text-success">Password reset</h2>
-          <p className="text-small text-success">
-            Your password has been changed. Taking you to sign in…
-          </p>
+          <h2 className="font-semibold text-success">{AUTH_COPY.passwordResetDone}</h2>
+          <p className="text-small text-success">{AUTH_COPY.passwordChanged}</p>
         </div>
       </div>
     );
@@ -60,7 +60,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
     <form onSubmit={onSubmit} className="space-y-4">
       <input type="hidden" {...register("token")} />
 
-      <AuthField id={`${id}-password`} label="New password" error={errors.password?.message}>
+      <AuthField id={`${id}-password`} label={AUTH_COPY.newPassword} error={errors.password?.message}>
         <PasswordInput
           id={`${id}-password`}
           autoComplete="new-password"
@@ -68,14 +68,14 @@ export function ResetPasswordForm({ token }: { token: string }) {
         />
         {!errors.password && (
           <p className="text-2xs text-muted-foreground">
-            At least 8 characters with uppercase, lowercase, a number and a symbol
+            {AUTH_COPY.passwordRules}
           </p>
         )}
       </AuthField>
 
       <AuthField
         id={`${id}-confirm`}
-        label="Confirm password"
+        label={AUTH_COPY.confirmPassword}
         error={errors.confirmPassword?.message}
       >
         <PasswordInput
@@ -92,7 +92,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
       )}
 
       <Button type="submit" disabled={isSubmitting} className={PRIMARY_BUTTON}>
-        {isSubmitting ? "Resetting…" : "Reset password"}
+        {isSubmitting ? AUTH_COPY.resetting : AUTH_COPY.resetPassword}
       </Button>
     </form>
   );

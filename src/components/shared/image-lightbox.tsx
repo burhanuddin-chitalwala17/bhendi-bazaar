@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { IMAGE_LIGHTBOX_COPY } from "./shared-copy";
 
 /** Placeholder proportions for the first paint, before the image reports its own. */
 const FALLBACK_EDGE = 1600;
@@ -225,7 +226,7 @@ export function ImageLightbox({
             variant="ghost"
             shape="icon" size="lg"
             className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 z-30 bg-scrim/80 text-hero-foreground hover:bg-hero/90 border border-primary/30 rounded-full backdrop-blur-sm"
-            aria-label="Close full view"
+            aria-label={IMAGE_LIGHTBOX_COPY.closeFullView}
           >
             <Icon name="close" size="md" />
           </Button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ROUTES } from "@server/shared/routes";
 
 import { ListPagination, ResourceList, type ResourceColumn } from "@/components/shared/resource-list";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
@@ -8,6 +9,7 @@ import { Money } from "@/components/shared/Money";
 import { formatShortDate } from "@/lib/format";
 import type { AdminOrderRow } from "@server/checkout/admin.order.types";
 import { orderChip, paymentChip } from "./order-status";
+import { ORDERS_TABLE_COPY } from "./console-copy";
 
 interface Props {
   orders: AdminOrderRow[];
@@ -21,12 +23,12 @@ interface Props {
 
 /** The order's columns, shared with the dashboard's latest orders so the two cannot disagree. */
 const ORDER_COLUMNS: ResourceColumn<AdminOrderRow>[] = [
-  { key: "code", label: "Order", cell: (o) => <span className="font-mono">{o.code}</span>, phone: "title" },
-  { key: "buyer", label: "Buyer", cell: (o) => o.customerName || "Guest", phone: "meta" },
-  { key: "total", label: "Total", cell: (o) => <Money paise={o.grandTotal || 0} />, sortable: true, align: "end", phone: "meta" },
+  { key: "code", label: ORDERS_TABLE_COPY.order, cell: (o) => <span className="font-mono">{o.code}</span>, phone: "title" },
+  { key: "buyer", label: ORDERS_TABLE_COPY.buyer, cell: (o) => o.customerName || ORDERS_TABLE_COPY.guest, phone: "meta" },
+  { key: "total", label: ORDERS_TABLE_COPY.total, cell: (o) => <Money paise={o.grandTotal || 0} />, sortable: true, align: "end", phone: "meta" },
   {
     key: "status",
-    label: "Status",
+    label: ORDERS_TABLE_COPY.status,
     cell: (o) => {
       const chip = orderChip(o.status);
       return <StatusBadge tone={chip.tone} dot>{chip.label}</StatusBadge>;
@@ -35,14 +37,14 @@ const ORDER_COLUMNS: ResourceColumn<AdminOrderRow>[] = [
   },
   {
     key: "payment",
-    label: "Payment",
+    label: ORDERS_TABLE_COPY.payment,
     cell: (o) => {
       const chip = paymentChip(o.paymentStatus);
       return <StatusBadge tone={chip.tone}>{chip.label}</StatusBadge>;
     },
     phone: "hidden",
   },
-  { key: "createdAt", label: "Placed", cell: (o) => formatShortDate(o.createdAt), sortable: true, phone: "meta" },
+  { key: "createdAt", label: ORDERS_TABLE_COPY.placed, cell: (o) => formatShortDate(o.createdAt), sortable: true, phone: "meta" },
 ];
 
 /**
@@ -72,15 +74,15 @@ export function OrdersTable({ orders, peekId, page, pageSize, totalPages, total 
 
   return (
     <ResourceList
-      label="Orders"
+      label={ORDERS_TABLE_COPY.orders}
       rows={orders}
       rowKey={(o) => o.id}
-      rowHref={(o) => `/admin/orders/${o.id}`}
+      rowHref={(o) => ROUTES.admin.order(o.id)}
       tableRowHref={peekHref}
       activeKey={peekId}
       tableFrom="lg"
       columns={ORDER_COLUMNS}
-      empty={{ title: "No orders here", description: "Orders that match this view appear here." }}
+      empty={{ title: ORDERS_TABLE_COPY.noOrdersHere, description: ORDERS_TABLE_COPY.ordersMatchViewAppear }}
       footer={
         <ListPagination
           page={page}
@@ -100,13 +102,13 @@ export function OrdersTable({ orders, peekId, page, pageSize, totalPages, total 
 export function LatestOrdersList({ orders }: { orders: AdminOrderRow[] }) {
   return (
     <ResourceList
-      label="Latest orders"
+      label={ORDERS_TABLE_COPY.latestOrders}
       rows={orders}
       rowKey={(o) => o.id}
-      rowHref={(o) => `/admin/orders/${o.id}`}
+      rowHref={(o) => ROUTES.admin.order(o.id)}
       columns={ORDER_COLUMNS.map((c) => ({ ...c, sortable: false }))}
       tableFrom="lg"
-      empty={{ title: "No orders yet", description: "The newest orders appear here as they are placed." }}
+      empty={{ title: ORDERS_TABLE_COPY.noOrdersYet, description: ORDERS_TABLE_COPY.newestOrdersAppearHere }}
     />
   );
 }

@@ -16,6 +16,8 @@ import { adminOrdersDAL } from "@/data-access-layer/admin/orders.dal";
 import { OrdersFilters } from "@/components/order/console/OrdersFilters";
 import { OrdersTable } from "@/components/order/console/OrdersTable";
 import { DEFAULT_PAGE_SIZE, resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
+import { ADMIN_ORDERS_COPY } from "./orders-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -49,7 +51,7 @@ export default async function AdminOrdersPage({
     }
     return next.toString();
   };
-  const closeHref = `/admin/orders${query(["order"]) ? `?${query(["order"])}` : ""}`;
+  const closeHref = `${ROUTES.admin.orders}${query(["order"]) ? `?${query(["order"])}` : ""}`;
   const exportHref = `/api/admin/orders/export?${query(["order", "page", "limit"])}`;
 
   // A tab keeps the search and payment filter; it starts again at page one.
@@ -59,28 +61,28 @@ export default async function AdminOrdersPage({
       if (one(key)) next.set(key, one(key)!);
     if (tabStatus) next.set("status", tabStatus);
     const query = next.toString();
-    return query ? `/admin/orders?${query}` : "/admin/orders";
+    return query ? `${ROUTES.admin.orders}?${query}` : ROUTES.admin.orders;
   };
   const all = Object.values(counts).reduce((sum, n) => sum + n, 0);
 
   return (
     <PageShell width="wide">
       <PageHeader
-        title="Orders"
-        description="Every order on the platform, newest first."
+        title={ADMIN_ORDERS_COPY.title}
+        description={ADMIN_ORDERS_COPY.description}
         actions={
           <Button asChild variant="outline">
             {/* A download, so a plain link: the server writes the file for exactly this view. */}
             <a href={exportHref} download>
               <Icon name="download" size="sm" />
-              Export CSV
+              {ADMIN_ORDERS_COPY.exportCsv}
             </a>
           </Button>
         }
       />
 
       <PageTabs
-        label="Order status"
+        label={ADMIN_ORDERS_COPY.statusTabs}
         current={status ?? "all"}
         tabs={ORDER_TABS.map((tab) => ({
           key: tab.key,

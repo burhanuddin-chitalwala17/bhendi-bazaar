@@ -4,6 +4,7 @@ import { SignInButton } from "@/components/auth/sign-in-button";
 import { ProfileSections } from "@/components/profile/profile-sections";
 import { profileDAL } from "@/data-access-layer/profile.dal";
 import { ordersDAL } from "@/data-access-layer/orders.dal";
+import { PROFILE_PAGE_COPY } from "./profile-page-copy";
 
 export default async function ProfilePage() {
   const data = await profileDAL.mine();
@@ -12,15 +13,12 @@ export default async function ProfilePage() {
     return (
       <Card>
         <CardHeader className="border-b border-border pb-4">
-          <CardTitle>Sign in to view your profile</CardTitle>
+          <CardTitle>{PROFILE_PAGE_COPY.signInTitle}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 pt-4 text-small text-muted-foreground">
-          <p>
-            Your profile hosts your saved addresses and recent orders once you&apos;re signed
-            in.
-          </p>
+          <p>{PROFILE_PAGE_COPY.signInBody}</p>
           <SignInButton className="mt-1 h-10 rounded-full px-6">
-            Sign in
+            {PROFILE_PAGE_COPY.signIn}
           </SignInButton>
         </CardContent>
       </Card>

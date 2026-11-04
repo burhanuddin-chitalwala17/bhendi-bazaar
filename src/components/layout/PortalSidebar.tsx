@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { PORTAL_SIDEBAR_COPY } from "./layout-copy";
 
 export interface PortalNavItem {
   title: string;
@@ -85,7 +86,7 @@ export function PortalSidebar({
           shape="icon"
           type="button"
           onClick={() => setOpen(true)}
-          aria-label="Open navigation"
+          aria-label={PORTAL_SIDEBAR_COPY.openNavigation}
           className="fixed left-3 top-2.5 z-40 flex h-9 w-9 items-center justify-center border-border bg-card text-foreground md:hidden"
         >
           <Icon name="menu" size="md" />
@@ -117,7 +118,7 @@ export function PortalSidebar({
           shape="icon"
           type="button"
           onClick={() => setOpen(false)}
-          aria-label="Close navigation"
+          aria-label={PORTAL_SIDEBAR_COPY.closeNavigation}
           className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground md:hidden"
         >
           <Icon name="close" size="md" />
@@ -154,7 +155,7 @@ export function PortalSidebar({
             className="flex min-h-11 items-center justify-center gap-3 px-4 py-2 text-small text-muted-foreground transition-colors hover:text-foreground"
           >
             <BrandLogo size="sm" />
-            Back to the store
+            {PORTAL_SIDEBAR_COPY.backToTheStore}
           </Link>
         </div>
       </aside>

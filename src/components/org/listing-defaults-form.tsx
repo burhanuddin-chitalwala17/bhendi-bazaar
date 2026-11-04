@@ -13,6 +13,8 @@ import {
   type ListingDefaultsParsed,
 } from "@/lib/validation/schemas/listing-defaults.schema";
 import type { OrgListingDefaultsDto } from "@server/listing/org-listing-defaults.types";
+import { LISTING_DEFAULTS_COPY } from "./org-copy";
+import { LISTING_DEFAULTS_SAVE_COPY } from "@/components/org/org-copy";
 
 interface ListingDefaultsFormProps {
   orgId: string;
@@ -37,7 +39,7 @@ export function ListingDefaultsForm({ orgId, defaults, categories }: ListingDefa
   } = useServerForm<ListingDefaultsParsed>({
     schema: listingDefaultsSchema,
     submit: (data) => orgListingDefaultsApiClient.save(orgId, data),
-    successMessage: "Defaults saved",
+    successMessage: LISTING_DEFAULTS_COPY.saved,
     onSuccess: () => router.refresh(),
     defaultValues: {
       countryOfOrigin: asCountryCode(defaults.countryOfOrigin),
@@ -60,39 +62,37 @@ export function ListingDefaultsForm({ orgId, defaults, categories }: ListingDefa
       <FormController
         name="countryOfOrigin"
         control={control}
-        label="Country of origin"
-        hint="Where your products are made, unless a brand or a product says otherwise"
+        label={LISTING_DEFAULTS_COPY.country}
+        hint={LISTING_DEFAULTS_COPY.countryHint}
         error={errors.countryOfOrigin?.message}
         render={({ field }) => (
           <CountryPicker value={typeof field.value === "string" ? field.value : null} onChange={field.onChange} />
         )}
       />
       <FormInput
-        label="Tax rate (%)"
+        label={LISTING_DEFAULTS_COPY.taxRate}
         type="number"
         inputMode="decimal"
         step="0.01"
         min={0}
         max={100}
-        placeholder="e.g. 18"
+        placeholder={LISTING_DEFAULTS_COPY.taxRatePlaceholder}
         {...register("taxRatePercent", { valueAsNumber: true })}
         error={errors.taxRatePercent?.message}
-        hint="The GST rate most of your products carry"
+        hint={LISTING_DEFAULTS_COPY.taxRateHint}
       />
 
       <fieldset className="space-y-3">
-        <legend className="text-sm font-medium">Tax code by category</legend>
+        <legend className="text-sm font-medium">{LISTING_DEFAULTS_COPY.taxCodes}</legend>
         {categories.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Categories appear here once you have products in them.
-          </p>
+          <p className="text-sm text-muted-foreground">{LISTING_DEFAULTS_COPY.noCategories}</p>
         ) : (
           categories.map((category, index) => (
             <div key={category.id}>
               <input type="hidden" {...register(`taxCodes.${index}.categoryId` as const)} />
               <FormInput
                 label={category.name}
-                placeholder="HSN code"
+                placeholder={LISTING_DEFAULTS_COPY.taxCodePlaceholder}
                 {...register(`taxCodes.${index}.taxCode` as const)}
                 error={errors.taxCodes?.[index]?.taxCode?.message}
               />
@@ -103,7 +103,7 @@ export function ListingDefaultsForm({ orgId, defaults, categories }: ListingDefa
 
       <div className="flex justify-end">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving…" : "Save defaults"}
+          {isSubmitting ? LISTING_DEFAULTS_SAVE_COPY.saving : LISTING_DEFAULTS_SAVE_COPY.save}
         </Button>
       </div>
     </form>

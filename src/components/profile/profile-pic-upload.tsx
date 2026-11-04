@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useMutation } from "@/hooks/core/useMutation";
 import { uploadApiClient } from "@/components/shared/uploadApiClient";
 import { Button } from "../ui/button";
+import { PROFILE_PIC_UPLOAD_COPY } from "./profile-copy";
 
 interface ProfilePicUploadProps {
   currentPic: string | null;
@@ -40,10 +41,10 @@ export function ProfilePicUpload({
 
   function validateFile(file: File): string | null {
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return "Only JPEG, PNG, and WebP images are allowed";
+      return PROFILE_PIC_UPLOAD_COPY.onlyJpegPngWebp;
     }
     if (file.size > MAX_SIZE) {
-      return "Image must be smaller than 5MB";
+      return PROFILE_PIC_UPLOAD_COPY.imageMustSmallerThan;
     }
     return null;
   }
@@ -114,7 +115,7 @@ export function ProfilePicUpload({
   async function handleRemove() {
     if (!onRemove) return;
 
-    if (!confirm("Are you sure you want to remove your profile picture?")) {
+    if (!confirm(PROFILE_PIC_UPLOAD_COPY.sureWantRemoveProfile)) {
       return;
     }
 
@@ -164,13 +165,13 @@ export function ProfilePicUpload({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={preview}
-            alt="Profile preview"
+            alt={PROFILE_PIC_UPLOAD_COPY.profilePreview}
             className="h-24 w-24 rounded-full object-cover"
           />
         ) : currentPic ? (
           <Image
             src={currentPic}
-            alt="Profile preview"
+            alt={PROFILE_PIC_UPLOAD_COPY.profilePreview}
             width={96}
             height={96}
             sizes="96px"
@@ -186,12 +187,8 @@ export function ProfilePicUpload({
           <>
             <Icon name="upload" size="md" className="text-muted-foreground" />
             <div className="text-center text-xs">
-              <p className="font-medium text-foreground">
-                Drop image here or click to upload
-              </p>
-              <p className="text-muted-foreground">
-                JPEG, PNG, or WebP · Max 5MB
-              </p>
+              <p className="font-medium text-foreground">{PROFILE_PIC_UPLOAD_COPY.dropImageHereClick}</p>
+              <p className="text-muted-foreground">{PROFILE_PIC_UPLOAD_COPY.jpegPngWebpMax}</p>
             </div>
           </>
         )}
@@ -206,9 +203,7 @@ export function ProfilePicUpload({
       )}
 
       {uploading && (
-        <p className="text-center text-xs text-muted-foreground">
-          Uploading your photo...
-        </p>
+        <p className="text-center text-xs text-muted-foreground">{PROFILE_PIC_UPLOAD_COPY.uploadingPhoto}</p>
       )}
 
       <div className="flex items-center justify-end gap-2 pt-2">
@@ -219,9 +214,7 @@ export function ProfilePicUpload({
             size="sm"
             onClick={handleRemove}
             className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
-          >
-            Remove
-          </Button>
+          >{PROFILE_PIC_UPLOAD_COPY.remove}</Button>
         )}
         <Button
           type="button"
@@ -230,9 +223,7 @@ export function ProfilePicUpload({
           disabled={uploading}
           onClick={onCancel}
           className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
-        >
-          Cancel
-        </Button>
+        >{PROFILE_PIC_UPLOAD_COPY.cancel}</Button>
       </div>
     </div>
   );

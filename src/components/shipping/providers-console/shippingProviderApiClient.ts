@@ -4,6 +4,7 @@ import type {
   ConnectionRequestBody,
   ConnectionResponse,
 } from "@/components/shipping/providers-console/types";
+import { PROVIDERS_API_COPY } from "@/components/shipping/providers-console/providers-console-copy";
 
 const message = (error: unknown, fallback: string) =>
   error instanceof Error ? error.message : fallback;
@@ -15,7 +16,7 @@ export const shippingProviderApiClient = {
       return await apiRequest<GetProvidersResponse>("/api/admin/shipping/providers", { cache: "no-store" });
     } catch (error) {
       console.error("shippingProviderApiClient.getProviders error:", error);
-      return { success: false, providers: [], error: message(error, "Failed to fetch providers") };
+      return { success: false, providers: [], error: message(error, PROVIDERS_API_COPY.fetchFailed) };
     }
   },
 
@@ -27,7 +28,7 @@ export const shippingProviderApiClient = {
       });
     } catch (error) {
       console.error("shippingProviderApiClient.connectProvider error:", error);
-      return { success: false, error: message(error, "Failed to connect provider") };
+      return { success: false, error: message(error, PROVIDERS_API_COPY.connectFailed) };
     }
   },
 
@@ -38,7 +39,7 @@ export const shippingProviderApiClient = {
       });
     } catch (error) {
       console.error("shippingProviderApiClient.disconnectProvider error:", error);
-      return { success: false, error: message(error, "Failed to disconnect provider") };
+      return { success: false, error: message(error, PROVIDERS_API_COPY.disconnectFailed) };
     }
   },
 };

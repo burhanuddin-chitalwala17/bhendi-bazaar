@@ -19,6 +19,7 @@ import { useMutation } from "@/hooks/core/useMutation";
 import { orgBrandsApiClient } from "@/components/org/orgBrandsApiClient";
 import { brandSchema, type BrandInput } from "@/lib/validation/schemas/brand.schema";
 import type { BrandDto } from "@server/catalog/brand.types";
+import { BRANDS_COPY } from "./brands-copy";
 
 interface BrandsManagerProps {
   orgId: string;
@@ -48,33 +49,31 @@ export function BrandsManager({ orgId, brands }: BrandsManagerProps) {
     (brand: BrandDto) => orgBrandsApiClient.retire(orgId, brand.id).then(() => brand),
     {
       onSuccess: (brand) => {
-        toast.success(brand.isDefault ? "Brand retired. You have no default brand now." : "Brand retired");
+        toast.success(brand.isDefault ? BRANDS_COPY.retiredDefault : BRANDS_COPY.retired);
         router.refresh();
       },
     },
   );
 
+  const currentDefault = brands.find((brand) => brand.isDefault) ?? null;
+
   // Retirement, never deletion (ADR-0032): the brand stays readable for whatever names it.
   // Retiring the default is allowed — nothing here is compulsory (R5) — but never silently.
   const retire = (brand: BrandDto) => {
     const warning = brand.isDefault
-      ? `"${brand.name}" is your default brand. After retiring it no brand is the default until you choose another. Retire it?`
-      : `Retire "${brand.name}"? Products that use it keep their values.`;
+      ? BRANDS_COPY.confirmRetireDefault(brand.name)
+      : BRANDS_COPY.confirmRetire(brand.name);
     if (!confirm(warning)) return;
     // `useMutation` toasts the failure and rethrows; catching keeps it from going unhandled.
     void retireBrand(brand).catch(() => {});
   };
-  const currentDefault = brands.find((brand) => brand.isDefault) ?? null;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-muted-foreground">
-          Your own brand, or the ones you carry. A brand remembers its maker and origin so you
-          type them once, not per product.
-        </p>
+        <p className="text-sm text-muted-foreground">{BRANDS_COPY.intro}</p>
         <Button onClick={openAdd} size="sm">
-          <Icon name="add" className="mr-1" /> Add brand
+          <Icon name="add" className="mr-1" /> {BRANDS_COPY.add}
         </Button>
       </div>
 
@@ -82,10 +81,7 @@ export function BrandsManager({ orgId, brands }: BrandsManagerProps) {
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
             <Icon name="factory" size="xl" tone="muted" />
-            <p className="text-sm text-muted-foreground">
-              No brands yet. Add one with just its name; fill in the maker when you have the pack
-              in front of you.
-            </p>
+            <p className="text-sm text-muted-foreground">{BRANDS_COPY.empty}</p>
           </CardContent>
         </Card>
       ) : (
@@ -94,20 +90,20 @@ export function BrandsManager({ orgId, brands }: BrandsManagerProps) {
             <Card key={brand.id}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-base">{brand.name}</CardTitle>
-                {brand.isDefault && <Badge>Default</Badge>}
+                {brand.isDefault && <Badge>{BRANDS_COPY.isDefault}</Badge>}
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div className="space-y-1 text-muted-foreground">
-                  <p>{brand.manufacturer ? `Made by ${brand.manufacturer}` : <em>Maker not given yet</em>}</p>
-                  {brand.packerOrImporter && <p>Packed or imported by {brand.packerOrImporter}</p>}
-                  <p>{brand.countryOfOrigin ? `From ${countryName(brand.countryOfOrigin)}` : <em>Origin not given yet</em>}</p>
+                  <p>{brand.manufacturer ? BRANDS_COPY.madeBy(brand.manufacturer) : <em>{BRANDS_COPY.makerMissing}</em>}</p>
+                  {brand.packerOrImporter && <p>{BRANDS_COPY.packedBy(brand.packerOrImporter)}</p>}
+                  <p>{brand.countryOfOrigin ? BRANDS_COPY.from(countryName(brand.countryOfOrigin)) : <em>{BRANDS_COPY.originMissing}</em>}</p>
                 </div>
                 <div className="flex justify-end gap-1 border-t pt-3">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => openEdit(brand)}
-                    aria-label={`Edit ${brand.name}`}
+                    aria-label={BRANDS_COPY.editLabel(brand.name)}
                   >
                     <Icon name="edit" />
                   </Button>
@@ -115,7 +111,7 @@ export function BrandsManager({ orgId, brands }: BrandsManagerProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => retire(brand)}
-                    aria-label={`Retire ${brand.name}`}
+                    aria-label={BRANDS_COPY.retireLabel(brand.name)}
                   >
                     <Icon name="archive" />
                   </Button>
@@ -129,7 +125,7 @@ export function BrandsManager({ orgId, brands }: BrandsManagerProps) {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit brand" : "Add brand"}</DialogTitle>
+            <DialogTitle>{editing ? BRANDS_COPY.edit : BRANDS_COPY.add}</DialogTitle>
           </DialogHeader>
           <BrandForm
             key={editing?.id ?? "new"}
@@ -174,16 +170,16 @@ function BrandForm({
   } = useServerForm<BrandInput>({
     schema: brandSchema,
     submit: (data) => orgBrandsApiClient.save(orgId, brand?.id, data),
-    successMessage: brand ? "Brand updated" : "Brand added",
+    successMessage: brand ? BRANDS_COPY.updated : BRANDS_COPY.added,
     onSuccess: (result) => {
       const saved = result as BrandDto;
       const isDefault = getValues("isDefault");
       if (isDefault && currentDefault && currentDefault.id !== saved.id) {
-        toast.info(`"${saved.name}" is now your default brand; "${currentDefault.name}" no longer is.`);
+        toast.info(BRANDS_COPY.defaultMoved(saved.name, currentDefault.name));
       } else if (isDefault && !currentDefault) {
-        toast.info(`"${saved.name}" is now your default brand.`);
+        toast.info(BRANDS_COPY.defaultSet(saved.name));
       } else if (!isDefault && brand?.isDefault) {
-        toast.info(`"${saved.name}" is no longer your default brand. You have no default now.`);
+        toast.info(BRANDS_COPY.defaultCleared(saved.name));
       }
       onDone();
     },
@@ -204,44 +200,42 @@ function BrandForm({
         </Alert>
       )}
 
-      <p className="text-xs text-muted-foreground">
-        Only the name is needed now. The rest is read off the pack when you have it.
-      </p>
+      <p className="text-xs text-muted-foreground">{BRANDS_COPY.formIntro}</p>
       <FormInput
-        label="Brand name"
-        placeholder="As printed on the pack"
+        label={BRANDS_COPY.name}
+        placeholder={BRANDS_COPY.namePlaceholder}
         {...register("name")}
         error={errors.name?.message}
       />
       <FormInput
-        label="Made by"
-        placeholder="Manufacturer"
+        label={BRANDS_COPY.maker}
+        placeholder={BRANDS_COPY.makerPlaceholder}
         {...register("manufacturer")}
         error={errors.manufacturer?.message}
-        hint="The maker named on the label"
+        hint={BRANDS_COPY.makerHint}
       />
       <FormInput
-        label="Packed or imported by"
+        label={BRANDS_COPY.packer}
         {...register("packerOrImporter")}
         error={errors.packerOrImporter?.message}
-        hint="When it differs from the maker"
+        hint={BRANDS_COPY.packerHint}
       />
       <FormController
         name="countryOfOrigin"
         control={control}
-        label="Country of origin"
-        hint="Where this brand's products are made, unless a product says otherwise"
+        label={BRANDS_COPY.country}
+        hint={BRANDS_COPY.countryHint}
         error={errors.countryOfOrigin?.message}
         render={({ field }) => (
           <CountryPicker value={typeof field.value === "string" ? field.value : null} onChange={field.onChange} />
         )}
       />
       <Checkbox
-        label="Default brand"
+        label={BRANDS_COPY.defaultBrand}
         description={
           currentDefault && currentDefault.id !== brand?.id
-            ? `Used for products that do not name a brand of their own. "${currentDefault.name}" is the default now and would stop being it.`
-            : "Used for products that do not name a brand of their own."
+            ? BRANDS_COPY.defaultHintReplacing(currentDefault.name)
+            : BRANDS_COPY.defaultHint
         }
         checked={watch("isDefault")}
         onChange={(event) => setValue("isDefault", event.target.checked)}
@@ -251,7 +245,7 @@ function BrandForm({
         <FormActions
           onCancel={onCancel}
           isSubmitting={isSubmitting}
-          submitLabel={brand ? "Save changes" : "Add brand"}
+          submitLabel={brand ? BRANDS_COPY.save : BRANDS_COPY.add}
         />
       </div>
     </form>

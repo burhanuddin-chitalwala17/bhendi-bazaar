@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { COMPOSITIONS, THEMES, type ThemeKey } from "@server/catalog/storefront-themes";
 import { appUrl } from "@server/shared/app-url";
 import { resolveShopPage } from "../resolve";
+import { STORE_PAGES_COPY } from "../../store-pages-copy";
 
 interface ShopPageProps {
   params: Promise<{ handle: string }>;
@@ -28,8 +29,8 @@ export async function generateMetadata({ params }: ShopPageProps): Promise<Metad
   const shop = await storefrontDAL.getByHandle(handle);
   if (!shop?.themeKey) return {};
   return {
-    title: `Shop ${shop.name}`,
-    description: `Everything ${shop.name} sells on ${APP_NAME}.`,
+    title: STORE_PAGES_COPY.shopTitle(shop.name),
+    description: STORE_PAGES_COPY.shopDescription(shop.name, APP_NAME),
     alternates: { canonical: `${appUrl()}${shopHref(shop.handle)}` },
   };
 }
@@ -97,10 +98,10 @@ async function ShopGoods({
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0 space-y-1">
           <p className="font-label text-tag uppercase tracking-tag text-muted-foreground">
-            {formatCount(total)} {total === 1 ? "product" : "products"}
+            {formatCount(total)} {STORE_PAGES_COPY.productCount(total)}
           </p>
           <h1 className="break-words font-display text-title tracking-headline">
-            {search ? `“${search}” in ${shop.name}` : shop.name}
+            {search ? STORE_PAGES_COPY.searchIn(search, shop.name) : shop.name}
           </h1>
         </div>
         <Link
@@ -113,8 +114,8 @@ async function ShopGoods({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <nav aria-label="Filter" className="no-scrollbar -mx-gutter flex gap-2 overflow-x-auto px-gutter">
-          <Chip href={href({ deals: !deals })} active={deals}>Deals</Chip>
+        <nav aria-label={STORE_PAGES_COPY.filterNav} className="no-scrollbar -mx-gutter flex gap-2 overflow-x-auto px-gutter">
+          <Chip href={href({ deals: !deals })} active={deals}>{STORE_PAGES_COPY.deals}</Chip>
           {categories.map((category) => (
             <Chip
               key={category.slug}
@@ -141,14 +142,14 @@ async function ShopGoods({
         />
       ) : filtering ? (
         <div className="space-y-3 py-section text-center">
-          <p className="text-body">Nothing here with these filters.</p>
+          <p className="text-body">{STORE_PAGES_COPY.noFilterMatch}</p>
           <Button asChild variant="outline">
-            <Link href={base} prefetch={false}>Clear filters</Link>
+            <Link href={base} prefetch={false}>{STORE_PAGES_COPY.clearFilters}</Link>
           </Button>
         </div>
       ) : (
         <p className="py-section text-center font-display text-title">
-          {shop.name} is setting up. Check back soon.
+          {STORE_PAGES_COPY.settingUp(shop.name)}
         </p>
       )}
     </section>

@@ -5,6 +5,7 @@ import { CARD_STATE, type ChannelAttentionDTO } from "@server/channels/channel-c
 
 import { channelsApiClient } from "./channelsApiClient";
 import { ACTION, BANNER } from "./channel-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** One banner on the dashboard for a connection that needs the shop (spec R9, ux.md). */
 export function ChannelAttentionBanner({ orgId, attention }: { orgId: string; attention: ChannelAttentionDTO[] }) {
@@ -15,7 +16,7 @@ export function ChannelAttentionBanner({ orgId, attention }: { orgId: string; at
       <div role="status" className="flex flex-col gap-2 rounded-card border border-warning bg-warning/10 p-3 text-sm md:flex-row md:items-center md:justify-between">
         <p>{BANNER.several(attention.length)}</p>
         <Button asChild variant="outline" size="sm" className="min-h-10 self-start md:self-auto">
-          <Link href={`/org/${orgId}/channels`}>{BANNER.openChannels}</Link>
+          <Link href={ROUTES.org.channels(orgId)}>{BANNER.openChannels}</Link>
         </Button>
       </div>
     );

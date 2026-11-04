@@ -20,6 +20,7 @@ import {
 import { reviewApiClient } from "@/components/product/reviewApiClient";
 import { STAR_VALUES } from "@server/catalog/review.types";
 import type { ReviewDto } from "@server/catalog/review.types";
+import { REVIEW_COPY } from "./product-copy";
 
 /**
  * Writing a review, or editing one of your own.
@@ -67,7 +68,7 @@ export function ReviewForm({
       if (editing) return reviewApiClient.update(editing.id, data);
       return reviewApiClient.create(productId, data);
     },
-    successMessage: editing ? "Your review is updated" : "Thanks — your review is live",
+    successMessage: editing ? REVIEW_COPY.form.updated : REVIEW_COPY.form.live,
     onSuccess: () => {
       clearDraft();
       form.reset({ rating: 0, title: "", comment: "", photos: [] });
@@ -119,7 +120,7 @@ export function ReviewForm({
     } catch {
       // The sign-in still works; only the draft is lost.
     }
-    openAuthSheet({ reason: "Sign in to post your review" });
+    openAuthSheet({ reason: REVIEW_COPY.form.signInReason });
   };
 
   return (
@@ -137,7 +138,7 @@ export function ReviewForm({
     >
       <fieldset className="space-y-1">
         <legend className="text-2xs font-medium sm:text-xs">
-          Your rating <span className="text-destructive">*</span>
+          {REVIEW_COPY.form.yourRating} <span className="text-destructive">*</span>
         </legend>
         {/* Tap targets, not hover targets: each star is a real button at size-9, which
             is the floor a phone gets (ADR-0015). */}
@@ -148,7 +149,7 @@ export function ReviewForm({
               type="button"
               variant="ghost"
               shape="icon"
-              aria-label={`${star} ${star === 1 ? "star" : "stars"}`}
+              aria-label={REVIEW_COPY.form.stars(star)}
               aria-pressed={rating === star}
               onClick={() =>
                 form.setValue("rating", star, { shouldValidate: true })
@@ -166,10 +167,10 @@ export function ReviewForm({
       </fieldset>
 
       <div className="space-y-1">
-        <Label htmlFor="review-title">Headline</Label>
+        <Label htmlFor="review-title">{REVIEW_COPY.form.headline}</Label>
         <Input
           id="review-title"
-          placeholder="Sums it up in a line"
+          placeholder={REVIEW_COPY.form.headlinePlaceholder}
           {...form.register("title")}
         />
         {form.formState.errors.title && (
@@ -180,11 +181,11 @@ export function ReviewForm({
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="review-comment">Your review</Label>
+        <Label htmlFor="review-comment">{REVIEW_COPY.form.yourReview}</Label>
         <Textarea
           id="review-comment"
           rows={4}
-          placeholder="How does it fit? How does the fabric feel? Is the colour true to the photographs?"
+          placeholder={REVIEW_COPY.form.reviewPlaceholder}
           {...form.register("comment")}
         />
         {form.formState.errors.comment && (
@@ -195,7 +196,7 @@ export function ReviewForm({
       </div>
 
       <div className="space-y-1">
-        <span className="text-2xs font-medium sm:text-xs">Photos</span>
+        <span className="text-2xs font-medium sm:text-xs">{REVIEW_COPY.form.photos}</span>
         <ReviewPhotoPicker
           photos={(form.watch("photos") as string[] | undefined) ?? []}
           onChange={(photos) =>
@@ -218,23 +219,22 @@ export function ReviewForm({
         <Button type="submit" disabled={form.isSubmitting}>
           {editing
             ? form.isSubmitting
-              ? "Saving…"
-              : "Save changes"
+              ? REVIEW_COPY.form.saving
+              : REVIEW_COPY.form.saveChanges
             : form.isSubmitting
-              ? "Posting…"
-              : "Post review"}
+              ? REVIEW_COPY.form.posting
+              : REVIEW_COPY.form.post}
         </Button>
         {onCancel && (
           <Button type="button" variant="ghost" onClick={onCancel}>
-            Cancel
+            {REVIEW_COPY.form.cancel}
           </Button>
         )}
       </div>
 
       {!isSignedIn && (
         <p className="text-2xs text-muted-foreground sm:text-2xs">
-          You will be asked to sign in before it posts. What you have written stays
-          here.
+          {REVIEW_COPY.form.signInFirst}
         </p>
       )}
     </form>

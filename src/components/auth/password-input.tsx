@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { AUTH_COPY } from "./auth-copy";
 
 /** A password input with a show/hide toggle — a 40px target inside the field. */
 export function PasswordInput({
@@ -25,7 +26,7 @@ export function PasswordInput({
         type="button"
         onClick={() => setVisible((v) => !v)}
         className="absolute right-0 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground"
-        aria-label={visible ? "Hide password" : "Show password"}
+        aria-label={visible ? AUTH_COPY.hidePassword : AUTH_COPY.showPassword}
       >
         <Icon name={visible ? "hide" : "show"} />
       </Button>

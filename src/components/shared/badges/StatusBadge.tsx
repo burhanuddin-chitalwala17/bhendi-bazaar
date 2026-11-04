@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
+import { STATUS_BADGE_COPY } from "./badges-copy";
 
 /**
  * The one status chip. A state is one word and one tone, so "Live" reads the same on every
@@ -48,7 +49,7 @@ export function OfferBadge({ percentOff }: { percentOff?: number }) {
 }
 
 export function StockBadge({ stock, threshold = 10 }: { stock: number; threshold?: number }) {
-  if (stock === 0) return <StatusBadge tone="neutral">Sold out</StatusBadge>;
+  if (stock === 0) return <StatusBadge tone="neutral">{STATUS_BADGE_COPY.soldOut}</StatusBadge>;
   if (stock <= threshold) return <StatusBadge tone="warning">Low stock · {stock}</StatusBadge>;
-  return <StatusBadge tone="success">In stock</StatusBadge>;
+  return <StatusBadge tone="success">{STATUS_BADGE_COPY.inStock}</StatusBadge>;
 }

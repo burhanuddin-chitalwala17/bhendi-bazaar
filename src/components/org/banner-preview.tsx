@@ -3,6 +3,7 @@ import { HeroBannerScrim, HeroBannerWords, hasHeroWords, type HeroBannerContent 
 import { SlotPreview } from "@/components/shared/image-slot/slot-preview";
 import { IMAGE_SLOT, IMAGE_SLOTS, ratioOf } from "@server/catalog/image-slots";
 import type { ResponsiveImageDto } from "@server/catalog/image-framing";
+import { BANNER_PREVIEW_COPY } from "./storefront-copy";
 
 const SHAPES = IMAGE_SLOTS[IMAGE_SLOT.ORG_BANNER];
 
@@ -20,8 +21,8 @@ export function BannerPreview({
 }) {
   const withWords = hasHeroWords(words);
   return (
-    <section aria-label="Preview" className="space-y-2">
-      <h3 className="text-label uppercase text-muted-foreground">How it will look</h3>
+    <section aria-label={BANNER_PREVIEW_COPY.label} className="space-y-2">
+      <h3 className="text-label uppercase text-muted-foreground">{BANNER_PREVIEW_COPY.heading}</h3>
       <div className="grid gap-3 sm:grid-cols-3 sm:items-end">
         <figure className="space-y-1 sm:col-span-2">
           <SlotPreview
@@ -33,7 +34,7 @@ export function BannerPreview({
             {image && withWords && <HeroBannerScrim frame="desktop" className="z-0" />}
             {withWords && <HeroBannerWords banner={words} frame="desktop" preview />}
           </SlotPreview>
-          <figcaption className="text-caption text-muted-foreground">Desktop and tablet</figcaption>
+          <figcaption className="text-caption text-muted-foreground">{BANNER_PREVIEW_COPY.desktop}</figcaption>
         </figure>
         <figure className="w-1/2 space-y-1 sm:w-auto">
           <SlotPreview
@@ -45,11 +46,11 @@ export function BannerPreview({
             {image && withWords && <HeroBannerScrim frame="phone" className="z-0" />}
             {withWords && <HeroBannerWords banner={words} frame="phone" preview />}
           </SlotPreview>
-          <figcaption className="text-caption text-muted-foreground">Phone</figcaption>
+          <figcaption className="text-caption text-muted-foreground">{BANNER_PREVIEW_COPY.phone}</figcaption>
         </figure>
       </div>
       {!image && (
-        <p className="text-caption text-muted-foreground">No picture yet: the banner shows on your shop&apos;s plain colour.</p>
+        <p className="text-caption text-muted-foreground">{BANNER_PREVIEW_COPY.noPicture}</p>
       )}
     </section>
   );

@@ -13,6 +13,8 @@ import {
   youtubePosterUrl,
   ZOOMABLE_IMAGE_SIZES,
 } from "@server/catalog/media";
+import { PRODUCT_PAGE_COPY } from "./product-copy";
+import { GALLERY_VIDEO_COPY } from "@/components/product/media-copy";
 
 
 export function ProductGallery(product: Product) {
@@ -249,7 +251,7 @@ export function ProductGallery(product: Product) {
                         <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
                           <Icon name="video" size="xl" />
                           <span className="text-caption">
-                            {item.state === "failed" ? "This video is not available" : "Video is being prepared"}
+                            {item.state === "failed" ? GALLERY_VIDEO_COPY.failed : GALLERY_VIDEO_COPY.preparing}
                           </span>
                         </span>
                       )}
@@ -308,7 +310,7 @@ export function ProductGallery(product: Product) {
                   handlePrevious();
                 }}
                 className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 text-hero-foreground hover:bg-hero/90 border border-primary/30 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm"
-                aria-label="Previous image"
+                aria-label={PRODUCT_PAGE_COPY.gallery.previous}
               >
                 <Icon name="previous" size="md" />
               </Button>
@@ -321,7 +323,7 @@ export function ProductGallery(product: Product) {
                   handleNext();
                 }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 text-hero-foreground hover:bg-hero/90 border border-primary/30 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm"
-                aria-label="Next image"
+                aria-label={PRODUCT_PAGE_COPY.gallery.next}
               >
                 <Icon name="next" size="md" />
               </Button>
@@ -346,7 +348,7 @@ export function ProductGallery(product: Product) {
         {/* Desktop hover zoom hint */}
         {!isZoomed && media.length > 0 && (
           <div className="absolute top-3 left-3 z-20 bg-scrim/60 backdrop-blur-sm border border-primary/20 rounded-field px-3 py-1.5 text-caption font-medium text-hero-foreground/80 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block pointer-events-none">
-            Hover to zoom
+            {PRODUCT_PAGE_COPY.gallery.hoverToZoom}
           </div>
         )}
       </div>
@@ -409,7 +411,7 @@ export function ProductGallery(product: Product) {
       {/* Mobile pinch zoom instruction */}
       <div className="text-center md:hidden">
         <p className="text-2xs text-muted-foreground/70">
-          Swipe to navigate • Pinch to zoom
+          {PRODUCT_PAGE_COPY.gallery.touchHint}
         </p>
       </div>
 

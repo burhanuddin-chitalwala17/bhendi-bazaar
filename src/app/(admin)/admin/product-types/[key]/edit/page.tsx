@@ -10,6 +10,8 @@ import { notFound } from "next/navigation";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { ProductTypeForm } from "@/components/product-type/product-type-form";
 import { adminProductTypesDAL } from "@/data-access-layer/admin/product-types.dal";
+import { PRODUCT_TYPE_PAGE_COPY } from "@/components/product-type/product-type-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export default async function EditProductTypePage({
   params,
@@ -26,8 +28,8 @@ export default async function EditProductTypePage({
     <PageShell width="form">
       <PageHeader
         title={type.label}
-        description={`Used by ${usage?.categories ?? 0} categories and ${usage?.products ?? 0} products. Changing what it asks never rewrites an answer already given.`}
-        back={{ href: "/admin/product-types", label: "Product types" }}
+        description={PRODUCT_TYPE_PAGE_COPY.editDescription(usage?.categories ?? 0, usage?.products ?? 0)}
+        back={{ href: ROUTES.admin.productTypes, label: PRODUCT_TYPE_PAGE_COPY.back }}
       />
       <ProductTypeForm type={type} />
     </PageShell>

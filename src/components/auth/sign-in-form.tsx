@@ -18,9 +18,10 @@ import {
 import { PasswordInput } from "@/components/auth/password-input";
 import { isRefusalMessage } from "@/lib/rate-limit/copy";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
-import type { SwitchAuthView } from "@/components/auth/auth-view";
+import type { AuthDone, SwitchAuthView } from "@/components/auth/auth-view";
+import { AUTH_COPY } from "./auth-copy";
 
-export const SIGN_IN_FAILED = "Invalid email or password.";
+export const SIGN_IN_FAILED = AUTH_COPY.signInFailed;
 
 export interface AuthFormHost {
   onSwitchView: SwitchAuthView;
@@ -45,7 +46,7 @@ export function SignInForm({
   onBeforeGoogle,
   defaultEmail = "",
 }: AuthFormHost & {
-  onSuccess: () => void | Promise<void>;
+  onSuccess: AuthDone;
   defaultEmail?: string;
 }) {
   const id = useId();
@@ -80,7 +81,7 @@ export function SignInForm({
       onSubmit={(event) => void onSubmit(event).catch(() => {})}
       className="space-y-3 text-small"
     >
-      <AuthField id={`${id}-email`} label="Email" error={errors.email?.message}>
+      <AuthField id={`${id}-email`} label={AUTH_COPY.email} error={errors.email?.message}>
         <Input
           id={`${id}-email`}
           type="email"
@@ -90,7 +91,7 @@ export function SignInForm({
       </AuthField>
       <AuthField
         id={`${id}-password`}
-        label="Password"
+        label={AUTH_COPY.password}
         error={errors.password?.message}
       >
         <PasswordInput
@@ -109,7 +110,7 @@ export function SignInForm({
           }
           className={SWITCH_LINK}
         >
-          Forgot password?
+          {AUTH_COPY.forgotPassword}
         </Button>
       </div>
       {formError && (
@@ -118,7 +119,7 @@ export function SignInForm({
         </p>
       )}
       <Button type="submit" disabled={isSubmitting} className={PRIMARY_BUTTON}>
-        {isSubmitting ? "Signing in..." : "Sign in"}
+        {isSubmitting ? AUTH_COPY.signingIn : AUTH_COPY.signIn}
       </Button>
       <OrDivider />
       <GoogleSignInButton
@@ -126,14 +127,14 @@ export function SignInForm({
         beforeRedirect={onBeforeGoogle}
       />
       <p className="pt-2 text-center text-2xs text-muted-foreground">
-        New to Bhendi Bazaar?{" "}
+        {AUTH_COPY.newHere}{" "}
         <Button
           variant="ghost"
           type="button"
           onClick={() => onSwitchView("signup")}
           className={SWITCH_LINK}
         >
-          Create an account
+          {AUTH_COPY.createAnAccount}
         </Button>
       </p>
     </form>

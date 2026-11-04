@@ -3,6 +3,9 @@ import { PriceDisplay } from "../shared/PriceDisplay";
 import { ShareButton } from "../shared/ShareButton";
 import { DownloadBillButton } from "./download-bill-button";
 import { PAYMENT_STATUS } from "@server/checkout/order.types";
+import { ORDER_SUMMARY_COPY } from "./order-copy";
+import { ROUTES } from "@server/shared/routes";
+import { ORDER_SHARE_COPY } from "@/components/order/order-copy";
 
 interface OrderSummaryProps {
   order: Order;
@@ -12,12 +15,12 @@ interface OrderSummaryProps {
 export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
   const paymentLabel =
     order.paymentMethod && order.paymentStatus
-      ? `${order.paymentMethod === "razorpay" ? "Razorpay" : "Stripe"} · ${
+      ? `${order.paymentMethod === "razorpay" ? ORDER_SUMMARY_COPY.razorpay : ORDER_SUMMARY_COPY.stripe} · ${
           order.paymentStatus === PAYMENT_STATUS.PAID
-            ? "Paid"
+            ? ORDER_SUMMARY_COPY.paid
             : order.paymentStatus === PAYMENT_STATUS.FAILED
-              ? "Failed"
-              : "Pending"
+              ? ORDER_SUMMARY_COPY.failed
+              : ORDER_SUMMARY_COPY.pending
         }`
       : null;
 
@@ -35,9 +38,9 @@ export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
             <>
               <DownloadBillButton className="print:hidden" />
               <ShareButton
-                url={`/order/${order.id}`}
-                title={`Order ${order.code} - Bhendi Bazaar`}
-                text={`Check out my order from Bhendi Bazaar`}
+                url={ROUTES.order(order.id)}
+                title={ORDER_SHARE_COPY.title(order.code)}
+                text={ORDER_SHARE_COPY.text}
                 variant="ghost"
                 size="lg"
                 shape="icon"
@@ -69,23 +72,23 @@ export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
       </div>
       <div className="mt-2 space-y-1 border-t border-border pt-2">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Subtotal</span>
+          <span className="text-muted-foreground">{ORDER_SUMMARY_COPY.subtotal}</span>
           <PriceDisplay price={order.itemsTotal} size="sm" />
         </div>
         {order.shippingTotal > 0 && (
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Delivery</span>
+            <span className="text-muted-foreground">{ORDER_SUMMARY_COPY.delivery}</span>
             <PriceDisplay price={order.shippingTotal} size="sm" />
           </div>
         )}
         {order.discount > 0 && (
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Offers</span>
+            <span className="text-muted-foreground">{ORDER_SUMMARY_COPY.offers}</span>
             <PriceDisplay price={order.discount} size="sm" />
           </div>
         )}
         <div className="mt-1 flex items-center justify-between text-body font-semibold">
-          <span>Total</span>
+          <span>{ORDER_SUMMARY_COPY.total}</span>
           <PriceDisplay price={order.grandTotal} size="sm" />
         </div>
       </div>

@@ -5,6 +5,7 @@ import { CHANNEL_LABELS } from "@server/shared/channels";
 import { LISTING_PROBLEM, LISTING_READINESS } from "@server/listing/channel-readiness";
 import type { ChannelVerdict } from "@server/listing/channel-readiness.service";
 import type { ListingProblem } from "@server/listing/channel-readiness";
+import { READINESS_PANEL } from "./channel-copy";
 
 interface ListingReadinessPanelProps {
   verdicts: ChannelVerdict[];
@@ -29,11 +30,8 @@ export function ListingReadinessPanel({ verdicts }: ListingReadinessPanelProps) 
     <Card>
       <CardContent className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold">How this would list elsewhere</h2>
-          <p className="text-sm text-muted-foreground">
-            What we expect each place to make of it. Nothing here stops you publishing — if a
-            channel disagrees with us, it is the channel that is right.
-          </p>
+          <h2 className="text-lg font-semibold">{READINESS_PANEL.title}</h2>
+          <p className="text-sm text-muted-foreground">{READINESS_PANEL.intro}</p>
         </div>
 
         <ul className="space-y-4">
@@ -46,7 +44,7 @@ export function ListingReadinessPanel({ verdicts }: ListingReadinessPanelProps) 
 
               {report.theirCategory && (
                 <p className="text-sm text-muted-foreground">
-                  Listed under <span className="font-medium">{report.theirCategory}</span>
+                  {READINESS_PANEL.listedUnder} <span className="font-medium">{report.theirCategory}</span>
                 </p>
               )}
 
@@ -73,7 +71,7 @@ function BandLabel({ state }: { state: ChannelVerdict["report"]["state"] }) {
     return (
       <span className="flex items-center gap-1.5 text-sm text-success">
         <Icon name="success" />
-        Nothing missing
+        {READINESS_PANEL.ready}
       </span>
     );
   }
@@ -85,7 +83,7 @@ function BandLabel({ state }: { state: ChannelVerdict["report"]["state"] }) {
       )}
     >
       <Icon name="warning" />
-      {state === LISTING_READINESS.INCOMPLETE ? "Something is missing" : "Worth a look"}
+      {state === LISTING_READINESS.INCOMPLETE ? READINESS_PANEL.incomplete : READINESS_PANEL.worthALook}
     </span>
   );
 }
@@ -99,16 +97,16 @@ function BandLabel({ state }: { state: ChannelVerdict["report"]["state"] }) {
 function wordFor(problem: ListingProblem): string {
   switch (problem.problem) {
     case LISTING_PROBLEM.NO_CATEGORY:
-      return "Nobody has chosen where this belongs on this channel yet.";
+      return READINESS_PANEL.noCategory;
     case LISTING_PROBLEM.NEAREST_CATEGORY:
       return problem.note
-        ? `This is the nearest they have, not their own word for it. ${problem.note}`
-        : "This is the nearest category they have, not their own word for it.";
+        ? READINESS_PANEL.nearestWithNote(problem.note)
+        : READINESS_PANEL.nearest;
     case LISTING_PROBLEM.MISSING_FACT:
-      return `They ask for ${problem.theirAttribute} and it is not answered.`;
+      return READINESS_PANEL.missingFact(problem.theirAttribute);
     case LISTING_PROBLEM.MISSING_OPTIONAL_FACT:
-      return `They would show ${problem.theirAttribute} if it were answered.`;
+      return READINESS_PANEL.missingOptionalFact(problem.theirAttribute);
     case LISTING_PROBLEM.UNMAPPED_VALUE:
-      return `They have no word for this ${problem.list} yet — "${problem.value}" needs one choosing, once, for every product that uses it.`;
+      return READINESS_PANEL.unmappedValue(problem.list, problem.value);
   }
 }

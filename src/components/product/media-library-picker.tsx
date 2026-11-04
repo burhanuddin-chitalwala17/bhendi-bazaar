@@ -10,6 +10,7 @@ import { YouTubePoster } from "@/components/product/youtube-poster";
 import { LoadMore } from "@/components/shared/load-more";
 import { useMediaLibraryPages } from "@/hooks/product/useMediaLibraryPages";
 import type { MediaAssetDto } from "@server/catalog/media-library.types";
+import { LIBRARY_PICKER_COPY } from "@/components/product/media-copy";
 
 interface MediaLibraryPickerProps {
   orgId: string;
@@ -49,7 +50,7 @@ export function MediaLibraryPicker({
   onPick,
   onUnpick,
   kinds = ALL_KINDS,
-  title = "From your library",
+  title = LIBRARY_PICKER_COPY.title,
   description = "Tap to add to this gallery; tap again to take it out.",
 }: MediaLibraryPickerProps) {
   const [kind, setKind] = useState<Kind>(kinds[0] ?? "IMAGE");
@@ -117,10 +118,10 @@ function PickerPages({
     return (
       <p className="py-6 text-center text-sm text-muted-foreground">
         {kind === "IMAGE"
-          ? "No photos in your library yet."
+          ? LIBRARY_PICKER_COPY.noPhotos
           : kind === "VIDEO"
-            ? "No videos in your library yet."
-            : "No YouTube links in your library yet."}
+            ? LIBRARY_PICKER_COPY.noVideos
+            : LIBRARY_PICKER_COPY.noYouTube}
       </p>
     );
   }
@@ -143,10 +144,10 @@ function PickerPages({
                 className="relative aspect-square h-auto w-full overflow-hidden rounded-card bg-muted p-0"
                 aria-label={
                   isTaken
-                    ? "In this gallery — tap to remove"
+                    ? LIBRARY_PICKER_COPY.inGallery
                     : asset.kind === "IMAGE"
-                      ? "Add this photo"
-                      : "Add this video"
+                      ? LIBRARY_PICKER_COPY.addPhoto
+                      : LIBRARY_PICKER_COPY.addVideo
                 }
               >
                 {isTaken && (

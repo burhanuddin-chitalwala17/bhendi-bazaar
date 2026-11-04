@@ -3,6 +3,8 @@
 import { UseFormRegister, FieldErrors } from "react-hook-form";
 import { FormInput, FormSelect } from "../FormField";
 import type { ProductFormInput } from "@/components/product/console/types";
+import { PRODUCT_PRICING_FIELDS_COPY } from "./product-copy";
+import { PRICING_RULES_COPY } from "@/components/shared/forms/product/product-copy";
 
 interface ProductPricingFieldsProps {
   register: UseFormRegister<ProductFormInput>;
@@ -17,10 +19,10 @@ export function ProductPricingFields({
 }: ProductPricingFieldsProps) {
   return (
     <div className="bg-card rounded-lg border border-border p-6">
-      <h2 className="text-lg font-semibold text-foreground mb-4">Pricing</h2>
+      <h2 className="text-lg font-semibold text-foreground mb-4">{PRODUCT_PRICING_FIELDS_COPY.pricing}</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FormInput
-          label="Regular Price (₹)"
+          label={PRODUCT_PRICING_FIELDS_COPY.regularPrice}
           required
           disabled={readOnly}
           type="number"
@@ -28,28 +30,28 @@ export function ProductPricingFields({
           min="0"
           placeholder="0.00"
           {...register("price", {
-            required: "Price is required",
+            required: PRICING_RULES_COPY.required,
             valueAsNumber: true,
-            min: { value: 0.01, message: "Price must be greater than 0" },
+            min: { value: 0.01, message: PRICING_RULES_COPY.min },
           })}
           error={errors.price?.message}
         />
 
         <FormInput
-          label="Sale Price (₹)"
+          label={PRODUCT_PRICING_FIELDS_COPY.salePrice}
           disabled={readOnly}
           type="number"
           step="0.01"
           min="0"
-          placeholder="Optional"
+          placeholder={PRODUCT_PRICING_FIELDS_COPY.optional}
           {...register("salePrice", { valueAsNumber: true })}
           error={errors.salePrice?.message}
-          hint="Sells at this instead. Leave empty if not on sale; schedule or stop it under Offers."
+          hint={PRODUCT_PRICING_FIELDS_COPY.sellsAtThisInsteadLeave}
         />
 
         {/* CHANGED: Now using FormSelect */}
         <FormSelect
-          label="Currency"
+          label={PRODUCT_PRICING_FIELDS_COPY.currency}
           disabled={readOnly}
           {...register("currency")}
           error={errors.currency?.message}

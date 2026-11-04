@@ -4,6 +4,7 @@ import { orgOrdersDAL } from "@/data-access-layer/org/orders.dal";
 import { ShopOrderList } from "@/components/org/parcels/shop-order-list";
 import { Button } from "@/components/ui/button";
 import { SHOP_ORDERS_COPY } from "@/components/org/parcels/parcel-copy";
+import { ROUTES } from "@server/shared/routes";
 
 interface Props {
   orgId: string;
@@ -19,10 +20,10 @@ export async function AdminOrgOrders({ orgId, searchParams }: Props) {
 
   return (
     <div className="space-y-3">
-      <ShopOrderList orders={orders} orderHref={(orderId) => `/admin/orders/${orderId}`} />
+      <ShopOrderList orders={orders} orderHref={(orderId) => ROUTES.admin.order(orderId)} />
       {hasMore && (
         <Button asChild variant="outline" className="min-h-10 w-full">
-          <Link href={`/admin/orgs/${orgId}?tab=orders&more=${pages + 1}`} scroll={false}>{SHOP_ORDERS_COPY.loadMore}</Link>
+          <Link href={`${ROUTES.admin.org(orgId)}?tab=orders&more=${pages + 1}`} scroll={false}>{SHOP_ORDERS_COPY.loadMore}</Link>
         </Button>
       )}
     </div>

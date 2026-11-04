@@ -71,6 +71,8 @@ import { ExtraRow, SlotRow } from "@/components/product/gallery-rows";
 import { CropDialog } from "@/components/product/crop-dialog";
 import { ImproveDialog, type ImproveTarget } from "@/components/product/improve-dialog";
 import type { AvailableTool, EnhancementDto } from "@server/content/enhancement.types";
+import { MEDIA_COPY } from "./media-copy";
+import { MEDIA_MANAGER_NOTICE_COPY } from "@/components/product/media-copy";
 
 interface ProductMediaManagerProps {
   value: ProductMediaInput[];
@@ -123,7 +125,7 @@ function releasePreviews(photos: readonly QueuedPhoto[]): void {
 }
 
 const CAPACITY_NOTICE = `A product can have at most ${MAX_MEDIA_PER_PRODUCT} gallery items`;
-const WAIT_NOTICE = "Wait for the upload to finish";
+const WAIT_NOTICE = MEDIA_MANAGER_NOTICE_COPY.wait;
 
 /** "2 photos still uploading" (product-form ux "Slow"); a video batch says videos. */
 function stillUploading(left: number, kind: "photo" | "video"): string {
@@ -255,7 +257,7 @@ export function ProductMediaManager({
       return false;
     }
     if (!orgCode) {
-      setNotice("Choose the selling organisation before uploading photographs");
+      setNotice(MEDIA_MANAGER_NOTICE_COPY.chooseOrg);
       return false;
     }
     return true;
@@ -314,12 +316,12 @@ export function ProductMediaManager({
         // Not an error: the org already had these bytes, so they were added from the library.
         setNotice(
           reused === 1
-            ? "One photo was already in your library and was added from there."
-            : `${reused} photos were already in your library and were added from there.`,
+            ? MEDIA_MANAGER_NOTICE_COPY.reusedOne
+            : MEDIA_MANAGER_NOTICE_COPY.reusedMany(reused),
         );
       }
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Failed to upload images");
+      setNotice(error instanceof Error ? error.message : MEDIA_MANAGER_NOTICE_COPY.uploadFailed);
     } finally {
       setIsUploading(false);
       setUploadingSlot(null);
@@ -344,7 +346,7 @@ export function ProductMediaManager({
     try {
       const source = await uploadBatch([ready], { endpoints, pathFor });
       const sourceUrl = source.urls[0];
-      if (!sourceUrl) throw new Error(source.firstError ?? "Upload failed");
+      if (!sourceUrl) throw new Error(source.firstError ?? MEDIA_MANAGER_NOTICE_COPY.failed);
 
       const cropFile = await renderCrop(ready, transform);
       const sourceAssetId = source.assetIds[0];
@@ -354,12 +356,12 @@ export function ProductMediaManager({
         derivedFrom: sourceAssetId ? { assetId: sourceAssetId, transform } : undefined,
       });
       const cropUrl = derived.urls[0];
-      if (!cropUrl) throw new Error(derived.firstError ?? "Upload failed");
+      if (!cropUrl) throw new Error(derived.firstError ?? MEDIA_MANAGER_NOTICE_COPY.failed);
 
       place([cropUrl], [cropFile], [picked], slot);
-      if (derived.reused) setNotice("That crop was already in your library and was added from there.");
+      if (derived.reused) setNotice(MEDIA_MANAGER_NOTICE_COPY.reusedCrop);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Failed to upload images");
+      setNotice(error instanceof Error ? error.message : MEDIA_MANAGER_NOTICE_COPY.uploadFailed);
     } finally {
       setIsUploading(false);
       setUploadingSlot(null);
@@ -389,7 +391,7 @@ export function ProductMediaManager({
           landed.push(result.url);
         } catch (error) {
           failed.push(file.name);
-          firstError ??= error instanceof Error ? error.message : "Upload failed";
+          firstError ??= error instanceof Error ? error.message : MEDIA_MANAGER_NOTICE_COPY.failed;
         }
         setProgress({ done: index + 1, total: files.length });
       }
@@ -476,11 +478,11 @@ export function ProductMediaManager({
     }
     const ref = parseYoutubeRef(linkDraft);
     if (!ref) {
-      setNotice("That does not look like a YouTube link");
+      setNotice(MEDIA_MANAGER_NOTICE_COPY.notYouTube);
       return;
     }
     if (media.some((item) => item.kind === "YOUTUBE" && item.ref === ref)) {
-      setNotice("That video is already in this gallery");
+      setNotice(MEDIA_MANAGER_NOTICE_COPY.duplicateVideo);
       return;
     }
     setNotice(null);
@@ -530,7 +532,7 @@ export function ProductMediaManager({
     // R15/A12: the cover cannot simply be dropped. Refusing here, where the org member is
     // looking, beats letting the payload fail validation on submit.
     if (media.some((item) => item.ref === ref && item.isThumbnail)) {
-      setNotice("Choose another cover before removing this photograph");
+      setNotice(MEDIA_MANAGER_NOTICE_COPY.coverFirst);
       return;
     }
     setNotice(null);
@@ -614,7 +616,7 @@ export function ProductMediaManager({
 
   return (
     <div className="space-y-6">
-      <ul className="space-y-3" aria-label="Photo slots">
+      <ul className="space-y-3" aria-label={MEDIA_COPY.manager.slots}>
         {shotList.map((slot) => {
           const item = filled.get(slot.key) ?? null;
           return (
@@ -648,10 +650,10 @@ export function ProductMediaManager({
       <section className="space-y-3" aria-labelledby={extrasHeadingId}>
         <div>
           <h3 id={extrasHeadingId} className="text-sm font-medium text-foreground">
-            Extras
+            {MEDIA_COPY.manager.extras}
           </h3>
           <p className="text-xs text-muted-foreground">
-            More photos and any video, shown after the slots in this order.
+            {MEDIA_COPY.manager.extrasHint}
           </p>
         </div>
 
@@ -699,7 +701,7 @@ export function ProductMediaManager({
           <ResponsivePicker
             open={isAddOpen}
             onOpenChange={openAdd}
-            title="Add"
+            title={MEDIA_COPY.manager.add}
             className="w-64"
             trigger={
               <Button
@@ -718,21 +720,21 @@ export function ProductMediaManager({
                 )}
                 {isUploading && uploadingSlot === null
                   ? progress.total > 1
-                    ? `Uploading ${progress.done}/${progress.total}…`
-                    : "Uploading…"
-                  : "Add"}
+                    ? MEDIA_COPY.manager.uploadingCount(progress.done, progress.total)
+                    : MEDIA_COPY.manager.uploading
+                  : MEDIA_COPY.manager.add}
               </Button>
             }
           >
             <div className="flex flex-col gap-1">
               <Button type="button" variant="ghost" size="lg" className="h-auto justify-start whitespace-normal py-3" onClick={() => addFrom("camera")}>
-                <Icon name="camera" /> Take photo
+                <Icon name="camera" /> {MEDIA_COPY.manager.takePhoto}
               </Button>
               <Button type="button" variant="ghost" size="lg" className="h-auto justify-start whitespace-normal py-3" onClick={() => addFrom("files")}>
-                <Icon name="upload" /> Choose photos or video
+                <Icon name="upload" /> {MEDIA_COPY.manager.choosePhotosOrVideo}
               </Button>
               <Button type="button" variant="ghost" size="lg" className="h-auto justify-start whitespace-normal py-3" onClick={() => addFrom("link")}>
-                <Icon name="youtube" /> Add YouTube link
+                <Icon name="youtube" /> {MEDIA_COPY.manager.addYouTube}
               </Button>
             </div>
           </ResponsivePicker>
@@ -744,7 +746,7 @@ export function ProductMediaManager({
               onClick={() => (atCapacity ? setNotice(CAPACITY_NOTICE) : openPicker(null))}
               className="sm:w-auto"
             >
-              <Icon name="photos" /> From library
+              <Icon name="photos" /> {MEDIA_COPY.manager.fromLibrary}
             </Button>
           )}
         </div>
@@ -754,12 +756,12 @@ export function ProductMediaManager({
             ref={linkInputRef}
             value={linkDraft}
             onChange={(event) => setLinkDraft(event.target.value)}
-            placeholder="Paste a YouTube link"
-            aria-label="YouTube link"
+            placeholder={MEDIA_COPY.manager.youtubePlaceholder}
+            aria-label={MEDIA_COPY.manager.youtubeLabel}
             className="h-10"
           />
           <Button type="button" variant="outline" size="lg" onClick={addVideo}>
-            <Icon name="youtube" /> Add video
+            <Icon name="youtube" /> {MEDIA_COPY.manager.addVideo}
           </Button>
         </div>
 
@@ -821,10 +823,9 @@ export function ProductMediaManager({
 
       <p className="text-xs text-muted-foreground">
         {photographCount === 0
-          ? "At least one photograph is required. Video is optional."
-          : `${media.length} of ${MAX_MEDIA_PER_PRODUCT} items · ${filled.size} of ${shotList.length} slots filled. Tap "Cover" on the photograph that should represent this product in listings.`}{" "}
-        Photos are resized in your browser before upload, so large files are fine. A video is sent as it is and made
-        playable in the background.
+          ? MEDIA_MANAGER_NOTICE_COPY.needPhoto
+          : MEDIA_MANAGER_NOTICE_COPY.progress(media.length, MAX_MEDIA_PER_PRODUCT, filled.size, shotList.length)}{" "}
+        {MEDIA_MANAGER_NOTICE_COPY.resizeNote}
       </p>
     </div>
   );

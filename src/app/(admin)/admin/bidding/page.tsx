@@ -9,6 +9,7 @@ import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminBiddingService } from "@server/bidding/admin.bidding.service";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { AdminBiddingList } from "@/components/bidding/admin-bidding-list";
+import { ADMIN_BIDDING_COPY } from "./bidding-copy";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -20,12 +21,8 @@ export default async function AdminBiddingPage() {
   return (
     <PageShell width="wide">
       <PageHeader
-        title="Auctions"
-        description={
-          awaiting.length > 0
-            ? `${awaiting.length} closed ${awaiting.length === 1 ? "auction needs" : "auctions need"} an outcome. Until one is recorded, the item stays off sale.`
-            : "Every auction across the platform."
-        }
+        title={ADMIN_BIDDING_COPY.title}
+        description={ADMIN_BIDDING_COPY.description(awaiting.length)}
       />
 
       <AdminBiddingList events={events} />

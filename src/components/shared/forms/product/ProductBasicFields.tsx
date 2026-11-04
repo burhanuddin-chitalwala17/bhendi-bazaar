@@ -4,6 +4,9 @@ import { UseFormRegister, FieldErrors, UseFormSetValue } from "react-hook-form";
 import { FormInput, FormSelect, FormTextarea } from "../FormField";
 import type { ProductFormInput } from "@/components/product/console/types";
 import { useRouter } from "next/navigation";
+import { PRODUCT_BASIC_FIELDS_COPY } from "./product-copy";
+import { ROUTES } from "@server/shared/routes";
+import { BASIC_FIELDS_RULES_COPY } from "@/components/shared/forms/product/product-copy";
 
 interface ProductBasicFieldsProps {
   register: UseFormRegister<ProductFormInput>;
@@ -22,32 +25,32 @@ export function ProductBasicFields({
   const router = useRouter();
   const handleAddCategory = () => {
     // Save current product form and navigate to category form
-    router.push("/admin/categories/new?returnUrl=/admin/products/new");
+    router.push(`${ROUTES.admin.newCategory}?returnUrl=/admin/products/new`);
   };
   return (
     <div className="bg-card rounded-lg border border-border p-6">
       <h2 className="text-lg font-semibold text-foreground mb-4">
-        Basic Information
+        {PRODUCT_BASIC_FIELDS_COPY.basicInformation}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormInput
-          label="Product Name"
+          label={PRODUCT_BASIC_FIELDS_COPY.productName}
           required
-          placeholder="e.g., Velvet Embroidered Kurta"
+          placeholder={PRODUCT_BASIC_FIELDS_COPY.eGVelvetEmbroideredKurta}
           disabled={readOnly}
-          {...register("name", { required: "Product name is required" })}
+          {...register("name", { required: BASIC_FIELDS_RULES_COPY.name })}
           error={errors.name?.message}
         />
 
         <div className="md:col-span-2">
           <FormTextarea
-            label="Description"
+            label={PRODUCT_BASIC_FIELDS_COPY.description}
             required
             disabled={readOnly}
-            placeholder="Detailed product description..."
+            placeholder={PRODUCT_BASIC_FIELDS_COPY.detailedProductDescription}
             rows={4}
             {...register("description", {
-              required: "Description is required",
+              required: BASIC_FIELDS_RULES_COPY.description,
             })}
             error={errors.description?.message}
           />
@@ -55,13 +58,13 @@ export function ProductBasicFields({
         {/* Category with Add button */}
         <div>
           <FormSelect
-            label="Category"
+            label={PRODUCT_BASIC_FIELDS_COPY.category}
             required
             disabled={readOnly}
-            {...register("categoryId", { required: "Category is required" })}
+            {...register("categoryId", { required: BASIC_FIELDS_RULES_COPY.category })}
             error={errors.categoryId?.message}
           >
-            <option value="">Select a category</option>
+            <option value="">{PRODUCT_BASIC_FIELDS_COPY.selectACategory}</option>
             {categories?.map((cat) => (
               <option key={cat.id} value={cat.id}>
                 {cat.name}
@@ -71,11 +74,11 @@ export function ProductBasicFields({
         </div>
         <FormInput
           label="SKU"
-          placeholder="e.g., VEK-001"
+          placeholder={PRODUCT_BASIC_FIELDS_COPY.eGVek001}
           disabled={readOnly}
           {...register("sku")}
           error={errors.sku?.message}
-          hint="Optional — must be unique"
+          hint={PRODUCT_BASIC_FIELDS_COPY.optionalMustBeUnique}
         />
       </div>
     </div>

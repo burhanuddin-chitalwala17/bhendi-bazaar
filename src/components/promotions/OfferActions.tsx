@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { useMutation } from "@/hooks/core/useMutation";
 import { offersApiClient } from "@/components/promotions/offersApiClient";
+import { OFFER_ACTIONS_COPY } from "./promotions-copy";
 
 export function OfferActions({
   editHref,
@@ -34,7 +35,7 @@ export function OfferActions({
   const { mutate, isLoading: isStopping } = useMutation(
     () => offersApiClient.stop(stopHref),
     {
-      successMessage: `“${label}” stopped`,
+      successMessage: OFFER_ACTIONS_COPY.stopped(label),
       onSuccess: () => router.refresh(),
     },
   );
@@ -46,13 +47,13 @@ export function OfferActions({
     <div className="flex items-center justify-end gap-1">
       <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
         <Link href={editHref} prefetch={false}>
-          <Icon name="edit" size="xs" /> Edit
+          <Icon name="edit" size="xs" /> {OFFER_ACTIONS_COPY.edit}
         </Link>
       </Button>
       {isActive && (
         <Button variant="ghost" size="sm" onClick={stop} pending={isStopping}>
           {!isStopping && <Icon name="square" size="xs" />}
-          {isStopping ? "Stopping…" : "Stop"}
+          {isStopping ? OFFER_ACTIONS_COPY.stopping : OFFER_ACTIONS_COPY.stop}
         </Button>
       )}
     </div>

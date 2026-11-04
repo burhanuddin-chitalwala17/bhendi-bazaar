@@ -13,6 +13,7 @@ import {
 } from "@/lib/validation/schemas/channel-mapping.schema";
 import type { Channel } from "@server/shared/channels";
 import type { UnmappedValue } from "@server/listing/channel-register.service";
+import { UNMAPPED } from "./channel-copy";
 
 interface UnmappedValueRowProps {
   channel: Channel;
@@ -63,11 +64,11 @@ export function UnmappedValueRow({ channel, entry }: UnmappedValueRowProps) {
         <div className="flex flex-col gap-2 sm:flex-row">
           <div className="min-w-0 flex-1">
             <label htmlFor={`their-${entry.list}-${entry.valueKey}`} className="sr-only">
-              What they call {entry.label}
+              {UNMAPPED.whatTheyCall(entry.label)}
             </label>
             <Input
               id={`their-${entry.list}-${entry.valueKey}`}
-              placeholder="What they call it"
+              placeholder={UNMAPPED.placeholder}
               autoComplete="off"
               {...register("theirValue")}
             />

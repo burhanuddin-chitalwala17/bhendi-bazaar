@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { SELECTION_BAR_COPY } from "./shared-copy";
 
 export interface SelectionAction {
   label: string;
@@ -67,7 +68,7 @@ export function SelectionBar({
   return (
     <div
       role="region"
-      aria-label="Selection"
+      aria-label={SELECTION_BAR_COPY.selection}
       className={cn(selectionBarVariants({ dock }))}
     >
       <div className="mb-2 flex items-center gap-2 rounded-card bg-foreground py-2 pl-4 pr-2 text-background shadow-overlay md:mb-0 md:min-w-96">
@@ -100,7 +101,7 @@ export function SelectionBar({
                 variant="inverse"
                 size="sm"
                 shape="icon"
-                aria-label="More actions"
+                aria-label={SELECTION_BAR_COPY.moreActions}
               >
                 <Icon name="more" size="md" />
               </Button>
@@ -118,7 +119,7 @@ export function SelectionBar({
           variant="inverse"
           size="sm"
           shape="icon"
-          aria-label="Clear selection"
+          aria-label={SELECTION_BAR_COPY.clearSelection}
           onClick={onClear}
         >
           <Icon name="close" size="md" />

@@ -9,8 +9,10 @@ import { SHOP_HUB_COPY } from "@/components/org/shop-hub/shop-hub-copy";
 import { brandPageShowing, brandPageStanding } from "@/components/storefront/brand-page/standing";
 import { shopHubDAL, type ShopHubData } from "@/data-access-layer/org/shop-hub.dal";
 import { requireOrgMember } from "@/lib/org-auth";
+import { ROUTES } from "@server/shared/routes";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
-export const metadata = { title: "Shop", robots: { index: false, follow: false } };
+export const metadata = { title: ORG_PAGE_TITLES.shop, robots: { index: false, follow: false } };
 
 /** The hub's four rows, compared by constant. */
 const HUB_ROW = { DETAILS: "details", PAGE: "page", ADDRESSES: "addresses", REVIEWS: "reviews" } as const;
@@ -26,28 +28,27 @@ interface HubRow {
 }
 
 function rowsFor(data: ShopHubData, orgId: string): HubRow[] {
-  const base = `/org/${orgId}`;
-  const missing = data.details.ok ? [!data.details.value.hasLogo, !data.details.value.hasTagline].filter(Boolean).length : 0;
+    const missing = data.details.ok ? [!data.details.value.hasLogo, !data.details.value.hasTagline].filter(Boolean).length : 0;
   const page = data.page.ok && data.page.value ? brandPageShowing(brandPageStanding(data.page.value, orgId)) : null;
   return [
     {
       key: HUB_ROW.DETAILS,
       icon: "id-card",
-      href: `${base}/shop/details`,
+      href: ROUTES.org.shopDetails(orgId),
       status: data.details.ok ? (missing === 0 ? SHOP_HUB_COPY.detailsDone : SHOP_HUB_COPY.detailsToAdd(missing)) : null,
       done: data.details.ok && missing === 0,
     },
     {
       key: HUB_ROW.PAGE,
       icon: "layout",
-      href: `${base}/storefront`,
+      href: ROUTES.org.storefront(orgId),
       status: page ? SHOP_HUB_COPY.pageShowing(page.showing, page.total) : data.page.ok ? SHOP_HUB_COPY.pageNotLive : null,
       done: page !== null && page.showing > 0,
     },
     {
       key: HUB_ROW.ADDRESSES,
       icon: "location",
-      href: `${base}/locations`,
+      href: ROUTES.org.locations(orgId),
       status: data.addresses.ok
         ? data.addresses.value.active === 0
           ? SHOP_HUB_COPY.addressesNone
@@ -58,7 +59,7 @@ function rowsFor(data: ShopHubData, orgId: string): HubRow[] {
     {
       key: HUB_ROW.REVIEWS,
       icon: "rating",
-      href: `${base}/reviews`,
+      href: ROUTES.org.reviews(orgId),
       status: data.reviews.ok
         ? data.reviews.value.count === 0
           ? SHOP_HUB_COPY.reviewsNone

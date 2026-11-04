@@ -1,4 +1,5 @@
 import type { PaletteKey, ThemeKey } from "@server/catalog/storefront-themes";
+import { ROUTES } from "@server/shared/routes";
 
 /** The two views the preview's switch offers (ux.md journey 1), compared by constant. */
 export const PREVIEW_VIEW = { LANDING: "landing", SHOP: "shop" } as const;
@@ -15,5 +16,5 @@ export function lookPreviewHref(
   const query = new URLSearchParams({ theme, palette, view });
   // A saved section is a new page: the revision makes the frame load it again (D13).
   if (revision) query.set("r", String(revision));
-  return `/org/${orgId}/storefront/preview?${query.toString()}`;
+  return `${ROUTES.org.storefrontPreview(orgId)}?${query.toString()}`;
 }

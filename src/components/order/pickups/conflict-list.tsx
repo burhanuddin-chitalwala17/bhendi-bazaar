@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ROUTES } from "@server/shared/routes";
 
 import type { CourierConflictRow } from "@server/shipping/courier-conflict.service";
 import { COURIER_CONFLICT_KIND } from "@server/shipping/domain/shipping.types";
@@ -11,6 +12,7 @@ import { ResourceList } from "@/components/shared/resource-list";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { ConflictDetails, DismissConflict } from "./conflict-actions";
 import { CONFLICT_COPY, SHIPROCKET_URL } from "./pickups-copy";
+import { CONFLICT_LIST_COPY } from "./pickups-copy";
 
 function lineOf(row: CourierConflictRow): string {
   return row.kind === COURIER_CONFLICT_KIND.CANCELLED_PARCEL
@@ -37,7 +39,7 @@ function Actions({ row }: { row: CourierConflictRow }) {
       ) : (
         <Button asChild size="sm" variant="outline">
           {/* Ready, not Booked: an unknown AWB is most often a parcel booked on Shiprocket but never here. */}
-          <Link href="/admin/orders/pickups" prefetch={false}>{CONFLICT_COPY.findParcel}</Link>
+          <Link href={ROUTES.admin.pickups} prefetch={false}>{CONFLICT_COPY.findParcel}</Link>
         </Button>
       )}
       <DismissConflict conflictId={row.id} />
@@ -49,15 +51,15 @@ function Actions({ row }: { row: CourierConflictRow }) {
 export function ConflictList({ rows }: { rows: CourierConflictRow[] }) {
   return (
     <ResourceList
-      label="Courier updates we couldn't apply"
+      label={CONFLICT_LIST_COPY.courierUpdatesWeCouldn}
       rows={rows}
       rowKey={(row) => row.id}
       tableFrom="lg"
-      empty={{ title: "No conflicts", description: CONFLICT_COPY.empty }}
+      empty={{ title: CONFLICT_LIST_COPY.noConflicts, description: CONFLICT_COPY.empty }}
       columns={[
         {
           key: "update",
-          label: "Update",
+          label: CONFLICT_LIST_COPY.update,
           phone: "title",
           cell: (row) => (
             <span className="block whitespace-normal font-normal">
@@ -70,18 +72,18 @@ export function ConflictList({ rows }: { rows: CourierConflictRow[] }) {
         { key: "awb", label: "AWB", cell: (row) => <span className="font-mono">{row.awb}</span>, phone: "meta" },
         {
           key: "state",
-          label: "Status",
+          label: CONFLICT_LIST_COPY.status,
           phone: "status",
           cell: (row) =>
             row.dismissed ? (
-              <StatusBadge tone="neutral">Dismissed</StatusBadge>
+              <StatusBadge tone="neutral">{CONFLICT_LIST_COPY.dismissed}</StatusBadge>
             ) : row.kind === COURIER_CONFLICT_KIND.CANCELLED_PARCEL ? (
-              <StatusBadge tone="destructive">Cancelled parcel</StatusBadge>
+              <StatusBadge tone="destructive">{CONFLICT_LIST_COPY.cancelledParcel}</StatusBadge>
             ) : (
-              <StatusBadge tone="warning">Unknown AWB</StatusBadge>
+              <StatusBadge tone="warning">{CONFLICT_LIST_COPY.unknownAwb}</StatusBadge>
             ),
         },
-        { key: "actions", label: "Action", align: "end", phone: "trailing", cell: (row) => <Actions row={row} /> },
+        { key: "actions", label: CONFLICT_LIST_COPY.action, align: "end", phone: "trailing", cell: (row) => <Actions row={row} /> },
       ]}
     />
   );

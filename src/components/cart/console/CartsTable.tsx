@@ -17,6 +17,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Money } from "@/components/shared/Money";
+import { CARTS_CONSOLE_COPY as COPY } from "../cart-copy";
 
 interface Props {
   carts: AbandonedCart[];
@@ -59,51 +60,51 @@ export function CartsTable({ carts, page, pageSize, totalPages, total }: Props) 
   const columns: Column<AbandonedCart>[] = [
     {
       key: "userName",
-      label: "Customer",
+      label: COPY.customer,
       phone: "title",
-      render: (cart) => cart.userName || "Guest",
+      render: (cart) => cart.userName || COPY.guest,
     },
     {
       key: "userEmail",
-      label: "Email",
+      label: COPY.email,
       phone: "hidden",
       render: (cart) => <span className="text-muted-foreground">{cart.userEmail}</span>,
     },
     {
       key: "itemsCount",
-      label: "Items",
+      label: COPY.items,
       phone: "meta",
-      render: (cart) => `${cart.itemsCount} ${cart.itemsCount === 1 ? "item" : "items"}`,
+      render: (cart) => COPY.itemCount(cart.itemsCount),
     },
     {
       key: "totalValue",
-      label: "Cart value",
+      label: COPY.cartValue,
       phone: "meta",
       render: (cart) => <Money paise={cart.totalValue} />,
     },
     {
       key: "daysSinceUpdate",
-      label: "Abandoned",
+      label: COPY.abandoned,
       phone: "meta",
       render: (cart) => (
         <span title={formatShortDate(cart.updatedAt)}>
-          {cart.daysSinceUpdate} {cart.daysSinceUpdate === 1 ? "day" : "days"} ago
+          {COPY.daysAgo(cart.daysSinceUpdate)}
         </span>
       ),
     },
     {
       key: "actions",
-      label: "Actions",
+      label: COPY.actions,
       phone: "trailing",
       render: (cart) => (
         <Button
           variant="outline"
           size="sm"
           onClick={() => setSelected(cart)}
-          aria-label={`View ${cart.userName || "guest"}'s cart`}
+          aria-label={COPY.viewCart(cart.userName)}
         >
           <Icon name="show" />
-          View
+          {COPY.view}
         </Button>
       ),
     },
@@ -114,7 +115,7 @@ export function CartsTable({ carts, page, pageSize, totalPages, total }: Props) 
       <DataTable
         data={carts}
         columns={columns}
-        label="Abandoned carts"
+        label={COPY.tableLabel}
         totalPages={totalPages}
         currentPage={page}
         totalItems={total}
@@ -130,14 +131,13 @@ export function CartsTable({ carts, page, pageSize, totalPages, total }: Props) 
             <div className="space-y-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <SheetTitle>{selected.userName || "Guest"}&apos;s cart</SheetTitle>
+                  <SheetTitle>{COPY.cartOf(selected.userName)}</SheetTitle>
                   <SheetDescription>
-                    {selected.userEmail || "No email"} · abandoned {selected.daysSinceUpdate}{" "}
-                    {selected.daysSinceUpdate === 1 ? "day" : "days"} ago
+                    {selected.userEmail || COPY.noEmail} · {COPY.abandonedAgo(selected.daysSinceUpdate)}
                   </SheetDescription>
                 </div>
                 <SheetClose asChild>
-                  <Button variant="ghost" shape="icon" aria-label="Close">
+                  <Button variant="ghost" shape="icon" aria-label={COPY.close}>
                     <Icon name="close" />
                   </Button>
                 </SheetClose>
@@ -145,7 +145,7 @@ export function CartsTable({ carts, page, pageSize, totalPages, total }: Props) 
 
               <section className="space-y-2">
                 <h3 className="text-small font-semibold text-foreground">
-                  {selected.itemsCount} {selected.itemsCount === 1 ? "item" : "items"}
+                  {COPY.itemCount(selected.itemsCount)}
                 </h3>
                 <ul className="divide-y divide-border rounded-card border border-border">
                   {selected.items.map((item, index) => (
@@ -160,7 +160,7 @@ export function CartsTable({ carts, page, pageSize, totalPages, total }: Props) 
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-small font-medium">{item.productName}</p>
-                        <p className="text-caption text-muted-foreground">Qty {item.quantity}</p>
+                        <p className="text-caption text-muted-foreground">{COPY.qty(item.quantity)}</p>
                       </div>
                       <p className="text-small font-semibold tabular-nums">
                         {formatCurrency(item.effectivePrice * item.quantity)}
@@ -171,7 +171,7 @@ export function CartsTable({ carts, page, pageSize, totalPages, total }: Props) 
               </section>
 
               <div className="flex items-center justify-between border-t border-border pt-4">
-                <span className="text-small text-muted-foreground">Cart value</span>
+                <span className="text-small text-muted-foreground">{COPY.cartValue}</span>
                 <span className="text-title font-semibold tabular-nums">
                   <Money paise={selected.totalValue} />
                 </span>

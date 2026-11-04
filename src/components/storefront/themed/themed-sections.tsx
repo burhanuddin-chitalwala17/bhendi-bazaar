@@ -32,6 +32,7 @@ import { ThemedStory } from "./story";
 import { ThemedVisit } from "./visit";
 import { ThemedWhyBuy } from "./why-buy";
 import { PREVIEW_COPY } from "../preview/preview-copy";
+import { THEMED_COPY } from "./themed-copy";
 
 interface Context {
   page: ThemedPageData;
@@ -71,11 +72,11 @@ const RENDER = {
   },
   [SECTION.BEST_SELLING]: ({ variant }, { page, theme }) => {
     const slice = bestSellingSlice(page);
-    return slice && <Shelf title="Best selling" layout={variant} slice={slice} page={page} theme={theme} />;
+    return slice && <Shelf title={THEMED_COPY.sections.bestSelling} layout={variant} slice={slice} page={page} theme={theme} />;
   },
   [SECTION.NEW_IN]: ({ variant }, { page, theme }) => {
     const slice = newInSlice(page);
-    return slice && <Shelf title="New in" layout={variant} slice={slice} page={page} theme={theme} />;
+    return slice && <Shelf title={THEMED_COPY.sections.newIn} layout={variant} slice={slice} page={page} theme={theme} />;
   },
   [SECTION.WHY_BUY]: ({ variant }, { page }) => {
     const slice = whyBuySlice(page);

@@ -14,6 +14,8 @@ import { CommercialTerms } from "@/components/payouts/CommercialTerms";
 import { SettleEntries } from "@/components/payouts/SettleEntries";
 import { SettlementList } from "@/components/payouts/SettlementList";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
+import { PAYOUTS_PAGE_COPY } from "@/components/payouts/payouts-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export default async function AdminOrgPayoutPage({
   params,
@@ -36,16 +38,16 @@ export default async function AdminOrgPayoutPage({
   return (
     <PageShell width="wide">
       <PageHeader
-        back={{ href: "/admin/payouts", label: "Payouts" }}
+        back={{ href: ROUTES.admin.payouts, label: PAYOUTS_PAGE_COPY.back }}
         title={org.name}
-        description={`${org.code} · default commission ${org.commissionBps / 100}%`}
+        description={PAYOUTS_PAGE_COPY.orgDescription(org.code, org.commissionBps / 100)}
       />
 
       {/* Two figures because they differ and both matter (D7). */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Card className="p-4">
           <p className="text-caption uppercase tracking-label text-muted-foreground">
-            Owed
+            {PAYOUTS_PAGE_COPY.owed}
           </p>
           <p className="font-heading text-headline font-semibold tabular-nums">
             {formatCurrency(owedPaise)}
@@ -53,13 +55,13 @@ export default async function AdminOrgPayoutPage({
         </Card>
         <Card className="p-4">
           <p className="text-caption uppercase tracking-label text-muted-foreground">
-            Unclaimed
+            {PAYOUTS_PAGE_COPY.unclaimed}
           </p>
           <p className="font-heading text-headline font-semibold tabular-nums">
             {formatCurrency(unclaimedPaise)}
           </p>
           <p className="mt-1 text-caption text-muted-foreground">
-            Not yet in a settlement
+            {PAYOUTS_PAGE_COPY.notInSettlement}
           </p>
         </Card>
       </div>

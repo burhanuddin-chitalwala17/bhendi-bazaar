@@ -11,6 +11,7 @@ import { PRODUCT_STOCK } from "./stock-copy";
 import { RetryPhotosButton } from "./retry-photos-button";
 import { PRODUCT_PHOTOS } from "./settle-copy";
 import { LINK_SOURCE } from "@server/channels/channel-connection.types";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * Where this product is linked on each connected marketplace, read-only (channel-import Q19, ux.md
@@ -34,7 +35,7 @@ export function ProductMarketplaces({
       <ul className="flex flex-col gap-3">
         {links.map((link) => {
           const summary = summaries.find((s) => s.channel === link.channel);
-          const listingHref = `/org/${orgId}/products/${productId}/listings/${link.channel}`;
+          const listingHref = ROUTES.org.productListing(orgId, productId, link.channel);
           return (
           <li key={link.channel} className="flex flex-col gap-2 text-sm md:flex-row md:items-center md:justify-between">
             <div className="flex min-w-0 flex-col gap-1">
@@ -74,16 +75,16 @@ export function ProductMarketplaces({
                 )}
                 {link.needsReconnect && (
                   <Button asChild variant="outline" size="sm">
-                    <Link href={`/org/${orgId}/channels`}>{ON_MARKETPLACES.goToChannels}</Link>
+                    <Link href={ROUTES.org.channels(orgId)}>{ON_MARKETPLACES.goToChannels}</Link>
                   </Button>
                 )}
                 {link.listing.stock?.oversold && (
                   <Button asChild variant="outline" size="sm">
-                    <Link href={`/org/${orgId}/orders?tab=marketplace`}>{PRODUCT_STOCK.seeOrder}</Link>
+                    <Link href={`${ROUTES.org.orders(orgId)}?tab=marketplace`}>{PRODUCT_STOCK.seeOrder}</Link>
                   </Button>
                 )}
                 <Button asChild variant="outline" size="sm">
-                  <Link href={`/org/${orgId}/channels/${link.channel}/listings?tab=linked&listing=${link.listing.id}`}>
+                  <Link href={`${ROUTES.org.channelListings(orgId, link.channel)}?tab=linked&listing=${link.listing.id}`}>
                     {ON_MARKETPLACES.seeListing}
                   </Link>
                 </Button>

@@ -26,7 +26,7 @@ export function toggledHref(basePath: string, params: Record<string, string | un
 export const parseSort = (raw?: string): ProductSort =>
   (PRODUCT_SORTS as readonly string[]).includes(raw ?? "") ? (raw as ProductSort) : "newest";
 
-export function countLabel(count: number, noun: { one: string; many: string } = { one: "piece", many: "pieces" }): string {
+export function countLabel(count: number, noun: { one: string; many: string } = { one: "item", many: "items" }): string {
   return `${formatCount(count)} ${count === 1 ? noun.one : noun.many}`;
 }
 

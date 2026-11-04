@@ -9,6 +9,7 @@ import { HandoffSheet, HANDOFF_WIDE } from "@/components/shared/overlays/handoff
 import type { ListingScreenDTO } from "@server/channels/platform-listing.types";
 
 import { LISTING, rupees } from "./platform-listing-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * "Same everywhere" (channel-listings Q10, parent Q28): strict fields shown, never editable here.
@@ -56,7 +57,7 @@ function LockedRow({ orgId, productId, name, value }: { orgId: string; productId
       }
     >
       <Button asChild className="min-h-10 w-full">
-        <Link href={`/org/${orgId}/products/${productId}/edit`}>{LISTING.editProduct}</Link>
+        <Link href={ROUTES.org.editProduct(orgId, productId)}>{LISTING.editProduct}</Link>
       </Button>
     </HandoffSheet>
   );

@@ -23,6 +23,8 @@ export const HOME_COPY = {
   hidden: "Hidden. It stays on Home as one line, to show again.",
   undo: "Undo",
   setupFailed: "Couldn't load your setup list.",
+  loading: "Loading your shop",
+  loadingSales: "Loading sales",
 } as const;
 
 export const STEP_TITLE: Record<OnboardingStep, string> = {

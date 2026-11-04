@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/shared/page-shell";
 import { formatShortDate } from "@/lib/format";
+import { SHOP_REVIEWS_COPY } from "@/components/org/reviews-copy";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
 export const metadata = {
-  title: "Reviews",
+  title: ORG_PAGE_TITLES.reviews,
   robots: { index: false, follow: false },
 };
 
@@ -36,11 +38,11 @@ export default async function OrgReviewsPage({
 
   return (
     <div className="max-w-3xl space-y-6">
-      <PageHeader help="reviews" title="Reviews" description="What buyers say about your products. Moderation is handled by the platform." />
+      <PageHeader help="reviews" title={SHOP_REVIEWS_COPY.title} description={SHOP_REVIEWS_COPY.description} />
 
       {reviews.length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-10 text-center text-muted-foreground">
-          No reviews yet.
+          {SHOP_REVIEWS_COPY.empty}
         </div>
       ) : (
         <>
@@ -78,13 +80,13 @@ export default async function OrgReviewsPage({
                         {formatShortDate(review.createdAt)}
                       </p>
                       {review.isVerified && (
-                        <Badge variant="secondary">Verified purchase</Badge>
+                        <Badge variant="secondary">{SHOP_REVIEWS_COPY.verified}</Badge>
                       )}
                       {/* Reviews publish on write, so an unpublished one was taken
                           down — never "awaiting" anything (R15). */}
                       {review.isWithdrawn && (
                         <Badge variant="destructive">
-                          Withdrawn by the platform
+                          {SHOP_REVIEWS_COPY.withdrawn}
                         </Badge>
                       )}
                     </div>
@@ -97,7 +99,7 @@ export default async function OrgReviewsPage({
           {pagination.totalPages > 1 && (
             <nav
               className="flex items-center justify-between gap-2"
-              aria-label="Reviews pages"
+              aria-label={SHOP_REVIEWS_COPY.pages}
             >
               <Button
                 variant="outline"
@@ -105,13 +107,13 @@ export default async function OrgReviewsPage({
                 asChild={pagination.page > 1}
               >
                 {pagination.page > 1 ? (
-                  <Link href={`?page=${pagination.page - 1}`}>Previous</Link>
+                  <Link href={`?page=${pagination.page - 1}`}>{SHOP_REVIEWS_COPY.previous}</Link>
                 ) : (
-                  <span>Previous</span>
+                  <span>{SHOP_REVIEWS_COPY.previous}</span>
                 )}
               </Button>
               <span className="text-xs text-muted-foreground">
-                Page {pagination.page} of {pagination.totalPages}
+                {SHOP_REVIEWS_COPY.pageOf(pagination.page, pagination.totalPages)}
               </span>
               <Button
                 variant="outline"
@@ -119,9 +121,9 @@ export default async function OrgReviewsPage({
                 asChild={pagination.page < pagination.totalPages}
               >
                 {pagination.page < pagination.totalPages ? (
-                  <Link href={`?page=${pagination.page + 1}`}>Next</Link>
+                  <Link href={`?page=${pagination.page + 1}`}>{SHOP_REVIEWS_COPY.next}</Link>
                 ) : (
-                  <span>Next</span>
+                  <span>{SHOP_REVIEWS_COPY.next}</span>
                 )}
               </Button>
             </nav>

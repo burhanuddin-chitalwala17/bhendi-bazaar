@@ -13,8 +13,10 @@ import type { Channel } from "@server/shared/channels";
 import type { ChannelTypeChangeInput } from "@/lib/validation/schemas/channel-mapping.schema";
 
 import { channelsApiClient } from "./channelsApiClient";
+import { TYPES_EDITOR } from "./channel-copy";
+import { TYPES_EDITOR_SAVE_COPY } from "@/components/channel/channel-copy";
 
-const SAVE_FAILED = "Couldn't save that change. Nothing was changed.";
+const SAVE_FAILED = TYPES_EDITOR_SAVE_COPY.failed;
 const day = (iso: string) => formatDate(iso, { day: "numeric", month: "short", year: "numeric" });
 
 /**
@@ -47,7 +49,7 @@ export function ChannelTypesEditor({
     change
       .mutate({ ...body, typeName })
       .then(() => {
-        toast.success(`Saved. ${label} types for ${typeName} updated.`);
+        toast.success(TYPES_EDITOR.saved(label, typeName));
         if (draftKey) setDrafts((d) => ({ ...d, [draftKey]: "" }));
         router.refresh();
       })
@@ -87,7 +89,7 @@ export function ChannelTypesEditor({
                       <span className="flex gap-2">
                         {!r.publishes && (
                           <Button size="sm" variant="outline" onClick={() => void run({ action: "publish", id: r.id }, name)}>
-                            Publishes here
+                            {TYPES_EDITOR.publishesHere}
                           </Button>
                         )}
                         <Button
@@ -95,7 +97,7 @@ export function ChannelTypesEditor({
                           variant="ghost"
                           onClick={() => void run({ action: "remove", id: r.id, typeLabel: name }, name)}
                         >
-                          Remove
+                          {TYPES_EDITOR.remove}
                         </Button>
                       </span>
                     </li>
@@ -107,14 +109,14 @@ export function ChannelTypesEditor({
                 onSubmit={(e) => {
                   e.preventDefault();
                   const value = (drafts[key] ?? "").trim();
-                  if (!value) return toast.error(`Name the ${label} type to add.`);
+                  if (!value) return toast.error(TYPES_EDITOR.nameIt(label));
                   void run({ action: "add", channel, productType: t.productType, kind: t.kind, theirCategory: value }, name, key);
                 }}
               >
                 <Input
-                  aria-label={`${label} type for ${name}`}
+                  aria-label={TYPES_EDITOR.typeFor(label, name)}
                   list={`types-${channel}`}
-                  placeholder={t.rows.length === 0 ? `Add a ${label} type` : `Another ${label} type`}
+                  placeholder={t.rows.length === 0 ? TYPES_EDITOR.add(label) : TYPES_EDITOR.another(label)}
                   value={drafts[key] ?? ""}
                   onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))}
                 />

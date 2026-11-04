@@ -1,5 +1,6 @@
 import type { PageTab } from "@/components/shared/page-tabs";
 import type { ProductStats } from "../types";
+import { PRODUCT_SHELF_COPY } from "@/components/product/console/console-copy";
 
 export type ProductTabKey = "all" | "low" | "out" | "archived";
 
@@ -23,9 +24,9 @@ export function productTabs(pathname: string, search: URLSearchParams | { toStri
     return query ? `${pathname}?${query}` : pathname;
   };
   return [
-    { key: "all", label: "All", href: href("all"), count: stats.totalProducts },
-    { key: "low", label: "Low stock", href: href("low"), count: stats.lowStockProducts },
-    { key: "out", label: "Sold out", href: href("out"), count: stats.outOfStockProducts },
-    { key: "archived", label: "Archived", href: href("archived"), count: stats.archivedProducts },
+    { key: "all", label: PRODUCT_SHELF_COPY.all, href: href("all"), count: stats.totalProducts },
+    { key: "low", label: PRODUCT_SHELF_COPY.lowStock, href: href("low"), count: stats.lowStockProducts },
+    { key: "out", label: PRODUCT_SHELF_COPY.soldOut, href: href("out"), count: stats.outOfStockProducts },
+    { key: "archived", label: PRODUCT_SHELF_COPY.archived, href: href("archived"), count: stats.archivedProducts },
   ];
 }

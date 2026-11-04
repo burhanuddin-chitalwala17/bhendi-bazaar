@@ -12,6 +12,8 @@ import { useDebounce } from "@/hooks/core/useDebounce";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
+import { NAVBAR_SEARCH_COPY } from "./navbar-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export function NavbarSearch() {
   const router = useRouter();
@@ -30,7 +32,7 @@ export function NavbarSearch() {
     e.preventDefault();
     const q = search.trim();
     if (!q) return;
-    router.push(`/s?q=${encodeURIComponent(q)}`);
+    router.push(`${ROUTES.search}?q=${encodeURIComponent(q)}`);
     setSearch("");
     setShowSuggestions(false);
   }
@@ -45,8 +47,8 @@ export function NavbarSearch() {
         <Icon name="search" size="sm" tone="muted" />
         <Input
           type="search"
-          aria-label="Search the bazaar"
-          placeholder="Search ridas, abayas, shops"
+          aria-label={NAVBAR_SEARCH_COPY.searchTheBazaar}
+          placeholder={NAVBAR_SEARCH_COPY.searchRidasAbayasShops}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -63,20 +65,20 @@ export function NavbarSearch() {
           {loading ? (
             <div className="flex items-center gap-2 p-4 text-small text-muted-foreground">
               <Spinner size="sm" />
-              Searching
+              {NAVBAR_SEARCH_COPY.searching}
             </div>
           ) : (
             <>
               {suggestions.products.length > 0 && (
                 <div className="p-2">
                   <p className="px-3 py-2 text-label uppercase text-muted-foreground">
-                    Products
+                    {NAVBAR_SEARCH_COPY.products}
                   </p>
                   {suggestions.products.map((product) => (
                     <Link
                       prefetch={false}
                       key={product.id}
-                      href={`/product/${product.slug}`}
+                      href={ROUTES.product(product.slug)}
                       onClick={() => {
                         setShowSuggestions(false);
                         setSearch("");
@@ -108,13 +110,13 @@ export function NavbarSearch() {
               {suggestions.categories.length > 0 && (
                 <div className="p-2 border-t border-border/70">
                   <p className="px-3 py-2 text-label uppercase text-muted-foreground">
-                    Categories
+                    {NAVBAR_SEARCH_COPY.categories}
                   </p>
                   {suggestions.categories.map((category) => (
                     <Link
                       prefetch={false}
                       key={category.slug}
-                      href={`/category/${category.slug}`}
+                      href={ROUTES.category(category.slug)}
                       onClick={() => {
                         setShowSuggestions(false);
                         setSearch("");

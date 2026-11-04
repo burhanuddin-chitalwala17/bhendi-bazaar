@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { CONFLICT_COPY } from "./pickups-copy";
 import { useDismissConflict } from "./useDismissConflict";
+import { CONFLICT_ACTIONS_COPY } from "./pickups-copy";
 
 /** Never disabled (R15): a press while dismissing does nothing. */
 export function DismissConflict({ conflictId }: { conflictId: string }) {

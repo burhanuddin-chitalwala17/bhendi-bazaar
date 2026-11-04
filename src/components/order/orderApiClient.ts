@@ -3,6 +3,7 @@ import { ApiError } from "@/lib/api-error";
 import type { Order } from "@/domain/order";
 import type { DeliveryAddress } from "@/domain/profile";
 import type { BuyerCancelInput } from "@/lib/validation/schemas/parcel-cancel.schema";
+import { ORDER_API_COPY } from "@/components/order/order-copy";
 
 /** One shipping group as the create-order wire accepts it: lines are product + quantity, priced server-side. */
 export interface ShippingGroupPayload {
@@ -42,7 +43,7 @@ export const orderApiClient = {
       // A rate limit carries its own message; the rest are said plainly to a guest.
       if (!(error instanceof ApiError) || error.status === 429) throw error;
       throw new ApiError(
-        error.status === 404 ? "Order not found" : "Failed to lookup order",
+        error.status === 404 ? ORDER_API_COPY.notFound : ORDER_API_COPY.lookupFailed,
         error.status,
         error.details,
       );

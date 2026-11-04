@@ -11,11 +11,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { resolveOrgScope } from "@/lib/org-auth";
 import { channelConnectionService } from "@server/channels/channel-connection.service";
 import { CONNECT_RESULT, type ConnectResult } from "@server/channels/channel-connection.types";
+import { ROUTES } from "@server/shared/routes";
 
 function backTo(request: NextRequest, orgId: string | null, channel: string, result: ConnectResult) {
   // A return we cannot attribute to any shop has nowhere better to land than home.
   if (!orgId) return NextResponse.redirect(new URL("/", request.url), 302);
-  const url = new URL(`/org/${orgId}/channels`, request.url);
+  const url = new URL(ROUTES.org.channels(orgId), request.url);
   url.searchParams.set("result", result);
   url.searchParams.set("channel", channel);
   return NextResponse.redirect(url, 302);

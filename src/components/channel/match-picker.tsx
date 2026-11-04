@@ -17,6 +17,7 @@ import type { SettlePickerProductDTO } from "@server/channels/channel-connection
 import { channelsApiClient } from "./channelsApiClient";
 import { ListingImage } from "./listing-image";
 import { PICKER, SETTLE_ACTION } from "./settle-copy";
+import { ROUTES } from "@server/shared/routes";
 
 interface MatchPickerProps {
   orgId: string;
@@ -52,7 +53,7 @@ export function MatchPicker({ orgId, listingId, label, addNewHref, trigger }: Ma
   const pick = (product: SettlePickerProductDTO) => {
     if (product.linkedHere) return toast.info(PICKER.linkedHereWhy(label));
     setOpen(false);
-    router.push(`/org/${orgId}/channels/settle?listing=${listingId}&productId=${product.id}`);
+    router.push(`${ROUTES.org.channelSettle(orgId)}?listing=${listingId}&productId=${product.id}`);
   };
 
   const row = (product: SettlePickerProductDTO) => (

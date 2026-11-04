@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import type { ZodType } from "zod";
 import { ApiError, applyServerErrors } from "@/lib/api-error";
+import { CORE_HOOKS_COPY } from "./core-copy";
 
 interface Options<T extends FieldValues> {
   /** Validates on the client *and* on the server, so the two cannot disagree. */
@@ -47,7 +48,7 @@ export function useServerForm<T extends FieldValues>({
   submit,
   onSuccess,
   successMessage,
-  fallbackMessage = "Could not save. Please try again.",
+  fallbackMessage = CORE_HOOKS_COPY.couldNotSave,
   onInvalid,
   toastErrors = true,
   prepare,

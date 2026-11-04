@@ -20,6 +20,8 @@ import {
 import { reviewApiClient } from "@/components/product/reviewApiClient";
 import type { ReviewDto } from "@server/catalog/review.types";
 import { formatDay } from "@/lib/format";
+import { REVIEW_COPY } from "./product-copy";
+import { REVIEW_LIST_ERROR_COPY } from "@/components/product/product-copy";
 
 /**
  * The reviews themselves, extending in place (product-reviews R3).
@@ -73,7 +75,7 @@ export function ReviewList({
       toast.error(
         error instanceof Error
           ? error.message
-          : "Could not load more reviews. Please try again.",
+          : REVIEW_LIST_ERROR_COPY.loadMore,
       );
     } finally {
       setLoading(false);
@@ -85,12 +87,12 @@ export function ReviewList({
     setDeleting(true);
     try {
       await reviewApiClient.remove(pendingDelete.id);
-      toast.success("Your review is deleted");
+      toast.success(REVIEW_COPY.list.deleted);
       setPendingDelete(null);
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Could not delete your review.",
+        error instanceof Error ? error.message : REVIEW_COPY.list.deleteFailed,
       );
     } finally {
       setDeleting(false);
@@ -121,7 +123,7 @@ export function ReviewList({
                   </p>
                   {review.isVerifiedPurchase && (
                     <Badge variant="secondary" className="text-2xs sm:text-2xs">
-                      Verified purchase
+                      {REVIEW_COPY.list.verifiedPurchase}
                     </Badge>
                   )}
                   <time
@@ -156,7 +158,7 @@ export function ReviewList({
                       size="sm"
                       onClick={() => setEditingId(review.id)}
                     >
-                      Edit
+                      {REVIEW_COPY.list.edit}
                     </Button>
                     <Button
                       type="button"
@@ -165,7 +167,7 @@ export function ReviewList({
                       className="text-destructive"
                       onClick={() => setPendingDelete(review)}
                     >
-                      Delete
+                      {REVIEW_COPY.list.delete}
                     </Button>
                   </div>
                 )}
@@ -183,7 +185,7 @@ export function ReviewList({
           disabled={loading}
           className="w-full sm:w-auto"
         >
-          {loading ? "Loading…" : `Read more reviews (${total - reviews.length} left)`}
+          {loading ? REVIEW_COPY.list.loading : REVIEW_COPY.list.readMore(total - reviews.length)}
         </Button>
       )}
 
@@ -195,10 +197,9 @@ export function ReviewList({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete this review?</DialogTitle>
+            <DialogTitle>{REVIEW_COPY.list.confirmTitle}</DialogTitle>
             <DialogDescription>
-              It comes off the product page and out of its rating. This cannot be
-              undone — your other reviews of this piece are untouched.
+              {REVIEW_COPY.list.confirmBody}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -207,7 +208,7 @@ export function ReviewList({
               variant="ghost"
               onClick={() => setPendingDelete(null)}
             >
-              Keep it
+              {REVIEW_COPY.list.keep}
             </Button>
             <Button
               type="button"
@@ -215,7 +216,7 @@ export function ReviewList({
               onClick={confirmDelete}
               disabled={deleting}
             >
-              {deleting ? "Deleting…" : "Delete review"}
+              {deleting ? REVIEW_COPY.list.deleting : REVIEW_COPY.list.confirm}
             </Button>
           </DialogFooter>
         </DialogContent>

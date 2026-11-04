@@ -2,6 +2,7 @@ import { orgSalesDAL } from "@/data-access-layer/org/sales.dal";
 import { formatCount, formatCurrency } from "@/lib/format";
 import type { SalesPeriod } from "@server/analytics/sales.types";
 import { change, SalesFailed, SalesSummary } from "./sales-summary";
+import { DASHBOARD_COPY } from "./dashboard-copy";
 
 /**
  * A shop's sales block on its Home: the admin dashboard's grammar in the shop's colour (Q34).
@@ -29,10 +30,10 @@ export async function ShopSalesBlock({
       series={s.series}
       previousSeries={s.previousSeries}
       figures={[
-        { title: "Paid orders", value: formatCount(s.orders.current), trend: change(s.orders) },
-        { title: "Average order", value: formatCurrency(s.averageOrder.current), trend: change(s.averageOrder) },
-        { title: "You'll receive", value: formatCurrency(s.payable.current), trend: change(s.payable) },
-        ...(toPack === null ? [] : [{ title: "To pack now", value: formatCount(toPack) }]),
+        { title: DASHBOARD_COPY.paidOrders, value: formatCount(s.orders.current), trend: change(s.orders) },
+        { title: DASHBOARD_COPY.averageOrder, value: formatCurrency(s.averageOrder.current), trend: change(s.averageOrder) },
+        { title: DASHBOARD_COPY.youllReceive, value: formatCurrency(s.payable.current), trend: change(s.payable) },
+        ...(toPack === null ? [] : [{ title: DASHBOARD_COPY.toPackNow, value: formatCount(toPack) }]),
       ]}
     />
   );

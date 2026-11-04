@@ -25,7 +25,7 @@ const twMerge = extendTailwindMerge({
       // elevation *roles*, not sizes
       shadow: [{ shadow: ["raised", "lifted", "overlay", "inset-field", "tile"] }],
       // the sub-`text-xs` scale, and the storefront type roles a theme repoints
-      "font-size": [{ text: ["2xs", "display", "headline", "title", "body", "small", "caption", "label", "tag", "price"] }],
+      "font-size": [{ text: ["2xs", "landing", "display", "headline", "title", "body", "small", "caption", "label", "tag", "price"] }],
       // storefront faces and theme colour roles (storefront-themes D2, D3)
       "font-family": [{ font: ["display", "label"] }],
       // `deal` and `feature` are fills only: as text on the page they fall below AA.

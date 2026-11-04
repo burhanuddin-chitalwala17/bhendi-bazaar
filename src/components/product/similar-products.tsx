@@ -1,6 +1,7 @@
 import type { Product } from "@/domain/product";
 import { ProductGrid } from "@/components/shared/product-grid";
 import { SectionHeader } from "../shared/SectionHeader";
+import { PRODUCT_PAGE_COPY } from "./product-copy";
 
 interface SimilarProductsProps {
   products: Product[];
@@ -11,7 +12,7 @@ export function SimilarProducts({ products }: SimilarProductsProps) {
 
   return (
     <section className="space-y-4">
-      <SectionHeader title="You may also like" description="Pieces from nearby lanes" />
+      <SectionHeader title={PRODUCT_PAGE_COPY.similar.title} description={PRODUCT_PAGE_COPY.similar.description} />
       <ProductGrid products={products} />
     </section>
   );

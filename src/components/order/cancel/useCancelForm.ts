@@ -7,9 +7,10 @@ import type { ZodType } from "zod";
 
 import { ApiError } from "@/lib/api-error";
 import { useServerForm } from "@/hooks/core/useServerForm";
+import { CANCEL_FORM_COPY } from "@/components/order/buyer-cancel-copy";
 
 /** ux.md "Retryable error" on every cancel sheet. */
-export const CANCEL_RETRY = "Couldn't cancel. Try again.";
+export const CANCEL_RETRY = CANCEL_FORM_COPY.retry;
 
 /**
  * One cancel sheet's state: open, the reason form, and a refusal that replaces the list (ux.md

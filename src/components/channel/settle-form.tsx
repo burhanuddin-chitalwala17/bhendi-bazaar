@@ -31,6 +31,7 @@ import { SettleFacts } from "./settle-facts";
 import { ASK_ADMIN, FACTS_TOAST } from "./facts-copy";
 import { GROUP } from "./family-copy";
 import { axisWord } from "./listing-copy";
+import { ROUTES } from "@server/shared/routes";
 
 const PRODUCT = "product";
 const UPLOAD = "upload";
@@ -361,7 +362,7 @@ export function SettleForm({ orgId, shopName, orgCode, detail, categories, backH
               orgId={orgId}
               listingId={primary.listingId}
               label={primary.label}
-              addNewHref={`/org/${orgId}/channels/settle?listing=${primary.listingId}`}
+              addNewHref={`${ROUTES.org.channelSettle(orgId)}?listing=${primary.listingId}`}
               trigger={
                 <Button type="button" variant="outline" className="min-h-10 self-start">
                   {SETTLE_ACTION.matchInstead}
@@ -374,7 +375,7 @@ export function SettleForm({ orgId, shopName, orgCode, detail, categories, backH
             <div className="flex flex-col gap-2 rounded-card border p-3">
               <p className="text-sm">{GROUP.oneOfGroup(detail.group.total, axisWord(detail.group.axis, detail.group.total), detail.group.name)}</p>
               <Button asChild variant="outline" className="min-h-10 self-start">
-                <Link href={`/org/${orgId}/channels/family?listings=${detail.group.listingIds.join(",")}`}>{GROUP.settleAll(detail.group.total)}</Link>
+                <Link href={`${ROUTES.org.channelFamily(orgId)}?listings=${detail.group.listingIds.join(",")}`}>{GROUP.settleAll(detail.group.total)}</Link>
               </Button>
             </div>
           )}

@@ -8,6 +8,7 @@ import { SHIPMENT_STATUS, type ShipmentStatus } from "@server/shipping/domain/sh
 import type { ShopOrderView, ShopParcelView } from "@server/checkout/shop-parcel.types";
 import { SHOP_ORDERS_COPY, parcelOfLine } from "./parcel-copy";
 import { ReadyForPickup } from "./ready-for-pickup";
+import { SHOP_ORDER_COLUMN_COPY } from "@/components/org/parcels/parcel-copy";
 
 type Row = { order: ShopOrderView; parcel: ShopParcelView; href: string };
 
@@ -42,7 +43,7 @@ export function ShopOrderRows({ rows, orgId }: { rows: Row[]; orgId?: string }) 
       cell: ({ parcel }) => <span className="line-clamp-2 whitespace-normal break-words">{parcel.items.map((i) => i.productName).join(", ")}</span>,
     },
     { key: "buyer", label: "Buyer", cell: ({ order }) => `${order.buyer.name} · ${order.buyer.city}, ${order.buyer.pincode}` },
-    { key: "value", label: "Your parcel value", align: "end", phone: "meta", cell: ({ parcel }) => formatCurrency(parcel.parcelValue) },
+    { key: "value", label: SHOP_ORDER_COLUMN_COPY.value, align: "end", phone: "meta", cell: ({ parcel }) => formatCurrency(parcel.parcelValue) },
     {
       key: "status",
       label: "Parcel",
@@ -66,7 +67,7 @@ export function ShopOrderRows({ rows, orgId }: { rows: Row[]; orgId?: string }) 
 
   return (
     <ResourceList
-      label="Parcels"
+      label={SHOP_ORDERS_COPY.parcels}
       rows={rows}
       rowKey={({ parcel }) => parcel.id}
       rowLabel={({ order }) => order.code}

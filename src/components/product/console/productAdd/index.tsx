@@ -20,6 +20,9 @@ import { CopyFromPicker } from "./CopyFromPicker";
 import { PageHeader } from "@/components/shared/page-shell";
 import type { PortalNavKey } from "@/components/layout/portal-nav";
 import type { ProductTypeRecord } from "@server/listing/product-type.types";
+import { ROUTES } from "@server/shared/routes";
+import { PRODUCT_CONSOLE_COPY } from "../console-copy";
+import { PRODUCT_ADD_HEADER_COPY } from "@/components/product/console/console-copy";
 interface ProductAddContainerProps {
   /** The shop portal's "?" key; the admin console passes none. */
   help?: PortalNavKey;
@@ -75,8 +78,8 @@ export function ProductAddContainer({
     const product = await createProduct(data);
     if (product && team) {
       // The team's next step is the product it made, not the shop's success screen (ux.md, Admin).
-      toast.success(`Saved. ${team.shopName} will see what changed.`);
-      router.push(`/admin/products/${product.id}`);
+      toast.success(PRODUCT_CONSOLE_COPY.toast.teamSaved(team.shopName));
+      router.push(ROUTES.admin.product(product.id));
     } else if (product && returnTo) router.push(returnTo);
     return product;
   };
@@ -90,8 +93,8 @@ export function ProductAddContainer({
     <div className="space-y-6">
       <PageHeader
         help={help}
-        back={{ href: productsBasePath, label: "Back to products" }}
-        title={team ? "Add product for this shop" : "Add product"}
+        back={{ href: productsBasePath, label: PRODUCT_ADD_HEADER_COPY.back }}
+        title={team ? PRODUCT_ADD_HEADER_COPY.teamTitle : PRODUCT_ADD_HEADER_COPY.title}
       />
 
       <ProductForm
@@ -113,7 +116,7 @@ export function ProductAddContainer({
         copyFrom={
           copyOptions.length > 0 && (
             <div className="space-y-2 rounded-card border border-border bg-card p-3">
-              <p className="text-sm font-medium text-foreground">Start from a product you already sell</p>
+              <p className="text-sm font-medium text-foreground">{PRODUCT_CONSOLE_COPY.add.startFrom}</p>
               <CopyFromPicker
                 options={copyOptions}
                 selectedId={copySource?.id}
@@ -123,8 +126,7 @@ export function ProductAddContainer({
                 <p className="flex items-start gap-2 text-xs text-muted-foreground">
                   <Icon name="copy" className="mt-0.5" />
                   <span>
-                    Copied from <strong>{copySource.name}</strong> — description, category, details
-                    and flags. Add photos, a name, price and stock.
+                    {PRODUCT_CONSOLE_COPY.add.copiedFrom} <strong>{copySource.name}</strong> {PRODUCT_CONSOLE_COPY.add.copiedWhat}
                   </span>
                 </p>
               )}

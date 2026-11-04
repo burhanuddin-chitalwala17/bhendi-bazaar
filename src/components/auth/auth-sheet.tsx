@@ -11,12 +11,14 @@ import {
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { SignUpForm } from "@/components/auth/sign-up-form";
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
-import type { AuthView, SwitchAuthView } from "@/components/auth/auth-view";
+import type { AuthDone, AuthView, SwitchAuthView } from "@/components/auth/auth-view";
+import { AUTH_COPY } from "./auth-copy";
+import { AUTH_SHEET_COPY } from "@/components/auth/auth-copy";
 
 const SHEET_TITLES: Record<AuthView, string> = {
-  signin: "Sign in",
-  signup: "Create an account",
-  forgot: "Forgot password",
+  signin: AUTH_SHEET_COPY.signin,
+  signup: AUTH_SHEET_COPY.signup,
+  forgot: AUTH_SHEET_COPY.forgot,
 };
 
 interface AuthSheetProps {
@@ -27,7 +29,7 @@ interface AuthSheetProps {
   reason?: string;
   email?: string;
   onSwitchView: SwitchAuthView;
-  onSuccess: () => void | Promise<void>;
+  onSuccess: AuthDone;
   onBeforeGoogle: () => void;
 }
 
@@ -65,7 +67,7 @@ export function AuthSheet({
             {reason && <SheetDescription>{reason}</SheetDescription>}
           </div>
           <SheetClose
-            aria-label="Close"
+            aria-label={AUTH_COPY.close}
             className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <Icon name="close" />

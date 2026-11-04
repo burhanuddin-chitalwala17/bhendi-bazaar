@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, usePathname } from "next/navigation";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * Where the product screens live in whichever portal the user is currently in.
@@ -12,7 +13,7 @@ import { useParams, usePathname } from "next/navigation";
 export function useProductsBasePath(): string {
   const params = useParams();
   const pathname = usePathname();
-  if (pathname.startsWith("/admin/")) return "/admin/products";
+  if (pathname.startsWith(`${ROUTES.admin.home}/`)) return ROUTES.admin.products;
   const orgId = typeof params.orgId === "string" ? params.orgId : undefined;
-  return orgId ? `/org/${orgId}/products` : "/admin/products";
+  return orgId ? ROUTES.org.products(orgId) : ROUTES.admin.products;
 }

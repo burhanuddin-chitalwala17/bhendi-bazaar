@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { authApiClient } from "@/components/auth/authApiClient";
 import { useMutation } from "@/hooks/core/useMutation";
 import { ApiError } from "@/lib/api-error";
+import { EMAIL_VERIFICATION_BANNER_COPY } from "./layout-copy";
 
 export function EmailVerificationBanner() {
   const { data: session, status, update } = useSession();
@@ -55,12 +56,12 @@ export function EmailVerificationBanner() {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reacts to the URL, which we also rewrite below
       setIsVisible(false);
       sessionStorage.removeItem("email-verification-banner-dismissed");
-      setResendMessage("Email verified successfully!");
+      setResendMessage(EMAIL_VERIFICATION_BANNER_COPY.verified);
       setTimeout(() => setResendMessage(null), 5000);
       window.history.replaceState({}, "", window.location.pathname);
     } else if (verification === "error") {
       const message = params.get("message");
-      setResendMessage(message || "Verification failed");
+      setResendMessage(message || EMAIL_VERIFICATION_BANNER_COPY.verifyFailed);
       setTimeout(() => setResendMessage(null), 5000);
       window.history.replaceState({}, "", window.location.pathname);
     }
@@ -76,13 +77,13 @@ export function EmailVerificationBanner() {
 
     try {
       const result = await resendVerification();
-      setResendMessage(result?.message || "Verification email sent!");
+      setResendMessage(result?.message || EMAIL_VERIFICATION_BANNER_COPY.sent);
     } catch (error) {
       console.error("Failed to resend verification email:", error);
       setResendMessage(
         error instanceof ApiError
           ? error.message
-          : "Failed to send verification email. Please try again.",
+          : EMAIL_VERIFICATION_BANNER_COPY.sendFailed,
       );
     }
 
@@ -101,7 +102,7 @@ export function EmailVerificationBanner() {
             <Icon name="email" size="md" tone="warning" />
             <div className="flex-1">
               <p className="text-small font-medium text-warning">
-                Please verify your email address
+                {EMAIL_VERIFICATION_BANNER_COPY.pleaseVerifyYourEmailAddress}
               </p>
               <p className="mt-0.5 text-caption text-warning">
                 Check your inbox for a verification link or{" "}
@@ -111,7 +112,7 @@ export function EmailVerificationBanner() {
                   pending={isResending}
                   className="h-auto p-0 font-semibold underline hover:no-underline"
                 >
-                  resend email
+                  {EMAIL_VERIFICATION_BANNER_COPY.resendEmail}
                 </Button>
               </p>
             </div>
@@ -121,7 +122,7 @@ export function EmailVerificationBanner() {
             shape="icon"
             onClick={handleClose}
             className="-m-2 flex h-10 w-10 items-center justify-center text-warning hover:text-warning/80"
-            aria-label="Dismiss"
+            aria-label={EMAIL_VERIFICATION_BANNER_COPY.dismiss}
           >
             <Icon name="close" size="md" />
           </Button>

@@ -9,6 +9,8 @@ import {
   type BulkStockRow,
 } from "@server/catalog/product-bulk.types";
 import type { BulkProductActionInput } from "@/lib/validation/schemas/product-bulk.schema";
+import { PRICE_INPUT_COPY } from "@/components/product/console/bulk/bulk-copy";
+export { SKIP_REASON_COPY } from "@/components/product/console/bulk/bulk-copy";
 
 /** Up or down, for a change by an amount or a percentage. */
 export const DIRECTION = { UP: "up", DOWN: "down" } as const;
@@ -34,11 +36,11 @@ export function priceChangeFrom(draft: PriceDraft): { ok: true; change: BulkPric
   const sign = draft.direction === DIRECTION.DOWN ? -1 : 1;
   if (draft.mode === BULK_PRICE_MODE.PERCENT) {
     const clean = draft.text.trim().replace(/%$/, "");
-    if (!TWO_DECIMALS.test(clean) || Number(clean) === 0) return { ok: false, message: "Enter a percentage, like 10 or 12.5" };
+    if (!TWO_DECIMALS.test(clean) || Number(clean) === 0) return { ok: false, message: PRICE_INPUT_COPY.invalidPercent };
     return { ok: true, change: { mode: BULK_PRICE_MODE.PERCENT, percent: sign * Number(clean) } };
   }
   const paise = rupeesTextToPaise(draft.text);
-  if (paise === null || paise === 0) return { ok: false, message: "Enter an amount in rupees, like 1250 or 99.50" };
+  if (paise === null || paise === 0) return { ok: false, message: PRICE_INPUT_COPY.invalid };
   if (draft.mode === BULK_PRICE_MODE.SET) return { ok: true, change: { mode: BULK_PRICE_MODE.SET, pricePaise: paise } };
   return { ok: true, change: { mode: BULK_PRICE_MODE.AMOUNT, deltaPaise: sign * paise } };
 }
@@ -88,17 +90,3 @@ export function stockRowsFrom(
   return rows;
 }
 
-/** Why a product was left as it was, in the shop's words. */
-export const SKIP_REASON_COPY: Record<BulkSkipReason, string> = {
-  [BULK_SKIP_REASON.NOT_FOUND]: "No longer in this shop",
-  [BULK_SKIP_REASON.ARCHIVED]: "Archived: restore it first",
-  [BULK_SKIP_REASON.ALREADY_ARCHIVED]: "Already archived",
-  [BULK_SKIP_REASON.UNCHANGED]: "Already at that value",
-  [BULK_SKIP_REASON.PRICE_TOO_LOW]: "The new price would be ₹0 or less",
-  [BULK_SKIP_REASON.PRICE_TOO_HIGH]: "The new price would be too high",
-  [BULK_SKIP_REASON.BIDDING_LIVE]: "In a live auction",
-  [BULK_SKIP_REASON.LOCATION_NOT_FOUND]: "That pickup address is not this product's shop's",
-  [BULK_SKIP_REASON.NOT_ON_MARKETPLACE]: "Not listed on that marketplace yet",
-  [BULK_SKIP_REASON.NOTHING_TO_SEND]: "Already up to date there",
-  [BULK_SKIP_REASON.SEND_IN_PROGRESS]: "Already on its way",
-};

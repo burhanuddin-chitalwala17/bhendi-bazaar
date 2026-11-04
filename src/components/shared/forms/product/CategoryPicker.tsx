@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ResponsivePicker } from "@/components/shared/overlays/responsive-picker";
 import { FormField } from "../FormField";
+import { CATEGORY_PICKER_COPY } from "./product-copy";
 
 interface CategoryOption {
   id: string;
@@ -99,11 +100,11 @@ export function CategoryPicker({
   );
 
   return (
-    <FormField id={id} label="Category" required error={error}>
+    <FormField id={id} label={CATEGORY_PICKER_COPY.category} required error={error}>
       <ResponsivePicker
         open={open}
         onOpenChange={setOpen}
-        title="Category"
+        title={CATEGORY_PICKER_COPY.category}
         className="w-80"
         trigger={
           <Button
@@ -114,7 +115,7 @@ export function CategoryPicker({
             className="h-auto min-h-10 w-full justify-between whitespace-normal py-2 text-left"
           >
             <span className={selected ? "text-foreground" : "text-muted-foreground"}>
-              {selected?.path ?? "Pick a category"}
+              {selected?.path ?? CATEGORY_PICKER_COPY.placeholder}
             </span>
             <Icon name="expand" />
           </Button>
@@ -126,17 +127,17 @@ export function CategoryPicker({
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search categories"
-            aria-label="Search categories"
+            placeholder={CATEGORY_PICKER_COPY.searchCategories}
+            aria-label={CATEGORY_PICKER_COPY.searchCategories}
             className="pl-9"
           />
         </div>
         <div className="max-h-80 space-y-1 overflow-y-auto">
           {recentOptions.length > 0 && (
             <>
-              <p className="px-1 pt-1 text-xs text-muted-foreground">Recent</p>
+              <p className="px-1 pt-1 text-xs text-muted-foreground">{CATEGORY_PICKER_COPY.recent}</p>
               {recentOptions.map(row)}
-              <p className="px-1 pt-2 text-xs text-muted-foreground">All categories</p>
+              <p className="px-1 pt-2 text-xs text-muted-foreground">{CATEGORY_PICKER_COPY.allCategories}</p>
             </>
           )}
           {matches.length === 0 ? (

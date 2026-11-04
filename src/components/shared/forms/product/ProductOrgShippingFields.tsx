@@ -8,6 +8,8 @@ import { PickupAddressSheet } from "@/components/org/pickup-address-sheet";
 import type { ProductFormInput } from "@/components/product/console/types";
 import type { OrgSummary } from "@/domain/org";
 import type { OrgLocation } from "@server/catalog/org.address.types";
+import { PRODUCT_ORG_SHIPPING_FIELDS_COPY } from "./product-copy";
+import { ORG_SHIPPING_FIELDS_COPY } from "@/components/shared/forms/product/product-copy";
 
 export interface LocationOption {
   id: string;
@@ -41,7 +43,7 @@ export function ProductOrgShippingFields({
   const selectedOrgId = watch("orgId");
   // One org offered means the caller already knows which — the portal — so nothing is asked.
   const fixedOrg = orgs?.length === 1 ? orgs[0] : null;
-  const orgField = register("orgId", { required: "Organisation is required" });
+  const orgField = register("orgId", { required: ORG_SHIPPING_FIELDS_COPY.orgRequired });
   const stockRows = watch("stockLocations") ?? [];
   const totalStock = stockRows.reduce(
     (sum, row) =>
@@ -79,12 +81,12 @@ export function ProductOrgShippingFields({
     <div className="bg-card rounded-lg border border-border p-6">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-foreground">
-          {fixedOrg ? "Stock locations" : "Org & Stock Locations"}
+          {fixedOrg ? ORG_SHIPPING_FIELDS_COPY.titleFixed : ORG_SHIPPING_FIELDS_COPY.title}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
           {fixedOrg
-            ? "Say where this product physically sits — the customer only ever sees the total."
-            : "Choose the organisation, then say where this product physically sits — nothing is preselected, and the customer only ever sees the total."}
+            ? ORG_SHIPPING_FIELDS_COPY.bodyFixed
+            : ORG_SHIPPING_FIELDS_COPY.body}
         </p>
       </div>
 
@@ -93,13 +95,13 @@ export function ProductOrgShippingFields({
           <input type="hidden" {...orgField} />
         ) : (
           <FormSelect
-            label="Organisation"
+            label={PRODUCT_ORG_SHIPPING_FIELDS_COPY.organisation}
             required
             {...orgField}
             error={errors.orgId?.message}
             disabled={readOnly}
           >
-            <option value="">Select an organisation</option>
+            <option value="">{PRODUCT_ORG_SHIPPING_FIELDS_COPY.selectAnOrganisation}</option>
             {orgs?.map((org) => (
               <option key={org.id} value={org.id}>
                 {org.name} ({org.code})
@@ -129,10 +131,10 @@ export function ProductOrgShippingFields({
             <div className="flex flex-col gap-3 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between">
               <span>
                 {selectedOrgId
-                  ? "Where is this kept? Add your shop address once."
-                  : "Choose the organisation to see where its stock can sit."}
+                  ? ORG_SHIPPING_FIELDS_COPY.noLocationFixed
+                  : ORG_SHIPPING_FIELDS_COPY.noLocation}
               </span>
-              {addLocation("Add location", "outline")}
+              {addLocation(ORG_SHIPPING_FIELDS_COPY.add, "outline")}
             </div>
           ) : (
             <div className="space-y-2">
@@ -175,7 +177,7 @@ export function ProductOrgShippingFields({
               ))}
             </div>
           )}
-          {locations.length > 0 && addLocation("Add another location", "ghost", "mt-2")}
+          {locations.length > 0 && addLocation(ORG_SHIPPING_FIELDS_COPY.addAnother, "ghost", "mt-2")}
         </div>
       </div>
     </div>

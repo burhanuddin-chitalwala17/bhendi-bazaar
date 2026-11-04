@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { StorefrontIdentity } from "@/components/storefront/storefront-identity";
 import type { Storefront } from "@/data-access-layer/storefront.dal";
+import { THEMED_COPY } from "./themed/themed-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * The storefront's masthead: who the shop is, and the way to read about it.
@@ -22,7 +24,7 @@ export function StorefrontHero({ shop }: { shop: Storefront }) {
           the top of the shop rather than buried under the grid. */}
       <div className="flex flex-wrap gap-2">
         <Button asChild variant="outline" size="sm">
-          <Link href={`/store/${shop.handle}/about`}>About this shop</Link>
+          <Link href={ROUTES.storeAbout(shop.handle)}>{THEMED_COPY.aboutThisShop}</Link>
         </Button>
       </div>
     </header>

@@ -1,3 +1,4 @@
+import { DELIVERY_ESTIMATE_COPY } from "./shipping-copy";
 import { formatCurrency } from "@/lib/format";
 /**
  * Client-side Shipping Domain Types
@@ -119,10 +120,9 @@ export function formatShippingCost(costPaise: number): string {
  * Format estimated delivery
  */
 export function formatEstimatedDelivery(days: number): string {
-  if (days === 0) return "Same day";
-  if (days === 1) return "Tomorrow";
-  if (days === 2) return "In 2 days";
-  return `In ${days} days`;
+  if (days === 0) return DELIVERY_ESTIMATE_COPY.sameDay;
+  if (days === 1) return DELIVERY_ESTIMATE_COPY.tomorrow;
+  return DELIVERY_ESTIMATE_COPY.inDays(days);
 }
 
 /**

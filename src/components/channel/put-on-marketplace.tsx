@@ -12,6 +12,7 @@ import type { ListingDraftInput } from "@/lib/validation/schemas/platform-listin
 import { listingsApiClient } from "./listingsApiClient";
 import { CREATE } from "./platform-listing-copy";
 import { usePagesSearch } from "./usePagesSearch";
+import { ROUTES } from "@server/shared/routes";
 
 interface Start {
   channel: MarketplaceChannel;
@@ -30,7 +31,7 @@ interface Start {
 export function PutOnMarketplace({ orgId, start }: { orgId: string; start: Start }) {
   const router = useRouter();
   const search = usePagesSearch(orgId, start.productId, start.channel);
-  const listingHref = `/org/${orgId}/products/${start.productId}/listings/${start.channel}`;
+  const listingHref = ROUTES.org.productListing(orgId, start.productId, start.channel);
 
   const draft = useMutation((body: ListingDraftInput) => listingsApiClient.startDraft(orgId, start.productId, start.channel, body), {
     showToast: false,
@@ -39,7 +40,7 @@ export function PutOnMarketplace({ orgId, start }: { orgId: string; start: Start
   });
   const family = useMutation(() => listingsApiClient.startFamily(orgId, start.family?.id ?? "", start.channel), {
     showToast: false,
-    onSuccess: () => router.push(`/org/${orgId}/channels/${start.channel}/publish`),
+    onSuccess: () => router.push(ROUTES.org.channelPublish(orgId, start.channel)),
     onError: (error) => toast.error(error.message || CREATE.unreachable(start.label)),
   });
 

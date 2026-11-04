@@ -11,6 +11,8 @@ import type { Org } from "@/domain/org";
 import { OrgBasicFields } from "./OrgBasicFields";
 import { OrgBusinessFields } from "./OrgBusinessFields";
 import { FormActions } from "../../button-groups/FormActions";
+import { INDEX_COPY } from "./orgs-copy";
+import { ORG_FORM_SUBMIT_COPY } from "@/components/shared/forms/orgs/orgs-copy";
 
 interface OrgFormProps {
   org?: Org;
@@ -88,9 +90,9 @@ export function OrgForm({
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="isActive">Active Status</Label>
+                <Label htmlFor="isActive">{INDEX_COPY.activeStatus}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Inactive orgs cannot list new products
+                  {INDEX_COPY.inactiveOrgsCannotListNew}
                 </p>
               </div>
               <Switch
@@ -112,13 +114,13 @@ export function OrgForm({
             onClick={onCancel}
             disabled={isSubmitting}
           >
-            Close
+            {INDEX_COPY.close}
           </Button>
         </div>
       ) : (
         <FormActions
           onCancel={onCancel}
-          submitLabel={isEdit ? "Update Organisation" : "Create Organisation"}
+          submitLabel={isEdit ? ORG_FORM_SUBMIT_COPY.update : ORG_FORM_SUBMIT_COPY.create}
           isSubmitting={isSubmitting}
         />
       )}

@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import type { BiddingPhase } from "@server/bidding/bidding-window";
+import { BIDDING_PHASE_BADGE_COPY } from "./bidding-copy";
 
 /**
  * One chip, one vocabulary. The phase is derived from the clock on every read, so this
@@ -10,12 +11,12 @@ const LABELS: Record<
   BiddingPhase,
   { text: string; variant: "default" | "secondary" | "outline" | "destructive" }
 > = {
-  SCHEDULED: { text: "Starts soon", variant: "outline" },
-  LIVE: { text: "Live", variant: "default" },
-  ENDED: { text: "Awaiting outcome", variant: "secondary" },
-  SOLD: { text: "Sold", variant: "secondary" },
-  UNSOLD: { text: "Unsold", variant: "outline" },
-  CANCELLED: { text: "Cancelled", variant: "destructive" },
+  SCHEDULED: { text: BIDDING_PHASE_BADGE_COPY.startsSoon, variant: "outline" },
+  LIVE: { text: BIDDING_PHASE_BADGE_COPY.live, variant: "default" },
+  ENDED: { text: BIDDING_PHASE_BADGE_COPY.awaitingOutcome, variant: "secondary" },
+  SOLD: { text: BIDDING_PHASE_BADGE_COPY.sold, variant: "secondary" },
+  UNSOLD: { text: BIDDING_PHASE_BADGE_COPY.unsold, variant: "outline" },
+  CANCELLED: { text: BIDDING_PHASE_BADGE_COPY.cancelled, variant: "destructive" },
 };
 
 export function BiddingPhaseBadge({ phase }: { phase: BiddingPhase }) {

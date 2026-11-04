@@ -23,9 +23,11 @@ import { LISTINGS_SETTLE } from "@/components/channel/settle-copy";
 import { READ_ERROR, READ_STATE } from "@server/channels/channel-connection.types";
 import { CHANNEL } from "@server/shared/channels";
 import { PageHeader } from "@/components/shared/page-shell";
+import { ROUTES } from "@server/shared/routes";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
 export const metadata = {
-  title: "Listings",
+  title: ORG_PAGE_TITLES.listings,
   robots: { index: false, follow: false },
 };
 
@@ -60,7 +62,7 @@ export default async function ChannelListingsPage({
   const { page, detail } = data;
   const { label, read } = page;
 
-  const base = `/org/${scope.orgId}/channels/${page.channel}/listings`;
+  const base = ROUTES.org.channelListings(scope.orgId, page.channel);
   const hrefWith = (next: Partial<Record<keyof Search, string | null>>) => {
     const merged: Record<string, string | null> = {
       tab,
@@ -98,7 +100,7 @@ export default async function ChannelListingsPage({
         <div className="flex flex-col gap-2 rounded-card bg-info/10 p-3 text-sm md:flex-row md:items-center md:justify-between">
           <p className="font-semibold">{PUBLISH.bar(waiting)}</p>
           <Button asChild size="sm" className="min-h-10 self-start md:self-auto">
-            <Link href={`/org/${scope.orgId}/channels/${channel}/publish`}>{LISTING.reviewAndPublish}</Link>
+            <Link href={ROUTES.org.channelPublish(scope.orgId, channel)}>{LISTING.reviewAndPublish}</Link>
           </Button>
         </div>
       )}
@@ -107,7 +109,7 @@ export default async function ChannelListingsPage({
         {canRead && !running && <ReadAgainButton orgId={scope.orgId} channel={page.channel} />}
         {!canRead && (
           <Button asChild variant="outline" className="min-h-10 w-full md:w-auto">
-            <Link href={`/org/${scope.orgId}/channels`}>{LISTINGS.goToChannels}</Link>
+            <Link href={ROUTES.org.channels(scope.orgId)}>{LISTINGS.goToChannels}</Link>
           </Button>
         )}
       </div>

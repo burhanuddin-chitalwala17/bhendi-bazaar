@@ -7,6 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { ResponsivePicker } from "@/components/shared/overlays/responsive-picker";
 import { DAY_RANGE_PRESETS, formatDayRange, fromDayKey, toDayKey, type DayRange } from "@/lib/date-range";
 import { Icon } from "@/components/ui/icon";
+import { DATE_RANGE_FIELD_COPY } from "./forms-copy";
 
 interface DateRangeFieldProps {
   value: DayRange;
@@ -47,8 +48,8 @@ export function DateRangeField({ value, onChange, names = { from: "from", to: "t
       <ResponsivePicker
         open={open}
         onOpenChange={(next) => (next ? openWith() : setOpen(false))}
-        title="When"
-        description="Tap the first day, then the last. A preset picks both."
+        title={DATE_RANGE_FIELD_COPY.when}
+        description={DATE_RANGE_FIELD_COPY.tapTheFirstDayThen}
         className="w-auto max-w-[calc(100vw-2rem)]"
         trigger={
           <Button type="button" variant="outline" className="w-full justify-between font-normal" aria-haspopup="dialog">
@@ -65,7 +66,7 @@ export function DateRangeField({ value, onChange, names = { from: "from", to: "t
               </Button>
             ))}
             <Button type="button" variant="ghost" size="sm" onClick={() => apply({})}>
-              Any time
+              {DATE_RANGE_FIELD_COPY.anyTime}
             </Button>
           </div>
           <Calendar
@@ -80,10 +81,10 @@ export function DateRangeField({ value, onChange, names = { from: "from", to: "t
             <p className="text-sm text-muted-foreground">
               {draft?.from
                 ? formatDayRange({ from: toDayKey(draft.from), to: draft.to ? toDayKey(draft.to) : undefined })
-                : "Nothing picked"}
+                : DATE_RANGE_FIELD_COPY.nothing}
             </p>
             <Button type="button" onClick={applyDraft} disabled={!draft?.from}>
-              {draft?.from && !draft.to ? "Just this day" : "Apply"}
+              {draft?.from && !draft.to ? DATE_RANGE_FIELD_COPY.oneDay : DATE_RANGE_FIELD_COPY.apply}
             </Button>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/icon";
 import { StatusBadge, type StatusTone } from "@/components/shared/badges/StatusBadge";
 import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { workerJobsApiClient } from "@/components/dashboard/workerJobsApiClient";
+import { DASHBOARD_COPY } from "./dashboard-copy";
 
 function ago(iso: string, now: Date): string {
   const minutes = Math.round((now.getTime() - new Date(iso).getTime()) / 60_000);
@@ -52,19 +53,19 @@ export function WorkerJobsList() {
     <div className="w-full">
       <Button type="button" variant="ghost" size="sm" onClick={toggle} aria-expanded={open} className="-ml-2">
         <Icon name={open ? "collapse" : "expand"} />
-        {open ? "Hide jobs" : "Show recent jobs"}
+        {open ? DASHBOARD_COPY.hideJobs : DASHBOARD_COPY.showJobs}
       </Button>
       {open && (
         <div className="mt-2 space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-caption text-muted-foreground">The newest twenty, both queues.</p>
+            <p className="text-caption text-muted-foreground">{DASHBOARD_COPY.jobsNote}</p>
             <Button type="button" variant="ghost" size="sm" onClick={() => void refetch()} pending={loading}>
               <Icon name="refresh" />
-              Refresh
+              {DASHBOARD_COPY.refresh}
             </Button>
           </div>
           {error && <p className="text-small text-destructive">{error}</p>}
-          {jobs !== null && jobs.length === 0 && <p className="text-small text-muted-foreground">No jobs yet.</p>}
+          {jobs !== null && jobs.length === 0 && <p className="text-small text-muted-foreground">{DASHBOARD_COPY.noJobs}</p>}
           {jobs && jobs.length > 0 && (
             <ul className="divide-y divide-border text-small">
               {jobs.map((job) => (

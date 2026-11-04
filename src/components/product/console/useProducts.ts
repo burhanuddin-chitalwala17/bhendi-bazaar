@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import { ProductsApiClient } from "./productsApiClient";
 import type { ProductFormInput } from "./types";
 import { useProductsBasePath } from "./useProductsBasePath";
+import { PRODUCT_CONSOLE_COPY } from "./console-copy";
+import { ROUTES } from "@server/shared/routes";
+import { PRODUCT_ACTIONS_COPY } from "@/components/product/console/console-copy";
 
 interface UseProductsOptions {
   onSuccess?: () => void;
@@ -25,7 +28,7 @@ export function useProducts(options?: UseProductsOptions) {
   // API tree and where a successful write returns to.
   const orgId = typeof params.orgId === "string" ? params.orgId : undefined;
   // Under /admin the team acts for a shop through its own routes (product-form D12).
-  const team = !!usePathname()?.startsWith("/admin/");
+  const team = !!usePathname()?.startsWith(`${ROUTES.admin.home}/`);
   const productsApiClient = new ProductsApiClient(orgId, team);
   const productsBasePath = useProductsBasePath();
 
@@ -45,7 +48,7 @@ export function useProducts(options?: UseProductsOptions) {
         return product;
       }
 
-      const successMsg = "Product created successfully!";
+      const successMsg = PRODUCT_ACTIONS_COPY.created;
       setSuccessMessage(successMsg);
       toast.success(successMsg);
 
@@ -74,7 +77,7 @@ export function useProducts(options?: UseProductsOptions) {
     try {
       const product = await productsApiClient.updateProduct(id as string, data);
       if (options?.stayAfterUpdate) return product;
-      const successMsg = "Product updated successfully!";
+      const successMsg = PRODUCT_ACTIONS_COPY.updated;
       setSuccessMessage(successMsg);
       toast.success(successMsg);
 
@@ -105,7 +108,7 @@ export function useProducts(options?: UseProductsOptions) {
     setIsLoading(true);
     try {
       await productsApiClient.deleteProduct(id);
-      toast.success("Product deleted");
+      toast.success(PRODUCT_CONSOLE_COPY.toast.deleted);
 
       // ⚡ Trigger server refresh
       router.refresh();
@@ -113,7 +116,7 @@ export function useProducts(options?: UseProductsOptions) {
     } catch (error) {
       // ApiError extends Error, so this is the server's own message when there is one.
       toast.error(
-        error instanceof Error ? error.message : "Could not delete the product",
+        error instanceof Error ? error.message : PRODUCT_CONSOLE_COPY.toast.deleteFailed,
       );
       throw error;
     } finally {
@@ -126,10 +129,10 @@ export function useProducts(options?: UseProductsOptions) {
     setIsLoading(true);
     try {
       await productsApiClient.restoreForShop(id);
-      toast.success("Product restored");
+      toast.success(PRODUCT_CONSOLE_COPY.toast.restored);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not restore the product");
+      toast.error(error instanceof Error ? error.message : PRODUCT_ACTIONS_COPY.restoreFailed);
     } finally {
       setIsLoading(false);
     }
@@ -141,7 +144,7 @@ export function useProducts(options?: UseProductsOptions) {
     try {
       await productsApiClient.setArchived(id, archived);
       toast.success(
-        archived ? "Product archived" : "Product restored",
+        archived ? PRODUCT_ACTIONS_COPY.archived : PRODUCT_ACTIONS_COPY.restored,
       );
       router.refresh();
       options?.onSuccess?.();
@@ -150,8 +153,8 @@ export function useProducts(options?: UseProductsOptions) {
         error instanceof Error
           ? error.message
           : archived
-            ? "Could not archive the product"
-            : "Could not restore the product",
+            ? PRODUCT_ACTIONS_COPY.archiveFailed
+            : PRODUCT_ACTIONS_COPY.restoreFailed,
       );
       throw error;
     } finally {

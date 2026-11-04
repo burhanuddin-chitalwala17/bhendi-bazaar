@@ -27,6 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PRODUCT_CONSOLE_COPY } from "../../console-copy";
 
 interface ProductRowMenuProps {
   product: { id: string; name: string; archivedAt: Date | null };
@@ -54,7 +55,7 @@ export function ProductRowMenu({
           <Button
             variant="ghost"
             shape="icon"
-            aria-label={`Actions for ${product.name}`}
+            aria-label={PRODUCT_CONSOLE_COPY.rowMenu.actionsFor(product.name)}
           >
             <Icon name="more" size="sm" />
           </Button>
@@ -66,7 +67,7 @@ export function ProductRowMenu({
           <DropdownMenuItem asChild>
             <Link prefetch={false} href={`${productsBasePath}/${product.id}`}>
               <Icon name="show" />
-              View
+              {PRODUCT_CONSOLE_COPY.rowMenu.view}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
@@ -75,7 +76,7 @@ export function ProductRowMenu({
               href={`${productsBasePath}/${product.id}/edit`}
             >
               <Icon name="edit" />
-              Edit
+              {PRODUCT_CONSOLE_COPY.rowMenu.edit}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
@@ -84,7 +85,7 @@ export function ProductRowMenu({
               href={`${productsBasePath}/new?copyFrom=${encodeURIComponent(product.id)}`}
             >
               <Icon name="copy" />
-              Copy product
+              {PRODUCT_CONSOLE_COPY.rowMenu.copy}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -93,7 +94,7 @@ export function ProductRowMenu({
             }
           >
             <Icon name={product.archivedAt ? "restore" : "archive"} />
-            {product.archivedAt ? "Restore" : "Archive"}
+            {product.archivedAt ? PRODUCT_CONSOLE_COPY.rowMenu.restore : PRODUCT_CONSOLE_COPY.rowMenu.archive}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -101,7 +102,7 @@ export function ProductRowMenu({
             onSelect={() => setConfirmingDelete(true)}
           >
             <Icon name="delete" />
-            Delete…
+            {PRODUCT_CONSOLE_COPY.rowMenu.delete}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -111,11 +112,7 @@ export function ProductRowMenu({
           <DialogHeader>
             <DialogTitle>{product.name}</DialogTitle>
             <DialogDescription>
-              Deleting is permanent and cannot be undone. It only works for a
-              product nothing refers to yet — once it appears on an order, a
-              promotion or a bidding event it is refused, because removing it
-              would break those records. To take a product off the storefront
-              instead, use Archive: it keeps everything and can be undone.
+              {PRODUCT_CONSOLE_COPY.rowMenu.deleteBody}
             </DialogDescription>
           </DialogHeader>
 
@@ -124,7 +121,7 @@ export function ProductRowMenu({
               variant="outline"
               onClick={() => setConfirmingDelete(false)}
             >
-              Cancel
+              {PRODUCT_CONSOLE_COPY.rowMenu.cancel}
             </Button>
             <Button
               variant="destructive"
@@ -135,7 +132,7 @@ export function ProductRowMenu({
               }}
             >
               <Icon name="delete" size="sm" />
-              Delete permanently
+              {PRODUCT_CONSOLE_COPY.rowMenu.deletePermanently}
             </Button>
           </DialogFooter>
         </DialogContent>

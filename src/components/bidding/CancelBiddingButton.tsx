@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { useMutation } from "@/hooks/core/useMutation";
 import { biddingApiClient } from "@/components/bidding/biddingApiClient";
+import { CANCEL_BIDDING_COPY } from "./bidding-copy";
 
 /**
  * Calling an event off (spec R11).
@@ -34,7 +35,7 @@ export function CancelBiddingButton({
   const { mutate, isLoading: isCancelling } = useMutation(
     () => biddingApiClient.cancel(apiPath),
     {
-      successMessage: "Bidding cancelled",
+      successMessage: CANCEL_BIDDING_COPY.biddingCancelled,
       onSuccess: () => {
         setOpen(false);
         router.refresh();
@@ -48,29 +49,25 @@ export function CancelBiddingButton({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Cancel
-        </Button>
+        <Button variant="outline" size="sm">{CANCEL_BIDDING_COPY.cancel}</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Call this off?</DialogTitle>
+          <DialogTitle>{CANCEL_BIDDING_COPY.callOff}</DialogTitle>
           <DialogDescription>
             {hasBids
-              ? "People have already bid on this item. Cancelling withdraws it from bidding and tells everyone who bid. The bids stay on record."
-              : "The item goes back on sale immediately. Nobody has bid, so nobody is affected."}
+              ? CANCEL_BIDDING_COPY.peopleHaveAlreadyBid
+              : CANCEL_BIDDING_COPY.itemGoesBackSale}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Keep it running
-          </Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>{CANCEL_BIDDING_COPY.keepRunning}</Button>
           <Button
             variant="destructive"
             onClick={cancel}
             disabled={isCancelling}
           >
-            {isCancelling ? "Cancelling…" : "Cancel bidding"}
+            {isCancelling ? CANCEL_BIDDING_COPY.cancelling : CANCEL_BIDDING_COPY.cancelBidding}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -8,6 +8,7 @@ import { useServerForm } from "@/hooks/core/useServerForm";
 import { addAddressSchema } from "@/lib/validation/schemas/address.schema";
 import { formatPhone } from "@server/shared/phone";
 import { Icon } from "@/components/ui/icon";
+import { ADDRESS_MODAL_COPY } from "./profile-copy";
 
 interface AddressModalProps {
   mode: "view" | "edit" | "add";
@@ -40,15 +41,15 @@ export function AddressModal({
           <div className="space-y-0.5">
             <p className="text-xs font-semibold uppercase tracking-eyebrow text-muted-foreground/80">
               {mode === "add"
-                ? "Add address"
+                ? ADDRESS_MODAL_COPY.addAddress
                 : mode === "edit"
-                  ? "Edit address"
-                  : "Address details"}
+                  ? ADDRESS_MODAL_COPY.editAddress
+                  : ADDRESS_MODAL_COPY.addressDetails}
             </p>
             <p className="text-2xs text-muted-foreground">
               {mode === "view"
-                ? "Full address and contact details."
-                : "These details will be used for delivery and updates."}
+                ? ADDRESS_MODAL_COPY.fullAddressContactDetails
+                : ADDRESS_MODAL_COPY.theseDetailsWillUsed}
             </p>
           </div>
           <Button
@@ -132,9 +133,7 @@ function AddressViewMode({
               disabled={saving}
               onClick={onDelete}
               className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
-            >
-              Delete
-            </Button>
+            >{ADDRESS_MODAL_COPY.delete}</Button>
           )}
         </div>
         <Button
@@ -144,9 +143,7 @@ function AddressViewMode({
           onClick={onStartEdit}
           className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
         >
-          <Icon name="edit" size="xs" className="mr-1" />
-          Edit
-        </Button>
+          <Icon name="edit" size="xs" className="mr-1" />{ADDRESS_MODAL_COPY.edit}</Button>
       </div>
     </div>
   );
@@ -200,8 +197,8 @@ function AddressForm({
         <FormActions
           onCancel={onCancel}
           isSubmitting={saving}
-          submitLabel="Save"
-          cancelLabel="Cancel"
+          submitLabel={ADDRESS_MODAL_COPY.save}
+          cancelLabel={ADDRESS_MODAL_COPY.cancel}
         />
       </div>
     </form>

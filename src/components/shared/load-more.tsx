@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { LOAD_MORE_COPY } from "./shared-copy";
 
 interface LoadMoreProps {
   onMore: () => void;
@@ -46,14 +47,14 @@ export function LoadMore({ onMore, done, loading, error, count, noun }: LoadMore
         <div className="flex flex-col items-center gap-2">
           <p className="text-small text-destructive">{error}</p>
           <Button type="button" variant="outline" size="sm" onClick={onMore}>
-            Try again
+            {LOAD_MORE_COPY.tryAgain}
           </Button>
         </div>
       )}
       {!done && !error && (
         <div className="flex justify-center">
           <Button type="button" variant="outline" size="sm" onClick={onMore} pending={loading}>
-            Show more
+            {LOAD_MORE_COPY.showMore}
           </Button>
         </div>
       )}

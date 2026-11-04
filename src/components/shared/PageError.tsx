@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { PageShell } from "@/components/shared/page-shell";
 import { ErrorState } from "@/components/shared/states/ErrorState";
+import { PAGE_ERROR_COPY } from "./shared-copy";
 
 /** What a page shows when it failed to render: the fact, a retry, and a way out in the words. */
 export function PageError({ retry, digest }: { retry: () => void; digest?: string }) {
@@ -10,12 +11,12 @@ export function PageError({ retry, digest }: { retry: () => void; digest?: strin
     <PageShell width="narrow">
       <ErrorState
         as="h1"
-        title="Something went wrong on our side"
+        title={PAGE_ERROR_COPY.somethingWentWrongOnOur}
         description={
           <p>
             Nothing you did caused this. Try again, or go back to the{" "}
             <Link href="/" className="font-medium text-foreground underline underline-offset-4">
-              home page
+              {PAGE_ERROR_COPY.homePage}
             </Link>
             .{digest ? ` Reference: ${digest}.` : ""}
           </p>

@@ -151,3 +151,53 @@ export function pickupsHref(tab: string, filter: { shop?: string; city?: string;
   if (filter.page && filter.page > 1) q.set("page", String(filter.page));
   return `${PICKUPS_BASE}?${q.toString()}`;
 }
+
+export const CONFLICT_LIST_COPY = {
+  dismissed: "Dismissed",
+  cancelledParcel: "Cancelled parcel",
+  unknownAwb: "Unknown AWB",
+  courierUpdatesWeCouldn: "Courier updates we couldn't apply",
+  noConflicts: "No conflicts",
+  update: "Update",
+  status: "Status",
+  action: "Action",
+} as const;
+
+export const NOT_PACKED_LIST_COPY = {
+  paidParcelsNotPacked: "Paid parcels not packed",
+  nothingLate: "Nothing late",
+  parcel: "Parcel",
+  paid: "Paid",
+  shop: "Shop",
+  emails: "Emails",
+  action: "Action",
+} as const;
+
+export const PICKUP_QUEUE_LIST_COPY = {
+  nothingWaiting: "Nothing waiting",
+  parcel: "Parcel",
+  pickupAddress: "Pickup address",
+  action: "Action",
+  parcelsReadyBook: "Parcels ready to book",
+  bookedPickups: "Booked pickups",
+  booking: "Booking",
+  waiting: "Waiting",
+} as const;
+
+export const ADMIN_CANCEL_PARCEL_COPY = {
+} as const;
+
+export const BOOK_PICKUP_COPY = {
+} as const;
+
+export const CHANGE_PICKUP_DATE_COPY = {
+} as const;
+
+export const CONFLICT_ACTIONS_COPY = {
+} as const;
+
+export const EMAIL_SHOP_BUTTON_COPY = {
+} as const;
+
+export const MARK_PICKED_UP_COPY = {
+} as const;

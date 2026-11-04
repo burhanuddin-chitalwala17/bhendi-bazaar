@@ -5,6 +5,7 @@ import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormInput, FormTextarea } from "@/components/shared/forms/FormField";
 import { Icon } from "@/components/ui/icon";
+import { ORG_BUSINESS_FIELDS_COPY } from "./orgs-copy";
 
 interface OrgBusinessFieldsProps {
   register: UseFormRegister<OrgFormInput>;
@@ -22,47 +23,47 @@ export function OrgBusinessFields({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Icon name="organisation" size="md" />
-          Business details (optional)
+          {ORG_BUSINESS_FIELDS_COPY.businessDetailsOptional}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <FormInput
-          label="Business Name"
+          label={ORG_BUSINESS_FIELDS_COPY.businessName}
           error={errors.businessName?.message}
           disabled={readOnly}
-          placeholder="ABC Traders Pvt Ltd"
+          placeholder={ORG_BUSINESS_FIELDS_COPY.abcTradersPvtLtd}
           {...register("businessName")}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormInput
-            label="GST Number"
+            label={ORG_BUSINESS_FIELDS_COPY.gstNumber}
             error={errors.gstNumber?.message}
             disabled={readOnly}
             placeholder="27AABCU9603R1ZM"
             maxLength={15}
             className="uppercase"
-            hint="15-digit GSTIN (optional)"
+            hint={ORG_BUSINESS_FIELDS_COPY.t15DigitGstinOptional}
             {...register("gstNumber")}
           />
 
           <FormInput
-            label="PAN Number"
+            label={ORG_BUSINESS_FIELDS_COPY.panNumber}
             error={errors.panNumber?.message}
             disabled={readOnly}
             placeholder="ABCDE1234F"
             maxLength={10}
             className="uppercase"
-            hint="10-character PAN (optional)"
+            hint={ORG_BUSINESS_FIELDS_COPY.t10CharacterPanOptional}
             {...register("panNumber")}
           />
         </div>
 
         <FormTextarea
-          label="Description"
+          label={ORG_BUSINESS_FIELDS_COPY.description}
           error={errors.description?.message}
           disabled={readOnly}
-          placeholder="Brief description about the org..."
+          placeholder={ORG_BUSINESS_FIELDS_COPY.briefDescriptionAboutTheOrg}
           rows={3}
           {...register("description")}
         />

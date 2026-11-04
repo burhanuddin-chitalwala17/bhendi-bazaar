@@ -16,6 +16,7 @@ import { adminChannelRegisterDAL } from "@/data-access-layer/admin/channel-regis
 import { UnmappedValueRow } from "@/components/channel/unmapped-value-row";
 import { NotSoldButton } from "@/components/channel/not-sold-button";
 import { isChannel } from "@server/shared/channels";
+import { ADMIN_CHANNEL_COPY } from "../channels-copy";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -32,21 +33,20 @@ export default async function AdminChannelPage({
     <div className="space-y-6">
       <PageHeader
         title={view.label}
-        description={`${view.counts.categories} categories, ${view.counts.attributes} fields and ${view.counts.values} answers mapped. Nothing here publishes.`}
+        description={ADMIN_CHANNEL_COPY.description(view.counts)}
       />
 
       <section className="space-y-3">
         <div>
-          <h2 className="text-title font-semibold">Answers with no word here</h2>
+          <h2 className="text-title font-semibold">{ADMIN_CHANNEL_COPY.unmappedTitle}</h2>
           <p className="text-small text-muted-foreground">
-            Only what products actually answer. One decision clears every product using that
-            value — and changes it for them all, so a correction works the same way.
+            {ADMIN_CHANNEL_COPY.unmappedBody}
           </p>
         </div>
         {view.unmappedValues.length === 0 ? (
           <Card>
             <CardContent className="py-6 text-small text-muted-foreground">
-              Every answer this catalogue gives has a word on {view.label}.
+              {ADMIN_CHANNEL_COPY.allMapped(view.label)}
             </CardContent>
           </Card>
         ) : (
@@ -67,9 +67,9 @@ export default async function AdminChannelPage({
       {view.unmappedCategories.length > 0 && (
         <section className="space-y-3">
           <div>
-            <h2 className="text-title font-semibold">Products with nowhere to go</h2>
+            <h2 className="text-title font-semibold">{ADMIN_CHANNEL_COPY.nowhereTitle}</h2>
             <p className="text-small text-muted-foreground">
-              These types sell here but no category on {view.label} has been chosen for them.
+              {ADMIN_CHANNEL_COPY.nowhereBody(view.label)}
             </p>
           </div>
           <Card className="py-0">
@@ -87,7 +87,7 @@ export default async function AdminChannelPage({
                       )}
                     </p>
                     <p className="text-small text-muted-foreground">
-                      {entry.products} {entry.products === 1 ? "product" : "products"}
+                      {ADMIN_CHANNEL_COPY.products(entry.products)}
                     </p>
                   </div>
                   <NotSoldButton
@@ -107,10 +107,9 @@ export default async function AdminChannelPage({
       {view.notSold.length > 0 && (
         <section className="space-y-3">
           <div>
-            <h2 className="text-title font-semibold">Not sold on {view.label}</h2>
+            <h2 className="text-title font-semibold">{ADMIN_CHANNEL_COPY.notSoldTitle(view.label)}</h2>
             <p className="text-small text-muted-foreground">
-              Decided, not overlooked — so they stay off the list above. Change your mind here and
-              they go back to it, with the choice still to make.
+              {ADMIN_CHANNEL_COPY.notSoldBody}
             </p>
           </div>
           <Card className="py-0">
@@ -128,8 +127,7 @@ export default async function AdminChannelPage({
                       )}
                     </p>
                     <p className="text-small text-muted-foreground">
-                      {entry.products} {entry.products === 1 ? "product" : "products"}, sold on
-                      this store only
+                      {ADMIN_CHANNEL_COPY.storeOnly(entry.products)}
                     </p>
                   </div>
                   <NotSoldButton
@@ -149,10 +147,9 @@ export default async function AdminChannelPage({
       {view.nearestFits.length > 0 && (
         <section className="space-y-3">
           <div>
-            <h2 className="text-title font-semibold">Listed as the nearest they have</h2>
+            <h2 className="text-title font-semibold">{ADMIN_CHANNEL_COPY.nearestTitle}</h2>
             <p className="text-small text-muted-foreground">
-              Not work to do — decisions already taken. Every product they affect shows the note
-              below, every time.
+              {ADMIN_CHANNEL_COPY.nearestBody}
             </p>
           </div>
           <Card className="py-0">

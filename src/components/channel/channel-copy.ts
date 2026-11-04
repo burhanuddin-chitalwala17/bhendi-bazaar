@@ -99,6 +99,9 @@ export const FEED = {
 
 export const DISCONNECT = {
   title: (label: string) => `Disconnect ${label}?`,
+  stopsLabel: "Stops: ",
+  staysLabel: "Stays: ",
+  watchOutLabel: "Watch out: ",
   stops: (label: string) => `Stock, prices and orders stop updating between Bhendi Bazaar and ${label}.`,
   stays: (label: string) =>
     `Your listings on ${label} stay live as they are. Your products and their ${label} links stay here, and pick up again if you reconnect this account.`,
@@ -152,4 +155,48 @@ export const BANNER = {
   needsReconnect: (label: string) => `${label} needs reconnecting. Stock and orders aren't updating there.`,
   several: (count: number) => `${count} channels need attention.`,
   openChannels: "Open Channels",
+} as const;
+
+/** The admin's per-marketplace product types (channel-types-editor). */
+export const TYPES_EDITOR = {
+  saved: (label: string, typeName: string) => `Saved. ${label} types for ${typeName} updated.`,
+  publishesHere: "Publishes here",
+  remove: "Remove",
+  nameIt: (label: string) => `Name the ${label} type to add.`,
+  typeFor: (label: string, name: string) => `${label} type for ${name}`,
+  add: (label: string) => `Add a ${label} type`,
+  another: (label: string) => `Another ${label} type`,
+} as const;
+
+/** A value a marketplace has no word for yet (unmapped-value-row). */
+export const UNMAPPED = {
+  whatTheyCall: (label: string) => `What they call ${label}`,
+  placeholder: "What they call it",
+} as const;
+
+/** How a product would list on each channel (listing-readiness-panel). */
+export const READINESS_PANEL = {
+  title: "How this would list elsewhere",
+  intro: "What we expect each place to make of it. Nothing here stops you publishing — if a channel disagrees with us, it is the channel that is right.",
+  listedUnder: "Listed under",
+  ready: "Nothing missing",
+  incomplete: "Something is missing",
+  worthALook: "Worth a look",
+  noCategory: "Nobody has chosen where this belongs on this channel yet.",
+  nearestWithNote: (note: string) => `This is the nearest they have, not their own word for it. ${note}`,
+  nearest: "This is the nearest category they have, not their own word for it.",
+  missingFact: (attribute: string) => `They ask for ${attribute} and it is not answered.`,
+  missingOptionalFact: (attribute: string) => `They would show ${attribute} if it were answered.`,
+  unmappedValue: (list: string, value: string) =>
+    `They have no word for this ${list} yet — "${value}" needs one choosing, once, for every product that uses it.`,
+} as const;
+
+export const TYPES_EDITOR_SAVE_COPY = {
+  failed: "Couldn't save that change. Nothing was changed.",
+} as const;
+
+export const NOT_SOLD_COPY = {
+  saving: "Saving…",
+  marked: "Decide where it goes",
+  mark: "Not sold here",
 } as const;

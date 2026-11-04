@@ -1,4 +1,5 @@
 import { ApiError, readApiError } from "@/lib/api-error";
+import { API_CLIENT_COPY } from "@/lib/lib-copy";
 
 /** `body` takes a plain value (sent as JSON) or a `FormData`/`Blob` (sent as it is). */
 export type ApiRequestInit = Omit<RequestInit, "body"> & { body?: unknown; timeoutMs?: number };
@@ -8,11 +9,10 @@ export const DEFAULT_TIMEOUT_MS = 30_000;
 /** For a request that carries files or many rows: ten 5 MB photos at 3 Mbps is over two minutes. */
 export const TRANSFER_TIMEOUT_MS = 300_000;
 
-export const OFFLINE_MESSAGE = "You seem to be offline. Check your connection and try again.";
-export const TIMEOUT_MESSAGE = "This is taking too long. Check your connection and try again.";
+export const OFFLINE_MESSAGE = API_CLIENT_COPY.offline;
+export const TIMEOUT_MESSAGE = API_CLIENT_COPY.timeout;
 /** A write that timed out may still have landed; a blind retry could do it twice. */
-export const TIMEOUT_UNSURE_MESSAGE =
-  "This is taking too long, and it may still go through. Refresh to check before trying again.";
+export const TIMEOUT_UNSURE_MESSAGE = API_CLIENT_COPY.timeoutUnsure;
 
 const READS = new Set(["GET", "HEAD"]);
 

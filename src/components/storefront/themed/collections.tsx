@@ -5,6 +5,7 @@ import type { SectionVariant } from "@server/catalog/storefront-themes";
 import type { CollectionsSlice } from "./page-data";
 import { SectionHeading, shopHref } from "./section-heading";
 import { ThemePhoto } from "./theme-photo";
+import { THEMED_COPY } from "./themed-copy";
 
 /** Darbar's editorial run is three tall tiles (spec Theme cards). */
 const EDITORIAL_COUNT = 3;
@@ -31,7 +32,7 @@ export function ThemedCollections({
               className="aspect-[4/5] w-full md:aspect-[21/9]"
             />
             <span className="mt-3 block font-display text-title uppercase tracking-headline">{tile.name}</span>
-            <span className="font-label text-tag uppercase tracking-tag underline underline-offset-4">Explore</span>
+            <span className="font-label text-tag uppercase tracking-tag underline underline-offset-4">{THEMED_COPY.sections.explore}</span>
           </Link>
         ))}
       </section>
@@ -41,7 +42,7 @@ export function ThemedCollections({
   const circles = variant === "circles";
   return (
     <section className="mx-auto max-w-store space-y-4 px-gutter py-section">
-      <SectionHeading title="Shop by category" />
+      <SectionHeading title={THEMED_COPY.sections.shopByCategory} />
       <ul
         className={cn(
           circles

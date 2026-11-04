@@ -18,6 +18,7 @@ import {
 } from "@/lib/validation/schemas/profile.schemas";
 import { formatPhone } from "@server/shared/phone";
 import { Icon } from "@/components/ui/icon";
+import { PROFILE_CARD_COPY } from "./profile-copy";
 
 interface ProfileCardProps {
   user: User | null;
@@ -70,7 +71,7 @@ export function ProfileCard({
 
   if (loading) {
     return (
-      <div role="status" aria-label="Loading your profile">
+      <div role="status" aria-label={PROFILE_CARD_COPY.loadingProfile}>
         <SkeletonRows count={1} />
       </div>
     );
@@ -80,7 +81,7 @@ export function ProfileCard({
     <Card>
       <CardHeader className="border-b border-border/60 pb-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <SectionHeader overline="Account" title="Your account information" />
+          <SectionHeader overline={PROFILE_CARD_COPY.account} title={PROFILE_CARD_COPY.accountInformation} />
           {!isEditing && !isEditingPic && (
             <Button
               type="button"
@@ -90,9 +91,7 @@ export function ProfileCard({
               disabled={loading}
               className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
             >
-              <Icon name="edit" size="xs" className="mr-1" />
-              Edit
-            </Button>
+              <Icon name="edit" size="xs" className="mr-1" />{PROFILE_CARD_COPY.edit}</Button>
           )}
         </div>
       </CardHeader>
@@ -104,7 +103,7 @@ export function ProfileCard({
               {profilePic ? (
                 <Image
                   src={profilePic}
-                  alt={name || "Profile"}
+                  alt={name || PROFILE_CARD_COPY.profile}
                   width={56}
                   height={56}
                   sizes="56px"
@@ -121,7 +120,7 @@ export function ProfileCard({
                   type="button"
                   onClick={handleEditPic}
                   className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background shadow-raised"
-                  title="Change profile picture"
+                  title={PROFILE_CARD_COPY.changeProfilePicture}
                 >
                   <Icon name="camera" size="sm" />
                 </Button>
@@ -129,7 +128,7 @@ export function ProfileCard({
             </div>
             <div className="space-y-1 text-sm">
               <p className="font-medium">
-                {loading && !name ? "Loading…" : name || "Your name"}
+                {loading && !name ? PROFILE_CARD_COPY.loading : name || PROFILE_CARD_COPY.yourName}
               </p>
               {email && (
                 <p className="text-xs text-muted-foreground">{email}</p>
@@ -216,16 +215,16 @@ function ProfileInfoForm({
         </div>
       )}
       <FormInput
-        label="Name"
-        placeholder="Your name"
+        label={PROFILE_CARD_COPY.name}
+        placeholder={PROFILE_CARD_COPY.yourName}
         autoComplete="name"
         {...register("name")}
         error={errors.name?.message}
       />
       <FormInput
-        label="Email"
+        label={PROFILE_CARD_COPY.email}
         type="email"
-        placeholder="your@email.com"
+        placeholder={PROFILE_CARD_COPY.emailCom}
         autoComplete="email"
         {...register("email")}
         error={errors.email?.message}
@@ -233,8 +232,8 @@ function ProfileInfoForm({
       <FormPhoneInput
         name="mobile"
         control={control}
-        label="Mobile Number"
-        placeholder="Mobile number"
+        label={PROFILE_CARD_COPY.mobileNumber}
+        placeholder={PROFILE_CARD_COPY.mobileNumber2}
       />
       <div className="flex gap-2">
         <ChangePasswordModal />
@@ -242,8 +241,8 @@ function ProfileInfoForm({
       <FormActions
         onCancel={onDone}
         isSubmitting={saving}
-        submitLabel="Save"
-        cancelLabel="Cancel"
+        submitLabel={PROFILE_CARD_COPY.save}
+        cancelLabel={PROFILE_CARD_COPY.cancel}
       />
     </form>
   );

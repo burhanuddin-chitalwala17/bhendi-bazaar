@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { PICKED_UP_COPY } from "./pickups-copy";
 import { useMarkPickedUp } from "./useMarkPickedUp";
+import { MARK_PICKED_UP_COPY } from "./pickups-copy";
 
 /** Never disabled (R15): a press while marking does nothing. */
 export function MarkPickedUp({ shipmentId }: { shipmentId: string }) {

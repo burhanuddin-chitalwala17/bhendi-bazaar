@@ -7,6 +7,7 @@ import { FormInput } from "@/components/shared/forms/FormField";
 import { FormDialog } from "@/components/shared/overlays/form-dialog";
 import { BOOKING_COPY, SHIPROCKET_URL } from "./pickups-copy";
 import { useBookPickup } from "./useBookPickup";
+import { BOOK_PICKUP_COPY } from "./pickups-copy";
 
 const F = BOOKING_COPY.fields;
 

@@ -19,6 +19,7 @@ import {
   resolveSortBy,
   resolveSortOrder,
 } from "@server/shared/pagination";
+import { ADMIN_USERS_COPY } from "./users-copy";
 
 /** The columns this listing may be ordered by — the same set `UserListFilters` declares. */
 const SORTABLE = ["createdAt", "lastActiveAt"] as const;
@@ -49,7 +50,7 @@ export default async function AdminUsersPage({
 
   return (
     <PageShell width="wide">
-      <PageHeader title="Users" description="Everyone with an account: buyers, shop members and admins." />
+      <PageHeader title={ADMIN_USERS_COPY.title} description={ADMIN_USERS_COPY.description} />
 
       <UsersFilters />
 

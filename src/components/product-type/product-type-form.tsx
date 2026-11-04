@@ -18,6 +18,8 @@ import {
   type MeasureKey,
 } from "@server/listing/listing-facts";
 import type { ProductTypeRecord } from "@server/listing/product-type.types";
+import { PRODUCT_TYPE_FORM_COPY } from "./product-type-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * Building a question set.
@@ -99,13 +101,13 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
       } else {
         await productTypeApiClient.create({ ...payload, key });
       }
-      router.push("/admin/product-types");
+      router.push(ROUTES.admin.productTypes);
       router.refresh();
     } catch (caught) {
       // The action stays enabled and the click explains why it could not proceed, rather than a
       // disabled button that says nothing.
       setError(
-        caught instanceof ApiError ? caught.message : "Could not save the product type",
+        caught instanceof ApiError ? caught.message : PRODUCT_TYPE_FORM_COPY.saveFailed,
       );
     } finally {
       setSaving(false);
@@ -125,37 +127,36 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
       )}
 
       <section className="rounded-card border border-border bg-card p-4 md:p-6">
-        <h2 className="mb-4 text-title font-semibold text-foreground">What it is</h2>
+        <h2 className="mb-4 text-title font-semibold text-foreground">{PRODUCT_TYPE_FORM_COPY.whatItIs}</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <FormInput
-            label="Name"
+            label={PRODUCT_TYPE_FORM_COPY.name}
             required
-            placeholder="e.g. Islamic wear"
+            placeholder={PRODUCT_TYPE_FORM_COPY.namePlaceholder}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            hint="What an admin picks it by"
+            hint={PRODUCT_TYPE_FORM_COPY.nameHint}
           />
           <FormInput
-            label="Key"
+            label={PRODUCT_TYPE_FORM_COPY.key}
             required
-            placeholder="e.g. islamic-wear"
+            placeholder={PRODUCT_TYPE_FORM_COPY.keyPlaceholder}
             value={key}
             onChange={(e) => setKey(e.target.value)}
             disabled={isEdit}
             hint={
               isEdit
-                ? "Frozen after creation — products and categories store it"
-                : "Lowercase letters, digits and hyphens. It cannot be changed later."
+                ? PRODUCT_TYPE_FORM_COPY.keyFrozen
+                : PRODUCT_TYPE_FORM_COPY.keyRule
             }
           />
         </div>
       </section>
 
       <section className="rounded-card border border-border bg-card p-4 md:p-6">
-        <h2 className="text-title font-semibold text-foreground">What it asks</h2>
+        <h2 className="text-title font-semibold text-foreground">{PRODUCT_TYPE_FORM_COPY.whatItAsks}</h2>
         <p className="mb-4 mt-1 text-small text-muted-foreground">
-          Each line says which marketplaces mark it compulsory somewhere. Leaving one out is
-          allowed; it means a listing there will be refused until it is answered.
+          {PRODUCT_TYPE_FORM_COPY.whatItAsksHint}
         </p>
         <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
           {FACTS.map((fact) => {
@@ -166,8 +167,8 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
                   label={declaration.label}
                   description={
                     declaration.requiredBy.length > 0
-                      ? `Required by ${declaration.requiredBy.join(", ")}`
-                      : "Required by nobody — useful on your own storefront"
+                      ? PRODUCT_TYPE_FORM_COPY.requiredBy(declaration.requiredBy.join(", "))
+                      : PRODUCT_TYPE_FORM_COPY.requiredByNobody
                   }
                   checked={facts.includes(fact)}
                   onChange={() => toggle(facts, fact, setFacts)}
@@ -179,10 +180,9 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
       </section>
 
       <section className="rounded-card border border-border bg-card p-4 md:p-6">
-        <h2 className="text-title font-semibold text-foreground">What it measures</h2>
+        <h2 className="text-title font-semibold text-foreground">{PRODUCT_TYPE_FORM_COPY.whatItMeasures}</h2>
         <p className="mb-4 mt-1 text-small text-muted-foreground">
-          The unit is fixed for the type, never chosen per product — a free unit is how
-          centimetres and inches end up in one column.
+          {PRODUCT_TYPE_FORM_COPY.whatItMeasuresHint}
         </p>
         <ul className="space-y-2">
           {MEASURES.map((measure) => (
@@ -197,7 +197,7 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
               {measures.includes(measure) && (
                 <>
                   <FormSelect
-                    label={`Unit for ${measure}`}
+                    label={PRODUCT_TYPE_FORM_COPY.unitFor(measure)}
                     value={units[measure] ?? "cm"}
                     onChange={(e) => setUnits({ ...units, [measure]: e.target.value })}
                   >
@@ -209,7 +209,7 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
                   </FormSelect>
                   <div className="pb-2">
                     <Checkbox
-                      label="Required"
+                      label={PRODUCT_TYPE_FORM_COPY.required}
                       checked={required.includes(measure)}
                       onChange={() => toggle(required, measure, setRequired)}
                     />
@@ -222,13 +222,12 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
       </section>
 
       <section className="rounded-card border border-border bg-card p-4 md:p-6">
-        <h2 className="text-title font-semibold text-foreground">What makes two sell separately</h2>
+        <h2 className="text-title font-semibold text-foreground">{PRODUCT_TYPE_FORM_COPY.axisTitle}</h2>
         <p className="mb-4 mt-1 text-small text-muted-foreground">
-          Only something the type asks about. An abaya varies by colour; an attar by its bottle
-          size.
+          {PRODUCT_TYPE_FORM_COPY.axisHint}
         </p>
         {axisCandidates.length === 0 ? (
-          <p className="text-small text-muted-foreground">Choose a question or a measurement first.</p>
+          <p className="text-small text-muted-foreground">{PRODUCT_TYPE_FORM_COPY.axisEmpty}</p>
         ) : (
           <ul className="grid grid-cols-1 gap-2 md:grid-cols-3">
             {axisCandidates.map((candidate) => (
@@ -245,15 +244,14 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
       </section>
 
       <section className="rounded-card border border-border bg-card p-4 md:p-6">
-        <h2 className="text-title font-semibold text-foreground">The kinds it holds</h2>
+        <h2 className="text-title font-semibold text-foreground">{PRODUCT_TYPE_FORM_COPY.kindsTitle}</h2>
         <p className="mb-4 mt-1 text-small text-muted-foreground">
-          One per line, as <code>key:Label</code>. A kind decides which category a marketplace
-          lists it under — abaya, burqa and rida are kinds, not types of their own.
+          {PRODUCT_TYPE_FORM_COPY.kindsHintBefore} <code>{PRODUCT_TYPE_FORM_COPY.kindsFormat}</code>{PRODUCT_TYPE_FORM_COPY.kindsHintAfter}
         </p>
         <FormTextarea
-          label="Kinds"
+          label={PRODUCT_TYPE_FORM_COPY.kinds}
           rows={5}
-          placeholder={"abaya:Abaya\nrida:Rida"}
+          placeholder={PRODUCT_TYPE_FORM_COPY.kindsPlaceholder}
           value={kinds}
           onChange={(e) => setKinds(e.target.value)}
         />
@@ -261,10 +259,10 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
 
       <div className="flex flex-wrap gap-3">
         <Button type="submit" pending={saving}>
-          {saving ? "Saving…" : isEdit ? "Save changes" : "Create type"}
+          {saving ? PRODUCT_TYPE_FORM_COPY.saving : isEdit ? PRODUCT_TYPE_FORM_COPY.saveChanges : PRODUCT_TYPE_FORM_COPY.create}
         </Button>
         <Button type="button" variant="outline" onClick={() => router.back()}>
-          Cancel
+          {PRODUCT_TYPE_FORM_COPY.cancel}
         </Button>
       </div>
     </form>

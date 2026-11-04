@@ -1,4 +1,6 @@
 import type { PaymentGatewayOrder } from "@/domain/payment";
+import { RAZORPAY_COPY } from "@/components/checkout/checkout-copy";
+import { APP_NAME } from "@/lib/config";
 
 // The SDK attaches itself to window; declaring it once beats casting at every use.
 declare global {
@@ -67,8 +69,8 @@ export async function openRazorpayCheckout(
     key: paymentOrder.key || "",
     amount: paymentOrder.amount,
     currency: paymentOrder.currency,
-    name: "Bhendi Bazaar",
-    description: "Order Payment",
+    name: APP_NAME,
+    description: RAZORPAY_COPY.description,
     order_id: paymentOrder.gatewayOrderId,
     handler: options.onSuccess,
     modal: { ondismiss: options.onDismiss || (() => {}) },

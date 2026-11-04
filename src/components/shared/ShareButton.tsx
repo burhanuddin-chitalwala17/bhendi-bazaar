@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { ShareDialog } from "./ShareDialog";
+import { SHARE_BUTTON_COPY } from "./shared-copy";
 
 interface ShareButtonProps {
   url: string;
@@ -32,7 +33,7 @@ export function ShareButton({
     <ShareDialog url={url} title={title} text={text}>
       <Button variant={variant} size={size} shape={shape} className={className} aria-label={withLabel ? undefined : "Share"}>
         <Icon name="share" size={shape === "icon" ? "md" : "sm"} />
-        {withLabel && <span>Share</span>}
+        {withLabel && <span>{SHARE_BUTTON_COPY.share}</span>}
       </Button>
     </ShareDialog>
   );

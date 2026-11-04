@@ -13,6 +13,7 @@ import { FIELDS, NAME_SHEET_COPY, SHOP_DETAILS_COPY } from "./shop-details-copy"
 import { useShopDetailsSection } from "./useShopDetailsSection";
 import { useShopNameChange } from "./useShopNameChange";
 import { useSaveAll } from "./useSaveBar";
+import { ROUTES } from "@server/shared/routes";
 
 /** What the owner-only rows are handed: the org's version, read at submit (Q21), and where to report. */
 export interface ContactProps {
@@ -23,7 +24,7 @@ export interface ContactProps {
   onLoadLatest: () => void;
 }
 
-const store = (handle: string) => `/store/${handle}`;
+const store = (handle: string) => ROUTES.store(handle);
 
 /** Shop name, with the confirming sheet (org-profile D7, Q15; ux Name change sheet). */
 export function ShopNameRow(props: ContactProps) {

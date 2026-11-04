@@ -3,8 +3,9 @@
 import { Button } from "@/components/ui/button";
 import { ContactLauncher } from "@/components/support/contact-launcher";
 import { CONTACT_US_REFUSALS } from "@server/checkout/parcel-cancel.types";
+import { CANCEL_REFUSED_COPY } from "../buyer-cancel-copy";
 
-const CONTACT_US = "Contact us";
+const CONTACT_US = CANCEL_REFUSED_COPY.contactUs;
 const OK = "OK";
 
 /**

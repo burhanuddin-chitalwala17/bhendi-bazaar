@@ -12,6 +12,126 @@
 
 ## Entries
 
+## 2026-11-05 — Tests: marketplace-facts no longer leaves categories on the dev Home
+
+- **Found by the owner:** the local Home's category row showed twelve "Mats Q35 …" arches. Each was
+  a top-level category `marketplace-facts.test.ts` creates; its `finally` deleted the category last,
+  after steps that can throw (a listing lookup, a job delete), so twelve runs on 2026-11-04 left one
+  each. The category deletes are now `deleteMany` (no throw on a row already gone) and `afterAll`
+  sweeps the suite's own empty `mf-q35-*` / `mf-mats-*` categories. The suite (19/19) removed all
+  twelve from the local dev database. No production impact.
+- **Not a change:** the local banner is shorter than live only because the seeded banners carry no
+  picture (a picture-less banner sizes to its words); with a picture it takes live's 5:2.
+
+## 2026-11-05 — /sell becomes /business, a landing page for what Bhendi Bazaar is
+
+- **A landing page, not a flyer.** `/business` explains the platform in the order a shop decides:
+  the problem today against what changes, the one idea (one product in, your store, Amazon,
+  Flipkart, Google and Meta out, one stock count), four features each beside a drawn screen, six
+  strengths, then the price, three steps and six questions. Inventory sync and marketplace publish
+  are now listed as live; sales by channel and Instagram posts stay "arriving".
+- **Honest terms.** ₹699 a month GST included, plus the owner's stated 2% on orders paid through the
+  shop's store and nothing on marketplace sales; cancel any month; "Questions? Talk to us" opens the
+  existing contact sheet. The 2% is a display constant in `business-copy.ts`; `Org.commissionBps`
+  still defaults to 1500 in `prisma/schema.prisma`, so the two must be reconciled before launch.
+- **Screens are drawn, not captured** (`business-mockups.tsx`): the seed catalogue is placeholder
+  data. Built from the revamp's grammar: type roles, `Icon`, `BrandLogo`, `PlatformMark`,
+  `StatusBadge`; one new role, `text-landing`, for the hero headline only (registered in `cn`).
+- `ROUTES.sell` is now `ROUTES.business`; `/sell` redirects permanently (`next.config.ts`), the
+  footer and sitemap follow. `src/components/org/sell/` is replaced by `src/components/org/business/`.
+
+## 2026-11-05 — Every word on screen and every link to our pages is a constant (ADR-0067)
+
+- **Asked by the owner:** "no strings hard coded … driven via constants". A scan found 1,837
+  hard-coded items in 412 front-end files — JSX text, copy props, toasts, our own paths — and a
+  second pass found 333 more the first rule could not see (sentences in ternaries, objects,
+  metadata, helper `.ts` files).
+- **Words** now live in each area's `*-copy.ts` beside its components (about 70 modules, one
+  `as const` object per surface; label maps keyed by a closed set are records there). Every word is
+  byte-identical, apart from "Pieces you add…/save…" → "Things you add…/save…" (the store sells more
+  than clothing). Existing exported names stay, re-exported from their copy module.
+- **Paths** to our own pages come from `ROUTES` (`server/shared/routes.ts`), one builder per page of
+  the app; it sits in `server/shared/` because emails and revalidation need it too.
+- **Enforced:** `tests/unit/hardcoded-copy.test.ts` fails on any hard-coded copy or route outside a
+  copy module or `ROUTES` (JSX text after a tag or an expression, copy props, toasts, route literals,
+  quoted sentences). Mutation-checked both ways: plain text, `&apos;` text, a ternary sentence and
+  text after an expression are caught; arrows, comparisons, generics, class names and identifiers
+  are not. It started as a ratchet and reached zero, so its baseline is gone. Seven files are
+  exempt by name, each with its reason (brand facts in `config.ts`, font names, a thrown error,
+  log text, a Zod schema's messages).
+- **Out of scope by decision (ADR-0067 D3):** schema messages in `src/lib/validation/` and route
+  handlers' fallback error text in `src/app/api/` stay beside their rule; `DomainError` text too.
+- ADR-0067 (Proposed), a line in `docs/CONVENTIONS.md`, a rule in `src/components/CLAUDE.md`.
+- **Build fix found on the way:** `security-headers.ts` had taken `ROUTES` through the `@server/`
+  alias, which `next.config.ts` loads before aliases exist — tsc and every unit test passed and only
+  `next build` failed. It imports relatively now, and `tests/unit/next-config-imports.test.ts`
+  walks everything `next.config.ts` loads and fails on any alias (mutation-checked).
+- Suites: tsc; unit; integration 648/648; `next build`; e2e 12/12 against `bhendi_bazaar_ci`.
+
+## 2026-11-05 — Local env: only what the app reads; ops secrets apart
+
+- **Asked by the owner.** The local `.env` had 55 variables; each was checked by name against
+  every reader in `src/`, `server/`, `prisma/`, `worker/`, `scripts/`, the workflows and the configs
+  (no value was read or printed).
+  - **Kept, 31,** grouped by purpose with one line each: app, database, seeding, sign-in, secrets
+    at rest, payments, shipping webhook, email, images, photo enhancement, marketplaces. Values
+    byte-identical to before; `missingEnv` reports nothing missing.
+  - **Moved to `.env.ops`, 11** (ignored by git, loaded by nothing): `WORKER_*`, `GHCR_*`,
+    `BACKUP_R2_*` (GitHub secrets for the workflows), `PROD_ADMIN_*` (an inline input to the one-off
+    production seed) and `GOOGLE_VERIFICATION_TOKEN` (production's meta tag).
+  - **Dropped, 13, read by nothing:** `KV_REST_API_*`, `KV_URL`, `REDIS_URL` (Vercel KV
+    leftovers; the `KV_REST_API_*` pair is a rate-limit fallback, so locally it pointed the limiter
+    at a remote store), `EMAIL`, `PASSWORD`, `TOKEN_VALUE`, `FIRE_CRAWL_API`, `AMAZON_REDIRECT_URL`,
+    `FLIPKART_REDIRECT_URL`, `SHIPROCKET_EMAIL`/`SHIPROCKET_PASSWORD` (the env fallback is gone,
+    shipping ADR-0002).
+  - A full copy is in `.env.backup-2026-11-05` (git-ignored); delete it once the app runs.
+- `.env.example` gains `APP_ENV` and the `.env.ops` note and loses the Shiprocket login pair;
+  `docs/OPERATIONS.md` loses its row and gains the `.env.ops` sentence.
+
+## 2026-11-05 — Tests: a refused banner can no longer be left live on the dev Home
+
+- **Found by the owner:** the local Home crashed (`next/image` unconfigured host
+  `cdn.bhendi-bazaar.com`). An active home banner "Home probe 2", pointing at a test picture, was in
+  `bhendi_bazaar_dev`: during a mutation run on 2026-11-04 the "only your own library" guard was off,
+  so a save the test expects refused went through, and `afterAll` deleted only the ids it had
+  pushed. A "Not mine" shop banner had leaked the same way.
+- `tests/integration/image-slots.test.ts` now also deletes every banner and shop banner carrying
+  this run's pictures. Mutation-checked: with the guard disabled the suite fails and leaves no row.
+- The two leaked rows and five unused test pictures were removed from the local dev database only.
+- No production impact: production banners come from uploads to the configured image host.
+
+## 2026-11-05 — Store copy: one vocabulary for every kind of product
+
+- **Asked by the owner** after "The cloth": a scan for prototype leftovers. The prototype's sample
+  data (shops, products, dates, a buyer's address) appears nowhere outside comments. Its clothing
+  vocabulary did, on surfaces every product uses — the bazaar sells attar, bukhoor, kitchenware
+  and bags as well:
+  - **"piece" → "item"/"product"** on the listing count ("248 items"), bag summary, saved list,
+    sold-out toast, empty bag, empty and offer-free category, shop-all, not-found, unavailable at
+    checkout, the bidding note and the review photos hint. Seller-side "Auctions for one-off
+    pieces" stays: an auction is for a one-off.
+  - **Reviews** no longer ask about fit and fabric ("Is it as described? How is the quality?…";
+    "What buyers say once it has arrived").
+  - **Search** suggests "a product, a colour, a shop", not "a fabric".
+- Suites: tsc; unit.
+
+## 2026-11-05 — Product page: no more clothing-only words on every product
+
+- **Asked by the owner:** every product page said "The cloth" above its description — the
+  prototype's heading for a rida, copied in as fixed text, so a tote bag and bukhoor said it too.
+  It is now "Product details". The same assumption is gone from "Questions about this product?",
+  the no-reviews line (was "how it fits and how the fabric feels"), the delete-review dialog, and
+  the shop's description placeholder ("how it is used", was "how it fits").
+- Suites: tsc; unit.
+
+## 2026-11-05 — Store Home: categories are one scrolling line, smaller
+
+- **Asked by the owner:** the category arches wrapped to a second row and were too large. They are
+  now one line at every size, never wrapping: 72–80px on a phone (swiped, no scrollbar), 128px on a
+  tablet and 160px on a desktop (9:10), with a thin scrollbar kept from tablet so a mouse can reach
+  the rest. Image `sizes` follow the fixed widths. The row runs to the gutter's edge at each size.
+- Suites: tsc; unit 3059/3059.
+
 ## 2026-11-05 — E2E: the checkout check reads the line a buyer can see
 
 - CI's smoke journey failed on both projects at `/checkout`: since the summary folds its lines on a

@@ -13,6 +13,7 @@ import { ErrorState, type ErrorStateProps } from "@/components/shared/states/Err
 import { SkeletonRows } from "@/components/shared/states/skeletons";
 import { cn } from "@/lib/utils";
 import { PAGE_SIZE_OPTIONS } from "@/types/shared";
+import { RESOURCE_LIST_COPY } from "./shared-copy";
 
 /** Where a column sits in a phone row. Unplaced columns show as a label and value under the title. */
 export type PhoneSlot = "title" | "meta" | "status" | "trailing" | "hidden";
@@ -87,7 +88,7 @@ export function ResourceList<T>({
   selection,
   rowLabel,
   state = "ready",
-  empty = { title: "Nothing here yet", description: "Rows appear here as soon as there are any." },
+  empty = { title: RESOURCE_LIST_COPY.emptyTitle, description: RESOURCE_LIST_COPY.emptyBody },
   error,
   sortParams = DEFAULT_SORT_PARAMS,
   tableFrom = "md",
@@ -104,7 +105,7 @@ export function ResourceList<T>({
         <SkeletonRows count={4} thumbnail={Boolean(thumbnail)} className="rounded-none border-0" />
       </div>
     ) : state === "error" ? (
-      <ErrorState className="px-4" description="The list didn't load. Nothing was changed." {...error} />
+      <ErrorState className="px-4" description={RESOURCE_LIST_COPY.theListDidnTLoad} {...error} />
     ) : rows.length === 0 ? (
       <EmptyState className="px-4" {...empty} />
     ) : (
@@ -246,7 +247,7 @@ function Table<T>({
               <th scope="col" className="w-12 px-4">
                 <Checkbox
                   hideLabel
-                  label={allSelected ? "Clear selection" : "Select all"}
+                  label={allSelected ? RESOURCE_LIST_COPY.clearSelection : RESOURCE_LIST_COPY.selectAll}
                   checked={allSelected}
                   onChange={() => selection.onChange(allSelected ? new Set() : new Set(keys))}
                 />
@@ -377,7 +378,7 @@ export function ListPagination({
     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-2">
       <div className="flex items-center gap-2">
         <label htmlFor={pageSizeId} className="text-small text-muted-foreground">
-          Rows
+          {RESOURCE_LIST_COPY.rows}
         </label>
         <div className="w-24">
           <Select id={pageSizeId} value={pageSize} onChange={(event) => onPageSizeChange(Number(event.target.value))}>
@@ -400,7 +401,7 @@ export function ListPagination({
           size="sm"
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          aria-label="Previous page"
+          aria-label={RESOURCE_LIST_COPY.previousPage}
         >
           <Icon name="previous" />
         </Button>
@@ -410,7 +411,7 @@ export function ListPagination({
           size="sm"
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          aria-label="Next page"
+          aria-label={RESOURCE_LIST_COPY.nextPage}
         >
           <Icon name="next" />
         </Button>

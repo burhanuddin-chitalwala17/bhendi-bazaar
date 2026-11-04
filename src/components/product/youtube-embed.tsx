@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { youtubeEmbedUrl, youtubePosterUrl } from "@server/catalog/media";
 import { GALLERY_SLIDE_SIZES } from "@/components/product/video-player";
+import { PRODUCT_PAGE_COPY } from "./product-copy";
 
 interface YouTubeEmbedProps {
   ref_: string;
@@ -38,7 +39,7 @@ export function YouTubeEmbed({
       <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-muted px-4 text-center">
         <Icon name="no-video" size="xl" tone="muted" />
         <p className="text-sm font-medium text-muted-foreground">
-          This video is no longer available
+          {PRODUCT_PAGE_COPY.video.unavailable}
         </p>
       </div>
     );

@@ -5,6 +5,7 @@ import {
   type BrandPage,
   type Storefront,
 } from "@/data-access-layer/storefront.dal";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * Turn a handle in the URL into the shop it names, or leave the page.
@@ -20,12 +21,12 @@ import {
  * the rare request rather than every storefront view.
  */
 export async function resolveStorefront(handle: string): Promise<Storefront> {
-  return await resolveOrLeave(handle, storefrontDAL.getByHandle, (current) => `/store/${current}`);
+  return await resolveOrLeave(handle, storefrontDAL.getByHandle, (current) => ROUTES.store(current));
 }
 
 /** The shop page's resolve (storefront-themes D6): a retired handle lands on the moved shop page. */
 export async function resolveShopPage(handle: string): Promise<Storefront> {
-  return await resolveOrLeave(handle, storefrontDAL.getByHandle, (current) => `/store/${current}/shop`);
+  return await resolveOrLeave(handle, storefrontDAL.getByHandle, (current) => ROUTES.storeShop(current));
 }
 
 /** The brand page's resolve: same three answers, the redirect landing on the moved page. */
@@ -33,7 +34,7 @@ export async function resolveBrandPage(handle: string): Promise<BrandPage> {
   return await resolveOrLeave(
     handle,
     storefrontDAL.getBrandPage,
-    (current) => `/store/${current}/about`,
+    (current) => ROUTES.storeAbout(current),
   );
 }
 

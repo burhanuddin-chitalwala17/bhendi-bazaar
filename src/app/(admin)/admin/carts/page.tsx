@@ -10,6 +10,7 @@ import { adminCartsDAL } from "@/data-access-layer/admin/carts.dal";
 import { CartsFilters } from "@/components/cart/console/CartsFilters";
 import { CartsTable } from "@/components/cart/console/CartsTable";
 import { DEFAULT_PAGE_SIZE, resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
+import { ADMIN_CARTS_COPY } from "./carts-copy";
 
 /** A positive whole number from the query string, or nothing. Untrusted like any input. */
 function positiveInt(value?: string): number | undefined {
@@ -41,11 +42,11 @@ export default async function AdminCartsPage({
   return (
     <PageShell width="wide">
       <PageHeader
-        title="Open carts"
-        description="Carts buyers left behind, and what they are worth."
+        title={ADMIN_CARTS_COPY.title}
+        description={ADMIN_CARTS_COPY.description}
         actions={
           <p className="text-small text-muted-foreground">
-            Worth <Money paise={totalValue || 0} className="font-semibold text-foreground" />
+            {ADMIN_CARTS_COPY.worth} <Money paise={totalValue || 0} className="font-semibold text-foreground" />
           </p>
         }
       />

@@ -6,9 +6,11 @@ import { ConnectResultNote } from "@/components/channel/connect-result-note";
 import { PAGE_INTRO } from "@/components/channel/channel-copy";
 import { isConnectResult, isMarketplaceChannel } from "@server/channels/channel-connection.types";
 import { CHANNEL_LABELS } from "@server/shared/channels";
+import { ORG_CHANNELS_PAGE_COPY } from "@/components/org/pages-copy";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
 export const metadata = {
-  title: "Channels",
+  title: ORG_PAGE_TITLES.channels,
   robots: { index: false, follow: false },
 };
 
@@ -29,7 +31,7 @@ export default async function OrgChannelsPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader help="channels" title="Channels" description={PAGE_INTRO} />
+      <PageHeader help="channels" title={ORG_CHANNELS_PAGE_COPY.title} description={PAGE_INTRO} />
       {outcome && (
         <ConnectResultNote
           orgId={scope.orgId}

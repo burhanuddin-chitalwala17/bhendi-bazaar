@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { ROUTES } from "@server/shared/routes";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import { useMutation } from "@/hooks/core/useMutation";
@@ -12,6 +13,7 @@ import { formatCurrency, formatShortDate } from "@/lib/format";
 import { formatPhone } from "@server/shared/phone";
 import { Button } from "@/components/ui/button";
 import { PLATFORM_ROLE } from "@server/identity/admin.user.types";
+import { USERS_TABLE_COPY } from "./console-copy";
 
 interface Props {
   users: AdminUser[];
@@ -47,7 +49,7 @@ export function UsersTable({ users, page, pageSize, totalPages, total }: Props) 
     ({ id, isBlocked }: { id: string; isBlocked: boolean }) =>
       adminUserApiClient.toggleBlockUser(id, isBlocked),
     {
-      successMessage: "User updated",
+      successMessage: USERS_TABLE_COPY.userUpdated,
       onSuccess: () => router.refresh(),
     },
   );
@@ -55,11 +57,11 @@ export function UsersTable({ users, page, pageSize, totalPages, total }: Props) 
   const columns: Column<AdminUser>[] = [
     {
       key: "name",
-      label: "User",
+      label: USERS_TABLE_COPY.user,
       phone: "title",
       render: (user) => (
-        <Link href={`/admin/users/${user.id}`} prefetch={false} className="block hover:underline">
-          <span className="block font-medium">{user.name || "No name"}</span>
+        <Link href={ROUTES.admin.user(user.id)} prefetch={false} className="block hover:underline">
+          <span className="block font-medium">{user.name || USERS_TABLE_COPY.noName}</span>
           <span className="block text-small font-normal text-muted-foreground">{user.email}</span>
           {user.mobile && (
             <span className="block text-small font-normal text-muted-foreground">{formatPhone(user.mobile)}</span>
@@ -69,38 +71,38 @@ export function UsersTable({ users, page, pageSize, totalPages, total }: Props) 
     },
     {
       key: "platformRole",
-      label: "Role",
+      label: USERS_TABLE_COPY.role,
       phone: "meta",
       render: (user) =>
-        user.platformRole === PLATFORM_ROLE.ADMIN ? <StatusBadge tone="info">Admin</StatusBadge> : "Buyer",
+        user.platformRole === PLATFORM_ROLE.ADMIN ? <StatusBadge tone="info">{USERS_TABLE_COPY.admin}</StatusBadge> : USERS_TABLE_COPY.buyer,
     },
-    { key: "ordersCount", label: "Orders", phone: "meta", render: (user) => `${user.ordersCount || 0} orders` },
+    { key: "ordersCount", label: USERS_TABLE_COPY.orders, phone: "meta", render: (user) => `${user.ordersCount || 0} orders` },
     {
       key: "totalSpent",
-      label: "Total spent",
+      label: USERS_TABLE_COPY.totalSpent,
       phone: "hidden",
       render: (user) => formatCurrency(user.totalSpent || 0),
     },
     {
       key: "createdAt",
-      label: "Joined",
+      label: USERS_TABLE_COPY.joined,
       sortable: true,
       phone: "hidden",
       render: (user) => formatShortDate(user.createdAt),
     },
     {
       key: "isBlocked",
-      label: "Status",
+      label: USERS_TABLE_COPY.status,
       phone: "status",
       render: (user) => (
         <StatusBadge tone={user.isBlocked ? "destructive" : "success"} dot>
-          {user.isBlocked ? "Blocked" : "Active"}
+          {user.isBlocked ? USERS_TABLE_COPY.blocked : USERS_TABLE_COPY.active}
         </StatusBadge>
       ),
     },
     {
       key: "actions",
-      label: "Actions",
+      label: USERS_TABLE_COPY.actions,
       phone: "trailing",
       render: (user) => (
         <Button
@@ -108,9 +110,9 @@ export function UsersTable({ users, page, pageSize, totalPages, total }: Props) 
           size="sm"
           pending={isTogglingBlock}
           onClick={() => toggleBlock({ id: user.id, isBlocked: !user.isBlocked }).catch(() => {})}
-          aria-label={`${user.isBlocked ? "Unblock" : "Block"} ${user.name || user.email}`}
+          aria-label={`${user.isBlocked ? USERS_TABLE_COPY.unblock : USERS_TABLE_COPY.block} ${user.name || user.email}`}
         >
-          {user.isBlocked ? "Unblock" : "Block"}
+          {user.isBlocked ? USERS_TABLE_COPY.unblock : USERS_TABLE_COPY.block}
         </Button>
       ),
     },
@@ -119,7 +121,7 @@ export function UsersTable({ users, page, pageSize, totalPages, total }: Props) 
   return (
     <DataTable
       data={users}
-      label="Users"
+      label={USERS_TABLE_COPY.users}
       columns={columns}
       totalPages={totalPages}
       currentPage={page}

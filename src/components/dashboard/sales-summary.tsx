@@ -6,6 +6,7 @@ import { bpsToPercent, formatCurrency } from "@/lib/format";
 import type { Compared, SalesDay, SalesPeriod } from "@server/analytics/sales.types";
 import { legendLabels, periodTitle, previousLabel } from "./period";
 import { SalesChart, type SalesTone } from "./sales-chart";
+import { DASHBOARD_COPY } from "./dashboard-copy";
 
 /** +12.4% / −3% from basis points; undefined when there was nothing before to compare with. */
 export function change(c: Compared): { value: number; isPositive: boolean } | undefined {
@@ -49,14 +50,14 @@ export function SalesSummary({
             <p className="font-heading text-display font-semibold tabular-nums text-foreground">{formatCurrency(total.current)}</p>
             {trend && (
               <StatusBadge tone={trend.isPositive ? "success" : "destructive"}>
-                <span className="sr-only">{trend.isPositive ? "Up" : "Down"} </span>
+                <span className="sr-only">{trend.isPositive ? DASHBOARD_COPY.up : DASHBOARD_COPY.down} </span>
                 {trend.isPositive ? "+" : "−"}
                 {trend.value}%
               </StatusBadge>
             )}
           </div>
           <p className="text-small text-muted-foreground">
-            vs {formatCurrency(total.previous)} {previousLabel(period)}
+            {DASHBOARD_COPY.versus(formatCurrency(total.previous), previousLabel(period))}
           </p>
         </div>
         <SalesChart
@@ -82,9 +83,9 @@ export function SalesFailed({ retryHref }: { retryHref: string }) {
   return (
     <Card className="p-4">
       <ErrorState
-        title="Sales didn't load"
-        description="The figures couldn't be read just now. Nothing was changed."
-        action={{ label: "Try again", href: retryHref }}
+        title={DASHBOARD_COPY.salesFailed}
+        description={DASHBOARD_COPY.salesFailedBody}
+        action={{ label: DASHBOARD_COPY.tryAgain, href: retryHref }}
         className="py-4"
       />
     </Card>

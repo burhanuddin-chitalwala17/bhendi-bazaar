@@ -10,6 +10,7 @@ import { ApiError } from "@/lib/api-error";
 import { orgLocationsApiClient } from "@/components/org/orgLocationsApiClient";
 import { orgLocationSchema, type OrgLocationInput } from "@/lib/validation/schemas/location.schema";
 import type { OrgLocation } from "@server/catalog/org.address.types";
+import { LOCATION_FORM_COPY } from "./locations-copy";
 
 /** What a caller's own actions are told: saving now, or the last save failed and can be retried. */
 export interface LocationFormActions {
@@ -58,7 +59,7 @@ export function LocationForm({
         throw error;
       }
     },
-    successMessage: messages?.success ?? (location ? "Location updated" : "Location added"),
+    successMessage: messages?.success ?? (location ? LOCATION_FORM_COPY.updated : LOCATION_FORM_COPY.added),
     fallbackMessage: messages?.retry,
     toastErrors: !messages,
     onSuccess: (saved) => onDone(saved as OrgLocation),
@@ -94,60 +95,60 @@ export function LocationForm({
       )}
 
       <FormInput
-        label="Location name"
+        label={LOCATION_FORM_COPY.name}
         required
-        placeholder="e.g., Bhendi Bazaar shop"
+        placeholder={LOCATION_FORM_COPY.namePlaceholder}
         {...register("name")}
         error={errors.name?.message}
-        hint="What couriers and your team call this place"
+        hint={LOCATION_FORM_COPY.nameHint}
       />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <FormInput
-          label="Pickup contact"
+          label={LOCATION_FORM_COPY.contact}
           required
-          placeholder="Who answers at pickup"
+          placeholder={LOCATION_FORM_COPY.contactPlaceholder}
           {...register("contactName")}
           error={errors.contactName?.message}
         />
         <FormPhoneInput
           name="contactPhone"
           control={control}
-          label="Contact phone"
+          label={LOCATION_FORM_COPY.phone}
           required
-          placeholder="Mobile number"
+          placeholder={LOCATION_FORM_COPY.phonePlaceholder}
         />
       </div>
       <FormInput
-        label="Address line 1"
+        label={LOCATION_FORM_COPY.line1}
         required
         {...register("addressLine1")}
         error={errors.addressLine1?.message}
       />
       <FormInput
-        label="Address line 2"
+        label={LOCATION_FORM_COPY.line2}
         {...register("addressLine2")}
         error={errors.addressLine2?.message}
       />
       <FormInput
-        label="Landmark"
+        label={LOCATION_FORM_COPY.landmark}
         {...register("landmark")}
         error={errors.landmark?.message}
       />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <FormInput
-          label="City"
+          label={LOCATION_FORM_COPY.city}
           required
           {...register("city")}
           error={errors.city?.message}
         />
         <FormInput
-          label="State"
+          label={LOCATION_FORM_COPY.state}
           required
           {...register("state")}
           error={errors.state?.message}
         />
         <FormInput
-          label="Pincode"
+          label={LOCATION_FORM_COPY.pincode}
           required
           inputMode="numeric"
           {...register("pincode")}
@@ -155,8 +156,8 @@ export function LocationForm({
         />
       </div>
       <Checkbox
-        label="Active"
-        description="Offer this location for new stock."
+        label={LOCATION_FORM_COPY.active}
+        description={LOCATION_FORM_COPY.activeHint}
         checked={watch("isActive")}
         onChange={(event) => setValue("isActive", event.target.checked)}
       />
@@ -168,7 +169,7 @@ export function LocationForm({
           <FormActions
             onCancel={onCancel}
             isSubmitting={isSubmitting}
-            submitLabel={location ? "Save changes" : "Add location"}
+            submitLabel={location ? LOCATION_FORM_COPY.save : LOCATION_FORM_COPY.add}
           />
         </div>
       )}

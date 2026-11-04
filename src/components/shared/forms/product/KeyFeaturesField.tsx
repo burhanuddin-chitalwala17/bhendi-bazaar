@@ -5,6 +5,8 @@ import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { FormInput } from "../FormField";
 import type { ProductForm } from "./ProductSections";
+import { KEY_FEATURES_FIELD_COPY } from "./product-copy";
+import { KEY_FEATURES_ADD_COPY } from "@/components/shared/forms/product/product-copy";
 
 const MAX_FEATURES = 5;
 
@@ -17,14 +19,14 @@ export function KeyFeaturesField({ form }: { form: ProductForm }) {
 
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="text-sm font-medium">Key features</legend>
-      <p className="text-xs text-muted-foreground">Up to five short points buyers see first</p>
+      <legend className="text-sm font-medium">{KEY_FEATURES_FIELD_COPY.keyFeatures}</legend>
+      <p className="text-xs text-muted-foreground">{KEY_FEATURES_FIELD_COPY.upToFiveShortPoints}</p>
       {features.map((_, index) => (
         <div key={index} className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
             <FormInput
               aria-label={`Key feature ${index + 1}`}
-              placeholder="e.g., Soft Nida, falls without clinging"
+              placeholder={KEY_FEATURES_FIELD_COPY.eGSoftNidaFalls}
               {...register(`keyFeatures.${index}` as const)}
               error={Array.isArray(errors) ? errors[index]?.message : undefined}
             />
@@ -49,7 +51,7 @@ export function KeyFeaturesField({ form }: { form: ProductForm }) {
         className="min-h-10 self-start"
         onClick={() => (features.length < MAX_FEATURES ? set([...features, ""]) : undefined)}
       >
-        <Icon name="add" /> {features.length < MAX_FEATURES ? "Add a point" : "Five is the most a marketplace shows"}
+        <Icon name="add" /> {features.length < MAX_FEATURES ? KEY_FEATURES_ADD_COPY.add : KEY_FEATURES_ADD_COPY.full}
       </Button>
     </fieldset>
   );

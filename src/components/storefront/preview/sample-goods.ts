@@ -1,17 +1,18 @@
 import type { Product } from "@/domain/product";
 import type { ThemedPageData } from "../themed/page-data";
+import { SAMPLE_GOODS_COPY } from "@/components/storefront/preview/preview-copy";
 
 /** ux.md picker, Empty: the label over a preview drawn with sample goods. */
-export const SAMPLE_GOODS_NOTE = "Showing sample products until you add your own.";
+export const SAMPLE_GOODS_NOTE = SAMPLE_GOODS_COPY.note;
 
 /** Paise, as every price is (Invariant 3); sample only, never sold. */
 const SAMPLES: ReadonlyArray<{ name: string; price: number; salePrice?: number }> = [
-  { name: "Sample product 1", price: 149_900 },
-  { name: "Sample product 2", price: 89_900, salePrice: 69_900 },
-  { name: "Sample product 3", price: 249_900 },
-  { name: "Sample product 4", price: 49_900 },
-  { name: "Sample product 5", price: 129_900 },
-  { name: "Sample product 6", price: 79_900 },
+  { name: SAMPLE_GOODS_COPY.product1, price: 149_900 },
+  { name: SAMPLE_GOODS_COPY.product2, price: 89_900, salePrice: 69_900 },
+  { name: SAMPLE_GOODS_COPY.product3, price: 249_900 },
+  { name: SAMPLE_GOODS_COPY.product4, price: 49_900 },
+  { name: SAMPLE_GOODS_COPY.product5, price: 129_900 },
+  { name: SAMPLE_GOODS_COPY.product6, price: 79_900 },
 ];
 
 /**

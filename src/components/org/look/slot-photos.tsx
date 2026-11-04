@@ -9,6 +9,7 @@ import { uploadApiClient } from "@/components/shared/uploadApiClient";
 import type { ImageSlotKey } from "@server/catalog/image-slots";
 import type { ImageSlotValue } from "@server/catalog/image-framing";
 import { SECTION_COPY } from "./section-copy";
+import { SLOT_PHOTOS_COPY } from "@/components/org/look/look-copy";
 
 /** Uploads land in this shop's library: the only pictures its storefront may use (image-slots D7). */
 export function shopUpload(orgId: string) {
@@ -93,7 +94,7 @@ export function SlotPhotos({
       )}
       {full && value.length >= max && (
         <p id={`${id}-full`} className="text-small text-muted-foreground">
-          {max === 1 ? "One photo here. Remove it to add another." : `Up to ${max} photos. Remove one to add another.`}
+          {max === 1 ? SLOT_PHOTOS_COPY.full : SLOT_PHOTOS_COPY.upTo(max)}
         </p>
       )}
       {error && (

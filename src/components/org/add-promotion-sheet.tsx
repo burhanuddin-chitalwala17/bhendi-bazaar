@@ -15,9 +15,11 @@ import { IMAGE_SLOT } from "@server/catalog/image-slots";
 import { previewOf, type ImageSlotValue } from "@server/catalog/image-framing";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { orgBannerSchema, type OrgBannerFormInput } from "@/lib/validation/schemas/org-banner.schema";
+import { ADD_BANNER_COPY } from "./storefront-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** The action every shop banner carries (`storefrontDAL.promotionsFor`); drawn in the preview only. */
-const SHOP_NOW = "Shop now";
+const SHOP_NOW = ADD_BANNER_COPY.shopNow;
 
 /**
  * Adding a promotion (storefront-branding R2a) in a full drawer: the words, both pictures and the
@@ -45,7 +47,7 @@ export function AddPromotionSheet({ orgId, handle }: { orgId: string; handle: st
   } = useServerForm<OrgBannerFormInput>({
     schema: orgBannerSchema,
     defaultValues: { title: "", description: "", href: "", image: null, imageAlt: "", isActive: true },
-    successMessage: "Banner added — it is live on your shop now.",
+    successMessage: ADD_BANNER_COPY.added,
     submit: (data) => orgStorefrontApiClient.addBanner(orgId, { ...data, image }),
     onSuccess: () => {
       reset();
@@ -67,18 +69,18 @@ export function AddPromotionSheet({ orgId, handle }: { orgId: string; handle: st
       <SheetTrigger asChild>
         <Button size="sm">
           <Icon name="add" />
-          Add banner
+          {ADD_BANNER_COPY.open}
         </Button>
       </SheetTrigger>
 
       <SheetContent side="adaptive" size="full" className="gap-0 overflow-hidden p-0 pb-0 md:pb-0">
         <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3 md:px-6 md:py-4">
           <div className="space-y-1">
-            <SheetTitle className="font-heading text-title">Add a banner</SheetTitle>
-            <SheetDescription className="text-small">It goes live on your shop as soon as you add it.</SheetDescription>
+            <SheetTitle className="font-heading text-title">{ADD_BANNER_COPY.title}</SheetTitle>
+            <SheetDescription className="text-small">{ADD_BANNER_COPY.description}</SheetDescription>
           </div>
           <SheetClose asChild>
-            <Button type="button" variant="ghost" shape="icon" size="lg" aria-label="Close">
+            <Button type="button" variant="ghost" shape="icon" size="lg" aria-label={ADD_BANNER_COPY.close}>
               <Icon name="close" />
             </Button>
           </SheetClose>
@@ -89,31 +91,28 @@ export function AddPromotionSheet({ orgId, handle }: { orgId: string; handle: st
             <BannerPreview words={words} image={previewOf(image)} />
 
             <div className="space-y-4">
-              <FormInput label="Title (optional)" placeholder="Eid collection" {...register("title")} error={errors.title?.message} />
+              <FormInput label={ADD_BANNER_COPY.titleField} placeholder={ADD_BANNER_COPY.titlePlaceholder} {...register("title")} error={errors.title?.message} />
               <FormInput
-                label="A line underneath (optional)"
-                placeholder="New ridas, in store now"
+                label={ADD_BANNER_COPY.line}
+                placeholder={ADD_BANNER_COPY.linePlaceholder}
                 {...register("description")}
                 error={errors.description?.message}
               />
               <FormInput
-                label="Where it points (optional)"
-                placeholder={`${origin}/store/${handle}`}
+                label={ADD_BANNER_COPY.href}
+                placeholder={`${origin}${ROUTES.store(handle)}`}
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
                 {...register("href")}
                 error={errors.href?.message}
               />
-              <p className="text-caption text-muted-foreground">
-                Paste the link to your shop or to one of your products — straight from the address bar is fine. Leave it
-                blank for a promotion that is not a link. With no words at all, the picture shows on its own.
-              </p>
+              <p className="text-caption text-muted-foreground">{ADD_BANNER_COPY.hrefHint}</p>
             </div>
 
             <ImageSlotField
               slot={IMAGE_SLOT.ORG_BANNER}
-              label="Picture (optional)"
+              label={ADD_BANNER_COPY.picture}
               value={image}
               onChange={setImage}
               upload={async (file) => {
@@ -134,11 +133,11 @@ export function AddPromotionSheet({ orgId, handle }: { orgId: string; handle: st
 
           <footer className="flex shrink-0 justify-end gap-2 border-t border-border bg-background px-4 py-3 pb-safe md:px-6">
             <Button type="button" variant="outline" onClick={() => !isSubmitting && setOpen(false)}>
-              Cancel
+              {ADD_BANNER_COPY.cancel}
             </Button>
             {/* Never disabled (ADR-0053): a second tap while adding is ignored, not refused. */}
             <Button type="submit" pending={isSubmitting} onClick={(event) => isSubmitting && event.preventDefault()}>
-              {isSubmitting ? "Adding…" : "Add banner"}
+              {isSubmitting ? ADD_BANNER_COPY.adding : ADD_BANNER_COPY.submit}
             </Button>
           </footer>
         </form>

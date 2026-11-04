@@ -10,6 +10,8 @@ import { PeriodControl } from "@/components/dashboard/period-control";
 import { SalesOverviewBlock } from "@/components/dashboard/sales-overview";
 import { WorkerStatusCard } from "@/components/dashboard/worker-status-card";
 import { formatDate } from "@/lib/format";
+import { DASHBOARD_COPY } from "@/components/dashboard/dashboard-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * The platform dashboard (design-system Q30, Q31): sales for a period from the URL, what needs the
@@ -22,14 +24,14 @@ export default async function AdminDashboardPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const period = parsePeriod((await searchParams).period);
-  const here = `/admin?period=${period}`;
+  const here = `${ROUTES.admin.home}?period=${period}`;
 
   return (
     <PageShell width="wide">
       <PageHeader
-        title="Dashboard"
-        description={`${formatDate(new Date(), { weekday: "long", day: "numeric", month: "long" })} · all shops`}
-        actions={<PeriodControl current={period} basePath="/admin" />}
+        title={DASHBOARD_COPY.title}
+        description={DASHBOARD_COPY.description(formatDate(new Date(), { weekday: "long", day: "numeric", month: "long" }))}
+        actions={<PeriodControl current={period} basePath={ROUTES.admin.home} />}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -56,7 +58,7 @@ export default async function AdminDashboardPage({
 
 function SalesSkeleton() {
   return (
-    <div className="space-y-4" role="status" aria-label="Loading sales">
+    <div className="space-y-4" role="status" aria-label={DASHBOARD_COPY.loadingSales}>
       <Skeleton className="h-72 rounded-card" />
       <SkeletonTiles count={4} className="sm:grid-cols-2 lg:grid-cols-4" />
     </div>

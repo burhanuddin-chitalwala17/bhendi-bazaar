@@ -8,6 +8,7 @@ import {
   type EnhancementUsage,
   type RequestEnhancementInput,
 } from "@server/content/enhancement.types";
+import { USE_ENHANCEMENT_RUN_COPY } from "./product-copy";
 
 /** How often the sheet asks after a run, and how long before it stops asking (spec A1: under a minute). */
 export const ENHANCEMENT_POLL_MS = 2_000;
@@ -49,15 +50,15 @@ export function useEnhancementRun(orgId: string) {
           const { enhancement } = await enhancementRunApiClient.get(orgId, id);
           if (enhancement.state === ENHANCEMENT_STATE.PROPOSED) return setRun({ phase: "proposed", enhancement });
           if (enhancement.state === ENHANCEMENT_STATE.FAILED) {
-            return setRun({ phase: "failed", message: enhancement.error ?? "The improvement could not be made" });
+            return setRun({ phase: "failed", message: enhancement.error ?? USE_ENHANCEMENT_RUN_COPY.couldNotBeMade });
           }
           if (Date.now() - startedAt >= ENHANCEMENT_POLL_LIMIT_MS) {
-            return setRun({ phase: "failed", message: "This is taking longer than expected. Try again in a little while." });
+            return setRun({ phase: "failed", message: USE_ENHANCEMENT_RUN_COPY.takingLonger });
           }
           setRun({ phase: "running", enhancement });
           timer.current = setTimeout(tick, ENHANCEMENT_POLL_MS);
         } catch (cause) {
-          setRun(failed(cause, "Could not check on the improvement"));
+          setRun(failed(cause, USE_ENHANCEMENT_RUN_COPY.couldNotCheck));
         }
       }
       timer.current = setTimeout(tick, ENHANCEMENT_POLL_MS);
@@ -75,7 +76,7 @@ export function useEnhancementRun(orgId: string) {
         setRun({ phase: "running", enhancement: body.enhancement });
         poll(body.enhancement.id, Date.now());
       } catch (cause) {
-        setRun(failed(cause, "Could not start the improvement"));
+        setRun(failed(cause, USE_ENHANCEMENT_RUN_COPY.couldNotStart));
       }
     },
     [orgId, poll, stop],
@@ -91,7 +92,7 @@ export function useEnhancementRun(orgId: string) {
         setRun({ phase: "idle" });
         return body.enhancement;
       } catch (cause) {
-        setRun(failed(cause, action === "accept" ? "Could not keep the improvement" : "Could not discard the improvement"));
+        setRun(failed(cause, action === "accept" ? USE_ENHANCEMENT_RUN_COPY.couldNotKeep : USE_ENHANCEMENT_RUN_COPY.couldNotDiscard));
         return null;
       }
     },

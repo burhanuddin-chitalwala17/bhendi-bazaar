@@ -21,6 +21,8 @@ import { useAuthSheet } from "@/context/AuthSheetContext";
 import { DeliveryAddress } from "@/domain/profile";
 import { Button } from "@/components/ui/button";
 import { PAYMENT_STATUS } from "@server/checkout/order.types";
+import { CHECKOUT_COPY } from "./checkout-copy";
+import { ROUTES } from "@server/shared/routes";
 
 interface CheckoutContainerProps {
   buyNowProduct?: CartItem;
@@ -154,9 +156,9 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
   if (checkoutItems.length === 0) {
     return (
       <EmptyState
-        title="Nothing to check out"
-        description="Your bag is empty. Add a piece or two first."
-        action={{ label: "Back to your bag", href: "/cart" }}
+        title={CHECKOUT_COPY.emptyTitle}
+        description={CHECKOUT_COPY.emptyBody}
+        action={{ label: CHECKOUT_COPY.backToYourBag, href: ROUTES.cart }}
       />
     );
   }
@@ -164,7 +166,7 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
   return (
     <div className="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-10">
       <div className="space-y-6">
-        <Step number={1} title="Deliver to" error={shown.address}>
+        <Step number={1} title={CHECKOUT_COPY.deliverTo} error={shown.address}>
           {user ? (
             <AuthenticatedAddress
               selectedAddress={selectedAddress}
@@ -176,14 +178,14 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
           ) : (
             <div className="space-y-3">
               <p className="flex flex-wrap items-center gap-x-1 text-small text-muted-foreground">
-                Already have an account?
+                {CHECKOUT_COPY.haveAccount}
                 <Button
                   variant="link"
                   type="button"
                   onClick={() => openAuthSheet()}
                   className="min-h-10 items-center px-1 font-semibold text-foreground underline underline-offset-4"
                 >
-                  Sign in
+                  {CHECKOUT_COPY.signIn}
                 </Button>
               </p>
               <GuestAddress onAddressChange={handleGuestAddress} />
@@ -193,7 +195,7 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
 
         <Step
           number={2}
-          title={shippingGroups.length > 1 ? `Delivery · ${shippingGroups.length} parcels` : "Delivery"}
+          title={shippingGroups.length > 1 ? CHECKOUT_COPY.deliveryParcels(shippingGroups.length) : CHECKOUT_COPY.delivery}
           error={shown.delivery}
         >
           {selectedAddress ? (
@@ -202,14 +204,14 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
               <MultiShippingSection groups={shippingGroups} onRateSelect={selectRateForGroup} isLoading={isShippingLoading} />
             </>
           ) : (
-            <p className="text-small text-muted-foreground">Delivery options appear once you add an address.</p>
+            <p className="text-small text-muted-foreground">{CHECKOUT_COPY.deliveryAfterAddress}</p>
           )}
         </Step>
 
-        <Step number={3} title="Pay" error={paymentError}>
+        <Step number={3} title={CHECKOUT_COPY.pay} error={paymentError}>
           <p className="flex items-start gap-3 text-small text-muted-foreground">
             <Icon name="secure" size="md" tone="primary" />
-            Tap Pay to choose UPI, card, net banking or a wallet in Razorpay&apos;s secure window.
+            {CHECKOUT_COPY.payExplainer}
           </p>
         </Step>
       </div>
@@ -232,9 +234,9 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
           total={totals.grandTotal}
         />
         <ul className="grid grid-cols-3 gap-2 text-center text-caption text-muted-foreground">
-          <li className="flex flex-col items-center gap-1.5"><Icon name="secure" size="md" />Payments by Razorpay</li>
-          <li className="flex flex-col items-center gap-1.5"><Icon name="returns" size="md" />7-day returns</li>
-          <li className="flex flex-col items-center gap-1.5"><Icon name="help" size="md" />Help from Account</li>
+          <li className="flex flex-col items-center gap-1.5"><Icon name="secure" size="md" />{CHECKOUT_COPY.trustRazorpay}</li>
+          <li className="flex flex-col items-center gap-1.5"><Icon name="returns" size="md" />{CHECKOUT_COPY.trustReturns}</li>
+          <li className="flex flex-col items-center gap-1.5"><Icon name="help" size="md" />{CHECKOUT_COPY.trustHelp}</li>
         </ul>
       </div>
 

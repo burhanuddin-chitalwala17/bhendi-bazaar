@@ -26,6 +26,7 @@ import type { CropTransform } from "@/lib/image/crop-transform";
 import { formatDay, formatDuration } from "@/lib/format";
 import { describeUses, type MediaAssetDto, type MediaUseDto } from "@server/catalog/media-library.types";
 import type { Pagination } from "@server/shared/pagination";
+import { MEDIA_GRID_COPY } from "./media-library-copy";
 
 interface MediaLibraryGridProps {
   orgId: string;
@@ -36,25 +37,25 @@ interface MediaLibraryGridProps {
 }
 
 const SOURCE_LABELS: Record<MediaAssetDto["source"], string> = {
-  UPLOAD: "Uploaded",
-  DERIVED: "Made from another item",
-  EMBED: "Video link",
+  UPLOAD: MEDIA_GRID_COPY.sourceUpload,
+  DERIVED: MEDIA_GRID_COPY.sourceDerived,
+  EMBED: MEDIA_GRID_COPY.sourceEmbed,
 };
 
 const KIND_LABELS: Record<MediaAssetDto["kind"], string> = {
-  IMAGE: "Photo",
-  VIDEO_EMBED: "Video link",
-  VIDEO: "Video",
+  IMAGE: MEDIA_GRID_COPY.kindImage,
+  VIDEO_EMBED: MEDIA_GRID_COPY.kindEmbed,
+  VIDEO: MEDIA_GRID_COPY.kindVideo,
 };
 
 /** A hosted video's readiness, as the tile says it (video-hosting D7); nothing for a state with nothing to say. */
 const STATE_BADGES: Partial<Record<MediaAssetDto["state"], { label: string; variant: "outline" | "destructive" }>> = {
-  PROCESSING: { label: "Processing", variant: "outline" },
-  FAILED: { label: "Failed", variant: "destructive" },
+  PROCESSING: { label: MEDIA_GRID_COPY.stateProcessing, variant: "outline" },
+  FAILED: { label: MEDIA_GRID_COPY.stateFailed, variant: "destructive" },
 };
 
 const formatBytes = (bytes: number | null) =>
-  bytes === null ? "—" : bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  bytes === null ? "—" : bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 
 const isVideoKind = (kind: MediaAssetDto["kind"]) => kind !== "IMAGE";
 
@@ -106,7 +107,7 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
     }
     setOpen(saved);
     setPosterPickerOpen(false);
-    toast.success(posterAssetId === null ? "The video shows its own frame again" : "Poster changed");
+    toast.success(posterAssetId === null ? MEDIA_GRID_COPY.posterRestored : MEDIA_GRID_COPY.posterChanged);
     router.refresh();
   };
 
@@ -117,7 +118,7 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
     ({ asset, transform }: { asset: MediaAssetDto; transform: CropTransform }) =>
       orgMediaApiClient.crop(orgId, asset.id, transform),
     {
-      successMessage: "Cropped. The photo you started from is untouched.",
+      successMessage: MEDIA_GRID_COPY.cropped,
       onSuccess: () => {
         setReframing(null);
         setOpen(null);
@@ -129,19 +130,19 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
     void cropMutation.mutate({ asset, transform }).catch(() => {});
 
   const retireMutation = useMutation((asset: MediaAssetDto) => orgMediaApiClient.retire(orgId, asset.id), {
-    successMessage: "Image retired",
+    successMessage: MEDIA_GRID_COPY.retired,
   });
 
   const retire = async (asset: MediaAssetDto) => {
     if (detail === null) {
-      toast.error("Still checking where this image is used. Try again in a moment.");
+      toast.error(MEDIA_GRID_COPY.stillChecking);
       return;
     }
     if (uses.length > 0) {
-      toast.error(`This image is still used by ${describeUses(uses)}. Remove it there first.`);
+      toast.error(MEDIA_GRID_COPY.stillUsed(describeUses(uses)));
       return;
     }
-    if (!confirm("Retire this image? It leaves the library now and its file is deleted after thirty days.")) return;
+    if (!confirm(MEDIA_GRID_COPY.confirmRetire)) return;
     try {
       await retireMutation.mutate(asset);
     } catch {
@@ -161,10 +162,7 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
       <Card>
         <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
           <Icon name="photos" size="xl" tone="muted" />
-          <p className="text-sm text-muted-foreground">
-            Nothing here yet. Photos you upload to a product, a banner or your storefront appear
-            in this library.
-          </p>
+          <p className="text-sm text-muted-foreground">{MEDIA_GRID_COPY.empty}</p>
         </CardContent>
       </Card>
     );
@@ -172,9 +170,7 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">
-        {total} item{total === 1 ? "" : "s"}
-      </p>
+      <p className="text-xs text-muted-foreground">{MEDIA_GRID_COPY.itemCount(total)}</p>
       <ul className={PRODUCT_GRID_CLASSES}>
         {assets.map((asset) => (
           <li key={asset.id}>
@@ -183,15 +179,13 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
               variant="ghost"
               onClick={() => show(asset)}
               className="relative aspect-square h-auto w-full overflow-hidden rounded-card bg-muted p-0"
-              aria-label={isVideoKind(asset.kind) ? KIND_LABELS[asset.kind] : `Photo ${asset.width ?? "?"} by ${asset.height ?? "?"}`}
+              aria-label={isVideoKind(asset.kind) ? KIND_LABELS[asset.kind] : MEDIA_GRID_COPY.photoLabel(asset.width ?? "?", asset.height ?? "?")}
             >
               <MediaTile asset={asset} />
               {/* Only a count, and only where there is one: most of a library is used nowhere yet,
                   and a badge on all of it says nothing. The Usage filter is how they are found. */}
               {asset.uses > 0 && (
-                <Badge className="absolute right-1 top-1">
-                  {asset.uses} use{asset.uses === 1 ? "" : "s"}
-                </Badge>
+                <Badge className="absolute right-1 top-1">{MEDIA_GRID_COPY.useCount(asset.uses)}</Badge>
               )}
               {STATE_BADGES[asset.state] && (
                 <Badge className="absolute left-1 top-1" variant={STATE_BADGES[asset.state]?.variant}>
@@ -208,7 +202,7 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
         ))}
       </ul>
 
-      <LoadMore onMore={() => void loadMore()} done={done} loading={loading} error={error} count={assets.length} noun="items" />
+      <LoadMore onMore={() => void loadMore()} done={done} loading={loading} error={error} count={assets.length} noun={MEDIA_GRID_COPY.loadMoreNoun} />
 
       <Sheet open={open !== null} onOpenChange={(next) => !next && setOpen(null)}>
         <SheetContent side="adaptive">
@@ -222,13 +216,13 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                 }`}
               >
                 {open.kind === "VIDEO_EMBED" ? (
-                  <YouTubeEmbed ref_={open.ref} description={null} productName="this library" />
+                  <YouTubeEmbed ref_={open.ref} description={null} productName={MEDIA_GRID_COPY.libraryName} />
                 ) : open.kind === "VIDEO" && open.state === "READY" && open.renditions.length > 0 ? (
                   <VideoPlayer
                     poster={open.poster}
                     renditions={open.renditions}
                     durationMs={open.durationMs}
-                    title="this video"
+                    title={MEDIA_GRID_COPY.videoTitle}
                     sizes={LARGE_TILE_SIZES}
                   />
                 ) : (
@@ -239,14 +233,14 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" variant="outline" onClick={() => setPosterPickerOpen(true)} pending={isSavingPoster}>
                     {!isSavingPoster && <Icon name="photo" className="mr-2" />}
-                    Change poster
+                    {MEDIA_GRID_COPY.changePoster}
                   </Button>
                   {/* Only where there is a choice to undo: with no photograph standing in, this
                       would put back the frame that is already showing. */}
                   {open.posterChosen && (
                     <Button type="button" variant="ghost" onClick={() => void savePoster(open, null)} pending={isSavingPoster}>
                       {!isSavingPoster && <Icon name="undo" className="mr-2" />}
-                      Use the video&apos;s own frame
+                      {MEDIA_GRID_COPY.ownFrame}
                     </Button>
                   )}
                   <MediaLibraryPicker
@@ -254,8 +248,8 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                     open={isPosterPickerOpen}
                     onOpenChange={setPosterPickerOpen}
                     kinds={["IMAGE"]}
-                    title="Choose a poster"
-                    description="The photograph that stands in for this video until it plays. Tap the current one to go back to the video's own frame."
+                    title={MEDIA_GRID_COPY.choosePoster}
+                    description={MEDIA_GRID_COPY.choosePosterHint}
                     taken={new Set(open.poster ? [open.poster] : [])}
                     onPick={(photo) => void savePoster(open, photo.id)}
                     onUnpick={() => void savePoster(open, null)}
@@ -263,19 +257,19 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                 </div>
               )}
               <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                <dt className="text-muted-foreground">Size</dt>
+                <dt className="text-muted-foreground">{MEDIA_GRID_COPY.size}</dt>
                 <dd>{open.width && open.height ? `${open.width} × ${open.height}` : "—"}</dd>
-                <dt className="text-muted-foreground">File</dt>
+                <dt className="text-muted-foreground">{MEDIA_GRID_COPY.file}</dt>
                 <dd>{formatBytes(open.bytes)}{open.mimeType ? ` · ${open.mimeType.replace(/^(image|video)\//, "")}` : ""}</dd>
                 {open.durationMs !== null && (
                   <>
-                    <dt className="text-muted-foreground">Duration</dt>
+                    <dt className="text-muted-foreground">{MEDIA_GRID_COPY.duration}</dt>
                     <dd>{formatDuration(open.durationMs)}</dd>
                   </>
                 )}
                 {STATE_BADGES[open.state] && (
                   <>
-                    <dt className="text-muted-foreground">Status</dt>
+                    <dt className="text-muted-foreground">{MEDIA_GRID_COPY.status}</dt>
                     <dd>
                       {STATE_BADGES[open.state]?.label}
                       {/* The reason is what the org member acts on (spec R7): a limit named, or a file no decoder read. */}
@@ -283,11 +277,11 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                     </dd>
                   </>
                 )}
-                <dt className="text-muted-foreground">Added</dt>
+                <dt className="text-muted-foreground">{MEDIA_GRID_COPY.added}</dt>
                 <dd>{formatDay(open.createdAt)}</dd>
                 {open.retiredAt && (
                   <>
-                    <dt className="text-muted-foreground">Retired</dt>
+                    <dt className="text-muted-foreground">{MEDIA_GRID_COPY.retiredOn}</dt>
                     <dd>{formatDay(open.retiredAt)}</dd>
                   </>
                 )}
@@ -296,16 +290,16 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                   (spec R12): the reason is on the asset, not only in the audit trail. */}
               {open.retiredBy === "PLATFORM" && (
                 <p className="rounded-field bg-destructive/10 p-3 text-sm text-destructive">
-                  Taken down by Bhendi Bazaar
+                  {MEDIA_GRID_COPY.takenDown}
                   {open.retiredReason ? `: ${open.retiredReason}` : "."}
                 </p>
               )}
               <div className="space-y-1">
-                <h3 className="text-sm font-medium">Used by</h3>
+                <h3 className="text-sm font-medium">{MEDIA_GRID_COPY.usedBy}</h3>
                 {detail === null ? (
-                  <p className="text-sm text-muted-foreground">Looking…</p>
+                  <p className="text-sm text-muted-foreground">{MEDIA_GRID_COPY.looking}</p>
                 ) : uses.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nowhere. This can be retired.</p>
+                  <p className="text-sm text-muted-foreground">{MEDIA_GRID_COPY.nowhere}</p>
                 ) : (
                   <>
                     <Button
@@ -338,8 +332,8 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                   number here would expose the plumbing and read as something the shop had made. */}
               {open.kind !== "VIDEO" && open.derivedCount > 0 && (
                 <p className="text-sm text-muted-foreground">
-                  {open.derivedCount} picture{open.derivedCount === 1 ? " was" : "s were"} made from this one.
-                  {" "}It stays in storage for them even after it leaves the library.
+                  {MEDIA_GRID_COPY.derived(open.derivedCount)}
+                  {MEDIA_GRID_COPY.derivedKept}
                 </p>
               )}
 
@@ -349,17 +343,17 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                     <>
                       <Button type="button" variant="outline" onClick={() => setImproving(open)}>
                         <Icon name="enhance" className="mr-2" />
-                        Improve
+                        {MEDIA_GRID_COPY.improve}
                       </Button>
                       <Button type="button" variant="outline" onClick={() => setReframing(open)}>
                         <Icon name="crop" className="mr-2" />
-                        Crop
+                        {MEDIA_GRID_COPY.crop}
                       </Button>
                     </>
                   )}
                   <Button type="button" variant="outline" onClick={() => retire(open)} pending={isRetiring}>
                     {!isRetiring && <Icon name="archive" className="mr-2" />}
-                    {isRetiring ? "Retiring…" : "Retire"}
+                    {isRetiring ? MEDIA_GRID_COPY.retiring : MEDIA_GRID_COPY.retire}
                   </Button>
                 </div>
               )}
@@ -423,20 +417,20 @@ function MediaTile({ asset, large = false }: { asset: MediaAssetDto; large?: boo
 
 function UseLine({ use }: { use: MediaUseDto }) {
   const where: Record<MediaUseDto["kind"], string> = {
-    product: "Product",
-    category: "Category",
-    "storefront-logo": "Storefront",
-    "storefront-hero": "Storefront",
-    "storefront-collection": "Storefront",
-    "storefront-banner": "Storefront banner",
-    "home-banner": "Home banner",
-    "video-poster": "Video",
+    product: MEDIA_GRID_COPY.useProduct,
+    category: MEDIA_GRID_COPY.useCategory,
+    "storefront-logo": MEDIA_GRID_COPY.useStorefront,
+    "storefront-hero": MEDIA_GRID_COPY.useStorefront,
+    "storefront-collection": MEDIA_GRID_COPY.useStorefront,
+    "storefront-banner": MEDIA_GRID_COPY.useStorefrontBanner,
+    "home-banner": MEDIA_GRID_COPY.useHomeBanner,
+    "video-poster": MEDIA_GRID_COPY.useVideoPoster,
   };
   return (
     <span>
       <span className="text-muted-foreground">{where[use.kind]}: </span>
       {use.label}
-      {use.slot && <span className="text-muted-foreground"> · {use.slot} slot</span>}
+      {use.slot && <span className="text-muted-foreground">{MEDIA_GRID_COPY.slot(use.slot)}</span>}
     </span>
   );
 }

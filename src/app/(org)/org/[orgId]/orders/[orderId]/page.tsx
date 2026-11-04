@@ -8,6 +8,7 @@ import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
 import { ShopOrdersRefused } from "@/components/org/parcels/shop-orders-refused";
 import { shopScopeOrRefused } from "../shop-scope";
 import { PageHeader } from "@/components/shared/page-shell";
+import { ROUTES } from "@server/shared/routes";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -34,7 +35,7 @@ export default async function OrgOrderDetailPage({ params }: { params: Promise<{
     <div className="max-w-4xl space-y-4 pb-24 lg:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <PageHeader help="orders" title={order.code} />
-        <Link href={`/org/${orgId}/orders`} className="min-h-10 text-sm text-primary hover:underline" prefetch={false}>
+        <Link href={ROUTES.org.orders(orgId)} className="min-h-10 text-sm text-primary hover:underline" prefetch={false}>
           {SHOP_PARCEL_COPY.allOrders}
         </Link>
       </div>

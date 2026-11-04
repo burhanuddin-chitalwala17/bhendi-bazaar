@@ -4,6 +4,8 @@ import { ReviewSummary } from "@/components/product/review-summary";
 import { SectionHeader } from "../shared/SectionHeader";
 import { reviewsDAL } from "@/data-access-layer/reviews.dal";
 import type { Product } from "@/domain/product";
+import { PRODUCT_PAGE_COPY } from "./product-copy";
+import { REVIEWS_ACTION_COPY } from "@/components/product/product-copy";
 
 /**
  * What buyers said about this piece, and the form to add to it (product-reviews R1–R5).
@@ -25,11 +27,11 @@ export async function Reviews({ product }: { product: Product }) {
       className="space-y-4 rounded-xl border border-border/70 bg-card/80 p-4"
     >
       <SectionHeader
-        overline="Bazaar whispers"
-        title="Customer reviews"
+        overline={PRODUCT_PAGE_COPY.reviews.overline}
+        title={PRODUCT_PAGE_COPY.reviews.title}
         description={
           hasReviews
-            ? "What buyers say about fit, fabric and colour."
+            ? PRODUCT_PAGE_COPY.reviews.description
             : undefined
         }
       />
@@ -47,14 +49,13 @@ export async function Reviews({ product }: { product: Product }) {
       ) : (
         // R5: an empty panel tells a shopper nothing. This asks.
         <p className="text-small text-muted-foreground">
-          No reviews yet. If you have this piece, yours would be the first — how it
-          fits and how the fabric feels is what the next buyer is trying to find out.
+          {PRODUCT_PAGE_COPY.reviews.empty}
         </p>
       )}
 
       <div className="space-y-2">
         <h3 className="font-heading text-small font-semibold">
-          {hasReviews ? "Write a review" : "Be the first to review it"}
+          {hasReviews ? REVIEWS_ACTION_COPY.write : REVIEWS_ACTION_COPY.first}
         </h3>
         <ReviewForm productId={product.id} />
       </div>

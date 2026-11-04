@@ -18,20 +18,22 @@ import { ParcelTimeline } from "@/components/order/timeline/parcel-timeline";
 import { TIMELINE_READER } from "@/components/order/timeline/timeline-copy";
 import { orderHeadline } from "./order-headline";
 import { PageHeader } from "@/components/shared/page-shell";
+import { BUYER_COPY, ORDER_CLIENT_COPY } from "./order-copy";
+import { ROUTES } from "@server/shared/routes";
 
 const STATUS_LABELS: Record<string, { label: string; tone: StatusTone }> = {
-  [ORDER_STATUS.PENDING_PAYMENT]: { label: "Awaiting payment", tone: "warning" },
-  [ORDER_STATUS.CONFIRMED]: { label: "Confirmed", tone: "info" },
-  [ORDER_STATUS.PROCESSING]: { label: "Being packed", tone: "info" },
-  [ORDER_STATUS.PACKED]: { label: "Packed", tone: "info" },
-  [ORDER_STATUS.SHIPPED]: { label: "On its way", tone: "success" },
-  [ORDER_STATUS.DELIVERED]: { label: "Delivered", tone: "success" },
-  [ORDER_STATUS.CANCELLED]: { label: "Cancelled", tone: "neutral" },
-  [ORDER_STATUS.FAILED]: { label: "Payment failed", tone: "destructive" },
+  [ORDER_STATUS.PENDING_PAYMENT]: { label: ORDER_CLIENT_COPY.awaitingPayment, tone: "warning" },
+  [ORDER_STATUS.CONFIRMED]: { label: ORDER_CLIENT_COPY.confirmed, tone: "info" },
+  [ORDER_STATUS.PROCESSING]: { label: ORDER_CLIENT_COPY.beingPacked, tone: "info" },
+  [ORDER_STATUS.PACKED]: { label: ORDER_CLIENT_COPY.packed, tone: "info" },
+  [ORDER_STATUS.SHIPPED]: { label: ORDER_CLIENT_COPY.onItsWay, tone: "success" },
+  [ORDER_STATUS.DELIVERED]: { label: ORDER_CLIENT_COPY.delivered, tone: "success" },
+  [ORDER_STATUS.CANCELLED]: { label: ORDER_CLIENT_COPY.cancelled, tone: "neutral" },
+  [ORDER_STATUS.FAILED]: { label: ORDER_CLIENT_COPY.paymentFailed, tone: "destructive" },
 };
 
 /** A parcel's journey as four steps; the courier's finer states fold into the one they belong to. */
-export const PARCEL_STEPS = ["Packed", "Shipped", "Out for delivery", "Delivered"] as const;
+export const PARCEL_STEPS = [ORDER_CLIENT_COPY.packed, ORDER_CLIENT_COPY.shipped, ORDER_CLIENT_COPY.outDelivery, ORDER_CLIENT_COPY.delivered] as const;
 const STEP_OF: Record<string, number> = {
   [SHIPMENT_STATUS.PACKING]: -1,
   [SHIPMENT_STATUS.READY_FOR_PICKUP]: 0,
@@ -52,7 +54,7 @@ function ParcelProgress({ status }: { status: string }) {
   const reached = parcelStep(status);
   if (reached === null) return null;
   return (
-    <ol aria-label="Parcel progress" className="grid grid-cols-4 gap-1">
+    <ol aria-label={ORDER_CLIENT_COPY.parcelProgress} className="grid grid-cols-4 gap-1">
       {PARCEL_STEPS.map((label, i) => (
         <li key={label} aria-current={i === reached ? "step" : undefined} className="space-y-1.5">
           <span className={cn("block h-1 rounded-full", i <= reached ? "bg-primary" : "bg-muted")} />
@@ -136,8 +138,7 @@ function ShipmentCard({ shipment, timeline, cancel }: { shipment: Shipment; time
       {refundText && <p className="font-medium">{refundText}</p>}
       <details className="group">
         <summary className="min-h-10 cursor-pointer list-none py-2 text-caption font-medium text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            Every update <Icon name="expand" size="xs" />
+          <span className="inline-flex items-center gap-1">{ORDER_CLIENT_COPY.everyUpdate}<Icon name="expand" size="xs" />
           </span>
         </summary>
         <ParcelTimeline timeline={withRefund} reader={TIMELINE_READER.BUYER} />
@@ -159,12 +160,6 @@ function ShipmentCard({ shipment, timeline, cancel }: { shipment: Shipment; time
   );
 }
 
-/** order-fulfilment ux.md "buyer order". */
-const BUYER_COPY = {
-  arrivesBy: (day: string) => `Arrives by ${day}`,
-  track: "Track parcel",
-  parcels: (n: number) => `Arriving in ${n} parcels`,
-} as const;
 
 interface OrderClientProps {
   order: Order;
@@ -188,7 +183,7 @@ export function OrderClient({ order, timelines, cancelView, viewerOwns }: OrderC
     <div className="space-y-6">
       <PageHeader
         eyebrow={`Order ${order.code}`}
-        back={viewerOwns ? { href: "/orders", label: "Your orders" } : undefined}
+        back={viewerOwns ? { href: ROUTES.orders, label: ORDER_CLIENT_COPY.yourOrders } : undefined}
         actions={statusInfo && <StatusBadge tone={statusInfo.tone} dot>{statusInfo.label}</StatusBadge>}
         {...orderHeadline(order.status)}
       />
@@ -216,8 +211,8 @@ export function OrderClient({ order, timelines, cancelView, viewerOwns }: OrderC
           <OrderSummary order={order} showShare={true} />
           <div className="flex items-center gap-2 text-small text-muted-foreground">
             <Icon name="help" size="md" />
-            <span>Need help with this order?</span>
-            <ContactLauncher className="h-auto min-h-10 px-0 text-small font-medium text-primary hover:bg-transparent">Contact us</ContactLauncher>
+            <span>{ORDER_CLIENT_COPY.needHelpOrder}</span>
+            <ContactLauncher className="h-auto min-h-10 px-0 text-small font-medium text-primary hover:bg-transparent">{ORDER_CLIENT_COPY.contactUs}</ContactLauncher>
           </div>
         </div>
       </div>

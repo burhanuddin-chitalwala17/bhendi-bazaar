@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@/hooks/core/useMutation";
 import { workerJobsApiClient } from "@/components/dashboard/workerJobsApiClient";
+import { DASHBOARD_COPY } from "./dashboard-copy";
 
 /** The one action on the worker card: put every parked job back on the queue. */
 export function RedriveFailedJobsButton({ failed }: { failed: number }) {
@@ -19,7 +20,7 @@ export function RedriveFailedJobsButton({ failed }: { failed: number }) {
 
   return (
     <Button variant="outline" onClick={() => void redrive().catch(() => {})} disabled={busy || failed === 0}>
-      {busy ? "Re-queuing…" : "Re-run failed"}
+      {busy ? DASHBOARD_COPY.requeuing : DASHBOARD_COPY.rerunFailed}
     </Button>
   );
 }

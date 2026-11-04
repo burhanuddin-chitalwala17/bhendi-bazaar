@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/icon";
+import { CHANGE_PASSWORD_MODAL_COPY } from "./profile-copy";
 
 export function ChangePasswordModal() {
   const [open, setOpen] = useState(false);
@@ -58,22 +59,16 @@ export function ChangePasswordModal() {
           size="sm"
           className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
         >
-          <Icon name="key" size="xs" className="mr-1" />
-          Change Password
-        </Button>
+          <Icon name="key" size="xs" className="mr-1" />{CHANGE_PASSWORD_MODAL_COPY.changePassword}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Change Password</DialogTitle>
-          <DialogDescription>
-            Enter your current password and choose a new one.
-          </DialogDescription>
+          <DialogTitle>{CHANGE_PASSWORD_MODAL_COPY.changePassword}</DialogTitle>
+          <DialogDescription>{CHANGE_PASSWORD_MODAL_COPY.enterCurrentPasswordChoose}</DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label variant="eyebrow" htmlFor={`${id}-current`} className="text-xs">
-              Current Password
-            </Label>
+            <Label variant="eyebrow" htmlFor={`${id}-current`} className="text-xs">{CHANGE_PASSWORD_MODAL_COPY.currentPassword}</Label>
             <div className="relative">
               <Input
                 id={`${id}-current`}
@@ -89,9 +84,7 @@ export function ChangePasswordModal() {
           </div>
 
           <div className="space-y-2">
-            <Label variant="eyebrow" htmlFor={`${id}-new`} className="text-xs">
-              New Password
-            </Label>
+            <Label variant="eyebrow" htmlFor={`${id}-new`} className="text-xs">{CHANGE_PASSWORD_MODAL_COPY.newPassword}</Label>
             <Input
               id={`${id}-new`}
               type={showPasswords ? "text" : "password"}
@@ -102,15 +95,11 @@ export function ChangePasswordModal() {
                 {errors.newPassword.message}
               </p>
             )}
-            <p className="text-2xs text-muted-foreground">
-              At least 8 characters with uppercase, lowercase, and numbers
-            </p>
+            <p className="text-2xs text-muted-foreground">{CHANGE_PASSWORD_MODAL_COPY.least8CharactersUppercase}</p>
           </div>
 
           <div className="space-y-2">
-            <Label variant="eyebrow" htmlFor={`${id}-confirm`} className="text-xs">
-              Confirm New Password
-            </Label>
+            <Label variant="eyebrow" htmlFor={`${id}-confirm`} className="text-xs">{CHANGE_PASSWORD_MODAL_COPY.confirmNewPassword}</Label>
             <Input
               id={`${id}-confirm`}
               type={showPasswords ? "text" : "password"}
@@ -131,12 +120,10 @@ export function ChangePasswordModal() {
           >
             {showPasswords ? (
               <>
-                <Icon name="hide" size="sm" /> Hide passwords
-              </>
+                <Icon name="hide" size="sm" />{CHANGE_PASSWORD_MODAL_COPY.hidePasswords}</>
             ) : (
               <>
-                <Icon name="show" size="sm" /> Show passwords
-              </>
+                <Icon name="show" size="sm" />{CHANGE_PASSWORD_MODAL_COPY.showPasswords}</>
             )}
           </Button>
 
@@ -150,9 +137,7 @@ export function ChangePasswordModal() {
           )}
 
           {success && (
-            <p className="text-sm text-success bg-success/10 p-3 rounded-md">
-              Password changed successfully!
-            </p>
+            <p className="text-sm text-success bg-success/10 p-3 rounded-md">{CHANGE_PASSWORD_MODAL_COPY.passwordChangedSuccessfully}</p>
           )}
 
           <div className="flex gap-2">
@@ -161,11 +146,9 @@ export function ChangePasswordModal() {
               variant="outline"
               onClick={() => setOpen(false)}
               className="flex-1"
-            >
-              Cancel
-            </Button>
+            >{CHANGE_PASSWORD_MODAL_COPY.cancel}</Button>
             <Button type="submit" disabled={isSubmitting} className="flex-1">
-              {isSubmitting ? "Changing..." : "Change Password"}
+              {isSubmitting ? CHANGE_PASSWORD_MODAL_COPY.changing : CHANGE_PASSWORD_MODAL_COPY.changePassword}
             </Button>
           </div>
         </form>

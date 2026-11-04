@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "@/components/ui/icon";
+import { ROUTES } from "@server/shared/routes";
 
 import {
   Sheet,
@@ -16,6 +17,7 @@ import { SUPPORT_WHATSAPP } from "@/lib/config";
 import { SOCIAL_BRAND } from "@/lib/social-brand";
 import { whatsappSupportUrl } from "@/lib/support-contact";
 import { ContactMessageForm } from "@/components/support/contact-message-form";
+import { CONTACT_SHEET_COPY } from "./support-copy";
 
 type Step = "choices" | "message" | "sent";
 
@@ -41,16 +43,16 @@ const OPTION_ROW =
 
 const TITLES: Record<Step, { title: string; description: string }> = {
   choices: {
-    title: "Contact us",
-    description: "Chat with us on WhatsApp, or email us a message.",
+    title: CONTACT_SHEET_COPY.contactUs,
+    description: CONTACT_SHEET_COPY.chatUsWhatsappEmail,
   },
   message: {
-    title: "Send us a message",
-    description: "We will reply by email.",
+    title: CONTACT_SHEET_COPY.sendUsMessage,
+    description: CONTACT_SHEET_COPY.weWillReplyEmail,
   },
   sent: {
-    title: "Message sent",
-    description: "It is on its way to our inbox.",
+    title: CONTACT_SHEET_COPY.messageSent,
+    description: CONTACT_SHEET_COPY.wayOurInbox,
   },
 };
 
@@ -80,7 +82,7 @@ export function ContactSheet({
             <SheetDescription>{TITLES[step].description}</SheetDescription>
           </div>
           <SheetClose
-            aria-label="Close"
+            aria-label={CONTACT_SHEET_COPY.close}
             className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <Icon name="close" size="sm" />
@@ -100,7 +102,7 @@ export function ContactSheet({
                 <Icon name="message" size="md" />
               </span>
               <span className="min-w-0">
-                <span className="block text-sm font-semibold">WhatsApp</span>
+                <span className="block text-sm font-semibold">{CONTACT_SHEET_COPY.whatsapp}</span>
                 <span className="block text-2xs text-muted-foreground">
                   Chat on {SUPPORT_WHATSAPP.display} — fastest reply
                 </span>
@@ -115,27 +117,21 @@ export function ContactSheet({
             >
               <Icon name="email" size="md" tone="muted" />
               <span className="min-w-0">
-                <span className="block text-sm font-semibold">
-                  Send a message
-                </span>
-                <span className="block text-2xs text-muted-foreground">
-                  Email us a subject and message
-                </span>
+                <span className="block text-sm font-semibold">{CONTACT_SHEET_COPY.sendMessage}</span>
+                <span className="block text-2xs text-muted-foreground">{CONTACT_SHEET_COPY.emailUsSubjectMessage}</span>
               </span>
             </Button>
 
             {/* The footer that carries these links is hidden on a phone (store-policies D4). */}
             <Link
-              href="/policies"
+              href={ROUTES.policies}
               onClick={() => handleOpenChange(false)}
               className={OPTION_ROW}
             >
               <Icon name="file" size="md" tone="muted" />
               <span className="min-w-0">
-                <span className="block text-sm font-semibold">Store policies</span>
-                <span className="block text-2xs text-muted-foreground">
-                  Shipping, returns, refunds and privacy
-                </span>
+                <span className="block text-sm font-semibold">{CONTACT_SHEET_COPY.storePolicies}</span>
+                <span className="block text-2xs text-muted-foreground">{CONTACT_SHEET_COPY.shippingReturnsRefundsPrivacy}</span>
               </span>
             </Link>
           </div>
@@ -152,20 +148,13 @@ export function ContactSheet({
         {step === "sent" && (
           <div className="space-y-3 pt-1 text-sm">
             <p className="flex items-center gap-2 text-success">
-              <Icon name="success" size="md" />
-              Thank you — we have your message.
-            </p>
-            <p className="text-2xs text-muted-foreground">
-              We usually reply within a day. For something urgent, WhatsApp is
-              faster.
-            </p>
+              <Icon name="success" size="md" />{CONTACT_SHEET_COPY.thankWeHaveMessage}</p>
+            <p className="text-2xs text-muted-foreground">{CONTACT_SHEET_COPY.weUsuallyReplyWithin}</p>
             <Button
               type="button"
               onClick={() => handleOpenChange(false)}
               className="h-10 w-full rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
-            >
-              Close
-            </Button>
+            >{CONTACT_SHEET_COPY.close}</Button>
           </div>
         )}
       </SheetContent>

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { relativePath } from "./files";
+import { BULK_IMPORT_COPY } from "./bulk-copy";
 
 export type BulkImportStep = "pick" | "checking" | "report" | "uploading" | "creating" | "done";
 
@@ -32,7 +33,7 @@ export function useBulkImport<TReport extends { ok: boolean }>(
 
   const check = async () => {
     if (!sheet) {
-      toast.error("Choose the filled-in sheet first");
+      toast.error(BULK_IMPORT_COPY.chooseSheet);
       return;
     }
     setStep("checking");
@@ -40,7 +41,7 @@ export function useBulkImport<TReport extends { ok: boolean }>(
       setReport(await validate(sheet, providedPaths));
       setStep("report");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not check the sheet");
+      toast.error(error instanceof Error ? error.message : BULK_IMPORT_COPY.checkFailed);
       setStep("pick");
     }
   };
@@ -60,7 +61,7 @@ export function useBulkImport<TReport extends { ok: boolean }>(
       setUpdated(result.updated ?? 0);
       setStep("done");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
+      toast.error(error instanceof Error ? error.message : BULK_IMPORT_COPY.uploadFailed);
       setStep("report");
     }
   };

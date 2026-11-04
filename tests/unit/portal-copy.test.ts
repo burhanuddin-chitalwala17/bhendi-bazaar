@@ -93,7 +93,9 @@ describe("portal copy", () => {
 
   it('names the banner card "Banners", not "Promotions" (spec A7)', () => {
     const banners = visible("src/components/org/storefront-banners-manager.tsx");
-    expect(banners).toContain("<CardTitle>Banners</CardTitle>");
+    // The words live in the copy module (ADR-0067); the card reads its title from there.
+    expect(banners).toContain("<CardTitle>{BANNERS_COPY.title}</CardTitle>");
+    expect(visible("src/components/org/storefront-copy.ts")).toMatch(/export const BANNERS_COPY = \{[^}]*title: "Banners",/);
     expect(banners).not.toMatch(/\bPromotions?\b(?!Dialog)/);
   });
 

@@ -1,5 +1,6 @@
 import type { ParcelTimelineDto } from "@server/checkout/parcel-timeline";
 import { timelineLine, type TimelineReader } from "./timeline-copy";
+import { PARCEL_TIMELINE_COPY } from "./timeline-copy";
 
 /**
  * A parcel's timeline (order-fulfilment R7, D5): the same events for shop, buyer and admin, worded
@@ -19,7 +20,7 @@ export function ParcelTimeline({
     .filter((row): row is { entry: typeof row.entry; line: string } => row.line !== null);
   if (entries.length === 0) return null;
   return (
-    <ol className="space-y-2 border-l pl-4 text-sm" aria-label="Parcel timeline">
+    <ol className="space-y-2 border-l pl-4 text-sm" aria-label={PARCEL_TIMELINE_COPY.parcelTimeline}>
       {entries.map(({ entry, line }) => (
         <li key={`${entry.at}-${entry.kind}-${entry.status}`}>
           <p className="break-words">{line}</p>

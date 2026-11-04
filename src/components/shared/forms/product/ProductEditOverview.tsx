@@ -15,6 +15,8 @@ import { ProductSections, ReviewReadiness, type ProductForm, type ProductSection
 import { useProductSections } from "./useProductSections";
 import { FIELD_LABEL, FIELD_STEP, PRODUCT_STEPS, errorCountsByStep, formFieldsIn, type ProductStepKey } from "./product-steps";
 import { sectionSummary, willAsk } from "./edit-overview";
+import { PRODUCT_EDIT_OVERVIEW_COPY } from "./product-copy";
+import { PRODUCT_EDIT_OVERVIEW_SAVE_COPY } from "@/components/shared/forms/product/product-copy";
 
 /** Five cards (ux Edit overview); Review holds no fields, so a failed save never opens it. */
 const CARDS = PRODUCT_STEPS as ReadonlyArray<{ key: ProductStepKey; label: string }>;
@@ -45,7 +47,7 @@ interface ProductEditOverviewProps {
 
 /**
  * Editing a product (product-form R7): one card per section with a summary and its hints; a card
- * opens that section alone, and one "Save changes" saves the whole product.
+ * opens that section alone, and one PRODUCT_EDIT_OVERVIEW_SAVE_COPY.save saves the whole product.
  */
 export function ProductEditOverview({
   form,
@@ -63,7 +65,7 @@ export function ProductEditOverview({
   draft,
   conflict,
   kept,
-  saveLabel = "Save changes",
+  saveLabel = PRODUCT_EDIT_OVERVIEW_SAVE_COPY.save,
 }: ProductEditOverviewProps) {
   const [open, setOpen] = useState<ProductStepKey | null>(null);
   const {
@@ -126,8 +128,8 @@ export function ProductEditOverview({
 
       <div className="md:grid md:grid-cols-5 md:gap-6 lg:grid-cols-12">
         <div className={cn("space-y-3 md:col-span-2 lg:col-span-4", open && "hidden md:block")}>
-          <p className="text-sm text-muted-foreground">Tap a section to change it.</p>
-          <ul className="space-y-2" aria-label="Sections">
+          <p className="text-sm text-muted-foreground">{PRODUCT_EDIT_OVERVIEW_COPY.tapASectionToChange}</p>
+          <ul className="space-y-2" aria-label={PRODUCT_EDIT_OVERVIEW_COPY.sections}>
             {CARDS.map((section) => {
               const count = counts[section.key];
               const hint = section.key === "details" ? asking.map(willAsk).join(" · ") : "";
@@ -176,7 +178,7 @@ export function ProductEditOverview({
             <div className="flex items-center gap-2">
               <Button type="button" variant="ghost" size="sm" className="md:hidden" onClick={() => setOpen(null)}>
                 <Icon name="previous" />
-                All sections
+                {PRODUCT_EDIT_OVERVIEW_COPY.allSections}
               </Button>
               <h2 data-testid="section-title" className="text-lg font-semibold text-foreground">
                 {openLabel}
@@ -202,7 +204,7 @@ export function ProductEditOverview({
           />
           {open === "review" && (
             <section className="space-y-4">
-              <p className="text-sm text-muted-foreground">This is how buyers will see it.</p>
+              <p className="text-sm text-muted-foreground">{PRODUCT_EDIT_OVERVIEW_COPY.thisIsHowBuyersWill}</p>
               <div className="lg:hidden">{preview}</div>
               <ReviewReadiness
                 hints={hints}
@@ -214,7 +216,7 @@ export function ProductEditOverview({
           )}
         </div>
 
-        <aside className="hidden lg:col-span-3 lg:block" aria-label="Buyer preview">
+        <aside className="hidden lg:col-span-3 lg:block" aria-label={PRODUCT_EDIT_OVERVIEW_COPY.buyerPreview}>
           {preview}
         </aside>
       </div>
@@ -231,7 +233,7 @@ export function ProductEditOverview({
               void save();
             }}
           >
-            Try again
+            {PRODUCT_EDIT_OVERVIEW_COPY.tryAgain}
           </Button>
         </div>
       )}

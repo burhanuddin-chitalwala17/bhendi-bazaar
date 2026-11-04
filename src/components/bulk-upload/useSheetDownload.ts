@@ -4,15 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { bulkImportApiClient } from "./bulkImportApiClient";
 import { saveBlob } from "./files";
+import { SHEET_COPY } from "@/components/bulk-upload/bulk-copy";
+export { SHEET_COPY } from "@/components/bulk-upload/bulk-copy";
 
 export type SheetDownloadStatus = "idle" | "making" | "failed";
 
-export const SHEET_COPY = {
-  REFUSED: "Tick at least one thing you sell, so the sheet has the right columns.",
-  MAKING: "Making your sheet…",
-  DONE: "Sheet downloaded. Open it, fill it, then come back here.",
-  FAILED: "Couldn't make your sheet. Try again.",
-} as const;
 
 const SLOW_MS = 3000;
 const lastKey = (orgId: string) => `bb:bulk-sheet:last-downloaded:${orgId}`;

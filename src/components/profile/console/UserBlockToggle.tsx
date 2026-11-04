@@ -5,6 +5,7 @@ import { useMutation } from "@/hooks/core/useMutation";
 import { adminUserApiClient } from "@/components/profile/console/adminUserApiClient";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { USER_BLOCK_TOGGLE_COPY } from "./console-copy";
 
 interface Props {
   userId: string;
@@ -17,7 +18,7 @@ export function UserBlockToggle({ userId, isBlocked }: Props) {
   const { mutate: toggle, isLoading } = useMutation(
     () => adminUserApiClient.toggleBlockUser(userId, !isBlocked),
     {
-      successMessage: isBlocked ? "User unblocked" : "User blocked",
+      successMessage: isBlocked ? USER_BLOCK_TOGGLE_COPY.userUnblocked : USER_BLOCK_TOGGLE_COPY.userBlocked,
       onSuccess: () => router.refresh(),
     },
   );
@@ -32,14 +33,10 @@ export function UserBlockToggle({ userId, isBlocked }: Props) {
     >
       {isBlocked ? (
         <>
-          <Icon name="secure" />
-          Unblock user
-        </>
+          <Icon name="secure" />{USER_BLOCK_TOGGLE_COPY.unblockUser}</>
       ) : (
         <>
-          <Icon name="block" />
-          Block user
-        </>
+          <Icon name="block" />{USER_BLOCK_TOGGLE_COPY.blockUser}</>
       )}
     </Button>
   );

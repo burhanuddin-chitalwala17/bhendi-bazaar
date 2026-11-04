@@ -12,6 +12,8 @@ import { ProductBuyActions } from "@/components/product/product-buy-actions";
 import { ContactLauncher } from "@/components/support/contact-launcher";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { ROUTES } from "@server/shared/routes";
+import { PRODUCT_PAGE_COPY } from "./product-copy";
 
 const label = (key: string) => key.replace(/-/g, " ");
 
@@ -30,7 +32,7 @@ export function ProductDetails(product: Product) {
       <div className="space-y-2">
         {/* Who sells it, and the way to everything else they sell (org-storefront R5). */}
         <Link
-          href={`/store/${product.org.handle}`}
+          href={ROUTES.store(product.org.handle)}
           prefetch={false}
           className="inline-flex min-h-10 items-center gap-1 text-small font-medium text-primary md:min-h-0"
         >
@@ -41,7 +43,7 @@ export function ProductDetails(product: Product) {
           <h1 className="min-w-0 flex-1 font-heading text-headline font-semibold text-foreground">{product.name}</h1>
           <WishlistButton productId={product.id} className="shrink-0" />
           <ShareButton
-            url={`/product/${product.slug}`}
+            url={ROUTES.product(product.slug)}
             title={`${product.name} — Bhendi Bazaar`}
             text={`Look at this on Bhendi Bazaar: ${product.name}`}
             variant="ghost"
@@ -55,30 +57,30 @@ export function ProductDetails(product: Product) {
           <Link href="#reviews" className="inline-flex min-h-10 items-center gap-1.5 text-small md:min-h-0">
             <ReviewStars value={product.rating} count={product.reviewsCount} size="xs" />
             <span className="text-muted-foreground underline-offset-2 hover:underline">
-              {product.reviewsCount === 1 ? "1 review" : `${product.reviewsCount} reviews`}
+              {PRODUCT_PAGE_COPY.details.reviewCount(product.reviewsCount)}
             </span>
           </Link>
         ) : (
           <Link href="#reviews" className="inline-flex min-h-10 items-center text-small text-muted-foreground underline-offset-2 hover:underline md:min-h-0">
-            No reviews yet — write the first
+            {PRODUCT_PAGE_COPY.details.noReviews}
           </Link>
         )}
       </div>
 
       <div className="space-y-1">
         <PriceDisplay price={product.price} salePrice={product.salePrice} size="lg" />
-        <p className="text-caption text-muted-foreground">Inclusive of all taxes</p>
+        <p className="text-caption text-muted-foreground">{PRODUCT_PAGE_COPY.details.inclusiveOfTaxes}</p>
         <StockStatus stock={product.stock} lowStockThreshold={product.lowStockThreshold} variant="warn-only" />
       </div>
 
       {product.siblings && product.siblings.length > 1 && (
         <div className="space-y-2">
-          <p className="text-label uppercase text-muted-foreground">Also available</p>
+          <p className="text-label uppercase text-muted-foreground">{PRODUCT_PAGE_COPY.details.alsoAvailable}</p>
           <ul className="flex flex-wrap gap-2">
             {product.siblings.map((sibling) => (
               <li key={sibling.slug}>
                 <Link
-                  href={`/product/${sibling.slug}`}
+                  href={ROUTES.product(sibling.slug)}
                   prefetch={false}
                   aria-current={sibling.isCurrent ? "page" : undefined}
                   className={cn(
@@ -107,19 +109,19 @@ export function ProductDetails(product: Product) {
         )}
         <li className="flex min-h-12 items-center gap-3 text-small">
           <Icon name="secure" size="md" />
-          Pay by UPI, card, net banking or wallet
+          {PRODUCT_PAGE_COPY.details.payBy}
         </li>
         <li className="flex min-h-12 items-center gap-3 text-small">
           <Icon name="returns" size="md" />
-          <Link href="/policies#returns" prefetch={false} className="underline-offset-2 hover:underline">
-            Return within 7 days of delivery
+          <Link href={ROUTES.policy("returns")} prefetch={false} className="underline-offset-2 hover:underline">
+            {PRODUCT_PAGE_COPY.details.returns}
           </Link>
         </li>
       </ul>
 
       {(product.description || specs.length > 0) && (
         <div className="space-y-3">
-          <h2 className="font-heading text-title font-semibold">The cloth</h2>
+          <h2 className="font-heading text-title font-semibold">{PRODUCT_PAGE_COPY.details.heading}</h2>
           {product.description && <p className="whitespace-pre-line text-body text-muted-foreground">{product.description}</p>}
           {specs.length > 0 && (
             <dl className="grid grid-cols-1 gap-x-6 divide-y divide-border md:grid-cols-2 md:divide-y-0">
@@ -136,8 +138,8 @@ export function ProductDetails(product: Product) {
 
       <div className="flex items-center gap-3 text-small text-muted-foreground">
         <Icon name="help" size="md" />
-        <span>Questions about this piece?</span>
-        <ContactLauncher className="h-auto min-h-10 px-0 text-small font-medium text-primary hover:bg-transparent">Contact us</ContactLauncher>
+        <span>{PRODUCT_PAGE_COPY.details.questions}</span>
+        <ContactLauncher className="h-auto min-h-10 px-0 text-small font-medium text-primary hover:bg-transparent">{PRODUCT_PAGE_COPY.details.contactUs}</ContactLauncher>
       </div>
     </section>
   );

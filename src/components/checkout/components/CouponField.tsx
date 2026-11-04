@@ -15,12 +15,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/format";
 import type { OfferQuote } from "../hooks/useCheckoutOffers";
+import { COUPON_COPY } from "../checkout-copy";
 
 interface CouponFieldProps {
   quote: OfferQuote;
   appliedCode: string | null;
   isPricing: boolean;
-  onApply: (code: string) => Promise<OfferQuote>;
+  onApply(code: string): Promise<OfferQuote>;
   onClear: () => void;
   /** How many basket lines exist, so coverage can be stated as "2 of 3". */
   lineCount: number;
@@ -64,7 +65,7 @@ export function CouponField({
                 here is what stops "why was it only ₹100 off" reaching support. */}
             {covered > 0 && covered < lineCount && (
               <p className="mt-0.5 text-caption text-muted-foreground">
-                Covers {covered} of {lineCount} items
+                {COUPON_COPY.covers(covered, lineCount)}
               </p>
             )}
           </div>
@@ -73,7 +74,7 @@ export function CouponField({
             variant="ghost"
             size="sm"
             onClick={onClear}
-            aria-label={`Remove coupon ${appliedCode}`}
+            aria-label={COUPON_COPY.remove(appliedCode)}
           >
             <Icon name="close" size="sm" />
           </Button>
@@ -88,12 +89,12 @@ export function CouponField({
         <Input
           value={typed}
           onChange={(event) => setTyped(event.target.value)}
-          placeholder="Coupon code"
+          placeholder={COUPON_COPY.placeholder}
           // Codes are typed from a poster or a message; neither wants autocorrect.
           autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}
-          aria-label="Coupon code"
+          aria-label={COUPON_COPY.placeholder}
           className="uppercase"
         />
         <Button
@@ -101,7 +102,7 @@ export function CouponField({
           variant="outline"
           disabled={!typed.trim() || isPricing}
         >
-          {isPricing ? "Checking…" : "Apply"}
+          {isPricing ? COUPON_COPY.checking : COUPON_COPY.apply}
         </Button>
       </div>
 
@@ -110,7 +111,7 @@ export function CouponField({
         <p className="text-caption text-destructive">
           {quote.rejection.message}
           {quote.rejection.shortfallPaise !== undefined &&
-            ` Add ${formatCurrency(quote.rejection.shortfallPaise)} more of the items it covers.`}
+            COUPON_COPY.shortfall(formatCurrency(quote.rejection.shortfallPaise))}
         </p>
       )}
     </form>

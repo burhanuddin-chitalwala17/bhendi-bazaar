@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { rupeesToPaise } from "@/lib/format";
 import type { ProductMediaInput } from "@server/catalog/media";
+import { BUYER_PREVIEW_COPY } from "./product-copy";
 
 /**
  * The product as a buyer will see it, from the unsaved values (product-form R3, Q19). Display only:
@@ -38,7 +39,7 @@ export function BuyerPreview({
         {cover ? (
           <NextImage src={cover.ref} alt={name} fill sizes="(min-width: 1024px) 25vw, 100vw" className="object-contain" />
         ) : (
-          <span className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">No cover yet</span>
+          <span className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">{BUYER_PREVIEW_COPY.noCoverYet}</span>
         )}
       </div>
       {(photos.length > 1 || hasVideo) && (
@@ -50,7 +51,7 @@ export function BuyerPreview({
           ))}
           {hasVideo && (
             <span className="flex size-14 shrink-0 items-center justify-center rounded-field bg-muted">
-              <Icon name="video" size="md" tone="muted" label="Video" />
+              <Icon name="video" size="md" tone="muted" label={BUYER_PREVIEW_COPY.video} />
             </span>
           )}
         </div>
@@ -64,7 +65,7 @@ export function BuyerPreview({
           </p>
           {!expanded && description.length > 160 && (
             <Button type="button" variant="link" size="sm" className="px-0" onClick={() => setExpanded(true)}>
-              More
+              {BUYER_PREVIEW_COPY.more}
             </Button>
           )}
         </div>

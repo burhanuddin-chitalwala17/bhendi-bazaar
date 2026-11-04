@@ -15,6 +15,7 @@ import { LISTING_FIELD, type ListingField, type ReviewChangeDTO, type ReviewDTO,
 import type { ListingPublishInput } from "@/lib/validation/schemas/platform-listing.schema";
 import { listingsApiClient } from "./listingsApiClient";
 import { FIELD_NAME, LISTING, PUBLISH, rupees } from "./platform-listing-copy";
+import { ROUTES } from "@server/shared/routes";
 
 const PAGE = 20;
 const key = (listingId: string, field: ListingField) => `${listingId}:${field}`;
@@ -39,7 +40,7 @@ export function ReviewPublish({ orgId, review, single }: { orgId: string; review
     .filter((item) => item.fields.length > 0);
   const count = items.reduce((n, item) => n + item.fields.length, 0);
   const creating = review.listings.some((l) => l.creating);
-  const back = single && review.listings[0]?.productId ? `/org/${orgId}/products/${review.listings[0].productId}/listings/${review.channel}` : `/org/${orgId}/channels/${review.channel}/listings`;
+  const back = single && review.listings[0]?.productId ? ROUTES.org.productListing(orgId, review.listings[0].productId, review.channel) : ROUTES.org.channelListings(orgId, review.channel);
 
   const publish = useMutation((body: ListingPublishInput) => listingsApiClient.publish(orgId, review.channel, body), {
     showToast: false,
@@ -57,7 +58,7 @@ export function ReviewPublish({ orgId, review, single }: { orgId: string; review
       <div className="flex flex-col items-start gap-3 rounded-card border bg-card p-4 text-sm">
         <p>{PUBLISH.empty(review.label)}</p>
         <Button asChild variant="outline" size="sm" className="min-h-10">
-          <Link href={`/org/${orgId}/channels/${review.channel}/listings`}>{PUBLISH.backToListings}</Link>
+          <Link href={ROUTES.org.channelListings(orgId, review.channel)}>{PUBLISH.backToListings}</Link>
         </Button>
       </div>
     );

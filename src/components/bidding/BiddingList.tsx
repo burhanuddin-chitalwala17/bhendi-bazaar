@@ -5,6 +5,8 @@ import { BiddingPhaseBadge } from "@/components/bidding/BiddingPhaseBadge";
 import { CopyLinkButton } from "@/components/bidding/CopyLinkButton";
 import { CancelBiddingButton } from "@/components/bidding/CancelBiddingButton";
 import type { OrgBiddingSummary } from "@server/bidding/bidding.types";
+import { BIDDING_LIST_COPY } from "./bidding-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * An organisation's events.
@@ -22,9 +24,7 @@ export function BiddingList({
 }) {
   if (events.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Nothing up for bidding yet. Create one to get a link you can share.
-      </p>
+      <p className="text-sm text-muted-foreground">{BIDDING_LIST_COPY.nothingUpBiddingYet}</p>
     );
   }
 
@@ -57,7 +57,7 @@ export function BiddingList({
             <dl className="grid grid-cols-2 gap-2 text-2xs">
               <div>
                 <dt className="uppercase tracking-label text-muted-foreground">
-                  {event.phase === "SOLD" ? "Sold for" : "Highest bid"}
+                  {event.phase === "SOLD" ? BIDDING_LIST_COPY.soldFor : BIDDING_LIST_COPY.highestBid}
                 </dt>
                 <dd className="mt-0.5 text-sm font-semibold">
                   {event.soldAmountPaise !== null
@@ -68,9 +68,7 @@ export function BiddingList({
                 </dd>
               </div>
               <div>
-                <dt className="uppercase tracking-label text-muted-foreground">
-                  Bids
-                </dt>
+                <dt className="uppercase tracking-label text-muted-foreground">{BIDDING_LIST_COPY.bids}</dt>
                 <dd className="mt-0.5 text-sm font-semibold">
                   {event.bidCount}
                 </dd>
@@ -84,7 +82,7 @@ export function BiddingList({
             </p>
 
             <div className="mt-auto flex flex-wrap gap-2">
-              <CopyLinkButton path={`/bid/${event.slug}`} />
+              <CopyLinkButton path={ROUTES.bid(event.slug)} />
               {event.status === "OPEN" && (
                 <CancelBiddingButton
                   apiPath={`${apiPath}/${event.id}`}

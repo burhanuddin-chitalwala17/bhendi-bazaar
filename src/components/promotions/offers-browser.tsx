@@ -14,19 +14,20 @@ import {
   type OfferListResult,
   type OfferStatus,
 } from "@server/promotions/promotion.types";
+import { OFFERS_BROWSER_COPY } from "./promotions-copy";
 
 const STATUS_LABEL: Record<OfferStatus, string> = {
-  [OFFER_STATUS.ALL]: "All",
-  [OFFER_STATUS.LIVE]: "Live",
-  [OFFER_STATUS.SCHEDULED]: "Scheduled",
-  [OFFER_STATUS.ENDED]: "Ended",
-  [OFFER_STATUS.STOPPED]: "Stopped",
+  [OFFER_STATUS.ALL]: OFFERS_BROWSER_COPY.statusAll,
+  [OFFER_STATUS.LIVE]: OFFERS_BROWSER_COPY.statusLive,
+  [OFFER_STATUS.SCHEDULED]: OFFERS_BROWSER_COPY.statusScheduled,
+  [OFFER_STATUS.ENDED]: OFFERS_BROWSER_COPY.statusEnded,
+  [OFFER_STATUS.STOPPED]: OFFERS_BROWSER_COPY.statusStopped,
 };
 
 const KIND_LABEL: Record<OfferKind, string> = {
-  [OFFER_KIND.ALL]: "Every kind",
-  [OFFER_KIND.AUTOMATIC]: "Automatic",
-  [OFFER_KIND.CODE]: "Codes",
+  [OFFER_KIND.ALL]: OFFERS_BROWSER_COPY.kindAll,
+  [OFFER_KIND.AUTOMATIC]: OFFERS_BROWSER_COPY.kindAutomatic,
+  [OFFER_KIND.CODE]: OFFERS_BROWSER_COPY.kindCode,
 };
 
 /** The list's URL with some parameters changed; defaults are left out so a plain list is a plain URL. */
@@ -69,7 +70,7 @@ export function OffersBrowser({
   return (
     <div className="space-y-4">
       <PageTabs
-        label="Offer status"
+        label={OFFERS_BROWSER_COPY.statusTabs}
         current={query.status}
         tabs={Object.values(OFFER_STATUS).map((status) => ({
           key: status,
@@ -87,13 +88,13 @@ export function OffersBrowser({
           type="search"
           name="search"
           defaultValue={query.search}
-          placeholder="Search by name, code, product or SKU"
-          aria-label="Search offers"
+          placeholder={OFFERS_BROWSER_COPY.searchPlaceholder}
+          aria-label={OFFERS_BROWSER_COPY.searchLabel}
           className="md:flex-1"
         />
         <div className="flex gap-2">
           <div className="flex-1 md:w-40 md:flex-none">
-            <Select name="kind" defaultValue={query.kind} aria-label="Kind of offer">
+            <Select name="kind" defaultValue={query.kind} aria-label={OFFERS_BROWSER_COPY.kindLabel}>
               {Object.values(OFFER_KIND).map((kind) => (
                 <option key={kind} value={kind}>
                   {KIND_LABEL[kind]}
@@ -103,7 +104,7 @@ export function OffersBrowser({
           </div>
           <Button type="submit" variant="outline">
             <Icon name="search" size="sm" />
-            Search
+            {OFFERS_BROWSER_COPY.search}
           </Button>
         </div>
       </form>
@@ -115,28 +116,28 @@ export function OffersBrowser({
         apiPath={apiPath}
         empty={
           filtered
-            ? { title: "No offers match", description: "Try another word, or clear the filters.", action: { label: "Clear filters", href: basePath } }
-            : { title: "No offers yet", description: "An offer you create shows here.", action: { label: "New offer", href: newHref } }
+            ? { title: OFFERS_BROWSER_COPY.noMatchTitle, description: OFFERS_BROWSER_COPY.noMatchDescription, action: { label: OFFERS_BROWSER_COPY.clearFilters, href: basePath } }
+            : { title: OFFERS_BROWSER_COPY.emptyTitle, description: OFFERS_BROWSER_COPY.emptyDescription, action: { label: OFFERS_BROWSER_COPY.newOffer, href: newHref } }
         }
         footer={
           pagination.totalPages > 1 && (
-            <nav aria-label="Pages" className="flex items-center justify-between gap-2 border-t border-border px-4 py-2">
+            <nav aria-label={OFFERS_BROWSER_COPY.pages} className="flex items-center justify-between gap-2 border-t border-border px-4 py-2">
               <p className="text-small text-muted-foreground tabular-nums">
-                Page {pagination.page} of {pagination.totalPages} · {pagination.total} offers
+                {OFFERS_BROWSER_COPY.page(pagination.page, pagination.totalPages, pagination.total)}
               </p>
               <div className="flex gap-2">
                 {pagination.page > 1 && (
                   <Button asChild variant="outline" size="sm">
                     <Link href={offersHref(basePath, query, { page: pagination.page - 1 })} prefetch={false} scroll={false}>
                       <Icon name="previous" size="sm" />
-                      Previous
+                      {OFFERS_BROWSER_COPY.previous}
                     </Link>
                   </Button>
                 )}
                 {pagination.page < pagination.totalPages && (
                   <Button asChild variant="outline" size="sm">
                     <Link href={offersHref(basePath, query, { page: pagination.page + 1 })} prefetch={false} scroll={false}>
-                      Next
+                      {OFFERS_BROWSER_COPY.next}
                       <Icon name="next" size="sm" />
                     </Link>
                   </Button>

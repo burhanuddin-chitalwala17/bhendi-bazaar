@@ -1,6 +1,7 @@
 import { ReviewStars } from "@/components/product/review-stars";
 import type { BrandProof } from "@server/catalog/storefront.types";
 import { formatCount } from "@/lib/format";
+import { BRAND_PAGE_COPY } from "./brand-page-copy";
 
 /**
  * The compact stats under the tagline (brand-page R1, R3, R4): the rating with its count and
@@ -19,7 +20,7 @@ export function ProofStrip({ proof }: { proof: BrandProof | null }) {
   if (!rating && ordersFulfilled === null) return null;
 
   return (
-    <ul className="flex gap-2 sm:gap-3" aria-label="Why buyers trust this shop">
+    <ul className="flex gap-2 sm:gap-3" aria-label={BRAND_PAGE_COPY.proof}>
       {rating && (
         <li className="flex flex-1 flex-wrap items-center justify-center gap-x-1 gap-y-0.5 rounded-card border border-border bg-card px-3 py-2">
           <ReviewStars value={rating.average} count={rating.count} />

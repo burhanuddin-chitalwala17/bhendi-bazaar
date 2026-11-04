@@ -42,3 +42,22 @@ export function causeLabel(cause: RefundCause, cancelledBy: ParcelActor | null):
 /** The payment in Razorpay's dashboard, where the admin checks before trying again. */
 export const razorpayPaymentUrl = (paymentId: string | null) =>
   paymentId ? `https://dashboard.razorpay.com/app/payments/${encodeURIComponent(paymentId)}` : "https://dashboard.razorpay.com/app/refunds";
+
+export const REFUND_LIST_COPY = {
+  refunds: "Refunds",
+  started: "Started",
+  unconfirmed: "Unconfirmed",
+  refused: "Refused",
+  owed: "Owed",
+  refundAppearsHereWhen: "A refund appears here when a paid parcel is cancelled, lost, damaged or returned.",
+  refund: "Refund",
+  parcel: "Parcel",
+  why: "Why",
+  order: "Order",
+  status: "Status",
+  detail: "Detail",
+  action: "Action",
+} as const;
+
+export const START_REFUND_COPY = {
+} as const;

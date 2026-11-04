@@ -15,6 +15,7 @@ import { Icon } from "@/components/ui/icon";
 import { ErrorState } from "@/components/shared/states/ErrorState";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { ORG_CONSOLE_COPY } from "./org-console-copy";
 
 export function OrgsContainer() {
   const [filters, setFilters] = useState<OrgListFilters>({
@@ -105,13 +106,13 @@ export function OrgsContainer() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Shops"
-        description={`${pagination.total} ${pagination.total === 1 ? "shop" : "shops"} on the platform`}
+        title={ORG_CONSOLE_COPY.title}
+        description={ORG_CONSOLE_COPY.count(pagination.total)}
         actions={
           <>
             <Button variant="outline" onClick={() => refetch()} pending={loading}>
               <Icon name="refresh" />
-              Refresh
+              {ORG_CONSOLE_COPY.refresh}
             </Button>
             <Button
               variant="default"
@@ -122,7 +123,7 @@ export function OrgsContainer() {
               }}
             >
               <Icon name="add" />
-              Add shop
+              {ORG_CONSOLE_COPY.add}
             </Button>
           </>
         }
@@ -139,8 +140,8 @@ export function OrgsContainer() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Search by name, code, email or city…"
-                aria-label="Search shops"
+                placeholder={ORG_CONSOLE_COPY.searchPlaceholder}
+                aria-label={ORG_CONSOLE_COPY.searchLabel}
                 className="flex-1"
               />
               <Button
@@ -148,7 +149,7 @@ export function OrgsContainer() {
                 onClick={handleSearch}
               >
                 <Icon name="search" />
-                Search
+                {ORG_CONSOLE_COPY.search}
               </Button>
             </div>
           </div>
@@ -162,16 +163,16 @@ export function OrgsContainer() {
               )
             }
           >
-            <option value="all">All statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="all">{ORG_CONSOLE_COPY.allStatuses}</option>
+            <option value="active">{ORG_CONSOLE_COPY.active}</option>
+            <option value="inactive">{ORG_CONSOLE_COPY.inactive}</option>
           </Select>
         </div>
       </div>
 
       {error && (
         <ErrorState
-          title="Shops didn't load"
+          title={ORG_CONSOLE_COPY.failed}
           description={error}
           onRetry={() => void refetch()}
         />

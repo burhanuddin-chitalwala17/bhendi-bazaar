@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ROUTES } from "@server/shared/routes";
 
 import type { PickupQueueRow, PickupQueueTab } from "@server/checkout/pickup-queue.types";
 import { PICKUP_QUEUE_TAB } from "@server/checkout/pickup-queue.types";
@@ -10,6 +11,7 @@ import { ResourceList } from "@/components/shared/resource-list";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { PickupActions } from "./pickup-actions";
 import { QUEUE_COPY, READY_AMBER_HOURS, parcelOf, pickupDue, pickupsHref, readyFor, waitingFor } from "./pickups-copy";
+import { PICKUP_QUEUE_LIST_COPY } from "./pickups-copy";
 
 /** ux.md "admin pickups", Ready and Booked: rows on phone and tablet, a table at `lg:`. Oldest first. */
 export function PickupQueueList({
@@ -27,21 +29,21 @@ export function PickupQueueList({
 
   return (
     <ResourceList
-      label={tab === PICKUP_QUEUE_TAB.READY ? "Parcels ready to book" : "Booked pickups"}
+      label={tab === PICKUP_QUEUE_TAB.READY ? PICKUP_QUEUE_LIST_COPY.parcelsReadyBook : PICKUP_QUEUE_LIST_COPY.bookedPickups}
       rows={rows}
       rowKey={(row) => row.shipmentId}
       tableFrom="lg"
-      empty={{ title: "Nothing waiting", description: QUEUE_COPY.empty }}
+      empty={{ title: PICKUP_QUEUE_LIST_COPY.nothingWaiting, description: QUEUE_COPY.empty }}
       columns={[
         {
           key: "parcel",
-          label: "Parcel",
+          label: PICKUP_QUEUE_LIST_COPY.parcel,
           phone: "title",
           cell: (row) => {
             const of = parcelOf(row.parcelCode, row.parcelsInOrder);
             return (
               <>
-                <Link href={`/admin/orders/${row.orderId}`} prefetch={false} className="font-mono text-primary hover:underline">
+                <Link href={ROUTES.admin.order(row.orderId)} prefetch={false} className="font-mono text-primary hover:underline">
                   {row.parcelCode}
                 </Link>
                 {of && <span className="font-normal text-muted-foreground"> · {of}</span>}
@@ -51,7 +53,7 @@ export function PickupQueueList({
         },
         {
           key: "address",
-          label: "Pickup address",
+          label: PICKUP_QUEUE_LIST_COPY.pickupAddress,
           phone: "meta",
           cell: (row) => (
             <span className="whitespace-normal">
@@ -69,7 +71,7 @@ export function PickupQueueList({
         },
         {
           key: "when",
-          label: tab === PICKUP_QUEUE_TAB.BOOKED ? "Booking" : "Waiting",
+          label: tab === PICKUP_QUEUE_TAB.BOOKED ? PICKUP_QUEUE_LIST_COPY.booking : PICKUP_QUEUE_LIST_COPY.waiting,
           cell: (row) => {
             if (tab === PICKUP_QUEUE_TAB.READY) {
               const hours = row.readyHours ?? 0;
@@ -97,7 +99,7 @@ export function PickupQueueList({
         },
         {
           key: "actions",
-          label: "Action",
+          label: PICKUP_QUEUE_LIST_COPY.action,
           align: "end",
           phone: "trailing",
           cell: (row) => <PickupActions parcel={{ ...row, status, pickupDay: row.pickupDay }} />,

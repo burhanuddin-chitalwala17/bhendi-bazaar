@@ -12,6 +12,8 @@ import type { AdminCategory } from "@/domain/admin";
 import { productFamilyService } from "@server/listing/product-family.service";
 import { orgChannelService } from "@server/listing/org-channel.service";
 import { orgAddressService } from "@server/catalog/org.address.service";
+import { ADMIN_PRODUCTS_COPY } from "../../products-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** The Bhendi Bazaar team editing a shop's product in the shop's own form (product-form R10, D12). */
 export default async function AdminEditProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -19,12 +21,12 @@ export default async function AdminEditProductPage({ params }: { params: Promise
   const product = await adminProductsDAL.getProductById(id);
   if (!product) notFound();
   const orgId = product.org.id;
-  const back = `/admin/products/${id}`;
+  const back = ROUTES.admin.product(id);
 
   if (product.archivedAt) {
     return (
       <PageShell>
-        <PageHeader back={{ href: back, label: "Product" }} title={`Edit for shop: ${product.name}`} />
+        <PageHeader back={{ href: back, label: ADMIN_PRODUCTS_COPY.back }} title={ADMIN_PRODUCTS_COPY.editTitle(product.name)} />
         <ArchivedNotice productId={id} />
       </PageShell>
     );

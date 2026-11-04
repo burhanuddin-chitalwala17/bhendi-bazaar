@@ -3,6 +3,7 @@ import { Icon } from "@/components/ui/icon";
 import { APP_NAME } from "@/lib/config";
 import { RETURNS_PRESET_LABEL } from "@server/catalog/shop-details.types";
 import type { PoliciesSlice } from "./sections";
+import { BRAND_PAGE_COPY } from "./brand-page-copy";
 
 /**
  * The shop's delivery and returns terms, in a collapsed disclosure: a stranger reads them
@@ -17,7 +18,7 @@ export function ShopPolicies({ name, preset, note }: PoliciesSlice) {
     <details className="group rounded-card border border-border bg-card">
       {/* min-h-11 keeps the tap target past 40px on a phone (ADR-0015). */}
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-heading text-base font-semibold [&::-webkit-details-marker]:hidden">
-        This shop&apos;s terms
+        {BRAND_PAGE_COPY.terms}
         <span className="text-muted-foreground transition-transform duration-fast group-open:rotate-180">
           <Icon name="expand" size="sm" />
         </span>
@@ -27,7 +28,7 @@ export function ShopPolicies({ name, preset, note }: PoliciesSlice) {
           Set by {name}. Payment and fraud protection are {APP_NAME}&apos;s.
         </p>
         <div>
-          <h3 className="text-sm font-medium">Returns</h3>
+          <h3 className="text-sm font-medium">{BRAND_PAGE_COPY.returns}</h3>
           <p className="text-sm text-muted-foreground">{RETURNS_PRESET_LABEL[preset]}</p>
         </div>
         {note && (

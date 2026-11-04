@@ -27,6 +27,8 @@ import { PageShell } from "@/components/shared/page-shell";
 import { BidPanel } from "@/components/bidding/BidPanel";
 import { BidCountdown } from "@/components/bidding/BidCountdown";
 import { ShareButton } from "@/components/shared/ShareButton";
+import { BID_PAGE_COPY } from "./bid-page-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** Metadata and the page share one read (the product page's convention). */
 const loadEvent = cache(async (slug: string) => {
@@ -47,27 +49,27 @@ export async function generateMetadata({
   const event = await loadEvent(slug);
   if (!event) return {};
 
-  const url = `${appUrl()}/bid/${slug}`;
+  const url = `${appUrl()}${ROUTES.bid(slug)}`;
   const price =
     event.highestBidPaise !== null
-      ? `Currently at ${formatCurrency(event.highestBidPaise)}`
-      : `Opening at ${formatCurrency(event.startingBidPaise)}`;
+      ? BID_PAGE_COPY.currentlyAt(formatCurrency(event.highestBidPaise))
+      : BID_PAGE_COPY.openingAt(formatCurrency(event.startingBidPaise));
   const description =
     event.phase === "LIVE"
-      ? `${price} · bidding closes ${absoluteWhen(event.endAt)}`
+      ? BID_PAGE_COPY.liveDescription(price, absoluteWhen(event.endAt))
       : event.phase === "SCHEDULED"
-        ? `Bidding opens ${absoluteWhen(event.startAt)}`
-        : "Bidding has closed on this item.";
+        ? BID_PAGE_COPY.opensDescription(absoluteWhen(event.startAt))
+        : BID_PAGE_COPY.closedDescription;
 
   return {
-    title: `${event.product.name} — live bidding`,
+    title: BID_PAGE_COPY.metaTitle(event.product.name),
     description,
     alternates: { canonical: url },
     openGraph: {
       type: "website",
       url,
       siteName: APP_NAME,
-      title: `${event.product.name} — live bidding`,
+      title: BID_PAGE_COPY.metaTitle(event.product.name),
       description,
     },
     twitter: {
@@ -108,7 +110,7 @@ export default async function BiddingPage({
               preload
             />
             <StatusBadge tone={event.phase === "LIVE" ? "success" : event.phase === "SCHEDULED" ? "info" : "neutral"} dot className="absolute left-3 top-3">
-              {event.phase === "LIVE" ? "Live bidding" : event.phase === "SCHEDULED" ? "Bidding soon" : "Bidding closed"}
+              {event.phase === "LIVE" ? BID_PAGE_COPY.live : event.phase === "SCHEDULED" ? BID_PAGE_COPY.soon : BID_PAGE_COPY.closed}
             </StatusBadge>
           </div>
         </div>
@@ -120,9 +122,9 @@ export default async function BiddingPage({
                 {event.product.name}
               </h1>
               <ShareButton
-                url={`/bid/${slug}`}
-                title={`${event.product.name} — bidding on ${APP_NAME}`}
-                text={`Bidding is open on ${event.product.name}`}
+                url={ROUTES.bid(slug)}
+                title={BID_PAGE_COPY.shareTitle(event.product.name, APP_NAME)}
+                text={BID_PAGE_COPY.shareText(event.product.name)}
                 variant="ghost"
                 size="lg"
                 shape="icon"
@@ -130,7 +132,7 @@ export default async function BiddingPage({
             </div>
             {/* R20: what the contest is against. */}
             <p className="text-small text-muted-foreground">
-              Usually {formatCurrency(event.product.referencePricePaise)}
+              {BID_PAGE_COPY.usually(formatCurrency(event.product.referencePricePaise))}
             </p>
           </div>
 
@@ -153,18 +155,17 @@ export default async function BiddingPage({
           {event.phase === "SCHEDULED" && (
             <div className="space-y-3 rounded-card border border-border bg-card p-4">
               <p className="text-label uppercase text-muted-foreground">
-                Bidding opens
+                {BID_PAGE_COPY.opensLabel}
               </p>
               <p className="font-heading text-headline font-semibold">
                 {absoluteWhen(event.startAt)}
               </p>
               <p className="text-small text-muted-foreground">
-                Opening bid {formatCurrency(event.startingBidPaise)}. Come back
-                then — or share this link with someone who will want it.
+                {BID_PAGE_COPY.openingBid(formatCurrency(event.startingBidPaise))}
               </p>
               <p className="text-small font-medium tabular-nums">
                 <span className="text-label uppercase text-muted-foreground">
-                  Opens in{" "}
+                  {BID_PAGE_COPY.opensIn}{" "}
                 </span>
                 <BidCountdown
                   endAt={event.startAt.toISOString()}
@@ -177,37 +178,36 @@ export default async function BiddingPage({
           {isOver && (
             <div className="space-y-3 rounded-card border border-border bg-card p-4">
               <p className="text-label uppercase text-muted-foreground">
-                Bidding has closed
+                {BID_PAGE_COPY.closedLabel}
               </p>
               {event.soldAmountPaise !== null ? (
                 <p className="font-heading text-3xl font-bold">
-                  Sold for {formatCurrency(event.soldAmountPaise)}
+                  {BID_PAGE_COPY.soldFor(formatCurrency(event.soldAmountPaise))}
                 </p>
               ) : event.highestBidPaise !== null ? (
                 <p className="font-heading text-3xl font-bold">
-                  Finished at {formatCurrency(event.highestBidPaise)}
+                  {BID_PAGE_COPY.finishedAt(formatCurrency(event.highestBidPaise))}
                 </p>
               ) : (
                 <p className="text-small text-muted-foreground">
-                  This one closed without any bids.
+                  {BID_PAGE_COPY.noBids}
                 </p>
               )}
               <p className="text-small text-muted-foreground">
                 {event.phase === "CANCELLED"
-                  ? "This event was called off."
-                  : `${event.bidCount} bid${event.bidCount === 1 ? "" : "s"} were placed.`}
+                  ? BID_PAGE_COPY.calledOff
+                  : BID_PAGE_COPY.bidsPlaced(event.bidCount)}
               </p>
               <Button asChild variant="outline" className="w-full">
-                <Link href={`/product/${event.product.slug}`}>
-                  See this item in the shop
+                <Link href={ROUTES.product(event.product.slug)}>
+                  {BID_PAGE_COPY.seeInShop}
                 </Link>
               </Button>
             </div>
           )}
 
           <p className="text-2xs leading-relaxed text-muted-foreground">
-            The highest bidder is contacted directly once bidding closes. Bids
-            are binding offers; who is leading is never shown, only the amount.
+            {BID_PAGE_COPY.howItWorks}
           </p>
         </div>
       </div>

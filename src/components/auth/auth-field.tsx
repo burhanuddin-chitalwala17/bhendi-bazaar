@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { AUTH_COPY } from "./auth-copy";
 
 /** Label, control and message for one auth form field. */
 export function AuthField({
@@ -33,7 +34,7 @@ export function OrDivider() {
     <div className="flex items-center gap-2 pt-2">
       <span className="h-px flex-1 bg-border/70" />
       <span className="text-2xs uppercase tracking-eyebrow text-muted-foreground">
-        or
+        {AUTH_COPY.or}
       </span>
       <span className="h-px flex-1 bg-border/70" />
     </div>

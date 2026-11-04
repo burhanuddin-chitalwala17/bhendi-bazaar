@@ -11,6 +11,7 @@ import { EmptyState } from "../shared/states/EmptyState";
 import { LoadingSkeleton } from "../shared/states/LoadingSkeleton";
 import { SectionHeader } from "../shared/SectionHeader";
 import { Icon } from "@/components/ui/icon";
+import { ADDRESSES_SECTION_COPY } from "./profile-copy";
 
 interface AddressesSectionProps {
   addresses: DeliveryAddress[];
@@ -30,7 +31,7 @@ const EMPTY_ADDRESS: DeliveryAddress = {
   city: "",
   state: "",
   pincode: "",
-  country: "India",
+  country: ADDRESSES_SECTION_COPY.india,
   label: "",
 };
 
@@ -71,7 +72,7 @@ export function AddressesSection({
   }
 
   async function handleDelete(addressId: string) {
-    if (!confirm("Are you sure you want to delete this address?")) {
+    if (!confirm(ADDRESSES_SECTION_COPY.sureWantDeleteAddress)) {
       return;
     }
     await onDeleteAddress(addressId);
@@ -80,7 +81,7 @@ export function AddressesSection({
 
   if (loading) {
     return (
-      <div role="status" aria-label="Loading your addresses">
+      <div role="status" aria-label={ADDRESSES_SECTION_COPY.loadingAddresses}>
         <SkeletonRows count={3} thumbnail={false} />
       </div>
     );
@@ -93,8 +94,8 @@ export function AddressesSection({
           <div className="flex items-center justify-between gap-3">
             <div>
               <SectionHeader
-                overline="Addresses"
-                title="Manage your delivery locations and contact details."
+                overline={ADDRESSES_SECTION_COPY.addresses}
+                title={ADDRESSES_SECTION_COPY.manageDeliveryLocationsContact}
               />
             </div>
             <Button
@@ -112,8 +113,8 @@ export function AddressesSection({
         <CardContent className="space-y-3 pt-4">
           {!loading && !hasAddresses && (
             <EmptyState
-              title="You don't have any saved addresses yet"
-              description="Add one to speed up checkout."
+              title={ADDRESSES_SECTION_COPY.donTHaveAny}
+              description={ADDRESSES_SECTION_COPY.addOneSpeedUp}
             />
           )}
           {loading && <LoadingSkeleton count={3} />}

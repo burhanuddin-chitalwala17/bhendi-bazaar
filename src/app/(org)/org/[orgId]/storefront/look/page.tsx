@@ -12,8 +12,10 @@ import { shareShopFor } from "@/data-access-layer/org/share-shop.dal";
 import { requireOrgMember } from "@/lib/org-auth";
 import { storefrontLookService } from "@server/catalog/storefront-look.service";
 import { NotFoundError } from "@server/shared/domain-error";
+import { ROUTES } from "@server/shared/routes";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
-export const metadata = { title: "Your shop's look", robots: { index: false, follow: false } };
+export const metadata = { title: ORG_PAGE_TITLES.look, robots: { index: false, follow: false } };
 
 /**
  * The look picker (storefront-themes ux.md; D11, D12): four themes previewed on the shop's own
@@ -23,7 +25,7 @@ export const metadata = { title: "Your shop's look", robots: { index: false, fol
 export default async function LookPickerPage({ params }: { params: Promise<{ orgId: string }> }) {
   const { orgId } = await params;
   const scope = await requireOrgMember(orgId);
-  const back = `/org/${scope.orgId}/storefront`;
+  const back = ROUTES.org.storefront(scope.orgId);
 
   if (scope.role !== OrgRole.OWNER) {
     return (
@@ -56,7 +58,7 @@ export default async function LookPickerPage({ params }: { params: Promise<{ org
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-card p-4">
           <p className="text-sm text-foreground">{SAMPLE_GOODS_NOTE}</p>
           <Button asChild className="min-h-11">
-            <Link prefetch={false} href={`/org/${scope.orgId}/products/new`}>{LOOK_COPY.addProduct}</Link>
+            <Link prefetch={false} href={ROUTES.org.newProduct(scope.orgId)}>{LOOK_COPY.addProduct}</Link>
           </Button>
         </div>
       )}

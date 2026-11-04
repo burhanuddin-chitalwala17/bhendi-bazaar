@@ -3,6 +3,7 @@ import { Icon } from "@/components/ui/icon";
 import { workerStatus, type WorkerStatus } from "@server/shared/jobs";
 import { RedriveFailedJobsButton } from "./redrive-failed-jobs-button";
 import { WorkerJobsList } from "./worker-jobs-list";
+import { DASHBOARD_COPY } from "./dashboard-copy";
 
 /** A commit hash reads as seven characters; anything else, a tag or "dev", is shown whole. */
 function shortVersion(version: string): string {
@@ -37,10 +38,9 @@ export async function WorkerStatusCard() {
         <CardContent className="flex items-center gap-4 pt-5">
           <Icon name="warning" size="lg" tone="destructive" />
           <div className="min-w-0">
-            <p className="text-small font-medium text-foreground">Worker</p>
+            <p className="text-small font-medium text-foreground">{DASHBOARD_COPY.worker}</p>
             <p className="text-small text-destructive">
-              Status unavailable — see the server log. Usually the deployment is missing
-              APP_ENV.
+              {DASHBOARD_COPY.workerUnavailable}
             </p>
           </div>
         </CardContent>

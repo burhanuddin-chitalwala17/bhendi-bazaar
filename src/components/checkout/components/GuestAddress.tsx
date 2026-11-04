@@ -11,6 +11,7 @@ import {
   phoneSchema,
   postalCodeSchema,
 } from "@/lib/validation/schemas/common.schemas";
+import { ADDRESS_PICKER_COPY } from "../checkout-copy";
 
 export const guestAddressSchema = z.object({
   id: z.string(),
@@ -106,7 +107,7 @@ export function GuestAddress({
     <div className="space-y-3">
       {/* A caption over a group of controls, not a label for one of them. */}
       <span className="text-caption font-medium uppercase tracking-eyebrow text-muted-foreground/80">
-        Delivery Address
+        {ADDRESS_PICKER_COPY.guestCaption}
       </span>
 
       <div className="rounded-card border border-border/70 bg-card/80 p-4">

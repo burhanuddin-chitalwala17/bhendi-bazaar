@@ -17,6 +17,7 @@ import { orgLocationsApiClient } from "@/components/org/orgLocationsApiClient";
 import type { OrgLocation } from "@server/catalog/org.address.types";
 import { LocationForm } from "@/components/org/location-form";
 import { formatPhone } from "@server/shared/phone";
+import { LOCATIONS_COPY } from "./locations-copy";
 
 interface LocationsManagerProps {
   orgId: string;
@@ -47,7 +48,7 @@ export function LocationsManager({ orgId, locations, returnTo = null }: Location
 
   const { mutate: removeLocation } = useMutation(
     (locationId: string) => orgLocationsApiClient.remove(orgId, locationId),
-    { successMessage: "Location deleted", onSuccess: () => router.refresh() },
+    { successMessage: LOCATIONS_COPY.deleted, onSuccess: () => router.refresh() },
   );
 
   const remove = (location: OrgLocation) => setConfirmingDelete(location);
@@ -61,11 +62,9 @@ export function LocationsManager({ orgId, locations, returnTo = null }: Location
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Where your products ship from. Couriers collect at these addresses.
-        </p>
+        <p className="text-sm text-muted-foreground">{LOCATIONS_COPY.intro}</p>
         <Button onClick={openAdd} size="sm">
-          <Icon name="add" className="mr-1" /> Add location
+          <Icon name="add" className="mr-1" /> {LOCATIONS_COPY.add}
         </Button>
       </div>
 
@@ -73,10 +72,7 @@ export function LocationsManager({ orgId, locations, returnTo = null }: Location
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
             <Icon name="location" size="xl" tone="muted" />
-            <p className="text-sm text-muted-foreground">
-              No pickup locations yet. Add the shop or warehouse your parcels
-              leave from.
-            </p>
+            <p className="text-sm text-muted-foreground">{LOCATIONS_COPY.empty}</p>
           </CardContent>
         </Card>
       ) : (
@@ -86,13 +82,13 @@ export function LocationsManager({ orgId, locations, returnTo = null }: Location
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-base">{location.name}</CardTitle>
                 <StatusBadge tone={location.isActive ? "success" : "neutral"}>
-                  {location.isActive ? "Active" : "Inactive"}
+                  {location.isActive ? LOCATIONS_COPY.active : LOCATIONS_COPY.inactive}
                 </StatusBadge>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div className="text-muted-foreground">
                   <p>
-                    {location.addressLine1 || <em>Street address needed</em>}
+                    {location.addressLine1 || <em>{LOCATIONS_COPY.streetNeeded}</em>}
                   </p>
                   {location.addressLine2 && <p>{location.addressLine2}</p>}
                   <p>
@@ -106,21 +102,18 @@ export function LocationsManager({ orgId, locations, returnTo = null }: Location
                       {formatPhone(location.contactPhone)}
                     </>
                   ) : (
-                    <em>Pickup contact needed</em>
+                    <em>{LOCATIONS_COPY.contactNeeded}</em>
                   )}
                 </p>
                 <div className="flex items-center justify-between border-t pt-3">
                   <span className="text-xs text-muted-foreground">
-                    {location.stockedProducts} product
-                    {location.stockedProducts === 1 ? "" : "s"} stocked ·{" "}
-                    {location.shipmentCount} parcel
-                    {location.shipmentCount === 1 ? "" : "s"} shipped
+                    {LOCATIONS_COPY.usage(location.stockedProducts, location.shipmentCount)}
                   </span>
                   <span className="flex gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
-                      aria-label={`Edit ${location.name}`}
+                      aria-label={LOCATIONS_COPY.editLabel(location.name)}
                       onClick={() => openEdit(location)}
                     >
                       <Icon name="edit" />
@@ -128,7 +121,7 @@ export function LocationsManager({ orgId, locations, returnTo = null }: Location
                     <Button
                       variant="ghost"
                       size="sm"
-                      aria-label={`Delete ${location.name}`}
+                      aria-label={LOCATIONS_COPY.deleteLabel(location.name)}
                       onClick={() => remove(location)}
                     >
                       <Icon name="delete" />
@@ -145,7 +138,7 @@ export function LocationsManager({ orgId, locations, returnTo = null }: Location
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editing ? "Edit location" : "Add pickup location"}
+              {editing ? LOCATIONS_COPY.edit : LOCATIONS_COPY.addPickup}
             </DialogTitle>
           </DialogHeader>
           <LocationForm
@@ -166,17 +159,17 @@ export function LocationsManager({ orgId, locations, returnTo = null }: Location
       <Dialog open={!!confirmingDelete} onOpenChange={() => setConfirmingDelete(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete location</DialogTitle>
+            <DialogTitle>{LOCATIONS_COPY.deleteTitle}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete &ldquo;{confirmingDelete?.name}&rdquo;?
+            {LOCATIONS_COPY.confirmDelete(confirmingDelete?.name)}
           </p>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" size="sm" onClick={() => setConfirmingDelete(null)}>
-              Cancel
+              {LOCATIONS_COPY.cancel}
             </Button>
             <Button variant="destructive" size="sm" onClick={confirmRemove}>
-              Delete
+              {LOCATIONS_COPY.delete}
             </Button>
           </div>
         </DialogContent>

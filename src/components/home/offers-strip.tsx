@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import { PriceDisplay } from "../shared/PriceDisplay";
 import { Product } from "@/domain/product";
+import { STORE_HOME_COPY } from "./store-home-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** How many offers the strip shows; callers read one more to know whether to offer the rest. */
 export const OFFERS_IN_STRIP = 3;
@@ -20,18 +22,18 @@ export async function OffersStrip({
   if (!offers?.length) return null;
 
   return (
-    <section aria-label="On offer" className="rounded-card bg-accent px-3 py-3 text-accent-foreground md:px-4">
+    <section aria-label={STORE_HOME_COPY.offers.region} className="rounded-card bg-accent px-3 py-3 text-accent-foreground md:px-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
         <p className="inline-flex shrink-0 items-center gap-2 text-small font-semibold text-foreground">
           <Icon name="offer" size="md" tone="deal" />
-          On offer now
+          {STORE_HOME_COPY.offers.heading}
         </p>
         <div className="-mx-3 flex snap-x snap-mandatory gap-4 overflow-x-auto px-3 no-scrollbar md:mx-0 md:flex-1 md:px-0">
           {offers.slice(0, OFFERS_IN_STRIP).map((offer) => (
             <Link
               prefetch={false}
               key={offer.id}
-              href={`/product/${offer.slug}`}
+              href={ROUTES.product(offer.slug)}
               className="flex min-h-10 shrink-0 snap-start items-center gap-2"
             >
               <span className="relative size-10 shrink-0 overflow-hidden rounded-field bg-muted">

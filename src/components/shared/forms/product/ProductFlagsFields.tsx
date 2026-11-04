@@ -3,6 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { ProductFormInput } from "@/components/product/console/types";
 import { FormController } from "../FormField";
 import { ProductFlag, MANUAL_FLAGS, PRODUCT_FLAG_METADATA } from "@/types/product";
+import { PRODUCT_FLAGS_FIELDS_COPY } from "./product-copy";
 
 interface ProductFlagsFieldsProps {
   control: Control<ProductFormInput>;
@@ -16,7 +17,7 @@ export function ProductFlagsFields({
   return (
     <div className="bg-card rounded-card border border-border p-6">
       <h2 className="text-lg font-semibold text-foreground mb-4">
-        Product Flags
+        {PRODUCT_FLAGS_FIELDS_COPY.productFlags}
       </h2>
       <div className="space-y-3">
         <FormController

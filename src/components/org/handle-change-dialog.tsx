@@ -22,6 +22,8 @@ import {
   type HandleChangeInput,
 } from "@/lib/validation/schemas/storefront.schema";
 import { formatDate } from "@/lib/format";
+import { HANDLE_CHANGE_COPY } from "./storefront-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * Changing a shop's public address (org-handle R4, R4g, R4g1).
@@ -65,7 +67,7 @@ export function HandleChangeDialog({
   } = useServerForm<HandleChangeInput>({
     schema: handleChangeSchema,
     defaultValues: { handle: "" },
-    successMessage: "Your shop has a new address.",
+    successMessage: HANDLE_CHANGE_COPY.changed,
     submit: (data) => orgStorefrontApiClient.changeHandle(orgId, data),
     onSuccess: () => {
       setOpen(false);
@@ -94,22 +96,22 @@ export function HandleChangeDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          Change address
+          {HANDLE_CHANGE_COPY.open}
         </Button>
       </DialogTrigger>
 
       <DialogContent className="max-h-overlay overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Change your shop&apos;s address</DialogTitle>
+          <DialogTitle>{HANDLE_CHANGE_COPY.title}</DialogTitle>
           <DialogDescription>
-            Your shop is at <strong>/store/{currentHandle}</strong> today.
+            {HANDLE_CHANGE_COPY.currentlyAt} <strong>{ROUTES.store(currentHandle)}</strong> {HANDLE_CHANGE_COPY.today}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={submitOnce} className="space-y-4">
           <FormInput
-            label="New address"
-            placeholder="naaz-collection"
+            label={HANDLE_CHANGE_COPY.field}
+            placeholder={HANDLE_CHANGE_COPY.fieldPlaceholder}
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
@@ -121,24 +123,22 @@ export function HandleChangeDialog({
           <div className="space-y-2 rounded-field border border-warning/40 bg-warning/10 p-3 text-sm">
             <p className="flex items-center gap-2 font-medium text-foreground">
               <Icon name="warning" tone="warning" />
-              Before you change it
+              {HANDLE_CHANGE_COPY.before}
             </p>
             <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
               <li>
-                <strong>/store/{currentHandle}</strong> keeps working until{" "}
-                <strong>{stopsWorking}</strong>, then stops.
+                <strong>{ROUTES.store(currentHandle)}</strong>{HANDLE_CHANGE_COPY.keepsWorking}{" "}
+                <strong>{stopsWorking}</strong>{HANDLE_CHANGE_COPY.thenStops}
               </li>
               <li>
-                After that it may be given to another shop — an old link could
-                take your customers somewhere else.
+                {HANDLE_CHANGE_COPY.mayBeTaken}
               </li>
               <li>
-                Update anything already printed, paid for or posted: cards,
-                signage, advertisements, your social profiles.
+                {HANDLE_CHANGE_COPY.updatePrinted}
               </li>
               <li>
-                Search results for the old address will not fully carry over to{" "}
-                {next ? <strong>/store/{next}</strong> : "the new one"}.
+                {HANDLE_CHANGE_COPY.search}{" "}
+                {next ? <strong>{ROUTES.store(next)}</strong> : HANDLE_CHANGE_COPY.theNewOne}.
               </li>
             </ul>
           </div>
@@ -151,11 +151,11 @@ export function HandleChangeDialog({
               variant="outline"
               onClick={() => setOpen(false)}
             >
-              Keep {currentHandle}
+              {HANDLE_CHANGE_COPY.keep(currentHandle)}
             </Button>
             {/* Never disabled (ADR-0053): an empty address submits and the field says why. */}
             <Button type="submit" aria-busy={isSubmitting}>
-              {isSubmitting ? "Changing…" : "Change the address"}
+              {isSubmitting ? HANDLE_CHANGE_COPY.changing : HANDLE_CHANGE_COPY.submit}
             </Button>
           </DialogFooter>
         </form>

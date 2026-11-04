@@ -19,6 +19,8 @@ import {
   resolveSortBy,
   resolveSortOrder,
 } from "@server/shared/pagination";
+import { ADMIN_CATEGORIES_COPY } from "./categories-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** The columns this listing may be ordered by — the same set `CategoryListFilters` declares. */
 const SORTABLE = ["order", "name", "createdAt"] as const;
@@ -48,20 +50,20 @@ export default async function AdminCategoriesPage({
   return (
     <PageShell width="wide">
       <PageHeader
-        title="Categories"
-        description="The categories buyers browse, in the order they see them."
+        title={ADMIN_CATEGORIES_COPY.title}
+        description={ADMIN_CATEGORIES_COPY.description}
         actions={
           <>
             <Button asChild variant="outline">
-              <Link prefetch={false} href="/admin/categories/bulk">
+              <Link prefetch={false} href={ROUTES.admin.bulkCategories}>
                 <Icon name="upload" />
-                Bulk upload
+                {ADMIN_CATEGORIES_COPY.bulk}
               </Link>
             </Button>
             <Button asChild>
-              <Link prefetch={false} href="/admin/categories/new">
+              <Link prefetch={false} href={ROUTES.admin.newCategory}>
                 <Icon name="add" />
-                Add category
+                {ADMIN_CATEGORIES_COPY.add}
               </Link>
             </Button>
           </>

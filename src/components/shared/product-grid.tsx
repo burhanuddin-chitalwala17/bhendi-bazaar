@@ -2,6 +2,7 @@ import type { Product } from "@/domain/product";
 import { ProductCard } from "@/components/shared/product-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { PRODUCT_GRID_COPY } from "./shared-copy";
 
 /**
  * The one product grid, so a lane, a category and a search result can't drift apart: 2-up on a
@@ -27,7 +28,7 @@ export function ProductGrid({ products, className }: { products: Product[]; clas
 /** The grid while it loads, in the tile's own shape, so nothing moves when it lands. */
 export function SkeletonProductGrid({ count = 4, className }: { count?: number; className?: string }) {
   return (
-    <ul aria-busy="true" aria-label="Loading products" className={cn(PRODUCT_GRID_CLASSES, className)}>
+    <ul aria-busy="true" aria-label={PRODUCT_GRID_COPY.loadingProducts} className={cn(PRODUCT_GRID_CLASSES, className)}>
       {Array.from({ length: count }, (_, i) => (
         <li key={i} className="space-y-2">
           <Skeleton className="aspect-4/5 w-full rounded-field" />

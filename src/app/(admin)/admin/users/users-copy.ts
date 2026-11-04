@@ -1,0 +1,21 @@
+/** The admin's user pages (ADR-0067). */
+export const ADMIN_USERS_COPY = {
+  title: "Users",
+  description: "Everyone with an account: buyers, shop members and admins.",
+  unnamed: "Unnamed user",
+  back: "Users",
+  profile: "Profile",
+  name: "Name",
+  email: "Email",
+  mobile: "Mobile",
+  none: "—",
+  role: "Role",
+  admin: "Admin",
+  buyer: "Buyer",
+  joined: "Joined",
+  activity: "Activity",
+  orders: "Orders",
+  totalSpent: "Total spent",
+  lastActive: "Last active:",
+  actions: "Actions",
+} as const;

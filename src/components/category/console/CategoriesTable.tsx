@@ -13,6 +13,9 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { formatShortDate } from "@/lib/format";
+import { CATEGORY_COPY } from "../category-copy";
+import { ROUTES } from "@server/shared/routes";
+import { CATEGORIES_TABLE_COPY } from "@/components/category/category-copy";
 
 interface Props {
   categories: AdminCategory[];
@@ -43,13 +46,13 @@ export function CategoriesTable({ categories, page, pageSize, totalPages, total 
 
   const { mutate: deleteCategory, isLoading: isDeleting } = useMutation(
     adminCategoryApiClient.deleteCategory,
-    { successMessage: "Category deleted", onSuccess: () => router.refresh() },
+    { successMessage: CATEGORIES_TABLE_COPY.deleted, onSuccess: () => router.refresh() },
   );
 
   const { mutate: reorder, isLoading: isUpdating } = useMutation(
     ({ id, order }: { id: string; order: number }) =>
       adminCategoryApiClient.updateCategory(id, { order }),
-    { successMessage: "Order saved", onSuccess: () => router.refresh() },
+    { successMessage: CATEGORIES_TABLE_COPY.orderSaved, onSuccess: () => router.refresh() },
   );
 
   const confirmDelete = (id: string, name: string) => {
@@ -68,7 +71,7 @@ export function CategoriesTable({ categories, page, pageSize, totalPages, total 
       sortable: true,
       phone: "title",
       render: (category) => (
-        <Link href={`/admin/categories/${category.id}/edit`} prefetch={false} className="flex items-center gap-3 hover:underline">
+        <Link href={ROUTES.admin.editCategory(category.id)} prefetch={false} className="flex items-center gap-3 hover:underline">
           <span
             aria-hidden
             className={cn(
@@ -133,7 +136,7 @@ export function CategoriesTable({ categories, page, pageSize, totalPages, total 
     },
     {
       key: "heroImage",
-      label: "Hero image",
+      label: CATEGORIES_TABLE_COPY.heroImage,
       phone: "hidden",
       render: (category) => (
         <Image
@@ -160,9 +163,9 @@ export function CategoriesTable({ categories, page, pageSize, totalPages, total 
       render: (category) => (
         <div className="flex items-center gap-2">
           <Button asChild variant="outline" size="sm" className="hidden md:inline-flex">
-            <Link prefetch={false} href={`/admin/categories/${category.id}/edit`} aria-label={`Edit ${category.name}`}>
+            <Link prefetch={false} href={ROUTES.admin.editCategory(category.id)} aria-label={CATEGORY_COPY.console.editNamed(category.name)}>
               <Icon name="edit" />
-              Edit
+              {CATEGORY_COPY.console.edit}
             </Link>
           </Button>
           <Button
@@ -170,10 +173,10 @@ export function CategoriesTable({ categories, page, pageSize, totalPages, total 
             size="sm"
             onClick={() => confirmDelete(category.id, category.name)}
             pending={isDeleting}
-            aria-label={`Delete ${category.name}`}
+            aria-label={CATEGORY_COPY.console.deleteNamed(category.name)}
           >
             <Icon name="delete" />
-            Delete
+            {CATEGORY_COPY.console.delete}
           </Button>
         </div>
       ),
@@ -183,7 +186,7 @@ export function CategoriesTable({ categories, page, pageSize, totalPages, total 
   return (
     <DataTable
       data={categories}
-      label="Categories"
+      label={CATEGORY_COPY.console.table}
       columns={columns}
       totalPages={totalPages}
       currentPage={page}

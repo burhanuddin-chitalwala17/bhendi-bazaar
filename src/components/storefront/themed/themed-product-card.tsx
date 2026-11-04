@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { CARD_STYLE, type CardStyle } from "@server/catalog/storefront-themes";
 import { storefrontProductHref } from "./section-heading";
 import { ThemePhoto } from "./theme-photo";
+import { THEMED_COPY } from "./themed-copy";
 
 /** Each style's image shape (spec Theme cards, "Card"). */
 export const ASPECT: Record<CardStyle, string> = {
@@ -72,7 +73,7 @@ export function ThemedProductCard({
         )}
         {soldOut && (
           <span className="absolute inset-x-0 bottom-0 bg-photo-scrim py-1 text-center font-label text-tag uppercase tracking-tag text-on-photo">
-            Sold out
+            {THEMED_COPY.card.soldOut}
           </span>
         )}
       </div>
@@ -118,7 +119,7 @@ export function ThemedProductCard({
           )}
         </p>
         {product.biddingSlug && (
-          <p className="font-label text-tag uppercase tracking-tag text-muted-foreground">In an auction</p>
+          <p className="font-label text-tag uppercase tracking-tag text-muted-foreground">{THEMED_COPY.card.inAuction}</p>
         )}
       </div>
     </Link>

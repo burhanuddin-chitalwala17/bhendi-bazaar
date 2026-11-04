@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import type { Category } from "@/domain/category";
 import { Icon } from "@/components/ui/icon";
+import { CATEGORY_COPY } from "./category-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** The only route back up the tree: lane tiles point downwards only. */
 export function CategoryBreadcrumb({
@@ -12,11 +14,11 @@ export function CategoryBreadcrumb({
   current: Category;
 }) {
   return (
-    <nav aria-label="Breadcrumb">
+    <nav aria-label={CATEGORY_COPY.breadcrumb}>
       <ol className="no-scrollbar flex items-center gap-1 overflow-x-auto text-caption text-muted-foreground">
         <li className="shrink-0">
-          <Link href="/" className="inline-flex min-h-10 items-center hover:text-foreground md:min-h-0" prefetch={false}>
-            Home
+          <Link href={ROUTES.home} className="inline-flex min-h-10 items-center hover:text-foreground md:min-h-0" prefetch={false}>
+            {CATEGORY_COPY.home}
           </Link>
         </li>
         {ancestors.map((ancestor) => (
@@ -24,7 +26,7 @@ export function CategoryBreadcrumb({
             <Icon name="next" size="xs" />
             <Link
               prefetch={false}
-              href={`/category/${ancestor.slug}`}
+              href={ROUTES.category(ancestor.slug)}
               className="whitespace-nowrap hover:text-foreground"
             >
               {ancestor.name}

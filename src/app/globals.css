@@ -132,6 +132,10 @@
      and a rem term, so browser zoom still scales it (never viewport-only). */
   /* The platform's seven roles (design-system Q10): a phone size and a desktop size each, phone
      smaller and tighter, never a desktop size squeezed down. Themes repoint headline, title, body. */
+  /* A marketing page's one headline (/business); never inside the store or a portal. */
+  --text-landing: clamp(2.25rem, 1.3rem + 4.2vw, 4.75rem);
+  --text-landing--line-height: 1.02;
+  --text-landing--letter-spacing: -0.025em;
   --text-display: clamp(1.75rem, 1.2rem + 2.2vw, 3rem);
   --text-display--line-height: 1.08;
   --text-display--letter-spacing: -0.015em;

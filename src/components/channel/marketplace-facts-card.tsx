@@ -13,6 +13,7 @@ import { ASK_ADMIN, FACTS, FACTS_TOAST } from "./facts-copy";
 import { ago } from "./listing-copy";
 import { StillLoading } from "./still-loading";
 import { useMarketplaceFacts } from "./useMarketplaceFacts";
+import { ROUTES } from "@server/shared/routes";
 
 /** Groups longer than this collapse behind "Show all" (ux.md "Many items"). */
 const SHOWN = 5;
@@ -65,7 +66,7 @@ export function MarketplaceFactsCard({
     }
     if (failure === "busy") return <Line text={FACTS.busy(l)} tone="warning" action={fillButton(FACTS.tryAgain)} />;
     if (failure === "reconnect" || card.state === FACTS_STATE.RECONNECT) {
-      return <Line text={FACTS.reconnect(l)} tone="error" action={<LinkButton href={`/org/${orgId}/channels`} text={FACTS.goToChannels} />} />;
+      return <Line text={FACTS.reconnect(l)} tone="error" action={<LinkButton href={ROUTES.org.channels(orgId)} text={FACTS.goToChannels} />} />;
     }
     switch (card.state) {
       case FACTS_STATE.NOT_READ:
@@ -75,7 +76,7 @@ export function MarketplaceFactsCard({
       case FACTS_STATE.NO_MAPPING:
         return <Line text={FACTS.noMapping(l)} />;
       case FACTS_STATE.NO_TYPE:
-        return <Line text={FACTS.noType(l)} action={<LinkButton href={`/org/${orgId}/products/${productId}/edit`} text={FACTS.editProduct} />} />;
+        return <Line text={FACTS.noType(l)} action={<LinkButton href={ROUTES.org.editProduct(orgId, productId)} text={FACTS.editProduct} />} />;
       case FACTS_STATE.TYPE_TO_CONFIRM:
       case FACTS_STATE.CATEGORY_TO_CONFIRM:
       case FACTS_STATE.NO_MATCHING_TYPE:
@@ -143,7 +144,7 @@ export function MarketplaceFactsCard({
         {filled.length > 0 && (
           <dl className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {filled.map((row) => (
-              <FilledRow key={`${row.column}:${row.fact}`} row={row} label={l} editHref={`/org/${orgId}/products/${productId}/edit`} run={run} />
+              <FilledRow key={`${row.column}:${row.fact}`} row={row} label={l} editHref={ROUTES.org.editProduct(orgId, productId)} run={run} />
             ))}
           </dl>
         )}

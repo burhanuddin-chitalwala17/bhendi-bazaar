@@ -29,8 +29,12 @@ describe.runIf(isDisposableDb)("image slots round trip", () => {
 
   afterAll(async () => {
     const { prisma } = await import("@server/shared/prisma");
-    await prisma.orgBanner.deleteMany({ where: { id: { in: orgBannerIds } } });
-    await prisma.banner.deleteMany({ where: { id: { in: bannerIds } } });
+    // Also every banner carrying this run's pictures: a save the test expects refused is never pushed,
+    // so a broken guard (or a mutation run) would otherwise leave a live banner on the dev Home.
+    const mine = { startsWith: `https://cdn.bhendi-bazaar.com/test/image-slots-${RUN}-` };
+    const byPicture = { OR: [{ imageUrl: mine }, { phoneImageUrl: mine }] };
+    await prisma.orgBanner.deleteMany({ where: { OR: [{ id: { in: orgBannerIds } }, byPicture] } });
+    await prisma.banner.deleteMany({ where: { OR: [{ id: { in: bannerIds } }, byPicture] } });
     await prisma.mediaAsset.deleteMany({ where: { id: { in: assetIds } } });
   });
 

@@ -16,6 +16,8 @@ import { OrderDetailAside } from "@/components/order/console/OrderDetailAside";
 import { ShipmentsPanel } from "@/components/order/console/ShipmentsPanel";
 import { adminOrdersDAL } from "@/data-access-layer/admin/orders.dal";
 import { PAYMENT_STATUS } from "@server/checkout/order.types";
+import { ADMIN_ORDERS_COPY } from "../orders-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export default async function AdminOrderDetailsPage({
   params,
@@ -33,9 +35,9 @@ export default async function AdminOrderDetailsPage({
   return (
     <PageShell width="wide">
       <PageHeader
-        eyebrow="Order"
+        eyebrow={ADMIN_ORDERS_COPY.eyebrow}
         title={order.code}
-        back={{ href: "/admin/orders", label: "Orders" }}
+        back={{ href: ROUTES.admin.orders, label: ADMIN_ORDERS_COPY.back }}
         actions={
           <>
             <StatusBadge tone={status.tone} dot>

@@ -100,6 +100,9 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
   });
 
   afterAll(async () => {
+    // A step above can throw before its category is removed; sweep this suite's own by slug, so a
+    // failed run never leaves a top-level category on the dev Home (as twelve runs once did).
+    await prisma.category.deleteMany({ where: { OR: [{ slug: { startsWith: "mf-q35-" } }, { slug: { startsWith: "mf-mats-" } }], products: { none: {} }, children: { none: {} } } });
     await cleanup();
     await prisma.channelConnection.deleteMany({ where: { orgId } });
     await prisma.channelCategoryMap.deleteMany({ where: { channel: "amazon", theirCategory: TYPE } });
@@ -304,7 +307,7 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
       } finally {
         await prisma.channelListing.deleteMany({ where: { productId: id } });
         await prisma.product.deleteMany({ where: { id } });
-        await prisma.category.delete({ where: { id: category.id } });
+        await prisma.category.deleteMany({ where: { id: category.id } });
       }
     });
   });
@@ -373,7 +376,7 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
         const linkedTo = (await prisma.channelListing.findUniqueOrThrow({ where: { id: listing.id }, select: { productId: true } })).productId;
         await prisma.channelListing.deleteMany({ where: { id: listing.id } });
         if (linkedTo) await prisma.product.deleteMany({ where: { id: linkedTo } });
-        await prisma.category.delete({ where: { id: category.id } });
+        await prisma.category.deleteMany({ where: { id: category.id } });
       }
     });
 

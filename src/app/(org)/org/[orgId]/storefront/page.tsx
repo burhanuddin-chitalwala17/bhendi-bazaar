@@ -10,6 +10,8 @@ import { storefrontDAL } from "@/data-access-layer/storefront.dal";
 import { requireOrgMember } from "@/lib/org-auth";
 import { storefrontService } from "@server/catalog/storefront.service";
 import { LOOK_COPY } from "@/components/org/look/look-copy";
+import { ORG_PAGES_COPY } from "@/components/org/pages-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * Where an org composes its own shop (storefront-branding R1).
@@ -40,13 +42,13 @@ export default async function OrgStorefrontPage({
     <PageShell width="form">
       <PageHeader
         help="storefront"
-        title="Shop page"
-        description="Your own page on Bhendi Bazaar, and the link you share."
+        title={ORG_PAGES_COPY.shopPageTitle}
+        description={ORG_PAGES_COPY.shopPageDescription}
       />
       {/* ux.md journey 1: the Shop tab's way into the look picker. */}
       <Link
         prefetch={false}
-        href={`/org/${orgId}/storefront/look`}
+        href={ROUTES.org.storefrontLook(orgId)}
         className="flex min-h-14 items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors hover:bg-muted/60"
       >
         <Icon name="palette" size="md" tone="primary" />

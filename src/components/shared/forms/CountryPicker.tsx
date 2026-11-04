@@ -10,6 +10,7 @@ import {
   type CountryCode,
 } from "@server/shared/countries";
 import { Icon } from "@/components/ui/icon";
+import { COUNTRY_PICKER_COPY } from "./forms-copy";
 
 interface CountryPickerProps {
   value: string | null | undefined;
@@ -29,7 +30,7 @@ interface CountryPickerProps {
 export function CountryPicker({
   value,
   onChange,
-  blankLabel = "Not set",
+  blankLabel = COUNTRY_PICKER_COPY.blank,
   disabled = false,
 }: CountryPickerProps) {
   const [open, setOpen] = useState(false);
@@ -48,8 +49,8 @@ export function CountryPicker({
       onOpenChange={(next) =>
         next ? setOpen(true) : pick(value ? (value as CountryCode) : null)
       }
-      title="Country"
-      description="Type a few letters to find it."
+      title={COUNTRY_PICKER_COPY.country}
+      description={COUNTRY_PICKER_COPY.typeAFewLettersTo}
       className="w-80"
       trigger={
         <Button
@@ -73,8 +74,8 @@ export function CountryPicker({
           type="search"
           inputMode="search"
           autoComplete="off"
-          placeholder="Search countries"
-          aria-label="Search countries"
+          placeholder={COUNTRY_PICKER_COPY.searchCountries}
+          aria-label={COUNTRY_PICKER_COPY.searchCountries}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={(event) => {
@@ -84,7 +85,7 @@ export function CountryPicker({
             }
           }}
         />
-        <ul role="listbox" aria-label="Countries" className="space-y-0.5">
+        <ul role="listbox" aria-label={COUNTRY_PICKER_COPY.countries} className="space-y-0.5">
           {!query && (
             <li role="option" aria-selected={!value}>
               <Button

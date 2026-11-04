@@ -5,6 +5,8 @@ import { PortalHeader } from "@/components/layout/PortalHeader";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { isDomainError } from "@server/shared/domain-error";
 import { refundsDAL } from "@/data-access-layer/admin/refunds.dal";
+import { ADMIN_SHELL_COPY } from "./admin-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * Everything beneath `/admin` is gated here, not in the middleware.
@@ -28,9 +30,9 @@ export default async function AdminLayout({
     // 401 means sign in and come back; 403 means this account will never have access,
     // so sending it to a sign-in page would be a loop.
     if (isDomainError(error) && error.status === 401) {
-      redirect("/signin?callbackUrl=/admin");
+      redirect(`${ROUTES.signIn}?callbackUrl=${ROUTES.admin.home}`);
     }
-    redirect("/");
+    redirect(ROUTES.home);
   }
 
   return (
@@ -40,7 +42,7 @@ export default async function AdminLayout({
         <PortalHeader
           name={session.user.name}
           email={session.user.email}
-          label="Platform Admin"
+          label={ADMIN_SHELL_COPY.portalLabel}
         />
         <main className="min-w-0 flex-1 p-4 md:p-8">{children}</main>
       </div>

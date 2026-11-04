@@ -13,6 +13,8 @@ import { appUrl } from "@server/shared/app-url";
 import { NotFoundError } from "@server/shared/domain-error";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { breadcrumbJsonLd } from "@/lib/structured-data";
+import { CATEGORY_PAGE_COPY } from "./category-page-copy";
+import { ROUTES } from "@server/shared/routes";
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
@@ -20,7 +22,7 @@ interface CategoryPageProps {
 }
 
 /** The filters a category offers; each is one the listing route already carries forward. */
-const FILTERS: ListingFilter[] = [{ label: "On offer", param: "offers", value: "1" }];
+const FILTERS: ListingFilter[] = [{ label: CATEGORY_PAGE_COPY.onOfferFilter, param: "offers", value: "1" }];
 
 /** An unknown slug is a 404, never an empty page that answers 200 (seo R7). */
 const getCategory = (slug: string) =>
@@ -35,7 +37,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const category = await getCategory(slug);
 
-  const url = `${appUrl()}/category/${category.slug}`;
+  const url = `${appUrl()}${ROUTES.category(category.slug)}`;
   const title = category.name;
   const socialTitle = `${category.name} — ${APP_NAME}`;
   const description = category.description?.trim().slice(0, 200) || APP_DESCRIPTION;
@@ -74,8 +76,8 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     <div className="space-y-4">
       <JsonLd
         data={breadcrumbJsonLd(appUrl(), [
-          { name: "Home", path: "/" },
-          ...[...ancestors, category].map((c) => ({ name: c.name, path: `/category/${c.slug}` })),
+          { name: CATEGORY_PAGE_COPY.breadcrumbHome, path: ROUTES.home },
+          ...[...ancestors, category].map((c) => ({ name: c.name, path: ROUTES.category(c.slug) })),
         ])}
       />
       <CategoryBreadcrumb ancestors={ancestors} current={category} />
@@ -86,7 +88,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       />
       <CategoryLanes categories={lanes} />
       <ListingToolbar
-        basePath={`/category/${category.slug}`}
+        basePath={ROUTES.category(category.slug)}
         params={{ sort: sort === "newest" ? undefined : sort, offers: offersOnly ? "1" : undefined }}
         filters={FILTERS}
       />
@@ -99,15 +101,15 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         />
       ) : offersOnly ? (
         <EmptyState
-          title="Nothing here is on offer right now"
-          description="Every piece in this category is at its usual price today."
-          action={{ label: "Show everything", href: `/category/${category.slug}` }}
+          title={CATEGORY_PAGE_COPY.noOffersTitle}
+          description={CATEGORY_PAGE_COPY.noOffersBody}
+          action={{ label: CATEGORY_PAGE_COPY.showEverything, href: ROUTES.category(category.slug) }}
         />
       ) : (
         <EmptyState
-          title="No pieces in this category yet"
-          description="Shops add new pieces every week. Browse the rest of the bazaar meanwhile."
-          action={{ label: "Browse the shop", href: "/shop" }}
+          title={CATEGORY_PAGE_COPY.emptyTitle}
+          description={CATEGORY_PAGE_COPY.emptyBody}
+          action={{ label: CATEGORY_PAGE_COPY.browseShop, href: ROUTES.shopAll }}
         />
       )}
     </div>

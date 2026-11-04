@@ -5,6 +5,8 @@ import { SHOP_PARCEL_TAB, type ShopParcelTab } from "@server/checkout/shop-parce
 /** Shop orders and shop parcel copy, exactly as order-fulfilment ux.md signs it off. */
 export const SHOP_ORDERS_COPY = {
   title: "Orders",
+  parcels: "Parcels",
+  marketplaceDescription: "Sales on your connected marketplaces, as they reported them",
   firstUse: "No orders yet. When someone buys, it appears here and we email you.",
   shareShop: "Share your shop",
   loadFailed: "Couldn't load orders. Check your internet.",
@@ -124,3 +126,7 @@ export const SHOP_CANCEL_COPY = {
 function feeLine(feePaise: number): string {
   return `${formatCurrency(feePaise)} cancellation fee taken from your earnings.`;
 }
+
+export const SHOP_ORDER_COLUMN_COPY = {
+  value: "Your parcel value",
+} as const;

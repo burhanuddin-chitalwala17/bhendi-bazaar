@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { STOCK_STATUS_COPY } from "@/components/shared/shared-copy";
 
 interface StockStatusProps {
   stock: number;
@@ -30,18 +31,18 @@ export function StockStatus({
     ? {
         color: "bg-destructive",
         textColor: "text-destructive",
-        label: "Sold out",
+        label: STOCK_STATUS_COPY.soldOut,
       }
     : isLowStock
       ? {
           color: "bg-warning",
           textColor: "text-warning",
-          label: `Only ${stock} left`,
+          label: STOCK_STATUS_COPY.onlyLeft(stock),
         }
       : {
           color: "bg-success",
           textColor: "text-success",
-          label: "In stock",
+          label: STOCK_STATUS_COPY.inStock,
         };
 
   const dotSize = isXs ? "h-1 w-1" : size === "sm" ? "h-1.5 w-1.5" : "h-2 w-2";

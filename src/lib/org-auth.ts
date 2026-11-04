@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/admin-auth";
 import { orgMemberRepository } from "@server/catalog/org.member.repository";
 import { DomainError, ForbiddenError } from "@server/shared/domain-error";
 import { toErrorResponse } from "@/lib/api-error-response";
+import { ERROR_RESPONSE_COPY } from "@/lib/lib-copy";
 
 /**
  * Permission to act for one org, and the id every subsequent query filters on.
@@ -58,7 +59,7 @@ export function withOrg<P extends { orgId: string }>(
       const scope = await resolveOrgScope(params.orgId);
       return await handler(request, scope, params);
     } catch (error) {
-      return toErrorResponse(error, "Something went wrong");
+      return toErrorResponse(error, ERROR_RESPONSE_COPY.somethingWentWrong);
     }
   };
 }

@@ -12,6 +12,7 @@ import type {
   ShippingProvider,
   ConnectionResponse,
 } from "../types";
+import { PROVIDERS_HOOK_COPY } from "@/components/shipping/providers-console/providers-console-copy";
 
 export interface UseShippingProvidersReturn {
   // Data
@@ -57,7 +58,7 @@ export function useShippingProviders(): UseShippingProvidersReturn {
         setError(response.error || "Failed to fetch providers");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : PROVIDERS_HOOK_COPY.failed);
     } finally {
       setIsLoading(false);
     }
@@ -99,10 +100,10 @@ export function useShippingProviders(): UseShippingProvidersReturn {
           return response;
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
+        setError(err instanceof Error ? err.message : PROVIDERS_HOOK_COPY.failed);
         return {
           success: false,
-          error: err instanceof Error ? err.message : "An error occurred",
+          error: err instanceof Error ? err.message : PROVIDERS_HOOK_COPY.failed,
         };
       } finally {
         setIsConnecting(false);
@@ -138,7 +139,7 @@ export function useShippingProviders(): UseShippingProvidersReturn {
         setError(response.error || "Failed to disconnect provider");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : PROVIDERS_HOOK_COPY.failed);
     } finally {
       setIsDisconnecting(false);
     }

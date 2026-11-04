@@ -7,6 +7,7 @@ import { channelConnectionService } from "@server/channels/channel-connection.se
 import type { ChannelAttentionDTO, ChannelsOverviewDTO } from "@server/channels/channel-connection.types";
 import { storefrontService } from "@server/catalog/storefront.service";
 import { appUrl } from "@server/shared/app-url";
+import { ROUTES } from "@server/shared/routes";
 
 export interface ChannelsPageData {
   overview: ChannelsOverviewDTO;
@@ -22,7 +23,7 @@ export const channelsDAL = {
       channelConnectionService.overview(orgId),
       storefrontService.getSettings(orgId).catch(() => null),
     ]);
-    const storePath = settings?.handle ? `/store/${settings.handle}` : null;
+    const storePath = settings?.handle ? ROUTES.store(settings.handle) : null;
     return { overview, storePath, storeLabel: storePath ? `${new URL(appUrl()).host}${storePath}` : null };
   },
 

@@ -104,4 +104,5 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0064](0064-a-storefront-theme-is-a-token-set-and-a-section-composition-declared-in-code.md) | A storefront theme is a token set and a section composition declared in code | Accepted | 2026-10-30 |
 | [0065](0065-storefront-reads-are-shared-across-requests-and-cleared-by-the-tables-a-write-touches.md) | Storefront reads are shared across requests, and cleared by the tables a write touches | Accepted | 2026-11-04 |
 | [0066](0066-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md) | The UI is built in tiers, and every icon goes through one seam | Proposed | 2026-11-04 |
+| [0067](0067-words-live-in-copy-modules-and-our-own-paths-in-one-routes-table.md) | Words live in copy modules, and our own paths in one routes table | Proposed | 2026-11-05 |
 <!-- generated:adr-index:end -->

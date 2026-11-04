@@ -7,6 +7,8 @@ import type { Pagination } from "@/types/shared";
 import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 import { toast } from "sonner";
 import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
+import { ORG_CONSOLE_COPY } from "../org-console-copy";
+import { ORGS_LOAD_COPY } from "@/components/org/console/org-console-copy";
 
 const EMPTY_PAGINATION: Pagination = {
   page: 1,
@@ -38,7 +40,7 @@ export function useOrgs(filters: OrgListFilters) {
     } catch (err) {
       const message = err instanceof Error ? err.message : "";
       setError(message);
-      toast.error(message || "Shops didn't load");
+      toast.error(message || ORGS_LOAD_COPY.failed);
     } finally {
       setLoading(false);
     }
@@ -51,7 +53,7 @@ export function useOrgs(filters: OrgListFilters) {
   const createOrg = async (data: OrgFormInput) => {
     try {
       await orgApiClient.createOrg(data);
-      toast.success("Shop created");
+      toast.success(ORG_CONSOLE_COPY.created);
       await loadOrgs();
     } catch (err) {
       // Presentation belongs to useServerForm; rethrow so field details survive.
@@ -62,7 +64,7 @@ export function useOrgs(filters: OrgListFilters) {
   const updateOrg = async (id: string, data: Partial<OrgFormInput>) => {
     try {
       await orgApiClient.updateOrg(id, data);
-      toast.success("Shop updated");
+      toast.success(ORG_CONSOLE_COPY.updated);
       await loadOrgs();
     } catch (err) {
       // Presentation belongs to useServerForm; rethrow so field details survive.
@@ -73,10 +75,10 @@ export function useOrgs(filters: OrgListFilters) {
   const blockOrg = async (id: string) => {
     try {
       await orgApiClient.blockOrg(id);
-      toast.success("Shop blocked");
+      toast.success(ORG_CONSOLE_COPY.blocked);
       await loadOrgs();
     } catch (err) {
-      toast.error((err instanceof Error && err.message) || "The shop wasn't blocked");
+      toast.error((err instanceof Error && err.message) || ORG_CONSOLE_COPY.blockFailed);
       throw err;
     }
   };
@@ -84,10 +86,10 @@ export function useOrgs(filters: OrgListFilters) {
   const unblockOrg = async (id: string) => {
     try {
       await orgApiClient.unblockOrg(id);
-      toast.success("Shop unblocked");
+      toast.success(ORG_CONSOLE_COPY.unblocked);
       await loadOrgs();
     } catch (err) {
-      toast.error((err instanceof Error && err.message) || "The shop wasn't unblocked");
+      toast.error((err instanceof Error && err.message) || ORG_CONSOLE_COPY.unblockFailed);
       throw err;
     }
   };

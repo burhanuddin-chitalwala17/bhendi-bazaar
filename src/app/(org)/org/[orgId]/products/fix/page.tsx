@@ -5,9 +5,10 @@ import { readinessFixDAL } from "@/data-access-layer/org/readiness-fix.dal";
 import { PageShell, PageHeader } from "@/components/shared/page-shell";
 import { ReadinessFix } from "@/components/channel/readiness-fix";
 import { FIX } from "@/components/channel/readiness-fix-copy";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
 export const metadata = {
-  title: "Fix what is missing",
+  title: ORG_PAGE_TITLES.fixProducts,
   robots: { index: false, follow: false },
 };
 

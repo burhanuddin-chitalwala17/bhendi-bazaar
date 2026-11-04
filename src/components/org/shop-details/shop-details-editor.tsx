@@ -23,6 +23,7 @@ import { ShopPreview } from "./shop-preview";
 import { SaveBar } from "./save-bar";
 import { SaveBarProvider, useSaveBar } from "./useSaveBar";
 import { ShopLinkRow, ShopNameRow, ShopPrivatePart, type ContactProps } from "./shop-private-part";
+import { ROUTES } from "@server/shared/routes";
 
 /** ux First use: none of the three essentials yet. Name is always there, so logo and line decide. */
 const essentialsDone = (d: ShopDetailsDto) => Boolean(d.logoUrl) && Boolean(d.tagline);
@@ -85,7 +86,7 @@ export function ShopDetailsEditor({
             {SHOP_DETAILS_COPY.buyersPart}
           </h2>
           <Button asChild variant="outline" size="sm">
-            <Link href={`/store/${details.handle}`} target="_blank">
+            <Link href={ROUTES.store(details.handle)} target="_blank">
               <Icon name="external" />
               {SHOP_DETAILS_COPY.seeAsBuyer}
             </Link>

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PRODUCT_SORT_COPY } from "@/lib/lib-copy";
 
 /**
  * How many products any listing asks for at a time.
@@ -27,9 +28,9 @@ export const PRODUCT_SORTS = ["newest", "price-asc", "price-desc"] as const;
 export type ProductSort = (typeof PRODUCT_SORTS)[number];
 
 export const PRODUCT_SORT_LABELS: Record<ProductSort, string> = {
-  newest: "New arrivals",
-  "price-asc": "Price: low to high",
-  "price-desc": "Price: high to low",
+  newest: PRODUCT_SORT_COPY.newest,
+  "price-asc": PRODUCT_SORT_COPY.priceAsc,
+  "price-desc": PRODUCT_SORT_COPY.priceDesc,
 };
 
 /**

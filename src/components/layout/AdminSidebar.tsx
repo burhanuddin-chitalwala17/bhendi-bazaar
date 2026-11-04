@@ -1,48 +1,50 @@
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { PortalSidebar, type PortalNavGroup } from "@/components/layout/PortalSidebar";
+import { ROUTES } from "@server/shared/routes";
+import { ADMIN_NAV_COPY as C } from "./layout-copy";
 
-const REFUNDS_HREF = "/admin/orders/refunds";
+const REFUNDS_HREF = ROUTES.admin.refunds;
 
 /** The admin's places, grouped by what they are about (design-system admin canvas). One icon per meaning. */
 const NAV: PortalNavGroup[] = [
-  { label: "Overview", items: [{ title: "Dashboard", href: "/admin", icon: "dashboard", exact: true }] },
+  { label: C.overview, items: [{ title: C.dashboard, href: ROUTES.admin.home, icon: "dashboard", exact: true }] },
   {
-    label: "Orders",
+    label: C.orders,
     items: [
-      { title: "Orders", href: "/admin/orders", icon: "orders" },
-      { title: "Pickups", href: "/admin/orders/pickups", icon: "parcel" },
-      { title: "Refunds", href: REFUNDS_HREF, icon: "returns" },
-      { title: "Open carts", href: "/admin/carts", icon: "bag" },
+      { title: C.orders, href: ROUTES.admin.orders, icon: "orders" },
+      { title: C.pickups, href: ROUTES.admin.pickups, icon: "parcel" },
+      { title: C.refunds, href: REFUNDS_HREF, icon: "returns" },
+      { title: C.carts, href: ROUTES.admin.carts, icon: "bag" },
     ],
   },
   {
-    label: "Catalogue",
+    label: C.catalogue,
     items: [
-      { title: "Products", href: "/admin/products", icon: "products" },
-      { title: "Categories", href: "/admin/categories", icon: "categories" },
-      { title: "Product types", href: "/admin/product-types", icon: "layers" },
-      { title: "Media", href: "/admin/media", icon: "photos" },
-      { title: "Photo enhancements", href: "/admin/enhancements", icon: "enhance" },
-      { title: "Banners", href: "/admin/banners", icon: "carousel" },
-      { title: "Offers", href: "/admin/promotions", icon: "offer" },
-      { title: "Auctions", href: "/admin/bidding", icon: "auction" },
+      { title: C.products, href: ROUTES.admin.products, icon: "products" },
+      { title: C.categories, href: ROUTES.admin.categories, icon: "categories" },
+      { title: C.productTypes, href: ROUTES.admin.productTypes, icon: "layers" },
+      { title: C.media, href: ROUTES.admin.media, icon: "photos" },
+      { title: C.enhancements, href: ROUTES.admin.enhancements, icon: "enhance" },
+      { title: C.banners, href: ROUTES.admin.banners, icon: "carousel" },
+      { title: C.offers, href: ROUTES.admin.promotions, icon: "offer" },
+      { title: C.auctions, href: ROUTES.admin.bidding, icon: "auction" },
     ],
   },
   {
-    label: "Shops",
+    label: C.shops,
     items: [
-      { title: "Shops", href: "/admin/orgs", icon: "shop" },
-      { title: "Payouts", href: "/admin/payouts", icon: "payout" },
-      { title: "Channels", href: "/admin/channels", icon: "connect" },
-      { title: "Reviews", href: "/admin/reviews", icon: "rating" },
+      { title: C.shops, href: ROUTES.admin.orgs, icon: "shop" },
+      { title: C.payouts, href: ROUTES.admin.payouts, icon: "payout" },
+      { title: C.channels, href: ROUTES.admin.channels, icon: "connect" },
+      { title: C.reviews, href: ROUTES.admin.reviews, icon: "rating" },
     ],
   },
   {
-    label: "Platform",
+    label: C.platform,
     items: [
-      { title: "Users", href: "/admin/users", icon: "team" },
-      { title: "Shipping providers", href: "/admin/shipping/providers", icon: "delivery" },
-      { title: "Fulfilment settings", href: "/admin/settings/fulfilment", icon: "settings" },
+      { title: C.users, href: ROUTES.admin.users, icon: "team" },
+      { title: C.shippingProviders, href: ROUTES.admin.shippingProviders, icon: "delivery" },
+      { title: C.fulfilmentSettings, href: ROUTES.admin.fulfilmentSettings, icon: "settings" },
     ],
   },
 ];
@@ -63,7 +65,7 @@ export function AdminSidebar({ refundsNotStarted = 0 }: { refundsNotStarted?: nu
         header={
           <div className="flex items-center gap-3 border-b border-border p-5">
             <BrandLogo size="sm" tone="light" />
-            <span className="text-label uppercase text-muted-foreground">Admin</span>
+            <span className="text-label uppercase text-muted-foreground">{C.badge}</span>
           </div>
         }
         groups={groups}

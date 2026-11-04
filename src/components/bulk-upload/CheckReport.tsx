@@ -7,6 +7,7 @@ import { SHEET_AGE_COPY } from "@server/catalog/bulk/sheet-copy";
 import type { ProductBulkReport } from "./bulkImportApiClient";
 import { CHECK_COPY } from "./check-copy";
 import { useProblemList } from "./useProblemList";
+import { BULK_IMPORT_COPY } from "./bulk-copy";
 
 /**
  * What the check found (own-store/bulk-sheet ux.md, Upload and Check and create): the sheet's age
@@ -61,7 +62,7 @@ function Problems({ report, onPickFile }: { report: ProductBulkReport; onPickFil
       <p className="text-sm font-semibold text-destructive">{CHECK_COPY.problems(report.errors.length, list.rowCount)}</p>
       {list.rowCount > 0 && <p className="text-sm text-muted-foreground">{CHECK_COPY.fixAndReupload}</p>}
       {list.columns.length > 1 && (
-        <Select aria-label="Filter by column" value={list.column} onChange={(event) => list.setColumn(event.target.value)}>
+        <Select aria-label={BULK_IMPORT_COPY.filterByColumn} value={list.column} onChange={(event) => list.setColumn(event.target.value)}>
           <option value="">{CHECK_COPY.allColumns}</option>
           {list.columns.map((column) => (
             <option key={column} value={column}>

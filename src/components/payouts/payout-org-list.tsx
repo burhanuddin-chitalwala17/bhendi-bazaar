@@ -5,6 +5,8 @@ import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { Money } from "@/components/shared/Money";
 import { bpsToPercent, formatCount } from "@/lib/format";
 import type { payoutsDAL } from "@/data-access-layer/payouts.dal";
+import { PAYOUT_ORG_LIST_COPY } from "./payouts-copy";
+import { ROUTES } from "@server/shared/routes";
 
 type PayoutOrgRow = Awaited<ReturnType<typeof payoutsDAL.overview>>["orgs"][number];
 
@@ -12,25 +14,25 @@ type PayoutOrgRow = Awaited<ReturnType<typeof payoutsDAL.overview>>["orgs"][numb
 export function PayoutOrgList({ orgs }: { orgs: PayoutOrgRow[] }) {
   return (
     <ResourceList
-      label="Shops and what they are owed"
+      label={PAYOUT_ORG_LIST_COPY.label}
       rows={orgs}
       rowKey={(org) => org.id}
-      rowHref={(org) => `/admin/payouts/${org.id}`}
-      empty={{ title: "No shops yet", description: "A shop appears here once it has terms and its first sale." }}
+      rowHref={(org) => ROUTES.admin.orgPayouts(org.id)}
+      empty={{ title: PAYOUT_ORG_LIST_COPY.emptyTitle, description: PAYOUT_ORG_LIST_COPY.emptyDescription }}
       columns={[
-        { key: "name", label: "Shop", cell: (org) => org.name, phone: "title" },
-        { key: "code", label: "Code", cell: (org) => <span className="font-mono">{org.code}</span>, phone: "meta" },
-        { key: "commission", label: "Commission", cell: (org) => `${bpsToPercent(org.commissionBps)}%`, phone: "hidden" },
-        { key: "entries", label: "Entries", cell: (org) => formatCount(org.entryCount), align: "end", phone: "hidden" },
+        { key: "name", label: PAYOUT_ORG_LIST_COPY.shop, cell: (org) => org.name, phone: "title" },
+        { key: "code", label: PAYOUT_ORG_LIST_COPY.code, cell: (org) => <span className="font-mono">{org.code}</span>, phone: "meta" },
+        { key: "commission", label: PAYOUT_ORG_LIST_COPY.commission, cell: (org) => `${bpsToPercent(org.commissionBps)}%`, phone: "hidden" },
+        { key: "entries", label: PAYOUT_ORG_LIST_COPY.entries, cell: (org) => formatCount(org.entryCount), align: "end", phone: "hidden" },
         {
           key: "belowCost",
-          label: "Below cost",
+          label: PAYOUT_ORG_LIST_COPY.belowCost,
           cell: (org) =>
-            org.negativeMarginOrders > 0 ? <StatusBadge tone="warning">{org.negativeMarginOrders} below cost</StatusBadge> : null,
+            org.negativeMarginOrders > 0 ? <StatusBadge tone="warning">{PAYOUT_ORG_LIST_COPY.belowCostCount(org.negativeMarginOrders)}</StatusBadge> : null,
           phone: "status",
         },
-        { key: "owed", label: "Owed", cell: (org) => <Money paise={org.owedPaise} />, align: "end", phone: "trailing" },
-        { key: "unclaimed", label: "Unclaimed", cell: (org) => <Money paise={org.unclaimedPaise} tone="muted" />, align: "end", phone: "meta" },
+        { key: "owed", label: PAYOUT_ORG_LIST_COPY.owed, cell: (org) => <Money paise={org.owedPaise} />, align: "end", phone: "trailing" },
+        { key: "unclaimed", label: PAYOUT_ORG_LIST_COPY.unclaimed, cell: (org) => <Money paise={org.unclaimedPaise} tone="muted" />, align: "end", phone: "meta" },
       ]}
     />
   );

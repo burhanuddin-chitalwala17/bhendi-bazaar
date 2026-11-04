@@ -15,9 +15,11 @@ import { shopScopeOrRefused } from "./shop-scope";
 import { channelStockDAL } from "@/data-access-layer/channel-stock.dal";
 import { MarketplaceOrders } from "@/components/channel/marketplace-orders";
 import { MARKETPLACE_ORDERS } from "@/components/channel/stock-copy";
+import { ROUTES } from "@server/shared/routes";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
 export const metadata = {
-  title: "Orders",
+  title: ORG_PAGE_TITLES.orders,
   robots: { index: false, follow: false },
 };
 
@@ -39,7 +41,7 @@ export default async function OrgOrdersPage({
       {(["store", "marketplace"] as const).map((t) => (
         <Button key={t} asChild size="sm" variant={t === active ? "outline" : "ghost"} className={t === active ? "shadow-none" : "text-muted-foreground"}>
           <Link
-            href={t === "store" ? `/org/${orgId}/orders` : `/org/${orgId}/orders?tab=marketplace`}
+            href={t === "store" ? ROUTES.org.orders(orgId) : `${ROUTES.org.orders(orgId)}?tab=marketplace`}
             prefetch={false}
             aria-current={t === active ? "page" : undefined}
           >
@@ -56,9 +58,9 @@ export default async function OrgOrdersPage({
     const { orders, hasMore } = await channelStockDAL.orders(orgId, more);
     return (
       <div className="space-y-6">
-        <PageHeader help="orders" title="Orders" description="Sales on your connected marketplaces, as they reported them" />
+        <PageHeader help="orders" title={SHOP_ORDERS_COPY.title} description={SHOP_ORDERS_COPY.marketplaceDescription} />
         {tabs("marketplace")}
-        <MarketplaceOrders orders={orders} hasMore={hasMore} moreHref={`/org/${orgId}/orders?tab=marketplace&more=${more + 1}`} />
+        <MarketplaceOrders orders={orders} hasMore={hasMore} moreHref={`${ROUTES.org.orders(orgId)}?tab=marketplace&more=${more + 1}`} />
       </div>
     );
   }
@@ -71,8 +73,8 @@ export default async function OrgOrdersPage({
     orgOrdersDAL.tabCounts(orgId),
   ]);
   const firstUse = orders.length === 0 && !search && (await orgOrdersDAL.list(orgId, "all", 1)).total === 0;
-  const tabHref = (t: ShopParcelTab) => `/org/${orgId}/orders?status=${t}`;
-  const moreHref = `/org/${orgId}/orders?status=${tab}&more=${pages + 1}${search ? `&search=${encodeURIComponent(search)}` : ""}`;
+  const tabHref = (t: ShopParcelTab) => `${ROUTES.org.orders(orgId)}?status=${t}`;
+  const moreHref = `${ROUTES.org.orders(orgId)}?status=${tab}&more=${pages + 1}${search ? `&search=${encodeURIComponent(search)}` : ""}`;
 
   return (
     <div className="space-y-4">
@@ -84,7 +86,7 @@ export default async function OrgOrdersPage({
         tabs={Object.values(SHOP_PARCEL_TAB).map((t) => ({ key: t, label: SHOP_TAB_LABEL[t], href: tabHref(t), count: counts[t] }))}
       />
       {tab === SHOP_PARCEL_TAB.TO_PACK && orders.length > 0 && <p className="text-small text-muted-foreground">{SHOP_ORDERS_COPY.toPackHint}</p>}
-      <form className="flex gap-2" action={`/org/${orgId}/orders`}>
+      <form className="flex gap-2" action={ROUTES.org.orders(orgId)}>
         <input type="hidden" name="status" value={tab} />
         <Input type="search" name="search" defaultValue={search} placeholder={SHOP_ORDERS_COPY.search} aria-label={SHOP_ORDERS_COPY.search} className="flex-1" />
         <Button type="submit" variant="outline" shape="icon" aria-label={SHOP_ORDERS_COPY.search}>
@@ -98,12 +100,12 @@ export default async function OrgOrdersPage({
           className="rounded-card border border-border bg-card px-4"
           title={SHOP_ORDERS_COPY.noOrders}
           description={SHOP_ORDERS_COPY.firstUse}
-          action={{ label: SHOP_ORDERS_COPY.shareShop, href: `/org/${orgId}/shop` }}
+          action={{ label: SHOP_ORDERS_COPY.shareShop, href: ROUTES.org.shop(orgId) }}
         />
       ) : orders.length === 0 ? (
         <EmptyState className="rounded-card border border-border bg-card px-4" title={SHOP_TAB_EMPTY[tab]} description={SHOP_ORDERS_COPY.emptyTab} />
       ) : (
-        <ShopOrderList orders={orders} orgId={orgId} orderHref={(id) => `/org/${orgId}/orders/${id}`} />
+        <ShopOrderList orders={orders} orgId={orgId} orderHref={(id) => ROUTES.org.order(orgId, id)} />
       )}
 
       {hasMore && (

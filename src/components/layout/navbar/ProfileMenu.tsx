@@ -7,6 +7,8 @@ import { signOut, useSession } from "next-auth/react";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
+import { PROFILE_MENU_COPY } from "./navbar-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export function ProfileMenu() {
   const [open, setOpen] = useState(false);
@@ -37,7 +39,7 @@ export function ProfileMenu() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         size="lg"
-        aria-label="Your account"
+        aria-label={PROFILE_MENU_COPY.yourAccount}
         aria-expanded={open}
         className="relative rounded-full text-caption font-semibold uppercase"
       >
@@ -50,7 +52,7 @@ export function ProfileMenu() {
         <div className="absolute right-0 z-20 mt-2 w-56 rounded-card border border-border bg-popover p-2 text-small shadow-overlay">
           <Link
             prefetch={false}
-            href="/profile"
+            href={ROUTES.profile}
             onClick={() => {
               setOpen(false);
             }}
@@ -63,39 +65,39 @@ export function ProfileMenu() {
             {!isEmailVerified && (
               <div className="mt-2 flex items-center gap-1.5 text-warning dark:text-warning">
                 <Icon name="security-warning" size="xs" />
-                <span className="text-2xs font-medium">Email not verified</span>
+                <span className="text-2xs font-medium">{PROFILE_MENU_COPY.emailNotVerified}</span>
               </div>
             )}
           </Link>
           <Link
             prefetch={false}
-            href="/orders"
+            href={ROUTES.orders}
             onClick={() => {
               setOpen(false);
             }}
             className="block rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            Orders
+            {PROFILE_MENU_COPY.orders}
           </Link>
           <Link
             prefetch={false}
-            href="/wishlist"
+            href={ROUTES.wishlist}
             onClick={() => {
               setOpen(false);
             }}
             className="block rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            Saved
+            {PROFILE_MENU_COPY.saved}
           </Link>
           <Link
             prefetch={false}
-            href="/org"
+            href={ROUTES.org.root}
             onClick={() => {
               setOpen(false);
             }}
             className="block rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            Your shop
+            {PROFILE_MENU_COPY.yourShop}
           </Link>
           <Button
             variant="ghost"
@@ -103,7 +105,7 @@ export function ProfileMenu() {
             className="mt-1 w-full justify-start text-left text-muted-foreground hover:text-foreground"
             onClick={handleLogout}
           >
-            Sign out
+            {PROFILE_MENU_COPY.signOut}
           </Button>
         </div>
       )}

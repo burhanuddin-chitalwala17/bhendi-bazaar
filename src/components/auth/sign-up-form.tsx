@@ -19,6 +19,8 @@ import { PasswordInput } from "@/components/auth/password-input";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { SWITCH_LINK, type AuthFormHost } from "@/components/auth/sign-in-form";
 import { authApiClient } from "@/components/auth/authApiClient";
+import type { AuthDone } from "@/components/auth/auth-view";
+import { AUTH_COPY } from "./auth-copy";
 
 /**
  * Create an account, then sign straight in. If that sign-in fails the account still
@@ -29,7 +31,7 @@ export function SignUpForm({
   onSwitchView,
   googleCallbackUrl,
   onBeforeGoogle,
-}: AuthFormHost & { onSuccess: () => void | Promise<void> }) {
+}: AuthFormHost & { onSuccess: AuthDone }) {
   const id = useId();
 
   // The same schema the route parses (Invariant 4): password rules show inline as
@@ -63,10 +65,10 @@ export function SignUpForm({
       onSubmit={(event) => void onSubmit(event).catch(() => {})}
       className="space-y-3 text-small"
     >
-      <AuthField id={`${id}-name`} label="Name" error={errors.name?.message}>
+      <AuthField id={`${id}-name`} label={AUTH_COPY.name} error={errors.name?.message}>
         <Input id={`${id}-name`} autoComplete="name" {...register("name")} />
       </AuthField>
-      <AuthField id={`${id}-email`} label="Email" error={errors.email?.message}>
+      <AuthField id={`${id}-email`} label={AUTH_COPY.email} error={errors.email?.message}>
         <Input
           id={`${id}-email`}
           type="email"
@@ -76,7 +78,7 @@ export function SignUpForm({
       </AuthField>
       <AuthField
         id={`${id}-password`}
-        label="Password"
+        label={AUTH_COPY.password}
         error={errors.password?.message}
       >
         <PasswordInput
@@ -92,7 +94,7 @@ export function SignUpForm({
         </p>
       )}
       <Button type="submit" disabled={isSubmitting} className={PRIMARY_BUTTON}>
-        {isSubmitting ? "Creating account..." : "Create account"}
+        {isSubmitting ? AUTH_COPY.creatingAccount : AUTH_COPY.createAccount}
       </Button>
       <OrDivider />
       <GoogleSignInButton
@@ -100,14 +102,14 @@ export function SignUpForm({
         beforeRedirect={onBeforeGoogle}
       />
       <p className="pt-2 text-center text-2xs text-muted-foreground">
-        Already have an account?{" "}
+        {AUTH_COPY.haveAccount}{" "}
         <Button
           variant="ghost"
           type="button"
           onClick={() => onSwitchView("signin")}
           className={SWITCH_LINK}
         >
-          Sign in
+          {AUTH_COPY.signIn}
         </Button>
       </p>
     </form>

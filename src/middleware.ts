@@ -5,6 +5,7 @@ import { contentSecurityPolicy, isSelfFramedPath } from "@/lib/security-headers"
 import { CROSS_SITE_REFUSED, isCrossSiteMutation } from "@/lib/same-origin";
 import { forwardStorefrontShop } from "@/lib/storefront-chrome";
 import { PLATFORM_ROLE } from "@server/identity/admin.user.types";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * Edge gate for the two portals.
@@ -29,7 +30,7 @@ async function signedIn(request: NextRequest) {
 }
 
 function toSignIn(request: NextRequest, pathname: string) {
-  const url = new URL("/signin", request.url);
+  const url = new URL(ROUTES.signIn, request.url);
   url.searchParams.set("callbackUrl", pathname);
   return NextResponse.redirect(url);
 }
@@ -53,7 +54,7 @@ export const isDeadPermalink = (pathname: string) => DEAD_PERMALINK.test(pathnam
  * It holds no data and its page still runs `requireSession` before showing the form.
  */
 export const signInAtEdge = (pathname: string) =>
-  (pathname.startsWith("/admin") || pathname.startsWith("/org")) && pathname !== "/org/new";
+  (pathname.startsWith(ROUTES.admin.home) || pathname.startsWith(ROUTES.org.root)) && pathname !== ROUTES.org.new;
 
 /**
  * A fresh nonce per response, carried both ways: on the *request* so Next stamps it onto
@@ -107,7 +108,7 @@ export async function middleware(request: NextRequest) {
 
     // Membership is not checked here — it lives in the database and can be revoked
     // mid-session, so the org layout owns it.
-    if (pathname.startsWith("/admin") && (token.platformRole ?? PLATFORM_ROLE.USER) !== PLATFORM_ROLE.ADMIN) {
+    if (pathname.startsWith(ROUTES.admin.home) && (token.platformRole ?? PLATFORM_ROLE.USER) !== PLATFORM_ROLE.ADMIN) {
       return NextResponse.redirect(new URL("/", request.url));
     }
   } catch (error) {

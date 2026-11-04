@@ -8,6 +8,7 @@ import {
   type BrandPageSectionStatus,
 } from "@/components/storefront/brand-page/standing";
 import type { BrandPage } from "@/data-access-layer/storefront.dal";
+import { BRAND_STANDING_COPY } from "./org-copy";
 
 /**
  * What your page shows (brand-page D11).
@@ -23,7 +24,7 @@ import type { BrandPage } from "@/data-access-layer/storefront.dal";
 export function BrandPageStanding({
   page,
   orgId,
-  heading = "What your page shows",
+  heading = BRAND_STANDING_COPY.heading,
 }: {
   page: BrandPage;
   orgId: string;
@@ -37,7 +38,7 @@ export function BrandPageStanding({
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-semibold text-foreground">{heading}</h2>
         <p className="text-sm text-muted-foreground tabular-nums">
-          {showing} of {total} showing
+          {BRAND_STANDING_COPY.count(showing, total)}
         </p>
       </div>
       <ul className="divide-y divide-border/60 rounded-card border border-border/60">
@@ -48,17 +49,17 @@ export function BrandPageStanding({
               <p className="text-sm font-medium text-foreground">{status.label}</p>
               {status.standing === "hidden" && (
                 <p className="text-sm text-muted-foreground">
-                  You have turned this off, so buyers do not see it.
+                  {BRAND_STANDING_COPY.turnedOff}
                 </p>
               )}
               {status.standing === "waiting" && status.waitingFor && (
                 <p className="text-sm text-muted-foreground">
-                  Waiting on {status.waitingFor}.
+                  {BRAND_STANDING_COPY.waitingOn(status.waitingFor)}
                   {status.href && (
                     <>
                       {" "}
                       <Link href={status.href} className="font-medium text-primary underline-offset-4 hover:underline">
-                        Add it
+                        {BRAND_STANDING_COPY.addIt}
                       </Link>
                     </>
                   )}
@@ -78,7 +79,7 @@ function StandingMark({ status }: { status: BrandPageSectionStatus }) {
     return (
       <StatusBadge tone="success" className="mt-0.5">
         <Icon name="done" size="xs" />
-        Showing
+        {BRAND_STANDING_COPY.showing}
       </StatusBadge>
     );
   }
@@ -86,14 +87,14 @@ function StandingMark({ status }: { status: BrandPageSectionStatus }) {
     return (
       <StatusBadge tone="neutral" className="mt-0.5">
         <Icon name="hide" size="xs" />
-        Hidden
+        {BRAND_STANDING_COPY.hidden}
       </StatusBadge>
     );
   }
   return (
     <StatusBadge tone="warning" className="mt-0.5">
       <Icon name="time" size="xs" />
-      Waiting
+      {BRAND_STANDING_COPY.waiting}
     </StatusBadge>
   );
 }

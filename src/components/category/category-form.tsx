@@ -16,6 +16,8 @@ import type { AdminCategory, CreateCategoryInput } from "@/domain/admin";
 
 import { PageHeader } from "@/components/shared/page-shell";
 import { Icon } from "@/components/ui/icon";
+import { ROUTES } from "@server/shared/routes";
+import { CATEGORY_FORM_COPY } from "@/components/category/category-copy";
 interface CategoryFormProps {
   category?: AdminCategory;
   isEdit?: boolean;
@@ -107,21 +109,21 @@ export function CategoryForm({
   });
 
   const handleCancel = () => {
-    router.push("/admin/categories");
+    router.push(ROUTES.admin.categories);
   };
 
   return (
     <form onSubmit={handleFormSubmit} className="space-y-8">
       <PageHeader
         back={{
-          href: returnUrl || "/admin/categories",
-          label: "Categories",
+          href: returnUrl || ROUTES.admin.categories,
+          label: CATEGORY_FORM_COPY.back,
         }}
-        title={isEdit ? "Edit Category" : "Create New Category"}
+        title={isEdit ? CATEGORY_FORM_COPY.editTitle : CATEGORY_FORM_COPY.createTitle}
         description={
           isEdit
-            ? "Update category details"
-            : "Add a new category to organize products"
+            ? CATEGORY_FORM_COPY.editBody
+            : CATEGORY_FORM_COPY.createBody
         }
       />
 
@@ -156,7 +158,7 @@ export function CategoryForm({
       {/* Actions */}
       <FormActions
         onCancel={handleCancel}
-        submitLabel="Save Category"
+        submitLabel={CATEGORY_FORM_COPY.save}
         isSubmitting={isSubmitting}
       />
     </form>

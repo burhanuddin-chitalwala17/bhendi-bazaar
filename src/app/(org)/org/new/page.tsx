@@ -6,8 +6,9 @@ import { OPEN_SHOP_COPY as COPY } from "@/components/org/open-shop-copy";
 import { SignInButton } from "@/components/auth/sign-in-button";
 
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 export const metadata = {
-  title: "Open your shop",
+  title: ORG_PAGE_TITLES.openShop,
   robots: { index: false, follow: false },
 };
 

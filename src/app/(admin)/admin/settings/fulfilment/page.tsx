@@ -7,12 +7,14 @@ import { CancelCountList } from "@/components/payouts/fulfilment-fee/cancel-coun
 import { FEE_COPY } from "@/components/payouts/fulfilment-fee/fee-copy";
 import { indiaDay } from "@server/shared/india-time";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
+import { ADMIN_SETTINGS_COPY } from "../settings-copy";
+import { ROUTES } from "@server/shared/routes";
 
-export const metadata = { title: "Fulfilment settings", robots: { index: false, follow: false } };
+export const metadata = { title: ADMIN_SETTINGS_COPY.fulfilmentTitle, robots: { index: false, follow: false } };
 
 async function Counts({ pages }: { pages: number }) {
   const { rows, total } = await fulfilmentSettingsDAL.counts(pages);
-  return <CancelCountList rows={rows} total={total} nextHref={`/admin/settings/fulfilment?pages=${pages + 1}`} />;
+  return <CancelCountList rows={rows} total={total} nextHref={`${ROUTES.admin.fulfilmentSettings}?pages=${pages + 1}`} />;
 }
 
 /**

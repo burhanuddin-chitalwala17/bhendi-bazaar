@@ -15,6 +15,8 @@ import { useBulkImport } from "./useBulkImport";
 import { downscaleImage, storedPathFor } from "@/lib/image/downscale";
 import { uploadDirect } from "@/lib/image/upload-direct";
 import { ADMIN_UPLOAD_ENDPOINTS } from "@/lib/image/upload-endpoints";
+import { BULK_CATEGORY_COPY } from "./bulk-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export function BulkCategoryWizard() {
   const { step, setSheet, images, setImages, report, created, check, run } = useBulkImport(
@@ -29,7 +31,7 @@ export function BulkCategoryWizard() {
         if (urls.has(row.image)) continue;
         const [path] = matchingPaths(row.image, providedPaths);
         const file = path ? filesByPath.get(path) : undefined;
-        if (!file) throw new Error(`Missing file "${row.image}"`);
+        if (!file) throw new Error(BULK_CATEGORY_COPY.missingFile(row.image));
         // As in BulkProductWizard: a browser-direct upload is past the server's reach.
         const hero = await downscaleImage(file);
         const { url } = await uploadDirect(
@@ -52,9 +54,9 @@ export function BulkCategoryWizard() {
   if (step === "done") {
     return (
       <div className="space-y-3 rounded-xl border border-border bg-card p-4">
-        <p className="text-lg font-semibold">✅ {created} categories created</p>
+        <p className="text-lg font-semibold">{BULK_CATEGORY_COPY.created(created)}</p>
         <Button asChild>
-          <a href="/admin/categories">View categories</a>
+          <a href={ROUTES.admin.categories}>{BULK_CATEGORY_COPY.viewCategories}</a>
         </Button>
       </div>
     );
@@ -64,13 +66,13 @@ export function BulkCategoryWizard() {
     <div className="space-y-4 pb-24">
       <section className="space-y-3 rounded-xl border border-border bg-card p-4">
         <div className="space-y-1">
-          <p className="text-sm font-medium">1 · The filled-in sheet</p>
+          <p className="text-sm font-medium">{BULK_CATEGORY_COPY.sheetStep}</p>
           <p className="text-xs text-muted-foreground">
-            .xlsx or .csv —{" "}
+            {BULK_CATEGORY_COPY.sheetFormats}{" "}
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- a file
                 download, not navigation: Link would route client-side instead. */}
             <a className="underline" href="/api/admin/categories/bulk/sample">
-              download the sample
+              {BULK_CATEGORY_COPY.downloadSample}
             </a>
             .
           </p>
@@ -82,15 +84,15 @@ export function BulkCategoryWizard() {
           onChange={(e) => setSheet(e.target.files?.[0] ?? null)}
         />
         <div className="space-y-1 pt-2">
-          <p className="text-sm font-medium">2 · The hero images</p>
+          <p className="text-sm font-medium">{BULK_CATEGORY_COPY.imagesStep}</p>
           <p className="text-xs text-muted-foreground">
-            A folder or individual files — write the folder in the sheet (
-            <code>abayas/hero.jpg</code>) when two rows share a filename.
+            {BULK_CATEGORY_COPY.imagesHintBefore}
+            <code>{BULK_CATEGORY_COPY.imagesExample}</code>{BULK_CATEGORY_COPY.imagesHintAfter}
           </p>
         </div>
         <div className="space-y-2">
           <label className="block text-xs font-medium text-muted-foreground">
-            Choose a folder
+            {BULK_CATEGORY_COPY.chooseFolder}
             <input
               type="file"
               webkitdirectory=""
@@ -100,7 +102,7 @@ export function BulkCategoryWizard() {
             />
           </label>
           <label className="block text-xs font-medium text-muted-foreground">
-            …or pick images individually
+            {BULK_CATEGORY_COPY.pickIndividually}
             <input
               type="file"
               accept="image/*"
@@ -112,7 +114,7 @@ export function BulkCategoryWizard() {
         </div>
         {images.length > 0 && (
           <p className="text-xs text-muted-foreground">
-            {images.length} files selected
+            {BULK_CATEGORY_COPY.filesSelected(images.length)}
           </p>
         )}
       </section>
@@ -120,14 +122,13 @@ export function BulkCategoryWizard() {
       {step === "report" && report && !report.ok && (
         <section className="space-y-2 rounded-xl border border-destructive/40 bg-card p-4">
           <p className="text-sm font-semibold text-destructive">
-            {report.errors.length} problem
-            {report.errors.length === 1 ? "" : "s"} — nothing was created
+            {BULK_CATEGORY_COPY.problems(report.errors.length)}
           </p>
           <ul className="max-h-overlay space-y-1 overflow-y-auto text-sm">
             {report.errors.map((error, i) => (
               <li key={i}>
                 <span className="font-medium">
-                  {error.row === 0 ? "Sheet" : `Row ${error.row}`} ·{" "}
+                  {error.row === 0 ? BULK_CATEGORY_COPY.sheet : BULK_CATEGORY_COPY.row(error.row)} ·{" "}
                   {error.field}:
                 </span>{" "}
                 {error.message}
@@ -140,7 +141,7 @@ export function BulkCategoryWizard() {
       {step === "report" && report?.ok && (
         <section className="space-y-2 rounded-xl border border-border bg-card p-4">
           <p className="text-sm font-semibold">
-            ✓ Sheet is clean — {report.rows.length} categories
+            {BULK_CATEGORY_COPY.clean(report.rows.length)}
           </p>
           <ul className="max-h-overlay space-y-1 overflow-y-auto text-sm">
             {report.rows.map(({ row, rowNumber }) => (
@@ -151,7 +152,7 @@ export function BulkCategoryWizard() {
                 <span className="truncate">{row.name}</span>
                 {row.parent && (
                   <span className="shrink-0 text-xs text-muted-foreground">
-                    under {row.parent}
+                    {BULK_CATEGORY_COPY.under(row.parent)}
                   </span>
                 )}
               </li>
@@ -164,15 +165,15 @@ export function BulkCategoryWizard() {
         <section className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm">
           <Spinner />
           {step === "uploading"
-            ? "Uploading hero images…"
-            : "Creating categories…"}
+            ? BULK_CATEGORY_COPY.uploading
+            : BULK_CATEGORY_COPY.creating}
         </section>
       )}
 
       <ActionBar className="-mx-4 md:mx-0">
         {step === "report" && report?.ok ? (
           <Button className="w-full md:w-auto" onClick={createAll}>
-            Create {report.rows.length} categories
+            {BULK_CATEGORY_COPY.create(report.rows.length)}
           </Button>
         ) : (
           <Button
@@ -182,7 +183,7 @@ export function BulkCategoryWizard() {
               step === "checking" || step === "uploading" || step === "creating"
             }
           >
-            {step === "checking" ? "Checking…" : "Check the sheet"}
+            {step === "checking" ? BULK_CATEGORY_COPY.checking : BULK_CATEGORY_COPY.check}
           </Button>
         )}
       </ActionBar>

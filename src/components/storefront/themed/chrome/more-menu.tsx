@@ -13,6 +13,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { THEMED_COPY } from "../themed-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** The tab bar's "More" (Q6): the buyer's account and orders, and the way out to the marketplace. Contact is the footer's. */
 export function MoreMenu({ children }: { children: ReactNode }) {
@@ -25,17 +27,17 @@ export function MoreMenu({ children }: { children: ReactNode }) {
       <DropdownMenuContent align="end" side="top" className="min-w-48">
         {session?.user ? (
           <DropdownMenuItem asChild>
-            <Link href="/profile" prefetch={false}>Account</Link>
+            <Link href={ROUTES.profile} prefetch={false}>{THEMED_COPY.more.account}</Link>
           </DropdownMenuItem>
         ) : (
-          <DropdownMenuItem onSelect={() => openAuthSheet()}>Login</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => openAuthSheet()}>{THEMED_COPY.more.login}</DropdownMenuItem>
         )}
         <DropdownMenuItem asChild>
-          <Link href="/orders" prefetch={false}>Orders</Link>
+          <Link href={ROUTES.orders} prefetch={false}>{THEMED_COPY.more.orders}</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/" prefetch={false}>Shop all of {APP_NAME}</Link>
+          <Link href={ROUTES.home} prefetch={false}>{THEMED_COPY.more.shopAll(APP_NAME)}</Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

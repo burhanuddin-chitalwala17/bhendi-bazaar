@@ -6,6 +6,8 @@ import type { OrgWithStats } from "@/domain/org";
 import type { Pagination } from "@/types/shared";
 import { formatPhone } from "@server/shared/phone";
 import { Button } from "@/components/ui/button";
+import { ORG_CONSOLE_COPY, ORGS_TABLE_COPY } from "../org-console-copy";
+import { ROUTES } from "@server/shared/routes";
 
 interface OrgsTableProps {
   orgs: OrgWithStats[];
@@ -33,10 +35,10 @@ export function OrgsTable({
   const columns: Column<OrgWithStats>[] = [
     {
       key: "name",
-      label: "Shop",
+      label: ORGS_TABLE_COPY.shop,
       phone: "title",
       render: (org) => (
-        <Link href={`/admin/orgs/${org.id}`} prefetch={false} className="flex items-center gap-3 hover:underline">
+        <Link href={ROUTES.admin.org(org.id)} prefetch={false} className="flex items-center gap-3 hover:underline">
           <span
             aria-hidden
             className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-small font-semibold text-muted-foreground"
@@ -52,7 +54,7 @@ export function OrgsTable({
     },
     {
       key: "contact",
-      label: "Contact",
+      label: ORGS_TABLE_COPY.contact,
       phone: "hidden",
       render: (org) => (
         <div className="text-small">
@@ -63,57 +65,58 @@ export function OrgsTable({
     },
     {
       key: "phone",
-      label: "Phone",
+      label: ORGS_TABLE_COPY.phone,
       phone: "hidden",
       render: (org) => (org.phone ? formatPhone(org.phone) : "—"),
     },
     {
       key: "products",
-      label: "Products",
+      label: ORGS_TABLE_COPY.products,
       phone: "meta",
-      render: (org) => `${org.productCount || 0} products`,
+      render: (org) => ORGS_TABLE_COPY.productCount(org.productCount || 0),
     },
     {
       key: "stock",
-      label: "Stock",
+      label: ORGS_TABLE_COPY.stock,
       phone: "meta",
-      render: (org) => `${org.totalStock || 0} in stock`,
+      render: (org) => ORGS_TABLE_COPY.inStock(org.totalStock || 0),
     },
     {
       key: "status",
-      label: "Status",
+      label: ORGS_TABLE_COPY.status,
       phone: "status",
-      render: (org) =>
+      render: (org) => (
         org.isBlocked ? (
-          <StatusBadge tone="destructive" dot>Blocked</StatusBadge>
+          <StatusBadge tone="destructive" dot>{ORGS_TABLE_COPY.blocked}</StatusBadge>
         ) : (
           <StatusBadge tone={org.isActive ? "success" : "neutral"} dot>
-            {org.isActive ? "Active" : "Inactive"}
+            {org.isActive ? ORG_CONSOLE_COPY.active : ORG_CONSOLE_COPY.inactive}
           </StatusBadge>
-        ),
+        )
+      ),
     },
     {
       key: "actions",
-      label: "Actions",
+      label: ORGS_TABLE_COPY.actions,
       phone: "trailing",
       render: (org) => (
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => onView(org)} aria-label={`View ${org.name}`} className="hidden md:inline-flex">
+          <Button variant="ghost" size="sm" onClick={() => onView(org)} aria-label={ORGS_TABLE_COPY.viewLabel(org.name)} className="hidden md:inline-flex">
             <Icon name="show" />
-            View
+            {ORGS_TABLE_COPY.view}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => onEdit(org)} aria-label={`Edit ${org.name}`}>
+          <Button variant="outline" size="sm" onClick={() => onEdit(org)} aria-label={ORGS_TABLE_COPY.editLabel(org.name)}>
             <Icon name="edit" />
-            Edit
+            {ORGS_TABLE_COPY.edit}
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => onToggleBlock(org)}
-            aria-label={`${org.isBlocked ? "Unblock" : "Block"} ${org.name}`}
+            aria-label={ORGS_TABLE_COPY.toggleLabel(org.isBlocked, org.name)}
           >
             <Icon name={org.isBlocked ? "secure" : "block"} />
-            {org.isBlocked ? "Unblock" : "Block"}
+            {org.isBlocked ? ORG_CONSOLE_COPY.unblock : ORG_CONSOLE_COPY.block}
           </Button>
         </div>
       ),
@@ -124,7 +127,7 @@ export function OrgsTable({
     <DataTable
       data={orgs}
       columns={columns}
-      label="Shops"
+      label={ORGS_TABLE_COPY.label}
       totalPages={totalPages}
       currentPage={page}
       totalItems={total}

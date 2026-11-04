@@ -23,6 +23,7 @@ import { ProductOrgShippingFields, type LocationOption } from "./ProductOrgShipp
 import { alsoAsks, willAlsoAsk, type ChannelHint } from "./readiness-hints";
 import { FIELD_STEP, MORE_OPTIONS_FIELDS, type ProductStepKey } from "./product-steps";
 import { KeyFeaturesField } from "./KeyFeaturesField";
+import { PRODUCT_SECTIONS_COPY } from "./product-copy";
 
 export type ProductForm = ReturnType<typeof useServerForm<ProductFormInput>>;
 export type SectionKey = Exclude<ProductStepKey, "review">;
@@ -135,17 +136,17 @@ export function ProductSections({
                 )}
               />
               <FormInput
-                label="Name"
+                label={PRODUCT_SECTIONS_COPY.name}
                 required
-                placeholder="e.g., Velvet Embroidered Kurta"
+                placeholder={PRODUCT_SECTIONS_COPY.eGVelvetEmbroideredKurta}
                 {...register("name")}
                 error={errors.name?.message}
               />
               <FormTextarea
-                label="Description"
+                label={PRODUCT_SECTIONS_COPY.description}
                 required
                 rows={4}
-                placeholder="What it is, what it is made of, how it fits"
+                placeholder={PRODUCT_SECTIONS_COPY.whatItIsWhatIt}
                 {...register("description")}
                 error={errors.description?.message}
               />
@@ -172,7 +173,7 @@ export function ProductSections({
           <section hidden={current !== "price"} className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FormInput
-                  label="Price (₹)"
+                  label={PRODUCT_SECTIONS_COPY.price}
                   required
                   type="number"
                   inputMode="decimal"
@@ -182,24 +183,24 @@ export function ProductSections({
                   error={errors.price?.message}
                 />
                 <FormInput
-                  label="Sale price (₹)"
+                  label={PRODUCT_SECTIONS_COPY.salePrice}
                   type="number"
                   inputMode="decimal"
                   step="0.01"
-                  placeholder="Optional"
+                  placeholder={PRODUCT_SECTIONS_COPY.optional}
                   {...register("salePrice", { valueAsNumber: true })}
                   error={errors.salePrice?.message}
-                  hint="Leave empty if it is not on sale."
+                  hint={PRODUCT_SECTIONS_COPY.leaveEmptyIfItIs}
                 />
                 <FormInput
                   label="MRP (₹)"
                   type="number"
                   inputMode="decimal"
                   step="0.01"
-                  placeholder="Optional"
+                  placeholder={PRODUCT_SECTIONS_COPY.optional}
                   {...register("mrp", { valueAsNumber: true })}
                   error={errors.mrp?.message}
-                  hint="The printed price. Every marketplace shows the same MRP."
+                  hint={PRODUCT_SECTIONS_COPY.thePrintedPriceEveryMarketplace}
                 />
               </div>
               <ProductOrgShippingFields
@@ -211,7 +212,7 @@ export function ProductSections({
                 onLocationAdded={onLocationAdded}
               />
               <FormInput
-                label="Packed weight (kg)"
+                label={PRODUCT_SECTIONS_COPY.packedWeightKg}
                 required
                 type="number"
                 inputMode="decimal"
@@ -219,19 +220,19 @@ export function ProductSections({
                 placeholder="0.6"
                 {...register("weight", { valueAsNumber: true })}
                 error={errors.weight?.message}
-                hint="With its packing. 0.6 means 600 g."
+                hint={PRODUCT_SECTIONS_COPY.withItsPacking06}
               />
               <MoreOptions open={isMoreOpen("price")} onToggle={() => toggleMore("price")}>
-                <FormInput label="SKU (your own code)" placeholder="e.g., VEK-001" {...register("sku")} error={errors.sku?.message} />
+                <FormInput label={PRODUCT_SECTIONS_COPY.skuYourOwnCode} placeholder={PRODUCT_SECTIONS_COPY.eGVek001} {...register("sku")} error={errors.sku?.message} />
                 <FormInput
-                  label="Barcode (EAN, UPC or ISBN)"
+                  label={PRODUCT_SECTIONS_COPY.barcodeEanUpcOrIsbn}
                   inputMode="numeric"
-                  placeholder="Leave blank if the product has none"
+                  placeholder={PRODUCT_SECTIONS_COPY.leaveBlankIfTheProduct}
                   {...register("barcode")}
                   error={errors.barcode?.message}
                 />
                 <FormInput
-                  label="Tell me when stock is below"
+                  label={PRODUCT_SECTIONS_COPY.tellMeWhenStockIs}
                   type="number"
                   inputMode="numeric"
                   placeholder="10"
@@ -267,7 +268,7 @@ export function AlsoAsks({ hints }: { hints: ChannelHint[] }) {
   const asking = hints.filter((hint) => hint.asks.length > 0);
   if (asking.length === 0) return null;
   return (
-    <ul aria-label="What other places ask" className="space-y-1 rounded-card border border-border bg-muted/40 p-3 text-sm">
+    <ul aria-label={PRODUCT_SECTIONS_COPY.whatOtherPlacesAsk} className="space-y-1 rounded-card border border-border bg-muted/40 p-3 text-sm">
       {asking.map((hint) => (
         <li key={hint.channel} className="flex items-start gap-2">
           <Icon name="info" tone="muted" className="mt-0.5" />
@@ -294,16 +295,16 @@ export function ReviewReadiness({
   onOpenDetails: () => void;
 }) {
   if (checking && hints.length === 0) {
-    return <p className="animate-pulse text-sm text-muted-foreground">Checking…</p>;
+    return <p className="animate-pulse text-sm text-muted-foreground">{PRODUCT_SECTIONS_COPY.checking}</p>;
   }
   if (hints.length === 0) return null;
   return (
-    <div aria-label="Where it will sell" className={cn("space-y-2 rounded-card border border-border p-3 text-sm", checking && "animate-pulse")}>
-      {checking && <p className="text-muted-foreground">Checking…</p>}
+    <div aria-label={PRODUCT_SECTIONS_COPY.whereItWillSell} className={cn("space-y-2 rounded-card border border-border p-3 text-sm", checking && "animate-pulse")}>
+      {checking && <p className="text-muted-foreground">{PRODUCT_SECTIONS_COPY.checking}</p>}
       {storeReady && (
         <p className="flex items-center gap-2 text-success">
           <Icon name="done" />
-          Ready for your store
+          {PRODUCT_SECTIONS_COPY.readyForYourStore}
         </p>
       )}
       <ul className="space-y-2">
@@ -338,7 +339,7 @@ export function MoreOptions({ open, onToggle, children }: { open: boolean; onTog
         className="h-auto w-full justify-between whitespace-normal px-4 py-3"
         onClick={onToggle}
       >
-        More options
+        {PRODUCT_SECTIONS_COPY.moreOptions}
         <Icon name="expand" className={cn("transition-transform", open && "rotate-180")} />
       </Button>
       {open && <div className="space-y-4 border-t border-border p-4">{children}</div>}
@@ -358,14 +359,14 @@ function TagsField({ form }: { form: ProductForm }) {
     <FormController
       name="tags"
       control={form.control}
-      label="Tags"
-      hint="Words buyers might search for, separated by commas."
+      label={PRODUCT_SECTIONS_COPY.tags}
+      hint={PRODUCT_SECTIONS_COPY.wordsBuyersMightSearchFor}
       error={errors.tags?.message}
       render={({ id }) => (
         <Input
           id={id}
           value={text}
-          placeholder="attar, velvet, festive"
+          placeholder={PRODUCT_SECTIONS_COPY.attarVelvetFestive}
           onChange={(event) => {
             setText(event.target.value);
             setValue(

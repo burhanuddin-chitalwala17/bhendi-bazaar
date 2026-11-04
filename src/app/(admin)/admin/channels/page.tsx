@@ -11,8 +11,10 @@ import { Icon } from "@/components/ui/icon";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { adminChannelRegisterDAL } from "@/data-access-layer/admin/channel-register.dal";
+import { ADMIN_CHANNELS_COPY } from "./channels-copy";
+import { ROUTES } from "@server/shared/routes";
 
-export const metadata = { title: "Channels", robots: { index: false, follow: false } };
+export const metadata = { title: ADMIN_CHANNELS_COPY.title, robots: { index: false, follow: false } };
 
 export default async function AdminChannelsPage() {
   const summary = await adminChannelRegisterDAL.getSummary();
@@ -20,24 +22,24 @@ export default async function AdminChannelsPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Channels"
-        description="What each place calls the things this shop sells, and what is still unmapped. Nothing here publishes; it is the dictionary publishing will read."
+        title={ADMIN_CHANNELS_COPY.title}
+        description={ADMIN_CHANNELS_COPY.description}
       />
 
       <ul className="space-y-3">
         {summary.map((row) => (
           <li key={row.channel}>
-            <Link href={`/admin/channels/${row.channel}`} prefetch={false} className="block">
+            <Link href={ROUTES.admin.channel(row.channel)} prefetch={false} className="block">
               <Card className="transition-colors duration-fast ease-standard hover:border-primary">
                 <CardContent className="flex items-center gap-4 py-4">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">{row.label}</p>
                     <p className="text-small text-muted-foreground">
-                      {row.mapped} mappings recorded
+                      {ADMIN_CHANNELS_COPY.mapped(row.mapped)}
                     </p>
                   </div>
                   <StatusBadge tone={row.toDo > 0 ? "warning" : "success"}>
-                    {row.toDo > 0 ? `${row.toDo} to decide` : "Nothing to decide"}
+                    {ADMIN_CHANNELS_COPY.toDo(row.toDo)}
                   </StatusBadge>
                   <Icon name="next" tone="muted" />
                 </CardContent>

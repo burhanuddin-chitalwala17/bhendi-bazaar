@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { ListingScreenDTO } from "@server/channels/platform-listing.types";
 
 import { CREATE, PUBLISH } from "./platform-listing-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * A listing not yet on the marketplace (marketplace-publish ux.md "Put on Amazon", Partial): how it
@@ -25,7 +26,7 @@ export function ListingDraftBanner({ orgId, screen }: { orgId: string; screen: L
         <div className="flex flex-col items-start gap-1">
           <p className="font-semibold">{CREATE.stillNeeds(draft.stillNeeds.join(", "))}</p>
           <Button asChild variant="link" size="sm" className="h-auto min-h-10 p-0">
-            <Link href={`/org/${orgId}/products/${screen.productId}/edit`}>{CREATE.fillOnProduct}</Link>
+            <Link href={ROUTES.org.editProduct(orgId, screen.productId)}>{CREATE.fillOnProduct}</Link>
           </Button>
         </div>
       )}
@@ -35,7 +36,7 @@ export function ListingDraftBanner({ orgId, screen }: { orgId: string; screen: L
           <p>{PUBLISH.barcodeHow}</p>
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm" className="min-h-10">
-              <Link href={`/org/${orgId}/products/${screen.productId}/edit`}>{PUBLISH.addBarcode}</Link>
+              <Link href={ROUTES.org.editProduct(orgId, screen.productId)}>{PUBLISH.addBarcode}</Link>
             </Button>
             <Button asChild variant="outline" size="sm" className="min-h-10">
               <a href={PUBLISH.exemptionUrl} target="_blank" rel="noreferrer">{PUBLISH.exemptionHow}</a>

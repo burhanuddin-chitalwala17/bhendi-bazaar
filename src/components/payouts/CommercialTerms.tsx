@@ -26,6 +26,7 @@ import {
   type CommercialTermsInput,
 } from "@/lib/validation/schemas/commercial-terms.schema";
 import { payoutsApiClient } from "@/components/payouts/payoutsApiClient";
+import { COMMERCIAL_TERMS_COPY } from "./payouts-copy";
 
 export interface CategoryOption {
   id: string;
@@ -61,7 +62,7 @@ export function CommercialTerms({
       })),
     },
     submit: (data) => payoutsApiClient.setCommercialTerms(orgId, data),
-    successMessage: "Commission updated",
+    successMessage: COMMERCIAL_TERMS_COPY.saved,
     onSuccess: () => {
       setOpen(false);
       router.refresh();
@@ -100,16 +101,15 @@ export function CommercialTerms({
       <Card className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-small font-medium">Commission</p>
+            <p className="text-small font-medium">{COMMERCIAL_TERMS_COPY.title}</p>
             <p className="text-caption text-muted-foreground">
-              {bpsToPercent(commissionBps)}% by default
-              {current.length > 0 &&
-                ` · ${current.length} category ${current.length === 1 ? "rate" : "rates"}`}
-              {" · "}discounts capped at {bpsToPercent(maxDiscountBps)}%
+              {COMMERCIAL_TERMS_COPY.byDefault(bpsToPercent(commissionBps))}
+              {current.length > 0 && COMMERCIAL_TERMS_COPY.categoryRates(current.length)}
+              {COMMERCIAL_TERMS_COPY.separator}{COMMERCIAL_TERMS_COPY.cappedAt(bpsToPercent(maxDiscountBps))}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-            Change
+            {COMMERCIAL_TERMS_COPY.change}
           </Button>
         </div>
       </Card>
@@ -118,14 +118,14 @@ export function CommercialTerms({
 
   return (
     <Card className="space-y-4 p-4">
-      <p className="text-small font-medium">Commission</p>
+      <p className="text-small font-medium">{COMMERCIAL_TERMS_COPY.title}</p>
 
       {formError && <p className="text-caption text-destructive">{formError}</p>}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="commission" className="text-caption">
-            Default rate (%)
+            {COMMERCIAL_TERMS_COPY.defaultRate}
           </Label>
           <Input
             id="commission"
@@ -138,7 +138,7 @@ export function CommercialTerms({
             {...register("commissionPercent", { valueAsNumber: true })}
           />
           <p className="mt-1 text-caption text-muted-foreground">
-            Charged where no category rate covers an item.
+            {COMMERCIAL_TERMS_COPY.defaultRateHint}
           </p>
           {errors.commissionPercent?.message && (
             <p className="mt-1 text-caption text-destructive">
@@ -148,7 +148,7 @@ export function CommercialTerms({
         </div>
         <div>
           <Label htmlFor="maxDiscount" className="text-caption">
-            Their discount ceiling (%)
+            {COMMERCIAL_TERMS_COPY.ceiling}
           </Label>
           <Input
             id="maxDiscount"
@@ -161,7 +161,7 @@ export function CommercialTerms({
             {...register("maxDiscountPercent", { valueAsNumber: true })}
           />
           <p className="mt-1 text-caption text-muted-foreground">
-            How deep they may discount their own goods.
+            {COMMERCIAL_TERMS_COPY.ceilingHint}
           </p>
           {errors.maxDiscountPercent?.message && (
             <p className="mt-1 text-caption text-destructive">
@@ -172,10 +172,9 @@ export function CommercialTerms({
       </div>
 
       <div className="space-y-2">
-        <Label className="text-caption">Category rates</Label>
+        <Label className="text-caption">{COMMERCIAL_TERMS_COPY.ratesTitle}</Label>
         <p className="text-caption text-muted-foreground">
-          A rate on a category covers everything beneath it, unless a child sets
-          its own.
+          {COMMERCIAL_TERMS_COPY.ratesHint}
         </p>
         {rates.fields.map((rate, index) => {
           const error = errors.categoryRates?.[index]?.ratePercent?.message;
@@ -191,7 +190,7 @@ export function CommercialTerms({
                   min="0"
                   max="100"
                   className="w-24"
-                  aria-label={`Rate for ${nameOf(rate.categoryId)}`}
+                  aria-label={COMMERCIAL_TERMS_COPY.rateFor(nameOf(rate.categoryId))}
                   aria-invalid={!!error}
                   {...register(`categoryRates.${index}.ratePercent`, {
                     valueAsNumber: true,
@@ -201,7 +200,7 @@ export function CommercialTerms({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  aria-label={`Remove the ${nameOf(rate.categoryId)} rate`}
+                  aria-label={COMMERCIAL_TERMS_COPY.removeRate(nameOf(rate.categoryId))}
                   onClick={() => rates.remove(index)}
                 >
                   <Icon name="close" />
@@ -224,9 +223,9 @@ export function CommercialTerms({
               })
             }
             className="mt-1 h-10 w-full rounded-field bg-background text-small"
-            aria-label="Add a category rate"
+            aria-label={COMMERCIAL_TERMS_COPY.addRate}
           >
-            <option value="">＋ Add a category rate…</option>
+            <option value="">{COMMERCIAL_TERMS_COPY.addRateOption}</option>
             {unused.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -239,16 +238,15 @@ export function CommercialTerms({
       {/* Changing a rate never rewrites a settlement: every rate is snapshotted onto
           the line that used it when the entry was written (R4). */}
       <p className="text-caption text-muted-foreground">
-        Applies to orders from now on. Entries already recorded keep the rates
-        they were written with.
+        {COMMERCIAL_TERMS_COPY.fromNow}
       </p>
 
       <div className="flex gap-2">
         <Button size="sm" onClick={() => void save().catch(() => {})} disabled={busy}>
-          {busy ? "Saving…" : "Save commission"}
+          {busy ? COMMERCIAL_TERMS_COPY.saving : COMMERCIAL_TERMS_COPY.save}
         </Button>
         <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
-          Cancel
+          {COMMERCIAL_TERMS_COPY.cancel}
         </Button>
       </div>
     </Card>

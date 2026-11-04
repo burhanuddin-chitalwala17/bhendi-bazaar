@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Icon } from "@/components/ui/icon";
+import { CREATE_BIDDING_COPY } from "./bidding-copy";
 
 export function CreateBiddingDialog({
   /** Where the create flow continues — `/org/<id>/bidding`. */
@@ -62,17 +63,12 @@ export function CreateBiddingDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <Icon name="auction" size="sm" />
-          Create bidding
-        </Button>
+          <Icon name="auction" size="sm" />{CREATE_BIDDING_COPY.createBidding}</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Which item?</DialogTitle>
-          <DialogDescription>
-            One item per bidding event. While it runs, that item cannot be
-            bought directly.
-          </DialogDescription>
+          <DialogTitle>{CREATE_BIDDING_COPY.whichItem}</DialogTitle>
+          <DialogDescription>{CREATE_BIDDING_COPY.oneItemPerBidding}</DialogDescription>
         </DialogHeader>
 
         <div className="relative">
@@ -80,9 +76,9 @@ export function CreateBiddingDialog({
           <Input
             value={term}
             onChange={(event) => setTerm(event.target.value)}
-            placeholder="Find a product"
+            placeholder={CREATE_BIDDING_COPY.findProduct}
             className="pl-9"
-            aria-label="Find a product"
+            aria-label={CREATE_BIDDING_COPY.findProduct}
           />
         </div>
 
@@ -101,12 +97,12 @@ export function CreateBiddingDialog({
           {results.length === 0 && (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">
               {isLoading
-                ? "Searching…"
+                ? CREATE_BIDDING_COPY.searching
                 : search.error
                   ? search.error
                   : term
-                  ? "Nothing matches that."
-                  : "Nothing here can go up for bidding right now."}
+                  ? CREATE_BIDDING_COPY.nothingMatches
+                  : CREATE_BIDDING_COPY.nothingHereCanGo}
             </p>
           )}
         </div>

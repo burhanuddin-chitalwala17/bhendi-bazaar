@@ -2,6 +2,7 @@ import { formatCount } from "@/lib/format";
 
 /** Shop details copy, exactly as ux.md signs it off (org-profile Copy deck, state matrix). */
 export const SHOP_DETAILS_COPY = {
+  preview: "Preview",
   title: "Shop details",
   help: "Your shop's facts. Buyers see the top part; only we see the bottom part.",
   buyersPart: "Buyers see this — on your shop page",

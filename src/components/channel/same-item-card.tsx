@@ -11,6 +11,7 @@ import type { MarketplaceChannel } from "@server/channels/channel-connection.typ
 import { channelsApiClient } from "./channelsApiClient";
 import { GROUP } from "./family-copy";
 import { ROW } from "./listing-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** "Looks like one item" (family-merge ux.md, Q5, Q21): a suggestion, never a grouping by itself. */
 export function SameItemCard({
@@ -36,7 +37,7 @@ export function SameItemCard({
       <p className="text-sm text-muted-foreground">{titles.join(" · ")}</p>
       <div className="flex flex-wrap gap-2">
         <Button asChild size="sm" className="min-h-10">
-          <Link href={`/org/${orgId}/channels/family?listings=${listingIds.join(",")}`}>{GROUP.groupThem}</Link>
+          <Link href={`${ROUTES.org.channelFamily(orgId)}?listings=${listingIds.join(",")}`}>{GROUP.groupThem}</Link>
         </Button>
         <Button variant="outline" size="sm" className="min-h-10" aria-busy={dismiss.isLoading} onClick={() => void dismiss.mutate().catch(() => undefined)}>
           {GROUP.notOneItem}

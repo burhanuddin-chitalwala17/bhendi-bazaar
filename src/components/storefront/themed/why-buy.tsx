@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import type { SectionVariant } from "@server/catalog/storefront-themes";
 import type { WhyBuySlice } from "./page-data";
 import { SectionHeading } from "./section-heading";
+import { THEMED_COPY } from "./themed-copy";
 
 /**
  * "Why buy from us" (Q21, R8): facts the platform derived, then the shop's own claims drawn
@@ -16,7 +17,7 @@ export function ThemedWhyBuy({
   const strip = variant === "strip";
   return (
     <section className="mx-auto max-w-store space-y-4 px-gutter py-section">
-      <SectionHeading title="Why buy from us" align={variant === "tiles" ? "center" : "start"} />
+      <SectionHeading title={THEMED_COPY.sections.whyBuy} align={variant === "tiles" ? "center" : "start"} />
       <ul
         aria-label={`What ${APP_NAME} knows about this shop`}
         className={cn(
@@ -44,7 +45,7 @@ export function ThemedWhyBuy({
         ))}
       </ul>
       {claims.length > 0 && (
-        <ul aria-label="What the shop says" className="space-y-2">
+        <ul aria-label={THEMED_COPY.sections.shopClaims} className="space-y-2">
           {claims.map((claim) => (
             <li key={claim.label} className="border-l-2 border-primary pl-3 text-body italic">
               {claim.label}

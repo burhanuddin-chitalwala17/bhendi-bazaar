@@ -10,13 +10,12 @@ import { isVideoContentType } from "@server/catalog/video";
 import { uploadBatch } from "@/lib/image/upload-batch";
 import { uploadVideo, videoFileProblem } from "@/lib/image/upload-video";
 import { orgUploadEndpoints } from "@/lib/image/upload-endpoints";
+import { MEDIA_UPLOAD_COPY } from "./media-library-copy";
 
 interface MediaLibraryUploadProps {
   orgId: string;
   orgCode: string;
 }
-
-const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
 
 /**
  * Photos and videos into the library with no product yet (media-library R6, video-hosting R1):
@@ -24,7 +23,9 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
  * as picked for the worker to make playable, all under the org's own folder. Then the page re-reads
  * so the new tiles are at the top. A file the org already holds is not stored twice (D11).
  */
-export function MediaLibraryUpload({ orgId, orgCode }: MediaLibraryUploadProps) {
+export function MediaLibraryUpload(props: MediaLibraryUploadProps) {
+  // The code only names the storage folder; it is never shown (org-profile R8).
+  const { orgId, orgCode } = props;
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -61,7 +62,7 @@ export function MediaLibraryUpload({ orgId, orgCode }: MediaLibraryUploadProps) 
           else videosAdded += 1;
         } catch (error) {
           refused.push(file.name);
-          firstError ??= error instanceof Error ? error.message : "Upload failed";
+          firstError ??= error instanceof Error ? error.message : MEDIA_UPLOAD_COPY.failed;
         }
         done += 1;
         setProgress({ done, total: files.length });
@@ -80,19 +81,19 @@ export function MediaLibraryUpload({ orgId, orgCode }: MediaLibraryUploadProps) 
         } catch (error) {
           // A refused batch is refused whole (upload-batch.ts), so every photograph is named.
           refused.push(...photos.map((file) => file.name));
-          firstError ??= error instanceof Error ? error.message : "Upload failed";
+          firstError ??= error instanceof Error ? error.message : MEDIA_UPLOAD_COPY.failed;
         }
       }
 
-      const added = [photosAdded > 0 && plural(photosAdded, "photo"), videosAdded > 0 && plural(videosAdded, "video")]
+      const added = [photosAdded > 0 && MEDIA_UPLOAD_COPY.photos(photosAdded), videosAdded > 0 && MEDIA_UPLOAD_COPY.videos(videosAdded)]
         .filter((part): part is string => Boolean(part))
-        .join(" and ");
+        .join(MEDIA_UPLOAD_COPY.and);
       if (refused.length > 0) {
-        toast.error(`Could not upload ${refused.join(", ")} (${firstError}).${added ? ` ${added} added.` : ""}`);
+        toast.error(MEDIA_UPLOAD_COPY.refused(refused.join(", "), firstError, added));
       } else if (!added && reused > 0) {
-        toast.info(reused === 1 ? "That file is already in your library." : `All ${reused} files are already in your library.`);
+        toast.info(MEDIA_UPLOAD_COPY.alreadyHere(reused));
       } else {
-        toast.success(`${added} added${reused > 0 ? `; ${reused} ${reused === 1 ? "was" : "were"} already here` : ""}.`);
+        toast.success(MEDIA_UPLOAD_COPY.added(added, reused));
       }
       if (added || reused > 0) router.refresh();
     } finally {
@@ -105,7 +106,7 @@ export function MediaLibraryUpload({ orgId, orgCode }: MediaLibraryUploadProps) 
     <>
       <Button type="button" onClick={() => input.current?.click()} pending={progress !== null} size="sm">
         {!progress && <Icon name="upload" className="mr-2" />}
-        {progress ? (progress.total > 1 ? `Uploading ${progress.done}/${progress.total}…` : "Uploading…") : "Upload photos or a video"}
+        {progress ? (progress.total > 1 ? MEDIA_UPLOAD_COPY.uploadingMany(progress.done, progress.total) : MEDIA_UPLOAD_COPY.uploading) : MEDIA_UPLOAD_COPY.upload}
       </Button>
       <input ref={input} type="file" accept="image/*,video/*" multiple onChange={handleFiles} className="hidden" />
     </>

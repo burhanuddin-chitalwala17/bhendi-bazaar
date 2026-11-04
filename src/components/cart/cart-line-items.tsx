@@ -9,6 +9,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { Icon } from "@/components/ui/icon";
 import type { CartItem as CartItemType } from "@/domain/cart";
 import { CartItem } from "./CartItem";
+import { CART_COPY } from "./cart-copy";
 
 /** The bag's lines by shop: each shop packs and sends its own parcel. */
 export function groupByShop(items: CartItemType[]): Array<{ shop: CartItemType["org"]; items: CartItemType[] }> {
@@ -60,11 +61,11 @@ export function CartLineItems({ items }: { items: CartItemType[] }) {
   return (
     <div className="space-y-4">
       {groupByShop(items).map(({ shop, items: lines }) => (
-        <section key={shop.id} aria-label={`From ${shop.name}`} className="rounded-card border border-border bg-card px-4">
+        <section key={shop.id} aria-label={CART_COPY.fromShop(shop.name)} className="rounded-card border border-border bg-card px-4">
           <p className="flex items-center gap-2 border-b border-border py-3 text-small text-muted-foreground">
             <Icon name="parcel" size="sm" />
             <span>
-              From <b className="font-semibold text-foreground">{shop.name}</b> · one parcel
+              {CART_COPY.from} <b className="font-semibold text-foreground">{shop.name}</b> {CART_COPY.oneParcel}
             </span>
           </p>
           <ul className="divide-y divide-border">

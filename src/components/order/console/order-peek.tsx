@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ROUTES } from "@server/shared/routes";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -9,6 +10,7 @@ import { formatDateTime } from "@/lib/format";
 import type { AdminOrderDetail } from "@server/checkout/admin.order.types";
 import { SHIPMENT_STATUS_LABELS } from "@server/shipping/domain/shipping.types";
 import { orderChip, parcelTone, paymentChip } from "./order-status";
+import { ORDER_PEEK_COPY } from "./console-copy";
 
 /**
  * One order beside the list, from desktop (AdminOrders, design-system Q36): enough to answer "what
@@ -33,7 +35,7 @@ export function OrderPeek({ order, closeHref }: { order: AdminOrderDetail; close
             {order.paymentMethod ? ` · ${order.paymentMethod}` : ""}
           </p>
         </div>
-        <Button asChild variant="ghost" shape="icon" size="sm" aria-label="Close order">
+        <Button asChild variant="ghost" shape="icon" size="sm" aria-label={ORDER_PEEK_COPY.closeOrder}>
           <Link href={closeHref} scroll={false} prefetch={false}>
             <Icon name="close" />
           </Link>
@@ -74,21 +76,19 @@ export function OrderPeek({ order, closeHref }: { order: AdminOrderDetail; close
       </ul>
 
       <div className="space-y-1">
-        <p className="text-caption text-muted-foreground">Deliver to</p>
+        <p className="text-caption text-muted-foreground">{ORDER_PEEK_COPY.deliverTo}</p>
         <p className="text-small">
-          {address ? `${address.fullName || "Guest"} · ${address.city} ${address.pincode}` : "No address on this order"}
+          {address ? `${address.fullName || ORDER_PEEK_COPY.guest} · ${address.city} ${address.pincode}` : ORDER_PEEK_COPY.noAddressOrder}
         </p>
       </div>
 
       <div className="flex items-center justify-between border-t border-border pt-3 text-small">
-        <span className="font-semibold">Total</span>
+        <span className="font-semibold">{ORDER_PEEK_COPY.total}</span>
         <Money paise={order.grandTotal} className="font-semibold" />
       </div>
 
       <Button asChild variant="outline" className="w-full">
-        <Link href={`/admin/orders/${order.id}`} prefetch={false}>
-          Open full order
-          <Icon name="forward" size="sm" />
+        <Link href={ROUTES.admin.order(order.id)} prefetch={false}>{ORDER_PEEK_COPY.openFullOrder}<Icon name="forward" size="sm" />
         </Link>
       </Button>
     </aside>

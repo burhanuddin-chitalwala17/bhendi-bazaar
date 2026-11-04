@@ -2,6 +2,7 @@ import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { CartItem } from "@/domain/cart";
 import { Icon } from "@/components/ui/icon";
 import { formatCurrency } from "@/lib/format";
+import { CHECKOUT_SUMMARY_COPY } from "../checkout-copy";
 
 interface CheckoutSummaryProps {
   items: CartItem[];
@@ -22,11 +23,11 @@ export function CheckoutSummary({
 }: CheckoutSummaryProps) {
   if (!items.length) {
     return (
-      <p className="text-small text-muted-foreground">Your bag is empty.</p>
+      <p className="text-small text-muted-foreground">{CHECKOUT_SUMMARY_COPY.empty}</p>
     );
   }
 
-  const title = `Order summary · ${items.length === 1 ? "1 item" : `${items.length} items`}`;
+  const title = CHECKOUT_SUMMARY_COPY.title(items.length);
   const lines = (
       <div className="space-y-2 text-caption">
         {items.map((item) => {
@@ -48,12 +49,8 @@ export function CheckoutSummary({
               {/* Show savings for this item if applicable */}
               {itemSavings > 0 && (
                 <div className="flex items-baseline justify-between gap-2 text-caption">
-                  <span className="text-muted-foreground/60">
-                    Offer applied
-                  </span>
-                  <span className="text-success">
-                    Save {formatCurrency(itemSavings)}
-                  </span>
+                  <span className="text-muted-foreground/60">{CHECKOUT_SUMMARY_COPY.offerApplied}</span>
+                  <span className="text-success">{CHECKOUT_SUMMARY_COPY.save(formatCurrency(itemSavings))}</span>
                 </div>
               )}
             </div>
@@ -81,14 +78,14 @@ export function CheckoutSummary({
       <div className="mt-2 space-y-1 border-t border-dashed border-border pt-2 text-caption">
         {/* Subtotal */}
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Subtotal</span>
+          <span className="text-muted-foreground">{CHECKOUT_SUMMARY_COPY.subtotal}</span>
           <PriceDisplay price={subtotal} size="sm" />
         </div>
 
         {/* Discount */}
         {discount > 0 && (
           <div className="flex items-center justify-between text-success">
-            <span>Offers</span>
+            <span>{CHECKOUT_SUMMARY_COPY.offers}</span>
             <span className="font-medium">- {formatCurrency(discount)}</span>
           </div>
         )}
@@ -96,18 +93,18 @@ export function CheckoutSummary({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
             <Icon name="delivery" size="xs" />
-            <span>Delivery</span>
+            <span>{CHECKOUT_SUMMARY_COPY.delivery}</span>
           </div>
           {shipping > 0 ? (
             <span className="font-medium">{formatCurrency(shipping)}</span>
           ) : (
-            <span className="text-muted-foreground">After your address</span>
+            <span className="text-muted-foreground">{CHECKOUT_SUMMARY_COPY.afterAddress}</span>
           )}
         </div>
 
         {/* Final Total */}
         <div className="mt-2 flex items-center justify-between border-t border-border pt-2 text-small font-semibold">
-          <span>To pay</span>
+          <span>{CHECKOUT_SUMMARY_COPY.toPay}</span>
           <PriceDisplay price={total} size="sm" />
         </div>
       </div>

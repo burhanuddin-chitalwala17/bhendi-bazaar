@@ -2,6 +2,7 @@ import { Control, FieldErrors } from "react-hook-form";
 import { FormController } from "../FormField";
 import { ImageUpload } from "@/components/shared/image-upload";
 import type { CreateCategoryInput } from "@/domain/admin";
+import { CATEGORY_IMAGE_FIELD_COPY } from "./category-copy";
 
 interface CategoryImageFieldProps {
   control: Control<CreateCategoryInput>;
@@ -14,11 +15,11 @@ export function CategoryImageField({
 }: CategoryImageFieldProps) {
   return (
     <div className="rounded-card border border-border bg-card p-6">
-      <h2 className="text-title font-semibold text-foreground mb-4">Hero image</h2>
+      <h2 className="text-title font-semibold text-foreground mb-4">{CATEGORY_IMAGE_FIELD_COPY.heroImage}</h2>
       <FormController
         name="heroImage"
         control={control}
-        label="Category Hero Image"
+        label={CATEGORY_IMAGE_FIELD_COPY.categoryHeroImage}
         required
         error={errors.heroImage?.message}
         render={(field) => (
@@ -33,8 +34,7 @@ export function CategoryImageField({
         )}
       />
       <p className="text-small text-muted-foreground mt-2">
-        This image will be displayed on the category page header. Recommended
-        size: 1920x600px
+        {CATEGORY_IMAGE_FIELD_COPY.thisImageWillBeDisplayed}
       </p>
     </div>
   );

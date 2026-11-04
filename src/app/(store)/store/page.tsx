@@ -9,11 +9,13 @@ import { PageHeader } from "@/components/shared/page-shell";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { storefrontDAL } from "@/data-access-layer/storefront.dal";
 import { appUrl } from "@server/shared/app-url";
+import { STORE_PAGES_COPY } from "./store-pages-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export const metadata: Metadata = {
-  title: "Shops",
-  description: "Every shop trading on Bhendi Bazaar.",
-  alternates: { canonical: `${appUrl()}/store` },
+  title: STORE_PAGES_COPY.directoryTitle,
+  description: STORE_PAGES_COPY.directoryDescription,
+  alternates: { canonical: `${appUrl()}${ROUTES.stores}` },
 };
 
 /**
@@ -30,26 +32,26 @@ export default async function ShopDirectoryPage() {
   return (
     <MarketplaceChrome>
       <PageShell width="wide">
-        <PageHeader title="Shops" description="Every shop trading on Bhendi Bazaar." />
+        <PageHeader title={STORE_PAGES_COPY.directoryTitle} description={STORE_PAGES_COPY.directoryDescription} />
 
         {shops.length === 0 ? (
           <EmptyState
-            title="No shops yet"
-            description="Nobody is trading here just yet. Check back soon."
+            title={STORE_PAGES_COPY.noShopsTitle}
+            description={STORE_PAGES_COPY.noShopsBody}
           />
         ) : (
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {shops.map((shop) => (
               <li key={shop.handle}>
                 <Link
-                  href={`/store/${shop.handle}`}
+                  href={ROUTES.store(shop.handle)}
                   className="flex items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors duration-fast hover:bg-muted"
                 >
                   {shop.logoUrl ? (
                     <div className="relative size-12 shrink-0 overflow-hidden rounded-card bg-muted">
                       <Image
                         src={shop.logoUrl}
-                        alt={`${shop.name} logo`}
+                        alt={STORE_PAGES_COPY.logoAlt(shop.name)}
                         fill
                         sizes="48px"
                         className="object-cover"

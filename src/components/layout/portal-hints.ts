@@ -1,22 +1,13 @@
 import { ONBOARDING_STEP, type OnboardingStep } from "@server/catalog/org-onboarding.types";
 import { PORTAL_NAV } from "./portal-nav";
+import { PORTAL_HINT_CARDS_COPY } from "@/components/layout/portal-copy";
+export { HINT_COPY } from "@/components/layout/portal-copy";
 
-/**
- * Every hint card and the "?" answer for each page (own-store onboarding D9), beside PORTAL_NAV,
- * whose purpose lines "?" repeats. A hint has 1–3 cards of at most two sentences (own-store Q12).
- */
-export const HINT_COPY = {
-  next: "Next",
-  gotIt: "Got it",
-  close: "Close",
-  pageHelp: "What is this page for?",
-  position: (index: number, total: number) => `${index} of ${total}`,
-} as const;
 
-const PRODUCT = ["Photos sell. Use daylight and a plain wall.", "Price and stock. You can change them any time."] as const;
-const ADDRESS = ["Couriers pick up from here. Buyers never see it."] as const;
-const LOOK = ["Your logo and one line show at the top of your shop page."] as const;
-const SHARE = ["Send your link to customers on WhatsApp. They can order without calling you."] as const;
+const PRODUCT = [PORTAL_HINT_CARDS_COPY.productPhotos, PORTAL_HINT_CARDS_COPY.productPrice] as const;
+const ADDRESS = [PORTAL_HINT_CARDS_COPY.address] as const;
+const LOOK = [PORTAL_HINT_CARDS_COPY.look] as const;
+const SHARE = [PORTAL_HINT_CARDS_COPY.share] as const;
 
 export interface StepHint {
   cards: readonly string[];
@@ -27,10 +18,10 @@ export interface StepHint {
 /** Null for "Your shop is open", which is ticked at creation and has nothing to do. */
 export const STEP_HINT: Record<OnboardingStep, StepHint | null> = {
   [ONBOARDING_STEP.OPEN]: null,
-  [ONBOARDING_STEP.PRODUCT]: { cards: PRODUCT, action: "Add product" },
-  [ONBOARDING_STEP.ADDRESS]: { cards: ADDRESS, action: "Add pickup address" },
-  [ONBOARDING_STEP.LOOK]: { cards: LOOK, action: "Add logo and line" },
-  [ONBOARDING_STEP.SHARE]: { cards: SHARE, action: "Share your shop" },
+  [ONBOARDING_STEP.PRODUCT]: { cards: PRODUCT, action: PORTAL_HINT_CARDS_COPY.productAction },
+  [ONBOARDING_STEP.ADDRESS]: { cards: ADDRESS, action: PORTAL_HINT_CARDS_COPY.addressAction },
+  [ONBOARDING_STEP.LOOK]: { cards: LOOK, action: PORTAL_HINT_CARDS_COPY.lookAction },
+  [ONBOARDING_STEP.SHARE]: { cards: SHARE, action: PORTAL_HINT_CARDS_COPY.shareAction },
 };
 
 /** A page's own cards after its purpose line, keyed by its PORTAL_NAV item: a step's page repeats the step's hint. */

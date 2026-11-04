@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { PayoutOrgList } from "@/components/payouts/payout-org-list";
+import { PAYOUTS_PAGE_COPY } from "@/components/payouts/payouts-copy";
 
 export default async function AdminPayoutsPage() {
   await requirePlatformAdmin();
@@ -17,7 +18,7 @@ export default async function AdminPayoutsPage() {
 
   return (
     <PageShell width="wide">
-      <PageHeader title="Payouts" description="What each shop has earned, and what is still owed." />
+      <PageHeader title={PAYOUTS_PAGE_COPY.title} description={PAYOUTS_PAGE_COPY.description} />
 
       {/* Paid orders with no ledger entry. Always zero unless a write failed — a
           non-zero figure is money owed that nothing has recorded, so it leads. */}
@@ -27,12 +28,10 @@ export default async function AdminPayoutsPage() {
             <Icon name="warning" size="md" tone="warning" />
             <div className="text-small">
               <p className="font-medium">
-                {unrecorded} paid{" "}
-                {unrecorded === 1 ? "order has" : "orders have"} no ledger entry
+                {PAYOUTS_PAGE_COPY.unrecorded(unrecorded)}
               </p>
               <p className="text-muted-foreground">
-                The nightly reconcile writes these automatically. If the figure
-                persists, the entries are failing rather than lagging.
+                {PAYOUTS_PAGE_COPY.unrecordedBody}
               </p>
             </div>
           </div>

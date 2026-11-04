@@ -14,6 +14,8 @@ import { AdminOrgProducts } from "@/components/org/console/tabs/AdminOrgProducts
 import { AdminOrgOrders } from "@/components/org/console/tabs/AdminOrgOrders";
 import { AdminOrgEarnings } from "@/components/org/console/tabs/AdminOrgEarnings";
 import { AdminOrgReviews } from "@/components/org/console/tabs/AdminOrgReviews";
+import { ADMIN_ORGS_COPY } from "../orgs-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export default async function AdminOrgDetailPage({
   params,
@@ -31,24 +33,24 @@ export default async function AdminOrgDetailPage({
     <PageShell width="wide">
       <PageHeader
         title={org.name}
-        description={`${org.code} · ${org.email}`}
-        back={{ href: "/admin/orgs", label: "Shops" }}
+        description={ADMIN_ORGS_COPY.description(org.code, org.email)}
+        back={{ href: ROUTES.admin.orgs, label: ADMIN_ORGS_COPY.back }}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {org.isBlocked && (
               <StatusBadge tone="destructive">
                 <Icon name="blocked" size="xs" />
-                Blocked
+                {ADMIN_ORGS_COPY.blocked}
               </StatusBadge>
             )}
             <OrgBlockToggle orgId={org.id} isBlocked={org.isBlocked} />
             {/* The team lists a product for a shop in the shop's own steps (product-form R10, Q12). */}
             <Button asChild size="sm">
-              <Link href={`/admin/orgs/${org.id}/products/new`} prefetch={false}>Add product for this shop</Link>
+              <Link href={ROUTES.admin.orgNewProduct(org.id)} prefetch={false}>{ADMIN_ORGS_COPY.addProduct}</Link>
             </Button>
             {/* The team uploads a shop's sheet in the shop's own steps (own-store/bulk-sheet R9). */}
             <Button asChild size="sm" variant="outline">
-              <Link href={`/admin/orgs/${org.id}/products/bulk`} prefetch={false}>Add many for this shop</Link>
+              <Link href={ROUTES.admin.orgBulkProducts(org.id)} prefetch={false}>{ADMIN_ORGS_COPY.addMany}</Link>
             </Button>
           </div>
         }

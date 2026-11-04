@@ -6,6 +6,8 @@ import { commercialTermsService } from "@server/catalog/commercial-terms.service
 import { OfferForm } from "@/components/promotions/OfferForm";
 
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
+import { ADMIN_OFFERS_PAGE_COPY } from "@/components/promotions/promotions-copy";
+import { ROUTES } from "@server/shared/routes";
 export default async function NewPlatformOfferPage() {
   await requirePlatformAdmin();
   const [categories, products, lowestRateBps] = await Promise.all([
@@ -17,12 +19,12 @@ export default async function NewPlatformOfferPage() {
   return (
     <PageShell width="narrow">
       <PageHeader
-        title="New offer"
-        description="Platform-funded. Where an organisation already offers something on the same item, you pay only the difference."
+        title={ADMIN_OFFERS_PAGE_COPY.newTitle}
+        description={ADMIN_OFFERS_PAGE_COPY.newDescription}
       />
       <OfferForm
         action="/api/admin/promotions"
-        returnTo="/admin/promotions"
+        returnTo={ROUTES.admin.promotions}
         categories={categories}
         products={products.products}
         productTotal={products.total}

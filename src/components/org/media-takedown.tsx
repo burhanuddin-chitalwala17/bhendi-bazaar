@@ -13,6 +13,7 @@ import {
   platformRetireSchema,
   type PlatformRetireInput,
 } from "@/lib/validation/schemas/media-library.schema";
+import { MEDIA_TAKEDOWN_COPY } from "./media-library-copy";
 
 /**
  * The platform taking one image down (media-library spec R12).
@@ -43,7 +44,7 @@ export function MediaTakedown({
     schema: platformRetireSchema,
     defaultValues: { reason: "" },
     submit: (data) => mediaTakedownApiClient.retire(assetId, data),
-    successMessage: "Taken down. The shop can see why.",
+    successMessage: MEDIA_TAKEDOWN_COPY.done,
     onSuccess: () => {
       setOpen(false);
       router.refresh();
@@ -55,13 +56,13 @@ export function MediaTakedown({
   return (
     <>
       <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(true)}>
-        Take down
+        {MEDIA_TAKEDOWN_COPY.open}
       </Button>
       <TaskDialog
         open={open}
         onOpenChange={setOpen}
-        title="Take this image down"
-        description="It leaves the shop's library now, and the shop is shown the reason you give."
+        title={MEDIA_TAKEDOWN_COPY.title}
+        description={MEDIA_TAKEDOWN_COPY.description}
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3">
           {previewUrl && (
@@ -76,18 +77,18 @@ export function MediaTakedown({
               </p>
             )}
             <FormTextarea
-              label="Why it is coming down"
+              label={MEDIA_TAKEDOWN_COPY.reason}
               rows={3}
-              placeholder="What rule this breaks, in words the shop will understand."
+              placeholder={MEDIA_TAKEDOWN_COPY.reasonPlaceholder}
               {...register("reason")}
               error={errors.reason?.message}
             />
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-                Cancel
+                {MEDIA_TAKEDOWN_COPY.cancel}
               </Button>
               <Button type="submit" variant="destructive" disabled={isSubmitting}>
-                {isSubmitting ? "Taking it down…" : "Take it down"}
+                {isSubmitting ? MEDIA_TAKEDOWN_COPY.submitting : MEDIA_TAKEDOWN_COPY.submit}
               </Button>
             </div>
           </form>

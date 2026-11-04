@@ -11,6 +11,8 @@ import type { OrgSummary } from "@/domain/org";
 
 import { PageHeader } from "@/components/shared/page-shell";
 import type { PortalNavKey } from "@/components/layout/portal-nav";
+import { ROUTES } from "@server/shared/routes";
+import { PRODUCT_CONSOLE_COPY } from "./console-copy";
 interface ProductViewProps {
   /** The shop portal's "?" key; the admin console passes none. */
   help?: PortalNavKey;
@@ -37,22 +39,22 @@ export function ProductsView({
     <div className="space-y-8">
       <PageHeader
         help={help}
-        back={{ href: productsBasePath, label: "Back to products" }}
+        back={{ href: productsBasePath, label: PRODUCT_CONSOLE_COPY.view.back }}
         title={product.name}
-        description="Product details"
+        description={PRODUCT_CONSOLE_COPY.view.description}
         actions={
           <>
             <Button asChild variant="outline">
-              <Link href={`/product/${product.slug}`} target="_blank" prefetch={false}>
+              <Link href={ROUTES.product(product.slug)} target="_blank" prefetch={false}>
                 <Icon name="external" size="sm" />
-                See it live
+                {PRODUCT_CONSOLE_COPY.view.seeLive}
               </Link>
             </Button>
             {canEdit && (
               <Button asChild>
                 <Link href={`${productsBasePath}/${product.id}/edit`} prefetch={false}>
                   <Icon name="edit" size="sm" />
-                  Edit product
+                  {PRODUCT_CONSOLE_COPY.view.edit}
                 </Link>
               </Button>
             )}

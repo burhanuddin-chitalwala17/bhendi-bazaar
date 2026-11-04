@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { HeroBanner, type HeroBannerContent, type HeroEdge } from "./hero-banner";
 import { cn } from "@/lib/utils";
+import { STORE_HOME_COPY } from "./store-home-copy";
+import { HERO_SLIDER_COPY } from "@/components/home/store-home-copy";
 
 const ADVANCE_MS = 6000;
 
@@ -62,7 +64,7 @@ export function HeroSlider({ banners, edge = "card" }: { banners: HeroBannerCont
   return (
     <section
       aria-roledescription={many ? "carousel" : undefined}
-      aria-label={many ? "Featured collections" : undefined}
+      aria-label={many ? HERO_SLIDER_COPY.label : undefined}
       className="relative"
       onMouseEnter={() => setHeld(true)}
       onMouseLeave={() => setHeld(false)}
@@ -109,7 +111,7 @@ export function HeroSlider({ banners, edge = "card" }: { banners: HeroBannerCont
             type="button"
             variant="ghost"
             shape="icon"
-            aria-label="Previous banner"
+            aria-label={STORE_HOME_COPY.slider.previous}
             onClick={() => {
               setStopped(true);
               goTo(index - 1);
@@ -122,7 +124,7 @@ export function HeroSlider({ banners, edge = "card" }: { banners: HeroBannerCont
             type="button"
             variant="ghost"
             shape="icon"
-            aria-label="Next banner"
+            aria-label={STORE_HOME_COPY.slider.next}
             onClick={() => {
               setStopped(true);
               goTo(index + 1);

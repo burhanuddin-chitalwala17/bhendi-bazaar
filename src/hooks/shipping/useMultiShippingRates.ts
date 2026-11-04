@@ -5,6 +5,7 @@ import { shippingApiClient } from "@/components/shipping/shippingApiClient";
 import type { CartItem } from "@/domain/cart";
 import type { ShippingGroup, ShippingRate, GetShippingRatesRequest } from "@/domain/shipping";
 import { calculateTotalShipping, areAllGroupsReady } from "@/utils/shipping";
+import { MULTI_SHIPPING_RATES_COPY } from "./shipping-copy";
 
 export interface UseMultiShippingRatesReturn {
   // Data
@@ -104,7 +105,7 @@ export function useMultiShippingRates(): UseMultiShippingRatesReturn {
       } catch (error) {
         setGroups([]);
         setAllocationError(
-          error instanceof Error ? error.message : "Could not plan your parcels"
+          error instanceof Error ? error.message : MULTI_SHIPPING_RATES_COPY.couldNotPlan
         );
         setIsLoading(false);
         return;
@@ -141,7 +142,7 @@ export function useMultiShippingRates(): UseMultiShippingRatesReturn {
               return {
                 ...updatedGroup,
                 isLoading: false,
-                error: error instanceof Error ? error.message : "Failed to fetch rates",
+                error: error instanceof Error ? error.message : MULTI_SHIPPING_RATES_COPY.failedToFetch,
                 serviceable: false,
               };
             }

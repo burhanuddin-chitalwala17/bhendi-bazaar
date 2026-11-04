@@ -4,6 +4,7 @@ import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Button } from "@/components/ui/button";
 import type { SocialNetwork } from "@server/catalog/social-networks";
 import type { SocialSlice } from "./sections";
+import { BRAND_SECTION_COPY } from "@/components/storefront/brand-page/brand-page-copy";
 
 /** One glyph per allowlisted network. Adding a network here means adding it to the allowlist first. */
 const ICONS: Record<SocialNetwork, IconName> = {
@@ -21,7 +22,7 @@ const ICONS: Record<SocialNetwork, IconName> = {
 export function WaysToFollow({ name, links }: SocialSlice) {
   return (
     <section className="space-y-3">
-      <SectionHeader overline="The shop" title={`Follow ${name}`} />
+      <SectionHeader overline={BRAND_SECTION_COPY.overline} title={BRAND_SECTION_COPY.follow(name)} />
       <ul className="flex flex-wrap gap-2">
         {links.map((link) => {
           const glyph = ICONS[link.network];

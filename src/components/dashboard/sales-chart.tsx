@@ -1,6 +1,7 @@
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { SalesDay } from "@server/analytics/sales.types";
+import { DASHBOARD_COPY } from "./dashboard-copy";
 
 /** Whose figures these are (design-system Q34): the platform's line is the brand's, a shop's its own. */
 export type SalesTone = "platform" | "shop";
@@ -73,8 +74,15 @@ export function SalesChart({
 
   const summary =
     peak === 0
-      ? `No sales on any day of this period or the one before.`
-      : `Sales by day. ${currentLabel}: ${formatCurrency(current.reduce((a, b) => a + b, 0))}, highest ${formatCurrency(best.paise)} on ${formatDate(indiaDay(best.day), { weekday: "long", day: "numeric", month: "long" })}. ${previousLabel}: ${formatCurrency(previous.reduce((a, b) => a + b, 0))}.`;
+      ? DASHBOARD_COPY.chartEmpty
+      : DASHBOARD_COPY.chartSummary({
+          currentLabel,
+          currentTotal: formatCurrency(current.reduce((a, b) => a + b, 0)),
+          best: formatCurrency(best.paise),
+          bestDay: formatDate(indiaDay(best.day), { weekday: "long", day: "numeric", month: "long" }),
+          previousLabel,
+          previousTotal: formatCurrency(previous.reduce((a, b) => a + b, 0)),
+        });
 
   return (
     <figure className="space-y-2">

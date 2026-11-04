@@ -9,33 +9,45 @@ import { cn } from "@/lib/utils";
 import { useAuthSheet } from "@/context/AuthSheetContext";
 import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
+import { isUnder, routeSection } from "@/lib/route-section";
+import { ROUTES } from "@server/shared/routes";
+import { TAB_BAR_COPY } from "./layout-copy";
 
 /** The phone's primary navigation (ADR-0016, design-system Q21); hidden from `md`, where the navbar carries it. */
 export const SHOPPER_TABS = [
-  { key: "home", label: "Home", href: "/", icon: "home" },
-  { key: "shop", label: "Shop", href: "/shop", icon: "shop" },
-  { key: "saved", label: "Saved", href: "/wishlist", icon: "saved" },
-  { key: "bag", label: "Bag", href: "/cart", icon: "bag" },
-  { key: "account", label: "Account", href: "/profile", icon: "account" },
+  { key: "home", label: TAB_BAR_COPY.home, href: ROUTES.home, icon: "home" },
+  { key: "shop", label: TAB_BAR_COPY.shop, href: ROUTES.shopAll, icon: "shop" },
+  { key: "saved", label: TAB_BAR_COPY.saved, href: ROUTES.wishlist, icon: "saved" },
+  { key: "bag", label: TAB_BAR_COPY.bag, href: ROUTES.cart, icon: "bag" },
+  { key: "account", label: TAB_BAR_COPY.account, href: ROUTES.profile, icon: "account" },
 ] as const satisfies ReadonlyArray<{ key: string; label: string; href: string; icon: IconName }>;
 
 type TabKey = (typeof SHOPPER_TABS)[number]["key"];
 
 /** Browsing anywhere in the catalogue is the Shop tab, so a product page keeps it lit. */
-const BROWSE = ["/shop", "/category", "/product", "/s", "/offers", "/store", "/bid"];
+const BROWSE = [
+  ROUTES.shopAll,
+  routeSection(ROUTES.category("")),
+  routeSection(ROUTES.product("")),
+  ROUTES.search,
+  ROUTES.offers,
+  ROUTES.stores,
+  routeSection(ROUTES.bid("")),
+];
+const ACCOUNT = [ROUTES.profile, ROUTES.orders, routeSection(ROUTES.order(""))];
 
 export function activeTab(pathname: string): TabKey | null {
-  const under = (prefix: string) => pathname === prefix || pathname.startsWith(`${prefix}/`);
-  if (pathname === "/") return "home";
+  const under = (section: string) => isUnder(pathname, section);
+  if (pathname === ROUTES.home) return "home";
   if (BROWSE.some(under)) return "shop";
-  if (under("/wishlist")) return "saved";
-  if (under("/cart")) return "bag";
-  if (under("/profile") || under("/orders") || under("/order")) return "account";
+  if (under(ROUTES.wishlist)) return "saved";
+  if (under(ROUTES.cart)) return "bag";
+  if (ACCOUNT.some(under)) return "account";
   return null;
 }
 
 /** Paths that hide the tab bar so nothing competes with paying. */
-export const isFocusedFlow = (pathname: string) => pathname === "/checkout" || pathname.startsWith("/checkout/");
+export const isFocusedFlow = (pathname: string) => isUnder(pathname, ROUTES.checkout);
 
 const TAB = "flex min-h-10 flex-1 flex-col items-center justify-center gap-0.5 text-2xs font-medium transition-colors duration-fast";
 
@@ -50,7 +62,7 @@ export function MobileTabBar() {
   if (isFocusedFlow(pathname)) return null;
 
   return (
-    <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-safe backdrop-blur md:hidden">
+    <nav aria-label={TAB_BAR_COPY.nav} className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-safe backdrop-blur md:hidden">
       <div className="mx-auto flex h-tabbar max-w-page items-stretch">
         {SHOPPER_TABS.map((tab) => {
           const on = current === tab.key;
@@ -82,7 +94,7 @@ export function MobileTabBar() {
               href={tab.href}
               prefetch={false}
               aria-current={on ? "page" : undefined}
-              aria-label={tab.key === "bag" && cartCount > 0 ? `Bag, ${cartCount} items` : undefined}
+              aria-label={tab.key === "bag" && cartCount > 0 ? TAB_BAR_COPY.bagCount(cartCount) : undefined}
               className={cn(TAB, tone)}
             >
               {glyph}

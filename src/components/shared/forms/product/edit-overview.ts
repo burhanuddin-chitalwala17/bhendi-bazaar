@@ -3,6 +3,7 @@ import { ApiError } from "@/lib/api-error";
 import { STOCK_FIELD, VERSION_FIELD } from "@server/catalog/product-edit";
 import type { ProductFormInput } from "@/components/product/console/types";
 import type { ProductStepKey } from "./product-steps";
+import { EDIT_OVERVIEW_SUMMARY_COPY } from "@/components/shared/forms/product/product-copy";
 
 /** Why a save was refused because the product moved on: someone saved it, or stock sold (D6, ux Stale). */
 export const EDIT_CONFLICT = { VERSION: "version", STOCK: "stock" } as const;
@@ -92,7 +93,7 @@ export function sectionSummary(
       const media = values.media ?? [];
       const photos = media.filter((item) => item.kind === "IMAGE").length;
       const videos = media.length - photos;
-      if (media.length === 0) return "No photos yet";
+      if (media.length === 0) return EDIT_OVERVIEW_SUMMARY_COPY.noPhotos;
       return [plural(photos, "photo"), videos ? plural(videos, "video") : ""].filter(Boolean).join(" · ");
     }
     case "what":
@@ -100,17 +101,17 @@ export function sectionSummary(
     case "price": {
       const price = Number(values.price) || 0;
       const sale = Number(values.salePrice) || 0;
-      const shown = sale > 0 ? `${formatCurrency(rupeesToPaise(sale))} on sale` : formatCurrency(rupeesToPaise(price));
-      return `${shown} · ${totalStock(values.stockLocations)} in stock`;
+      const shown = sale > 0 ? EDIT_OVERVIEW_SUMMARY_COPY.onSale(formatCurrency(rupeesToPaise(sale))) : formatCurrency(rupeesToPaise(price));
+      return EDIT_OVERVIEW_SUMMARY_COPY.priceLine(shown, totalStock(values.stockLocations));
     }
     case "details": {
       const answered = [...Object.values(values.facts ?? {}), ...Object.values(values.measurements ?? {})].filter(
         (value) => value !== null && value !== undefined && value !== "",
       ).length;
-      return answered ? plural(answered, "detail") + " answered" : "No details yet";
+      return answered ? EDIT_OVERVIEW_SUMMARY_COPY.detailsAnswered(plural(answered, "detail")) : EDIT_OVERVIEW_SUMMARY_COPY.noDetails;
     }
     case "review":
-      return "How buyers see it";
+      return EDIT_OVERVIEW_SUMMARY_COPY.review;
   }
 }
 

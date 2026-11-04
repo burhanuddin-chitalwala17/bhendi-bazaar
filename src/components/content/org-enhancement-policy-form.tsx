@@ -13,6 +13,7 @@ import {
   type OrgEnhancementPolicyInput,
 } from "@/lib/validation/schemas/enhancement.schema";
 import type { OrgEnhancementUsage } from "@server/content/enhancement.types";
+import { ENHANCEMENT_COPY } from "./enhancement-copy";
 
 /**
  * What one shop does differently (image-enhancement spec R7, A5): a number of its own, a pause
@@ -42,7 +43,7 @@ export function OrgEnhancementPolicyForm({
       pauseReason: org.pauseReason,
     },
     submit: (data) => enhancementsApiClient.saveOrgPolicy(org.orgId, data),
-    successMessage: `Saved for ${org.name}`,
+    successMessage: ENHANCEMENT_COPY.policy.saved(org.name),
     onSuccess: () => router.refresh(),
   });
   const paused = watch("paused");
@@ -58,9 +59,9 @@ export function OrgEnhancementPolicyForm({
       <FormController
         name="monthlyAllowance"
         control={control}
-        label="Allowance for this shop"
+        label={ENHANCEMENT_COPY.policy.allowance}
         error={errors.monthlyAllowance?.message}
-        hint={`Leave empty to follow the platform's ${platformDefault}`}
+        hint={ENHANCEMENT_COPY.policy.allowanceHint(platformDefault)}
         render={({ field }) => (
           <Input
             type="number"
@@ -80,7 +81,7 @@ export function OrgEnhancementPolicyForm({
       <FormController
         name="paused"
         control={control}
-        label="Paused"
+        label={ENHANCEMENT_COPY.policy.paused}
         error={errors.paused?.message}
         render={({ field }) => (
           <div className="flex min-h-10 items-center gap-3">
@@ -91,10 +92,10 @@ export function OrgEnhancementPolicyForm({
                 // A lifted pause carries no reason: leaving it would resurface on the next pause.
                 if (!next) setValue("pauseReason", null);
               }}
-              aria-label={`Pause enhancement for ${org.name}`}
+              aria-label={ENHANCEMENT_COPY.policy.pauseFor(org.name)}
             />
             <span className="text-sm text-muted-foreground">
-              {paused ? "Its members cannot enhance" : "Enhancement is on"}
+              {paused ? ENHANCEMENT_COPY.policy.pausedOn : ENHANCEMENT_COPY.policy.pausedOff}
             </span>
           </div>
         )}
@@ -104,11 +105,11 @@ export function OrgEnhancementPolicyForm({
         <FormController
           name="pauseReason"
           control={control}
-          label="Reason its members will read"
+          label={ENHANCEMENT_COPY.policy.reason}
           error={errors.pauseReason?.message}
           render={({ field }) => (
             <Input
-              placeholder="e.g. Unpaid invoice"
+              placeholder={ENHANCEMENT_COPY.policy.reasonPlaceholder}
               maxLength={200}
               value={typeof field.value === "string" ? field.value : ""}
               onBlur={field.onBlur}
@@ -120,7 +121,7 @@ export function OrgEnhancementPolicyForm({
 
       <div className="flex justify-end">
         <Button type="submit" size="lg" variant="outline" disabled={isSubmitting}>
-          {isSubmitting ? "Saving…" : "Save"}
+          {isSubmitting ? ENHANCEMENT_COPY.saving : ENHANCEMENT_COPY.save}
         </Button>
       </div>
     </form>

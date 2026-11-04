@@ -12,6 +12,8 @@ import { orgRepository } from "@server/catalog/org.repository";
 import { OfferForm } from "@/components/promotions/OfferForm";
 
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
+import { ORG_PAGES_COPY } from "@/components/org/pages-copy";
+import { ROUTES } from "@server/shared/routes";
 export default async function NewOrgOfferPage({
   params,
 }: {
@@ -30,12 +32,12 @@ export default async function NewOrgOfferPage({
     <PageShell width="narrow">
       <PageHeader
         help="promotions"
-        title="New offer"
-        description={`You bear what this costs, up to ${(org?.maxDiscountBps ?? 5000) / 100}%. If the platform runs something deeper on the same item, it pays the difference.`}
+        title={ORG_PAGES_COPY.newOffer}
+        description={ORG_PAGES_COPY.newOfferDescription((org?.maxDiscountBps ?? 5000) / 100)}
       />
       <OfferForm
         action={`/api/org/${scope.orgId}/promotions`}
-        returnTo={`/org/${scope.orgId}/promotions`}
+        returnTo={ROUTES.org.promotions(scope.orgId)}
         categories={categories}
         products={products.products}
         productTotal={products.total}

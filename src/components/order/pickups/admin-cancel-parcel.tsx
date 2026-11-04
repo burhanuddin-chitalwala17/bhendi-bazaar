@@ -9,6 +9,7 @@ import { CancelRefused } from "@/components/order/cancel/cancel-refused";
 import { SHOP_CANCEL_REASON, SHOP_CANCEL_REASON_LABEL, type ShopCancelReason } from "@server/checkout/parcel-cancel.types";
 import { ADMIN_CANCEL_COPY } from "./pickups-copy";
 import { useAdminCancel } from "./useAdminCancel";
+import { ADMIN_CANCEL_PARCEL_COPY } from "./pickups-copy";
 
 /** ux.md "admin cancel sheet": a reason from the shop's list, no fee. Never disabled (R15). */
 export function AdminCancelParcel({ shipmentId }: { shipmentId: string }) {

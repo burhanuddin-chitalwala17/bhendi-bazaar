@@ -2,6 +2,7 @@ import type { ShopDetailsDto } from "@server/catalog/shop-details.types";
 import { appUrl } from "@server/shared/app-url";
 import { storePreview, type ShareShop } from "@/lib/store-preview";
 import { storefrontDAL } from "@/data-access-layer/storefront.dal";
+import { ROUTES } from "@server/shared/routes";
 
 /** A missing origin costs the full link, not the page: the sheet falls back to the path. */
 function absolute(path: string): string {
@@ -19,7 +20,7 @@ type ShareSource = Pick<ShopDetailsDto, "handle" | "name" | "tagline" | "about" 
  * carries the hero image; a shop not yet public, or a failed read, previews from its own details.
  */
 export async function shareShopFor(details: ShareSource): Promise<ShareShop> {
-  const path = `/store/${details.handle}`;
+  const path = ROUTES.store(details.handle);
   const live = await storefrontDAL.getByHandle(details.handle).catch(() => null);
   return {
     name: details.name,

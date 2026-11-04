@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { ProductCopyOption } from "@server/catalog/admin.product.types";
+import { PRODUCT_CONSOLE_COPY } from "../console-copy";
 
 interface CopyFromPickerProps {
   options: ProductCopyOption[];
@@ -84,13 +85,13 @@ export function CopyFromPicker({
       <DropdownMenuTrigger asChild>
         <Button variant="outline">
           <Icon name="copy" />
-          Copy from product
+          {PRODUCT_CONSOLE_COPY.add.copyFrom}
           <Icon name="expand" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent ref={contentRef} align="end" className="w-80">
         <DropdownMenuLabel>
-          Copies description, category, attributes and flags
+          {PRODUCT_CONSOLE_COPY.add.copies}
         </DropdownMenuLabel>
         {/* Sticky so the box stays in reach while a long list scrolls beneath it. */}
         <div className="sticky -top-1 z-10 bg-popover px-1 pb-1">
@@ -102,8 +103,8 @@ export function CopyFromPicker({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={onSearchKeyDown}
-              placeholder="Search by name or SKU"
-              aria-label="Search products to copy"
+              placeholder={PRODUCT_CONSOLE_COPY.add.searchPlaceholder}
+              aria-label={PRODUCT_CONSOLE_COPY.add.searchLabel}
               className="pl-9"
             />
           </div>
@@ -117,7 +118,7 @@ export function CopyFromPicker({
               onSelect={() => router.push(newProductPath)}
             >
               <Icon name="file-add" />
-              Start blank instead
+              {PRODUCT_CONSOLE_COPY.add.startBlank}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>

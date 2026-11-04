@@ -2,6 +2,8 @@ import { optionalActiveSession } from "@/lib/admin-auth";
 import { OrderClient } from "@/components/order/order-client";
 import { ordersDAL } from "@/data-access-layer/orders.dal";
 import { ErrorState } from "@/components/shared/states/ErrorState";
+import { ORDER_PAGE_COPY } from "./order-page-copy";
+import { ROUTES } from "@server/shared/routes";
 
 interface OrderPageProps {
   params: Promise<{ orderId: string }>;
@@ -14,7 +16,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
   const session = await optionalActiveSession({ onBlocked: "allow" });
   const order = await ordersDAL.getOrderById(orderId, session?.user?.id);
   // In-page, not a 404: loading.tsx has already streamed a 200, and an order page is never indexed.
-  if (!order) return <ErrorState as="h1" title="Order not found" description="Check the link in your confirmation email, or find it in your orders." action={{ label: "Your orders", href: "/orders" }} />;
+  if (!order) return <ErrorState as="h1" title={ORDER_PAGE_COPY.notFoundTitle} description={ORDER_PAGE_COPY.notFoundBody} action={{ label: ORDER_PAGE_COPY.yourOrders, href: ROUTES.orders }} />;
 
   const [timelines, cancelView] = await Promise.all([ordersDAL.timelinesFor(order), ordersDAL.cancelViewFor(order)]);
   // Only the signed-in owner cancels here; a guest's page is readable by id alone (Q31).

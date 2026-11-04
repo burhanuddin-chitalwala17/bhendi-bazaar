@@ -22,6 +22,7 @@ import {
 } from "@server/content/scene-presets";
 import type { ShotRole } from "@server/catalog/shot-list";
 import { useEnhancementRun } from "@/hooks/product/useEnhancementRun";
+import { MEDIA_COPY } from "./media-copy";
 
 /**
  * The photo on the table. A gallery row knows only the URL it carries and the slot it fills; the
@@ -165,13 +166,13 @@ export function ImproveDialog({
       onOpenChange={(open) => {
         if (!open && !busy) close();
       }}
-      title="Improve this photo"
-      description="One change at a time. You see before and after, and nothing is kept until you say so."
+      title={MEDIA_COPY.improve.title}
+      description={MEDIA_COPY.improve.description}
     >
       {target && run.phase === "idle" && !preselect && !chooseFrom && (
         <ul
           className="min-h-0 flex-1 space-y-2 overflow-y-auto"
-          aria-label="Improvements"
+          aria-label={MEDIA_COPY.improve.improvements}
         >
           {AVAILABLE_TOOLS.map((candidate) => (
             <li key={candidate}>
@@ -209,12 +210,12 @@ export function ImproveDialog({
               className="shrink-0 self-start"
               onClick={() => setChoosing(null)}
             >
-              <Icon name="back" /> All improvements
+              <Icon name="back" /> {MEDIA_COPY.improve.allImprovements}
             </Button>
           )}
           <ul
             className="grid min-h-0 flex-1 grid-cols-2 content-start gap-2 overflow-y-auto"
-            aria-label="Scene settings"
+            aria-label={MEDIA_COPY.improve.sceneSettings}
           >
             {SCENE_PRESETS.map((preset) => (
               <li key={preset.key}>
@@ -240,13 +241,13 @@ export function ImproveDialog({
 
       {target && (run.phase === "requesting" || run.phase === "running") && (
         <>
-          <Frame src={target.ref} alt="The photo being improved">
+          <Frame src={target.ref} alt={MEDIA_COPY.improve.beingImproved}>
             <span className="absolute inset-0 flex items-center justify-center gap-2 bg-scrim/40 text-sm font-medium text-hero-foreground">
-              <Spinner /> Improving…
+              <Spinner /> {MEDIA_COPY.improve.improving}
             </span>
           </Frame>
           <p className="text-xs text-muted-foreground">
-            Usually under a minute. You can close this and come back.
+            {MEDIA_COPY.improve.duration}
           </p>
         </>
       )}
@@ -256,7 +257,7 @@ export function ImproveDialog({
           <div
             className="flex shrink-0 gap-2"
             role="group"
-            aria-label="Compare"
+            aria-label={MEDIA_COPY.improve.compare}
           >
             <Button
               type="button"
@@ -266,7 +267,7 @@ export function ImproveDialog({
               aria-pressed={showing === "before"}
               onClick={() => setShowing("before")}
             >
-              Before
+              {MEDIA_COPY.improve.before}
             </Button>
             <Button
               type="button"
@@ -276,7 +277,7 @@ export function ImproveDialog({
               aria-pressed={showing === "after"}
               onClick={() => setShowing("after")}
             >
-              After
+              {MEDIA_COPY.improve.after}
             </Button>
           </div>
           <Frame
@@ -287,8 +288,8 @@ export function ImproveDialog({
             }
             alt={
               showing === "after"
-                ? "After the improvement"
-                : "Before the improvement"
+                ? MEDIA_COPY.improve.afterAlt
+                : MEDIA_COPY.improve.beforeAlt
             }
           />
           <div className="flex shrink-0 gap-2 bg-background pt-2">
@@ -300,7 +301,7 @@ export function ImproveDialog({
               onClick={() => void drop()}
               pending={busy}
             >
-              {!busy && <Icon name="close" />} Discard
+              {!busy && <Icon name="close" />} {MEDIA_COPY.improve.discard}
             </Button>
             <Button
               type="button"
@@ -310,7 +311,7 @@ export function ImproveDialog({
               pending={busy}
             >
               {!busy && <Icon name="done" />}
-              Accept
+              {MEDIA_COPY.improve.accept}
             </Button>
           </div>
         </>
@@ -328,10 +329,10 @@ export function ImproveDialog({
               size="lg"
               onClick={() => (tool ? start(tool, setting) : reset())}
             >
-              <Icon name="refresh" /> Retry
+              <Icon name="refresh" /> {MEDIA_COPY.improve.retry}
             </Button>
             <Button type="button" variant="ghost" size="lg" onClick={close}>
-              Close
+              {MEDIA_COPY.improve.close}
             </Button>
           </div>
         </>

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
+import { CORE_HOOKS_COPY } from "./core-copy";
 
 interface UseMutationOptions<TData, TVariables> {
   onSuccess?: (data: TData) => void | Promise<void>;
@@ -58,7 +59,7 @@ export function useMutation<TData = unknown, TVariables = void>(
         return result;
       } catch (err) {
         const errorMsg =
-          err instanceof Error ? err.message : "An error occurred";
+          err instanceof Error ? err.message : CORE_HOOKS_COPY.errorOccurred;
 
         // Set state synchronously before throwing
         setError(errorMsg);

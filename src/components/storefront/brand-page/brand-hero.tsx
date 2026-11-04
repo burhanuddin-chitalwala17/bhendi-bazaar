@@ -5,6 +5,8 @@ import { StorefrontIdentity } from "@/components/storefront/storefront-identity"
 import { Button } from "@/components/ui/button";
 import type { BrandPage } from "@/data-access-layer/storefront.dal";
 import { ProofStrip } from "./proof-strip";
+import { BRAND_PAGE_COPY } from "./brand-page-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * The first phone screen (brand-page R3): cover, mark, name, tagline, where and since
@@ -46,8 +48,8 @@ export function BrandHero({ page }: { page: BrandPage }) {
 
       <div className="fixed inset-x-0 bottom-tabbar z-30 border-t border-border/60 bg-background/95 px-3 py-2 backdrop-blur md:static md:inset-auto md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
         <Button asChild size="lg" className="w-full md:w-auto">
-          <Link href={`/store/${page.handle}`} prefetch={false}>
-            Shop {page.name}
+          <Link href={ROUTES.store(page.handle)} prefetch={false}>
+            {BRAND_PAGE_COPY.shopNamed(page.name)}
           </Link>
         </Button>
       </div>

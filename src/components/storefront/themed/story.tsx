@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import type { SectionVariant } from "@server/catalog/storefront-themes";
 import type { StorySlice } from "./page-data";
 import { SectionHeading } from "./section-heading";
+import { THEMED_COPY } from "./themed-copy";
 
 /**
  * "About your shop" and the person behind it (Q10), plain, with a drop cap, or in two
@@ -18,7 +19,7 @@ export function ThemedStory({
   const twoColumn = variant === "twoColumn";
   return (
     <section className="mx-auto max-w-store space-y-4 px-gutter py-section">
-      <SectionHeading title="Our story" overline={name} />
+      <SectionHeading title={THEMED_COPY.sections.story} overline={name} />
       <div className={cn("space-y-4", twoColumn && "md:grid md:grid-cols-2 md:gap-section md:space-y-0")}>
         {about && (
           <p

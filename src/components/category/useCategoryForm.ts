@@ -8,6 +8,8 @@ import type {
   CreateCategoryInput,
   UpdateCategoryInput,
 } from "@/domain/admin";
+import { ROUTES } from "@server/shared/routes";
+import { CATEGORY_FORM_RESULT_COPY } from "@/components/category/category-copy";
 
 interface UseCategoryFormOptions {
   category?: AdminCategory;
@@ -43,18 +45,18 @@ export function useCategoryForm({
           category.id,
           data as UpdateCategoryInput
         );
-        setSuccessMessage("Category updated successfully!");
+        setSuccessMessage(CATEGORY_FORM_RESULT_COPY.updated);
       } else {
         // Create new category
         await adminCategoryApiClient.createCategory(data);
-        setSuccessMessage("Category created successfully!");
+        setSuccessMessage(CATEGORY_FORM_RESULT_COPY.created);
         // Clear the saved draft after successful creation
         onClearDraft?.();
       }
 
       // Navigate back to categories list
       setTimeout(() => {
-        router.push(returnUrl || "/admin/categories");
+        router.push(returnUrl || ROUTES.admin.categories);
       }, 500);
     } catch (err) {
       // Presentation belongs to useServerForm; rethrow so field details survive.

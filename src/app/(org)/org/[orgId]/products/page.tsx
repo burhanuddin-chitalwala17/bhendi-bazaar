@@ -16,9 +16,12 @@ import { PRODUCT_SHELVES, type ProductShelf } from "@server/catalog/product.visi
 import { parseNotReadyOn } from "@/lib/validation/schemas/product-list.schema";
 import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 import { PageHeader } from "@/components/shared/page-shell";
+import { SHOP_PRODUCTS_COPY } from "@/components/org/products-copy";
+import { ROUTES } from "@server/shared/routes";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
 export const metadata: Metadata = {
-  title: "Products",
+  title: ORG_PAGE_TITLES.products,
   robots: { index: false, follow: false },
 };
 
@@ -56,20 +59,20 @@ export default async function OrgProductsPage({
     <div className="space-y-6">
       <PageHeader
         help="products"
-        title="Products"
-        description="Add and edit what you sell"
+        title={SHOP_PRODUCTS_COPY.title}
+        description={SHOP_PRODUCTS_COPY.description}
         actions={
           <>
             <Button asChild variant="outline">
-              <Link href={`/org/${orgId}/products/bulk`} prefetch={false}>
+              <Link href={ROUTES.org.bulkProducts(orgId)} prefetch={false}>
                 <Icon name="upload" size="sm" />
-                Add many at once
+                {SHOP_PRODUCTS_COPY.addMany}
               </Link>
             </Button>
             <Button asChild>
-              <Link href={`/org/${orgId}/products/new`} prefetch={false}>
+              <Link href={ROUTES.org.newProduct(orgId)} prefetch={false}>
                 <Icon name="add" size="sm" />
-                Add a product
+                {SHOP_PRODUCTS_COPY.add}
               </Link>
             </Button>
           </>
@@ -134,9 +137,9 @@ async function OrgProductsData({
         categories={categoryList.categories}
         locations={locations.filter((l) => l.isActive).map((l) => ({ id: l.id, name: l.name }))}
         marketplaces={marketplaces}
-        addHref={`/org/${orgId}/products/new`}
+        addHref={ROUTES.org.newProduct(orgId)}
         channelRows={channels}
-        channelsHref={`/org/${orgId}/channels`}
+        channelsHref={ROUTES.org.channels(orgId)}
       />
     </div>
   );

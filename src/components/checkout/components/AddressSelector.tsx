@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { DeliveryAddress } from "@/domain/profile";
+import { ADDRESS_PICKER_COPY } from "../checkout-copy";
 
 interface AddressSelectorProps {
   selectedAddress: DeliveryAddress | null;
@@ -30,9 +31,7 @@ export function AddressSelector({
   if (addresses.length === 0) {
     return (
       <Card className="p-5">
-        <p className="mb-3 text-small text-muted-foreground">
-          You don&apos;t have any saved addresses.
-        </p>
+        <p className="mb-3 text-small text-muted-foreground">{ADDRESS_PICKER_COPY.noSaved}</p>
         <Button
           type="button"
           variant="outline"
@@ -40,7 +39,7 @@ export function AddressSelector({
           className="w-full"
         >
           <Icon name="location" size="sm" />
-          Add delivery address
+          {ADDRESS_PICKER_COPY.addDelivery}
         </Button>
       </Card>
     );
@@ -48,7 +47,9 @@ export function AddressSelector({
 
   // With no selection the list is always open — it IS the question being asked.
   const listOpen = isOpen || !selectedAddress;
-  const choices = addresses.filter((addr) => addr.id !== selectedAddress?.id);
+  const choices = addresses.filter((addr) => {
+    return addr.id !== selectedAddress?.id;
+  });
 
   return (
     <Card className="overflow-hidden border-border/60">
@@ -87,7 +88,7 @@ export function AddressSelector({
       ) : (
         <div className="flex items-center gap-3 p-5 pb-2">
           <Icon name="location" size="md" tone="primary" />
-          <span className="text-small font-medium">Choose a delivery address</span>
+          <span className="text-small font-medium">{ADDRESS_PICKER_COPY.choose}</span>
         </div>
       )}
 
@@ -137,7 +138,7 @@ export function AddressSelector({
               className="flex w-full items-center justify-center gap-2 border-2 border-dashed border-muted-foreground/30 p-3 text-muted-foreground hover:border-muted-foreground/50 hover:bg-muted/50"
             >
               <Icon name="add" size="sm" />
-              Add new address
+              {ADDRESS_PICKER_COPY.addNew}
             </Button>
           </div>
         </div>

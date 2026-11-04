@@ -41,6 +41,7 @@ import {
 } from "@/components/promotions/ProductPicker";
 import { offersApiClient } from "@/components/promotions/offersApiClient";
 import { bpsToPercent, paiseToRupees, rupeesToPaise } from "@/lib/format";
+import { OFFER_FORM_COPY } from "./promotions-copy";
 
 /** An offer as stored, for editing. Paise and basis points — converted on the way in. */
 export interface OfferInitialValues {
@@ -174,8 +175,8 @@ export function OfferForm({
           endsAt: toLocalInput(inAMonth),
         }) as never,
     submit: (data) => offersApiClient.save(action, method, data),
-    successMessage: "Offer saved.",
-    fallbackMessage: "Couldn't save. Try again.",
+    successMessage: OFFER_FORM_COPY.saved,
+    fallbackMessage: OFFER_FORM_COPY.saveFailed,
     onSuccess: () => {
       router.push(returnTo);
       router.refresh();
@@ -245,40 +246,34 @@ export function OfferForm({
       )}
 
       <section className="space-y-4 rounded-lg border border-border bg-card p-4 md:p-6">
-        <h2 className="text-base font-semibold">What the offer is</h2>
+        <h2 className="text-base font-semibold">{OFFER_FORM_COPY.whatTitle}</h2>
 
         <FormInput
-          label="Name"
+          label={OFFER_FORM_COPY.name}
           required
-          placeholder="Summer Sale"
-          hint="Buyers see this on the line it discounts."
+          placeholder={OFFER_FORM_COPY.namePlaceholder}
+          hint={OFFER_FORM_COPY.nameHint}
           {...register("label")}
           error={formState.errors.label?.message}
         />
 
         <div className="grid gap-4 md:grid-cols-2">
           <FormSelect
-            label="How it applies"
+            label={OFFER_FORM_COPY.howItApplies}
             required
             {...register("trigger")}
             error={formState.errors.trigger?.message}
           >
-            <option value="AUTOMATIC">
-              Automatically — shown as the price
-            </option>
-            <option value="CODE">With a coupon code</option>
+            <option value="AUTOMATIC">{OFFER_FORM_COPY.automatic}</option>
+            <option value="CODE">{OFFER_FORM_COPY.withCode}</option>
           </FormSelect>
 
           {isCoupon && (
             <FormInput
-              label="Code"
+              label={OFFER_FORM_COPY.code}
               required
-              placeholder={codePrefix ? `${codePrefix}SUMMER20` : "SUMMER20"}
-              hint={
-                codePrefix
-                  ? `Starts with ${codePrefix} so buyers know whose offer it is.`
-                  : "Letters, numbers and hyphens."
-              }
+              placeholder={OFFER_FORM_COPY.codePlaceholder(codePrefix)}
+              hint={OFFER_FORM_COPY.codeHint(codePrefix)}
               {...register("code")}
               error={formState.errors.code?.message}
             />
@@ -287,25 +282,25 @@ export function OfferForm({
       </section>
 
       <section className="space-y-4 rounded-lg border border-border bg-card p-4 md:p-6">
-        <h2 className="text-base font-semibold">What it takes off</h2>
+        <h2 className="text-base font-semibold">{OFFER_FORM_COPY.takesOffTitle}</h2>
 
         <div className="grid gap-4 md:grid-cols-2">
           <FormSelect
-            label="Kind"
+            label={OFFER_FORM_COPY.kind}
             required
             {...register("valueType")}
             // The schema attaches "a fixed selling price is a markdown, not a coupon"
             // here, so this field genuinely can carry an error.
             error={formState.errors.valueType?.message}
           >
-            <option value="PERCENT">A percentage</option>
-            <option value="AMOUNT_OFF">A fixed amount off</option>
-            <option value="FIXED_PRICE">A fixed selling price</option>
+            <option value="PERCENT">{OFFER_FORM_COPY.kindPercent}</option>
+            <option value="AMOUNT_OFF">{OFFER_FORM_COPY.kindAmountOff}</option>
+            <option value="FIXED_PRICE">{OFFER_FORM_COPY.kindFixedPrice}</option>
           </FormSelect>
 
           {valueType === "PERCENT" && (
             <FormInput
-              label="Percentage"
+              label={OFFER_FORM_COPY.percentage}
               required
               type="number"
               step="0.01"
@@ -322,18 +317,14 @@ export function OfferForm({
               // applies, and the difference is invisible until an order is placed —
               // so the label carries it rather than the documentation.
               label={
-                isCoupon
-                  ? "Amount off the order (₹)"
-                  : "Amount off each item (₹)"
+                isCoupon ? OFFER_FORM_COPY.amountOffOrder : OFFER_FORM_COPY.amountOffItem
               }
               required
               type="number"
               step="0.01"
               min="0"
               hint={
-                isCoupon
-                  ? "Taken off once, spread across the items it covers."
-                  : "Taken off every unit — ₹100 on a basket of three is ₹300."
+                isCoupon ? OFFER_FORM_COPY.amountOffOrderHint : OFFER_FORM_COPY.amountOffItemHint
               }
               {...register("amountOff", { valueAsNumber: true })}
               error={formState.errors.amountOff?.message}
@@ -341,12 +332,12 @@ export function OfferForm({
           )}
           {isMarkdown && (
             <FormInput
-              label="Sells at (₹)"
+              label={OFFER_FORM_COPY.sellsAt}
               required
               type="number"
               step="0.01"
               min="0"
-              hint="A markdown on named products — pick them below."
+              hint={OFFER_FORM_COPY.sellsAtHint}
               {...register("fixedPrice", { valueAsNumber: true })}
               error={formState.errors.fixedPrice?.message}
             />
@@ -358,24 +349,24 @@ export function OfferForm({
         {isCoupon && (
           <div className="grid gap-4 md:grid-cols-2">
             <FormInput
-              label="Minimum spend (₹)"
+              label={OFFER_FORM_COPY.minimumSpend}
               type="number"
               step="0.01"
               min="0"
-              placeholder="Optional"
-              hint="Measured on the items this offer covers, not the whole basket."
+              placeholder={OFFER_FORM_COPY.optional}
+              hint={OFFER_FORM_COPY.minimumSpendHint}
               {...register("minSubtotal", { valueAsNumber: true })}
               error={formState.errors.minSubtotal?.message}
             />
             {/* Only a proportion of an unknown basket needs a ceiling. */}
             {valueType === "PERCENT" && (
               <FormInput
-                label="Most it can take off (₹)"
+                label={OFFER_FORM_COPY.mostOff}
                 type="number"
                 step="0.01"
                 min="0"
-                placeholder="Optional"
-                hint="Caps a percentage on a large basket."
+                placeholder={OFFER_FORM_COPY.optional}
+                hint={OFFER_FORM_COPY.mostOffHint}
                 {...register("maxDiscount", { valueAsNumber: true })}
                 error={formState.errors.maxDiscount?.message}
               />
@@ -388,7 +379,7 @@ export function OfferForm({
           <Alert className="space-y-3 border-warning/40 bg-warning/10">
             <AlertDescription>{lossWarning(lossRule.lowestRateBps)}</AlertDescription>
             <FormInput
-              label="Confirm"
+              label={OFFER_FORM_COPY.confirm}
               required
               autoComplete="off"
               autoCapitalize="characters"
@@ -402,7 +393,7 @@ export function OfferForm({
         {lossRule && (
           <div className="grid gap-4 md:grid-cols-2">
             <FormInput
-              label="Budget (₹)"
+              label={OFFER_FORM_COPY.budget}
               required={couldLose}
               type="number"
               step="0.01"
@@ -410,7 +401,7 @@ export function OfferForm({
               hint={
                 couldLose
                   ? LOSS_BUDGET_REQUIRED
-                  : "Stop the offer once it has cost this much. Optional."
+                  : OFFER_FORM_COPY.budgetHint
               }
               {...register("budget", { valueAsNumber: true })}
               error={formState.errors.budget?.message}
@@ -420,22 +411,22 @@ export function OfferForm({
       </section>
 
       <section className="space-y-4 rounded-lg border border-border bg-card p-4 md:p-6">
-        <h2 className="text-base font-semibold">When it runs</h2>
+        <h2 className="text-base font-semibold">{OFFER_FORM_COPY.whenTitle}</h2>
         {/* Stacked at base, side by side from md — a date range squeezed onto a phone
             is where mis-set windows come from. */}
         <div className="grid gap-4 md:grid-cols-2">
           <FormInput
-            label="Starts"
+            label={OFFER_FORM_COPY.starts}
             required
             type="datetime-local"
             {...register("startsAt")}
             error={formState.errors.startsAt?.message}
           />
           <FormInput
-            label="Ends"
+            label={OFFER_FORM_COPY.ends}
             required
             type="datetime-local"
-            hint="Every offer has an end. Stop it sooner with the switch below."
+            hint={OFFER_FORM_COPY.endsHint}
             {...register("endsAt")}
             error={formState.errors.endsAt?.message}
           />
@@ -444,19 +435,19 @@ export function OfferForm({
         {isCoupon && (
           <div className="grid gap-4 md:grid-cols-2">
             <FormInput
-              label="Total redemptions"
+              label={OFFER_FORM_COPY.totalRedemptions}
               type="number"
               min="1"
-              placeholder="Unlimited"
+              placeholder={OFFER_FORM_COPY.unlimited}
               {...register("usageLimit", { valueAsNumber: true })}
               error={formState.errors.usageLimit?.message}
             />
             <FormInput
-              label="Per customer"
+              label={OFFER_FORM_COPY.perCustomer}
               type="number"
               min="1"
-              placeholder="Unlimited"
-              hint="Requires the buyer to be signed in."
+              placeholder={OFFER_FORM_COPY.unlimited}
+              hint={OFFER_FORM_COPY.perCustomerHint}
               {...register("perUserLimit", { valueAsNumber: true })}
               error={formState.errors.perUserLimit?.message}
             />
@@ -465,8 +456,8 @@ export function OfferForm({
 
         {isCoupon && !lossRule && (
           <Checkbox
-            label="Show on my shop"
-            description="Prints this code in your shop's deals, where anyone can use it."
+            label={OFFER_FORM_COPY.showOnShop}
+            description={OFFER_FORM_COPY.showOnShopHint}
             checked={watch("showOnStorefront") === true}
             onChange={(event) => setValue("showOnStorefront", event.target.checked)}
           />
@@ -474,10 +465,10 @@ export function OfferForm({
 
         <div className="pt-1">
           <Checkbox
-            label="Running"
+            label={OFFER_FORM_COPY.running}
             // The description has to describe the box as it is, not as the action of
             // clearing it — "stops the offer" beside a ticked box reads backwards.
-            description="Untick to stop it immediately, whatever its dates say."
+            description={OFFER_FORM_COPY.runningHint}
             checked={watch("isActive")}
             onChange={(event) => setValue("isActive", event.target.checked)}
           />
@@ -485,17 +476,17 @@ export function OfferForm({
       </section>
 
       <section className="space-y-4 rounded-lg border border-border bg-card p-4 md:p-6">
-        <h2 className="text-base font-semibold">What it covers</h2>
+        <h2 className="text-base font-semibold">{OFFER_FORM_COPY.coversTitle}</h2>
         <p className="text-sm text-muted-foreground">
           {categoryIds.length === 0 && productIds.length === 0
-            ? "Everything you sell. Narrow it by picking categories or products."
-            : "Only what you pick below."}
+            ? OFFER_FORM_COPY.coversEverything
+            : OFFER_FORM_COPY.coversPicked}
         </p>
 
         <div>
-          <Label className="text-sm">Categories</Label>
+          <Label className="text-sm">{OFFER_FORM_COPY.categories}</Label>
           <p className="mb-2 text-xs text-muted-foreground">
-            A category includes everything beneath it.
+            {OFFER_FORM_COPY.categoriesHint}
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {categories.map((category) => (
@@ -529,14 +520,14 @@ export function OfferForm({
           variant="outline"
           onClick={() => router.push(returnTo)}
         >
-          Cancel
+          {OFFER_FORM_COPY.cancel}
         </Button>
         <Button
           type="submit"
           pending={isSubmitting}
           className="flex-1 md:flex-none"
         >
-          {isEdit ? "Save changes" : "Create offer"}
+          {isEdit ? OFFER_FORM_COPY.saveChanges : OFFER_FORM_COPY.create}
         </Button>
       </ActionBar>
     </form>

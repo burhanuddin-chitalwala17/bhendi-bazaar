@@ -12,6 +12,7 @@ import {
 import { formatShippingCost } from "@/domain/shipping";
 import type { ShippingGroup, ShippingRate } from "@/domain/shipping";
 import { Button } from "@/components/ui/button";
+import { SHIPPING_COPY } from "../checkout-copy";
 
 interface MultiShippingSectionProps {
   groups: ShippingGroup[];
@@ -39,9 +40,10 @@ export function MultiShippingSection({
   // The figure a customer actually wants for a split order (stock-locations R10/A8):
   // when every parcel has a chosen rate, the order completes with the slowest one.
   const selectedDays = groups.map((group) => group.selectedRate?.estimatedDays);
-  const completionDays = selectedDays.every((days) => typeof days === "number")
-    ? Math.max(...(selectedDays as number[]))
-    : null;
+  const allChosen = selectedDays.every((days) => {
+    return typeof days === "number";
+  });
+  const completionDays = allChosen ? Math.max(...(selectedDays as number[])) : null;
 
   return (
     <div className="space-y-4">
@@ -51,17 +53,17 @@ export function MultiShippingSection({
           <div className="flex items-start gap-2">
             <Icon name="parcel" size="sm" tone="primary" className="mt-0.5" />
             <div>
-              <p className="font-medium text-foreground">{groups.length} parcels</p>
+              <p className="font-medium text-foreground">{SHIPPING_COPY.parcels(groups.length)}</p>
               <p className="mt-1 text-muted-foreground">
-                Your order will arrive in{" "}
+                {SHIPPING_COPY.arriveIn}{" "}
                 <span className="font-semibold">
-                  {groups.length} separate parcels
+                  {SHIPPING_COPY.separateParcels(groups.length)}
                 </span>{" "}
-                as items ship from different locations.
+                {SHIPPING_COPY.differentLocations}
                 {completionDays !== null && (
                   <>
                     {" "}
-                    Everything arrives by{" "}
+                    {SHIPPING_COPY.everythingBy}{" "}
                     <span className="font-semibold">
                       {formatDeliveryDate(
                         getEstimatedDeliveryDate(completionDays),
@@ -114,7 +116,7 @@ function ShippingGroupCard({
         <div className="min-w-0 space-y-1">
           {showGroupNumber && (
             <p className="text-caption font-medium text-muted-foreground">
-              Parcel {groupNumber} of {totalGroups}
+              {SHIPPING_COPY.parcelOf(groupNumber, totalGroups)}
             </p>
           )}
           <div className="flex items-center gap-2">
@@ -122,21 +124,21 @@ function ShippingGroupCard({
             {/* Two warehouses can share a city, so the location's own name leads
                 and the city is secondary detail (stock-locations D12). */}
             <p className="text-small font-medium">
-              Ships from{" "}
+              {SHIPPING_COPY.shipsFrom}{" "}
               {group.locationName
                 ? `${group.locationName} (${group.fromCity})`
                 : `${group.fromCity}, ${group.fromState}`}
             </p>
           </div>
-          <p className="text-caption text-muted-foreground">From {group.orgName}</p>
+          <p className="text-caption text-muted-foreground">{SHIPPING_COPY.fromShop(group.orgName)}</p>
         </div>
 
         <div className="shrink-0 text-right">
-          <p className="text-caption text-muted-foreground">Items</p>
+          <p className="text-caption text-muted-foreground">{SHIPPING_COPY.items}</p>
           <p className="text-small font-semibold">{group.items.length}</p>
           {group.billableWeightKg !== undefined && (
             <p className="text-caption text-muted-foreground">
-              billed as {group.billableWeightKg} kg
+              {SHIPPING_COPY.billedAs(group.billableWeightKg)}
             </p>
           )}
         </div>
@@ -152,7 +154,7 @@ function ShippingGroupCard({
               {idx < Math.min(group.items.length, 2) - 1 ? ", " : ""}
             </span>
           ))}
-        {group.items.length > 2 && ` and ${group.items.length - 2} more`}
+        {group.items.length > 2 && SHIPPING_COPY.andMore(group.items.length - 2)}
       </div>
 
       <Separator />
@@ -160,17 +162,17 @@ function ShippingGroupCard({
       {/* Shipping rates */}
       {group.isLoading ? (
         <div className="py-2">
-          <p className="text-small text-muted-foreground">Working out delivery…</p>
+          <p className="text-small text-muted-foreground">{SHIPPING_COPY.working}</p>
         </div>
       ) : group.error ? (
         <div className="py-2 text-small text-destructive">{group.error}</div>
       ) : !group.serviceable ? (
         <div className="py-2 text-small text-warning">
-          This shop doesn&apos;t deliver to this PIN code yet
+          {SHIPPING_COPY.notServiceable}
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-caption font-medium text-muted-foreground">Choose delivery</p>
+          <p className="text-caption font-medium text-muted-foreground">{SHIPPING_COPY.choose}</p>
           {group.rates.map((rate) => (
             <Button
               variant="ghost"

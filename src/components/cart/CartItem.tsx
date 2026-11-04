@@ -11,6 +11,8 @@ import { Icon } from "@/components/ui/icon";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { StockStatus } from "@/components/shared/StockStatus";
 import type { CartItem as CartItemType } from "@/domain/cart";
+import { CART_COPY } from "./cart-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** One line of the bag. Stock arrives from CartLineItems, which checks the whole bag in one request. */
 export function CartItem({
@@ -41,21 +43,21 @@ export function CartItem({
   const increase = () => {
     // Never disabled (ADR-0053): the tap says why it can't go higher.
     if (stock !== null && item.quantity + 1 > stock) {
-      toast.error(stock === 0 ? "This piece has sold out" : `Only ${stock} available`);
+      toast.error(stock === 0 ? CART_COPY.soldOut : CART_COPY.onlyLeft(stock));
       return;
     }
     step(item.quantity + 1);
   };
 
-  const variant = [item.size && `Size ${item.size}`, item.color].filter(Boolean).join(" · ");
+  const variant = [item.size && CART_COPY.size(item.size), item.color].filter(Boolean).join(" · ");
 
   return (
     <li className="flex gap-3 py-4">
-      <Link href={`/product/${item.productSlug}`} prefetch={false} className="relative aspect-4/5 w-20 shrink-0 overflow-hidden rounded-field bg-muted md:w-24">
+      <Link href={ROUTES.product(item.productSlug)} prefetch={false} className="relative aspect-4/5 w-20 shrink-0 overflow-hidden rounded-field bg-muted md:w-24">
         <Image src={item.thumbnail} alt={item.productName} fill sizes="96px" className="object-cover" />
       </Link>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <Link href={`/product/${item.productSlug}`} prefetch={false} className="line-clamp-2 text-small font-medium text-foreground">
+        <Link href={ROUTES.product(item.productSlug)} prefetch={false} className="line-clamp-2 text-small font-medium text-foreground">
           {item.productName}
         </Link>
         {variant && <p className="text-caption text-muted-foreground">{variant}</p>}
@@ -63,13 +65,13 @@ export function CartItem({
 
         <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center rounded-full border border-border">
-            <Button variant="ghost" shape="icon" size="lg" type="button" aria-label="One fewer" className="rounded-full" onClick={() => step(item.quantity - 1)}>
+            <Button variant="ghost" shape="icon" size="lg" type="button" aria-label={CART_COPY.oneFewer} className="rounded-full" onClick={() => step(item.quantity - 1)}>
               <Icon name="remove" size="sm" />
             </Button>
             <span className="min-w-6 text-center text-small font-medium tabular-nums" aria-live="polite">
               {item.quantity}
             </span>
-            <Button variant="ghost" shape="icon" size="lg" type="button" aria-label="One more" className="rounded-full" onClick={increase}>
+            <Button variant="ghost" shape="icon" size="lg" type="button" aria-label={CART_COPY.oneMore} className="rounded-full" onClick={increase}>
               <Icon name="add" size="sm" />
             </Button>
           </div>
@@ -78,11 +80,11 @@ export function CartItem({
         <div className="-ml-2 flex items-center gap-1">
           {onMoveToSaved && (
             <Button variant="link" size="sm" type="button" className="px-2 text-muted-foreground" onClick={() => onMoveToSaved(item)}>
-              Move to saved
+              {CART_COPY.moveToSaved}
             </Button>
           )}
           <Button variant="link" size="sm" type="button" className="px-2 text-muted-foreground" onClick={() => removeItem(item.id)}>
-            Remove
+            {CART_COPY.remove}
           </Button>
         </div>
       </div>

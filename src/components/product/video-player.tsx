@@ -10,6 +10,7 @@ import { VIDEO_RENDITION_MIME_TYPE } from "@server/catalog/video";
 import { formatDuration } from "@/lib/format";
 import { pickRendition } from "@/lib/video-renditions";
 import { FORM_FACTOR_QUERY } from "@/hooks/core/useMediaQuery";
+import { PRODUCT_PAGE_COPY } from "./product-copy";
 
 /** The gallery slide's slot (ADR-0026): the full phone, then half the page (at most half of 90rem, less the rail). */
 export const GALLERY_SLIDE_SIZES = "(min-width: 1024px) 42rem, (min-width: 768px) 50vw, 100vw";
@@ -97,7 +98,7 @@ export function VideoPlayer({
         {renditions.length > 1 && (
           <div
             role="group"
-            aria-label="Video quality"
+            aria-label={PRODUCT_PAGE_COPY.video.quality}
             className="absolute right-3 top-3 z-20 flex gap-1 rounded-field border border-primary/30 bg-scrim/80 p-1 backdrop-blur-sm"
           >
             {renditions.map((rendition) => (

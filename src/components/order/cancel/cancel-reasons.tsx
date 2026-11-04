@@ -5,6 +5,7 @@ import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { FormTextarea } from "@/components/shared/forms/FormField";
 import { CANCEL_OTHER_MAX } from "@server/checkout/parcel-cancel.types";
+import { CANCEL_REASONS_COPY } from "../buyer-cancel-copy";
 
 /**
  * The reason list on a cancel sheet (order-fulfilment Q21): one tap picks a reason, "Other" opens
@@ -32,9 +33,7 @@ export function CancelReasons<R extends string>({
   return (
     <div className="space-y-3">
       <div role="radiogroup" aria-labelledby={legend} aria-invalid={!!error} className="flex flex-col gap-2">
-        <span id={legend} className="sr-only">
-          Reason
-        </span>
+        <span id={legend} className="sr-only">{CANCEL_REASONS_COPY.reason}</span>
         {reasons.map((reason) => (
           <Button
             key={reason}

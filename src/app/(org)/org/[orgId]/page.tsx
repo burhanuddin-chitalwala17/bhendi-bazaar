@@ -23,6 +23,7 @@ import { ONBOARDING_STEP } from "@server/catalog/org-onboarding.types";
 import type { SalesPeriod } from "@server/analytics/sales.types";
 import { homeDAL } from "@/data-access-layer/org/home.dal";
 import { requireOrgMember } from "@/lib/org-auth";
+import { ROUTES } from "@server/shared/routes";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -59,7 +60,7 @@ async function HomeBody({ orgId, done, period }: { orgId: string; done: unknown;
   // After the first product the toast offers Share as well (R10); Home's link carries the sheet.
   const productToast = doneStep === ONBOARDING_STEP.PRODUCT && shop && setup ? doneToast(doneStep, setup.doneCount) : null;
   const hasSales = home.hasPaidOrder.ok && home.hasPaidOrder.value;
-  const here = `/org/${orgId}?period=${period}`;
+  const here = `${ROUTES.org.home(orgId)}?period=${period}`;
   const toPack = home.attention.toPack.ok ? home.attention.toPack.value.count : null;
 
   return (
@@ -70,7 +71,7 @@ async function HomeBody({ orgId, done, period }: { orgId: string; done: unknown;
         help="home"
         title={shop?.name ?? "Home"}
         description={shop && setup && !setup.complete ? HOME_COPY.welcome(shop.name) : undefined}
-        actions={hasSales ? <PeriodControl current={period} basePath={`/org/${orgId}`} /> : undefined}
+        actions={hasSales ? <PeriodControl current={period} basePath={ROUTES.org.home(orgId)} /> : undefined}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
@@ -118,7 +119,7 @@ async function HomeBody({ orgId, done, period }: { orgId: string; done: unknown;
                 />
               ) : (
                 <Button asChild variant="outline" size="sm">
-                  <Link href={`/org/${orgId}/shop`}>{HOME_COPY.shareShop}</Link>
+                  <Link href={ROUTES.org.shop(orgId)}>{HOME_COPY.shareShop}</Link>
                 </Button>
               )}
             </div>
@@ -132,7 +133,7 @@ async function HomeBody({ orgId, done, period }: { orgId: string; done: unknown;
 
       <ActionBar className="-mx-4 md:mx-0">
         <Button asChild>
-          <Link href={`/org/${orgId}/products/new`} prefetch={false}>
+          <Link href={ROUTES.org.newProduct(orgId)} prefetch={false}>
             <Icon name="add" size="sm" />
             {HOME_COPY.addProduct}
           </Link>
@@ -145,7 +146,7 @@ async function HomeBody({ orgId, done, period }: { orgId: string; done: unknown;
 /** ux Home Loading: a skeleton per section while Home reads. */
 function HomeSkeleton() {
   return (
-    <div className="space-y-6" role="status" aria-label="Loading your shop">
+    <div className="space-y-6" role="status" aria-label={HOME_COPY.loading}>
       <SkeletonHeader />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -160,7 +161,7 @@ function HomeSkeleton() {
 
 function SalesSkeleton() {
   return (
-    <div className="space-y-4" role="status" aria-label="Loading sales">
+    <div className="space-y-4" role="status" aria-label={HOME_COPY.loadingSales}>
       <Skeleton className="h-72 rounded-card" />
       <SkeletonTiles count={4} className="sm:grid-cols-2 lg:grid-cols-4" />
     </div>

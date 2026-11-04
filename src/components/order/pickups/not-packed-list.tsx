@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ROUTES } from "@server/shared/routes";
 
 import type { NotPackedRow } from "@server/checkout/fulfilment-nudges";
 import { NOTICE_KIND } from "@server/notifications/notice.types";
@@ -10,6 +11,7 @@ import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { EmailShopButton } from "./email-shop-button";
 import { AdminCancelParcel } from "./admin-cancel-parcel";
 import { NOT_PACKED_COPY, NOT_PACKED_TAB, OVERDUE_RED_HOURS, nudgeLine, paidAgoLine, pickupsHref } from "./pickups-copy";
+import { NOT_PACKED_LIST_COPY } from "./pickups-copy";
 
 /** ux.md "admin not-packed flag": rows on phone and tablet, a table at `lg:`. */
 export function NotPackedList({ rows, now }: { rows: NotPackedRow[]; now: number }) {
@@ -23,25 +25,25 @@ export function NotPackedList({ rows, now }: { rows: NotPackedRow[]; now: number
 
   return (
     <ResourceList
-      label="Paid parcels not packed"
+      label={NOT_PACKED_LIST_COPY.paidParcelsNotPacked}
       rows={rows}
       rowKey={(row) => row.shipmentId}
       tableFrom="lg"
-      empty={{ title: "Nothing late", description: NOT_PACKED_COPY.empty }}
+      empty={{ title: NOT_PACKED_LIST_COPY.nothingLate, description: NOT_PACKED_COPY.empty }}
       columns={[
         {
           key: "parcel",
-          label: "Parcel",
+          label: NOT_PACKED_LIST_COPY.parcel,
           phone: "title",
           cell: (row) => (
-            <Link href={`/admin/orders/${row.orderId}`} prefetch={false} className="font-mono text-primary hover:underline">
+            <Link href={ROUTES.admin.order(row.orderId)} prefetch={false} className="font-mono text-primary hover:underline">
               {row.parcelCode}
             </Link>
           ),
         },
         {
           key: "paid",
-          label: "Paid",
+          label: NOT_PACKED_LIST_COPY.paid,
           phone: "status",
           cell: (row) => (
             <StatusBadge tone={row.hoursSincePaid > OVERDUE_RED_HOURS ? "destructive" : "warning"}>{paidAgoLine(row.hoursSincePaid)}</StatusBadge>
@@ -49,7 +51,7 @@ export function NotPackedList({ rows, now }: { rows: NotPackedRow[]; now: number
         },
         {
           key: "shop",
-          label: "Shop",
+          label: NOT_PACKED_LIST_COPY.shop,
           phone: "meta",
           cell: (row) => (
             <span className="whitespace-normal">
@@ -62,10 +64,10 @@ export function NotPackedList({ rows, now }: { rows: NotPackedRow[]; now: number
             </span>
           ),
         },
-        { key: "emails", label: "Emails", cell: (row) => <span className="text-muted-foreground">{nudges(row)}</span> },
+        { key: "emails", label: NOT_PACKED_LIST_COPY.emails, cell: (row) => <span className="text-muted-foreground">{nudges(row)}</span> },
         {
           key: "actions",
-          label: "Action",
+          label: NOT_PACKED_LIST_COPY.action,
           align: "end",
           phone: "trailing",
           cell: (row) => (

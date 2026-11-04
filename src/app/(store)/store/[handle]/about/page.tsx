@@ -11,6 +11,8 @@ import { renditionUrlForRef } from "@server/content/renditions.service";
 import { appUrl } from "@server/shared/app-url";
 import { permanentRedirect } from "next/navigation";
 import { resolveBrandPage } from "../resolve";
+import { STORE_PAGES_COPY } from "../../store-pages-copy";
+import { ROUTES } from "@server/shared/routes";
 
 interface BrandPageProps {
   params: Promise<{ handle: string }>;
@@ -37,8 +39,8 @@ export async function generateMetadata({
   if (!page) return {};
 
   const description =
-    page.tagline ?? firstLine(page.about) ?? `About ${page.name} on ${APP_NAME}.`;
-  const url = `${appUrl()}/store/${page.handle}/about`;
+    page.tagline ?? firstLine(page.about) ?? STORE_PAGES_COPY.aboutDescription(page.name, APP_NAME);
+  const url = `${appUrl()}${ROUTES.storeAbout(page.handle)}`;
   // The cover at the one size every social host agrees on, made once and found thereafter
   // (renditions R2). A host fetches this itself, so the optimizer never sees it and the full
   // cover would go over the wire every time a link is shared.
@@ -46,7 +48,7 @@ export async function generateMetadata({
   const image = cover ?? page.logoUrl;
 
   return {
-    title: `About ${page.name}`,
+    title: STORE_PAGES_COPY.aboutTitle(page.name),
     description,
     alternates: { canonical: url },
     openGraph: {
@@ -71,7 +73,7 @@ export default async function StorefrontAboutPage({ params }: BrandPageProps) {
   const { handle } = await params;
   // A themed shop's story is its landing page (Q3): a permanent move, so printed links still arrive.
   const shop = await storefrontDAL.getByHandle(handle);
-  if (shop?.themeKey) permanentRedirect(`/store/${shop.handle}`);
+  if (shop?.themeKey) permanentRedirect(ROUTES.store(shop.handle));
   const page = await resolveBrandPage(handle);
 
   return (
@@ -84,7 +86,7 @@ export default async function StorefrontAboutPage({ params }: BrandPageProps) {
         {/* storefront-pages R6: a visitor is never trapped in one shop. */}
         <div className="flex justify-center pt-2">
           <Button asChild variant="outline">
-            <Link href="/">Browse the whole marketplace</Link>
+            <Link href={ROUTES.home}>{STORE_PAGES_COPY.wholeMarketplace}</Link>
           </Button>
         </div>
       </PageShell>

@@ -19,3 +19,15 @@ export const BUYER_CANCEL_COPY = {
   refundStarted: (paise: number, day: string) => `Refund of ${rupees(paise)} started ${day}. It reaches your account in 5–7 working days.`,
   couponBack: (code: string) => `Your ${code} coupon can be used again.`,
 } as const;
+
+export const CANCEL_REASONS_COPY = {
+  reason: "Reason",
+} as const;
+
+export const CANCEL_REFUSED_COPY = {
+  contactUs: "Contact us",
+} as const;
+
+export const CANCEL_FORM_COPY = {
+  retry: "Couldn't cancel. Try again.",
+} as const;

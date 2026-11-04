@@ -10,6 +10,7 @@ import type { ImageSlotSideValue } from "@server/catalog/image-framing";
 import { sampleEdgeColour } from "./measure";
 import { SlotPreview } from "./slot-preview";
 import { useSlotUpload } from "./useSlotUpload";
+import { SLOT_SIDE_CARD_COPY } from "./image-slot-copy";
 
 /** How the picture sits against the slot's shape, in words: the first thing the card says. */
 function shapeNote(side: ImageSlotSideValue, shape: SlotShape): string | null {
@@ -87,7 +88,7 @@ export function SlotSideCard({
           )}
           {note && <p className="text-small">{note}</p>}
           {choosable && (
-            <div className="grid gap-2 sm:grid-cols-2" role="group" aria-label="How to fit it">
+            <div className="grid gap-2 sm:grid-cols-2" role="group" aria-label={SLOT_SIDE_CARD_COPY.howToFitIt}>
               <Button
                 type="button"
                 variant={value.fit === IMAGE_FIT.CROP ? "default" : "outline"}
@@ -95,7 +96,7 @@ export function SlotSideCard({
                 className="h-auto flex-col items-start justify-start whitespace-normal py-3 text-left"
                 onClick={() => void choose(IMAGE_FIT.CROP)}
               >
-                <span className="font-medium">Keep it exact</span>
+                <span className="font-medium">{SLOT_SIDE_CARD_COPY.keepItExact}</span>
                 <span className="text-caption">Crop to {shape.label}. Drag to choose what stays.</span>
               </Button>
               <Button
@@ -105,14 +106,14 @@ export function SlotSideCard({
                 className="h-auto flex-col items-start justify-start whitespace-normal py-3 text-left"
                 onClick={() => void choose(IMAGE_FIT.CONTAIN)}
               >
-                <span className="font-medium">Fit it in</span>
-                <span className="text-caption">Show the whole picture; the edges are filled with a colour from it.</span>
+                <span className="font-medium">{SLOT_SIDE_CARD_COPY.fitItIn}</span>
+                <span className="text-caption">{SLOT_SIDE_CARD_COPY.fitItInHint}</span>
               </Button>
             </div>
           )}
           {value.fit === IMAGE_FIT.CONTAIN && (
             <label className="flex items-center gap-3 text-small">
-              Edge colour
+              {SLOT_SIDE_CARD_COPY.edgeColour}
               <Input
                 type="color"
                 className="h-10 w-16 p-1"
@@ -125,16 +126,16 @@ export function SlotSideCard({
             {value.fit === IMAGE_FIT.CROP && note && (
               <Button type="button" variant="outline" size="sm" onClick={onCrop}>
                 <Icon name="crop" />
-                Change crop
+                {SLOT_SIDE_CARD_COPY.changeCrop}
               </Button>
             )}
             <Button type="button" variant="outline" size="sm" pending={slot.uploading} onClick={() => input.current?.click()}>
               <Icon name="upload" />
-              Replace
+              {SLOT_SIDE_CARD_COPY.replace}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => onChange(null)}>
               <Icon name="delete" />
-              Remove
+              {SLOT_SIDE_CARD_COPY.remove}
             </Button>
           </div>
         </>

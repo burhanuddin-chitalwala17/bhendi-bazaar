@@ -13,8 +13,9 @@ import { storefrontDAL } from "@/data-access-layer/storefront.dal";
 import { requireOrgMember } from "@/lib/org-auth";
 import { storefrontLookService } from "@server/catalog/storefront-look.service";
 import { readStorefrontLook } from "@server/catalog/storefront-themes";
+import { PREVIEW_PAGE_COPY } from "@/app/(preview)/preview-copy";
 
-export const metadata: Metadata = { title: "Preview", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: PREVIEW_PAGE_COPY.title, robots: { index: false, follow: false } };
 
 /**
  * A shop in the look its owner is trying (storefront-themes D12, Q32): the same sections a buyer's

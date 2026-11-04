@@ -5,9 +5,10 @@ import { platformListingDAL } from "@/data-access-layer/platform-listing.dal";
 import { PageShell, PageHeader } from "@/components/shared/page-shell";
 import { ReviewPublish } from "@/components/channel/review-publish";
 import { PUBLISH } from "@/components/channel/platform-listing-copy";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
 export const metadata = {
-  title: "Review changes",
+  title: ORG_PAGE_TITLES.publish,
   robots: { index: false, follow: false },
 };
 

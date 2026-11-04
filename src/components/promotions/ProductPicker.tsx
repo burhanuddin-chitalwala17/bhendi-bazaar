@@ -19,6 +19,7 @@ import { productSearchApiClient } from "@/components/promotions/productSearchApi
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PRODUCT_PICKER_COPY } from "./promotions-copy";
 
 export interface TargetOption {
   id: string;
@@ -80,7 +81,7 @@ export function ProductPicker({
   return (
     <div>
       <Label className="text-sm" htmlFor="offer-product-search">
-        Products {required && <span className="text-destructive">*</span>}
+        {PRODUCT_PICKER_COPY.products} {required && <span className="text-destructive">*</span>}
       </Label>
       <div className="relative mt-1.5">
         <Icon
@@ -92,7 +93,7 @@ export function ProductPicker({
           id="offer-product-search"
           value={term}
           onChange={(event) => setTerm(event.target.value)}
-          placeholder="Find a product"
+          placeholder={PRODUCT_PICKER_COPY.find}
           className="pl-9"
         />
       </div>
@@ -108,17 +109,15 @@ export function ProductPicker({
         ))}
         {shown.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            {isSearching ? "Searching…" : "Nothing matches that."}
+            {isSearching ? PRODUCT_PICKER_COPY.searching : PRODUCT_PICKER_COPY.nothing}
           </p>
         )}
       </div>
 
       {/* Say what is not on screen. A silent cap reads as "no such product". */}
       <p className="mt-1.5 text-xs text-muted-foreground">
-        {value.length > 0 && `${value.length} selected · `}
-        {hidden > 0
-          ? `showing ${results.length} of ${total} — search to narrow`
-          : `${total} product${total === 1 ? "" : "s"}`}
+        {value.length > 0 && PRODUCT_PICKER_COPY.selected(value.length)}
+        {hidden > 0 ? PRODUCT_PICKER_COPY.showing(results.length, total) : PRODUCT_PICKER_COPY.count(total)}
       </p>
 
       {search.error && (

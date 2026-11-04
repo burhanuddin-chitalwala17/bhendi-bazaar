@@ -13,6 +13,7 @@ import { ExpandableLine } from "./expandable-line";
 import { LISTINGS, cardReadLine } from "./listing-copy";
 import { MarketplaceCardActions } from "./marketplace-card-actions";
 import { STOCK } from "./stock-copy";
+import { ROUTES } from "@server/shared/routes";
 
 const chipFor = (card: ChannelCardDTO) => {
   switch (card.state) {
@@ -46,7 +47,7 @@ export function MarketplaceCard({ orgId, card }: { orgId: string; card: ChannelC
         <>
           {live && (
             <Button asChild variant="link" className="min-h-10 px-0 md:mr-auto">
-              <Link href={`/org/${orgId}/channels/${card.channel}/listings`}>{LISTINGS.seeListings}</Link>
+              <Link href={ROUTES.org.channelListings(orgId, card.channel)}>{LISTINGS.seeListings}</Link>
             </Button>
           )}
           <MarketplaceCardActions

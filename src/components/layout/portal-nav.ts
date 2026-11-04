@@ -1,4 +1,6 @@
 import type { IconName } from "@/components/ui/icon";
+import { ROUTES } from "@server/shared/routes";
+import { PORTAL_GROUP_COPY, PORTAL_NAV_COPY } from "@/components/layout/portal-copy";
 
 /**
  * The shop portal's one navigation list (own-store onboarding D1): the phone tab bar, More and the
@@ -15,11 +17,11 @@ export type PortalGroup = (typeof PORTAL_GROUP)[keyof typeof PORTAL_GROUP];
 export const PORTAL_GROUPS = Object.values(PORTAL_GROUP) as readonly PortalGroup[];
 
 export const PORTAL_GROUP_LABEL: Record<PortalGroup, string> = {
-  [PORTAL_GROUP.SELL]: "Sell",
-  [PORTAL_GROUP.SHOP]: "Your shop",
-  [PORTAL_GROUP.GROW]: "Grow",
-  [PORTAL_GROUP.MONEY]: "Money",
-  [PORTAL_GROUP.SETTINGS]: "Settings",
+  [PORTAL_GROUP.SELL]: PORTAL_GROUP_COPY.sell,
+  [PORTAL_GROUP.SHOP]: PORTAL_GROUP_COPY.shop,
+  [PORTAL_GROUP.GROW]: PORTAL_GROUP_COPY.grow,
+  [PORTAL_GROUP.MONEY]: PORTAL_GROUP_COPY.money,
+  [PORTAL_GROUP.SETTINGS]: PORTAL_GROUP_COPY.settings,
 };
 
 /** What an item does when tapped that is not opening a portal page. */
@@ -56,21 +58,21 @@ export interface PortalNavEntry {
 }
 
 export const PORTAL_NAV: readonly PortalNavEntry[] = [
-  { key: "home", label: "Home", purpose: "What needs you today", icon: "home", target: { page: "" }, tab: true },
-  { key: "products", label: "Products", purpose: "Add and edit what you sell", icon: "products", target: { page: "products" }, group: PORTAL_GROUP.SELL, tab: true },
-  { key: "orders", label: "Orders", purpose: "Pack and track parcels", icon: "orders", target: { page: "orders" }, group: PORTAL_GROUP.SELL, tab: true },
-  { key: "shop", label: "Shop", purpose: "Your link and what buyers see", icon: "shop", target: { page: "shop" }, group: PORTAL_GROUP.SHOP },
-  { key: "listing", label: "Brands and defaults", purpose: "Facts every product starts with", icon: "layers", target: { page: "listing" }, group: PORTAL_GROUP.SELL },
-  { key: "library", label: "Photos", purpose: "All your pictures in one place", icon: "photos", target: { page: "library" }, group: PORTAL_GROUP.SELL },
-  { key: "storefront", label: "Shop page", purpose: "What buyers see", icon: "layout", target: { page: "storefront" }, group: PORTAL_GROUP.SHOP },
-  { key: "locations", label: "Pickup addresses", purpose: "Where couriers collect from", icon: "location", target: { page: "locations" }, group: PORTAL_GROUP.SHOP },
-  { key: "reviews", label: "Reviews", purpose: "What buyers say", icon: "rating", target: { page: "reviews" }, group: PORTAL_GROUP.SHOP },
-  { key: "promotions", label: "Offers", purpose: "Discounts you run", icon: "offer", target: { page: "promotions" }, group: PORTAL_GROUP.GROW },
-  { key: "channels", label: "Channels", purpose: "Sell on Amazon, Flipkart and more", icon: "connect", target: { page: "channels" }, group: PORTAL_GROUP.GROW },
-  { key: "bidding", label: "Bidding", purpose: "Auctions for one-off pieces", icon: "auction", target: { page: "bidding" }, group: PORTAL_GROUP.GROW },
-  { key: "earnings", label: "Money you'll receive", purpose: "What you earned and when it's paid", icon: "payout", target: { page: "earnings" }, group: PORTAL_GROUP.MONEY, tab: true, tabLabel: "Earnings" },
-  { key: "details", label: "Shop details", purpose: "Name, contact, tax", icon: "id-card", target: { page: "shop/details" }, group: PORTAL_GROUP.SETTINGS },
-  { key: "help", label: "Help", purpose: "Ask us anything", icon: "support", target: { action: PORTAL_ACTION.CONTACT }, group: PORTAL_GROUP.SETTINGS },
+  { key: "home", label: PORTAL_NAV_COPY.home.label, purpose: PORTAL_NAV_COPY.home.purpose, icon: "home", target: { page: "" }, tab: true },
+  { key: "products", label: PORTAL_NAV_COPY.products.label, purpose: PORTAL_NAV_COPY.products.purpose, icon: "products", target: { page: "products" }, group: PORTAL_GROUP.SELL, tab: true },
+  { key: "orders", label: PORTAL_NAV_COPY.orders.label, purpose: PORTAL_NAV_COPY.orders.purpose, icon: "orders", target: { page: "orders" }, group: PORTAL_GROUP.SELL, tab: true },
+  { key: "shop", label: PORTAL_NAV_COPY.shop.label, purpose: PORTAL_NAV_COPY.shop.purpose, icon: "shop", target: { page: "shop" }, group: PORTAL_GROUP.SHOP },
+  { key: "listing", label: PORTAL_NAV_COPY.listing.label, purpose: PORTAL_NAV_COPY.listing.purpose, icon: "layers", target: { page: "listing" }, group: PORTAL_GROUP.SELL },
+  { key: "library", label: PORTAL_NAV_COPY.library.label, purpose: PORTAL_NAV_COPY.library.purpose, icon: "photos", target: { page: "library" }, group: PORTAL_GROUP.SELL },
+  { key: "storefront", label: PORTAL_NAV_COPY.storefront.label, purpose: PORTAL_NAV_COPY.storefront.purpose, icon: "layout", target: { page: "storefront" }, group: PORTAL_GROUP.SHOP },
+  { key: "locations", label: PORTAL_NAV_COPY.locations.label, purpose: PORTAL_NAV_COPY.locations.purpose, icon: "location", target: { page: "locations" }, group: PORTAL_GROUP.SHOP },
+  { key: "reviews", label: PORTAL_NAV_COPY.reviews.label, purpose: PORTAL_NAV_COPY.reviews.purpose, icon: "rating", target: { page: "reviews" }, group: PORTAL_GROUP.SHOP },
+  { key: "promotions", label: PORTAL_NAV_COPY.promotions.label, purpose: PORTAL_NAV_COPY.promotions.purpose, icon: "offer", target: { page: "promotions" }, group: PORTAL_GROUP.GROW },
+  { key: "channels", label: PORTAL_NAV_COPY.channels.label, purpose: PORTAL_NAV_COPY.channels.purpose, icon: "connect", target: { page: "channels" }, group: PORTAL_GROUP.GROW },
+  { key: "bidding", label: PORTAL_NAV_COPY.bidding.label, purpose: PORTAL_NAV_COPY.bidding.purpose, icon: "auction", target: { page: "bidding" }, group: PORTAL_GROUP.GROW },
+  { key: "earnings", label: PORTAL_NAV_COPY.earnings.label, purpose: PORTAL_NAV_COPY.earnings.purpose, icon: "payout", target: { page: "earnings" }, group: PORTAL_GROUP.MONEY, tab: true, tabLabel: PORTAL_NAV_COPY.earnings.tabLabel },
+  { key: "details", label: PORTAL_NAV_COPY.details.label, purpose: PORTAL_NAV_COPY.details.purpose, icon: "id-card", target: { page: "shop/details" }, group: PORTAL_GROUP.SETTINGS },
+  { key: "help", label: PORTAL_NAV_COPY.help.label, purpose: PORTAL_NAV_COPY.help.purpose, icon: "support", target: { action: PORTAL_ACTION.CONTACT }, group: PORTAL_GROUP.SETTINGS },
 ];
 
 /** The href an entry opens for one shop, or null for an action. */
@@ -78,7 +80,7 @@ export function portalHref(entry: PortalNavEntry, orgId: string): string | null 
   const { target } = entry;
   if ("action" in target) return null;
   if ("href" in target) return target.href;
-  const base = `/org/${orgId}`;
+  const base = ROUTES.org.home(orgId);
   if (target.page === "") return base;
   return target.page.startsWith("#") ? `${base}${target.page}` : `${base}/${target.page}`;
 }
@@ -96,7 +98,7 @@ function pageOf(entry: PortalNavEntry): string | null {
  * (`shop/details`) wins over the Shop hub (`shop`) and only one item is ever marked.
  */
 export function activePortalEntry(orgId: string, pathname: string): PortalNavEntry | null {
-  const base = `/org/${orgId}`;
+  const base = ROUTES.org.home(orgId);
   let best: PortalNavEntry | null = null;
   let bestLength = -1;
   for (const entry of PORTAL_NAV) {

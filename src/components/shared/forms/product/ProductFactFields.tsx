@@ -11,6 +11,7 @@ import { resolveProductType } from "@server/listing/product-type";
 import type { ProductTypeRecord } from "@server/listing/product-type.types";
 import type { ProductFormInput } from "@/components/product/console/types";
 import { ProductFamilyField, type FamilyOption } from "./ProductFamilyField";
+import { PRODUCT_FACT_FIELDS_COPY } from "./product-copy";
 
 interface ProductFactFieldsProps {
   control: Control<ProductFormInput>;
@@ -91,11 +92,8 @@ export function ProductFactFields({
   if (!type) {
     return (
       <section className="rounded-card border border-border bg-card p-4 md:p-6">
-        <h2 className="text-lg font-semibold text-foreground">Product details</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          This category has no product type, so there is nothing more to ask. The product saves
-          and sells here; it cannot be published to a marketplace until a type is set.
-        </p>
+        <h2 className="text-lg font-semibold text-foreground">{PRODUCT_FACT_FIELDS_COPY.productDetails}</h2>
+        <p className="mt-2 text-sm text-muted-foreground">{PRODUCT_FACT_FIELDS_COPY.noProductType}</p>
         {/* A family is still legitimate without a type: the siblings share a description even
             where nothing has named what makes them differ. */}
         {withFamily && (
@@ -119,8 +117,7 @@ export function ProductFactFields({
     <section className="rounded-card border border-border bg-card p-4 md:p-6">
       <h2 className="text-lg font-semibold text-foreground">{type.label} details</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        What a marketplace asks about this kind of thing. Leave anything you do not know — it
-        saves either way.
+        {PRODUCT_FACT_FIELDS_COPY.whatAMarketplaceAsksAbout}
       </p>
 
       {withFamily && (
@@ -142,12 +139,12 @@ export function ProductFactFields({
           <FormSelect
             // Remounted per type, so a kind kept from an earlier category shows when switched back (D5).
             key={type.key}
-            label="Kind"
+            label={PRODUCT_FACT_FIELDS_COPY.kind}
             {...register("kind")}
             error={errors.kind?.message}
             disabled={readOnly}
           >
-            <option value="">Not specified</option>
+            <option value="">{PRODUCT_FACT_FIELDS_COPY.notSpecified}</option>
             {type.kinds.map((kind) => (
               <option key={kind.key} value={kind.key}>
                 {kind.label}
@@ -178,7 +175,7 @@ export function ProductFactFields({
 
       {type.measures.length > 0 && (
         <>
-          <h3 className="mt-6 text-sm font-medium text-foreground">Measurements</h3>
+          <h3 className="mt-6 text-sm font-medium text-foreground">{PRODUCT_FACT_FIELDS_COPY.measurements}</h3>
           <p className="mt-1 text-2xs text-muted-foreground">
             In {type.measures[0]?.unit}. Measured once here rather than guessed at a size label —
             a measurement says which size it is, and a size label does not say the measurement.
@@ -293,7 +290,7 @@ function FactField({
       hint={loading ? "Loading the answers…" : hint}
       {...register(name as never)}
     >
-      <option value="">Not specified</option>
+      <option value="">{PRODUCT_FACT_FIELDS_COPY.notSpecified}</option>
       {options.map((option) => (
         <option key={option.key} value={option.key}>
           {option.label}

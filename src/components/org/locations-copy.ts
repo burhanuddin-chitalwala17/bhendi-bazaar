@@ -1,0 +1,43 @@
+/** Pickup locations: the list, its delete confirmation, and the location form (ADR-0067). */
+export const LOCATIONS_COPY = {
+  deleted: "Location deleted",
+  intro: "Where your products ship from. Couriers collect at these addresses.",
+  add: "Add location",
+  empty: "No pickup locations yet. Add the shop or warehouse your parcels leave from.",
+  active: "Active",
+  inactive: "Inactive",
+  streetNeeded: "Street address needed",
+  contactNeeded: "Pickup contact needed",
+  usage: (stocked: number, shipped: number) =>
+    `${stocked} product${stocked === 1 ? "" : "s"} stocked · ${shipped} parcel${shipped === 1 ? "" : "s"} shipped`,
+  editLabel: (name: string) => `Edit ${name}`,
+  deleteLabel: (name: string) => `Delete ${name}`,
+  edit: "Edit location",
+  addPickup: "Add pickup location",
+  deleteTitle: "Delete location",
+  confirmDelete: (name: string | undefined) => `Are you sure you want to delete “${name ?? ""}”?`,
+  cancel: "Cancel",
+  delete: "Delete",
+} as const;
+
+export const LOCATION_FORM_COPY = {
+  updated: "Location updated",
+  added: "Location added",
+  name: "Location name",
+  namePlaceholder: "e.g., Bhendi Bazaar shop",
+  nameHint: "What couriers and your team call this place",
+  contact: "Pickup contact",
+  contactPlaceholder: "Who answers at pickup",
+  phone: "Contact phone",
+  phonePlaceholder: "Mobile number",
+  line1: "Address line 1",
+  line2: "Address line 2",
+  landmark: "Landmark",
+  city: "City",
+  state: "State",
+  pincode: "Pincode",
+  active: "Active",
+  activeHint: "Offer this location for new stock.",
+  save: "Save changes",
+  add: "Add location",
+} as const;

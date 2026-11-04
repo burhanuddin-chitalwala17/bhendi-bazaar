@@ -4,15 +4,17 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 
 import { useCartCount } from "./themed-cart-count";
+import { THEMED_COPY } from "../themed-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** The header's cart, from `md` up; on a phone the tab bar carries it (ADR-0016). */
 export function ThemedCartLink() {
   const count = useCartCount();
   return (
     <Link
-      href="/cart"
+      href={ROUTES.cart}
       prefetch={false}
-      aria-label={count > 0 ? `Cart, ${count} items` : "Cart"}
+      aria-label={THEMED_COPY.cartLink(count)}
       className="relative hidden shrink-0 text-foreground md:inline-flex"
     >
       <Icon name="bag" size="md" />

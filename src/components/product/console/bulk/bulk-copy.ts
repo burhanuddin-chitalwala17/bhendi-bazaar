@@ -1,3 +1,4 @@
+import { BULK_SKIP_REASON, type BulkSkipReason } from "@server/catalog/product-bulk.types";
 import { BULK_ACTION, type BulkAction } from "@server/catalog/product-bulk.types";
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
@@ -53,4 +54,30 @@ export const BULK_COPY = {
   conflictsTitle: "Someone changed these while you were editing — review",
   conflictLine: (place: string, seen: number, now: number) => `${place ? `${place}: ` : ""}you saw ${seen}, now ${now}`,
   skippedTitle: (n: number) => `${products(n)} left as they were`,
+} as const;
+
+export const PRICE_MODE_COPY = {
+  set: "Set to",
+  amount: "Change by ₹",
+  percent: "Change by %",
+} as const;
+
+/** Why a product was left as it was, in the shop's words. */
+export const SKIP_REASON_COPY: Record<BulkSkipReason, string> = {
+  [BULK_SKIP_REASON.NOT_FOUND]: "No longer in this shop",
+  [BULK_SKIP_REASON.ARCHIVED]: "Archived: restore it first",
+  [BULK_SKIP_REASON.ALREADY_ARCHIVED]: "Already archived",
+  [BULK_SKIP_REASON.UNCHANGED]: "Already at that value",
+  [BULK_SKIP_REASON.PRICE_TOO_LOW]: "The new price would be ₹0 or less",
+  [BULK_SKIP_REASON.PRICE_TOO_HIGH]: "The new price would be too high",
+  [BULK_SKIP_REASON.BIDDING_LIVE]: "In a live auction",
+  [BULK_SKIP_REASON.LOCATION_NOT_FOUND]: "That pickup address is not this product's shop's",
+  [BULK_SKIP_REASON.NOT_ON_MARKETPLACE]: "Not listed on that marketplace yet",
+  [BULK_SKIP_REASON.NOTHING_TO_SEND]: "Already up to date there",
+  [BULK_SKIP_REASON.SEND_IN_PROGRESS]: "Already on its way",
+};
+
+export const PRICE_INPUT_COPY = {
+  invalid: "Enter an amount in rupees, like 1250 or 99.50",
+  invalidPercent: "Enter a percentage, like 10 or 12.5",
 } as const;

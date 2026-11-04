@@ -46,6 +46,8 @@ import { useLeaveGuard } from "./useLeaveGuard";
 import { useEditRebase } from "./useEditRebase";
 import { DRAFT_MAX_AGE_MS, seenVersionOf } from "./edit-overview";
 import { formFieldsIn, leaveBody, stepsOf } from "./product-steps";
+import { INDEX_COPY } from "./product-copy";
+import { PRODUCT_FORM_SAVE_COPY } from "@/components/shared/forms/product/product-copy";
 interface ProductFormProps {
   product?: ProductDetails;
   /** Create only: another of the org's products whose descriptive fields seed this one. */
@@ -201,11 +203,11 @@ export function ProductForm({
     // The stepped create opens the step holding the first problem (ProductStepsForm), not a banner (D2).
     onInvalid: stepped || overview ? () => {} : undefined,
     fallbackMessage: team
-      ? "Couldn't save. Try again."
+      ? PRODUCT_FORM_SAVE_COPY.failed
       : stepped
-      ? "Couldn't save. Your work is still here."
+      ? PRODUCT_FORM_SAVE_COPY.failedNew
       : overview
-        ? "Couldn't save. Your changes are still here."
+        ? PRODUCT_FORM_SAVE_COPY.failedEdit
         : undefined,
     // The stepped form and the overview show the failure inline with "Try again"; a toast would say it twice.
     toastErrors: !stepped && !overview,
@@ -335,7 +337,7 @@ export function ProductForm({
           draft={draftNotice}
           conflict={rebaser.notice}
           kept={rebaser.kept}
-          saveLabel={team ? "Save for shop" : undefined}
+          saveLabel={team ? PRODUCT_FORM_SAVE_COPY.teamSave : undefined}
         />
         {leaveSheet}
       </>
@@ -358,7 +360,7 @@ export function ProductForm({
         onLocationAdded={team ? undefined : addLocation}
         uploadEndpoints={uploadEndpoints}
         copyFrom={copyFrom}
-        saveLabel={team ? "Put on sale for shop" : undefined}
+        saveLabel={team ? PRODUCT_FORM_SAVE_COPY.teamPublish : undefined}
         sellsElsewhere={sellsElsewhere}
         created={created}
         onStartAnother={() => {
@@ -406,12 +408,12 @@ export function ProductForm({
         <Card>
           <CardContent className="pt-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">
-              Gallery
+              {INDEX_COPY.gallery}
             </h2>
             <FormController
               name="media"
               control={control}
-              label="Photos and video"
+              label={INDEX_COPY.photosAndVideo}
               render={({ field }) => (
                 <ProductMediaManager
                   value={field.value as ProductMediaInput[]}
@@ -440,7 +442,7 @@ export function ProductForm({
         <Card>
           <CardContent className="pt-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">
-              Gallery
+              {INDEX_COPY.gallery}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {product.media.map((item) => (
@@ -536,7 +538,7 @@ export function ProductForm({
       {/* Create is the steps and edit the overview, so what is left here is the read-only view. */}
       <div className="flex justify-end gap-3">
         <Button type="button" variant="outline" onClick={handleCancel}>
-          Close
+          {INDEX_COPY.close}
         </Button>
       </div>
     </form>

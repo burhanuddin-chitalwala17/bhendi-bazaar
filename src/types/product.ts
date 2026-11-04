@@ -1,3 +1,5 @@
+import { PRODUCT_FLAG_COPY } from "./types-copy";
+
 export enum ProductFlag {
   FEATURED = "FEATURED",
   HERO = "HERO",
@@ -27,30 +29,30 @@ export const PRODUCT_FLAG_METADATA: Record<
   { label: string; description: string; color?: string; computed?: boolean }
 > = {
   [ProductFlag.FEATURED]: {
-    label: "Featured Product",
-    description: "Display this product in featured sections",
+    label: PRODUCT_FLAG_COPY.featured.label,
+    description: PRODUCT_FLAG_COPY.featured.description,
     color: "purple",
   },
   [ProductFlag.HERO]: {
-    label: "Hero Product",
-    description: "Display this product in hero sections on homepage",
+    label: PRODUCT_FLAG_COPY.hero.label,
+    description: PRODUCT_FLAG_COPY.hero.description,
     color: "blue",
   },
   [ProductFlag.ON_OFFER]: {
-    label: "On Offer",
-    description: "Derived from active promotions",
+    label: PRODUCT_FLAG_COPY.onOffer.label,
+    description: PRODUCT_FLAG_COPY.onOffer.description,
     color: "orange",
     computed: true,
   },
   [ProductFlag.NEW_ARRIVAL]: {
-    label: "New Arrival",
-    description: `Derived from creation date (${NEW_ARRIVAL_DAYS} days)`,
+    label: PRODUCT_FLAG_COPY.newArrival.label,
+    description: PRODUCT_FLAG_COPY.newArrival.description(NEW_ARRIVAL_DAYS),
     color: "green",
     computed: true,
   },
   [ProductFlag.CLEARANCE_SALE]: {
-    label: "Clearance Sale",
-    description: "Mark this product as part of clearance sale",
+    label: PRODUCT_FLAG_COPY.clearance.label,
+    description: PRODUCT_FLAG_COPY.clearance.description,
     color: "red",
   },
 };

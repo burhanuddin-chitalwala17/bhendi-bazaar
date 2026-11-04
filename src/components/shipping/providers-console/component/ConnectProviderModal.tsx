@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ConnectionRequestBody, ConnectionResponse } from "../types";
+import { CONNECT_PROVIDER_MODAL_COPY } from "../providers-console-copy";
 
 interface ConnectProviderModalProps {
   providerId: string;
@@ -68,7 +69,7 @@ export function ConnectProviderModal({
 
     if (!response.success) {
       setError(
-        response.error ?? "That didn't connect. Check the API user's email and password.",
+        response.error ?? CONNECT_PROVIDER_MODAL_COPY.didnTConnectCheck,
       );
     }
   };
@@ -83,17 +84,15 @@ export function ConnectProviderModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <p className="rounded-field border border-border/60 bg-muted/50 p-3 text-caption text-muted-foreground">
             These are{" "}
-            <span className="font-semibold text-foreground">API user</span>{" "}
+            <span className="font-semibold text-foreground">{CONNECT_PROVIDER_MODAL_COPY.apiUser}</span>{" "}
             credentials, not your {providerName} dashboard login. Create them
             under{" "}
-            <span className="font-semibold text-foreground">
-              Settings → API → Configure
-            </span>
+            <span className="font-semibold text-foreground">{CONNECT_PROVIDER_MODAL_COPY.settingsApiConfigure}</span>
             , using an email different from your registered one.
           </p>
 
           <div>
-            <Label htmlFor="email">API user email</Label>
+            <Label htmlFor="email">{CONNECT_PROVIDER_MODAL_COPY.apiUserEmail}</Label>
             <Input
               id="email"
               type="email"
@@ -105,7 +104,7 @@ export function ConnectProviderModal({
           </div>
 
           <div>
-            <Label htmlFor="password">API user password</Label>
+            <Label htmlFor="password">{CONNECT_PROVIDER_MODAL_COPY.apiUserPassword}</Label>
             <Input
               id="password"
               type="password"
@@ -127,12 +126,8 @@ export function ConnectProviderModal({
               type="button"
               variant="outline"
               onClick={onClose}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" pending={isConnecting}>
-              Connect
-            </Button>
+            >{CONNECT_PROVIDER_MODAL_COPY.cancel}</Button>
+            <Button type="submit" pending={isConnecting}>{CONNECT_PROVIDER_MODAL_COPY.connect}</Button>
           </div>
         </form>
       </DialogContent>

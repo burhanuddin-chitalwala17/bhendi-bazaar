@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 
 import { wishlistApiClient } from "@/components/wishlist/wishlistApiClient";
+import { AUTH_INTENT_COPY, AUTH_INTENT_FAILED_COPY } from "./lib-copy";
 
 /**
  * What a shopper was doing when asked to sign in, finished once they have
@@ -13,7 +14,7 @@ export type AuthIntent = { kind: "wishlist.save"; productId: string };
 const HANDLERS: { [K in AuthIntent["kind"]]: (intent: Extract<AuthIntent, { kind: K }>) => Promise<void> } = {
   "wishlist.save": async ({ productId }) => {
     await wishlistApiClient.save(productId);
-    toast.success("Added to wishlist");
+    toast.success(AUTH_INTENT_COPY.addedToWishlist);
   },
 };
 
@@ -21,7 +22,7 @@ export async function runIntent(intent: AuthIntent): Promise<void> {
   try {
     await HANDLERS[intent.kind](intent);
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : "That did not go through. Please try again.");
+    toast.error(error instanceof Error ? error.message : AUTH_INTENT_FAILED_COPY.didNotGoThrough);
   }
 }
 

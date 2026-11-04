@@ -8,6 +8,7 @@ import {
 import { isDomainError } from "@server/shared/domain-error";
 import type { ApiErrorBody, ApiErrorDetail } from "@/lib/api-error";
 import { RateLimitedError } from "@/lib/rate-limit/refusal";
+import { ERROR_RESPONSE_COPY, FIELD_LABEL_COPY, REFERENCED_BY_COPY } from "@/lib/lib-copy";
 
 /**
  * Convert anything thrown in a route handler into the standard envelope
@@ -16,16 +17,7 @@ import { RateLimitedError } from "@/lib/rate-limit/refusal";
  */
 
 /** Field name -> label, for messages an admin or customer will read. */
-const FIELD_LABELS: Record<string, string> = {
-  sku: "SKU",
-  slug: "URL slug",
-  email: "email address",
-  mobile: "mobile number",
-  code: "code",
-  gstNumber: "GST number",
-  categoryId: "category",
-  orgId: "org",
-};
+const FIELD_LABELS = FIELD_LABEL_COPY;
 
 const label = (field: string) => FIELD_LABELS[field] ?? field;
 
@@ -34,19 +26,11 @@ const label = (field: string) => FIELD_LABELS[field] ?? field;
  * Only the tables that actually hold such a key need an entry; anything else falls
  * back to the generic wording.
  */
-const REFERENCED_BY_LABELS: Record<string, string> = {
-  OrderItem: "existing orders",
-  OrderDiscount: "recorded discounts",
-  OrgLedgerEntry: "payout records",
-  PromotionTarget: "promotions",
-  BiddingEvent: "bidding events",
-  Shipment: "shipments",
-  Product: "products",
-};
+const REFERENCED_BY_LABELS = REFERENCED_BY_COPY;
 
 export function toErrorResponse(
   error: unknown,
-  fallbackMessage = "Something went wrong"
+  fallbackMessage: string = ERROR_RESPONSE_COPY.somethingWentWrong
 ): NextResponse {
   // 1. Invalid input shape — every issue attributed to its field.
   if (error instanceof z.ZodError) {
@@ -54,7 +38,7 @@ export function toErrorResponse(
       path: issue.path.join("."),
       message: issue.message,
     }));
-    return json({ error: "Please correct the highlighted fields", details }, 400);
+    return json({ error: ERROR_RESPONSE_COPY.correctHighlighted, details }, 400);
   }
 
   // 2. Domain code opted in to being shown. A rate-limit refusal also says when to retry.
@@ -77,16 +61,16 @@ export function toErrorResponse(
   // 3. Uniqueness — knowable only at the database, so no client validation replaces it.
   const conflicting = uniqueViolationFields(error);
   if (conflicting !== null) {
-    if (!conflicting.length) return json({ error: "That value is already in use" }, 409);
+    if (!conflicting.length) return json({ error: ERROR_RESPONSE_COPY.valueInUse }, 409);
     return json(
       {
         error:
           conflicting.length === 1
-            ? `This ${label(conflicting[0])} is already in use`
-            : "Some values are already in use",
+            ? ERROR_RESPONSE_COPY.fieldInUse(label(conflicting[0]))
+            : ERROR_RESPONSE_COPY.valuesInUse,
         details: conflicting.map((f) => ({
           path: f,
-          message: `This ${label(f)} is already in use`,
+          message: ERROR_RESPONSE_COPY.fieldInUse(label(f)),
         })),
       },
       409
@@ -107,24 +91,24 @@ export function toErrorResponse(
       return json(
         {
           error: referrer
-            ? `This cannot be deleted while ${referrer} still refer to it`
-            : "This cannot be deleted while other records still refer to it",
+            ? ERROR_RESPONSE_COPY.cannotDeleteReferredBy(referrer)
+            : ERROR_RESPONSE_COPY.cannotDeleteReferred,
         },
         409
       );
     }
     const perField = (f: string) =>
       constraint.kind === "foreignKey"
-        ? `That ${label(f)} no longer exists — pick another`
+        ? ERROR_RESPONSE_COPY.fieldGone(label(f))
         : constraint.kind === "tooLong"
-          ? `This ${label(f)} is too long`
-          : `This ${label(f)} is required`;
+          ? ERROR_RESPONSE_COPY.fieldTooLong(label(f))
+          : ERROR_RESPONSE_COPY.fieldRequired(label(f));
     const summary =
       constraint.fields.length === 1
         ? perField(constraint.fields[0])
         : constraint.kind === "foreignKey"
-          ? "One of the selected records no longer exists"
-          : "Some values were rejected";
+          ? ERROR_RESPONSE_COPY.recordsGone
+          : ERROR_RESPONSE_COPY.valuesRejected;
     return json(
       {
         error: summary,
@@ -138,7 +122,7 @@ export function toErrorResponse(
 
   // 5. Prisma could not find the row it was told to change.
   if (isNotFoundViolation(error)) {
-    return json({ error: "That record no longer exists" }, 404);
+    return json({ error: ERROR_RESPONSE_COPY.recordGone }, 404);
   }
 
   // 6. Unknown: an internal fault. Logged in full, reported generically — the only

@@ -12,6 +12,8 @@ import { formatCount } from "@/lib/format";
 /** Placeholders while the next page loads: a desktop row, two phone rows. */
 const PLACEHOLDER_ROW = 4;
 import { productPagesApiClient } from "@/components/product/productPagesApiClient";
+import { PAGINATED_PRODUCT_GRID_COPY } from "./shared-copy";
+import { PAGINATED_GRID_COPY } from "@/components/shared/shared-copy";
 
 /**
  * The one product listing that loads as you scroll (design-system Q23): the first page is
@@ -84,7 +86,7 @@ export function PaginatedProductGrid({
       setError(
         cause instanceof Error
           ? cause.message
-          : "Could not load more. Check your connection and try again.",
+          : PAGINATED_GRID_COPY.loadFailed,
       );
     } finally {
       setLoading(false);
@@ -116,15 +118,15 @@ export function PaginatedProductGrid({
       {/* One live region: a screen reader is told the count grew, rather than nothing. */}
       <p aria-live="polite" className="sr-only">
         {loading
-          ? "Loading more products"
-          : `${products.length} ${emptyLabel ?? "products"} shown`}
+          ? PAGINATED_GRID_COPY.loading
+          : PAGINATED_GRID_COPY.shown(products.length, emptyLabel ?? PAGINATED_GRID_COPY.noun)}
       </p>
 
       {error && (
         <div role="alert" className="flex flex-col items-center gap-2">
           <p className="text-small text-destructive">{error}</p>
           <Button variant="outline" size="sm" onClick={() => void loadMore()}>
-            Try again
+            {PAGINATED_PRODUCT_GRID_COPY.tryAgain}
           </Button>
         </div>
       )}
@@ -146,14 +148,14 @@ export function PaginatedProductGrid({
             onClick={() => void loadMore()}
             pending={loading}
           >
-            Show more
+            {PAGINATED_PRODUCT_GRID_COPY.showMore}
           </Button>
         </div>
       )}
 
       {done && products.length > PRODUCT_PAGE_SIZE && (
         <p className="text-center text-caption text-muted-foreground">
-          That is everything.
+          {PAGINATED_PRODUCT_GRID_COPY.thatIsEverything}
         </p>
       )}
     </div>

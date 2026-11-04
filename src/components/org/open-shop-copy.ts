@@ -17,3 +17,16 @@ export const SLOW_AFTER_MS = 3000;
 
 /** The handle's room after the store prefix on a 360px phone; cut in the middle beyond it (ux Long content). */
 export const LINK_PREVIEW_MAX = 24;
+
+/** The create form's fields (own-store onboarding ux.md copy deck). */
+export const OPEN_SHOP_FIELDS_COPY = {
+  name: "Shop name",
+  nameHint: "Buyers see this on your shop and every product.",
+  namePlaceholder: "Noor Attar House",
+  phone: "Your mobile number",
+  phoneHint: "We'll call or message you about orders and pickups. Buyers never see it.",
+  phonePlaceholder: "98765 43210",
+  email: "Email for order updates",
+  emailHint: "We send new orders here.",
+  emailPlaceholder: "noorattar@gmail.com",
+} as const;

@@ -5,6 +5,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { WISHLIST_BUTTON_LABEL_COPY } from "@/components/wishlist/wishlist-copy";
 
 /** The heart: a client leaf on server product surfaces. It stops the click so saving never opens the product. */
 export function WishlistButton({
@@ -28,7 +29,7 @@ export function WishlistButton({
       variant="ghost"
       shape="icon"
       size="lg"
-      aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}
+      aria-label={saved ? WISHLIST_BUTTON_LABEL_COPY.remove : WISHLIST_BUTTON_LABEL_COPY.add}
       aria-pressed={saved}
       disabled={pending}
       onClick={(event) => {

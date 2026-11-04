@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
+import { PLATFORM_MARKS_COPY } from "./icons-copy";
 
 /**
  * Other platforms' marks, drawn as each platform draws them (ADR-0066 D3): the one place their
@@ -53,7 +54,7 @@ export function PlatformMark({ name, size, label, className }: PlatformMarkProps
     return (
       <span className={cn(tileVariants({ size }), "px-0.5", className)} {...a11y}>
         <span className="text-2xs font-bold lowercase" style={{ color: MEESHO_PURPLE }}>
-          meesho
+          {PLATFORM_MARKS_COPY.meesho}
         </span>
       </span>
     );

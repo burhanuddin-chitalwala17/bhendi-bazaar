@@ -12,6 +12,7 @@ import type { AvailableTool } from "@server/content/enhancement.types";
 import type { ProductMediaInput, ProductMediaState } from "@server/catalog/media";
 import type { ShotList, ShotSlot } from "@server/catalog/shot-list";
 import { SlotSilhouette } from "@/components/product/slot-silhouette";
+import { MEDIA_COPY } from "./media-copy";
 
 /**
  * The rows of the slot-guided gallery editor (media-library R4, R8, trd D4/D6). The manager
@@ -44,7 +45,7 @@ export function CaptureBanner({
   return (
     <Alert className="border-warning/40 [&>svg]:text-warning">
       <Icon name="warning" tone="warning" />
-      <AlertTitle className="text-warning">Worth another look</AlertTitle>
+      <AlertTitle className="text-warning">{MEDIA_COPY.rows.worthALook}</AlertTitle>
       <AlertDescription>
         <ul className="list-disc pl-4 text-muted-foreground">
           {warnings.map((warning) => (
@@ -54,14 +55,14 @@ export function CaptureBanner({
         <div className="mt-3 flex flex-wrap gap-2">
           {fix && onImprove && (
             <Button type="button" size="lg" onClick={() => onImprove(fix)}>
-              <Icon name="enhance" /> Improve
+              <Icon name="enhance" /> {MEDIA_COPY.rows.improve}
             </Button>
           )}
           <Button type="button" variant="outline" size="lg" onClick={onRemove}>
-            <Icon name="close" /> Remove
+            <Icon name="close" /> {MEDIA_COPY.rows.remove}
           </Button>
           <Button type="button" variant="ghost" size="lg" onClick={onKeep}>
-            Keep anyway
+            {MEDIA_COPY.rows.keepAnyway}
           </Button>
         </div>
       </AlertDescription>
@@ -152,11 +153,11 @@ export function SlotRow({
             pending={uploading}
           >
             {!uploading && <Icon name="camera" />}
-            {uploading ? "Uploading…" : "Take or choose a photo"}
+            {uploading ? MEDIA_COPY.rows.uploading : MEDIA_COPY.rows.takeOrChoose}
           </Button>
           {canPickFromLibrary && (
             <Button type="button" variant="outline" size="lg" onClick={onPickFromLibrary}>
-              <Icon name="photos" /> From library
+              <Icon name="photos" /> {MEDIA_COPY.rows.fromLibrary}
             </Button>
           )}
         </div>
@@ -166,7 +167,7 @@ export function SlotRow({
           accept="image/*"
           onChange={handleFiles}
           className="hidden"
-          aria-label={`Photo for ${slot.label}`}
+          aria-label={MEDIA_COPY.rows.photoFor(slot.label)}
         />
       </li>
     );
@@ -179,36 +180,36 @@ export function SlotRow({
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">{slot.label}</Badge>
-            {item.isThumbnail && <Badge>Cover</Badge>}
+            {item.isThumbnail && <Badge>{MEDIA_COPY.rows.cover}</Badge>}
           </div>
           <Input
             value={item.description ?? ""}
             onChange={(event) => onDescribe(event.target.value)}
-            placeholder="Describe this photo"
-            aria-label={`Description for ${slot.label}`}
+            placeholder={MEDIA_COPY.rows.describePhoto}
+            aria-label={MEDIA_COPY.rows.describeLabel(slot.label)}
           />
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
         {!item.isThumbnail && (
           <Button type="button" variant="outline" size="lg" onClick={onCover}>
-            <Icon name="rating" /> Cover
+            <Icon name="rating" /> {MEDIA_COPY.rows.cover}
           </Button>
         )}
         {onImprove && (
           <Button type="button" variant="outline" size="lg" onClick={() => onImprove()}>
-            <Icon name="enhance" /> Improve…
+            <Icon name="enhance" /> {MEDIA_COPY.rows.improveMore}
           </Button>
         )}
         <Button type="button" variant="outline" size="lg" onClick={onMoveToExtra}>
-          Move to extra
+          {MEDIA_COPY.rows.moveToExtra}
         </Button>
         <Button
           type="button"
           variant="outline"
           shape="icon" size="lg"
           onClick={onRemove}
-          aria-label={`Remove the ${slot.label} photo`}
+          aria-label={MEDIA_COPY.rows.removeSlotPhoto(slot.label)}
         >
           <Icon name="close" />
         </Button>
@@ -263,20 +264,20 @@ export function ExtraRow({
         {thumb}
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={isVideo ? "secondary" : "outline"}>{isVideo ? "Video" : "Extra photo"}</Badge>
-            {item.isThumbnail && <Badge>Cover</Badge>}
+            <Badge variant={isVideo ? "secondary" : "outline"}>{isVideo ? MEDIA_COPY.rows.video : MEDIA_COPY.rows.extraPhoto}</Badge>
+            {item.isThumbnail && <Badge>{MEDIA_COPY.rows.cover}</Badge>}
             {/* A hosted video says where it is (spec R3, R7): a badge on the row, never a modal. */}
-            {status === "processing" && <Badge variant="outline">Processing</Badge>}
-            {status === "failed" && <Badge variant="destructive">Failed</Badge>}
+            {status === "processing" && <Badge variant="outline">{MEDIA_COPY.rows.processing}</Badge>}
+            {status === "failed" && <Badge variant="destructive">{MEDIA_COPY.rows.failed}</Badge>}
           </div>
           {status === "processing" && (
             <p className="text-xs text-muted-foreground">
-              Being made playable in the background. Save whenever you like; it plays on the product page once ready.
+              {MEDIA_COPY.rows.processingHint}
             </p>
           )}
           {status === "failed" && (
             <p className="text-xs text-muted-foreground">
-              Could not be made playable — the reason is on this video in your library. Remove it here.
+              {MEDIA_COPY.rows.failedHint}
             </p>
           )}
           {/* Only a photograph fills a slot; a video is always an extra (D4). */}
@@ -284,9 +285,9 @@ export function ExtraRow({
             <Select
               value=""
               onChange={(event) => event.target.value && onAssignSlot(event.target.value)}
-              aria-label={`Move ${label} to a slot`}
+              aria-label={MEDIA_COPY.rows.moveToSlot(label)}
             >
-              <option value="">Move to a slot…</option>
+              <option value="">{MEDIA_COPY.rows.moveToSlotOption}</option>
               {shotList.map((slot) => (
                 <option key={slot.key} value={slot.key}>
                   {slot.label}
@@ -297,8 +298,8 @@ export function ExtraRow({
           <Input
             value={item.description ?? ""}
             onChange={(event) => onDescribe(event.target.value)}
-            placeholder="Describe this item"
-            aria-label={`Description for ${label}`}
+            placeholder={MEDIA_COPY.rows.describePlaceholder}
+            aria-label={MEDIA_COPY.rows.describeLabel(label)}
           />
         </div>
       </div>
@@ -309,7 +310,7 @@ export function ExtraRow({
           shape="icon" size="lg"
           // moveExtra is a no-op at the ends, so the button need not be greyed (A8).
           onClick={() => onMove(-1)}
-          aria-label={`Move ${label} earlier`}
+          aria-label={MEDIA_COPY.rows.moveEarlier(label)}
         >
           <Icon name="move-up" />
         </Button>
@@ -318,7 +319,7 @@ export function ExtraRow({
           variant="outline"
           shape="icon" size="lg"
           onClick={() => onMove(1)}
-          aria-label={`Move ${label} later`}
+          aria-label={MEDIA_COPY.rows.moveLater(label)}
         >
           <Icon name="move-down" />
         </Button>
@@ -326,15 +327,15 @@ export function ExtraRow({
             present and rejected. */}
         {!isVideo && !item.isThumbnail && (
           <Button type="button" variant="outline" size="lg" onClick={onCover}>
-            <Icon name="rating" /> Cover
+            <Icon name="rating" /> {MEDIA_COPY.rows.cover}
           </Button>
         )}
         {!isVideo && onImprove && (
           <Button type="button" variant="outline" size="lg" onClick={() => onImprove()}>
-            <Icon name="enhance" /> Improve…
+            <Icon name="enhance" /> {MEDIA_COPY.rows.improveMore}
           </Button>
         )}
-        <Button type="button" variant="outline" shape="icon" size="lg" onClick={onRemove} aria-label={`Remove ${label}`}>
+        <Button type="button" variant="outline" shape="icon" size="lg" onClick={onRemove} aria-label={MEDIA_COPY.rows.removeNamed(label)}>
           <Icon name="close" />
         </Button>
       </div>

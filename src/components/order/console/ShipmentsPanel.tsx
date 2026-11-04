@@ -9,6 +9,7 @@ import { PickupActions } from "@/components/order/pickups/pickup-actions";
 import { ParcelTimeline } from "@/components/order/timeline/parcel-timeline";
 import { TIMELINE_READER } from "@/components/order/timeline/timeline-copy";
 import { SHIPMENT_STATUS_LABELS } from "@server/shipping/domain/shipping.types";
+import { SHIPMENTS_PANEL_COPY } from "./console-copy";
 
 /**
  * The parcels on an order: each one's booking, its timeline, and what the admin can do at its
@@ -28,15 +29,11 @@ export function ShipmentsPanel({
   return (
     <div className="space-y-6">
       <h2 className="flex items-center gap-2 text-title font-semibold">
-        <Icon name="parcel" size="md" tone="muted" />
-        Parcels
-        <span className="text-small font-normal tabular-nums text-muted-foreground">{shipments.length}</span>
+        <Icon name="parcel" size="md" tone="muted" />{SHIPMENTS_PANEL_COPY.parcels}<span className="text-small font-normal tabular-nums text-muted-foreground">{shipments.length}</span>
       </h2>
 
       {shipments.length === 0 && (
-        <p className="rounded-card border border-border bg-card p-4 text-small text-muted-foreground md:p-6">
-          Nothing has been packed for this order yet.
-        </p>
+        <p className="rounded-card border border-border bg-card p-4 text-small text-muted-foreground md:p-6">{SHIPMENTS_PANEL_COPY.nothingHasBeenPacked}</p>
       )}
 
       {shipments.map((shipment) => {
@@ -59,7 +56,7 @@ export function ShipmentsPanel({
                       {shipment.packageWeight} kg
                     </p>
                   )}
-                  <p>Shipping: <Money paise={shipment.shippingCost} /></p>
+                  <p>{SHIPMENTS_PANEL_COPY.shipping}<Money paise={shipment.shippingCost} /></p>
                 </div>
               </div>
               <StatusBadge tone={parcelTone(shipment.status)} dot>
@@ -68,7 +65,7 @@ export function ShipmentsPanel({
             </div>
 
             <div className="border-t border-border pt-4">
-              <h4 className="mb-2 text-small font-medium">Items</h4>
+              <h4 className="mb-2 text-small font-medium">{SHIPMENTS_PANEL_COPY.items}</h4>
               <div className="space-y-2">
                 {shipment.items.map((item) => (
                   <div
@@ -93,9 +90,7 @@ export function ShipmentsPanel({
                   {shipment.courierName ?? "—"} · <span className="font-mono">{shipment.trackingNumber}</span>
                 </p>
                 {shipment.trackingUrl && (
-                  <a href={shipment.trackingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-1 text-primary underline">
-                    Track parcel
-                    <Icon name="external" size="xs" />
+                  <a href={shipment.trackingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-1 text-primary underline">{SHIPMENTS_PANEL_COPY.trackParcel}<Icon name="external" size="xs" />
                   </a>
                 )}
               </div>

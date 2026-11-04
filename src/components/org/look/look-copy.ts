@@ -39,3 +39,8 @@ export const LOOK_COPY = {
 
 /** ux.md preview & publish, Slow: the button shows its spinner after this long, and stays tappable. */
 export const SLOW_AFTER_MS = 1_000;
+
+export const SLOT_PHOTOS_COPY = {
+  full: "One photo here. Remove it to add another.",
+  upTo: (max: number) => `Up to ${max} photos. Remove one to add another.`,
+} as const;

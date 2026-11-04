@@ -15,6 +15,7 @@ import { ProductRowMenu } from "./ProductRowMenu";
 import { useProductsBasePath } from "@/components/product/console/useProductsBasePath";
 import { productStatus } from "./product-status";
 import { CHANNEL_FILTER } from "../channel-filter-copy";
+import { PRODUCT_CONSOLE_COPY } from "../../console-copy";
 
 interface ProductsTableProps {
   products: ProductForTable[];
@@ -151,7 +152,7 @@ export function ProductsTable({
 
   return (
     <ResourceList
-      label="Products"
+      label={PRODUCT_CONSOLE_COPY.list.table}
       rows={products}
       rowKey={(p) => p.id}
       rowLabel={(p) => p.name}

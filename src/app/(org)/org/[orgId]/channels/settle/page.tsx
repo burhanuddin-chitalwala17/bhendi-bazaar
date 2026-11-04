@@ -7,9 +7,11 @@ import { RefreshButton } from "@/components/channel/refresh-button";
 import { SettleForm } from "@/components/channel/settle-form";
 import { SETTLE, SETTLE_ACTION } from "@/components/channel/settle-copy";
 import { ago } from "@/components/channel/listing-copy";
+import { ROUTES } from "@server/shared/routes";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
 export const metadata = {
-  title: "Settle listing",
+  title: ORG_PAGE_TITLES.settle,
   robots: { index: false, follow: false },
 };
 
@@ -31,7 +33,7 @@ export default async function SettleListingPage({
   const data = await channelSettleDAL.page(scope.orgId, listing, productId ?? null);
   if (!data) notFound();
   const { detail } = data;
-  const backHref = `/org/${scope.orgId}/channels/${detail.primary.channel}/listings?tab=notLinked`;
+  const backHref = `${ROUTES.org.channelListings(scope.orgId, detail.primary.channel)}?tab=notLinked`;
   const stale = detail.readFinishedAt && Date.now() - new Date(detail.readFinishedAt).getTime() > STALE_MS;
 
   return (

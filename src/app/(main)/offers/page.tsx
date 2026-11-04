@@ -5,11 +5,13 @@ import { ListingToolbar, parseSort } from "@/components/shared/listing-toolbar";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { productsDAL } from "@/data-access-layer/products.dal";
 import { appUrl } from "@server/shared/app-url";
+import { OFFERS_PAGE_COPY } from "./offers-page-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export const metadata: Metadata = {
-  title: "Offers",
-  description: "Everything reduced right now on Bhendi Bazaar.",
-  alternates: { canonical: `${appUrl()}/offers` },
+  title: OFFERS_PAGE_COPY.metaTitle,
+  description: OFFERS_PAGE_COPY.metaDescription,
+  alternates: { canonical: `${appUrl()}${ROUTES.offers}` },
 };
 
 /** Everything on offer, where the strip's "View more" lands; the same coverage query the strip runs (ADR-0018). */
@@ -20,15 +22,15 @@ export default async function OffersPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Offers" title="Everything reduced right now" />
-      <ListingToolbar basePath="/offers" params={{ sort: sort === "newest" ? undefined : sort }} count={count} />
+      <PageHeader eyebrow={OFFERS_PAGE_COPY.eyebrow} title={OFFERS_PAGE_COPY.title} />
+      <ListingToolbar basePath={ROUTES.offers} params={{ sort: sort === "newest" ? undefined : sort }} count={count} />
       {page.products.length > 0 ? (
-        <PaginatedProductGrid initial={page.products} initiallyDone={page.done} query={{ offersOnly: true, sort }} emptyLabel="offers" />
+        <PaginatedProductGrid initial={page.products} initiallyDone={page.done} query={{ offersOnly: true, sort }} emptyLabel={OFFERS_PAGE_COPY.emptyLabel} />
       ) : (
         <EmptyState
-          title="No offers running"
-          description="Nothing is reduced at the moment. Check back soon."
-          action={{ label: "Browse the shop", href: "/shop" }}
+          title={OFFERS_PAGE_COPY.emptyTitle}
+          description={OFFERS_PAGE_COPY.emptyBody}
+          action={{ label: OFFERS_PAGE_COPY.browseShop, href: ROUTES.shopAll }}
         />
       )}
     </div>

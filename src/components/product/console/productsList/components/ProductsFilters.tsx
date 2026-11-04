@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { ProductFilters } from "../../types";
+import { PRODUCT_CONSOLE_COPY } from "../../console-copy";
 
 interface ProductsFiltersProps {
   filters: ProductFilters;
@@ -34,11 +35,11 @@ export function ProductsFilters({ filters, categories, onFilterChange }: Product
           type="search"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search by name or SKU"
-          aria-label="Search products"
+          placeholder={PRODUCT_CONSOLE_COPY.list.searchPlaceholder}
+          aria-label={PRODUCT_CONSOLE_COPY.list.searchLabel}
           className="flex-1"
         />
-        <Button type="submit" variant="outline" shape="icon" aria-label="Search">
+        <Button type="submit" variant="outline" shape="icon" aria-label={PRODUCT_CONSOLE_COPY.list.search}>
           <Icon name="search" size="sm" />
         </Button>
       </form>
@@ -47,10 +48,10 @@ export function ProductsFilters({ filters, categories, onFilterChange }: Product
         <Select
           value={filters.categoryId || ""}
           onChange={(e) => onFilterChange({ categoryId: e.target.value || undefined, page: 1 })}
-          aria-label="Category"
+          aria-label={PRODUCT_CONSOLE_COPY.list.category}
           className="min-w-0 flex-1 md:w-48 md:flex-none"
         >
-          <option value="">All categories</option>
+          <option value="">{PRODUCT_CONSOLE_COPY.list.allCategories}</option>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name}
@@ -68,7 +69,7 @@ export function ProductsFilters({ filters, categories, onFilterChange }: Product
           />
           {/* The switch is under the 40px floor, so the label is the rest of the target (ADR-0015). */}
           <label htmlFor="wishlisted-only" className="min-h-10 cursor-pointer select-none content-center text-small">
-            Wishlisted only
+            {PRODUCT_CONSOLE_COPY.list.wishlistedOnly}
           </label>
         </div>
       </div>

@@ -13,6 +13,8 @@ import { useAuthSheet } from "@/context/AuthSheetContext";
 import { isFocusedFlow } from "@/components/layout/mobile-tab-bar";
 import { NavbarSearch } from "./NavbarSearch";
 import { ProfileMenu } from "./ProfileMenu";
+import { NAVBAR_COPY } from "./navbar-copy";
+import { ROUTES } from "@server/shared/routes";
 
 export interface NavLink {
   href: string;
@@ -39,7 +41,7 @@ export function Navbar({ links = [] }: { links?: NavLink[] }) {
         </Link>
 
         {links.length > 0 && (
-          <nav aria-label="Browse" className="hidden items-center gap-5 lg:flex">
+          <nav aria-label={NAVBAR_COPY.browse} className="hidden items-center gap-5 lg:flex">
             {links.map((link) => (
               <Link
                 key={link.href}
@@ -60,26 +62,26 @@ export function Navbar({ links = [] }: { links?: NavLink[] }) {
         <NavbarSearch />
 
         <div className="flex shrink-0 items-center gap-1">
-          <Link href="/wishlist" prefetch={false} aria-label="Saved" className={cn(ICON_LINK, "hidden md:inline-flex")}>
-            <Icon name="saved" size="md" filled={pathname === "/wishlist"} />
+          <Link href={ROUTES.wishlist} prefetch={false} aria-label={NAVBAR_COPY.saved} className={cn(ICON_LINK, "hidden md:inline-flex")}>
+            <Icon name="saved" size="md" filled={pathname === ROUTES.wishlist} />
           </Link>
           <div className="hidden md:block">
             {session?.user ? (
               <ProfileMenu />
             ) : (
-              <Button type="button" variant="ghost" shape="icon" size="lg" aria-label="Sign in" onClick={() => openAuthSheet()} className="rounded-full">
+              <Button type="button" variant="ghost" shape="icon" size="lg" aria-label={NAVBAR_COPY.signIn} onClick={() => openAuthSheet()} className="rounded-full">
                 <Icon name="account" size="md" />
               </Button>
             )}
           </div>
           {/* Always opens: an empty bag is a page with somewhere to go, not a dead control. */}
           <Link
-            href="/cart"
+            href={ROUTES.cart}
             prefetch={false}
             aria-label={cartCount > 0 ? `Bag, ${cartCount} items` : "Bag"}
             className={ICON_LINK}
           >
-            <Icon name="bag" size="md" filled={pathname === "/cart"} />
+            <Icon name="bag" size="md" filled={pathname === ROUTES.cart} />
             {cartCount > 0 && (
               <span className="absolute right-0.5 top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-2xs font-semibold leading-none text-primary-foreground">
                 {cartCount}
@@ -97,16 +99,16 @@ function FocusedBar() {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-page items-center gap-2 px-3 sm:px-6 md:h-16 lg:px-8">
-        <Link href="/cart" prefetch={false} aria-label="Back to bag" className={ICON_LINK}>
+        <Link href={ROUTES.cart} prefetch={false} aria-label={NAVBAR_COPY.backToBag} className={ICON_LINK}>
           <Icon name="back" size="lg" />
         </Link>
         <Link href="/" prefetch={false} className="hidden shrink-0 md:flex">
           <BrandLogo size="sm" />
         </Link>
-        <p className="flex-1 font-heading text-title font-semibold md:text-center">Checkout</p>
+        <p className="flex-1 font-heading text-title font-semibold md:text-center">{NAVBAR_COPY.checkout}</p>
         <p className="inline-flex items-center gap-1 text-caption text-muted-foreground">
           <Icon name="secure" size="sm" tone="success" />
-          Secure
+          {NAVBAR_COPY.secure}
         </p>
       </div>
     </header>

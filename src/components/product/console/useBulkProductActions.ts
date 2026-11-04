@@ -6,6 +6,7 @@ import { useMutation } from "@/hooks/core/useMutation";
 import type { BulkProductActionInput, TeamBulkProductActionInput } from "@/lib/validation/schemas/product-bulk.schema";
 import { BULK_ACTION } from "@server/catalog/product-bulk.types";
 import { ProductsApiClient } from "./productsApiClient";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * A bulk action on the selected products (design-system Q29): one request per action, whatever the
@@ -17,7 +18,7 @@ export function useBulkProductActions() {
   const router = useRouter();
   const params = useParams();
   const orgId = typeof params.orgId === "string" ? params.orgId : undefined;
-  const team = !!usePathname()?.startsWith("/admin/");
+  const team = !!usePathname()?.startsWith(`${ROUTES.admin.home}/`);
   const client = new ProductsApiClient(orgId, team);
 
   const { mutate, isLoading, data, error, reset } = useMutation(

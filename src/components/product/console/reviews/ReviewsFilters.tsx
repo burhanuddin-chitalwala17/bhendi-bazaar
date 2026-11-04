@@ -8,15 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { REVIEW_STATES, type ReviewState } from "@server/catalog/review.types";
+import { PRODUCT_CONSOLE_COPY } from "../console-copy";
+import { REVIEW_STATE_COPY } from "@/components/product/console/console-copy";
 
 /**
  * How each state reads to a moderator. Keyed by the union rather than restated as a
  * list, so a fourth state cannot be added without the compiler asking what to call it.
  */
 const STATE_LABELS: Record<ReviewState, string> = {
-  published: "Published",
-  withdrawn: "Withdrawn",
-  deleted: "Deleted by author",
+  published: REVIEW_STATE_COPY.published,
+  withdrawn: REVIEW_STATE_COPY.withdrawn,
+  deleted: REVIEW_STATE_COPY.deleted,
 };
 
 const RATINGS = [5, 4, 3, 2, 1] as const;
@@ -45,16 +47,16 @@ export function ReviewsFilters() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && apply({ search })}
-          placeholder="Search reviews..."
+          placeholder={PRODUCT_CONSOLE_COPY.reviews.searchPlaceholder}
         />
         <Button variant="default" onClick={() => apply({ search })} className="flex items-center gap-2">
           <Icon name="search" />
-          Search
+          {PRODUCT_CONSOLE_COPY.reviews.search}
         </Button>
       </div>
 
       <Select value={params.get("state") ?? ""} onChange={(e) => apply({ state: e.target.value })}>
-        <option value="">All reviews</option>
+        <option value="">{PRODUCT_CONSOLE_COPY.reviews.allReviews}</option>
         {REVIEW_STATES.map((state) => (
           <option key={state} value={state}>
             {STATE_LABELS[state]}
@@ -66,19 +68,19 @@ export function ReviewsFilters() {
         value={params.get("isVerified") ?? ""}
         onChange={(e) => apply({ isVerified: e.target.value })}
       >
-        <option value="">All types</option>
-        <option value="true">Verified purchase</option>
-        <option value="false">Not verified</option>
+        <option value="">{PRODUCT_CONSOLE_COPY.reviews.allTypes}</option>
+        <option value="true">{PRODUCT_CONSOLE_COPY.reviews.verified}</option>
+        <option value="false">{PRODUCT_CONSOLE_COPY.reviews.notVerified}</option>
       </Select>
 
       <Select
         value={params.get("minRating") ?? ""}
         onChange={(e) => apply({ minRating: e.target.value })}
       >
-        <option value="">All ratings</option>
+        <option value="">{PRODUCT_CONSOLE_COPY.reviews.allRatings}</option>
         {RATINGS.map((rating) => (
           <option key={rating} value={rating}>
-            {rating === 5 ? "5 stars" : `${rating}+ stars`}
+            {PRODUCT_CONSOLE_COPY.reviews.stars(rating)}
           </option>
         ))}
       </Select>

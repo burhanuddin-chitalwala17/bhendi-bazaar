@@ -1,6 +1,7 @@
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { PaginatedProductGrid } from "@/components/shared/paginated-product-grid";
 import { Product } from "@/domain/product";
+import { STORE_HOME_COPY } from "./store-home-copy";
 
 /** Two rows of the desktop's 4-up grid, four of the phone's; the rest load as the shopper scrolls. */
 export const HEROES_FIRST_PAGE = 8;
@@ -16,12 +17,12 @@ export function HeroProductsGrid({
 
   return (
     <section className="space-y-4">
-      <SectionHeader title="Chosen from the lanes" description="Pieces the shops are proudest of" />
+      <SectionHeader title={STORE_HOME_COPY.heroes.title} description={STORE_HOME_COPY.heroes.description} />
       <PaginatedProductGrid
         initial={heroes}
         initiallyDone={done}
         query={{ heroOnly: true }}
-        emptyLabel="hero pieces"
+        emptyLabel={STORE_HOME_COPY.heroes.shownLabel}
       />
     </section>
   );

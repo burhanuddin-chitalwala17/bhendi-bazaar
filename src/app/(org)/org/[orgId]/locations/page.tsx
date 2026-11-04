@@ -4,9 +4,11 @@ import { LocationsManager } from "@/components/org/locations-manager";
 import { PageHeader } from "@/components/shared/page-shell";
 import { returnHref } from "@/components/org/home/return-to";
 import { ONBOARDING_STEP } from "@server/catalog/org-onboarding.types";
+import { ORG_PAGES_COPY } from "@/components/org/pages-copy";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
 export const metadata = {
-  title: "Pickup addresses",
+  title: ORG_PAGE_TITLES.locations,
   robots: { index: false, follow: false },
 };
 
@@ -24,7 +26,7 @@ export default async function OrgLocationsPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader help="locations" title="Pickup addresses" description="Where couriers collect from" />
+      <PageHeader help="locations" title={ORG_PAGES_COPY.locationsTitle} description={ORG_PAGES_COPY.locationsDescription} />
       <LocationsManager
         orgId={scope.orgId}
         locations={locations}

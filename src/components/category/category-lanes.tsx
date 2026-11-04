@@ -3,6 +3,8 @@ import Link from "next/link";
 
 import type { Category } from "@/domain/category";
 import { cn } from "@/lib/utils";
+import { CATEGORY_COPY } from "./category-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /**
  * One scrollable line of category tiles below the current page: descend-only on the marketplace,
@@ -10,7 +12,7 @@ import { cn } from "@/lib/utils";
  */
 export function CategoryLanes({
   categories,
-  hrefFor = (category) => `/category/${category.slug}`,
+  hrefFor = (category) => ROUTES.category(category.slug),
   activeSlug,
 }: {
   categories: Category[];
@@ -24,7 +26,7 @@ export function CategoryLanes({
   return (
     // Bleeds past the gutter so the row reads as scrollable, not truncated.
     <nav
-      aria-label="Categories"
+      aria-label={CATEGORY_COPY.nav}
       className="relative -mx-3 sm:-mx-6 lg:-mx-8"
     >
       <ul className="no-scrollbar flex gap-3 overflow-x-auto px-3 sm:gap-4 sm:px-6 lg:px-8">

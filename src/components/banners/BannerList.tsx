@@ -24,6 +24,8 @@ import { bannerLabel } from "@/lib/banner-label";
 import type { AdminBanner } from "@server/catalog/banner.types";
 import { isRenderableImageUrl } from "@server/catalog/image-paths";
 import { bannersApiClient } from "./bannersApiClient";
+import { BANNER_LIST_COPY } from "./banner-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** Order as written, and membership regardless of order. */
 const sequenceOf = (list: AdminBanner[]) => list.map((b) => b.id).join("|");
@@ -98,8 +100,8 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
   if (rows.length === 0) {
     return (
       <EmptyState
-        title="No banners yet"
-        description="The storefront hero is empty until you add one."
+        title={BANNER_LIST_COPY.emptyTitle}
+        description={BANNER_LIST_COPY.emptyDescription}
       />
     );
   }
@@ -117,7 +119,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                   <Button
                     variant="outline"
                     shape="icon"
-                    aria-label={`Move ${bannerLabel(banner.title)} up`}
+                    aria-label={BANNER_LIST_COPY.moveUp(bannerLabel(banner.title))}
                     disabled={index === 0 || frozen}
                     onClick={() => move(index, index - 1)}
                     className={TAP}
@@ -127,7 +129,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                   <Button
                     variant="outline"
                     shape="icon"
-                    aria-label={`Move ${bannerLabel(banner.title)} down`}
+                    aria-label={BANNER_LIST_COPY.moveDown(bannerLabel(banner.title))}
                     disabled={index === rows.length - 1 || frozen}
                     onClick={() => move(index, index + 1)}
                     className={TAP}
@@ -174,17 +176,16 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <StatusBadge tone={banner.isActive ? "success" : "destructive"}
                     >
-                      {banner.isActive ? "Live" : "Down"}
+                      {banner.isActive ? BANNER_LIST_COPY.live : BANNER_LIST_COPY.down}
                     </StatusBadge>
                     {banner.imageUrl &&
                       !isRenderableImageUrl(banner.imageUrl) && (
                         <span className="text-2xs text-warning">
-                          Image needs re-uploading
+                          {BANNER_LIST_COPY.reupload}
                         </span>
                       )}
                     <span className="text-2xs text-muted-foreground">
-                      {banner.actions.length} button
-                      {banner.actions.length === 1 ? "" : "s"}
+                      {BANNER_LIST_COPY.buttons(banner.actions.length)}
                     </span>
                   </div>
                 </div>
@@ -192,7 +193,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={banner.isActive}
-                    aria-label={`${banner.isActive ? "Take down" : "Publish"} ${bannerLabel(banner.title)}`}
+                    aria-label={BANNER_LIST_COPY.toggle(banner.isActive, bannerLabel(banner.title))}
                     disabled={frozen}
                     onCheckedChange={(on) => setActive(banner, on)}
                   />
@@ -200,11 +201,11 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                     asChild
                     variant="outline"
                     shape="icon"
-                    aria-label={`Edit ${bannerLabel(banner.title)}`}
+                    aria-label={BANNER_LIST_COPY.edit(bannerLabel(banner.title))}
                     className={TAP}
                   >
                     <Link
-                      href={`/admin/banners/${banner.id}/edit`}
+                      href={ROUTES.admin.editBanner(banner.id)}
                       prefetch={false}
                     >
                       <Icon name="edit" />
@@ -217,7 +218,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                     <Button
                       variant="ghost"
                       shape="icon"
-                      aria-label={`Delete ${bannerLabel(banner.title)}`}
+                      aria-label={BANNER_LIST_COPY.delete(bannerLabel(banner.title))}
                       disabled={frozen}
                       onClick={() => setConfirming(banner)}
                       className={`${TAP} text-muted-foreground hover:bg-destructive/10 hover:text-destructive`}
@@ -238,12 +239,8 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete this banner?</DialogTitle>
-            <DialogDescription>
-              “{bannerLabel(confirming?.title)}” and its buttons are removed for
-              good. Taking it down with the switch keeps the copy and artwork
-              for next time.
-            </DialogDescription>
+            <DialogTitle>{BANNER_LIST_COPY.confirmTitle}</DialogTitle>
+            <DialogDescription>{BANNER_LIST_COPY.confirmBody(bannerLabel(confirming?.title))}</DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-2">
             <Button
@@ -251,14 +248,14 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
               onClick={() => setConfirming(null)}
               className="h-10"
             >
-              Keep it
+              {BANNER_LIST_COPY.keep}
             </Button>
             <Button
               variant="destructive"
               onClick={() => confirming && remove(confirming)}
               className="h-10"
             >
-              Delete banner
+              {BANNER_LIST_COPY.confirmDelete}
             </Button>
           </DialogFooter>
         </DialogContent>

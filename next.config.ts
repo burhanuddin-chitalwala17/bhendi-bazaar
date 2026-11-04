@@ -38,6 +38,8 @@ const nextConfig: NextConfig = {
     // (Search Console 404 report, 2026-10-29). Permanent, so the link's standing moves.
     return [
       { source: "/semi-formal-ridas", destination: "/category/semi-formal-rida", permanent: true },
+      // The seller page was /sell until 2026-11-05; links already shared keep working.
+      { source: "/sell", destination: "/business", permanent: true },
     ];
   },
   images: {

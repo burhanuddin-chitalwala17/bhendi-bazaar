@@ -11,6 +11,7 @@ import { addressApiClient } from "@/components/profile/addressApiClient";
 import { profileApiClient } from "@/components/profile/profileApiClient";
 import type { DeliveryAddress, ProfileData } from "@/domain/profile";
 import type { Order } from "@/domain/order";
+import { PROFILE_SECTIONS_COPY } from "./profile-copy";
 
 /**
  * The three editable sections of a profile, and the writes behind them.
@@ -39,14 +40,14 @@ export function ProfileSections({
 
   return (
     <div className="space-y-6">
-      {error && <ErrorState title="That didn't save" description={error} />}
+      {error && <ErrorState title={PROFILE_SECTIONS_COPY.didnTSave} description={error} />}
 
       <section>
         <ProfileCard
           user={data.user}
           profilePic={data.profile.profilePic}
           saving={saving}
-          fallbackName="User"
+          fallbackName={PROFILE_SECTIONS_COPY.user}
           onUpdate={(input) => run(() => profileApiClient.updateProfile(input))}
           onUpdateProfilePic={(profilePic) => run(() => profileApiClient.updateProfile({ profilePic }))}
         />
@@ -68,8 +69,8 @@ export function ProfileSections({
       <section>
         {orders.length === 0 ? (
           <EmptyState
-            title="No orders found"
-            description="You haven't placed any orders yet."
+            title={PROFILE_SECTIONS_COPY.noOrdersFound}
+            description={PROFILE_SECTIONS_COPY.havenTPlacedAny}
           />
         ) : (
           <RecentOrdersSection orders={orders} />

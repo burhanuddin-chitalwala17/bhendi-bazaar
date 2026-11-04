@@ -5,6 +5,7 @@ import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormInput, FormPhoneInput } from "@/components/shared/forms/FormField";
 import { Icon } from "@/components/ui/icon";
+import { ORG_BASIC_FIELDS_COPY } from "./orgs-copy";
 
 interface OrgBasicFieldsProps {
   register: UseFormRegister<OrgFormInput>;
@@ -27,56 +28,56 @@ export function OrgBasicFields({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Icon name="shop" size="md" />
-          Basic information
+          {ORG_BASIC_FIELDS_COPY.basicInformation}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {code && (
             <FormInput
-              label="Organisation Code"
+              label={ORG_BASIC_FIELDS_COPY.organisationCode}
               value={code}
               disabled
               readOnly
-              hint="Assigned automatically — codes never change"
+              hint={ORG_BASIC_FIELDS_COPY.assignedAutomaticallyCodesNeverChange}
             />
           )}
 
           <FormInput
-            label="Organisation Name"
+            label={ORG_BASIC_FIELDS_COPY.organisationName}
             required
             error={errors.name?.message}
             disabled={readOnly}
-            placeholder="ABC Traders"
+            placeholder={ORG_BASIC_FIELDS_COPY.abcTraders}
             {...register("name")}
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormInput
-            label="Email"
+            label={ORG_BASIC_FIELDS_COPY.email}
             required
             type="email"
             error={errors.email?.message}
             disabled={readOnly}
-            placeholder="org@example.com"
+            placeholder={ORG_BASIC_FIELDS_COPY.orgExampleCom}
             {...register("email")}
           />
 
           <FormPhoneInput
             name="phone"
             control={control}
-            label="Phone"
+            label={ORG_BASIC_FIELDS_COPY.phone}
             disabled={readOnly}
             placeholder="98765 43210"
           />
         </div>
 
         <FormInput
-          label="Contact Person"
+          label={ORG_BASIC_FIELDS_COPY.contactPerson}
           error={errors.contactPerson?.message}
           disabled={readOnly}
-          placeholder="John Doe"
+          placeholder={ORG_BASIC_FIELDS_COPY.johnDoe}
           {...register("contactPerson")}
         />
       </CardContent>

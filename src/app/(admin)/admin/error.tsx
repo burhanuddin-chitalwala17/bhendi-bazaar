@@ -1,14 +1,15 @@
 "use client";
 
 import { ErrorState } from "@/components/shared/states/ErrorState";
+import { ADMIN_SHELL_COPY } from "./admin-copy";
 
 /** Any admin page that failed to render: what happened, and the same request again. */
 export default function AdminError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
   return (
     <ErrorState
       as="h1"
-      title="This page didn't load"
-      description="Something went wrong reading it. Nothing was changed; try again, and if it keeps failing, check the server log."
+      title={ADMIN_SHELL_COPY.errorTitle}
+      description={ADMIN_SHELL_COPY.errorDescription}
       onRetry={() => retry()}
     />
   );

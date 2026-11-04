@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { useShare } from "@/hooks/core/useShare";
 import { SOCIAL_BRAND } from "@/lib/social-brand";
 import { Icon, type IconName } from "@/components/ui/icon";
+import { SHARE_DIALOG_COPY } from "./shared-copy";
+import { SHARE_DIALOG_LINK_COPY } from "@/components/shared/shared-copy";
 
 interface ShareDialogProps {
   url: string;
@@ -103,7 +105,7 @@ export function ShareDialog({
 
   const handleInstagram = () => {
     copyToClipboard(shareUrl);
-    toast("Link copied — paste it in your Instagram post or story");
+    toast(SHARE_DIALOG_COPY.linkCopiedPasteItIn);
     setOpen(false);
   };
 
@@ -164,13 +166,13 @@ export function ShareDialog({
         {children || (
           <Button variant="outline" size="sm" className={triggerClassName}>
             <Icon name="share" size="sm" />
-            <span>Share</span>
+            <span>{SHARE_DIALOG_COPY.share}</span>
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center">Share</DialogTitle>
+          <DialogTitle className="text-center">{SHARE_DIALOG_COPY.share}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           {/* Social Media Grid */}
@@ -207,7 +209,7 @@ export function ShareDialog({
                 )}
                 <div className="flex flex-col items-start flex-1 min-w-0">
                   <span className="text-small font-medium">
-                    {copySuccess ? "Copied" : "Copy link"}
+                    {copySuccess ? SHARE_DIALOG_LINK_COPY.copied : SHARE_DIALOG_LINK_COPY.copy}
                   </span>
                   <span className="w-full truncate text-caption text-muted-foreground">
                     {url}

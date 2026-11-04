@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { Stars, stateOf } from "./review-state";
 import { formatShortDate } from "@/lib/format";
+import { PRODUCT_CONSOLE_COPY } from "../console-copy";
+import { REVIEWS_TABLE_TOAST_COPY } from "@/components/product/console/console-copy";
 
 interface Props {
   reviews: AdminReview[];
@@ -56,7 +58,7 @@ export function ReviewsTable({ reviews, page, pageSize, totalPages, total }: Pro
     ({ id, withdrawn }: { id: string; withdrawn: boolean }) =>
       adminReviewApiClient.updateReview(id, { withdrawn }),
     {
-      successMessage: "Review updated",
+      successMessage: REVIEWS_TABLE_TOAST_COPY.updated,
       onSuccess: () => {
         setOpened(null);
         router.refresh();
@@ -104,7 +106,7 @@ export function ReviewsTable({ reviews, page, pageSize, totalPages, total }: Pro
             className="h-auto p-0 text-xs underline"
             onClick={() => setOpened(review)}
           >
-            Open review
+            {PRODUCT_CONSOLE_COPY.reviews.open}
           </Button>
         </div>
       ),
@@ -178,12 +180,12 @@ export function ReviewsTable({ reviews, page, pageSize, totalPages, total }: Pro
                 <div className="flex flex-wrap items-center gap-2">
                   <Stars rating={opened.rating} />
                   <StatusBadge tone={stateOf(opened).tone}>{stateOf(opened).label}</StatusBadge>
-                  {opened.isVerified && <Badge variant="secondary">Verified purchase</Badge>}
+                  {opened.isVerified && <Badge variant="secondary">{PRODUCT_CONSOLE_COPY.reviews.verified}</Badge>}
                 </div>
 
                 <p className="whitespace-pre-wrap text-sm">
                   {opened.comment || (
-                    <span className="text-muted-foreground">No words — a rating only.</span>
+                    <span className="text-muted-foreground">{PRODUCT_CONSOLE_COPY.reviews.ratingOnly}</span>
                   )}
                 </p>
 
@@ -191,9 +193,8 @@ export function ReviewsTable({ reviews, page, pageSize, totalPages, total }: Pro
 
                 {opened.deletedAt && (
                   <p className="text-xs text-muted-foreground">
-                    The author deleted this on{" "}
-                    {formatShortDate(opened.deletedAt)}. It is kept here and
-                    shown to nobody else.
+                    {PRODUCT_CONSOLE_COPY.reviews.deletedOn}{" "}
+                    {formatShortDate(opened.deletedAt)}{PRODUCT_CONSOLE_COPY.reviews.keptHere}
                   </p>
                 )}
               </div>
@@ -206,11 +207,11 @@ export function ReviewsTable({ reviews, page, pageSize, totalPages, total }: Pro
                       setWithdrawn({ id: opened.id, withdrawn: opened.withdrawnAt === null })
                     }
                   >
-                    {opened.withdrawnAt ? "Restore review" : "Withdraw review"}
+                    {opened.withdrawnAt ? PRODUCT_CONSOLE_COPY.reviews.restore : PRODUCT_CONSOLE_COPY.reviews.withdraw}
                   </Button>
                 )}
                 <Button variant="ghost" onClick={() => setOpened(null)}>
-                  Close
+                  {PRODUCT_CONSOLE_COPY.reviews.close}
                 </Button>
               </DialogFooter>
             </>

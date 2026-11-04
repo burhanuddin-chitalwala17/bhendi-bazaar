@@ -13,6 +13,7 @@ import { bannerLabel } from "@/lib/banner-label";
 import { AddPromotionSheet } from "@/components/org/add-promotion-sheet";
 import { orgStorefrontApiClient } from "@/components/org/orgStorefrontApiClient";
 import type { ImageSlotValue } from "@server/catalog/image-framing";
+import { BANNERS_COPY } from "./storefront-copy";
 
 export interface ManagedBanner {
   id: string;
@@ -61,7 +62,7 @@ export function StorefrontBannersManager({
   );
   const deleteBanner = useMutation(
     (bannerId: string) => orgStorefrontApiClient.deleteBanner(orgId, bannerId),
-    { ...refresh, successMessage: "Banner deleted." },
+    { ...refresh, successMessage: BANNERS_COPY.deleted },
   );
   const reorderBanners = useMutation(
     (ids: string[]) => orgStorefrontApiClient.reorderBanners(orgId, ids),
@@ -72,7 +73,7 @@ export function StorefrontBannersManager({
   // `useMutation` toasts a failure and rethrows; the catches keep it from going unhandled.
   // Never disabled (ADR-0053): a tap while another change is saving says so instead.
   const stillSaving = () => {
-    if (busy) toast("Saving the last change…");
+    if (busy) toast(BANNERS_COPY.stillSaving);
     return busy;
   };
 
@@ -98,17 +99,14 @@ export function StorefrontBannersManager({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Banners</CardTitle>
+        <CardTitle>{BANNERS_COPY.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
         <p className="text-2xs text-muted-foreground">
-          Cards that run across the top of your shop — a picture, a line of
-          words, and somewhere to go. Add more than one and they rotate.
+          {BANNERS_COPY.intro}
           <br />
-          <strong className="text-foreground">
-            Changes here apply straight away
-          </strong>{" "}
-          — they are not part of the Save button below.
+          <strong className="text-foreground">{BANNERS_COPY.appliesNow}</strong>{" "}
+          {BANNERS_COPY.notSaved}
         </p>
 
         {banners.length > 0 && (
@@ -131,7 +129,7 @@ export function StorefrontBannersManager({
                   )}
                 </div>
                 <StatusBadge tone={banner.isActive ? "success" : "neutral"}>
-                  {banner.isActive ? "Live" : "Down"}
+                  {banner.isActive ? BANNERS_COPY.live : BANNERS_COPY.down}
                 </StatusBadge>
                 <div className="flex shrink-0 items-center gap-1">
                   {/* An arrow with nowhere to go is not drawn, rather than drawn and silent. */}
@@ -139,7 +137,7 @@ export function StorefrontBannersManager({
                     <Button
                       variant="ghost"
                       shape="icon"
-                      aria-label={`Move ${bannerLabel(banner.title)} up`}
+                      aria-label={BANNERS_COPY.moveUp(bannerLabel(banner.title))}
                       onClick={() => move(index, -1)}
                     >
                       <Icon name="move-up" />
@@ -149,21 +147,21 @@ export function StorefrontBannersManager({
                     <Button
                       variant="ghost"
                       shape="icon"
-                      aria-label={`Move ${bannerLabel(banner.title)} down`}
+                      aria-label={BANNERS_COPY.moveDown(bannerLabel(banner.title))}
                       onClick={() => move(index, 1)}
                     >
                       <Icon name="move-down" />
                     </Button>
                   )}
                   <Checkbox
-                    label={banner.isActive ? "Live" : "Down"}
+                    label={banner.isActive ? BANNERS_COPY.live : BANNERS_COPY.down}
                     checked={banner.isActive}
                     onChange={() => toggle(banner)}
                   />
                   <Button
                     variant="ghost"
                     shape="icon"
-                    aria-label={`Delete ${bannerLabel(banner.title)}`}
+                    aria-label={BANNERS_COPY.delete(bannerLabel(banner.title))}
                     onClick={() => remove(banner)}
                   >
                     <Icon name="delete" tone="destructive" />

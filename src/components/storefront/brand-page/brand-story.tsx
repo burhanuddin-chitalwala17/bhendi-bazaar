@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import type { StorySlice } from "./sections";
+import { BRAND_SECTION_COPY } from "@/components/storefront/brand-page/brand-page-copy";
 
 /**
  * Who this shop is, in its own words. Plain text rendered as text (ADR-0030 D9, brand-page
@@ -14,7 +15,7 @@ import type { StorySlice } from "./sections";
 export function BrandStory({ name, about, owner }: StorySlice) {
   return (
     <section className="space-y-3">
-      <SectionHeader overline="The shop" title={`About ${name}`} />
+      <SectionHeader overline={BRAND_SECTION_COPY.overline} title={BRAND_SECTION_COPY.about(name)} />
       {about && (
         <p className="whitespace-pre-line break-words text-base leading-relaxed text-foreground/90">
           {about}

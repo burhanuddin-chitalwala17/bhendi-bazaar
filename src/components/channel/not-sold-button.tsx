@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { channelsApiClient } from "@/components/channel/channelsApiClient";
 import { useMutation } from "@/hooks/core/useMutation";
 import type { Channel } from "@server/shared/channels";
+import { NOT_SOLD_COPY } from "@/components/channel/channel-copy";
 
 interface NotSoldButtonProps {
   channel: Channel;
@@ -42,7 +43,7 @@ export function NotSoldButton({ channel, productType, kind, label, marked }: Not
       onClick={send}
       disabled={saving}
     >
-      {saving ? "Saving…" : marked ? "Decide where it goes" : "Not sold here"}
+      {saving ? NOT_SOLD_COPY.saving : marked ? NOT_SOLD_COPY.marked : NOT_SOLD_COPY.mark}
     </Button>
   );
 }

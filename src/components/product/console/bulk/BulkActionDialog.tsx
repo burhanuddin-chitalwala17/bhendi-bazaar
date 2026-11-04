@@ -34,6 +34,7 @@ import {
   type StockProduct,
 } from "./bulk-input";
 import { BULK_COPY } from "./bulk-copy";
+import { PRICE_MODE_COPY } from "@/components/product/console/bulk/bulk-copy";
 
 export interface BulkTarget extends StockProduct {
   name: string;
@@ -170,9 +171,9 @@ export function BulkActionDialog({ action, onClose, products, locations, marketp
 }
 
 const MODES: { mode: BulkPriceMode; label: string }[] = [
-  { mode: BULK_PRICE_MODE.SET, label: "Set to" },
-  { mode: BULK_PRICE_MODE.AMOUNT, label: "Change by ₹" },
-  { mode: BULK_PRICE_MODE.PERCENT, label: "Change by %" },
+  { mode: BULK_PRICE_MODE.SET, label: PRICE_MODE_COPY.set },
+  { mode: BULK_PRICE_MODE.AMOUNT, label: PRICE_MODE_COPY.amount },
+  { mode: BULK_PRICE_MODE.PERCENT, label: PRICE_MODE_COPY.percent },
 ];
 
 function PriceFields({

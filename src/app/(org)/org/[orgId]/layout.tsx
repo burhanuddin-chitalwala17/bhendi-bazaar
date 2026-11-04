@@ -11,6 +11,7 @@ import { PORTAL_COPY } from "@/components/layout/portal-copy";
 import { Icon } from "@/components/ui/icon";
 import { OrgSwitcher } from "@/components/org/org-switcher";
 import { toPack } from "@server/analytics/attention.service";
+import { ROUTES } from "@server/shared/routes";
 
 /** The Orders tab's badge: parcels paid for and waiting on the shop. A failed read shows none, never a wrong one. */
 async function toPackCount(orgId: string): Promise<number> {
@@ -34,7 +35,7 @@ export default async function OrgLayout({
     await requireOrgMember(orgId);
   } catch (error) {
     if (isDomainError(error) && error.status === 401) {
-      redirect(`/signin?callbackUrl=/org/${orgId}`);
+      redirect(`${ROUTES.signIn}?callbackUrl=${ROUTES.org.home(orgId)}`);
     }
     redirect("/");
   }
@@ -69,7 +70,7 @@ export default async function OrgLayout({
           name={session.user.name}
           email={session.user.email}
           label={PORTAL_COPY.headerLabel}
-          storefrontHref={handle ? `/store/${handle}` : undefined}
+          storefrontHref={handle ? ROUTES.store(handle) : undefined}
           leading={<OrgSwitcher orgs={orgs} currentOrgId={orgId} variant="bar" />}
         />
         {/* Phone: clear the fixed tab bar, so the last row of every page stays tappable. */}
