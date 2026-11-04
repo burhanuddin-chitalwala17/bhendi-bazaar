@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-11-04
+- **Verified:** 2026-11-05
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -259,6 +259,8 @@ and answers `text/csv` as an attachment named `bhendi-bazaar-orders-YYYY-MM-DD.c
 order: Order, Placed (India time, `YYYY-MM-DD HH:mm`), Status, Payment, Buyer, Email, Phone, City, Pincode, Items
 (units), Total (₹, two decimals from paise), Shops (`; `-joined). Over 10,000 rows it answers `422` in the error
 envelope. The rows are **`AdminOrderExportRow`** (`server/checkout/admin.order.types.ts`), built only for this export.
+The list page's side panel is `?order=<id>` (`orderPeekSchema`, same file: an id's shape or nothing); it is a
+page parameter, not a wire shape.
 
 Since order-fulfilment unit 4 the courier webhook is **`POST /api/webhooks/shipping/courier`** (was
 `/api/webhooks/shipping/shiprocket`, deleted; Shiprocket refuses a URL naming it). It requires the header **`x-api-key`** equal to

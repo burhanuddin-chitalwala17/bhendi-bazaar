@@ -1,6 +1,6 @@
 # CLAUDE.md — route handlers
 
-- **Verified:** 2026-11-04
+- **Verified:** 2026-11-05
 - **Covers:** `src/app/api/**`
 
 > Read the root [`/CLAUDE.md`](../../../CLAUDE.md) first. Its seven Invariants are hard blocks here more than anywhere: this is where an untrusted request becomes a write.
@@ -17,7 +17,7 @@ A route handler is the HTTP boundary and nothing else. It does four things, in t
 
 ## Every route has a caller
 
-A handler exists because a browser must call it: a mutation, or a read triggered by interaction ([ADR-0034](../../../docs/adr/0034-render-on-the-server-by-default.md)). Its caller is an `*ApiClient` in `src/components/<domain>/` ([ADR-0048](../../../docs/adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)). A caller outside the repository, such as a gateway webhook or a link in an email, is named in `EXTERNALLY_CALLED` with who calls it. `tests/unit/route-reachability.test.ts`
+A handler exists because a browser must call it: a mutation, a read triggered by interaction, or a file download a server page links to (`/api/admin/orders/export`: a plain `href` built from the page's own query, so no client code is involved; it answers `Cache-Control: no-store` and an `attachment` disposition) ([ADR-0034](../../../docs/adr/0034-render-on-the-server-by-default.md)). Its caller is an `*ApiClient` in `src/components/<domain>/` ([ADR-0048](../../../docs/adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)). A caller outside the repository, such as a gateway webhook or a link in an email, is named in `EXTERNALLY_CALLED` with who calls it. `tests/unit/route-reachability.test.ts`
 
 ## Every public route is classified for rate limiting
 

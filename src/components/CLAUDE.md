@@ -1,6 +1,6 @@
 # CLAUDE.md — the front end
 
-- **Verified:** 2026-11-04
+- **Verified:** 2026-11-05
 - **Covers:** `src/components/**`, `src/hooks/**`, `src/app/globals.css`
 
 > Read the root [`/CLAUDE.md`](../../CLAUDE.md) first. This file loads when a component is read, so its rules are in front of you while you write one. Each rule names the test that enforces it; a rule with no test says so.
@@ -37,7 +37,7 @@ Each layer reads only from the one above. A component that skips a layer is the 
 - **Variants are one `cva` map per primitive, one prop per axis** (`variant`, `size`, `shape`, `tone`, `density`); combinations are `compoundVariants`; a composite passes axes through, never restyles. Adding a variant is one entry. *Review checks it.* ([ADR-0066](../../docs/adr/0066-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md) D8)
 - **Type is a role:** `text-display`, `-headline`, `-title`, `-body`, `-small`, `-caption`, `-label` (with `uppercase`, once per section). Nothing below `text-2xs` (11px). Motion is `duration-fast|base|slow` and `ease-standard|emphasised`. `tests/unit/design-tokens.test.ts`
 - **A page is built from the page grammar in `shared/`:** one `PageHeader` (the only h1; `SectionHeader` is h2/h3), one `ActionBar` for its primary actions, `EmptyState`/`ErrorState` with one action (an href from a server page), skeletons from `states/skeletons` (no page spinner), `PageTabs` for route filters, `StatusBadge` for every status chip, `ResourceList` for any list of records (rows on a phone, a table from `md:`, sort in the URL), `SelectionBar` for bulk actions. A hand-rolled sticky bar, chip or table is the defect. `tests/unit/page-grammar.test.tsx`
-- **The logo is `<BrandLogo>`** (`layout/brand-logo.tsx`), inverted on dark surfaces.
+- **The logo is `<BrandLogo>`** (`layout/brand-logo.tsx`), inverted on dark surfaces. Another platform's mark (Amazon, Google, Meta…) is `PlatformMark` from `ui/icons/platform-marks.tsx`, drawn in that platform's own colours; a channel surface reaches it through `channel/channel-mark.tsx`.
 - **A row-shaped `Button`** (two lines, an address, a menu item) states `h-auto whitespace-normal justify-start`. `tests/unit/button-rows.test.ts`
 - **Every design axis is a semantic token:** colour, type size, tracking, elevation, shape, page width (`PageShell`/`PageHeader`). Never a palette class, an arbitrary `[…]` value, or a primitive like `--emerald-550`. `tests/unit/design-tokens.test.ts`
   - A new token in `globals.css` must also be registered in `cn`, or `tailwind-merge` silently drops it. `tests/unit/cn-tokens.test.ts`

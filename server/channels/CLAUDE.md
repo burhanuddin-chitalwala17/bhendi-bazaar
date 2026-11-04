@@ -1,6 +1,6 @@
 # CLAUDE.md — channels domain
 
-- **Verified:** 2026-11-04
+- **Verified:** 2026-11-05
 - **Covers:** `server/channels/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md). This file covers **channels** only. Requirements are in [docs/specs/marketplace-integration/](../../docs/specs/marketplace-integration/); every decision, with who made it, is in each spec's `decisions.md`.

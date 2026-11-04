@@ -12,6 +12,18 @@
 
 ## Entries
 
+## 2026-11-05 — Docs: five living docs re-verified against yesterday's code
+
+- CI's docs gate: `CONTRACTS.md`, `server/checkout/CLAUDE.md`, `server/channels/CLAUDE.md`,
+  `src/components/CLAUDE.md` and `src/app/api/CLAUDE.md` covered code that changed on 2026-11-05.
+  Each was read against the named paths; `Verified:` moves to 2026-11-05.
+  - **checkout:** a rule for the one export path (`order-export.ts`: list filter and
+    `VISIBLE_ORDER_WHERE`, the cap, audit before the file, `csvCell`, `rupeesText`).
+  - **route handlers:** a file download linked from a server page counts as the route's caller.
+  - **front end:** another platform's mark is `PlatformMark`, reached through `channel-mark.tsx`.
+  - **CONTRACTS:** the orders side panel's `?order=` is named as a page parameter, not a wire shape.
+  - **channels:** read against `listing-problems.*`; nothing had drifted.
+
 ## 2026-11-05 — Store: the page column widens to 1440px
 
 - **Asked by the owner:** on a laptop the store showed ~200px of empty margin each side; the
