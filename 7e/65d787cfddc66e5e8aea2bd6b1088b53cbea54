@@ -1,0 +1,374 @@
+src/components/org/parcels/shop-order-rows.tsx
+  s_70578559cabf14::t_d1ee043832721a 3,6,34-38,75-79
+  s_70578559cabf14::t_307c3f93207cab 32
+src/components/dashboard/shop-sales.tsx
+  s_70578559cabf14::t_f16eafdea3cb7a 1-39
+server/analytics/sales.types.ts
+  s_70578559cabf14::t_27c67a103b90ed 71-87
+server/listing/channel-readiness.ts
+  s_70578559cabf14::t_73c24c7ae39842 59-61
+src/components/product/console/productsList/index.tsx
+  s_70578559cabf14::t_bcf5c896327368 16-20,34-37,46,61-62,69-70,85-88,170-179,182,193-201,205,207-213,223-224,232-244,252-253,258-269
+src/components/home/home-hero.tsx
+  s_70578559cabf14::t_cf947f6722ed4e 4-7,10-14
+tests/unit/listing-publish-providers.test.ts
+  s_0972fb7ac9c18b::t_c72cf721a697af 5,7,121-149
+src/components/home/hero-slider.tsx
+  s_70578559cabf14::t_cf947f6722ed4e 7,13,97
+src/app/(org)/org/[orgId]/channels/[channel]/listings/page.tsx
+  s_0972fb7ac9c18b::t_bc4efe9157a34d 140
+  s_0972fb7ac9c18b::t_604d1dd696c30a 13,32,51-52,54,71,147-153
+src/app/(main)/page.tsx
+  s_70578559cabf14::t_db041c22404186 3,32-33,41
+  s_70578559cabf14::t_91a9f6202f0b56 14,59-60,64-68
+tests/integration/marketplace-publish.test.ts
+  s_0972fb7ac9c18b::t_af9550105257dc 36-37,78-82,84-85,147,154-205
+src/components/channel/channel-copy.ts
+  s_70578559cabf14::t_ac8867d248f72c 3,17-32,46-47
+src/components/dashboard/sales-summary.tsx
+  s_70578559cabf14::t_91eb4ea4481702 1-92
+server/promotions/promotion.types.ts
+  s_70578559cabf14::t_178df86f0d938a 133-193
+src/components/order/console/ShipmentsPanel.tsx
+  s_70578559cabf14::t_3f1ab4d0533dc7 2-3
+tests/unit/product-bulk-schema.test.ts
+  s_70578559cabf14::t_e503fbf4e81bf4 58-83
+src/components/dashboard/sales-overview.tsx
+  s_70578559cabf14::t_b19386cb44ace5 2-4,6,9,12-24
+src/app/(org)/org/[orgId]/products/page.tsx
+  s_70578559cabf14::t_12dd66bc25ba25 15-16,38,47,109,138-139
+src/app/(main)/checkout/page.tsx
+  s_70578559cabf14::t_8de11981fc8e30 2,50-60
+src/components/channel/marketplace-card.tsx
+  s_70578559cabf14::t_03caa02da2ea5b 63-84,86-94
+  s_70578559cabf14::t_f45ae548f96b14 10-11,40-62
+src/components/shared/listing-toolbar.tsx
+  s_70578559cabf14::t_d6847300ea80f4 46-47,51-52,54-58
+tests/integration/orders-export.test.ts
+  s_70578559cabf14::t_c917a6c059519f 1-112
+src/components/product/console/bulk/BulkActionDialog.tsx
+  s_70578559cabf14::t_2537697dd5f2a1 23,32,61-62,70,91,96,104,107,125
+src/data-access-layer/org/sales.dal.ts
+  s_70578559cabf14::t_ae498f4fe598d2 1-20
+src/data-access-layer/org/home.dal.ts
+  s_0972fb7ac9c18b::t_9683d03ca1f7e1 36-37
+  s_0972fb7ac9c18b::t_ddd527dd16be26 71
+  s_70578559cabf14::t_9e28e128806891 21-22
+  s_0972fb7ac9c18b::t_ecc566bd3215cb 78
+  s_0972fb7ac9c18b::t_e12424a940c4f4 86
+  s_0972fb7ac9c18b::t_a8c25eff515d99 11-12
+src/app/api/admin/orders/export/route.ts
+  s_70578559cabf14::t_271bd010a94477 1-30
+server/catalog/product.visibility.ts
+  s_70578559cabf14::t_7c0a8f97bce6d7 38-39
+src/components/cart/cart-summary.tsx
+  s_70578559cabf14::t_8d31fe7b3dd365 65-74,77
+src/app/(admin)/admin/orders/page.tsx
+  s_70578559cabf14::t_cee673e88ab8d8 5-6,8-11,18,34-39,41,44-52,54,71-79,95-112
+  s_70578559cabf14::t_ba879cb4b2f4b8 53
+src/components/checkout/components/checkout-summary.tsx
+  s_70578559cabf14::t_f5bacace73f084 29-30,63-77
+src/components/channel/listing-row.tsx
+  s_0972fb7ac9c18b::t_604d1dd696c30a 19-20,59-61,64-69,75-80
+src/components/order/console/order-peek.tsx
+  s_70578559cabf14::t_cde2ba2db920c5 1-96
+docs/ARCHITECTURE.md
+  s_70578559cabf14::t_1242f5890c8024 18
+src/components/product/video-player.tsx
+  s_70578559cabf14::t_5b31fa7899d63c 14-15
+prisma/migrations/20261104130000_listing_problems/migration.sql
+  s_0972fb7ac9c18b::t_5e903ec3d68edf 1,3-5
+  s_0972fb7ac9c18b::t_1e853b2573b9e3 2
+src/data-access-layer/admin/products.dal.ts
+  s_70578559cabf14::t_1e5af65bca4520 15-17,33-43,47-48,64,95,100-106,109-110
+  s_70578559cabf14::t_a3c195bfd061a9 44-46,49-56,65,107-108
+src/components/dashboard/sales-chart.tsx
+  s_70578559cabf14::t_788e7efe3ed801 5-11,54,56,83,102
+src/components/channel/channel-mark.tsx
+  s_70578559cabf14::t_8438980b0be6c6 1-15
+src/components/ui/select.tsx
+  s_70578559cabf14::t_0dc1ca07de1e01 3-5,10-17,20-25,28,30-33
+server/channels/channel-connection.repository.ts
+  s_0972fb7ac9c18b::t_b2476a8b7d5bbb 330-340
+server/channels/listing-problems.service.ts
+  s_0972fb7ac9c18b::t_b2476a8b7d5bbb 1-52
+src/components/layout/marketplace-chrome.tsx
+  s_70578559cabf14::t_cf947f6722ed4e 32
+src/components/cart/CartItem.tsx
+  s_70578559cabf14::t_b2b3341dc05d0f 80-81,83-86
+  s_70578559cabf14::t_8d31fe7b3dd365 76-79
+src/components/product/console/productsList/channel-filter-copy.ts
+  s_70578559cabf14::t_2006ae3aa2172a 1-28
+src/components/org/home/home-copy.ts
+  s_70578559cabf14::t_b9d9ba161839e5 23
+src/components/shared/badges/StatusBadge.tsx
+  s_70578559cabf14::t_228be4e95516b6 46-47
+src/data-access-layer/channel-listings.dal.ts
+  s_70578559cabf14::t_b1e890748ad35a 18-19
+src/components/product/product-gallery.tsx
+  s_70578559cabf14::t_42c1ff6ae25556 191,194,209,251,260,333,340,348,354,356,363,365
+docs/specs/design-system/decisions.md
+  s_70578559cabf14::t_3532687b18c7eb 41-42
+  s_70578559cabf14::t_f1a042560f531a 39
+server/channels/channels.jobs.ts
+  s_70578559cabf14::t_05dcc3cfb22c4e 20-21,72-73,163-169
+tests/unit/portal-copy.test.ts
+  s_70578559cabf14::t_738a025a457470 45
+prisma/schema.prisma
+  s_0972fb7ac9c18b::t_5e903ec3d68edf 2439-2444
+src/components/promotions/OfferList.tsx
+  s_70578559cabf14::t_368b620718870e 1-2,4,6-7,9-10,13-14,16-17,19-20,24,28,39-74,79,84-85,88,92-93,95-137,140-148
+server/channels/channel-connection.types.ts
+  s_70578559cabf14::t_b1e890748ad35a 179-180,216,218-219
+docs/specs/marketplace-integration/marketplace-publish/decisions.md
+  s_70578559cabf14::t_4e7d9c5ee52a25 36
+src/components/home/hero-banner.tsx
+  s_70578559cabf14::t_5bc34d4534caae 53
+  s_70578559cabf14::t_ea8e18ab1b99cd 26-52,54-62,65-112,136,138,159,163
+  s_70578559cabf14::t_ee897b9f1f1816 63-64
+  s_70578559cabf14::t_cf947f6722ed4e 114-123,127,133,143-145,147
+  s_70578559cabf14::t_5b31fa7899d63c 156
+docs/specs/marketplace-integration/marketplace-publish/ux.md
+  s_70578559cabf14::t_4e7d9c5ee52a25 4,71-74,96,100-101
+src/components/order/console/OrdersTable.tsx
+  s_70578559cabf14::t_67ecccb0e03d57 14-15,52,66-72,79-81
+src/components/product/console/productsList/components/ChannelFilter.tsx
+  s_70578559cabf14::t_dfdd5b6b636158 1-107
+tests/integration/offers-list.test.ts
+  s_70578559cabf14::t_1fa47cf8acd60e 1-55,58-74,76-82,84-96
+  s_70578559cabf14::t_51e2b8ceed9905 56-57,75,83
+server/checkout/admin.order.repository.ts
+  s_70578559cabf14::t_5273d5051af181 17,69-93,114,156-194
+server/channels/providers/amazon/amazon.provider.ts
+  s_0972fb7ac9c18b::t_ce98cdd0f09b40 11,75
+src/lib/validation/schemas/promotion.schema.ts
+  s_70578559cabf14::t_1dc58e23d60af1 147-148,153
+  s_70578559cabf14::t_ffa98c53aa483d 17,137-146,149-152
+src/components/channel/platform-listing-copy.ts
+  s_0972fb7ac9c18b::t_604d1dd696c30a 93-103,106-107
+server/channels/providers/flipkart/flipkart.provider.ts
+  s_0972fb7ac9c18b::t_ce98cdd0f09b40 68-69
+src/components/org/home/setup-list.tsx
+  s_70578559cabf14::t_b9d9ba161839e5 28
+src/components/channel/channel-card-list.tsx
+  s_70578559cabf14::t_8438980b0be6c6 42-44,52,87,89
+  s_70578559cabf14::t_c6a0dedacc3d98 4-5,10,14-20,30-31,33-34,37-39,41,45-51,53-86,88,90,92-101
+tests/unit/offer-form-loss-panel.test.tsx
+  s_70578559cabf14::t_eb001c883ff915 11-15,87-90,95
+server/listing/channel-readiness.service.ts
+  s_70578559cabf14::t_04ed444c54abe9 54-55,57,182-198,232
+  s_70578559cabf14::t_c969e2b708b324 53,56
+  s_70578559cabf14::t_73c24c7ae39842 7,231,233-240
+server/channels/channel-import.service.ts
+  s_70578559cabf14::t_b1e890748ad35a 81,84-90,296
+src/app/(admin)/admin/promotions/page.tsx
+  s_70578559cabf14::t_4fa6e14f15b5b6 3,7-10,12-16,18-20,35-38,41
+server/channels/providers/amazon/amazon.publish.ts
+  s_0972fb7ac9c18b::t_ce98cdd0f09b40 3,172-198
+src/lib/validation/schemas/product-list.schema.ts
+  s_70578559cabf14::t_7c0a8f97bce6d7 1-27
+src/components/product/console/productsList/components/ProductsTable.tsx
+  s_70578559cabf14::t_12dd66bc25ba25 17,34-35,50,60-73
+server/analytics/sales.repository.ts
+  s_70578559cabf14::t_27c67a103b90ed 75-84,87-94
+  s_70578559cabf14::t_7cf63fabae08ca 1,85-86
+src/components/shared/image-slot/image-slot-field.tsx
+  s_70578559cabf14::t_9c505e21e8f6b5 37,46-47,103
+tests/unit/product-form-team-history.test.tsx
+  s_0972fb7ac9c18b::t_9a82e4ae676dcf 113
+src/components/layout/FloatingAdminButton.tsx
+  s_70578559cabf14::t_3df2518c80adcc 14-15,24
+server/checkout/admin.order.service.ts
+  s_70578559cabf14::t_76204db298f734 7-10,18-20,22-47
+src/components/layout/portal-nav.ts
+  s_70578559cabf14::t_c40cd3bdf12bad 39
+src/components/shared/PriceDisplay.tsx
+  s_70578559cabf14::t_849e7e30c4faad 4,57
+src/components/order/order-client.tsx
+  s_70578559cabf14::t_b2b3341dc05d0f 1,108,110-116
+src/components/checkout/index.tsx
+  s_70578559cabf14::t_8de11981fc8e30 234-237
+src/components/channel/channel-card-shell.tsx
+  s_70578559cabf14::t_6a993a8a2c11da 43
+  s_70578559cabf14::t_4ea6c06c1e00d0 2,9-17,19-22,24-25,29-30,32-37,39,41-42,44
+src/components/org/banner-preview.tsx
+  s_70578559cabf14::t_ee897b9f1f1816 1-24,27-29,31-37,39-41,43-56
+  s_70578559cabf14::t_55675ad0c524e0 25-26,30,38,42
+src/components/promotions/offers-browser.tsx
+  s_70578559cabf14::t_182f0e91e70515 1-151
+server/channels/providers/publish.ts
+  s_0972fb7ac9c18b::t_ce98cdd0f09b40 43-49
+src/components/shared/image-slot/slot-preview.tsx
+  s_70578559cabf14::t_ee897b9f1f1816 17,24-25,45
+server/channels/platform-listing.types.ts
+  s_0972fb7ac9c18b::t_c0f0cd3e0481be 137-138
+  s_0972fb7ac9c18b::t_b2476a8b7d5bbb 55-62
+src/app/globals.css
+  s_70578559cabf14::t_5b31fa7899d63c 108-111,163
+  s_70578559cabf14::t_cf947f6722ed4e 1013-1018
+  s_70578559cabf14::t_66c38501b095e2 41,357-359,406
+server/checkout/admin.order.types.ts
+  s_70578559cabf14::t_5273d5051af181 92-112
+src/components/product/console/useBulkProductActions.ts
+  s_70578559cabf14::t_60ac572f79e930 6-7,25,34-40
+src/components/channel/listing-issues-banner.tsx
+  s_0972fb7ac9c18b::t_70f44359d578fb 3-5,17-24,41-42,44-45
+src/app/api/org/[orgId]/products/bulk-edit/route.ts
+  s_70578559cabf14::t_5f9fb64611ae2d 5-6,14-19,26,30,32
+  s_70578559cabf14::t_725af0c448fdf2 12
+src/components/shared/selection-bar.tsx
+  s_70578559cabf14::t_434b1e7517e010 47-51,61,80-84
+src/components/product/product-details.tsx
+  s_70578559cabf14::t_228be4e95516b6 101-102,104,108-109,112-113
+server/channels/platform-listing.service.ts
+  s_0972fb7ac9c18b::t_ae6a1867be950b 10
+  s_0972fb7ac9c18b::t_70f44359d578fb 170,194-196
+  s_0972fb7ac9c18b::t_4afcfaab9a8268 118,123-124,171
+  s_0972fb7ac9c18b::t_3b886f09d434bc 25
+tests/unit/storefront-journey.test.tsx
+  s_70578559cabf14::t_377b82fc12c61e 61-62
+src/components/shared/resource-list.tsx
+  s_70578559cabf14::t_e58cdf2087c473 47-50,85-86,113-118,150,153,232-233,235,290,316
+  s_70578559cabf14::t_3efe92a605a76f 291
+server/channels/channel-orders.service.ts
+  s_70578559cabf14::t_05dcc3cfb22c4e 64
+tests/unit/channel-cards.test.tsx
+  s_70578559cabf14::t_99f88f52b5595b 6,9,97-114
+src/components/org/add-promotion-sheet.tsx
+  s_70578559cabf14::t_738a025a457470 1-80,82-148
+server/checkout/order-export.ts
+  s_70578559cabf14::t_346278f913ec5a 1-47
+src/components/dashboard/period-control.tsx
+  s_70578559cabf14::t_788e7efe3ed801 8,16
+server/promotions/promotion.repository.ts
+  s_70578559cabf14::t_3490da95a911ff 263,266-276,279,283,296-297,299,307-315
+server/channels/listing-publish.service.ts
+  s_0972fb7ac9c18b::t_4afcfaab9a8268 180-183,193
+  s_0972fb7ac9c18b::t_42d1f70bf34196 21
+  s_70578559cabf14::t_05dcc3cfb22c4e 130-131
+src/components/product/console/types.ts
+  s_70578559cabf14::t_1e5af65bca4520 9-10,23-24,60-61
+src/components/product/console/bulk/bulk-input.ts
+  s_70578559cabf14::t_2537697dd5f2a1 1,46-50
+tests/integration/admin-dashboard-metrics.test.ts
+  s_70578559cabf14::t_fe2c330ba445ea 5,90,278-310
+src/components/shared/paginated-product-grid.tsx
+  s_70578559cabf14::t_82a252cb11380c 5,10-11,13,132
+  s_70578559cabf14::t_91a9f6202f0b56 12
+  s_70578559cabf14::t_d6847300ea80f4 27,38-39,133-140
+tests/integration/product-select-all.test.ts
+  s_70578559cabf14::t_bc33218455ac00 1-61
+src/components/org/home/setup-list-actions.tsx
+  s_70578559cabf14::t_b9d9ba161839e5 28
+docs/CHANGELOG.md
+  s_70578559cabf14::t_56cb2076d7b8bd 75-89
+  s_70578559cabf14::t_b6680ede467ce8 282-296
+  s_70578559cabf14::t_377b82fc12c61e 15-26
+  s_70578559cabf14::t_8b55d1aafa4190 128-143
+  s_70578559cabf14::t_4e7d9c5ee52a25 163-183,185
+  s_70578559cabf14::t_f1a042560f531a 260-281
+  s_0972fb7ac9c18b::t_ed29c6fbd8d401 144-162
+  s_70578559cabf14::t_84d6ac0472fe3b 90-111
+  s_70578559cabf14::t_e8329fdfef0d05 199-228
+  s_70578559cabf14::t_5ce85f7a808a7e 246-259
+  s_70578559cabf14::t_3532687b18c7eb 28-49
+  s_70578559cabf14::t_9c8cf355d24b25 229-245
+  s_70578559cabf14::t_8c2290099884fc 112-127
+  s_70578559cabf14::t_45028754675483 27
+  s_70578559cabf14::t_e7efa3a0270d32 184
+  s_70578559cabf14::t_34c698a8c77d0d 297-303
+src/components/ui/icons/platform-marks.tsx
+  s_70578559cabf14::t_428943c2a25abf 55
+  s_70578559cabf14::t_f05403056dc998 1-54,56-71
+server/channels/providers/marketplace-provider.ts
+  s_0972fb7ac9c18b::t_81a31310b5d2c4 5
+  s_0972fb7ac9c18b::t_ce98cdd0f09b40 79-84
+server/channels/channel-connection.service.ts
+  s_0972fb7ac9c18b::t_b2476a8b7d5bbb 339-346
+src/components/home/offers-strip.tsx
+  s_70578559cabf14::t_91a9f6202f0b56 23
+src/lib/validation/schemas/admin-order-list.schema.ts
+  s_70578559cabf14::t_7a8168419a685c 1-28
+server/analytics/sales.service.ts
+  s_70578559cabf14::t_27c67a103b90ed 3,72-91
+src/app/(admin)/admin/page.tsx
+  s_70578559cabf14::t_cf2b2f77030834 32
+src/components/promotions/OfferActions.tsx
+  s_70578559cabf14::t_075f0cd043318f 4-5,47
+  s_70578559cabf14::t_ccf705f14b1aff 46
+src/app/(org)/org/[orgId]/promotions/page.tsx
+  s_70578559cabf14::t_4fa6e14f15b5b6 3,5,7-10,14,17,21-24,28-44,46
+server/channels/channel-listing.repository.ts
+  s_70578559cabf14::t_b1e890748ad35a 58-59,65-66,73-74,214-215,219,221
+  s_0972fb7ac9c18b::t_70f44359d578fb 500
+  s_0972fb7ac9c18b::t_b2476a8b7d5bbb 446-493
+server/channels/listing-problems.job.ts
+  s_0972fb7ac9c18b::t_b2476a8b7d5bbb 1-10
+src/app/(main)/category/[slug]/page.tsx
+  s_70578559cabf14::t_d6847300ea80f4 8,82-86,97
+src/data-access-layer/org/channel-summary.dal.ts
+  s_70578559cabf14::t_1e5af65bca4520 6,14-15
+src/components/org/home/attention-lines.ts
+  s_0972fb7ac9c18b::t_da1b927151a1eb 6
+  s_0972fb7ac9c18b::t_c54a0e615e8289 46-52
+src/components/order/console/order-status.ts
+  s_70578559cabf14::t_3f1ab4d0533dc7 48-51
+  s_70578559cabf14::t_e428d6698afb23 3,47,52-57
+src/components/ui/sheet.tsx
+  s_70578559cabf14::t_2240f3536601a4 22-28,33,38,54,65
+src/components/category/category-arches.tsx
+  s_70578559cabf14::t_006d2b1f4667b6 1-7,10-15,17,19,21-24,26-28,32-39
+docs/CONTRACTS.md
+  s_70578559cabf14::t_4e7d9c5ee52a25 538-543
+  s_70578559cabf14::t_f1a042560f531a 316-318
+  s_70578559cabf14::t_45028754675483 256-262
+src/app/(main)/product/[slug]/page.tsx
+  s_70578559cabf14::t_228be4e95516b6 88-89
+server/channels/CLAUDE.md
+  s_70578559cabf14::t_4e7d9c5ee52a25 19,30,62
+server/channels/listing-plan.ts
+  s_0972fb7ac9c18b::t_4afcfaab9a8268 92-105
+tests/unit/home-attention.test.ts
+  s_0972fb7ac9c18b::t_9a82e4ae676dcf 19
+  s_70578559cabf14::t_2b3be8e9896f0e 55-59
+docs/specs/marketplace-integration/marketplace-publish/trd.md
+  s_70578559cabf14::t_4e7d9c5ee52a25 65-70,89-90
+src/components/org/storefront-banners-manager.tsx
+  s_70578559cabf14::t_738a025a457470 13,177
+src/components/shared/product-card.tsx
+  s_70578559cabf14::t_5b31fa7899d63c 11,14
+src/app/(org)/org/[orgId]/page.tsx
+  s_70578559cabf14::t_fabe679d81b74c 77,79-84
+  s_70578559cabf14::t_beb11d785fa7ce 7-9,12,23,30-32,39,42,46,51,61-63,73,76,78,86-96,101,131,150-153,160-165
+  s_70578559cabf14::t_9e28e128806891 99-100,102-124,129
+tests/unit/promotion-schema.test.ts
+  s_70578559cabf14::t_e9cb18f52bbcd2 190-204
+src/components/home/trust-row.tsx
+  s_70578559cabf14::t_91a9f6202f0b56 12-13,15-16
+tests/unit/overlay-surfaces.test.ts
+  s_70578559cabf14::t_738a025a457470 28-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "7e65d787cfddc66e5e8aea2bd6b1088b53cbea54",
+  "prompts": {},
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    },
+    "s_70578559cabf14": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3d8c5e99-123d-451a-b57d-7876f27849f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
