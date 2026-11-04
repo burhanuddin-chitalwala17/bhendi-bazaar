@@ -1,6 +1,6 @@
 # Decisions — channel-import
 
-- **Verified:** 2026-10-21
+- **Verified:** 2026-11-04
 
 > Replaced in place until implemented, superseded after ([ADR-0062](../../../adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)).
 > Ids here are this subfeature's own; "parent Qn" means [../decisions.md](../decisions.md), and
@@ -30,6 +30,7 @@
 | Q18 | Does import preview the product's final state after choices? | No: linking changes nothing, so there is nothing to preview. The live "after merging" preview, with whose title, price and stock win, is product-merge's compare window | Claude · reversible | 2026-10-21 | The choices live in merge (parent Q18–Q20); previewing them here would build them twice | parked |
 | Q19 | Where does a linked listing show on the product's side? | A read-only "On marketplaces" block on the product editor: per marketplace, linked (with id, status there, price and stock as reported, and a link to the listing) or not linked. channel-listings later makes it the editable per-platform screen | Claude · reversible | 2026-10-21 | Owner could not find a linked listing's final state; the product is where a shop looks for it | implemented (import units 1–5) |
 | Q20 | Flipkart answers product search with 404 for our app: how do its listings read? | Through listing search and listing details only: every SKU, title, status, price and stock, with no picture (the initial tile). The one-shop check needs Flipkart's account id, which only product search gave, so it is not made on Flipkart until another call names the account; Amazon keeps it. Supersedes Q8 for Flipkart pictures and Q10 | Owner · reversible | 2026-10-21 | Probe on production, 2026-10-21: product search 404, search, details and the SKU lookup 200. One shop is connected, so no second shop's account is at risk today | implemented (Flipkart read fix) |
+| Q21 | How does the Listings page follow a running read without re-reading the whole page every few seconds? | It asks only for the read's progress (`GET …/listings/read`) every 4 seconds, so the line's count moves as before; the rows refresh when the read ends or every 30 seconds of progress. After 15 minutes it stops asking and says "Still reading your listings. Refresh the page to see the latest." | Owner | 2026-11-04 | A full refresh re-ran every read on the page every 4 seconds, for as long as a tab stayed open (the ops review, ADR-0065's CHANGELOG entry). Supersedes D10's "refreshes the page every few seconds" | implemented |
 ## Parked (Later)
 
 - Q6 — manual linking and name suggestions: product-merge.

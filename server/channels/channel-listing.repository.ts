@@ -422,6 +422,8 @@ export const channelListingRepository = {
   async mirrorsFor(connectionId: string, productIds: readonly string[]) {
     return await prisma.channelListing.findMany({
       where: { connectionId, productId: { in: [...productIds] }, goneAt: null },
+      // A fixed order, so a product with two live mirrors names the same one to every caller.
+      orderBy: [{ lastSeenAt: "desc" }, { id: "asc" }],
       select: { id: true, productId: true, sku: true, externalId: true, title: true, pricePaise: true, status: true, quantity: true, attributes: true, attributesReadAt: true, lastSeenAt: true },
     });
   },

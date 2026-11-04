@@ -6,7 +6,7 @@
 
 import { prisma } from "@server/shared/prisma";
 import { MediaAssetState, type Prisma } from "@prisma/client";
-import { loadPriceContext } from "@server/promotions/price-context";
+import { loadDisplayPriceContext } from "@server/promotions/price-context";
 import { offerCoverage } from "@server/promotions/targeting";
 import { ProductFilter } from "@server/catalog/product.types";
 import { NotFoundError } from "@server/shared/domain-error";
@@ -84,11 +84,11 @@ export type ProductWithRelations = Prisma.ProductGetPayload<{
  * expressed as an empty filter rather than by enumerating the catalogue.
  */
 async function offerFilter(ownedBy?: string) {
-  // The request's shared price context, not a fresh query pair: `loadPriceContext`
+  // The request's shared price context, not a fresh query pair: `loadDisplayPriceContext`
   // is request-memoised, so this costs nothing here — and the filter now shares the
   // context's clock, so a listing cannot filter by one offer set and label prices
   // with another across an offer boundary.
-  const { promotions, categoryParents, orgCeilings } = await loadPriceContext();
+  const { promotions, categoryParents, orgCeilings } = await loadDisplayPriceContext();
   const { coversEverything, productIds, orgIds, categoryIds } = offerCoverage(
     promotions,
     categoryParents,

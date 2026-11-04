@@ -15,6 +15,7 @@
 
 import { cache } from "react";
 import { reviewRepository } from "@server/catalog/review.repository";
+import { cachedRead, CACHED_READ_EXPIRY } from "@server/shared/read-cache";
 import {
   STAR_VALUES,
   type ProductRating,
@@ -141,14 +142,25 @@ export function summariseOrgRating(rows: readonly RatingRow[]): OrgRating {
  * lists twelve products and then asks for one of them again pays for two queries at
  * worst, not thirteen.
  */
-export async function loadRatingContext(productIds: readonly string[]): Promise<RatingContext> {
+export async function loadRatingContext(productIds: readonly string[], { shared = false }: { shared?: boolean } = {}): Promise<RatingContext> {
   const unique = [...new Set(productIds)].sort();
   if (unique.length === 0) return EMPTY_RATING_CONTEXT;
-  return loadByKey(unique.join(","));
+  return (shared ? loadShared : loadByKey)(unique.join(","));
 }
+
+export const RATING_TABLES = ["Review"] as const;
 
 const loadByKey = cache(async (key: string): Promise<RatingContext> => {
   const rows = await reviewRepository.publishedRatingRows(key.split(","));
+  return { byProduct: summariseRatings(rows) };
+});
+
+// Shared across requests too (ADR-0065), for a set of products that is itself a cached page: an
+// arbitrary set (a search's results) would add an entry per query. A review written clears it.
+const loadShared = cache(async (key: string): Promise<RatingContext> => {
+  const rows = await cachedRead("rating-rows", [key], { tables: RATING_TABLES, seconds: CACHED_READ_EXPIRY.slow }, () =>
+    reviewRepository.publishedRatingRows(key.split(",")),
+  );
   return { byProduct: summariseRatings(rows) };
 });
 

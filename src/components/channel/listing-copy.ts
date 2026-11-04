@@ -87,6 +87,8 @@ export const LISTINGS = {
   title: (label: string) => `${label} listings`,
   seeListings: "See listings",
   readAgain: "Read again",
+  /** The page stopped following a long read on its own (useReadProgress). */
+  stillReading: "Still reading your listings. Refresh the page to see the latest.",
   readingAgain: "Reading again…",
   goToChannels: "Go to Channels",
   empty: (label: string) => `Your ${label} account has no listings yet. When you add some on ${label}, tap Read again.`,

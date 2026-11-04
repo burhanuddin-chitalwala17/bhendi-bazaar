@@ -17,7 +17,7 @@ import type {
   CreateBiddingEventInput,
   OrgBiddingSummary,
 } from "@server/bidding/bidding.types";
-import { biddingPhase } from "@server/bidding/bidding-window";
+import { biddingPhase, type BiddingWindow } from "@server/bidding/bidding-window";
 
 /**
  * Anything that can run these queries — the client, or a transaction handle. Named so
@@ -109,6 +109,17 @@ export interface BiddingLock {
 }
 
 export class BiddingRepository {
+  /**
+   * Every open event with what decides whether it still holds its product: the cacheable half of
+   * `lockedProducts`, whose clock the caller applies at its own instant (ADR-0065).
+   */
+  async openEvents(db: Db = prisma): Promise<Array<BiddingLock & BiddingWindow & { bidCount: number }>> {
+    return await db.biddingEvent.findMany({
+      where: { status: "OPEN" },
+      select: { productId: true, slug: true, status: true, startAt: true, endAt: true, bidCount: true },
+    });
+  }
+
   /**
    * Every product currently suspended from sale, in one query.
    *

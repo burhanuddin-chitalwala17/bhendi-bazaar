@@ -12,4 +12,6 @@ export async function register() {
   if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) return;
   const { checkBootEnvironment } = await import("./lib/env");
   checkBootEnvironment();
+  const { installStorefrontCache } = await import("./lib/storefront-cache");
+  installStorefrontCache();
 }

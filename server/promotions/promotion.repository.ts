@@ -64,6 +64,18 @@ export class PromotionRepository {
   }
 
   /**
+   * Every active offer that has not ended, upcoming ones included: the cacheable half of `listLive`.
+   * The caller applies the start at its own instant, so a cached copy cannot miss a boundary (ADR-0065).
+   */
+  async listNotEnded(now: Date, db: Db = prisma): Promise<EnginePromotion[]> {
+    return await db.promotion.findMany({
+      relationLoadStrategy: "join",
+      where: { isActive: true, endsAt: { gt: now } },
+      select: PROMOTION_SELECT,
+    });
+  }
+
+  /**
    * One shop's running offers with what each covers named, for its deals section (storefront-themes
    * D10). Which of them show is `storefrontOffers`' policy; this only scopes to the shop and the clock.
    */

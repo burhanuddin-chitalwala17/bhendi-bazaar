@@ -34,6 +34,9 @@ import type {
 } from "@server/catalog/review.types";
 import { REVIEWS_PAGE_SIZE } from "@server/catalog/review.types";
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
+import { cachedRead, CACHED_READ_EXPIRY } from "@server/shared/read-cache";
+
+export const REVIEW_PAGE_TABLES = ["Review", "ReviewMedia", "MediaAsset"] as const;
 
 /** "New" on Home is the last week, not a per-person "seen" mark (own-store onboarding Q24). */
 const NEW_REVIEW_DAYS = 7;
@@ -137,16 +140,24 @@ export class ReviewService {
    * number beside the stars on this page and the number on its listing tile are the
    * same computation, not two that agree by luck (R6).
    */
+  /** `shared` only from the product page, which has already found the product: an id from a URL could be anything. */
   async getPage(
     productId: string,
     page: number,
-    viewerId: string | null
+    viewerId: string | null,
+    { shared = false }: { shared?: boolean } = {},
   ): Promise<ReviewPageDto> {
     const take = REVIEWS_PAGE_SIZE;
     const skip = (Math.max(1, page) - 1) * take;
     const [{ rows, total }, ratings] = await Promise.all([
-      reviewRepository.listPublished(productId, skip, take),
-      loadRatingContext([productId]),
+      // The first page's rows are the same for every viewer (isMine is resolved below), so they are
+      // shared (ADR-0065); a later page is read live, so paging cannot add entries without end.
+      shared && skip === 0
+        ? cachedRead("review-page", [productId, take], { tables: REVIEW_PAGE_TABLES, seconds: CACHED_READ_EXPIRY.slow }, () =>
+            reviewRepository.listPublished(productId, skip, take),
+          )
+        : reviewRepository.listPublished(productId, skip, take),
+      loadRatingContext([productId], { shared }),
     ]);
     return {
       reviews: rows.map((row) => toDto(row, viewerId)),

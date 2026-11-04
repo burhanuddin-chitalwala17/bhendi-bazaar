@@ -121,6 +121,19 @@ async function suggestionsFor(orgId: string, connectionId: string, rows: readonl
   return out;
 }
 
+/** Where a connection's listing read has got to, as the page and its progress poll both show it. */
+function toReadDTO(row: Awaited<ReturnType<typeof connectionFor>>["row"]): ChannelReadDTO {
+  return {
+    state: (row.readState as ReadState | null) ?? null,
+    total: row.readTotal,
+    done: row.readDone,
+    startedAt: row.readStartedAt?.toISOString() ?? null,
+    finishedAt: row.readFinishedAt?.toISOString() ?? null,
+    error: (row.readErrorCode as ReadError | null) ?? null,
+    stalled: isStalled(row),
+  };
+}
+
 async function connectionFor(orgId: string, channel: string) {
   if (!isMarketplaceChannel(channel)) throw new NotFoundError("Channel");
   const row = await channelConnectionRepository.find(orgId, channel);
@@ -129,6 +142,15 @@ async function connectionFor(orgId: string, channel: string) {
 }
 
 export const channelImportService = {
+  /**
+   * Just the read's progress, for the listings page to poll while a read runs: one row, where a
+   * re-render of the page re-ran every read on it every four seconds.
+   */
+  async readProgress(orgId: string, channel: string): Promise<ChannelReadDTO> {
+    const { row } = await connectionFor(orgId, channel);
+    return toReadDTO(row);
+  },
+
   /** "Read again" (R2): queue a read; the job claims it, so a second tap does nothing extra (D3). */
   async requestRead(orgId: string, channel: string): Promise<void> {
     const { row } = await connectionFor(orgId, channel);
@@ -255,15 +277,7 @@ export const channelImportService = {
     const sameItem = suggestGroups(ungrouped)
       .slice(0, 3)
       .map((g) => ({ listingIds: g.map((r) => r.id), titles: g.map((r) => r.title ?? r.sku) }));
-    const read: ChannelReadDTO = {
-      state: (row.readState as ReadState | null) ?? null,
-      total: row.readTotal,
-      done: row.readDone,
-      startedAt: row.readStartedAt?.toISOString() ?? null,
-      finishedAt: row.readFinishedAt?.toISOString() ?? null,
-      error: (row.readErrorCode as ReadError | null) ?? null,
-      stalled: isStalled(row),
-    };
+    const read = toReadDTO(row);
     return {
       channel: marketplace,
       label: CHANNEL_LABELS[marketplace],

@@ -1,14 +1,14 @@
 import { prisma } from "@server/shared/prisma";
 import { CHANNEL_LABELS } from "@server/shared/channels";
-import { enqueue, enqueueLater } from "@server/shared/jobs/jobs.enqueue";
+import { enqueue } from "@server/shared/jobs/jobs.enqueue";
 import { productService } from "@server/catalog/product.service";
 
-import type { MarketplaceChannel } from "./channel-connection.types";
-import { channelConnectionRepository } from "./channel-connection.repository";
+import { CONNECTION_STATE, type MarketplaceChannel } from "./channel-connection.types";
+import { channelConnectionRepository, type OrdersCheckRow } from "./channel-connection.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
 import { computeListing, masterValues, parseOverrides, parseSent, snapshot, toWholeRupees } from "./listing-plan";
-import { checkListingsSpec, LISTING_CHECK_AFTER_SECONDS, LISTING_CHECK_EVERY_SECONDS, publishListingSpec } from "./listing-publish.job";
+import { checkListingsSpec, enqueueListingCheck, LISTING_CHECK_AFTER_SECONDS, LISTING_CHECK_EVERY_SECONDS, publishListingSpec } from "./listing-publish.job";
 import { listingCreateService } from "./listing-create.service";
 import { platformListingRepository, type PlatformListingRow } from "./platform-listing.repository";
 import { connectionFor, statusOf } from "./platform-listing.service";
@@ -104,7 +104,56 @@ async function missedLook(id: string, error: unknown, now: Date): Promise<void> 
 }
 
 async function startChecks(): Promise<void> {
-  await enqueueLater(prisma, checkListingsSpec, {}, { afterSeconds: LISTING_CHECK_EVERY_SECONDS, onePerSeconds: LISTING_CHECK_EVERY_SECONDS });
+  await enqueueListingCheck(prisma, LISTING_CHECK_EVERY_SECONDS);
+}
+
+/**
+ * A connection's token for a batch of looks: the one the read already holds while it is fresh, judged
+ * at each call; the locked renewal only when it is about to lapse, and once per batch (as Q26 does for
+ * the order check). An unreadable stored token throws inside the look, so it is that listing's failure.
+ */
+function tokenFor(connection: OrdersCheckRow): () => Promise<string> {
+  let renewed: string | null = null;
+  return async () =>
+    renewed ?? channelConnectionService.unexpiredAccessToken(connection) ?? (renewed = await channelConnectionService.accessToken(connection.id));
+}
+
+/** The marketplace SKU of each listing that has none of its own, one read per connection. Keyed `connection:product`. */
+async function mirrorSkus(rows: readonly PlatformListingRow[]): Promise<Map<string, string>> {
+  const byConnection = new Map<string, string[]>();
+  for (const row of rows) byConnection.set(row.connectionId, [...(byConnection.get(row.connectionId) ?? []), row.productId as string]);
+  const skus = new Map<string, string>();
+  for (const [connectionId, productIds] of byConnection) {
+    for (const mirror of await channelListingRepository.mirrorsFor(connectionId, productIds)) {
+      const key = `${connectionId}:${mirror.productId}`;
+      if (mirror.productId && !skus.has(key)) skus.set(key, mirror.sku);
+    }
+  }
+  return skus;
+}
+
+/**
+ * One look (D5). A complaint ends the wait: what it names stays waiting, the rest is sent. Found clean
+ * at the second look, everything pending is confirmed sent. Not found by the last look: "hasn't answered".
+ */
+async function lookAt(row: PlatformListingRow, connection: OrdersCheckRow | null, token: (() => Promise<string>) | null, now: Date, sku: string | null): Promise<void> {
+  // A connection the shop must reconnect is not asked, as `accessToken` refused before the reads were batched.
+  if (!connection || connection.state !== CONNECTION_STATE.CONNECTED || !token || !sku) return await missedLook(row.id, null, now);
+  const provider = providerFor(connection.channel as MarketplaceChannel);
+  const answer = await provider.listingStatus(token, connection.externalAccountId, { sku, externalId: null, marketplaceType: row.marketplaceType });
+  const count = row.checkCount + 1;
+  const errors = answer.issues.filter((i) => i.severity === "error");
+  const pending = parseOverrides(row.pending);
+  const sent = parseSent(row.sent) ?? {};
+  const title = pending.title ?? sent.title;
+  const showing = answer.found && answer.showing.title && title && answer.showing.title !== title ? { title: answer.showing.title, mainImageUrl: null } : null;
+  const done = errors.length > 0 || (answer.found && count >= 2);
+  const next = done ? null : checkAt(count, row.publishedAt ?? now);
+  const state = errors.length > 0 ? PUBLISH_STATE.ATTENTION : done ? PUBLISH_STATE.IDLE : next ? PUBLISH_STATE.CHECKING : PUBLISH_STATE.UNANSWERED;
+  const refused = new Set(errors.map((i) => i.field));
+  const confirmed = !done ? null : refused.has(null) ? (Object.keys(sent).length ? sent : null) : { ...sent, ...pick(pending, (Object.keys(pending) as ListingField[]).filter((f) => !refused.has(f))) };
+  await platformListingRepository.recordAnswer(row.id, { sent: confirmed, publishState: state, issues: answer.issues, nextCheckAt: next, checkCount: count, live: answer.live, showing, keepPending: !done }, now, prisma, [PUBLISH_STATE.CHECKING]);
+  if (done && answer.found && errors.length === 0 && row.channelListingId === null) await listingCreateService.linkCreated({ ...row, sent: confirmed });
 }
 
 export const listingPublishService = {
@@ -216,51 +265,44 @@ export const listingPublishService = {
   },
 
   /**
-   * The answer check (D5, Q5): listings whose next look is due are claimed; each is asked of its
-   * marketplace. A look that cannot be made still counts, so a listing always reaches an end and the
-   * chain always stops. The next run is enqueued only while something still waits.
+   * The answer check (D5, Q5, Q22): listings whose next look is due are claimed, read with their
+   * connections in two statements whatever their number, and each asked of its marketplace. A look that
+   * cannot be made still counts, so a listing always reaches an end and the chain always stops. The next
+   * run is enqueued for when the next look falls due, and only while something still waits.
    */
-  async checkDue(enqueueNext: () => Promise<unknown>): Promise<number> {
+  async checkDue(enqueueNext: (afterSeconds: number) => Promise<unknown>): Promise<number> {
     const now = new Date();
     const ids = await platformListingRepository.claimDueChecks(now, new Date(now.getTime() + 600_000));
-    for (const id of ids) {
+    const rows = (await platformListingRepository.claimedRows(ids)).filter((row) => row.publishState === PUBLISH_STATE.CHECKING);
+    const connections = new Map(
+      (await channelConnectionRepository.withTokens([...new Set(rows.map((row) => row.connectionId))])).map((c) => [c.id, c]),
+    );
+    const skus = await mirrorSkus(rows.filter((row) => row.sku === null && row.productId !== null && connections.has(row.connectionId)));
+    const tokens = new Map<string, () => Promise<string>>();
+    for (const row of rows) {
+      const connection = connections.get(row.connectionId) ?? null;
+      if (connection && !tokens.has(connection.id)) tokens.set(connection.id, tokenFor(connection));
       try {
-        await this.check(id, now);
+        const sku = row.sku ?? (row.productId ? skus.get(`${row.connectionId}:${row.productId}`) ?? null : null);
+        await lookAt(row, connection, connection ? tokens.get(connection.id)! : null, now, sku);
       } catch (error) {
-        console.error(`[channels] listing check ${id} failed: ${error instanceof Error ? error.name : "error"}`);
-        await missedLook(id, error, now);
+        console.error(`[channels] listing check ${row.id} failed: ${error instanceof Error ? error.name : "error"}`);
+        await missedLook(row.id, error, now);
       }
     }
-    if ((await platformListingRepository.waitingForAnswer()) > 0) await enqueueNext();
+    const due = await platformListingRepository.nextDueAt();
+    if (due) await enqueueNext(Math.max(LISTING_CHECK_EVERY_SECONDS, Math.ceil((due.getTime() - Date.now()) / 1000)));
     return ids.length;
   },
 
-  /**
-   * One look (D5). A complaint ends the wait: what it names stays waiting, the rest is sent. Found clean
-   * at the second look, everything pending is confirmed sent. Not found by the last look: "hasn't answered".
-   */
+  /** One look at one listing, read on its own (a single look outside the batched check). */
   async check(listingId: string, now = new Date()): Promise<void> {
     const orgId = await platformListingRepository.orgOf(listingId);
     const row = orgId ? await platformListingRepository.find(listingId, orgId) : null;
     if (!row || row.publishState !== PUBLISH_STATE.CHECKING) return;
-    const connection = await channelConnectionRepository.byId(row.connectionId);
-    const sku = row.sku ?? (row.productId && connection ? (await channelListingRepository.mirrorsFor(connection.id, [row.productId]))[0]?.sku : null);
-    if (!connection || !sku) return await missedLook(listingId, null, now);
-    const provider = providerFor(connection.channel as MarketplaceChannel);
-    const answer = await provider.listingStatus(() => channelConnectionService.accessToken(connection.id), connection.externalAccountId, { sku, externalId: null, marketplaceType: row.marketplaceType });
-    const count = row.checkCount + 1;
-    const errors = answer.issues.filter((i) => i.severity === "error");
-    const pending = parseOverrides(row.pending);
-    const sent = parseSent(row.sent) ?? {};
-    const title = pending.title ?? sent.title;
-    const showing = answer.found && answer.showing.title && title && answer.showing.title !== title ? { title: answer.showing.title, mainImageUrl: null } : null;
-    const done = errors.length > 0 || (answer.found && count >= 2);
-    const next = done ? null : checkAt(count, row.publishedAt ?? now);
-    const state = errors.length > 0 ? PUBLISH_STATE.ATTENTION : done ? PUBLISH_STATE.IDLE : next ? PUBLISH_STATE.CHECKING : PUBLISH_STATE.UNANSWERED;
-    const refused = new Set(errors.map((i) => i.field));
-    const confirmed = !done ? null : refused.has(null) ? (Object.keys(sent).length ? sent : null) : { ...sent, ...pick(pending, (Object.keys(pending) as ListingField[]).filter((f) => !refused.has(f))) };
-    await platformListingRepository.recordAnswer(row.id, { sent: confirmed, publishState: state, issues: answer.issues, nextCheckAt: next, checkCount: count, live: answer.live, showing, keepPending: !done }, now, prisma, [PUBLISH_STATE.CHECKING]);
-    if (done && answer.found && errors.length === 0 && row.channelListingId === null) await listingCreateService.linkCreated({ ...row, sent: confirmed });
+    const [connection] = await channelConnectionRepository.withTokens([row.connectionId]);
+    const sku = row.sku ?? (row.productId && connection ? (await channelListingRepository.mirrorsFor(connection.id, [row.productId]))[0]?.sku ?? null : null);
+    await lookAt(row, connection ?? null, connection ? tokenFor(connection) : null, now, sku);
   },
 
   /** The daily pass (D5): sends the queue gave up on wait for the shop; anything still waiting gets a look. */

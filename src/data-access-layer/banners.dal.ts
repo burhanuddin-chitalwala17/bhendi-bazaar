@@ -1,8 +1,11 @@
 import { cache } from "react";
 import { bannerRepository } from "@server/catalog/banner.repository";
+import { cachedRead, CACHED_READ_EXPIRY } from "@server/shared/read-cache";
 import type { HeroBannerContent } from "@/components/home/hero-banner";
 import type { AdminBanner } from "@server/catalog/banner.types";
 import { isRenderableImageUrl } from "@server/catalog/image-paths";
+
+export const BANNER_TABLES = ["Banner", "BannerAction"] as const;
 
 /** Row to props. Null columns become absent keys — the banner treats "no eyebrow" and
  *  "empty eyebrow" the same, and only one of them should reach the component. */
@@ -29,7 +32,11 @@ class BannersDAL {
   /** The storefront hero, in display order. Inactive banners are invisible here and
    *  still listed in admin, which is what makes a campaign re-runnable. */
   getActiveBanners = cache(async (): Promise<HeroBannerContent[]> => {
-    return (await bannerRepository.listActive()).map(toHeroBanner);
+    // Shared across requests (ADR-0065): a banner edit clears it.
+    const banners = await cachedRead("active-banners", [], { tables: BANNER_TABLES, seconds: CACHED_READ_EXPIRY.slow }, () =>
+      bannerRepository.listActive(),
+    );
+    return banners.map(toHeroBanner);
   });
 }
 

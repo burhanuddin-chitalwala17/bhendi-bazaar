@@ -41,7 +41,7 @@ export async function enqueueLater<T>(
   tx: EnqueueTx,
   definition: JobSpec<T>,
   payload: T,
-  options: { afterSeconds: number; onePerSeconds: number },
+  options: { afterSeconds: number; onePerSeconds: number; slot?: string },
 ): Promise<boolean> {
   const data: JobEnvelope = { type: definition.type, payload: definition.schema.parse(payload) };
   const group = definition.group?.(payload);
@@ -49,7 +49,9 @@ export async function enqueueLater<T>(
   const id = await boss.send(JOBS_QUEUE, data, {
     db: fromPrisma(tx),
     startAfter: options.afterSeconds,
-    singletonKey: `later:${definition.type}`,
+    // pg-boss slots a singleton by when it is sent, not when it runs; a caller whose runs fall at
+    // different times names the run's own slot, so an early run is never swallowed by a later one.
+    singletonKey: options.slot ? `later:${definition.type}:${options.slot}` : `later:${definition.type}`,
     singletonSeconds: options.onePerSeconds,
     ...(group ? { group: { id: group } } : {}),
   });

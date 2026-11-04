@@ -14,6 +14,8 @@
 import { cache } from "react";
 import { biddingRepository, type BiddingDb } from "@server/bidding/bidding.repository";
 import { ConflictError } from "@server/shared/domain-error";
+import { cachedRead, CACHED_READ_EXPIRY } from "@server/shared/read-cache";
+import { suspendsPurchase } from "@server/bidding/bidding-window";
 
 export interface BiddingLockContext {
   /** `productId -> the event's public slug`, so a caller can link to it (spec R30). */
@@ -31,6 +33,24 @@ export const loadBiddingLockContext = cache(async (): Promise<BiddingLockContext
   const locks = await biddingRepository.lockedProducts(now);
   return {
     locked: new Map(locks.map((lock) => [lock.productId, lock.slug])),
+    now,
+  };
+});
+
+export const DISPLAY_BIDDING_TABLES = ["BiddingEvent"] as const;
+
+/**
+ * The lock set for display (ADR-0065): open events from the shared cache, held or released at this
+ * request's instant by `suspendsPurchase`, the rule `lockedProducts` is the SQL of. Enforcement stays
+ * `assertNotUnderBidding`.
+ */
+export const loadDisplayBiddingLockContext = cache(async (): Promise<BiddingLockContext> => {
+  const events = await cachedRead("display-bidding-locks", [], { tables: DISPLAY_BIDDING_TABLES, seconds: CACHED_READ_EXPIRY.slow }, () =>
+    biddingRepository.openEvents(),
+  );
+  const now = new Date();
+  return {
+    locked: new Map(events.filter((e) => suspendsPurchase(e, now)).map((e) => [e.productId, e.slug])),
     now,
   };
 });

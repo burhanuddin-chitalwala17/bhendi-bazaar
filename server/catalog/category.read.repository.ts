@@ -6,6 +6,7 @@
 
 import { cache } from "react";
 import { prisma } from "@server/shared/prisma";
+import { cachedRead, CACHED_READ_EXPIRY } from "@server/shared/read-cache";
 import type { Category } from "@prisma/client";
 import type { ServerCategory } from "@server/catalog/category.types";
 import type { CategoryTreeNode } from "@server/catalog/category.tree";
@@ -14,14 +15,16 @@ import type { CategoryTreeNode } from "@server/catalog/category.tree";
  * The whole table, once per request. Tens of rows, and a single category page used
  * to read them four times in four shapes (slug lookup, subtree walk, parents map,
  * offer filter) — four billed operations for one small table. Every reader below
- * derives from this one request-memoised query instead. Same pattern and request
- * scope as loadPriceContext; deliberately memoised no further than a request.
+ * derives from this one request-memoised query instead, and since ADR-0065 from the
+ * shared cache across requests too: a category write clears it.
  */
-const allCategories = cache(async (): Promise<Category[]> => {
-  return prisma.category.findMany({
-    orderBy: [{ order: "asc" }, { name: "asc" }],
-  });
-});
+export const CATEGORY_TABLES = ["Category"] as const;
+
+const allCategories = cache(async (): Promise<Category[]> =>
+  cachedRead("all-categories", [], { tables: CATEGORY_TABLES, seconds: CACHED_READ_EXPIRY.slow }, () =>
+    prisma.category.findMany({ orderBy: [{ order: "asc" }, { name: "asc" }] }),
+  ),
+);
 
 export class CategoryRepository {
   /** Id, name and slug — what a bulk sheet needs to resolve a `parent` cell to a

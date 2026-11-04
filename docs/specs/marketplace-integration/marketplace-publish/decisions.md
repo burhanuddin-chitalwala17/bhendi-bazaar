@@ -1,6 +1,6 @@
 # Decisions — marketplace-publish
 
-- **Verified:** 2026-11-02
+- **Verified:** 2026-11-04
 
 > Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented ones ([ADR-0062](../../../adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)).
 > Owner decides money, policy, irreversible data, external commitments, taste.
@@ -32,6 +32,7 @@
 | Q19 | Amazon India's compliance fields (HSN key, manufacturer, packer, importer)? | Filled from the brand and the shop's listing defaults, under the names in Amazon.in's 2026 template (`listing-node-templates/extracted/amazon.json`) and the attributes our reads already parse (`external_product_information` for HSN, `rtip_manufacturer_contact_information`, `packer_contact_information`, `importer_contact_information`). No production read needed; Amazon's check-only answer catches a wrong name | Claude · reversible | 2026-11-02 | The template and our live reads already name them. was: read from one product-type schema on production (owner had approved) | implemented |
 | Q20 | Instant results by Amazon's notifications? | Later (parent Q34) | Claude · reversible | 2026-11-02 | Needs an AWS queue; checks work without one | parked |
 | Q21 | A business (B2B) price on Amazon? | Later | Claude · reversible | 2026-11-02 | Needs Amazon Business enrolment; not asked for | parked |
+| Q22 | How often does the answer check run while a listing waits? | When the next look falls due, never sooner than two minutes apart, and not at all once nothing waits. Each run claims what is due and reads those listings, their connections (sealed tokens included) and missing SKUs in one statement each, so a look costs only its own write | Owner | 2026-11-04 | Every two minutes while anything waited was about sixty runs for four looks per publish, each re-reading its listing piece by piece: up to ~4,300 statements a day (the ops review). Keeps D5's looks at 2, 10, 30 and 120 minutes, and inventory-sync Q23's chain | implemented |
 
 ## Parked (Later)
 - Q20 — Instant results by Amazon's notifications (needs an AWS queue, parent Q34).

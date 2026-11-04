@@ -15,7 +15,7 @@ import { channelStockService } from "./channel-stock.service";
 import { channelOrdersService } from "./channel-orders.service";
 import { platformListingService } from "./platform-listing.service";
 import { listingPublishService } from "./listing-publish.service";
-import { checkListingsSpec, LISTING_CHECK_EVERY_SECONDS, publishListingSpec } from "./listing-publish.job";
+import { checkListingsSpec, enqueueListingCheck, publishListingSpec } from "./listing-publish.job";
 import { checkOrdersSpec, checkStockSpec, ORDERS_CHECK_EVERY_SECONDS } from "./stock-checks.job";
 import { enqueue, enqueueLater } from "@server/shared/jobs/jobs.enqueue";
 import { prisma } from "@server/shared/prisma";
@@ -136,12 +136,12 @@ export const publishListingJob = registerJob({
   },
 });
 
-/** The marketplaces' answers to what was sent (marketplace-publish D5): runs again only while one is waiting. */
+/** The marketplaces' answers to what was sent (marketplace-publish D5, Q22): runs again when the next look falls due. */
 export const checkListingsJob = registerJob({
   ...checkListingsSpec,
   handler: async ({ jobId }) => {
-    const checked = await listingPublishService.checkDue(() =>
-      enqueueLater(prisma, checkListingsSpec, {}, { afterSeconds: LISTING_CHECK_EVERY_SECONDS, onePerSeconds: LISTING_CHECK_EVERY_SECONDS }),
+    const checked = await listingPublishService.checkDue((afterSeconds) =>
+      enqueueListingCheck(prisma, afterSeconds),
     );
     if (checked > 0) console.log(`[jobs] channels.check-listings ${jobId}: ${checked} listings`);
   },

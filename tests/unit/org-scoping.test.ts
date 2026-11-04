@@ -32,6 +32,7 @@ vi.mock("@server/shared/prisma", () => ({
 }));
 vi.mock("@server/promotions/price-context", () => ({
   loadPriceContext: async () => ({ promotions: [], categoryParents: new Map() }),
+  loadDisplayPriceContext: async () => ({ promotions: [], categoryParents: new Map() }),
 }));
 vi.mock("@server/promotions/targeting", () => ({
   offerCoverage: () => ({

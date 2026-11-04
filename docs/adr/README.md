@@ -55,7 +55,7 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0015](0015-mobile-first-design.md) | The UI is designed mobile-first; desktop is the enhancement | Accepted | 2026-08-09 |
 | [0016](0016-mobile-app-shell.md) | The phone storefront is an app shell — bottom tab bar, dense grids, page-level chrome | Accepted (D5 refined by [ADR-0040](0040-an-overlays-surface-is-chosen-by-what-it-holds.md)) | 2026-08-11 |
 | [0017](0017-video-is-embedded-not-hosted.md) | Video is embedded from a third-party host, never stored in our own object storage | Superseded by [ADR-0039](0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md) | 2026-08-13 |
-| [0018](0018-one-effective-price-function.md) | One effective-price function serves display and charge | Accepted | 2026-08-16 |
+| [0018](0018-one-effective-price-function.md) | One effective-price function serves display and charge | Accepted (decision 3 narrowed for display reads by [ADR-0065](0065-storefront-reads-are-shared-across-requests-and-cleared-by-the-tables-a-write-touches.md)) | 2026-08-16 |
 | [0019](0019-discount-is-one-winning-offer.md) | A discount is one winning offer, allocated to lines, with its funding recorded | Accepted | 2026-08-16 |
 | [0020](0020-money-bearing-records-never-cascade.md) | Records that carry money or attribution never cascade | Accepted | 2026-08-16 |
 | [0021](0021-audit-trail-never-fails-the-action.md) | The audit trail records an action; it never decides whether it happened | Accepted | 2026-08-22 |
@@ -102,5 +102,6 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0062](0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md) | A decision is replaced until it is implemented, and superseded after | Accepted | 2026-10-20 |
 | [0063](0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md) | Every public route is classified for rate limiting in one registry | Accepted | 2026-10-29 |
 | [0064](0064-a-storefront-theme-is-a-token-set-and-a-section-composition-declared-in-code.md) | A storefront theme is a token set and a section composition declared in code | Accepted | 2026-10-30 |
-| [0065](0065-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md) | The UI is built in tiers, and every icon goes through one seam | Proposed | 2026-11-04 |
+| [0065](0065-storefront-reads-are-shared-across-requests-and-cleared-by-the-tables-a-write-touches.md) | Storefront reads are shared across requests, and cleared by the tables a write touches | Accepted | 2026-11-04 |
+| [0066](0066-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md) | The UI is built in tiers, and every icon goes through one seam | Proposed | 2026-11-04 |
 <!-- generated:adr-index:end -->

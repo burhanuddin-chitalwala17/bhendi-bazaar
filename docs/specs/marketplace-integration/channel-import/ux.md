@@ -1,7 +1,7 @@
 # UX — channel-import
 
 - **Status:** Signed off
-- **Verified:** 2026-10-21
+- **Verified:** 2026-11-04
 - **Prototype:** https://claude.ai/artifact/NhQb1cNBkWzqjkWRQuLmdT (private to the owner)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [channel-connectors ux](../channel-connectors/ux.md), [src/components/CLAUDE.md](../../../../src/components/CLAUDE.md), [ADR-0050](../../../adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
@@ -41,6 +41,7 @@
 | Empty | "Your Amazon account has no listings yet. When you add some on Amazon, tap Read again." | Read again |
 | Loading | Header and tabs at once; eight skeleton rows | — |
 | Partial (read running) | Rows read so far, counts updating, line "Reading… 212 of 480" | — |
+| Partial, still reading after 15 minutes | As above, plus "Still reading your listings. Refresh the page to see the latest." The count stops moving until a refresh (Q21) | — |
 | Success | Tabs "Linked 402" · "Not linked 78"; line "Read 2 min ago" | Read again |
 | Retryable error | "Reading stopped at 212 of 480. Amazon is busy; we'll try again in a few minutes." Rows so far stay | Read again |
 | Not allowed | "Flipkart doesn't let us read your listings yet. We're working on it; nothing on Flipkart has changed." Rows so far stay | Read again |
@@ -95,7 +96,7 @@ Bhendi Bazaar", a listing is "on Amazon" or "on Flipkart". Prices and stock are 
 marketplace last said, and the line "As Amazon last reported" sits under the tabs.
 
 ## Sign-off
-Signed off by the owner, 2026-10-21, as the prototype stands (version 5).
+Signed off by the owner, 2026-10-21, as the prototype stands (version 5). Amended 2026-11-04 by the owner's choice in the ops review: the Listings page's "still reading after 15 minutes" state (decisions Q21).
 
 Added while building, 2026-10-21: the "different account" rows (a reconnect that consents with another
 Flipkart account than the one this connection read before), using the copy already agreed in chat. Not reached while decisions Q20 holds: the refused-Flipkart-account rows (no Flipkart call our app

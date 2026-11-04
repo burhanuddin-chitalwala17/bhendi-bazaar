@@ -12,6 +12,81 @@
 
 ## Entries
 
+## 2026-11-04 — Answer check and worker wake, review: a first look is never merged into a later run
+
+- **Found in review** of the entry below, fixed before merge:
+  - pg-boss merges delayed jobs by when they are *sent*, so a send's two-minute first look could be
+    swallowed by a run already queued an hour ahead. `enqueueListingCheck` now keys each run by the
+    two-minute slot it will *run* in (`enqueueLater`'s new `slot`): different moments never merge,
+    the same moment still collapses to one run.
+  - A connection the shop must reconnect is no longer asked; its look counts as missed, as before
+    the reads were batched.
+  - `mirrorsFor` reads in a fixed order, so a product with two live mirrors names the same SKU to
+    every caller.
+- **Tests:** a far-off run does not swallow a near one (mutation: no run slot went red); no call
+  through a connection needing reconnect (mutation went red); one shop's unreadable token fails only
+  its looks (mutation: reading it outside the guard went red); the wake rule prefers an idle loop,
+  still wakes one when all are busy, and frees a loop whose job threw (mutations went red).
+
+## 2026-11-04 — The listing answer check runs when a look is due; one new job wakes one worker loop
+
+- **Why (the ops review):** after a publish the worker looks for the marketplace's answer at 2, 10, 30
+  and 120 minutes, but the check ran every two minutes while anything waited (about sixty runs for four
+  looks) and read each listing piece by piece: up to ~4,300 statements a day. Separately, pg-boss woke
+  all four worker loops for every new job, three of them to fetch nothing.
+- **Answer check (marketplace-publish Q22):** the next run is enqueued for when the next look falls
+  due, never sooner than two minutes apart, and none once nothing waits. A run claims what is due and
+  reads those listings, their connections with sealed tokens, and missing SKUs in one statement each;
+  a look then costs only its own write. The looks and the chain (inventory-sync Q23) are unchanged.
+- **Worker wake (worker-foundation trd.md D3):** a new job wakes one idle loop; a loop that takes a job
+  wakes one idle sibling, so a burst still spreads. Measured on the real worker: 8 statements per job
+  before, 4 after; 40 jobs in one transaction drained in 1.5 s at about 2 each.
+- **Tests:** `tests/integration/marketplace-publish.test.ts` gains the schedule (mutation: a fixed two
+  minutes went red) and the cost, one write per extra listing (mutation: a per-listing SKU read went
+  red); `tests/unit/jobs-wake.test.ts` holds the wake rule (mutations: no override, no sibling wake
+  each went red) and fails if a pg-boss upgrade moves the internals it relies on.
+
+## 2026-11-04 — Storefront cache, review: bounded age, a clear after commit, only cached tables, input cannot fill it
+
+- **Found in review** of the entry below, fixed before merge:
+  - Next serves an expired entry and refreshes it behind the response, so its `revalidate` bounded
+    nothing: each entry now carries when it was read and is read live past its limit.
+  - A write's statement runs before its transaction commits, so a page rendered in between could
+    re-cache the old row: the clear is now repeated after the response (`after()`).
+  - A write to any table queued a clear: now only tables some cached read declares (`CACHED_TABLES`).
+  - Searches, later pages, arbitrary review ids and over-long slugs no longer add cache entries.
+  - The auction lock goes through `suspendsPurchase`; the bidding CLAUDE.md and CONTRACTS.md are updated.
+  - The listings page's progress line moves every 4 seconds again (it showed only on refresh); the
+    15-minute "still reading" state is recorded (channel-import Q21, ux.md, trd.md D10).
+- **Tests:** `tests/unit/read-cache-money.test.ts` fails if checkout, cart, payments, payouts, the
+  promotion engine or their routes touch the cache (mutation: cart on the display context went red);
+  the age limit (mutation: serving the old entry went red); the write wiring through the real client,
+  raw SQL and a transaction included.
+
+## 2026-11-04 — Storefront page views stop re-reading the database; the listings page stops re-rendering itself
+
+- **Why:** the database meters every statement, and the store was spending about 15,000 a day. Each
+  query was already lean, but nothing was kept between requests: every page view cost 5–9 statements,
+  a missing product 5, so crawlers cost as much as shoppers.
+- **Storefront reads are shared across requests ([ADR-0065](adr/0065-storefront-reads-are-shared-across-requests-and-cleared-by-the-tables-a-write-touches.md)):**
+  offers, auction locks, categories, ratings, banners, review lists and product rows come from Next's
+  data cache. Each cached read declares the tables it reads; any write to one of them through the site
+  clears it at once (checked: an admin banner switch shows on the very next view). The worker's writes
+  fall back to an expiry: 5 minutes for product rows (stock), an hour for the rest.
+- **Prices stay exact:** offers that have not ended are cached, and which have started is decided per
+  request, so a sale starts and ends to the second (ADR-0018's boundary). Lists chosen *by* being on
+  offer are read live. Checkout, cart and payment still read live (Invariants 1, 2, 6).
+- **Measured on a production build** (statements per repeat view): home 8 → 1, category 7 → 0,
+  product 9 → 0, search 6 → 0, offers 5 → 1, missing product 5 → 0.
+- **Listings page:** while a marketplace read runs, the page used to re-render all its reads every
+  4 seconds. It now asks only for the read's progress (new `GET …/listings/read`), refreshes when the
+  read ends or every 30 seconds of progress, and stops on its own after 15 minutes.
+- **Tests:** `tests/integration/read-cache-tables.test.ts` fails if a cached read touches a table it
+  did not declare (mutation: dropping `ProductStock` and `PromotionTarget` went red);
+  `tests/unit/display-price-context.test.ts` holds the offer boundary (mutation: dropping the start
+  check went red); `tests/unit/read-cache.test.ts` (write detection, Date/Map round trip);
+  `tests/unit/read-progress.test.ts` (mutation: dropping the time limit went red).
+
 ## 2026-11-04 — Seven UI defects from the platform audit
 
 - **Checkout:** the phone's Place Order bar was `sticky bottom-0` under the fixed tab bar (z-40), so it

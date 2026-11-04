@@ -212,9 +212,22 @@ export const platformListingRepository = {
     return (await db.platformListing.findUnique({ where: { id }, select: { orgId: true } }))?.orgId ?? null;
   },
 
-  /** How many still wait for a marketplace's answer: the check chain runs only while one does (D5). */
-  async waitingForAnswer(): Promise<number> {
-    return await prisma.platformListing.count({ where: { publishState: { in: [PUBLISH_STATE.SENT, PUBLISH_STATE.CHECKING] }, nextCheckAt: { not: null } } });
+  /**
+   * When the next look falls due across every listing still waiting, or null when none waits: the
+   * check runs again only then (D5, marketplace-publish Q22), not on a fixed short interval.
+   */
+  async nextDueAt(): Promise<Date | null> {
+    const { _min } = await prisma.platformListing.aggregate({
+      where: { publishState: { in: [PUBLISH_STATE.SENT, PUBLISH_STATE.CHECKING] }, nextCheckAt: { not: null } },
+      _min: { nextCheckAt: true },
+    });
+    return _min.nextCheckAt;
+  },
+
+  /** The listings a check just claimed, across every shop, in one read: the worker's, never a shop's. */
+  async claimedRows(ids: readonly string[]): Promise<PlatformListingRow[]> {
+    if (ids.length === 0) return [];
+    return await prisma.platformListing.findMany({ where: { id: { in: [...ids] } }, select: ROW });
   },
 
   /** The daily look (D5): every listing still waiting, or not answered, is due now. */
