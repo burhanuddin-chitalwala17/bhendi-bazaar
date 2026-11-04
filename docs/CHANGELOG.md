@@ -33,7 +33,11 @@ A push to `main` took 30–38 minutes (run 363: 37m50s). Measured from the job t
   `:buildcache`.
 - **The restart pulled ~1 GB onto the machine** after the deploy (87s). On `main` the image is
   pre-pulled while the gates run; the pull alone, never a restart.
-- `e2e` caches `.next/cache`. The check name `test (22.x)` is unchanged.
+- `e2e` caches `.next/cache`.
+- **Yours:** `test (22.x)` keeps its name but no longer runs the suite. Add `unit` and `integration`
+  to `main`'s required checks, or a PR can merge with them red (`deploy` still refuses).
+- `test-integrity` also runs in the `integration` job, so the guard that the integration layer is not
+  skipping checks that job's own `DATABASE_URL`.
 
 Expected critical path: about 4 minutes of gates, then the Vercel build (2–4 minutes), then the
 worker restart. `tests/unit/deploy-safety.test.ts` passes against the new workflow; actionlint is clean.

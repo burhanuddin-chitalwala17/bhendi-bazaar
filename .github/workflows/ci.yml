@@ -148,10 +148,8 @@ jobs:
       - name: Run integration tests
         run: npm run test:integration
 
-  # Builds and pushes the worker's image as `:<sha>` alongside the gates, so it is ready when
-  # `deploy-worker` needs it. Nothing runs it from here; the branch tag (`:main`, `:develop`)
-  # moves only in `deploy-worker`, after the gates pass. The image is built for arm64 and amd64
-  # so either free shape can run it (worker-foundation trd D7).
+  # Pushes the worker image as `:<sha>` alongside the gates, for arm64 and amd64 (worker-foundation
+  # trd D7). Nothing runs it from here; `deploy-worker` moves the branch tag once the gates pass.
   worker-image:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -166,8 +164,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Only the runtime stage's apt layer runs emulated, and it is cached; the npm install
-      # runs natively (infra/worker/Dockerfile).
+      # Only the cached apt layer runs emulated; npm installs natively (infra/worker/Dockerfile).
       - name: Set up QEMU for the arm64 build
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
 
@@ -181,9 +178,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Cache in the registry, not the Actions cache: that one is capped at 10 GB a repository,
-      # so the 1 GB-per-architecture dependency layer was evicted and rebuilt, and its export
-      # alone took 6 minutes. Registry blobs are shared with the image and uploaded once.
+      # Registry cache: the Actions cache (10 GB cap) evicted the 1 GB layers and took 6 min to
+      # export. Detail in docs/OPERATIONS.md.
       - name: Build and push the worker image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
@@ -196,12 +192,11 @@ jobs:
           cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true
 
-      # Downloads the image onto the production machine while the gates run, so the restart
-      # after `deploy` does not wait on a 1 GB pull. Only a pull: the running worker is untouched,
-      # and a commit that then fails its gates leaves an unused image the weekly prune removes.
+      # A pull only, so the restart after `deploy` skips 1 GB; the running worker is untouched.
       - name: Pre-pull the image on the production machine
         if: github.ref_name == 'main'
         continue-on-error: true
+        timeout-minutes: 5
         env:
           WORKER_HOST: ${{ secrets.WORKER_HOST }}
           WORKER_SSH_USER: ${{ secrets.WORKER_SSH_USER }}
@@ -215,9 +210,10 @@ jobs:
           trap 'rm -f ~/.ssh/worker' EXIT
           printf '%s\n' "$WORKER_SSH_KEY" > ~/.ssh/worker
           chmod 600 ~/.ssh/worker
-          ssh -i ~/.ssh/worker -o StrictHostKeyChecking=accept-new "$WORKER_SSH_USER@$WORKER_HOST" \
-            "echo '$GHCR_PULL_TOKEN' | docker login ghcr.io -u '$GHCR_PULL_USER' --password-stdin && \
-             docker pull -q '${IMAGE}:${{ github.sha }}'"
+          # The token goes over stdin, never into the remote command line.
+          printf '%s' "$GHCR_PULL_TOKEN" | ssh -i ~/.ssh/worker -o StrictHostKeyChecking=accept-new \
+            -o ConnectTimeout=10 -o BatchMode=yes "$WORKER_SSH_USER@$WORKER_HOST" \
+            "docker login ghcr.io -u '$GHCR_PULL_USER' --password-stdin && docker pull -q '${IMAGE}:${{ github.sha }}'"
 
   # Builds the app, starts it, and walks the journeys a broken deploy breaks first (e2e/,
   # docs/GTM-READINESS.md B8). On every event: `deploy` needs it, so nothing ships to customers

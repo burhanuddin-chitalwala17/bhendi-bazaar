@@ -48,7 +48,7 @@ const ENVIRONMENT_GATED: Record<string, string> = {
     "Needs git history to tell when a covered file changed shape; CI checks out with " +
     "fetch-depth: 0, and the suite asserts that it did rather than skipping quietly.",
   "tests/unit/video-transcode.test.ts":
-    "Runs ffmpeg on a generated clip; CI installs ffmpeg in the test job, and the suite asserts " +
+    "Runs ffmpeg on a generated clip; CI installs ffmpeg in the unit job, and the suite asserts " +
     "that it is present there rather than skipping quietly.",
 };
 
