@@ -12,6 +12,20 @@
 
 ## Entries
 
+## 2026-11-04 — E2E smoke green again: seed before the server answers; tests speak "bag"
+
+- **Category page read "0 pieces" in CI.** Playwright starts the server, whose readiness probe loads
+  home; since the revamp home and the footer read the category list, which the read cache keeps for
+  an hour (ADR-0065). The seed then made the "test-fixtures" category outside any request, which
+  clears nothing, so the category page found the category (read live) but walked a stale tree and
+  listed nothing. Production is not affected: categories are made through admin requests, which clear
+  the cache. The webServer command now seeds before `next start`; globalSetup still seeds for a
+  reused local server (the seed is idempotent).
+- The smoke test now asks for the store's words since Q21: "Add to bag", "Added to your bag", "Your bag
+  is empty" (was "Add to cart", "Added to cart", "Your cart is quiet", "No items to checkout").
+- Reproduced exactly as CI runs it (fresh `bhendi_bazaar_ci`, no `.next`, CI's missing secrets): 4
+  failed before, 12/12 passed after, phone and desktop.
+
 ## 2026-11-04 — Review fixes for the design-system programme (/bb-review, fresh context)
 
 - **A phone-only storefront photo drew cover-cropped on tablet and desktop** while the editor's preview

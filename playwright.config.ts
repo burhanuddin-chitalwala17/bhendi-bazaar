@@ -25,7 +25,10 @@ export default defineConfig({
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
   ],
   webServer: {
-    command: `npx next start -p ${PORT}`,
+    // Seed before the server answers anything: its first page warms the read cache (ADR-0065), and a
+    // seed written afterwards, outside a request, clears nothing — a category made then would read
+    // as empty for an hour. globalSetup seeds again for a reused local server; the seed is idempotent.
+    command: `npx tsx e2e/seed-fixtures.ts && npx next start -p ${PORT}`,
     url: `http://localhost:${PORT}/`,
     timeout: 120_000,
     reuseExistingServer: !process.env.CI,

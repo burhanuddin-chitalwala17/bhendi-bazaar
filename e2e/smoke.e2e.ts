@@ -25,23 +25,23 @@ test("browse a category, open the product, add it to the cart", async ({ page })
   await expect(page.getByRole("heading", { name: E2E_PRODUCT.name })).toBeVisible();
   await expect(page.getByText("499").first()).toBeVisible();
 
-  await page.getByRole("button", { name: /add to cart/i }).click();
-  // The cart is written after the confirmation's delay; leaving before it would lose the item.
-  await expect(page.getByText("Added to cart")).toBeVisible();
+  await page.getByRole("button", { name: /add to bag/i }).click();
+  // The bag is written after the confirmation's delay; leaving before it would lose the item.
+  await expect(page.getByText("Added to your bag")).toBeVisible();
 
   await page.goto("/cart");
   await expect(page.getByText(E2E_PRODUCT.name).first()).toBeVisible();
-  await expect(page.getByText(/your cart is quiet/i)).toHaveCount(0);
+  await expect(page.getByText(/your bag is empty/i)).toHaveCount(0);
 
   // Checkout snapshots the cart once; it must wait for the saved cart, not snapshot nothing.
   await page.goto("/checkout");
   await expect(page.getByText(E2E_PRODUCT.name).first()).toBeVisible();
-  await expect(page.getByText(/no items to checkout/i)).toHaveCount(0);
+  await expect(page.getByText(/your bag is empty/i)).toHaveCount(0);
 });
 
-test("an empty cart says so", async ({ page }) => {
+test("an empty bag says so", async ({ page }) => {
   await page.goto("/cart");
-  await expect(page.getByText(/your cart is quiet/i)).toBeVisible();
+  await expect(page.getByText(/your bag is empty/i).first()).toBeVisible();
 });
 
 test("sign-in offers email and password", async ({ page }) => {
