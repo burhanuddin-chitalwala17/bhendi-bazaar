@@ -2,7 +2,6 @@ import type { Prisma } from "@prisma/client";
 
 import { CHANNEL_LABELS } from "@server/shared/channels";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
-import { enqueueLater } from "@server/shared/jobs/jobs.enqueue";
 import { prisma } from "@server/shared/prisma";
 import { productService } from "@server/catalog/product.service";
 import { channelMapRepository } from "@server/listing/channel-map.repository";
@@ -16,7 +15,7 @@ import { channelConnectionRepository } from "./channel-connection.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
 import { forwardAttributes, listsOf, pickTheme, skuFor } from "./listing-create";
-import { checkListingsSpec, LISTING_CHECK_AFTER_SECONDS, LISTING_CHECK_EVERY_SECONDS } from "./listing-publish.job";
+import { enqueueListingCheck, LISTING_CHECK_AFTER_SECONDS, LISTING_CHECK_EVERY_SECONDS } from "./listing-publish.job";
 import { computeListing, listingStatus, masterValues, parseOverrides, parseSent } from "./listing-plan";
 import { platformListingRepository, type PlatformListingRow } from "./platform-listing.repository";
 import { CREATE_MODE, PUBLISH_STATE, type CreateMode, type ListingIssue, type ReviewListingDTO } from "./platform-listing.types";
@@ -229,7 +228,7 @@ export const listingCreateService = {
       // A family's page exists once accepted, so its members may follow; a product's fields stay pending until a look confirms them (D3).
       const sent = row.familyId ? { title: input.title } : null;
       await platformListingRepository.recordAnswer(row.id, { sent, publishState: PUBLISH_STATE.CHECKING, issues: answer.issues, nextCheckAt: checkAt(now), checkCount: 0, keepPending: true }, now, prisma, [PUBLISH_STATE.SENT]);
-      await enqueueLater(prisma, checkListingsSpec, {}, { afterSeconds: LISTING_CHECK_EVERY_SECONDS, onePerSeconds: LISTING_CHECK_EVERY_SECONDS });
+      await enqueueListingCheck(prisma, LISTING_CHECK_EVERY_SECONDS);
       return PUBLISH_STATE.CHECKING;
     } catch (error) {
       if (error instanceof MarketplaceUnavailableError) throw error;

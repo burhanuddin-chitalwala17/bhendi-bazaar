@@ -19,7 +19,7 @@ const registry = globalThis as unknown as { [KEY]?: Set<string> };
 const busy = (): Set<string> => (registry[KEY] ??= new Set());
 
 /**
- * One new job wakes one loop, not all of them (ADR-0038 D8, worker-foundation trd.md D3). pg-boss's
+ * One new job wakes one loop, not all of them (worker-foundation trd.md D3). pg-boss's
  * listener wakes every loop on the queue, so each job cost an empty fetch per idle loop: a billed
  * statement apiece. Picks an idle loop; with none idle, one busy loop, which fetches when it finishes.
  */

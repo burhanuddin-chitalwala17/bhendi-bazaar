@@ -1,9 +1,4 @@
-/**
- * One new job wakes one of the worker's loops, not all of them: each wake is a fetch, a billed
- * statement, and pg-boss wakes every loop on the queue (measured locally: 8 statements per job
- * before, 4 after). The override reaches into pg-boss, so this also fails if an upgrade moves what
- * it relies on: the listener calling `notifyQueue`, and workers kept in a `workers` map by id.
- */
+/** One new job wakes one worker loop, not all (worker-foundation trd.md D3); fails too if pg-boss moves what that relies on. */
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -11,6 +6,12 @@ import Manager from "pg-boss/dist/manager.js";
 import { startWorkLoops, wakeOneLoopPerJob } from "@server/shared/jobs/jobs.work";
 
 const PG_BOSS = resolve(__dirname, "../../node_modules/pg-boss/dist");
+const busy = () => ((globalThis as unknown as Record<symbol, Set<string>>)[Symbol.for("bhendi-bazaar.jobs-busy")] ??= new Set());
+const notifyQueue = (workers: Array<{ id: string; name: string; notify: () => void }>) =>
+  (Manager.prototype as unknown as { notifyQueue(this: unknown, name: string): void }).notifyQueue.call(
+    { workers: new Map(workers.map((w) => [w.id, w])) },
+    "jobs",
+  );
 
 describe("pg-boss still has the shape the wake rule relies on", () => {
   it("the listener wakes a queue through notifyQueue, and workers live in a map with name, id and notify", () => {
@@ -26,15 +27,28 @@ describe("pg-boss still has the shape the wake rule relies on", () => {
 describe("wake rule", () => {
   const loops = (names: string[]) => names.map((name, i) => ({ id: `w${i}`, name, notify: vi.fn() }));
 
-  it("wakes one loop on the queue, not every one", () => {
+  it("wakes one loop on the queue, not every one, and an idle one before a busy one", () => {
     wakeOneLoopPerJob();
     const workers = loops(["jobs", "jobs", "jobs", "jobs", "other"]);
-    (Manager.prototype as unknown as { notifyQueue(this: unknown, name: string): void }).notifyQueue.call(
-      { workers: new Map(workers.map((w) => [w.id, w])) },
-      "jobs",
-    );
+    busy().add("w0");
+    try {
+      notifyQueue(workers);
+    } finally {
+      busy().delete("w0");
+    }
+    expect(workers.filter((w) => w.notify.mock.calls.length > 0).map((w) => w.id)).toEqual(["w1"]);
+  });
+
+  it("with every loop busy, still wakes one, which looks again when its job ends", () => {
+    wakeOneLoopPerJob();
+    const workers = loops(["jobs", "jobs"]);
+    workers.forEach((w) => busy().add(w.id));
+    try {
+      notifyQueue(workers);
+    } finally {
+      workers.forEach((w) => busy().delete(w.id));
+    }
     expect(workers.filter((w) => w.notify.mock.calls.length > 0)).toHaveLength(1);
-    expect(workers[4].notify).not.toHaveBeenCalled();
   });
 
   it("a loop that takes a job wakes one idle sibling, so a burst still spreads", async () => {
@@ -56,6 +70,15 @@ describe("wake rule", () => {
     release();
     await first;
     expect(notifyWorker.mock.calls.at(-1)?.[0]).toBe("loop-0"); // and looks again itself once done
+  });
+
+  it("a job that throws leaves its loop idle again", async () => {
+    const handlers: Array<(jobs: Array<{ id: string; data: unknown }>) => Promise<void>> = [];
+    await startWorkLoops({ work: async (_q: string, _o: unknown, h: (typeof handlers)[number]) => (handlers.push(h), `t${handlers.length}`), notifyWorker: vi.fn() } as never, "jobs", async () => {
+      throw new Error("handler failed");
+    }, 2);
+    await expect(handlers[0]([{ id: "a", data: {} }])).rejects.toThrow("handler failed");
+    expect(busy().has("t1")).toBe(false);
   });
 
   it("an empty fetch wakes no one", async () => {

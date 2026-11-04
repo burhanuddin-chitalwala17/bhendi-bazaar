@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { JobSpec } from "@server/shared/jobs/jobs.types";
+import { enqueueLater, type EnqueueTx } from "@server/shared/jobs/jobs.enqueue";
 
 /**
  * Publishing's jobs (marketplace-publish D4, D5). The handlers are in channels.jobs.ts, which only the
@@ -31,3 +32,13 @@ export const checkListingsSpec: JobSpec<NoPayload> = { type: "channels.check-lis
  */
 export const LISTING_CHECK_EVERY_SECONDS = 120;
 export const LISTING_CHECK_AFTER_SECONDS = [120, 600, 1800, 7200] as const;
+
+/**
+ * Queue the answer check to run in `afterSeconds` (Q22). Keyed by the two-minute slot it will run in,
+ * so a send's first look two minutes out is never merged into a run queued an hour ahead, while
+ * two calls aiming at the same moment still collapse into one.
+ */
+export function enqueueListingCheck(db: EnqueueTx, afterSeconds: number): Promise<boolean> {
+  const runSlot = Math.floor((Date.now() + afterSeconds * 1000) / (LISTING_CHECK_EVERY_SECONDS * 1000));
+  return enqueueLater(db, checkListingsSpec, {}, { afterSeconds, onePerSeconds: LISTING_CHECK_EVERY_SECONDS, slot: String(runSlot) });
+}

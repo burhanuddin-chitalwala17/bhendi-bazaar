@@ -12,6 +12,22 @@
 
 ## Entries
 
+## 2026-11-04 — Answer check and worker wake, review: a first look is never merged into a later run
+
+- **Found in review** of the entry below, fixed before merge:
+  - pg-boss merges delayed jobs by when they are *sent*, so a send's two-minute first look could be
+    swallowed by a run already queued an hour ahead. `enqueueListingCheck` now keys each run by the
+    two-minute slot it will *run* in (`enqueueLater`'s new `slot`): different moments never merge,
+    the same moment still collapses to one run.
+  - A connection the shop must reconnect is no longer asked; its look counts as missed, as before
+    the reads were batched.
+  - `mirrorsFor` reads in a fixed order, so a product with two live mirrors names the same SKU to
+    every caller.
+- **Tests:** a far-off run does not swallow a near one (mutation: no run slot went red); no call
+  through a connection needing reconnect (mutation went red); one shop's unreadable token fails only
+  its looks (mutation: reading it outside the guard went red); the wake rule prefers an idle loop,
+  still wakes one when all are busy, and frees a loop whose job threw (mutations went red).
+
 ## 2026-11-04 — The listing answer check runs when a look is due; one new job wakes one worker loop
 
 - **Why (the ops review):** after a publish the worker looks for the marketplace's answer at 2, 10, 30

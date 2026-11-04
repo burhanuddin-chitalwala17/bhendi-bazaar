@@ -31,6 +31,8 @@ const fake = vi.hoisted(() => {
     status: { found: true, live: true, issues: [] as unknown[], showing: { title: null as string | null, mainImageUrl: null } },
     /** Thrown by the next status read. */
     statusError: null as Error | null,
+    /** Status reads made, each asking for its token first as a real provider does. */
+    statusCalls: 0,
   };
   return { state };
 });
@@ -52,7 +54,9 @@ vi.mock("@server/channels/providers", async () => {
         decidesLater: s.decidesLater,
       };
     },
-    listingStatus: async () => {
+    listingStatus: async (token: () => Promise<string>) => {
+      s.statusCalls++;
+      await token();
       const error = s.statusError;
       if (error) throw error;
       return s.status;
@@ -110,7 +114,11 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
     await prisma.productFamily.deleteMany({ where: { orgId, name: { startsWith: `MP family ${stamp}` } } });
   };
 
+  let sealedTokens: () => { refreshToken: string; accessToken: string; accessTokenExpiresAt: Date };
+
   beforeAll(async () => {
+    const { encryptSecret } = await import("@server/shared/crypto");
+    sealedTokens = () => ({ refreshToken: encryptSecret("refresh"), accessToken: encryptSecret("access"), accessTokenExpiresAt: new Date(Date.now() + 3_600_000) });
     ({ prisma } = await import("@server/shared/prisma"));
     ({ platformListingService: listings } = await import("@server/channels/platform-listing.service"));
     ({ listingPublishService: publish } = await import("@server/channels/listing-publish.service"));
@@ -120,7 +128,7 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
     await prisma.channelLocation.deleteMany({ where: { orgId } });
     await prisma.channelConnection.deleteMany({ where: { orgId } });
     for (const channel of ["amazon", "flipkart"] as const) {
-      connections[channel] = (await prisma.channelConnection.create({ data: { orgId, channel, state: "CONNECTED", externalAccountId: `${channel}-${stamp}`, refreshToken: "sealed-test" }, select: { id: true } })).id;
+      connections[channel] = (await prisma.channelConnection.create({ data: { orgId, channel, state: "CONNECTED", externalAccountId: `${channel}-${stamp}`, ...sealedTokens() }, select: { id: true } })).id;
     }
   });
   beforeEach(async () => {
@@ -343,6 +351,50 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
       expect(asked).toHaveLength(1);
       expect(asked[0]).toBeGreaterThan(300); // the second look is ten minutes after the send
       expect(Math.abs(asked[0] - untilNext)).toBeLessThanOrEqual(2);
+    });
+
+    it("a send's first look is not swallowed by a run already queued far ahead", async () => {
+      const { enqueueListingCheck } = await import("@server/channels/listing-publish.job");
+      // Moments no other test aims at, so only these two calls can share a slot.
+      const far = 7_200 * 24 + Math.floor(Math.random() * 1_000) * 120;
+      const near = 3_600 * 12 + Math.floor(Math.random() * 100) * 120;
+      expect(await enqueueListingCheck(prisma, far)).toBe(true);
+      expect(await enqueueListingCheck(prisma, near)).toBe(true); // the far run does not swallow it
+      expect(await enqueueListingCheck(prisma, far)).toBe(false); // aimed at the same moment: one run
+    });
+
+    it("does not ask a marketplace through a connection the shop must reconnect", async () => {
+      const listingId = await waitingAndDue("RECONNECT");
+      await prisma.channelConnection.update({ where: { id: connections.amazon }, data: { state: "NEEDS_RECONNECT" } });
+      try {
+        fake.state.statusCalls = 0;
+        await publish.checkDue(async () => {});
+        expect(fake.state.statusCalls).toBe(0);
+        expect((await prisma.platformListing.findUniqueOrThrow({ where: { id: listingId } })).checkCount).toBe(1);
+      } finally {
+        await prisma.channelConnection.update({ where: { id: connections.amazon }, data: { state: "CONNECTED" } });
+      }
+    });
+
+    it("one shop's unreadable stored token fails that shop's looks, not the run", async () => {
+      const amazonListing = await waitingAndDue("BADTOKEN");
+      const flipkartProduct = await product("GOODTOKEN", "flipkart");
+      await editAndPublish(flipkartProduct, "flipkart", { price: 39_900 });
+      const flipkartListing = (await row(flipkartProduct)).id;
+      await prisma.platformListing.update({ where: { id: flipkartListing }, data: { publishState: "checking", nextCheckAt: new Date(Date.now() - 1000), checkCount: 0, publishedAt: new Date() } });
+      await prisma.channelConnection.update({ where: { id: connections.amazon }, data: { accessToken: "not-a-sealed-secret" } });
+      const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        await publish.checkDue(async () => {});
+      } finally {
+        errors.mockRestore();
+        await prisma.channelConnection.update({ where: { id: connections.amazon }, data: sealedTokens() });
+      }
+      const bad = await prisma.platformListing.findUniqueOrThrow({ where: { id: amazonListing } });
+      const good = await prisma.platformListing.findUniqueOrThrow({ where: { id: flipkartListing } });
+      expect(bad.checkCount).toBe(1); // a missed look, counted
+      expect(good.checkCount).toBe(1);
+      expect(good.checkedAt).not.toBeNull();
     });
 
     it("asks for no further run once nothing waits", async () => {

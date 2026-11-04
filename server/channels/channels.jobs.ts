@@ -15,7 +15,7 @@ import { channelStockService } from "./channel-stock.service";
 import { channelOrdersService } from "./channel-orders.service";
 import { platformListingService } from "./platform-listing.service";
 import { listingPublishService } from "./listing-publish.service";
-import { checkListingsSpec, LISTING_CHECK_EVERY_SECONDS, publishListingSpec } from "./listing-publish.job";
+import { checkListingsSpec, enqueueListingCheck, publishListingSpec } from "./listing-publish.job";
 import { checkOrdersSpec, checkStockSpec, ORDERS_CHECK_EVERY_SECONDS } from "./stock-checks.job";
 import { enqueue, enqueueLater } from "@server/shared/jobs/jobs.enqueue";
 import { prisma } from "@server/shared/prisma";
@@ -141,7 +141,7 @@ export const checkListingsJob = registerJob({
   ...checkListingsSpec,
   handler: async ({ jobId }) => {
     const checked = await listingPublishService.checkDue((afterSeconds) =>
-      enqueueLater(prisma, checkListingsSpec, {}, { afterSeconds, onePerSeconds: LISTING_CHECK_EVERY_SECONDS }),
+      enqueueListingCheck(prisma, afterSeconds),
     );
     if (checked > 0) console.log(`[jobs] channels.check-listings ${jobId}: ${checked} listings`);
   },

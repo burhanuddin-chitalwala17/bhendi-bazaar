@@ -1,14 +1,14 @@
 import { prisma } from "@server/shared/prisma";
 import { CHANNEL_LABELS } from "@server/shared/channels";
-import { enqueue, enqueueLater } from "@server/shared/jobs/jobs.enqueue";
+import { enqueue } from "@server/shared/jobs/jobs.enqueue";
 import { productService } from "@server/catalog/product.service";
 
-import type { MarketplaceChannel } from "./channel-connection.types";
+import { CONNECTION_STATE, type MarketplaceChannel } from "./channel-connection.types";
 import { channelConnectionRepository, type OrdersCheckRow } from "./channel-connection.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
 import { computeListing, masterValues, parseOverrides, parseSent, snapshot, toWholeRupees } from "./listing-plan";
-import { checkListingsSpec, LISTING_CHECK_AFTER_SECONDS, LISTING_CHECK_EVERY_SECONDS, publishListingSpec } from "./listing-publish.job";
+import { checkListingsSpec, enqueueListingCheck, LISTING_CHECK_AFTER_SECONDS, LISTING_CHECK_EVERY_SECONDS, publishListingSpec } from "./listing-publish.job";
 import { listingCreateService } from "./listing-create.service";
 import { platformListingRepository, type PlatformListingRow } from "./platform-listing.repository";
 import { connectionFor, statusOf } from "./platform-listing.service";
@@ -114,7 +114,7 @@ async function missedLook(id: string, error: unknown, now: Date): Promise<void> 
 }
 
 async function startChecks(): Promise<void> {
-  await enqueueLater(prisma, checkListingsSpec, {}, { afterSeconds: LISTING_CHECK_EVERY_SECONDS, onePerSeconds: LISTING_CHECK_EVERY_SECONDS });
+  await enqueueListingCheck(prisma, LISTING_CHECK_EVERY_SECONDS);
 }
 
 /**
@@ -147,7 +147,8 @@ async function mirrorSkus(rows: readonly PlatformListingRow[]): Promise<Map<stri
  * at the second look, everything pending is confirmed sent. Not found by the last look: "hasn't answered".
  */
 async function lookAt(row: PlatformListingRow, connection: OrdersCheckRow | null, token: (() => Promise<string>) | null, now: Date, sku: string | null): Promise<void> {
-  if (!connection || !token || !sku) return await missedLook(row.id, null, now);
+  // A connection the shop must reconnect is not asked, as `accessToken` refused before the reads were batched.
+  if (!connection || connection.state !== CONNECTION_STATE.CONNECTED || !token || !sku) return await missedLook(row.id, null, now);
   const provider = providerFor(connection.channel as MarketplaceChannel);
   const answer = await provider.listingStatus(token, connection.externalAccountId, { sku, externalId: null, marketplaceType: row.marketplaceType });
   const count = row.checkCount + 1;
