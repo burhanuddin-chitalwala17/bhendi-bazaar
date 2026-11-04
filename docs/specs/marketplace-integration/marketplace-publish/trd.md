@@ -62,6 +62,12 @@ looking for the product's page on Amazon so it is never duplicated.
   Compliance attributes come from the brand and the shop's listing defaults (Q19).
 - **D9 — An issue's message** is kept as plain text, cut to 300 characters, never the response body
   (Q6); its code is stored for us. `attributeNames` map to our fields through the provider.
+- **D10 — A daily problems look** (Q23), `channels.check-listing-problems`, enqueued by the daily
+  maintain pass: a provider verb `listingProblems(account)` (Amazon: one error-filtered search per
+  twenty listings with errors), one read of every connected account with its token, one
+  `UPDATE … FROM jsonb_to_recordset` writing every account's answer to `ChannelListing`. Two
+  statements a day whatever the number of shops. The fields named join `waitingFields`, so the review
+  sends them; the post-send look clears the mirror's complaint when clean.
 
 ## Packages
 None.
@@ -80,7 +86,8 @@ list on the phone and a two-column grid from `md:`.
 
 ## Data model [MIGRATION]
 `PlatformListing` gains publish state, issues, what the marketplace shows, check count and next check,
-creation mode and target page, and a nullable family. Nothing dropped.
+creation mode and target page, and a nullable family. `ChannelListing` gains `problems`,
+`problemsSince` and `suppressed` (Q23). Nothing dropped.
 
 ## API / contract changes [CONTRACT]
 Review and status DTOs; `POST …/channels/[channel]/publish`, `GET …/products/[id]/listings/[channel]/pages`,

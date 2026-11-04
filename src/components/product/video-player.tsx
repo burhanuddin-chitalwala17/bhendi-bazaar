@@ -11,8 +11,8 @@ import { formatDuration } from "@/lib/format";
 import { pickRendition } from "@/lib/video-renditions";
 import { FORM_FACTOR_QUERY } from "@/hooks/core/useMediaQuery";
 
-/** The gallery slide's slot (ADR-0026): the full phone, half a tablet, three fifths of the 72rem page on a desktop. */
-export const GALLERY_SLIDE_SIZES = "(min-width: 1024px) 43rem, (min-width: 768px) 50vw, 100vw";
+/** The gallery slide's slot (ADR-0026): the full phone, then half the page (at most half of 90rem, less the rail). */
+export const GALLERY_SLIDE_SIZES = "(min-width: 1024px) 42rem, (min-width: 768px) 50vw, 100vw";
 
 
 interface VideoPlayerProps {

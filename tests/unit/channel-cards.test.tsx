@@ -3,9 +3,10 @@
  * Buttons that cannot do their job still answer on tap rather than greying out (ADR-0053).
  */
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 
 import { MarketplaceCard } from "@/components/channel/marketplace-card";
+import { ChannelCardList } from "@/components/channel/channel-card-list";
 import { ChannelAttentionBanner } from "@/components/channel/channel-attention-banner";
 import { RESULT_NOTE } from "@/components/channel/channel-copy";
 import { orgChannelsSchema } from "@/lib/validation/schemas/org-channels.schema";
@@ -90,6 +91,27 @@ describe("the marketplace card (spec A4)", () => {
     card({ state: CARD_STATE.CONNECTED, connectedAt: threeDaysAgo, lastCheckedAt: threeDaysAgo, stale: true });
     expect(screen.getByText("Last checked 3 days ago")).toHaveClass("text-warning");
     expect(screen.getByRole("button", { name: "Check now" })).toBeEnabled();
+  });
+});
+
+describe("the page's two sections", () => {
+  it("puts an unavailable marketplace and Meesho under Coming soon, with nothing to press", () => {
+    render(
+      <ChannelCardList
+        orgId="org_1"
+        storePath={null}
+        storeLabel={null}
+        cards={[base, { ...base, channel: "flipkart", label: "Flipkart", state: CARD_STATE.UNAVAILABLE }]}
+      />,
+    );
+    const soon = within(screen.getByRole("region", { name: "Coming soon" }));
+    expect(soon.getByText("Flipkart")).toBeInTheDocument();
+    expect(soon.getByText("Meesho")).toBeInTheDocument();
+    expect(soon.queryAllByRole("link")).toHaveLength(0);
+    expect(soon.queryAllByRole("button")).toHaveLength(0);
+    const live = within(screen.getByRole("region", { name: "Where you sell" }));
+    expect(live.getByRole("link", { name: "Connect Amazon" })).toBeInTheDocument();
+    expect(live.queryByText("Flipkart")).toBeNull();
   });
 });
 

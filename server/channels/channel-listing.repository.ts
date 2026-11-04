@@ -55,19 +55,23 @@ const ROW = {
   photoDone: true,
   photoFailed: true,
   photoMode: true,
+  problems: true,
+  suppressed: true,
   product: PRODUCT,
 } as const;
 
 export type ListingRow = Prisma.ChannelListingGetPayload<{ select: typeof ROW }>;
 
-/** `notLinked` is the to-do; `leftOff` lists what the owner ruled out (product-merge Q23). */
-export type ListingFilter = "linked" | "notLinked" | "leftOff";
+/** `notLinked` is the to-do; `leftOff` lists what the owner ruled out (product-merge Q23); `problems`, linked ones the marketplace complains of (publish Q23). */
+export type ListingFilter = "linked" | "notLinked" | "leftOff" | "problems";
 
 const PAGE_SIZE = 50;
 
 const filterWhere = (filter: ListingFilter): Prisma.ChannelListingWhereInput =>
   filter === "linked"
     ? { productId: { not: null } }
+    : filter === "problems"
+      ? { productId: { not: null }, goneAt: null, problemsSince: { not: null } }
     : filter === "leftOff"
       ? { productId: null, leftOffAt: { not: null } }
       : { productId: null, leftOffAt: null };
@@ -207,13 +211,14 @@ export const channelListingRepository = {
   },
 
   /** What each tab lists, gone rows included, so a tab's number matches its rows. */
-  async tabCounts(connectionId: string): Promise<{ linked: number; notLinked: number; leftOff: number }> {
-    const [linked, notLinked, leftOff] = await Promise.all([
+  async tabCounts(connectionId: string): Promise<{ linked: number; notLinked: number; leftOff: number; problems: number }> {
+    const [linked, notLinked, leftOff, problems] = await Promise.all([
       prisma.channelListing.count({ where: { connectionId, ...filterWhere("linked") } }),
       prisma.channelListing.count({ where: { connectionId, ...filterWhere("notLinked") } }),
       prisma.channelListing.count({ where: { connectionId, ...filterWhere("leftOff") } }),
+      prisma.channelListing.count({ where: { connectionId, ...filterWhere("problems") } }),
     ]);
-    return { linked, notLinked, leftOff };
+    return { linked, notLinked, leftOff, problems };
   },
 
   /** What is on the marketplace now, for the card: gone rows left out. */
@@ -438,13 +443,61 @@ export const channelListingRepository = {
     return rows.filter((r) => r.stockSentAt! > r.lastSeenAt);
   },
 
+  /**
+   * The daily problems look's answer for every account it read, in one statement (marketplace-publish
+   * Q23): each listing named gets its problems, kept since it was first seen; a listing on those
+   * accounts that had problems and was not named is clean again. Accounts not read are left as they were.
+   */
+  async recordProblems(
+    connectionIds: readonly string[],
+    found: ReadonlyArray<{ connectionId: string; sku: string; problems: unknown; suppressed: boolean }>,
+    now: Date,
+  ): Promise<number> {
+    if (connectionIds.length === 0) return 0;
+    return await prisma.$executeRaw`
+      WITH found AS (
+        SELECT * FROM jsonb_to_recordset(${JSON.stringify(found)}::jsonb) AS f("connectionId" text, sku text, problems jsonb, suppressed boolean)
+      )
+      UPDATE "ChannelListing" c
+      SET "problems" = f.problems,
+          "problemsSince" = CASE WHEN f.sku IS NULL THEN NULL ELSE COALESCE(c."problemsSince", ${now}) END,
+          "suppressed" = COALESCE(f.suppressed, false)
+      FROM "ChannelListing" t
+      LEFT JOIN found f ON f."connectionId" = t."connectionId" AND f.sku = t.sku
+      WHERE c.id = t.id
+        AND t."connectionId" = ANY(${[...connectionIds]}::text[])
+        AND (f.sku IS NOT NULL OR t."problemsSince" IS NOT NULL)`;
+  },
+
+  /** Clean again: a look after a publish found no error on this listing (marketplace-publish Q23). */
+  async clearProblems(connectionId: string, sku: string): Promise<void> {
+    await prisma.channelListing.updateMany({ where: { connectionId, sku, problemsSince: { not: null } }, data: { problems: Prisma.DbNull, problemsSince: null, suppressed: false } });
+  },
+
+  /** Linked listings with problems, per org: Home's line (Q23). */
+  async problemCounts(orgId: string): Promise<Array<{ channel: string; problems: number; suppressed: number }>> {
+    const rows = await prisma.channelListing.groupBy({
+      by: ["channel", "suppressed"],
+      where: { orgId, productId: { not: null }, goneAt: null, problemsSince: { not: null } },
+      _count: { _all: true },
+    });
+    const byChannel = new Map<string, { channel: string; problems: number; suppressed: number }>();
+    for (const r of rows) {
+      const entry = byChannel.get(r.channel) ?? { channel: r.channel, problems: 0, suppressed: 0 };
+      entry.problems += r._count._all;
+      if (r.suppressed) entry.suppressed += r._count._all;
+      byChannel.set(r.channel, entry);
+    }
+    return [...byChannel.values()];
+  },
+
   /** The live linked mirror rows of these products on a connection: what a listing screen shows as "On Amazon now" (channel-listings D3, D5). */
   async mirrorsFor(connectionId: string, productIds: readonly string[]) {
     return await prisma.channelListing.findMany({
       where: { connectionId, productId: { in: [...productIds] }, goneAt: null },
       // A fixed order, so a product with two live mirrors names the same one to every caller.
       orderBy: [{ lastSeenAt: "desc" }, { id: "asc" }],
-      select: { id: true, productId: true, sku: true, externalId: true, title: true, pricePaise: true, status: true, quantity: true, attributes: true, attributesReadAt: true, lastSeenAt: true },
+      select: { id: true, productId: true, sku: true, externalId: true, title: true, pricePaise: true, status: true, quantity: true, attributes: true, attributesReadAt: true, lastSeenAt: true, problems: true, problemsSince: true, suppressed: true },
     });
   },
 

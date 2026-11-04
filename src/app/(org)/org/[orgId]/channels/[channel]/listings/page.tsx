@@ -10,7 +10,7 @@ import { ListingList } from "@/components/channel/listing-list";
 import { StockSyncSection } from "@/components/channel/stock-sync-section";
 import { channelStockDAL } from "@/data-access-layer/channel-stock.dal";
 import { platformListingDAL } from "@/data-access-layer/platform-listing.dal";
-import { LISTING, PUBLISH } from "@/components/channel/platform-listing-copy";
+import { LISTING, PROBLEMS, PUBLISH } from "@/components/channel/platform-listing-copy";
 import { SameItemCard } from "@/components/channel/same-item-card";
 import { GroupPicker } from "@/components/channel/group-picker";
 import { GROUP } from "@/components/channel/family-copy";
@@ -29,7 +29,7 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-type Search = { tab?: string; q?: string; more?: string; listing?: string; left?: string; pick?: string };
+type Search = { tab?: string; q?: string; more?: string; listing?: string; left?: string; pick?: string; fix?: string };
 
 /** One marketplace's listings and their links (channel-import spec R1–R7, R10, ux.md "Listings page"). */
 export default async function ChannelListingsPage({
@@ -48,8 +48,10 @@ export default async function ChannelListingsPage({
 
   const showLeftOff = tab === "notLinked" && search.left === "1";
   const picking = tab === "notLinked" && search.pick === "1";
+  // Linked listings the marketplace complains of (marketplace-publish Q23).
+  const showProblems = tab === "linked" && search.fix === "1";
   const [data, org, stock, waiting] = await Promise.all([channelListingsDAL.page(scope.orgId, channel, {
-    tab: showLeftOff ? "leftOff" : tab,
+    tab: showLeftOff ? "leftOff" : showProblems ? "problems" : tab,
     search: q,
     pages,
     listingId: search.listing ?? null,
@@ -66,6 +68,7 @@ export default async function ChannelListingsPage({
       more: pages > 1 ? String(pages) : null,
       listing: null,
       left: showLeftOff ? "1" : null,
+      fix: showProblems ? "1" : null,
       ...next,
     };
     const qs = new URLSearchParams(Object.entries(merged).filter((e): e is [string, string] => !!e[1])).toString();
@@ -134,12 +137,20 @@ export default async function ChannelListingsPage({
           <nav className="flex gap-2" aria-label={LISTINGS.title(label)}>
             {(["linked", "notLinked"] as const).map((t) => (
               <Button key={t} asChild variant={t === tab ? "default" : "outline"} className="min-h-10 flex-1 md:flex-none">
-                <Link href={hrefWith({ tab: t, more: null, left: null })} aria-current={t === tab ? "page" : undefined} scroll={false}>
+                <Link href={hrefWith({ tab: t, more: null, left: null, fix: null })} aria-current={t === tab ? "page" : undefined} scroll={false}>
                   {t === "linked" ? LISTINGS.tabLinked(page.counts.linked) : LISTINGS.tabNotLinked(page.counts.notLinked)}
                 </Link>
               </Button>
             ))}
           </nav>
+
+          {tab === "linked" && (page.counts.problems > 0 || showProblems) && (
+            <Button asChild variant={showProblems ? "secondary" : "outline"} size="sm" className="min-h-10 self-start text-warning">
+              <Link href={hrefWith({ fix: showProblems ? null : "1", more: null })} aria-pressed={showProblems} scroll={false}>
+                {PROBLEMS.filter(page.counts.problems)}
+              </Link>
+            </Button>
+          )}
 
           {tab === "notLinked" && (
             <Button asChild variant={showLeftOff ? "secondary" : "ghost"} size="sm" className="self-start">

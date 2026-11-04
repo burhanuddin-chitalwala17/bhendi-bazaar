@@ -89,9 +89,20 @@ export function ownFields(overrides: ListingOverrides): Record<ListingField, boo
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-/** Fields the marketplace takes whose value differs from what was last sent: "changes waiting" (R8, R10). */
-export function waitingFields(values: ListingValues, sent: ListingOverrides | null, writable: readonly ListingField[]): ListingField[] {
-  return writable.filter((f) => !same(values[f], sent?.[f]));
+/**
+ * Fields the marketplace takes whose value differs from what was last sent: "changes waiting" (R8, R10).
+ * A field the marketplace now complains of waits too, so fixing it, or sending it again as it is, goes
+ * through the same review (marketplace-publish Q23).
+ */
+export function waitingFields(values: ListingValues, sent: ListingOverrides | null, writable: readonly ListingField[], resend: readonly ListingField[] = []): ListingField[] {
+  return writable.filter((f) => !same(values[f], sent?.[f]) || resend.includes(f));
+}
+
+/** The fields a stored complaint names, errors only (Q23). */
+export function complainedFields(problems: unknown): ListingField[] {
+  if (!Array.isArray(problems)) return [];
+  const fields = problems.flatMap((p) => (p && typeof p === "object" && (p as { severity?: unknown }).severity === "error" && typeof (p as { field?: unknown }).field === "string" ? [(p as { field: string }).field] : []));
+  return LISTING_FIELDS.filter((f) => fields.includes(f));
 }
 
 /**

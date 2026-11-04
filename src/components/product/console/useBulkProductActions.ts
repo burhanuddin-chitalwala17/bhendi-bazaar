@@ -3,7 +3,8 @@
 import { useParams, usePathname, useRouter } from "next/navigation";
 
 import { useMutation } from "@/hooks/core/useMutation";
-import type { BulkProductActionInput } from "@/lib/validation/schemas/product-bulk.schema";
+import type { BulkProductActionInput, TeamBulkProductActionInput } from "@/lib/validation/schemas/product-bulk.schema";
+import { BULK_ACTION } from "@server/catalog/product-bulk.types";
 import { ProductsApiClient } from "./productsApiClient";
 
 /**
@@ -21,7 +22,7 @@ export function useBulkProductActions() {
 
   const { mutate, isLoading, data, error, reset } = useMutation(
     (input: { action: BulkProductActionInput; reason?: string }) =>
-      team ? client.teamBulkEdit({ ...input.action, reason: input.reason ?? "" }) : client.bulkEdit(input.action),
+      team ? client.teamBulkEdit(teamBody(input.action, input.reason ?? "")) : client.bulkEdit(input.action),
     { onSuccess: () => router.refresh() },
   );
 
@@ -29,4 +30,12 @@ export function useBulkProductActions() {
   const run = (input: { action: BulkProductActionInput; reason?: string }) => mutate(input).catch(() => null);
 
   return { run, running: isLoading, result: data, error, clear: reset, team };
+}
+
+/** The team names its products; "all that match" is the shop's own list (Q35), so it never reaches here. */
+function teamBody(action: BulkProductActionInput, reason: string): TeamBulkProductActionInput {
+  if (action.action === BULK_ACTION.STOCK) return { ...action, reason };
+  const { matching, productIds, ...rest } = action;
+  if (matching || !productIds) throw new Error("The team acts on the products it picked");
+  return { ...rest, productIds, reason };
 }

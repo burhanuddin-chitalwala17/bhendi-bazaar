@@ -58,8 +58,8 @@ export async function DashboardWidgets({
             result.reason,
           );
           return (
-            <Card key={widget.key} className="border-destructive/30">
-              <CardContent className="pt-5">
+            <Card key={widget.key} className="h-full border-destructive/30 p-4">
+              <CardContent className="p-0">
                 <p className="text-small font-medium text-foreground">
                   {widget.title}
                 </p>
@@ -95,29 +95,20 @@ function WidgetCard({
   const display =
     value.kind === "money" ? formatCurrency(value.value) : String(value.value);
 
+  // StatsCard's grammar: the figure, then what it is, then its caption; one height per row.
   const body = (
-    <Card
-      className={
-        widget.href ? "transition-colors hover:border-primary/40" : undefined
-      }
-    >
-      <CardContent className="flex items-center gap-4 pt-5">
-        <Icon name={ICONS[widget.icon]} size="lg" tone="primary" />
-        <span className="min-w-0">
-          <span className="block truncate font-heading text-headline font-semibold tabular-nums">
-            {display}
-          </span>
-          <span className="text-small text-muted-foreground">
-            {widget.title}
-            {value.caption ? ` — ${value.caption}` : ""}
-          </span>
-        </span>
-      </CardContent>
+    <Card className={cn("h-full gap-1 p-4", widget.href && "transition-colors duration-fast ease-standard hover:border-primary/40")}>
+      <div className="flex items-start justify-between gap-3">
+        <p className="min-w-0 truncate font-heading text-headline font-semibold tabular-nums text-foreground">{display}</p>
+        <Icon name={ICONS[widget.icon]} size="md" tone="muted" />
+      </div>
+      <p className="text-small text-muted-foreground">{widget.title}</p>
+      {value.caption && <p className="text-caption text-muted-foreground">{value.caption}</p>}
     </Card>
   );
 
   return widget.href ? (
-    <Link href={`${basePath}${widget.href}`} prefetch={false}>
+    <Link href={`${basePath}${widget.href}`} prefetch={false} className="block h-full rounded-card">
       {body}
     </Link>
   ) : (

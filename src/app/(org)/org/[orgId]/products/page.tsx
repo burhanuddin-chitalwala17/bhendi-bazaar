@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { orgChannelSummaryDAL } from "@/data-access-layer/org/channel-summary.dal";
-import { ChannelReadinessSummary } from "@/components/channel/channel-readiness-summary";
 import { ProductsContainer } from "@/components/product/console/productsList";
 import { ProductsTableSkeleton } from "@/components/product/console/productsList/components/ProductsTableSkeleton";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,8 @@ import { orgAddressService } from "@server/catalog/org.address.service";
 import { channelConnectionService } from "@server/channels/channel-connection.service";
 import { CARD_STATE, isMarketplaceChannel } from "@server/channels/channel-connection.types";
 import type { BulkMarketplace } from "@/components/product/console/bulk/BulkActionDialog";
-import type { ProductShelf } from "@server/catalog/product.visibility";
+import { PRODUCT_SHELVES, type ProductShelf } from "@server/catalog/product.visibility";
+import { parseNotReadyOn } from "@/lib/validation/schemas/product-list.schema";
 import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 import { PageHeader } from "@/components/shared/page-shell";
 
@@ -35,6 +35,7 @@ interface PageProps {
     outOfStock?: string;
     shelf?: string;
     wishlisted?: string;
+    channel?: string;
   }>;
 }
 
@@ -42,9 +43,8 @@ interface PageProps {
  * A query string is caller-controlled, so the shelf is matched against the closed set
  * rather than cast into it — an unknown value falls back to available (Invariant 4).
  */
-const SHELVES: ProductShelf[] = ["available", "archived", "all"];
 const shelfFrom = (value: string | undefined): ProductShelf =>
-  SHELVES.find((shelf) => shelf === value) ?? "available";
+  PRODUCT_SHELVES.find((shelf) => shelf === value) ?? "available";
 
 export default async function OrgProductsPage({
   params,
@@ -106,6 +106,7 @@ async function OrgProductsData({
     outOfStock: params.outOfStock === "true" ? true : undefined,
     shelf: shelfFrom(params.shelf),
     wishlistedOnly: params.wishlisted === "true" ? true : undefined,
+    notReadyOn: parseNotReadyOn(params.channel),
   };
 
   const [productsData, stats, categoryList, channels, locations, connections] = await Promise.all([
@@ -126,7 +127,6 @@ async function OrgProductsData({
 
   return (
     <div className="space-y-4">
-      <ChannelReadinessSummary orgId={orgId} rows={channels} />
       <ProductsContainer
         initialData={productsData}
         initialStats={stats}
@@ -135,6 +135,8 @@ async function OrgProductsData({
         locations={locations.filter((l) => l.isActive).map((l) => ({ id: l.id, name: l.name }))}
         marketplaces={marketplaces}
         addHref={`/org/${orgId}/products/new`}
+        channelRows={channels}
+        channelsHref={`/org/${orgId}/channels`}
       />
     </div>
   );

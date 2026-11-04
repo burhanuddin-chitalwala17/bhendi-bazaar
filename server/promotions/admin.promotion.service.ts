@@ -25,6 +25,55 @@ import {
 } from "@server/promotions/loss";
 import { formatCurrency } from "@server/shared/money";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
+import type { Prisma } from "@prisma/client";
+import {
+  OFFER_KIND,
+  OFFER_STATUS,
+  OFFERS_PAGE_SIZE,
+  type OfferKind,
+  type OfferListQuery,
+  type OfferListResult,
+  type OfferListRow,
+  type OfferStatus,
+} from "@server/promotions/promotion.types";
+
+/**
+ * Which offers a status tab holds, at `now`. Stopped wins over dates; a running offer that is
+ * fully claimed or out of budget is still Live here and says so on its badge.
+ */
+export function offerStatusWhere(status: OfferStatus, now: Date): Prisma.PromotionWhereInput {
+  switch (status) {
+    case OFFER_STATUS.LIVE:
+      return { isActive: true, startsAt: { lte: now }, endsAt: { gt: now } };
+    case OFFER_STATUS.SCHEDULED:
+      return { isActive: true, startsAt: { gt: now } };
+    case OFFER_STATUS.ENDED:
+      return { isActive: true, endsAt: { lte: now } };
+    case OFFER_STATUS.STOPPED:
+      return { isActive: false };
+    case OFFER_STATUS.ALL:
+      return {};
+  }
+}
+
+const KIND_WHERE: Record<OfferKind, Prisma.PromotionWhereInput> = {
+  [OFFER_KIND.ALL]: {},
+  [OFFER_KIND.AUTOMATIC]: { trigger: "AUTOMATIC" },
+  [OFFER_KIND.CODE]: { trigger: "CODE" },
+};
+
+/** The name, the code, or a covered product's name or SKU (a markdown's name carries its SKU too). */
+function searchWhere(search: string): Prisma.PromotionWhereInput {
+  if (!search) return {};
+  const contains = { contains: search, mode: "insensitive" as const };
+  return {
+    OR: [
+      { label: contains },
+      { code: contains },
+      { targets: { some: { product: { OR: [{ name: contains }, { sku: contains }] } } } },
+    ],
+  };
+}
 
 /** Who is creating the offer, and therefore who funds it. */
 export type PromotionOwner = { scope: "PLATFORM" } | { scope: "ORG"; orgId: string };
@@ -271,12 +320,60 @@ export class AdminPromotionService {
   }
 
   /** Offers this audience may see, newest first. */
+  /** The offers list (offers list Q1): one filtered, sorted page and the tab counts. */
+  async listOffers(owner: PromotionOwner, query: OfferListQuery, now: Date = new Date()): Promise<OfferListResult> {
+    const scope: Prisma.PromotionWhereInput = owner.scope === "ORG" ? { orgId: owner.orgId } : { scope: "PLATFORM" };
+    const filter: Prisma.PromotionWhereInput = {
+      AND: [offerStatusWhere(query.status, now), KIND_WHERE[query.kind], searchWhere(query.search)],
+    };
+    const [{ offers, pagination }, counts] = await Promise.all([
+      promotionRepository.listScoped(scope, {
+        page: query.page,
+        limit: OFFERS_PAGE_SIZE,
+        filter,
+        orderBy: [{ [query.sortBy]: query.sortOrder }],
+      }),
+      promotionRepository.countScoped(
+        scope,
+        Object.fromEntries(Object.values(OFFER_STATUS).map((st) => [st, offerStatusWhere(st, now)])) as Record<
+          OfferStatus,
+          Prisma.PromotionWhereInput
+        >
+      ),
+    ]);
+    return { offers: offers.map(toOfferListRow), pagination, counts };
+  }
+
   async list(owner: PromotionOwner, page = 1) {
     return await promotionRepository.listScoped(
       owner.scope === "ORG" ? { orgId: owner.orgId } : { scope: "PLATFORM" },
       { page }
     );
   }
+}
+
+/** Only what the list shows; a row from the repository carries more than a browser needs. */
+function toOfferListRow(o: Awaited<ReturnType<typeof promotionRepository.listScoped>>["offers"][number]): OfferListRow {
+  return {
+    id: o.id,
+    label: o.label,
+    trigger: o.trigger,
+    code: o.code,
+    valueType: o.valueType,
+    percentBps: o.percentBps,
+    amountOffPaise: o.amountOffPaise,
+    fixedPricePaise: o.fixedPricePaise,
+    startsAt: o.startsAt,
+    endsAt: o.endsAt,
+    isActive: o.isActive,
+    usageLimit: o.usageLimit,
+    usageCount: o.usageCount,
+    platformBudgetPaise: o.platformBudgetPaise,
+    platformSpentPaise: o.platformSpentPaise,
+    lossConfirmedAt: o.lossConfirmedAt,
+    lossConfirmedBy: o.lossConfirmedBy,
+    targets: o.targets.map((t) => ({ category: t.category, product: t.product })),
+  };
 }
 
 export const adminPromotionService = new AdminPromotionService();

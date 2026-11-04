@@ -2,7 +2,7 @@ import type { MarketplaceChannel } from "../channel-connection.types";
 import type { ListingAttributes, ListingDetail, ListingSink, TokenSource } from "./listing-read";
 import type { ListingStock, LocationCount, MarketplaceLocation, OrdersPage, StockListingRef } from "./stock";
 import type { ListingRules } from "../platform-listing.types";
-import type { CreateListingInput, PageMatch, PublishAnswer, PublishChanges, PublishRef, StatusAnswer } from "./publish";
+import type { CreateListingInput, ListingProblem, PageMatch, PublishAnswer, PublishChanges, PublishRef, StatusAnswer } from "./publish";
 
 /**
  * One marketplace, behind the verbs channel-connectors needs (TRD D1). Later subfeatures add their
@@ -75,6 +75,12 @@ export interface MarketplaceProvider {
 
   /** One listing as the marketplace holds it now (marketplace-publish D5). */
   listingStatus(token: TokenSource, externalAccountId: string | null, ref: PublishRef): Promise<StatusAnswer>;
+
+  /**
+   * Every listing on the account the marketplace says has an error now (marketplace-publish Q23), in as
+   * few calls as it allows; empty where its answer comes only with a send. A listing not returned is clean.
+   */
+  listingProblems(token: TokenSource, externalAccountId: string | null): Promise<ListingProblem[]>;
 
   /** Pages already on the marketplace for a product; empty where it cannot create (marketplace-publish D6). */
   findPages(token: TokenSource, externalAccountId: string | null, query: { barcode: string | null; keywords: string }): Promise<PageMatch[]>;

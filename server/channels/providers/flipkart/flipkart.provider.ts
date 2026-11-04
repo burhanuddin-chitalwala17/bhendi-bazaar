@@ -65,6 +65,8 @@ export const flipkartProvider: MarketplaceProvider = {
   theirsFromRead: flipkartTheirsFromRead,
   publishListing: flipkartPublish,
   listingStatus: flipkartListingStatus,
+  // Flipkart's answer comes with each send and it reports no reason for an inactive listing.
+  listingProblems: async () => [],
   // No public API creates a Flipkart product (parent Q33): it is made in Seller Hub and read back.
   findPages: async () => [],
   createListing: async () => ({ accepted: [], issues: [{ code: "not_supported", message: "New products are made in Flipkart Seller Hub.", severity: "error", field: null }], decidesLater: false }),

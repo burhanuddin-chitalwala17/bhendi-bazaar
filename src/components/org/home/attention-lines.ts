@@ -3,6 +3,7 @@ import { STOCK_ATTENTION } from "@server/channels/channel-stock.types";
 import { ATTENTION_CAP } from "@server/analytics/attention.types";
 import type { HomeAttentionDto } from "@/data-access-layer/org/home.dal";
 import { TEAM_HISTORY_ANCHOR } from "@/components/product/team/team-edit-copy";
+import { PROBLEMS } from "@/components/channel/platform-listing-copy";
 import { HOME_COPY, LINE_COPY } from "./home-copy";
 
 export type AttentionLine =
@@ -40,6 +41,13 @@ export function attentionLines(orgId: string, a: HomeAttentionDto, now: Date): A
     const { channel, label, kind, count } = a.stock.value;
     const text = kind === STOCK_ATTENTION.MATCH ? LINE_COPY.matchLocations(label) : LINE_COPY.outOfStock(label, count);
     lines.push({ key: "stock", ok: true, text, href: `${base}/channels/${channel}/listings` });
+  }
+
+  // A listing a marketplace stopped or limits, with the reason on its listing (marketplace-publish Q23).
+  if (!a.listingProblems.ok) lines.push(failed("listingProblems"));
+  else if (a.listingProblems.value) {
+    const { channel, label, problems, suppressed } = a.listingProblems.value;
+    lines.push({ key: "listingProblems", ok: true, text: PROBLEMS.home(label, problems, suppressed), href: `${base}/channels/${channel}/listings?fix=1` });
   }
 
   // Sales about to stop: only what sold in the last 30 days (Q31).

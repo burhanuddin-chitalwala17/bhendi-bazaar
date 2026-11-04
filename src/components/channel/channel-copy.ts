@@ -1,6 +1,6 @@
 import type { ConnectResult, ConnectionError } from "@server/channels/channel-connection.types";
 import { formatDate } from "@/lib/format";
-import { CHANNEL } from "@server/shared/channels";
+import { CHANNEL, type Channel } from "@server/shared/channels";
 
 /**
  * Every string the Channels page shows, as signed off in
@@ -14,6 +14,22 @@ export const longDate = (iso: string) => formatDate(iso, DAY_MONTH_YEAR);
 export const shortDate = (iso: string) => formatDate(iso, DAY_MONTH);
 
 export const PAGE_INTRO = "Connect a marketplace to sell there from Bhendi Bazaar.";
+
+/** The page's two sections: where the shop can sell today, and what is being built. */
+export const SECTION = {
+  live: { title: "Where you sell", description: "Your shop, the feeds that show your products, and the marketplaces you can connect." },
+  soon: { title: "Coming soon", description: "Being built. They appear above, ready to connect, when they open." },
+} as const;
+
+/** What each channel does for the shop, one line under its name. */
+export const PURPOSE: Record<Channel, string> = {
+  [CHANNEL.STORE]: "Your own shop on Bhendi Bazaar",
+  [CHANNEL.GOOGLE]: "Your products in Google Shopping results",
+  [CHANNEL.META]: "Your products on Facebook and Instagram",
+  [CHANNEL.AMAZON]: "Listings, stock and orders with Seller Central",
+  [CHANNEL.FLIPKART]: "Listings, stock and orders with Seller Hub",
+  [CHANNEL.MEESHO]: "Sell to Meesho's buyers across India",
+};
 export const PAGE_LOAD_FAILED = "Couldn't load your channels. Check your connection and try again.";
 
 export const MARKETPLACE_PITCH = (label: string) =>
@@ -27,6 +43,8 @@ export const CHIP = {
   comingSoon: "Coming soon",
   full: "Full for now",
   alwaysOn: "Always on",
+  feedOn: "On",
+  feedOff: "Off",
 } as const;
 
 export const CARD = {

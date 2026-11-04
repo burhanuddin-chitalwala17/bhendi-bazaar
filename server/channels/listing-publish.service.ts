@@ -18,7 +18,7 @@ import { CONNECTION_STATE, type MarketplaceChannel } from "./channel-connection.
 import { channelConnectionRepository, type OrdersCheckRow } from "./channel-connection.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
-import { computeListing, masterValues, parseOverrides, parseSent, snapshot, toWholeRupees } from "./listing-plan";
+import { complainedFields, computeListing, masterValues, parseOverrides, parseSent, snapshot, toWholeRupees } from "./listing-plan";
 import { checkListingsSpec, enqueueListingCheck, LISTING_CHECK_AFTER_SECONDS, LISTING_CHECK_EVERY_SECONDS, publishListingSpec } from "./listing-publish.job";
 import { listingCreateService } from "./listing-create.service";
 import { platformListingRepository, type PlatformListingRow } from "./platform-listing.repository";
@@ -127,16 +127,8 @@ async function startChecks(): Promise<void> {
   await enqueueListingCheck(prisma, LISTING_CHECK_EVERY_SECONDS);
 }
 
-/**
- * A connection's token for a batch of looks: the one the read already holds while it is fresh, judged
- * at each call; the locked renewal only when it is about to lapse, and once per batch (as Q26 does for
- * the order check). An unreadable stored token throws inside the look, so it is that listing's failure.
- */
-function tokenFor(connection: OrdersCheckRow): () => Promise<string> {
-  let renewed: string | null = null;
-  return async () =>
-    renewed ?? channelConnectionService.unexpiredAccessToken(connection) ?? (renewed = await channelConnectionService.accessToken(connection.id));
-}
+/** A connection's token for a batch of looks (as Q26 does for the order check). An unreadable stored token throws inside the look. */
+const tokenFor = (connection: OrdersCheckRow) => channelConnectionService.tokenSource(connection);
 
 /** The marketplace SKU of each listing that has none of its own, one read per connection. Keyed `connection:product`. */
 async function mirrorSkus(rows: readonly PlatformListingRow[]): Promise<Map<string, string>> {
@@ -173,6 +165,8 @@ async function lookAt(row: PlatformListingRow, connection: OrdersCheckRow | null
   const refused = new Set(errors.map((i) => i.field));
   const confirmed = !done ? null : refused.has(null) ? (Object.keys(sent).length ? sent : null) : { ...sent, ...pick(pending, (Object.keys(pending) as ListingField[]).filter((f) => !refused.has(f))) };
   await platformListingRepository.recordAnswer(row.id, { sent: confirmed, publishState: state, issues: answer.issues, nextCheckAt: next, checkCount: count, live: answer.live, showing, keepPending: !done }, now, prisma, [PUBLISH_STATE.CHECKING]);
+  // A fix published and found clean ends the daily look's complaint at once, not tomorrow (Q23).
+  if (done && answer.found && errors.length === 0) await channelListingRepository.clearProblems(connection.id, sku);
   if (done && answer.found && errors.length === 0 && row.channelListingId === null) await listingCreateService.linkCreated({ ...row, sent: confirmed });
 }
 
@@ -183,7 +177,10 @@ export const listingPublishService = {
     const rules = providerFor(channel).listingRules;
     const all = listingId ? [await platformListingRepository.find(listingId, orgId)].filter((r): r is PlatformListingRow => r !== null && r.connectionId === connection.id) : await platformListingRepository.onConnection(connection.id);
     const rows = all.filter((r) => r.productId !== null || r.familyId !== null);
-    const products = await productService.forListing(orgId, rows.map((r) => r.productId).filter((id): id is string => id !== null));
+    const productIds = rows.map((r) => r.productId).filter((id): id is string => id !== null);
+    const [products, mirrors] = await Promise.all([productService.forListing(orgId, productIds), channelListingRepository.mirrorsFor(connection.id, productIds)]);
+    // Fields the daily look found a complaint on wait for a send, edited or not (Q23).
+    const resend = new Map(mirrors.map((m) => [m.productId, m.problemsSince ? complainedFields(m.problems) : []]));
     const listings: ReviewListingDTO[] = [];
     for (const row of rows) {
       if (row.familyId) {
@@ -193,7 +190,7 @@ export const listingPublishService = {
       }
       const product = products.find((p) => p.id === row.productId);
       if (!product) continue;
-      const { status, values, waiting } = statusOf(row, product, rules);
+      const { status, values, waiting } = statusOf(row, product, rules, resend.get(product.id) ?? []);
       const creating = row.channelListingId === null;
       if (waiting.length === 0) continue;
       listings.push({ id: row.id, version: row.version, productId: product.id, name: product.name, status, creating, changes: changesOf(row, product, waiting, values) });

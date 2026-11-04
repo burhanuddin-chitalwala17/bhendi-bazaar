@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import { CategoryLanes } from "@/components/category/category-lanes";
+import { CategoryArches } from "@/components/category/category-arches";
 import { HEROES_FIRST_PAGE, HeroProductsGrid } from "@/components/home/hero-products-grid";
 import { HomeHero } from "@/components/home/home-hero";
 import { OffersStrip, OFFERS_IN_STRIP } from "@/components/home/offers-strip";
@@ -11,6 +11,7 @@ import { SectionHeader } from "@/components/shared/SectionHeader";
 import { bannersDAL } from "@/data-access-layer/banners.dal";
 import { categoriesDAL } from "@/data-access-layer/categories.dal";
 import { productsDAL } from "@/data-access-layer/products.dal";
+import { formatCount } from "@/lib/format";
 import { APP_DESCRIPTION, APP_NAME, BRAND_PROFILES } from "@/lib/config";
 import { JsonLd } from "@/components/shared/JsonLd";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/structured-data";
@@ -28,14 +29,16 @@ export default async function HomePage() {
     categoriesDAL.getDescendants(null),
   ]);
 
+  const topLevel = lanes.filter((category) => category.parentId === null).sort((a, b) => a.order - b.order);
+
   return (
     <div className="space-y-8 md:space-y-12">
       <JsonLd data={[organizationJsonLd(appUrl(), BRAND_PROFILES), websiteJsonLd(appUrl())]} />
       <h1 className="sr-only">
         {APP_NAME} — {APP_DESCRIPTION}
       </h1>
-      <CategoryLanes categories={lanes} />
       <HomeHero banners={banners} />
+      <CategoryArches categories={topLevel} />
       <OffersStrip
         offers={offers.slice(0, OFFERS_IN_STRIP)}
         viewAll={offers.length > OFFERS_IN_STRIP ? { href: "/offers", label: "View more" } : undefined}
@@ -53,11 +56,16 @@ export default async function HomePage() {
 }
 
 async function NewIn() {
-  const { products } = await productsDAL.getPage({}, { limit: NEW_IN });
+  // The count is the cached listing count: one read, no fresher than the grid it sits over.
+  const [{ products }, total] = await Promise.all([productsDAL.getPage({}, { limit: NEW_IN }), productsDAL.countListing({})]);
   if (products.length === 0) return null;
   return (
     <section className="space-y-4">
-      <SectionHeader title="New this week" description="Fresh from the shops of the bazaar" action={{ label: "See all", href: "/shop" }} />
+      <SectionHeader
+        title="New this week"
+        description="Fresh from the shops of the bazaar"
+        action={{ label: total > products.length ? `See all ${formatCount(total)}` : "See all", href: "/shop" }}
+      />
       <ProductGrid products={products} />
     </section>
   );

@@ -25,6 +25,8 @@ const MAY_USE_SHEET: Record<string, string> = {
     "Decision 3: the details of a selected item, beside a list that stays visible and whose selection moves.",
   "src/components/org/look/section-sheet.tsx":
     "Decision 3: one section's fields beside the preview they change (storefront-themes D13): a bottom sheet on a phone, a side panel from md.",
+  "src/components/org/add-promotion-sheet.tsx":
+    "Decision 3: a banner's words and pictures beside the preview they change: the whole phone, a wide side panel from md.",
   "src/components/cart/console/CartsTable.tsx":
     "Decision 3: an abandoned cart's items beside the list of carts it was opened from.",
   "src/components/channel/listing-details-panel.tsx":
@@ -122,7 +124,6 @@ describe("an overlay's surface is chosen, not inherited", () => {
     // Ratchet: these use raw DialogContent and should migrate to FormDialog.
     "src/components/org/brands-manager.tsx": "Ratchet: short form, wants FormDialog.",
     "src/components/org/locations-manager.tsx": "Ratchet: short form, wants FormDialog.",
-    "src/components/org/add-promotion-dialog.tsx": "Ratchet: short form, wants FormDialog.",
     "src/components/org/handle-change-dialog.tsx": "Ratchet: short form, wants FormDialog.",
     "src/components/org/console/components/AddOrgModal.tsx": "Ratchet: short form, wants FormDialog.",
     "src/components/shipping/providers-console/component/ConnectProviderModal.tsx": "Ratchet: short form, wants FormDialog.",

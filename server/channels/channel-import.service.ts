@@ -78,7 +78,15 @@ const toDto = (row: ListingRow, suggestion: ListingSuggestionDTO | null = null, 
   suggestion,
   photos:
     row.photoTotal !== null ? { total: row.photoTotal, done: row.photoDone ?? 0, failed: row.photoFailed ?? 0 } : null,
+  problems: problemsOf(row),
 });
+
+/** The daily look's complaint, as the row's one line: its first sentence and how many more (Q23). */
+function problemsOf(row: ListingRow): ChannelListingDTO["problems"] {
+  const issues = Array.isArray(row.problems) ? (row.problems as Array<{ message?: unknown }>) : [];
+  const first = issues.find((i) => typeof i.message === "string")?.message as string | undefined;
+  return first ? { suppressed: row.suppressed, first, count: issues.length } : null;
+}
 
 /** What each variation group's header offers (family-merge D6): settle, make, add, or see its family. */
 async function groupsOf(connectionId: string, rows: readonly ListingRow[]): Promise<Record<string, ListingGroupDTO>> {
@@ -285,6 +293,7 @@ export const channelImportService = {
       read,
       counts,
       showingLeftOff: filter === "leftOff",
+      showingProblems: filter === "problems",
       listings: listing.rows.map((r) => toDto(r, suggestions.get(r.id) ?? null, types.get(r.id) ?? null)),
       hasMore: listing.hasMore,
       groups,

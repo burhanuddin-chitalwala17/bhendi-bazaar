@@ -1,5 +1,6 @@
 import { ORDER_STATUS, PAYMENT_STATUS, type OrderStatus, type PaymentStatus } from "@server/checkout/order.types";
 import type { StatusTone } from "@/components/shared/badges/StatusBadge";
+import { SHIPMENT_STATUS, SHIPMENT_STATUS_EFFECTS, type ShipmentStatus } from "@server/shipping/domain/shipping.types";
 
 interface Chip {
   label: string;
@@ -43,3 +44,14 @@ export const ORDER_TABS = [
   { key: ORDER_STATUS.DELIVERED, label: "Delivered", status: ORDER_STATUS.DELIVERED },
   { key: ORDER_STATUS.CANCELLED, label: "Cancelled", status: ORDER_STATUS.CANCELLED },
 ] as const;
+
+/**
+ * A parcel's tone. It follows the effects table, not a list of names: a state that owes the buyer
+ * money is the one an operator must notice, and a new state gets its colour by describing its cost.
+ */
+export function parcelTone(status: ShipmentStatus): StatusTone {
+  if (status === SHIPMENT_STATUS.DELIVERED) return "success";
+  if (SHIPMENT_STATUS_EFFECTS[status]?.refundOwed) return "destructive";
+  if (status === SHIPMENT_STATUS.PACKING) return "warning";
+  return "info";
+}

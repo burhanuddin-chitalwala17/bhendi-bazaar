@@ -55,4 +55,30 @@ describe("bulk product action schema", () => {
     expect(teamBulkProductActionSchema.safeParse({ ...price, reason: "Correcting a typo" }).success).toBe(true);
     expect(bulkProductActionSchema.safeParse({ ...price, reason: "Correcting a typo" }).success).toBe(false);
   });
+
+  // "Select all" (design-system Q35): the list's filters instead of ids, and never both.
+  describe("all that match", () => {
+    const matching = { action: "archive", matching: { search: "rida", shelf: "available", notReadyOn: "google" } };
+
+    it("accepts the list's filters in place of ids", () => {
+      expect(bulkProductActionSchema.safeParse(matching).success).toBe(true);
+    });
+
+    it("takes exactly one of ids and filters", () => {
+      expect(bulkProductActionSchema.safeParse({ ...matching, productIds: ["p1"] }).success).toBe(false);
+      expect(bulkProductActionSchema.safeParse({ action: "archive" }).success).toBe(false);
+    });
+
+    it("refuses a shop named inside the filters: the org is the path's", () => {
+      expect(bulkProductActionSchema.safeParse({ ...matching, matching: { ...matching.matching, orgId: "another-shop" } }).success).toBe(false);
+    });
+
+    it("refuses a channel the platform does not have", () => {
+      expect(bulkProductActionSchema.safeParse({ ...matching, matching: { notReadyOn: "ebay" } }).success).toBe(false);
+    });
+
+    it("is the shop's own list, never the team's", () => {
+      expect(teamBulkProductActionSchema.safeParse({ ...matching, reason: "Tidying up" }).success).toBe(false);
+    });
+  });
 });

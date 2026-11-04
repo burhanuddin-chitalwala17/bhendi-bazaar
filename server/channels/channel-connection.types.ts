@@ -176,6 +176,8 @@ export interface ChannelListingDTO {
   suggestion: ListingSuggestionDTO | null;
   /** Photos being copied from this listing onto its product (product-merge D6). */
   photos: { total: number; done: number; failed: number } | null;
+  /** What the marketplace says stops or limits it, from the daily look (marketplace-publish Q23); null when clean. */
+  problems: { suppressed: boolean; first: string; count: number } | null;
 }
 
 export const SUGGESTION_KIND = { SAME_SKU: "same_sku", SIMILAR_NAME: "similar_name" } as const;
@@ -211,8 +213,10 @@ export interface ChannelListingsPageDTO {
   connected: boolean;
   read: ChannelReadDTO;
   /** `notLinked` is the to-do: unsettled and not left off. */
-  counts: { linked: number; notLinked: number; leftOff: number };
+  counts: { linked: number; notLinked: number; leftOff: number; problems: number };
   showingLeftOff: boolean;
+  /** Only the linked listings the marketplace complains of (marketplace-publish Q23). */
+  showingProblems: boolean;
   listings: ChannelListingDTO[];
   hasMore: boolean;
   /** Each variation group on the page, across tabs: what its header offers (family-merge D6). */

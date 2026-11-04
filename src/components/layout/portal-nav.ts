@@ -36,7 +36,7 @@ export type PortalNavTarget =
 /** Every navigation key, closed so a page's "?" (help=…) cannot name one that does not exist. */
 export type PortalNavKey =
   | "home" | "orders" | "products" | "shop" | "listing" | "library" | "storefront" | "locations"
-  | "reviews" | "promotions" | "channels" | "bidding" | "earnings" | "details" | "setup" | "help" | "switch";
+  | "reviews" | "promotions" | "channels" | "bidding" | "earnings" | "details" | "help";
 
 export interface PortalNavEntry {
   key: PortalNavKey;
@@ -70,10 +70,7 @@ export const PORTAL_NAV: readonly PortalNavEntry[] = [
   { key: "bidding", label: "Bidding", purpose: "Auctions for one-off pieces", icon: "auction", target: { page: "bidding" }, group: PORTAL_GROUP.GROW },
   { key: "earnings", label: "Money you'll receive", purpose: "What you earned and when it's paid", icon: "payout", target: { page: "earnings" }, group: PORTAL_GROUP.MONEY, tab: true, tabLabel: "Earnings" },
   { key: "details", label: "Shop details", purpose: "Name, contact, tax", icon: "id-card", target: { page: "shop/details" }, group: PORTAL_GROUP.SETTINGS },
-  // Home's setup list carries this id; when hidden it keeps a "Show" row there (onboarding U3).
-  { key: "setup", label: "Setup list", purpose: "Your five first steps", icon: "checklist", target: { page: "#setup-list" }, group: PORTAL_GROUP.SETTINGS },
   { key: "help", label: "Help", purpose: "Ask us anything", icon: "support", target: { action: PORTAL_ACTION.CONTACT }, group: PORTAL_GROUP.SETTINGS },
-  { key: "switch", label: "Switch shop", purpose: "Work on another shop", icon: "repeat", target: { href: "/org" }, group: PORTAL_GROUP.SETTINGS },
 ];
 
 /** The href an entry opens for one shop, or null for an action. */

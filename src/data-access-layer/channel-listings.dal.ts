@@ -15,8 +15,8 @@ import { NotFoundError } from "@server/shared/domain-error";
 
 export type ListingsTab = "linked" | "notLinked";
 
-/** What the page lists: a tab, or the left-off listings behind Not linked (product-merge Q23). */
-export type ListingsView = ListingsTab | "leftOff";
+/** What the page lists: a tab, the left-off listings behind Not linked (product-merge Q23), or the linked ones needing a fix (publish Q23). */
+export type ListingsView = ListingsTab | "leftOff" | "problems";
 
 export interface ListingsPageQuery {
   tab: ListingsView;

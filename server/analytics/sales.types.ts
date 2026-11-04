@@ -68,3 +68,20 @@ export interface SalesOverview {
   /** Shops with at least one live parcel on a counted order in the window. */
   shopsSelling: Compared;
 }
+
+/**
+ * One shop's sales for a period and the one before (design-system Q34), from its payouts ledger,
+ * dated when each entry was written: a sale at payment, a reversal when a parcel is cancelled.
+ */
+export interface ShopSalesOverview {
+  period: SalesPeriod;
+  series: SalesDay[];
+  previousSeries: SalesDay[];
+  /** What buyers paid for this shop's goods, net of both funded discounts and of cancellations. */
+  total: Compared;
+  /** Orders paid that included this shop's goods. */
+  orders: Compared;
+  averageOrder: Compared;
+  /** What the shop is owed for the window's entries: sales after commission, less reversals and fees. */
+  payable: Compared;
+}

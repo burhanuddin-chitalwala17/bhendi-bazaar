@@ -188,10 +188,10 @@ export function ProductGallery(product: Product) {
   }, [isLightboxOpen]);
 
   return (
-    <div className="space-y-2 sm:space-y-3">
+    <div className="space-y-2 sm:space-y-3 lg:flex lg:flex-row-reverse lg:items-start lg:gap-4 lg:space-y-0">
       {/* Edge-to-edge on a phone — the gutter around a hero image is the clearest
           "this is a web page" tell, and 24px of it is 24px off the product. */}
-      <div className="group relative -mx-3 sm:-mx-6 md:mx-0">
+      <div className="group relative -mx-3 sm:-mx-6 md:mx-0 lg:min-w-0 lg:flex-1">
         <div
           ref={imageContainerRef}
           className={`relative aspect-4/5 overflow-hidden ${isVideoSlide ? "cursor-default" : "cursor-zoom-in"} border-border bg-muted touch-pan-x touch-pan-y md:rounded-card md:border`}
@@ -206,7 +206,7 @@ export function ProductGallery(product: Product) {
 
           {/* Image slider */}
           <div
-            className="relative flex h-full transition-transform duration-500 ease-out"
+            className="relative flex h-full transition-transform duration-slow ease-standard motion-reduce:transition-none"
             style={{
               transform: `translateX(-${activeIndex * 100}%)`,
             }}
@@ -248,7 +248,7 @@ export function ProductGallery(product: Product) {
                       ) : (
                         <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
                           <Icon name="video" size="xl" />
-                          <span className="text-xs">
+                          <span className="text-caption">
                             {item.state === "failed" ? "This video is not available" : "Video is being prepared"}
                           </span>
                         </span>
@@ -257,7 +257,7 @@ export function ProductGallery(product: Product) {
                   )
                 ) : (
                   <div
-                    className="relative w-full h-full transition-transform duration-200 ease-out"
+                    className="relative w-full h-full transition-transform duration-fast ease-standard"
                     style={{
                       transform: `scale(${
                         index === activeIndex ? (isZoomed ? 2 : scale) : 1
@@ -330,14 +330,14 @@ export function ProductGallery(product: Product) {
 
           {/* Image counter */}
           {media.length > 1 && (
-            <div className="absolute bottom-3 right-3 z-20 bg-scrim/80 backdrop-blur-sm border border-primary/30 rounded-lg px-3 py-1.5 text-xs font-medium text-hero-foreground">
+            <div className="absolute bottom-3 right-3 z-20 bg-scrim/80 backdrop-blur-sm border border-primary/30 rounded-field px-3 py-1.5 text-caption font-medium text-hero-foreground">
               {activeIndex + 1} / {media.length}
             </div>
           )}
 
           {/* Zoom indicator for mobile */}
           {scale > 1 && (
-            <div className="absolute top-3 right-3 z-20 bg-scrim/80 backdrop-blur-sm border border-primary/30 rounded-lg px-3 py-1.5 text-xs font-medium text-hero-foreground">
+            <div className="absolute top-3 right-3 z-20 bg-scrim/80 backdrop-blur-sm border border-primary/30 rounded-field px-3 py-1.5 text-caption font-medium text-hero-foreground">
               {Math.round(scale * 100)}%
             </div>
           )}
@@ -345,24 +345,24 @@ export function ProductGallery(product: Product) {
 
         {/* Desktop hover zoom hint */}
         {!isZoomed && media.length > 0 && (
-          <div className="absolute top-3 left-3 z-20 bg-scrim/60 backdrop-blur-sm border border-primary/20 rounded-lg px-3 py-1.5 text-xs font-medium text-hero-foreground/80 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block pointer-events-none">
+          <div className="absolute top-3 left-3 z-20 bg-scrim/60 backdrop-blur-sm border border-primary/20 rounded-field px-3 py-1.5 text-caption font-medium text-hero-foreground/80 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block pointer-events-none">
             Hover to zoom
           </div>
         )}
       </div>
 
-      {/* Thumbnail preview */}
+      {/* Thumbnails: a line under the photo, a rail beside it from desktop (StorePDPDesktop). */}
       {media.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar lg:w-18 lg:shrink-0 lg:flex-col lg:gap-2.5 lg:overflow-visible lg:pb-0">
           {media.map((item, index) => (
             <Button
               key={item.id}
               type="button"
               variant="ghost"
               onClick={() => goToIndex(() => index)}
-              className={`relative shrink-0 w-16 h-auto p-0 aspect-4/5 sm:w-20 rounded-field border-2 overflow-hidden ${
+              className={`relative shrink-0 w-16 h-auto p-0 aspect-4/5 sm:w-20 lg:w-full rounded-field border-2 overflow-hidden ${
                 activeIndex === index
-                  ? "border-primary ring-2 ring-ring/30 scale-105"
+                  ? "border-foreground"
                   : "border-border/70 hover:border-primary/50 opacity-70 hover:opacity-100"
               }`}
               aria-label={

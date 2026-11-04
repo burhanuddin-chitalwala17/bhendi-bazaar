@@ -35,7 +35,8 @@ export const FROM_ACTIVE_ORG = {
 export const ARCHIVED = { archivedAt: { not: null } } satisfies Prisma.ProductWhereInput;
 
 /** Which shelf an org is asking about. `all` spreads nothing. */
-export type ProductShelf = "available" | "archived" | "all";
+export const PRODUCT_SHELVES = ["available", "archived", "all"] as const;
+export type ProductShelf = (typeof PRODUCT_SHELVES)[number];
 
 export function shelfFilter(shelf: ProductShelf = "available"): Prisma.ProductWhereInput {
   switch (shelf) {

@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * Edit and stop, on an offer card.
+ * Edit and stop, on an offer's row. The whole row opens the edit page; Edit is spelled out
+ * from a tablet, where a table row reads less obviously as a link.
  *
  * A client leaf inside a server-rendered list — the list itself needs no interactivity,
  * so the boundary sits here rather than at the page.
@@ -42,8 +43,8 @@ export function OfferActions({
   const stop = () => mutate().catch(() => {});
 
   return (
-    <div className="mt-3 flex gap-2 border-t border-border pt-3">
-      <Button asChild variant="outline" size="sm">
+    <div className="flex items-center justify-end gap-1">
+      <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
         <Link href={editHref} prefetch={false}>
           <Icon name="edit" size="xs" /> Edit
         </Link>

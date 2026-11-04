@@ -44,6 +44,11 @@ export interface SelectionBarProps extends VariantProps<
   onClear: () => void;
   /** "selected" by default; a screen may name the thing: "products selected". */
   noun?: string;
+  /**
+   * Widen the selection past the page (design-system Q35): offered once every visible row is
+   * picked, as Gmail and Shopify do. The screen says what "all" is: "Select all 105".
+   */
+  selectAll?: { label: string; onClick: () => void };
 }
 
 /** What to do with the rows a viewer picked. Absent until something is picked. */
@@ -53,6 +58,7 @@ export function SelectionBar({
   onClear,
   noun = "selected",
   dock,
+  selectAll,
 }: SelectionBarProps) {
   if (count <= 0) return null;
   const shown = actions.slice(0, VISIBLE_ACTIONS);
@@ -71,6 +77,11 @@ export function SelectionBar({
         >
           {count} {noun}
         </p>
+        {selectAll && (
+          <Button variant="inverse" size="sm" className="underline underline-offset-4" onClick={selectAll.onClick}>
+            {selectAll.label}
+          </Button>
+        )}
         {shown.map((action) => (
           <Button
             key={action.label}

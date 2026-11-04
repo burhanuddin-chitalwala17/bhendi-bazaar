@@ -2,6 +2,7 @@
  * The admin dashboard's figures and both "Needs attention" queues against a real schema
  * (design-system Q30, Q31). Sales run in 2011, where nothing else lives, so their sums are exact;
  * the admin queue is platform-wide, so it is asserted as the change this suite's own rows make.
+ * A shop's own sales (Q34) run in 2012, clear of the platform's 2011 sums.
  * Owns its world: fresh orgs, removed afterwards.
  */
 import "dotenv/config";
@@ -86,7 +87,7 @@ describe.skipIf(!isDisposableDb)("admin dashboard metrics (local db)", () => {
     await prisma.orderItem.create({ data: { orderId, productId, quantity, unitPrice: 10_000 } });
   };
 
-  const ledger = (orgId: string, e: { gross?: number; orgFunded?: number; platformFunded?: number; commission?: number; payable: number; createdAt: Date; kind?: "SALE" | "CANCELLATION_FEE"; deleted?: boolean }) =>
+  const ledger = (orgId: string, e: { gross?: number; orgFunded?: number; platformFunded?: number; commission?: number; payable: number; createdAt: Date; kind?: "SALE" | "REVERSAL" | "CANCELLATION_FEE"; deleted?: boolean }) =>
     prisma.orgLedgerEntry.create({
       data: {
         orgId,
@@ -272,6 +273,41 @@ describe.skipIf(!isDisposableDb)("admin dashboard metrics (local db)", () => {
       expect(after.payouts.shops - before.payouts.shops).toBe(1);
       expect(after.payouts.amountPaise - before.payouts.amountPaise).toBe(10_000);
       expect(after.courierConflicts.count - before.courierConflicts.count).toBe(1);
+    });
+  });
+
+  describe("one shop's sales, from its ledger (Q34)", () => {
+    // 10:00 in India on 2 March 2012 (a leap year): the period is 25 Feb–2 Mar, the one before 18–24 Feb.
+    const now = new Date("2012-03-02T04:30:00Z");
+    let shopA: string;
+
+    beforeAll(async () => {
+      shopA = await newOrg("sa");
+      const shopB = await newOrg("sb");
+      // 1 Mar in India: paid 10,000 of goods, 800 off between the shop and the platform.
+      await ledger(shopA, { gross: 10_000, orgFunded: 500, platformFunded: 300, payable: 8_000, createdAt: new Date("2012-03-01T06:00:00Z") });
+      // 00:30 on 1 Mar in India is still 29 Feb in UTC: it belongs to 1 Mar.
+      await ledger(shopA, { gross: 1_000, payable: 900, createdAt: new Date("2012-02-29T19:00:00Z") });
+      // A parcel cancelled today nets out of sales; its fee comes off what the shop receives.
+      await ledger(shopA, { kind: "REVERSAL", gross: -2_000, payable: -1_600, createdAt: new Date("2012-03-02T03:00:00Z") });
+      await ledger(shopA, { kind: "CANCELLATION_FEE", payable: -100, createdAt: new Date("2012-03-02T03:00:00Z") });
+      // Not counted: a deleted entry, one after now, and another shop's.
+      await ledger(shopA, { gross: 50_000, payable: 40_000, createdAt: new Date("2012-03-01T06:00:00Z"), deleted: true });
+      await ledger(shopA, { gross: 70_000, payable: 60_000, createdAt: new Date("2012-03-02T05:00:00Z") });
+      await ledger(shopB, { gross: 99_999, payable: 90_000, createdAt: new Date("2012-03-01T06:00:00Z") });
+      // The period before.
+      await ledger(shopA, { gross: 5_000, payable: 4_000, createdAt: new Date("2012-02-20T06:00:00Z") });
+    });
+
+    it("sums only this shop's live entries, nets cancellations and buckets by India day", async () => {
+      const s = await sales.shopSalesOverview(shopA, SALES_PERIOD.WEEK, now);
+      expect(s.total).toEqual({ current: 8_200, previous: 5_000, changeBps: 6_400 });
+      expect(s.orders).toEqual({ current: 2, previous: 1, changeBps: 10_000 });
+      expect(s.averageOrder.current).toBe(4_100);
+      expect(s.payable).toEqual({ current: 7_200, previous: 4_000, changeBps: 8_000 });
+      expect(s.series.map((d) => d.day)).toEqual(["2012-02-25", "2012-02-26", "2012-02-27", "2012-02-28", "2012-02-29", "2012-03-01", "2012-03-02"]);
+      expect(s.series.slice(-2).map((d) => d.paise)).toEqual([10_200, -2_000]);
+      expect(s.previousSeries.find((d) => d.day === "2012-02-20")?.paise).toBe(5_000);
     });
   });
 });

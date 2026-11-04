@@ -40,6 +40,13 @@ export interface StatusAnswer {
   showing: { title: string | null; mainImageUrl: string | null };
 }
 
+/** A listing the marketplace says has a problem now (marketplace-publish Q23): its errors, and whether it is hidden from shoppers. */
+export interface ListingProblem {
+  sku: string;
+  issues: ListingIssue[];
+  suppressed: boolean;
+}
+
 /** A page already on the marketplace that a product could sell on (D6). */
 export interface PageMatch {
   externalId: string;

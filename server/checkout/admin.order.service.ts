@@ -4,6 +4,10 @@
  */
 
 import { adminOrderRepository } from "@server/checkout/admin.order.repository";
+import { ORDER_EXPORT_CAP, ordersCsv } from "@server/checkout/order-export";
+import { recordAdminActionIn } from "@server/shared/audit/audit.service";
+import { DomainError } from "@server/shared/domain-error";
+import { prisma } from "@server/shared/prisma";
 import type {
   OrderAddressSnapshot,
   OrderListFilters,
@@ -11,7 +15,36 @@ import type {
   OrderStats,
 } from "@server/checkout/admin.order.types";
 
+/** The audit trail's name for an export of buyers' details. */
+export const ORDERS_EXPORTED = "ORDERS_EXPORTED";
+
 export class AdminOrderService {
+  /**
+   * A view of the orders as CSV, for a platform admin (design-system Q37). The file holds buyers'
+   * names, phones and addresses, so the trail is written first and must land: no entry, no file.
+   */
+  async exportOrders(
+    adminId: string,
+    view: Pick<OrderListFilters, "search" | "status" | "paymentStatus" | "sortBy" | "sortOrder">,
+  ): Promise<{ csv: string; count: number }> {
+    const rows = await adminOrderRepository.exportRows(view, ORDER_EXPORT_CAP);
+    if (rows.length > ORDER_EXPORT_CAP) {
+      throw new DomainError(
+        `This view has more than ${ORDER_EXPORT_CAP.toLocaleString("en-IN")} orders. Narrow it with a status, payment or search, then export again.`,
+        { status: 422 },
+      );
+    }
+    await recordAdminActionIn(prisma, {
+      adminId,
+      action: ORDERS_EXPORTED,
+      resource: "Order",
+      resourceId: "export",
+      metadata: { view, count: rows.length },
+    });
+    return { csv: ordersCsv(rows), count: rows.length };
+  }
+
+
   /** Visible orders by status, for the console's tabs. */
   countByStatus(): Promise<Record<string, number>> {
     return adminOrderRepository.countByStatus();

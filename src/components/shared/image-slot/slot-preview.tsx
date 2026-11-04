@@ -14,12 +14,15 @@ export function SlotPreview({
   aspect,
   sizes,
   className,
+  children,
 }: {
   side: ResponsiveImageSide | null;
   /** Width over height of the box. */
   aspect: number;
   sizes: string;
   className?: string;
+  /** Drawn over the picture: what the slot lays on it (a banner's words). */
+  children?: React.ReactNode;
 }) {
   return (
     <div
@@ -39,6 +42,7 @@ export function SlotPreview({
           }}
         />
       ) : null}
+      {children}
     </div>
   );
 }

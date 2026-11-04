@@ -1,20 +1,23 @@
 /** Platform offers. Scope is fixed by the route, not chosen in the page. */
-import { requirePlatformAdmin } from "@/lib/admin-auth";
-import { adminPromotionService } from "@server/promotions/admin.promotion.service";
 import Link from "next/link";
+
 import { Button } from "@/components/ui/button";
-import { OfferList, type OfferRow } from "@/components/promotions/OfferList";
 import { Icon } from "@/components/ui/icon";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
+import { OffersBrowser } from "@/components/promotions/offers-browser";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
+import { offerListQuerySchema } from "@/lib/validation/schemas/promotion.schema";
+import { adminPromotionService } from "@server/promotions/admin.promotion.service";
 
-export default async function AdminPromotionsPage() {
+export default async function AdminPromotionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requirePlatformAdmin();
-  const offers = (await adminPromotionService.list({
-    scope: "PLATFORM",
-  })) as unknown as {
-    offers: OfferRow[];
-    pagination: { page: number; totalPages: number; total: number };
-  };
+  const query = offerListQuerySchema.parse(await searchParams);
+  const now = new Date();
+  const result = await adminPromotionService.listOffers({ scope: "PLATFORM" }, query, now);
 
   return (
     <PageShell width="wide">
@@ -29,10 +32,13 @@ export default async function AdminPromotionsPage() {
           </Button>
         }
       />
-      <OfferList
-        offers={offers.offers}
+      <OffersBrowser
+        result={result}
+        query={query}
+        now={now}
         basePath="/admin/promotions"
         apiPath="/api/admin/promotions"
+        newHref="/admin/promotions/new"
       />
     </PageShell>
   );

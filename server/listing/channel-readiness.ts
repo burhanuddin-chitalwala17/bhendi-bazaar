@@ -56,6 +56,9 @@ const BAND: Readonly<Record<ListingProblemKind, Exclude<ListingReadiness, "ready
   [LISTING_PROBLEM.MISSING_OPTIONAL_FACT]: LISTING_READINESS.WARNED,
 };
 
+/** Whether a problem keeps a product off the channel, by the band above, so callers never list them again. */
+export const keepsItOff = (problem: ListingProblemKind): boolean => BAND[problem] === LISTING_READINESS.INCOMPLETE;
+
 /** A category mapping, as much of it as deciding needs. */
 export interface CategoryMapping {
   /** Null means every kind of the type; a row naming the kind wins over it. */

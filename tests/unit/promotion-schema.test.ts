@@ -187,3 +187,18 @@ describe("Show on my shop (storefront-themes Q20)", () => {
     expect(result.success && "showOnStorefront" in result.data).toBe(false);
   });
 });
+
+describe("the offers list's URL (offers list Q1)", () => {
+  // The sort column is spread into Prisma's orderBy, and the URL is hand-typeable.
+  it("never lets an unknown sort column or status through; it falls back instead of erroring", async () => {
+    const { offerListQuerySchema } = await import("@/lib/validation/schemas/promotion.schema");
+    const q = offerListQuerySchema.parse({ sortBy: "usageCount; drop", sortOrder: "sideways", status: "deleted", kind: "x", page: "-3" });
+    expect(q).toEqual({ status: "all", kind: "all", search: "", sortBy: "createdAt", sortOrder: "desc", page: 1 });
+  });
+
+  it("reads a repeated parameter's first value and trims the search", async () => {
+    const { offerListQuerySchema } = await import("@/lib/validation/schemas/promotion.schema");
+    const q = offerListQuerySchema.parse({ status: ["live", "ended"], search: "  tote  ", sortBy: "endsAt", sortOrder: "asc", page: "2" });
+    expect(q).toMatchObject({ status: "live", search: "tote", sortBy: "endsAt", sortOrder: "asc", page: 2 });
+  });
+});

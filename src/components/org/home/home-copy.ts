@@ -12,7 +12,6 @@ export const HOME_COPY = {
   ordersFailed: "Couldn't load orders.",
   tryAgain: "Try again",
   retry: "Retry",
-  numbers: "Your numbers",
   numbersBeforeFirstOrder: "Your numbers start with your first order.",
   updated: (minutes: number) => `Updated ${minutes} min ago`,
   refresh: "Refresh",
@@ -21,7 +20,7 @@ export const HOME_COPY = {
   show: "Show",
   setUp: "Your shop is set up.",
   seeYourShop: "See your shop",
-  hidden: "Hidden. Find it under More → Setup list",
+  hidden: "Hidden. It stays on Home as one line, to show again.",
   undo: "Undo",
   setupFailed: "Couldn't load your setup list.",
 } as const;

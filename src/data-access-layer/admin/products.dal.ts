@@ -12,7 +12,9 @@ import { isRenderableImageUrl, renderableMedia } from "@server/catalog/image-pat
 import { toProductMediaDto } from "@server/catalog/media";
 import { parseStoredFacts, parseStoredMeasurements } from "@server/listing/listing-facts";
 import { LOGO } from "@/lib/config";
-import { NotFoundError } from "@server/shared/domain-error";
+import { DomainError, NotFoundError } from "@server/shared/domain-error";
+import type { NotReadyReason } from "@server/listing/channel-readiness.service";
+import { orgChannelSummaryDAL } from "@/data-access-layer/org/channel-summary.dal";
 import type { ProductCopyOption, ProductCopySource } from "@server/catalog/admin.product.types";
 
 /**
@@ -28,6 +30,30 @@ const buyerPriceOf = (
   return offerPricePaise < pricePaise ? offerPricePaise : undefined;
 };
 
+/**
+ * The filters that decide *which* products before the catalog query, as ids from the domain that
+ * owns the answer: saves from wishlist, readiness from listing (ADR-0012). Both set: both must hold.
+ */
+async function idsInScope(filters: ProductFilters): Promise<{ productIds?: string[]; notReady?: Map<string, NotReadyReason[]> }> {
+  const [saved, notReady] = await Promise.all([
+    filters.wishlistedOnly ? wishlistService.listSavedProductIds(filters.orgId) : undefined,
+    filters.notReadyOn && filters.orgId ? orgChannelSummaryDAL.notReadyOn(filters.orgId, filters.notReadyOn) : undefined,
+  ]);
+  if (!notReady) return { productIds: saved };
+  const refused = [...notReady.keys()];
+  if (!saved) return { productIds: refused, notReady };
+  const savedSet = new Set(saved);
+  return { productIds: refused.filter((id) => savedSet.has(id)), notReady };
+}
+
+/** What the catalog query filters on itself; the rest became ids above. */
+function catalogPart(filters: ProductFilters) {
+  const { wishlistedOnly, notReadyOn, ...rest } = filters;
+  void wishlistedOnly;
+  void notReadyOn;
+  return rest;
+}
+
 class ProductsDAL {
   // ✅ React cache - deduplicates requests in same render
   getProducts = cache(async (filters: ProductFilters): Promise<{ products: ProductForTable[]; pagination: Pagination }> => {
@@ -35,10 +61,8 @@ class ProductsDAL {
     // the catalog query rather than merged in after it like the demand column. The
     // wishlist domain answers in ids and catalog filters on them, so neither learns to
     // read the other's table (ADR-0012).
-    const { wishlistedOnly, ...catalogFilters } = filters;
-    const productIds = wishlistedOnly
-      ? await wishlistService.listSavedProductIds(filters.orgId)
-      : undefined;
+    const { productIds, notReady } = await idsInScope(filters);
+    const catalogFilters = catalogPart(filters);
 
     const [{ products, pagination }, context] = await Promise.all([
       productsService.getProducts({ ...catalogFilters, productIds }),
@@ -68,9 +92,22 @@ class ProductsDAL {
         createdAt: product.createdAt,
         category: product.category,
         org: product.org,
+        ...(notReady && { notReady: notReady.get(product.id) ?? [] }),
       })), pagination
     };
   });
+
+  /**
+   * Every product a list's filters match, for "Select all" (design-system Q35): the ids the server
+   * found itself, never the browser's. More than `cap` is refused rather than cut, so an action
+   * never lands on an arbitrary part of what the shop asked for.
+   */
+  matchingIds = async (filters: ProductFilters & { orgId: string }, cap: number): Promise<string[]> => {
+    const { productIds } = await idsInScope(filters);
+    const { products } = await productsService.getProducts({ ...catalogPart(filters), productIds, page: 1, limit: cap + 1 });
+    if (products.length > cap) throw new DomainError(`That is more than ${cap} products. Narrow the list with a filter and try again.`, { status: 422 });
+    return products.map((p) => p.id);
+  };
 
   /** `null` means every org — only a platform page may ask for that. */
   getStats = cache(async (orgId: string | null): Promise<ProductStats> => {

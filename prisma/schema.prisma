@@ -2436,6 +2436,12 @@ model ChannelListing {
   photoFailed    Int?
   photoUpdatedAt DateTime?
 
+  /// What the marketplace says stops or limits this listing, from the daily look (marketplace-publish Q23):
+  /// its issues as ours, whether it is suppressed, and since when; all null once a look finds it clean.
+  problems      Json?
+  problemsSince DateTime?
+  suppressed    Boolean   @default(false)
+
   /// The start of the last read that saw this listing; earlier than a finished read means gone (D8).
   lastSeenAt DateTime
   goneAt     DateTime?

@@ -59,7 +59,6 @@ export function CartItem({
           {item.productName}
         </Link>
         {variant && <p className="text-caption text-muted-foreground">{variant}</p>}
-        <PriceDisplay price={item.price} salePrice={item.salePrice} size="sm" showBadge={false} />
         {!isLoadingStock && stock !== null && <StockStatus stock={stock} size="xs" variant="warn-only" />}
 
         <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
@@ -74,16 +73,17 @@ export function CartItem({
               <Icon name="add" size="sm" />
             </Button>
           </div>
-          <div className="flex items-center gap-1">
-            {onMoveToSaved && (
-              <Button variant="link" size="sm" type="button" className="px-2 text-muted-foreground" onClick={() => onMoveToSaved(item)}>
-                Move to saved
-              </Button>
-            )}
-            <Button variant="link" size="sm" type="button" className="px-2 text-muted-foreground" onClick={() => removeItem(item.id)}>
-              Remove
+          <PriceDisplay price={item.price} salePrice={item.salePrice} size="sm" showBadge={false} className="flex-col items-end gap-0" />
+        </div>
+        <div className="-ml-2 flex items-center gap-1">
+          {onMoveToSaved && (
+            <Button variant="link" size="sm" type="button" className="px-2 text-muted-foreground" onClick={() => onMoveToSaved(item)}>
+              Move to saved
             </Button>
-          </div>
+          )}
+          <Button variant="link" size="sm" type="button" className="px-2 text-muted-foreground" onClick={() => removeItem(item.id)}>
+            Remove
+          </Button>
         </div>
       </div>
     </li>

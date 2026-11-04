@@ -71,7 +71,6 @@ export default async function OrgLayout({
           label={PORTAL_COPY.headerLabel}
           storefrontHref={handle ? `/store/${handle}` : undefined}
           leading={<OrgSwitcher orgs={orgs} currentOrgId={orgId} variant="bar" />}
-          search={{ href: `/org/${orgId}/products#search`, label: PORTAL_COPY.searchProducts }}
         />
         {/* Phone: clear the fixed tab bar, so the last row of every page stays tappable. */}
         <main className="min-w-0 flex-1 p-4 pb-tabbar md:p-8">{children}</main>

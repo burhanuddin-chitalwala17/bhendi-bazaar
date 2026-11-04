@@ -55,7 +55,6 @@ const SHAPE_LEGACY = new Set([
   "src/components/layout/navbar/NavbarSearch.tsx",
   "src/components/layout/navbar/ProfileMenu.tsx",
   "src/components/product/console/productEdit/index.tsx",
-  "src/components/product/product-gallery.tsx",
   "src/components/product/reviews.tsx",
   "src/components/profile/address-modal.tsx",
   "src/components/profile/addresses-section.tsx",

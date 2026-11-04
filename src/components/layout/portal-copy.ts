@@ -5,5 +5,4 @@ export const PORTAL_COPY = {
   pausedTitle: "Your shop is paused",
   pausedBody: "Contact us to reopen it.",
   contactUs: "Contact us",
-  searchProducts: "Search your products",
 } as const;

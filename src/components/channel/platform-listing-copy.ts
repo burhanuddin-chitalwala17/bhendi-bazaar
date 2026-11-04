@@ -90,6 +90,21 @@ export const PUBLISH = {
   exemptionUrl: "https://sellercentral.amazon.in/gtinx",
 };
 
+/** What a marketplace says stops a listing, from the daily look (marketplace-publish Q23, ux.md "Problems"). */
+export const PROBLEMS = {
+  suppressed: "Suppressed",
+  needsFix: "Needs a fix",
+  line: (label: string, first: string, more: number) => `${label} says: ${first}${more > 0 ? ` (+${more} more)` : ""}`,
+  fix: "Fix",
+  filter: (n: number) => `Needs fixing ${n}`,
+  home: (label: string, n: number, hidden: number) =>
+    `${n} ${label} listing${n === 1 ? " needs" : "s need"} a fix${hidden > 0 ? `: ${hidden} hidden from shoppers` : ""}`,
+  bannerTitle: (label: string, suppressed: boolean) => (suppressed ? `Suppressed on ${label}: shoppers can't find or buy it` : `${label} found a problem with this listing`),
+  bannerHow: (label: string) => `Fix what it names below, then Review and publish. If it names something not on this page, fix it in ${label} Seller Central; we look again every day.`,
+  openCentral: "Open Seller Central",
+  centralUrl: "https://sellercentral.amazon.in/myinventory/inventory",
+} as const;
+
 export const CREATE = {
   putOn: (label: string) => `Put on ${label}`,
   putFamilyOn: (label: string) => `Put the family on ${label}`,

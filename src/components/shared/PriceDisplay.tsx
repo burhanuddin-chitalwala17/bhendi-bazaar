@@ -1,7 +1,7 @@
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { OfferBadge } from "./badges/StatusBadge";
-import { effectivePrice, hasOffer } from "@/domain/product";
+import { effectivePrice, hasOffer, percentOff } from "@/domain/product";
 
 interface PriceDisplayProps {
   price: number;
@@ -54,7 +54,7 @@ export function PriceDisplay({
           >
             {formatCurrency(price)}
           </span>
-          {showBadge && <OfferBadge />}
+          {showBadge && <OfferBadge percentOff={percentOff({ price, salePrice })} />}
         </>
       )}
     </div>

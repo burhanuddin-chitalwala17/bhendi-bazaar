@@ -43,15 +43,19 @@ export function ListingToolbar({
   basePath: string;
   /** The page's current search parameters, carried through every toggle. */
   params: Record<string, string | undefined>;
-  count: number;
+  /** Omitted where the page header already states it (StoreCategory: beside the title). */
+  count?: number;
   filters?: ListingFilter[];
 }) {
   return (
-    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    // A ruled band, edge to edge of the page gutter (StoreCategory, StoreCategoryTablet).
+    <div className="-mx-3 flex flex-col gap-3 border-y border-border px-3 py-2.5 sm:-mx-6 sm:px-6 md:flex-row md:items-center md:justify-between lg:-mx-8 lg:px-8">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="mr-1 text-small text-muted-foreground" aria-live="polite">
-          {countLabel(count)}
-        </p>
+        {count !== undefined && (
+          <p className="mr-1 text-small text-muted-foreground" aria-live="polite">
+            {countLabel(count)}
+          </p>
+        )}
         {filters.map((filter) => {
           const on = params[filter.param] === filter.value;
           return (

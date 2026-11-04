@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { ResourceList, type ResourceColumn } from "@/components/shared/resource-list";
 import { StatusBadge, type StatusTone } from "@/components/shared/badges/StatusBadge";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDate, formatTime } from "@/lib/format";
 import { SHIPMENT_STATUS, type ShipmentStatus } from "@server/shipping/domain/shipping.types";
 import type { ShopOrderView, ShopParcelView } from "@server/checkout/shop-parcel.types";
 import { SHOP_ORDERS_COPY, parcelOfLine } from "./parcel-copy";
@@ -28,6 +29,13 @@ const TONE: Partial<Record<ShipmentStatus, StatusTone>> = {
 export function ShopOrderRows({ rows, orgId }: { rows: Row[]; orgId?: string }) {
   const columns: ResourceColumn<Row>[] = [
     { key: "order", label: "Order", phone: "title", cell: ({ order }) => order.code },
+    // How long the buyer has waited is what "To pack" is sorted by; the row says it (the shop Orders prototype).
+    {
+      key: "paid",
+      label: "Paid",
+      phone: "meta",
+      cell: ({ parcel }) => (parcel.paidAt ? `${formatDate(parcel.paidAt, { day: "numeric", month: "short" })}, ${formatTime(parcel.paidAt)}` : "—"),
+    },
     {
       key: "items",
       label: "Items",
@@ -64,6 +72,11 @@ export function ShopOrderRows({ rows, orgId }: { rows: Row[]; orgId?: string }) 
       rowLabel={({ order }) => order.code}
       columns={columns}
       rowHref={({ href }) => href}
+      thumbnail={({ parcel }) =>
+        parcel.items[0]?.thumbnail ? (
+          <Image src={parcel.items[0].thumbnail} alt="" width={44} height={55} sizes="44px" className="aspect-4/5 w-11 rounded-field object-cover" />
+        ) : null
+      }
     />
   );
 }

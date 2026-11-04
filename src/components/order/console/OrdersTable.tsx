@@ -11,6 +11,8 @@ import { orderChip, paymentChip } from "./order-status";
 
 interface Props {
   orders: AdminOrderRow[];
+  /** The order open beside the list (`?order=`, Q36). */
+  peekId?: string;
   page: number;
   pageSize: number;
   totalPages: number;
@@ -47,7 +49,7 @@ const ORDER_COLUMNS: ResourceColumn<AdminOrderRow>[] = [
  * The rows. The status is read-only: it summarises the parcels (order-fulfilment D4, Q30), which
  * move from the pickup queue and the order's own screen. Paging navigates; the URL is the query.
  */
-export function OrdersTable({ orders, page, pageSize, totalPages, total }: Props) {
+export function OrdersTable({ orders, peekId, page, pageSize, totalPages, total }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -61,12 +63,22 @@ export function OrdersTable({ orders, page, pageSize, totalPages, total }: Props
     router.push(`${pathname}?${next.toString()}`);
   };
 
+  // From desktop a row opens beside the list, keeping the view; below it, the full page (Q36).
+  const peekHref = (o: AdminOrderRow) => {
+    const next = new URLSearchParams(params.toString());
+    next.set("order", o.id);
+    return `${pathname}?${next.toString()}`;
+  };
+
   return (
     <ResourceList
       label="Orders"
       rows={orders}
       rowKey={(o) => o.id}
       rowHref={(o) => `/admin/orders/${o.id}`}
+      tableRowHref={peekHref}
+      activeKey={peekId}
+      tableFrom="lg"
       columns={ORDER_COLUMNS}
       empty={{ title: "No orders here", description: "Orders that match this view appear here." }}
       footer={

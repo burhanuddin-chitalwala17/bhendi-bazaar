@@ -14,6 +14,7 @@ import type { ProductForTable } from "../../types";
 import { ProductRowMenu } from "./ProductRowMenu";
 import { useProductsBasePath } from "@/components/product/console/useProductsBasePath";
 import { productStatus } from "./product-status";
+import { CHANNEL_FILTER } from "../channel-filter-copy";
 
 interface ProductsTableProps {
   products: ProductForTable[];
@@ -30,6 +31,8 @@ interface ProductsTableProps {
   selection?: ResourceSelection;
   /** What the empty list says, which depends on the filter it is showing. */
   empty: { title: string; description: string; action?: { label: string; href: string } };
+  /** The channel the list is filtered to, by name: each row then says what keeps it off (Q35). */
+  notReadyChannel?: string;
 }
 
 /** The products list: a row per product on a phone, a dense table from a tablet (one component). */
@@ -44,6 +47,7 @@ export function ProductsTable({
   readOnly = false,
   selection,
   empty,
+  notReadyChannel,
 }: ProductsTableProps) {
   const basePath = useProductsBasePath();
 
@@ -53,9 +57,20 @@ export function ProductsTable({
       label: "Product",
       sortable: true,
       phone: "title",
-      cell: (p) => (
-        <span className={p.archivedAt ? "text-muted-foreground" : undefined}>{p.name}</span>
-      ),
+      cell: (p) => {
+        const reasons = notReadyChannel ? (p.notReady ?? []) : [];
+        return (
+          <span className="flex flex-col items-start gap-1">
+            <span className={p.archivedAt ? "text-muted-foreground" : undefined}>{p.name}</span>
+            {reasons.length > 0 && (
+              <StatusBadge tone="warning">
+                {CHANNEL_FILTER.reason(reasons[0], notReadyChannel!)}
+                {reasons.length > 1 && ` ${CHANNEL_FILTER.more(reasons.length - 1)}`}
+              </StatusBadge>
+            )}
+          </span>
+        );
+      },
     },
     {
       key: "price",

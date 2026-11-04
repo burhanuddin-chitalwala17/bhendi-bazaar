@@ -58,8 +58,8 @@ describe("the product grid and its image sizes move together (Q19)", () => {
   it("asks for no more than a column's width at each form factor", () => {
     expect(slot(null)).toBe(`${100 / columns("")}vw`);
     expect(slot("(min-width: 768px)")).toBe(`${Math.round(100 / columns("md:"))}vw`);
-    // The 72rem page split four ways is 288px before gaps; asking more is the 1600px tile.
-    expect(parseInt(slot("(min-width: 1024px)"), 10)).toBeLessThanOrEqual(1152 / columns("lg:"));
+    // The 90rem page split four ways is 360px before gaps; asking more is the 1600px tile.
+    expect(parseInt(slot("(min-width: 1024px)"), 10)).toBeLessThanOrEqual(1440 / columns("lg:"));
   });
 });
 

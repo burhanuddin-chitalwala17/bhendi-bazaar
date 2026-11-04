@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/shared/page-shell";
+import { Icon } from "@/components/ui/icon";
 import { CheckoutContainer } from "@/components/checkout";
 import { productsDAL } from "@/data-access-layer/products.dal";
 import { CartItem } from "@/domain/cart";
@@ -46,8 +47,17 @@ export default async function CheckoutPage({
 
   return (
     <div className="space-y-6">
-      {/* The focused top bar names the page on a phone; the h1 stays for assistive tech. */}
-      <PageHeader title="Checkout" className="sr-only md:not-sr-only" />
+      {/* StoreCheckout's bar: the way back to the bag, the page's name, and that payment is secure. */}
+      <PageHeader
+        title="Checkout"
+        back={{ href: "/cart", label: "Your bag" }}
+        actions={
+          <span className="inline-flex items-center gap-1.5 text-caption font-medium text-success">
+            <Icon name="secure" size="sm" />
+            Secure
+          </span>
+        }
+      />
 
       {/* Keyed: a different buy-now item is a different checkout, with its own snapshot. */}
       <CheckoutContainer key={buyNow ?? "cart"} buyNowProduct={buyNowProductCartItem} />

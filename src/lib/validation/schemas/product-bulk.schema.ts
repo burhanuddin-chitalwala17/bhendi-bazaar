@@ -8,6 +8,7 @@ import {
 } from "@server/catalog/product-bulk.types";
 import { MARKETPLACE_CHANNELS } from "@server/channels/channel-connection.types";
 import { STOCK_MAX } from "./product.schema";
+import { productListScopeSchema } from "./product-list.schema";
 
 /**
  * A bulk action on selected products (design-system Q29), one shape per action. Every object is
@@ -66,13 +67,26 @@ const actions = {
   send: { action: z.literal(BULK_ACTION.SEND), productIds, channel: z.enum(MARKETPLACE_CHANNELS) },
 };
 
+/**
+ * "Select all" (design-system Q35): instead of ids, the list's filters, from which the server finds
+ * the products itself. Exactly one of the two. Not for stock, whose rows carry what each editor saw.
+ */
+const orgTarget = { productIds: productIds.optional(), matching: productListScopeSchema.optional() };
+
 /** A shop member's bulk action: its own products, by the org in the path. */
-export const bulkProductActionSchema = z.discriminatedUnion("action", [
-  z.strictObject(actions.price),
-  z.strictObject(actions.stock),
-  z.strictObject(actions.archive),
-  z.strictObject(actions.send),
-]);
+export const bulkProductActionSchema = z
+  .discriminatedUnion("action", [
+    z.strictObject({ ...actions.price, ...orgTarget }),
+    z.strictObject(actions.stock),
+    z.strictObject({ ...actions.archive, ...orgTarget }),
+    z.strictObject({ ...actions.send, ...orgTarget }),
+  ])
+  .superRefine((body, ctx) => {
+    if (body.action === BULK_ACTION.STOCK) return;
+    if ((body.productIds === undefined) === (body.matching === undefined)) {
+      ctx.addIssue({ code: "custom", path: ["productIds"], message: "Choose the products, or ask for all that match" });
+    }
+  });
 
 /** The team's: the same, with the reason the shop will read (product-form D11, Q22). */
 export const teamBulkProductActionSchema = z.discriminatedUnion("action", [

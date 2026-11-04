@@ -16,6 +16,8 @@ import { ID_NAME, ROW, STATUS_TEXT, priceAndStock } from "./listing-copy";
 import { LISTINGS_SETTLE } from "./settle-copy";
 import { AskAdminPicker } from "./ask-admin-picker";
 import { ASK_ADMIN } from "./facts-copy";
+import { PROBLEMS } from "./platform-listing-copy";
+import { Button } from "@/components/ui/button";
 
 interface ListingRowProps {
   orgId: string;
@@ -54,15 +56,28 @@ export function ListingRow({ orgId, shopName, channel, label, listing, href, ind
               {ROW.skuLine(listing.sku, ID_NAME[channel], listing.externalId)}
             </p>
             <LinkLine listing={listing} label={label} />
+            {listing.problems && (
+              <p className="line-clamp-2 text-xs font-medium text-warning">{PROBLEMS.line(label, listing.problems.first, listing.problems.count - 1)}</p>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground md:w-40 md:flex-col md:items-end md:gap-1 lg:w-48">
-            {status && (
-              <StatusBadge tone={listing.status === LISTING_STATUS.LIVE ? "success" : "neutral"}>{status}</StatusBadge>
+            {listing.problems ? (
+              <StatusBadge tone={listing.problems.suppressed ? "destructive" : "warning"}>
+                {listing.problems.suppressed ? PROBLEMS.suppressed : PROBLEMS.needsFix}
+              </StatusBadge>
+            ) : (
+              status && <StatusBadge tone={listing.status === LISTING_STATUS.LIVE ? "success" : "neutral"}>{status}</StatusBadge>
             )}
             {money && <span className="tabular-nums">{money}</span>}
           </div>
         </div>
       </Link>
+      {/* The fix is the listing screen's: the reason on its field, then Review and publish (Q23). */}
+      {!listing.gone && listing.product && listing.problems && (
+        <Button asChild size="sm" className="min-h-10">
+          <Link href={`/org/${orgId}/products/${listing.product.id}/listings/${channel}`}>{PROBLEMS.fix}</Link>
+        </Button>
+      )}
       {!listing.gone && listing.product && (
         <ListingLinkAction orgId={orgId} channel={channel} listingId={listing.id} kind="unlink" />
       )}

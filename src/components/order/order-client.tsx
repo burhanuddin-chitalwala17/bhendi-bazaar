@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { OrderSummary } from "@/components/order/order-summary";
 import { Icon } from "@/components/ui/icon";
@@ -104,8 +105,15 @@ function ShipmentCard({ shipment, timeline, cancel }: { shipment: Shipment; time
   const withRefund = timeline ? { ...timeline, refund: refundState } : timeline;
   return (
     <section aria-label={`Parcel ${shipment.code}`} className="flex flex-col gap-3 rounded-card border border-border bg-card p-4 text-small">
+      {/* StoreOrder: the parcel's first piece, so it is recognised before it is read. */}
       <div className="flex items-start gap-3">
-        <Icon name="parcel" size="md" tone="muted" />
+        {shipment.items[0]?.thumbnail ? (
+          <span className="relative aspect-4/5 w-12 shrink-0 overflow-hidden rounded-field bg-muted">
+            <Image src={shipment.items[0].thumbnail} alt="" fill sizes="48px" className="object-cover" />
+          </span>
+        ) : (
+          <Icon name="parcel" size="md" tone="muted" />
+        )}
         <div className="min-w-0 flex-1">
           <p className="font-medium text-foreground">{shipment.org?.name ? `From ${shipment.org.name}` : `Parcel ${shipment.code}`}</p>
           <p className="text-caption text-muted-foreground">

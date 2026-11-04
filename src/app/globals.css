@@ -38,6 +38,7 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  --color-shop-accent: var(--shop-accent);
   --color-favorite: var(--favorite);
   /* Fixed in both themes, deliberately: a scrim dims, whatever the theme; the hero
      scene is the storefront's deep-emerald brand surface and does not flip. */
@@ -104,8 +105,10 @@
   --aspect-banner-phone: 4 / 5;
 
   /* The storefront column. The layout and the verification banner that spans it were
-     two separate `max-w-6xl` literals; a token is what keeps them the same column. */
-  --container-page: 72rem;
+     two separate `max-w-6xl` literals; a token is what keeps them the same column.
+     1440px (owner, 2026-11-05): at 1152 a laptop screen showed ~200px of empty margin a side,
+     where the prototype keeps the gutter small and gives the width to the goods. */
+  --container-page: 90rem;
 
   /* Elevation as a role, not a size. Tailwind's shadow scale answers "how big"; these
      answer "what is this thing" — which is the question a redesign changes. Values are
@@ -157,7 +160,7 @@
   --spacing-section: clamp(2rem, 1.5rem + 2.5vw, 4rem);
   --spacing-gutter: clamp(1rem, 0.75rem + 1vw, 2rem);
   --spacing-grid: clamp(0.75rem, 0.6rem + 0.6vw, 1.25rem);
-  --container-store: 72rem;
+  --container-store: 90rem;
   --ease-theme: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Motion as roles: three speeds, two curves (foundations R8). Reduced motion zeroes them below. */
@@ -351,6 +354,9 @@
   --success: var(--green-550);
   --warning: var(--amber-550);
   --info: var(--blue-520);
+  /* The seller portal's dashboard accent: the admin's control-panel grammar, told apart by
+     colour (design-system Q34). Not `info`, which means "here is a note". */
+  --shop-accent: var(--blue-520);
   /* A saved product. Its own role rather than `destructive`, which means "this will
      break something" — a filled heart is the opposite of a warning. */
   --favorite: var(--pink-580);
@@ -397,6 +403,7 @@
   --success: var(--green-720);
   --warning: var(--amber-780);
   --info: var(--blue-720);
+  --shop-accent: var(--blue-720);
   --favorite: var(--pink-700);
   --icon-accent: var(--gold-820);
   --deal: var(--rose-650);
@@ -1003,6 +1010,12 @@
 }
 
 /* Horizontal rails read as app carousels, not as scrollbars. */
+/* Out of the page gutter to the viewport's edges: a full-width band inside a centred page. The
+   chrome clips the scrollbar's width of overshoot (overflow-x: clip), so it never scrolls sideways. */
+@utility bleed {
+  margin-inline: calc(50% - 50vw);
+}
+
 @utility no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;

@@ -1,3 +1,4 @@
+import type { ProductListScope } from "@/lib/validation/schemas/product-list.schema";
 import {
   BULK_ACTION,
   BULK_PRICE_MODE,
@@ -42,8 +43,11 @@ export function priceChangeFrom(draft: PriceDraft): { ok: true; change: BulkPric
   return { ok: true, change: { mode: BULK_PRICE_MODE.AMOUNT, deltaPaise: sign * paise } };
 }
 
-export function priceAction(productIds: string[], change: BulkPriceChange): BulkProductActionInput {
-  return { action: BULK_ACTION.PRICE, productIds, change };
+/** Which products an action names: picked by id, or every one the list's filters match (Q35). */
+export type BulkTargetSet = { productIds: string[] } | { matching: ProductListScope };
+
+export function priceAction(target: string[] | BulkTargetSet, change: BulkPriceChange): BulkProductActionInput {
+  return { action: BULK_ACTION.PRICE, ...(Array.isArray(target) ? { productIds: target } : target), change };
 }
 
 /** A product as the stock editor needs it: each location's count as the list read it. */

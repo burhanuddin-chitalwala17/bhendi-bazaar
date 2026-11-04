@@ -5,7 +5,7 @@ import { CategoryLanes } from "@/components/category/category-lanes";
 import { PaginatedProductGrid } from "@/components/shared/paginated-product-grid";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { PageHeader } from "@/components/shared/page-shell";
-import { ListingToolbar, parseSort, type ListingFilter } from "@/components/shared/listing-toolbar";
+import { ListingToolbar, countLabel, parseSort, type ListingFilter } from "@/components/shared/listing-toolbar";
 import { productsDAL } from "@/data-access-layer/products.dal";
 import { categoriesDAL } from "@/data-access-layer/categories.dal";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/config";
@@ -79,18 +79,22 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         ])}
       />
       <CategoryBreadcrumb ancestors={ancestors} current={category} />
-      <PageHeader title={category.name} description={category.description || undefined} />
+      <PageHeader
+        title={category.name}
+        description={category.description || undefined}
+        actions={<p className="text-small tabular-nums text-muted-foreground" aria-live="polite">{countLabel(count)}</p>}
+      />
       <CategoryLanes categories={lanes} />
       <ListingToolbar
         basePath={`/category/${category.slug}`}
         params={{ sort: sort === "newest" ? undefined : sort, offers: offersOnly ? "1" : undefined }}
-        count={count}
         filters={FILTERS}
       />
       {page.products.length > 0 ? (
         <PaginatedProductGrid
           initial={page.products}
           initiallyDone={page.done}
+          total={count}
           query={{ category: slug, offersOnly, sort }}
         />
       ) : offersOnly ? (

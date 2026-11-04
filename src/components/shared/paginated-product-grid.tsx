@@ -2,11 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { ProductGrid } from "@/components/shared/product-grid";
+import { ProductGrid, SkeletonProductGrid } from "@/components/shared/product-grid";
 import { ThemedProductGrid, type ThemedGridStyle } from "@/components/storefront/themed/themed-product-grid";
 import { Button } from "@/components/ui/button";
 import type { Product } from "@/domain/product";
 import { PRODUCT_PAGE_SIZE, type ProductPageQuery } from "@/lib/product-paging";
+import { formatCount } from "@/lib/format";
+
+/** Placeholders while the next page loads: a desktop row, two phone rows. */
+const PLACEHOLDER_ROW = 4;
 import { productPagesApiClient } from "@/components/product/productPagesApiClient";
 
 /**
@@ -20,6 +24,7 @@ export function PaginatedProductGrid({
   query,
   emptyLabel,
   themed,
+  total,
 }: {
   initial: Product[];
   /** The server already knows whether its first page was the last one. */
@@ -30,6 +35,8 @@ export function PaginatedProductGrid({
   emptyLabel?: string;
   /** A themed shop's page draws its theme's card (storefront-themes D8); the fetching is the same. */
   themed?: ThemedGridStyle;
+  /** The listing's full count, for "12 of 248" under the grid; omitted where the page does not read it. */
+  total?: number;
 }) {
   // `query` and `initial` are new on every render; this string changes only when the listing does.
   const queryKey = [
@@ -122,6 +129,15 @@ export function PaginatedProductGrid({
         </div>
       )}
 
+      {loading && !themed && <SkeletonProductGrid count={PLACEHOLDER_ROW} />}
+
+      {!done && !error && total !== undefined && (
+        <p className="text-center text-caption tabular-nums text-muted-foreground">
+          {formatCount(products.length)} of {formatCount(total)} · more load as you scroll
+        </p>
+      )}
+
+      {/* A fallback: the sentinel loads on scroll, but an observer that never fires must not end the list. */}
       {!done && !error && (
         <div className="flex justify-center">
           <Button

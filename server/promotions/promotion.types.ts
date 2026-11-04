@@ -130,3 +130,64 @@ export interface DiscountQuote {
   /** Line keys the applied code covered, for the checkout coverage message. */
   couponCoveredKeys: string[];
 }
+
+/** The offers list's status tabs, declared once (offers list Q1). "Live" includes a used-up offer still in its dates. */
+export const OFFER_STATUS = {
+  ALL: "all",
+  LIVE: "live",
+  SCHEDULED: "scheduled",
+  ENDED: "ended",
+  STOPPED: "stopped",
+} as const;
+export type OfferStatus = (typeof OFFER_STATUS)[keyof typeof OFFER_STATUS];
+
+/** How a buyer gets the offer: on its own, or by typing a code. */
+export const OFFER_KIND = { ALL: "all", AUTOMATIC: "automatic", CODE: "code" } as const;
+export type OfferKind = (typeof OFFER_KIND)[keyof typeof OFFER_KIND];
+
+/** Columns the list sorts by on the server; anything else in the URL is the default. */
+export const OFFER_SORTS = ["createdAt", "label", "startsAt", "endsAt"] as const;
+export type OfferSort = (typeof OFFER_SORTS)[number];
+
+export const OFFERS_PAGE_SIZE = 25;
+
+/** One page of the list, as the URL asked for it, already parsed. */
+export interface OfferListQuery {
+  status: OfferStatus;
+  kind: OfferKind;
+  /** Trimmed; empty means no search. Matches the name, the code, or a covered product's name or SKU. */
+  search: string;
+  sortBy: OfferSort;
+  sortOrder: "asc" | "desc";
+  page: number;
+}
+
+/** An offer as the list shows it: integer paise and basis points, the UI formats (Invariant 3). */
+export interface OfferListRow {
+  id: string;
+  label: string;
+  trigger: PromotionTrigger;
+  code: string | null;
+  valueType: PromotionValueType;
+  percentBps: number | null;
+  amountOffPaise: number | null;
+  fixedPricePaise: number | null;
+  startsAt: Date;
+  endsAt: Date;
+  isActive: boolean;
+  usageLimit: number | null;
+  usageCount: number;
+  /** Platform offers only (offers-hardening D5, D6). */
+  platformBudgetPaise: number | null;
+  platformSpentPaise: number;
+  lossConfirmedAt: Date | null;
+  lossConfirmedBy: { name: string | null } | null;
+  targets: Array<{ category: { name: string } | null; product: { name: string } | null }>;
+}
+
+export interface OfferListResult {
+  offers: OfferListRow[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+  /** Per tab, over the whole scope: search and kind narrow the rows, not the tabs. */
+  counts: Record<OfferStatus, number>;
+}

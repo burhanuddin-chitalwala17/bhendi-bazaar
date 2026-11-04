@@ -9,10 +9,11 @@ const PROMISES: Array<{ icon: IconName; label: string }> = [
 
 export function TrustRow() {
   return (
-    <ul aria-label="Shopping with us" className="grid grid-cols-3 gap-2 rounded-card border border-border bg-card px-2 py-4">
+    // Ruled above and below, not boxed (StoreHome): a promise is a line of the page, not a card to tap.
+    <ul aria-label="Shopping with us" className="grid grid-cols-3 gap-2 border-y border-border py-4 md:py-5">
       {PROMISES.map((promise) => (
-        <li key={promise.label} className="flex flex-col items-center gap-1.5 text-center text-caption text-muted-foreground md:flex-row md:justify-center md:text-small">
-          <Icon name={promise.icon} size="lg" tone="primary" />
+        <li key={promise.label} className="flex flex-col items-center gap-1.5 text-center text-caption text-foreground md:flex-row md:justify-center md:gap-2 md:text-small">
+          <Icon name={promise.icon} size="lg" />
           {promise.label}
         </li>
       ))}

@@ -43,8 +43,8 @@ export function StatusBadge({ tone, dot, children, className }: StatusBadgeProps
 }
 
 // Success, not deal: PriceDisplay renders outside a theme scope, where `--deal` is unset.
-export function OfferBadge() {
-  return <StatusBadge tone="success">Offer</StatusBadge>;
+export function OfferBadge({ percentOff }: { percentOff?: number }) {
+  return <StatusBadge tone="success">{percentOff && percentOff >= 1 ? `${percentOff}% off` : "Offer"}</StatusBadge>;
 }
 
 export function StockBadge({ stock, threshold = 10 }: { stock: number; threshold?: number }) {

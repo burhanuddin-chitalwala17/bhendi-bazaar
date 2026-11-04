@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { useMutation } from "@/hooks/core/useMutation";
 import { bannerLabel } from "@/lib/banner-label";
-import { AddPromotionDialog } from "@/components/org/add-promotion-dialog";
+import { AddPromotionSheet } from "@/components/org/add-promotion-sheet";
 import { orgStorefrontApiClient } from "@/components/org/orgStorefrontApiClient";
 import type { ImageSlotValue } from "@server/catalog/image-framing";
 
@@ -174,7 +174,7 @@ export function StorefrontBannersManager({
           </ul>
         )}
 
-        <AddPromotionDialog orgId={orgId} handle={handle} />
+        <AddPromotionSheet orgId={orgId} handle={handle} />
       </CardContent>
     </Card>
   );

@@ -1,8 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { SignOutButton } from "./SignOutButton";
 import { PORTAL_COPY } from "./portal-copy";
@@ -22,7 +20,6 @@ export function PortalHeader({
   label,
   storefrontHref,
   leading,
-  search,
 }: {
   name?: string | null;
   email?: string | null;
@@ -30,8 +27,6 @@ export function PortalHeader({
   storefrontHref?: string;
   /** Phone only: what the bar is about (the shop switcher). */
   leading?: ReactNode;
-  /** A search the bar opens, on every form factor. */
-  search?: { href: string; label: string };
 }) {
   const phoneBar = Boolean(leading);
   return (
@@ -40,13 +35,6 @@ export function PortalHeader({
       {/* Hidden below md: the label plus a full email cannot fit a phone-width row. */}
       <span className="hidden text-label uppercase text-muted-foreground md:inline">{label}</span>
       <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-4">
-        {search && (
-          <Button asChild variant="ghost" shape="icon">
-            <Link prefetch={false} href={search.href} aria-label={search.label}>
-              <Icon name="search" size="md" />
-            </Link>
-          </Button>
-        )}
         <div className={cn("hidden text-right leading-tight", phoneBar ? "md:block" : "sm:block")}>
           <p className="text-small font-medium text-foreground">{name ?? "Signed in"}</p>
           {email && <p className="hidden text-caption text-muted-foreground md:block">{email}</p>}

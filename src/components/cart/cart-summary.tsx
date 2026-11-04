@@ -62,9 +62,19 @@ export function CartView() {
               <dd className="tabular-nums">{formatCurrency(total)}</dd>
             </div>
           </dl>
+          {/* StoreCart's coupon row. A code is priced against the order, so it is entered at checkout. */}
+          <Link
+            href="/checkout"
+            prefetch={false}
+            className="flex min-h-12 items-center gap-3 rounded-card border border-dashed border-border px-3 text-small text-foreground transition-colors duration-fast ease-standard hover:border-primary/40"
+          >
+            <Icon name="offer" size="md" />
+            <span className="flex-1">Apply a coupon at checkout</span>
+            <Icon name="next" size="sm" tone="muted" />
+          </Link>
           <p className="flex items-center gap-2 text-caption text-muted-foreground">
             <Icon name="secure" size="xs" />
-            Coupons at checkout · pay by UPI, card, net banking or wallet
+            Pay by UPI, card, net banking or wallet
           </p>
           <Button asChild size="lg" className="hidden w-full rounded-full md:inline-flex">
             <Link href="/checkout" prefetch={false}>Checkout</Link>

@@ -2,6 +2,13 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { SalesDay } from "@server/analytics/sales.types";
 
+/** Whose figures these are (design-system Q34): the platform's line is the brand's, a shop's its own. */
+export type SalesTone = "platform" | "shop";
+const TONE: Record<SalesTone, { line: string; key: string }> = {
+  platform: { line: "stroke-primary", key: "bg-primary" },
+  shop: { line: "stroke-shop-accent", key: "bg-shop-accent" },
+};
+
 /** The drawing's own coordinate space; the SVG scales to its box, so these are not pixels on screen. */
 const WIDTH = 600;
 const HEIGHT = 160;
@@ -44,7 +51,9 @@ export function SalesChart({
   previousSeries,
   currentLabel,
   previousLabel,
+  tone = "platform",
 }: {
+  tone?: SalesTone;
   series: readonly SalesDay[];
   previousSeries: readonly SalesDay[];
   currentLabel: string;
@@ -71,7 +80,7 @@ export function SalesChart({
     <figure className="space-y-2">
       <figcaption className="flex items-center gap-4 text-caption text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <span aria-hidden className="h-0.5 w-4 rounded-full bg-primary" />
+          <span aria-hidden className={cn("h-0.5 w-4 rounded-full", TONE[tone].key)} />
           {currentLabel}
         </span>
         <span className="inline-flex items-center gap-1.5">
@@ -90,7 +99,7 @@ export function SalesChart({
         {before.length > 1 && (
           <path d={path(before)} fill="none" className="stroke-muted-foreground" strokeWidth={1.5} strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
         )}
-        <path d={path(now)} fill="none" className="stroke-primary" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <path d={path(now)} fill="none" className={TONE[tone].line} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       </svg>
       <div aria-hidden className="relative h-4 text-caption text-muted-foreground">
         {labelIndices(series.length).map((i) => (

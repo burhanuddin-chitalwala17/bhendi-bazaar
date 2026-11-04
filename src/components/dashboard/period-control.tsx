@@ -5,7 +5,7 @@ import type { SalesPeriod } from "@server/analytics/sales.types";
 import { PERIOD_OPTIONS } from "./period";
 
 /** The period, as links: the URL holds it, so a view can be shared and the server reads it. */
-export function PeriodControl({ current }: { current: SalesPeriod }) {
+export function PeriodControl({ current, basePath }: { current: SalesPeriod; basePath: string }) {
   return (
     <nav aria-label="Period" className="inline-flex rounded-field border border-border bg-card p-0.5">
       {PERIOD_OPTIONS.map(({ period, label }) => {
@@ -13,7 +13,7 @@ export function PeriodControl({ current }: { current: SalesPeriod }) {
         return (
           <Link
             key={period}
-            href={`/admin?period=${period}`}
+            href={`${basePath}?period=${period}`}
             prefetch={false}
             scroll={false}
             aria-current={active ? "page" : undefined}

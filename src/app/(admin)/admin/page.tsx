@@ -29,7 +29,7 @@ export default async function AdminDashboardPage({
       <PageHeader
         title="Dashboard"
         description={`${formatDate(new Date(), { weekday: "long", day: "numeric", month: "long" })} · all shops`}
-        actions={<PeriodControl current={period} />}
+        actions={<PeriodControl current={period} basePath="/admin" />}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

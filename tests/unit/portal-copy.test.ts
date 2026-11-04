@@ -42,7 +42,7 @@ const NEVER_DISABLED = [
   "src/components/layout/OrgSidebar.tsx",
   "src/components/layout/org-tab-bar.tsx",
   "src/components/org/storefront-banners-manager.tsx",
-  "src/components/org/add-promotion-dialog.tsx",
+  "src/components/org/add-promotion-sheet.tsx",
   "src/components/org/shop-hub/shop-link-card.tsx",
   "src/app/(org)/org/[orgId]/shop/page.tsx",
 ];

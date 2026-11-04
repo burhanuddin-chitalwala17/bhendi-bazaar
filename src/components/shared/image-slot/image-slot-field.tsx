@@ -34,6 +34,7 @@ export function ImageSlotField({
   onChange,
   upload,
   error,
+  showPreview = true,
 }: {
   slot: ImageSlotKey;
   label: string;
@@ -42,6 +43,8 @@ export function ImageSlotField({
   upload: (file: File) => Promise<string>;
   /** The server's verdict on this field (R7), shown under it. */
   error?: string;
+  /** False when the caller draws its own preview of what the picture goes into (the banner drawer). */
+  showPreview?: boolean;
 }) {
   const shapes = IMAGE_SLOTS[slot];
   const [cropping, setCropping] = useState<FormFactor | null>(null);
@@ -97,7 +100,7 @@ export function ImageSlotField({
         />
       </div>
 
-      {preview && (
+      {showPreview && preview && (
         <section aria-label="Preview, before you save" className="space-y-2">
           <h3 className="text-label uppercase text-muted-foreground">Preview, before you save</h3>
           <div className="grid grid-cols-3 items-end gap-3">

@@ -8,7 +8,11 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { OfferForm } from "@/components/promotions/OfferForm";
 import { OfferList, type OfferRow } from "@/components/promotions/OfferList";
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
+  usePathname: () => "/admin/promotions",
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock("@/components/promotions/offersApiClient", () => ({ offersApiClient: { save: vi.fn(), stop: vi.fn() } }));
 
 const PANEL =
@@ -80,14 +84,15 @@ describe("the admin offers list's budget (spec A5)", () => {
       platformBudgetPaise: 5_000_000, platformSpentPaise: 1_240_000,
       lossConfirmedAt: new Date("2026-10-29T10:00:00Z"), lossConfirmedBy: { name: "Burhan" },
     }));
-    expect(screen.getByText(/₹12,400 of ₹50,000 used/)).toBeInTheDocument();
-    expect(screen.getByText(/Runs at a loss — confirmed by Burhan,/)).toBeInTheDocument();
-    expect(screen.getByText("Live")).toBeInTheDocument();
+    // Phone rows and the table are both in the document; the table shows the money columns.
+    expect(screen.getAllByText(/₹12,400 of ₹50,000 used/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Runs at a loss — confirmed by Burhan,/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Live").length).toBeGreaterThan(0);
   });
 
   it("a spent budget reads as used up, not live (spec A5)", () => {
     list(row({ platformBudgetPaise: 100_000, platformSpentPaise: 100_000 }));
-    expect(screen.getByText("Budget used up")).toBeInTheDocument();
+    expect(screen.getAllByText("Budget used up").length).toBeGreaterThan(0);
     expect(screen.queryByText("Live")).toBeNull();
   });
 });

@@ -33,6 +33,8 @@ const fake = vi.hoisted(() => {
     statusError: null as Error | null,
     /** Status reads made, each asking for its token first as a real provider does. */
     statusCalls: 0,
+    /** The daily problems look's answer per marketplace, or an error to throw (Q23). */
+    problems: { amazon: [] as unknown[], flipkart: [] as unknown[] } as Record<string, unknown[] | Error>,
   };
   return { state };
 });
@@ -73,9 +75,14 @@ vi.mock("@server/channels/providers", async () => {
     },
     variationThemes: async () => ["SIZE_NAME", "COLOR_NAME", "SIZE_NAME/COLOR_NAME"],
   };
+  const problemsOf = (channel: string) => async () => {
+    const answer = s.problems[channel];
+    if (answer instanceof Error) throw answer;
+    return answer ?? [];
+  };
   const providers = {
-    amazon: { ...common, listingRules: AMAZON_LISTING_RULES, theirsFromRead: amazonTheirsFromRead },
-    flipkart: { ...common, listingRules: FLIPKART_LISTING_RULES, theirsFromRead: flipkartTheirsFromRead },
+    amazon: { ...common, listingRules: AMAZON_LISTING_RULES, theirsFromRead: amazonTheirsFromRead, listingProblems: problemsOf("amazon") },
+    flipkart: { ...common, listingRules: FLIPKART_LISTING_RULES, theirsFromRead: flipkartTheirsFromRead, listingProblems: problemsOf("flipkart") },
   };
   return { providerFor: (channel: "amazon" | "flipkart") => providers[channel] };
 });
@@ -137,11 +144,65 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
   });
   beforeEach(async () => {
     await cleanup();
-    Object.assign(fake.state, { published: [], created: [], refuse: new Set(), decidesLater: true, busy: false, previewErrors: false, statusError: null, status: { found: true, live: true, issues: [], showing: { title: null, mainImageUrl: null } } });
+    Object.assign(fake.state, { published: [], created: [], refuse: new Set(), decidesLater: true, busy: false, previewErrors: false, statusError: null, status: { found: true, live: true, issues: [], showing: { title: null, mainImageUrl: null } }, problems: { amazon: [], flipkart: [] } });
   });
   afterAll(async () => {
     await cleanup();
     await prisma.channelConnection.deleteMany({ where: { orgId } });
+  });
+
+  describe("the daily problems look (Q23)", () => {
+    const titleProblem = { code: "8541", message: "Title has a restricted word.", severity: "error", field: "title" };
+    const problemsOf = async (productId: string) =>
+      prisma.channelListing.findFirstOrThrow({ where: { productId }, select: { problems: true, problemsSince: true, suppressed: true } });
+
+    it("reads every account once and records all of them in one write; a clean listing clears, an unread account keeps its own", async () => {
+      const { listingProblemsService } = await import("@server/channels/listing-problems.service");
+      const a = await product("PROB-A", "amazon");
+      const f = await product("PROB-F", "flipkart");
+      fake.state.problems = {
+        amazon: [{ sku: `MP-${stamp}-PROB-A`, issues: [titleProblem], suppressed: true }],
+        flipkart: [{ sku: `MP-${stamp}-PROB-F`, issues: [{ ...titleProblem, field: null }], suppressed: false }],
+      };
+      statements = 0;
+      counting = true;
+      await listingProblemsService.checkAll();
+      counting = false;
+      // One read of every connection with its token, one write of every answer, however many shops.
+      expect(statements).toBe(2);
+      const first = await problemsOf(a);
+      expect(first).toMatchObject({ suppressed: true, problems: [titleProblem] });
+      const since = (await problemsOf(f)).problemsSince;
+      expect(since).toBeInstanceOf(Date);
+
+      const { MarketplaceUnavailableError } = await import("@server/channels/providers/marketplace-provider");
+      fake.state.problems = { amazon: [], flipkart: new MarketplaceUnavailableError(503) };
+      await listingProblemsService.checkAll();
+      expect(await problemsOf(a)).toEqual({ problems: null, problemsSince: null, suppressed: false });
+      expect((await problemsOf(f)).problemsSince).toEqual(since);
+    });
+
+    it("puts the reason on the listing's field and waits it for a resend, edited or not; a clean look after the send clears it", async () => {
+      const { listingProblemsService } = await import("@server/channels/listing-problems.service");
+      const id = await product("PROB-R", "amazon");
+      await listings.screen(orgId, id, "amazon");
+      fake.state.problems = { amazon: [{ sku: `MP-${stamp}-PROB-R`, issues: [titleProblem], suppressed: true }], flipkart: [] };
+      await listingProblemsService.checkAll();
+
+      const screen = await listings.screen(orgId, id, "amazon");
+      expect(screen.marketplaceProblems).toEqual({ suppressed: true });
+      expect(screen.issues).toEqual([titleProblem]);
+      expect(screen.waitingFields).toEqual(["title"]);
+      const review = await publish.review(orgId, "amazon", screen.id);
+      expect(review.listings[0].changes.map((c) => c.field)).toEqual(["title"]);
+      await publish.publish(orgId, "amazon", [{ id: screen.id, version: review.listings[0].version, fields: ["title"] }]);
+      await publish.send(screen.id);
+      expect(fake.state.published.at(-1)).toMatchObject({ sku: `MP-${stamp}-PROB-R`, changes: { title: `Hijab PROB-R` } });
+      await publish.check(screen.id);
+      await publish.check(screen.id);
+      expect((await problemsOf(id)).problemsSince).toBeNull();
+      expect((await listings.screen(orgId, id, "amazon")).waitingFields).toEqual([]);
+    });
   });
 
   it("sends only the changes kept on the review, and records them as sent (spec A1, D3)", async () => {

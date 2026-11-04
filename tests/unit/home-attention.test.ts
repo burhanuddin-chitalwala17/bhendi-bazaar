@@ -16,6 +16,7 @@ const quiet = (): HomeAttentionDto => ({
   lowStock: { ok: true, value: { count: 0, soldOut: 0, soonestDays: null } },
   channel: { ok: true, value: null },
   stock: { ok: true, value: null },
+  listingProblems: { ok: true, value: null },
   photos: { ok: true, value: 0 },
   teamEdits: { ok: true, value: { count: 0, productId: null } },
 });
@@ -51,6 +52,11 @@ describe("needs you now", () => {
     expect(lines[0]).toMatchObject({ text: "Match your Amazon locations so stock can be sent", href: "/org/o1/channels/amazon/listings" });
   });
 
+  it("names listings a marketplace stopped, and opens the ones needing a fix (marketplace-publish Q23)", () => {
+    const lines = attentionLines("o1", { ...quiet(), listingProblems: { ok: true, value: { channel: "amazon", label: "Amazon", problems: 3, suppressed: 2 } } }, now);
+    expect(lines[0]).toMatchObject({ text: "3 Amazon listings need a fix: 2 hidden from shoppers", href: "/org/o1/channels/amazon/listings?fix=1" });
+  });
+
   it("puts buyers and money first and shows at most five (Q31)", () => {
     const lines = attentionLines(
       "o1",
@@ -59,6 +65,7 @@ describe("needs you now", () => {
         lowStock: { ok: true, value: { count: 2, soldOut: 0, soonestDays: 3 } },
         channel: { ok: true, value: { channel: "amazon" as never, label: "Amazon", state: CARD_STATE.NEEDS_RECONNECT, reapproveBy: null } },
         stock: { ok: true, value: { channel: "amazon", label: "Amazon", kind: STOCK_ATTENTION.OUT_OF_STOCK, count: 2 } },
+        listingProblems: { ok: true, value: null },
         photos: { ok: true, value: 3 },
         teamEdits: { ok: true, value: { count: 1, productId: null } },
       },

@@ -85,7 +85,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
         return ld ? <JsonLd data={ld} /> : null;
       })()}
       <Suspense fallback={<ProductPageSkeleton />}>
-        <div className="grid gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-[3fr_2fr] lg:gap-12">
+        {/* Photo and words share the width, as StorePDPDesktop draws them: a 3:2 photo column made the picture taller than the screen. */}
+        <div className="grid gap-6 md:grid-cols-2 md:gap-8 lg:gap-12">
           <ProductGallery {...product} />
           <ProductDetails {...product} />
         </div>

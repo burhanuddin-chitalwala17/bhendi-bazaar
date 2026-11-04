@@ -1,6 +1,6 @@
 import { indiaToday } from "@server/shared/india-time";
 import { salesRepository, type SalesWindows } from "@server/analytics/sales.repository";
-import { PERIOD_DAYS, type Compared, type SalesDay, type SalesOverview, type SalesPeriod } from "@server/analytics/sales.types";
+import { PERIOD_DAYS, type Compared, type SalesDay, type SalesOverview, type SalesPeriod, type ShopSalesOverview } from "@server/analytics/sales.types";
 
 const DAY_MS = 86_400_000;
 /** India has no daylight saving, so its midnight is a fixed offset from UTC's. */
@@ -67,5 +67,27 @@ export async function salesOverview(period: SalesPeriod, now: Date = new Date())
     averageOrder: compare(averagePaise(total.current, orders.current), averagePaise(total.previous, orders.previous)),
     platformKept: compare(figures.kept, figures.previousKept),
     shopsSelling: compare(figures.shops, figures.previousShops),
+  };
+}
+
+/** One shop's sales block on its Home (Q34): one statement whatever the period. */
+export async function shopSalesOverview(orgId: string, period: SalesPeriod, now: Date = new Date()): Promise<ShopSalesOverview> {
+  const w = salesWindows(period, now);
+  const byDay = new Map((await salesRepository.shopByDay(w, orgId)).map((row) => [row.day, row]));
+  const fill = (day: string): SalesDay => ({ day, paise: byDay.get(day)?.paise ?? 0, orders: byDay.get(day)?.orders ?? 0 });
+  const series = w.days.map(fill);
+  const previousSeries = w.previousDays.map(fill);
+  const sum = (list: SalesDay[], field: "paise" | "orders") => list.reduce((acc, d) => acc + d[field], 0);
+  const payableOf = (days: string[]) => days.reduce((acc, day) => acc + (byDay.get(day)?.payable ?? 0), 0);
+  const total = compare(sum(series, "paise"), sum(previousSeries, "paise"));
+  const orders = compare(sum(series, "orders"), sum(previousSeries, "orders"));
+  return {
+    period,
+    series,
+    previousSeries,
+    total,
+    orders,
+    averageOrder: compare(averagePaise(total.current, orders.current), averagePaise(total.previous, orders.previous)),
+    payable: compare(payableOf(w.days), payableOf(w.previousDays)),
   };
 }

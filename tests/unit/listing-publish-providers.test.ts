@@ -2,9 +2,9 @@
  * What publishing sends and how it reads the answer (marketplace-publish D2, D7, D8, D9). Pure
  * builders; no marketplace is called.
  */
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { amazonCreateBody, amazonIssues, amazonPatches } from "@server/channels/providers/amazon/amazon.publish";
+import { amazonCreateBody, amazonIssues, amazonListingProblems, amazonPatches } from "@server/channels/providers/amazon/amazon.publish";
 import { flipkartAnswer } from "@server/channels/providers/flipkart/flipkart.publish";
 import { forwardAttributes, pickTheme, skuFor } from "@server/channels/listing-create";
 
@@ -116,5 +116,36 @@ describe("turning a product into a new listing (D7, D8)", () => {
   it("gives a product with no SKU one from its id", () => {
     expect(skuFor({ id: "cmt32hxzc000304l3fj9lhaew", sku: null })).toBe("BB-L3FJ9LHAEW");
     expect(skuFor({ id: "x", sku: "NBH0221" })).toBe("NBH0221");
+  });
+});
+
+describe("Amazon's daily problems look (marketplace-publish Q23)", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("asks only for listings with errors, follows every page, and reads a suppression from its enforcement", async () => {
+    const asked: URL[] = [];
+    const pages = [
+      {
+        items: [
+          { sku: "A", issues: [{ code: "18027", message: "Main image missing", severity: "ERROR", attributeNames: ["main_product_image_locator"], enforcements: { actions: [{ action: "LISTING_SUPPRESSED" }] } }] },
+          { sku: "B", issues: [{ code: "1", message: "Consider a lower price", severity: "WARNING" }] },
+        ],
+        pagination: { nextToken: "t2" },
+      },
+      { items: [{ sku: "C", issues: [{ code: "8541", message: "Brand not approved", severity: "ERROR" }] }] },
+    ];
+    vi.stubGlobal("fetch", async (url: string) => {
+      asked.push(new URL(url));
+      return new Response(JSON.stringify(pages[asked.length - 1]), { status: 200 });
+    });
+    const problems = await amazonListingProblems(async () => "token", "SELLER");
+    expect(asked).toHaveLength(2);
+    expect(asked[0].searchParams.get("withIssueSeverity")).toBe("ERROR");
+    expect(asked[0].searchParams.get("includedData")).toBe("summaries,issues");
+    expect(asked[1].searchParams.get("pageToken")).toBe("t2");
+    expect(problems).toEqual([
+      { sku: "A", suppressed: true, issues: [{ code: "18027", message: "Main image missing", severity: "error", field: "photos" }] },
+      { sku: "C", suppressed: false, issues: [{ code: "8541", message: "Brand not approved", severity: "error", field: null }] },
+    ]);
   });
 });

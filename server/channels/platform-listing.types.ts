@@ -52,6 +52,14 @@ export interface ListingIssue {
   field: ListingField | null;
 }
 
+/** Home's line for listings a marketplace says need a fix (marketplace-publish Q23). */
+export interface ListingProblemsAttentionDTO {
+  channel: MarketplaceChannel;
+  label: string;
+  problems: number;
+  suppressed: number;
+}
+
 /** What a marketplace lets us write and the limits it sets, declared in its provider (channel-listings D6). */
 export interface ListingRules {
   writable: readonly ListingField[];
@@ -126,6 +134,8 @@ export interface ListingScreenDTO {
   status: ListingStatusDTO;
   waitingFields: ListingField[];
   issues: ListingIssue[];
+  /** The issues came from the daily look, not a send (marketplace-publish Q23): whether it is hidden from shoppers. */
+  marketplaceProblems: { suppressed: boolean } | null;
   /** What Amazon shows when it differs from what was sent (marketplace-publish Q14). */
   showing: { title: string | null; mainImageUrl: string | null } | null;
   /** For a listing not yet on the marketplace: how it will be made, and what the marketplace still needs. */

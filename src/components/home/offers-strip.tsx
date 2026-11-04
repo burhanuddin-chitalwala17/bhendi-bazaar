@@ -20,7 +20,7 @@ export async function OffersStrip({
   if (!offers?.length) return null;
 
   return (
-    <section aria-label="On offer" className="rounded-card border border-border bg-card px-3 py-3 md:px-4">
+    <section aria-label="On offer" className="rounded-card bg-accent px-3 py-3 text-accent-foreground md:px-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
         <p className="inline-flex shrink-0 items-center gap-2 text-small font-semibold text-foreground">
           <Icon name="offer" size="md" tone="deal" />

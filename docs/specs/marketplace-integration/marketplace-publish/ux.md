@@ -1,7 +1,7 @@
 # UX — marketplace-publish
 
 - **Status:** Signed off
-- **Verified:** 2026-11-02
+- **Verified:** 2026-11-04
 - **Prototype:** https://claude.ai/artifact/JT6ymWHU5TL2VBBwVNBMsf (one canvas with channel-listings)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [channel-listings ux](../channel-listings/ux.md)
 
@@ -68,6 +68,10 @@
 | Paused | "Paused on Amazon" | Resume |
 | Busy, retrying | "Sent · Amazon is busy, trying again" | — |
 | Not answered | After the last check: "Amazon hasn't answered. We'll look again tomorrow." | Check now |
+| Suppressed later (Q23) | Row chip "Suppressed", line "Amazon says: {reason} (+n more)"; the listing's banner "Suppressed on Amazon: shoppers can't find or buy it", the reason on its field | Fix → Review and publish |
+| Problem later, still on sale (Q23) | Row chip "Needs a fix", the same line; banner "Amazon found a problem with this listing" | Fix → Review and publish |
+| Problem on nothing we edit (Q23) | Banner's "Amazon says: {reason}" with "If it names something not on this page, fix it in Amazon Seller Central; we look again every day." | Open Seller Central |
+| Many with problems (Q23) | Listings page "Needs fixing {n}" filters to them; Home "{n} Amazon listings need a fix: {m} hidden from shoppers" | Opens the filter |
 
 ## State matrix — Put on Amazon
 | State | What the person sees | Action |
@@ -89,6 +93,9 @@
 - Put on Amazon: "Put on Amazon" · "Looking for it on Amazon…" · "Sell on this page" · "Create a new page" · "Put the family on Amazon" · "One page with {n} {axis}"
 - Flipkart: "New products are made in Flipkart Seller Hub. Once it's there, Read again links it here."
 - Pause: "On sale" · "Paused" · "Paused on Amazon" · "Resume"
+- Problems (Q23): "Suppressed" · "Needs a fix" · "Fix" · "Needs fixing {n}" · "Open Seller Central"
 
 ## Sign-off
 Signed off by the owner, 2026-11-02 ("signed off"), on the prototype above, with its four confirmations: Flipkart paise rounded down, Amazon's issue message shown, Amazon pause ends the offer, one read-only production schema read.
+Added 2026-11-04 (Q23, owner: "yes do it"): the problems rows above, built from the status matrix's
+own pieces; not yet seen on a prototype.

@@ -11,7 +11,8 @@ import { PLATFORM_ROLE } from "@server/identity/admin.user.types";
 
 /**
  * A way back to the admin for an admin browsing the store. It sits on the tab bar on a phone,
- * clear of the store's own controls, and folds to a single labelled button.
+ * clear of the store's own controls, and folds to a single labelled button. Not in a portal: its
+ * own chrome has the way out, and a floating button there covers the page's action bar.
  */
 export function FloatingAdminButton() {
   const { data: session, status } = useSession();
@@ -20,7 +21,7 @@ export function FloatingAdminButton() {
 
   if (status === "loading") return null;
   if (!session?.user || session.user.platformRole !== PLATFORM_ROLE.ADMIN) return null;
-  if (pathname?.startsWith("/admin")) return null;
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/org")) return null;
 
   if (isMinimized) {
     return (

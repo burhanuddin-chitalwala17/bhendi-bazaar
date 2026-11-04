@@ -2,29 +2,20 @@
  * Admin Orders Page — a server component ([ADR-0034]).
  *
  * Filters live in the URL, so the server answers the question the URL asks. The status is a tab
- * (a link); search and payment are the one client leaf.
+ * (a link); search and payment are the one client leaf. From desktop `?order=` opens that order
+ * beside the list (design-system Q36); Export CSV downloads the same view (Q37).
  */
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { OrderPeek } from "@/components/order/console/order-peek";
+import { adminOrderViewSchema, orderPeekSchema } from "@/lib/validation/schemas/admin-order-list.schema";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { PageTabs } from "@/components/shared/page-tabs";
 import { ORDER_TABS } from "@/components/order/console/order-status";
 import { adminOrdersDAL } from "@/data-access-layer/admin/orders.dal";
 import { OrdersFilters } from "@/components/order/console/OrdersFilters";
 import { OrdersTable } from "@/components/order/console/OrdersTable";
-import {
-  DEFAULT_PAGE_SIZE,
-  resolvePageNumber,
-  resolvePageSize,
-  resolveSortBy,
-  resolveSortOrder,
-} from "@server/shared/pagination";
-import { ORDER_STATUS, PAYMENT_STATUS } from "@server/checkout/order.types";
-
-/** The columns this listing may be ordered by — the same set `OrderListFilters` declares. */
-const SORTABLE = ["createdAt", "updatedAt", "total"] as const;
-
-/** A filter value is only honoured if it names a real state (Invariant 4). */
-const oneOf = <T extends string>(set: readonly T[], value?: string) =>
-  set.includes(value as T) ? (value as T) : undefined;
+import { DEFAULT_PAGE_SIZE, resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -40,19 +31,26 @@ export default async function AdminOrdersPage({
   const page = resolvePageNumber(one("page"));
   const limit = resolvePageSize(one("limit"), DEFAULT_PAGE_SIZE);
 
-  const status = oneOf(Object.values(ORDER_STATUS), one("status"));
-  const [{ orders, total, totalPages }, counts] = await Promise.all([
-    adminOrdersDAL.list({
-      search: one("search") || undefined,
-      status,
-      paymentStatus: oneOf(Object.values(PAYMENT_STATUS), one("paymentStatus")),
-      page,
-      limit,
-      sortBy: resolveSortBy(one("sortBy"), SORTABLE, "createdAt"),
-      sortOrder: resolveSortOrder(one("sortOrder")),
-    }),
+  // One schema for the list and its export, so the file is always the view on screen (Q37).
+  const view = adminOrderViewSchema.parse(params);
+  const { status } = view;
+  const peekId = orderPeekSchema.parse(params.order);
+  const [{ orders, total, totalPages }, counts, peek] = await Promise.all([
+    adminOrdersDAL.list({ ...view, page, limit }),
     adminOrdersDAL.statusCounts(),
+    peekId ? adminOrdersDAL.detail(peekId) : null,
   ]);
+
+  const query = (drop: string[]) => {
+    const next = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      const v = Array.isArray(value) ? value[0] : value;
+      if (v && !drop.includes(key)) next.set(key, v);
+    }
+    return next.toString();
+  };
+  const closeHref = `/admin/orders${query(["order"]) ? `?${query(["order"])}` : ""}`;
+  const exportHref = `/api/admin/orders/export?${query(["order", "page", "limit"])}`;
 
   // A tab keeps the search and payment filter; it starts again at page one.
   const tabHref = (tabStatus: string | null) => {
@@ -70,6 +68,15 @@ export default async function AdminOrdersPage({
       <PageHeader
         title="Orders"
         description="Every order on the platform, newest first."
+        actions={
+          <Button asChild variant="outline">
+            {/* A download, so a plain link: the server writes the file for exactly this view. */}
+            <a href={exportHref} download>
+              <Icon name="download" size="sm" />
+              Export CSV
+            </a>
+          </Button>
+        }
       />
 
       <PageTabs
@@ -85,13 +92,24 @@ export default async function AdminOrdersPage({
 
       <OrdersFilters />
 
-      <OrdersTable
-        orders={orders}
-        page={page}
-        pageSize={limit}
-        totalPages={totalPages}
-        total={total}
-      />
+      <div className="lg:flex lg:items-start lg:gap-6">
+        <div className="min-w-0 lg:flex-1">
+          <OrdersTable
+            orders={orders}
+            peekId={peek ? peek.id : undefined}
+            page={page}
+            pageSize={limit}
+            totalPages={totalPages}
+            total={total}
+          />
+        </div>
+        {/* Desktop only: below it a row opens the full page, so there is nothing to show here. */}
+        {peek && (
+          <div className="hidden lg:sticky lg:top-6 lg:block lg:w-96 lg:shrink-0">
+            <OrderPeek order={peek} closeHref={closeHref} />
+          </div>
+        )}
+      </div>
     </PageShell>
   );
 }

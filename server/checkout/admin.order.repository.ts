@@ -14,6 +14,7 @@ import { Prisma } from "@prisma/client";
 import { ORDER_STATUS, PAYMENT_STATUS, VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
 import type {
   AdminOrderDetail,
+  AdminOrderExportRow,
   OrderAddressSnapshot,
   OrderListFilters,
   OrderStats,
@@ -65,6 +66,31 @@ function toAddressSnapshot(value: unknown): OrderAddressSnapshot | null {
   };
 }
 
+/**
+ * What a view of the console's orders selects, shared by the list and its CSV export so the two
+ * cannot disagree (design-system Q37). Abandoned checkouts are invisible here (checkout-abandonment
+ * R4): combined with AND, so an explicit `status` narrows within the visible set.
+ */
+function viewWhere(filters: Pick<OrderListFilters, "search" | "status" | "paymentStatus" | "dateFrom" | "dateTo">): Prisma.OrderWhereInput {
+  const { search, status, paymentStatus, dateFrom, dateTo } = filters;
+  const where: Prisma.OrderWhereInput = { AND: [VISIBLE_ORDER_WHERE] };
+  if (search) {
+    where.OR = [
+      { code: { contains: search, mode: "insensitive" } },
+      { user: { name: { contains: search, mode: "insensitive" } } },
+      { user: { email: { contains: search, mode: "insensitive" } } },
+    ];
+  }
+  if (status) where.status = status;
+  if (paymentStatus) where.paymentStatus = paymentStatus;
+  if (dateFrom || dateTo) {
+    where.createdAt = {};
+    if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+    if (dateTo) where.createdAt.lte = new Date(dateTo);
+  }
+  return where;
+}
+
 export class AdminOrderRepository {
   /**
    * Get paginated list of orders with filters
@@ -85,33 +111,7 @@ export class AdminOrderRepository {
     } = filters;
 
     const skip = (page - 1) * limit;
-
-    // Abandoned checkouts are invisible here (checkout-abandonment R4). Combined with
-    // AND rather than assigned, so an explicit `status` filter narrows within the
-    // visible set instead of replacing the predicate.
-    const where: Prisma.OrderWhereInput = { AND: [VISIBLE_ORDER_WHERE] };
-
-    if (search) {
-      where.OR = [
-        { code: { contains: search, mode: "insensitive" } },
-        { user: { name: { contains: search, mode: "insensitive" } } },
-        { user: { email: { contains: search, mode: "insensitive" } } },
-      ];
-    }
-
-    if (status) {
-      where.status = status;
-    }
-
-    if (paymentStatus) {
-      where.paymentStatus = paymentStatus;
-    }
-
-    if (dateFrom || dateTo) {
-      where.createdAt = {};
-      if (dateFrom) where.createdAt.gte = new Date(dateFrom);
-      if (dateTo) where.createdAt.lte = new Date(dateTo);
-    }
+    const where = viewWhere({ search, status, paymentStatus, dateFrom, dateTo });
 
     // Note: For amount filtering, we'd need to use raw SQL or post-filter
     // since totals is stored as JSON
@@ -151,6 +151,47 @@ export class AdminOrderRepository {
     }
 
     return { orders: orders.map(withWireItems), total };
+  }
+
+  /**
+   * The rows of a view for Export CSV, at most `cap + 1` so the caller can tell "over the cap" from
+   * "exactly the cap" without a second count. One statement: items and parcels' shops come joined.
+   */
+  async exportRows(filters: OrderListFilters, cap: number): Promise<AdminOrderExportRow[]> {
+    const orders = await prisma.order.findMany({
+      relationLoadStrategy: "join",
+      where: viewWhere(filters),
+      take: cap + 1,
+      orderBy: [{ [SORT_COLUMNS[filters.sortBy ?? "createdAt"]]: filters.sortOrder ?? "desc" }, { id: "asc" }],
+      select: {
+        code: true,
+        createdAt: true,
+        status: true,
+        paymentStatus: true,
+        address: true,
+        grandTotal: true,
+        user: { select: { email: true } },
+        items: { select: { quantity: true } },
+        shipments: { select: { org: { select: { name: true } } } },
+      },
+    });
+    return orders.map((order) => {
+      const address = toAddressSnapshot(order.address);
+      return {
+        code: order.code,
+        createdAt: order.createdAt,
+        status: order.status,
+        paymentStatus: order.paymentStatus ?? PAYMENT_STATUS.PENDING,
+        buyerName: address?.fullName ?? "",
+        buyerEmail: address?.email ?? order.user?.email ?? "",
+        phone: address?.mobile ?? "",
+        city: address?.city ?? "",
+        pincode: address?.pincode ?? "",
+        itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
+        grandTotal: order.grandTotal,
+        shops: [...new Set(order.shipments.map((s) => s.org.name))],
+      };
+    });
   }
 
   /** How many visible orders sit in each status: one grouped count, for the console's tab counts. */

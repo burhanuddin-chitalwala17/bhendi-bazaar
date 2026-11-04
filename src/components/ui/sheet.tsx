@@ -19,14 +19,23 @@ const SheetClose = DialogPrimitive.Close;
 const SIDE_ON_DESKTOP =
   "md:inset-y-0 md:right-0 md:left-auto md:h-full md:max-h-none md:w-full md:max-w-sm md:rounded-none md:rounded-l-2xl md:border-t-0 md:border-l md:pb-4 md:data-[state=open]:slide-in-from-bottom-0 md:data-[state=closed]:slide-out-to-bottom-0 md:data-[state=open]:slide-in-from-right md:data-[state=closed]:slide-out-to-right";
 
+// How much the sheet holds. `full` is a task with a picture and its words beside it: the whole
+// phone, and a wider right-hand panel from md (only with `adaptive`).
+const SIZES = {
+  default: "",
+  full: "h-dvh max-h-none rounded-t-none border-t-0 md:max-w-2xl md:rounded-l-2xl",
+} as const;
+
 function SheetContent({
   className,
   children,
   side = "bottom",
+  size = "default",
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   /** `adaptive`: a bottom sheet on a phone, a right-hand panel from `md`. */
   side?: "bottom" | "adaptive";
+  size?: keyof typeof SIZES;
 }) {
   return (
     <DialogPrimitive.Portal data-slot="sheet-portal">
@@ -42,6 +51,7 @@ function SheetContent({
           "pb-[calc(1rem+env(safe-area-inset-bottom))]",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom",
           side === "adaptive" && SIDE_ON_DESKTOP,
+          SIZES[size],
           className,
         )}
         {...props}
@@ -52,6 +62,7 @@ function SheetContent({
           className={cn(
             "mx-auto h-1 w-10 shrink-0 rounded-full bg-muted-foreground/30",
             side === "adaptive" && "md:hidden",
+            size === "full" && "hidden",
           )}
         />
         {children}

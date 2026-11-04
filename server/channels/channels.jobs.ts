@@ -17,6 +17,8 @@ import { channelOrdersService } from "./channel-orders.service";
 import { platformListingService } from "./platform-listing.service";
 import { listingPublishService } from "./listing-publish.service";
 import { checkListingsSpec, enqueueListingCheck, publishListingSpec } from "./listing-publish.job";
+import { checkListingProblemsSpec } from "./listing-problems.job";
+import { listingProblemsService } from "./listing-problems.service";
 import { checkOrdersSpec, checkStockSpec, ORDERS_CHECK_EVERY_SECONDS } from "./stock-checks.job";
 import { enqueue, enqueueLater } from "@server/shared/jobs/jobs.enqueue";
 import { prisma } from "@server/shared/prisma";
@@ -67,6 +69,8 @@ export const channelsMaintainJob = registerJob({
     // Platform listings for anything linked since, and one more look at listings still waiting (marketplace-publish D5).
     await platformListingService.ensureForAll().catch((error: unknown) => console.error(`[channels] platform listings pass failed: ${error instanceof Error ? error.name : "error"}`));
     await listingPublishService.daily();
+    // What each marketplace says stops a listing now, for every shop in one run (marketplace-publish Q23).
+    await enqueue(prisma, checkListingProblemsSpec, {});
     await channelFactsService.fillUnreadAll().catch((error: unknown) => console.error(`[channels] facts fill pass failed: ${error instanceof Error ? error.name : "error"}`));
     console.log(
       `[jobs] channels.maintain ${jobId}: checked ${summary.checked}, renewed ${summary.renewed}, ` +
@@ -154,5 +158,14 @@ export const checkListingsJob = registerJob({
       enqueueListingCheck(prisma, afterSeconds),
     );
     if (checked > 0) console.log(`[jobs] channels.check-listings ${jobId}: ${checked} listings`);
+  },
+});
+
+/** Every connected account's listings with errors, read once a day and recorded in one write (marketplace-publish Q23). */
+export const checkListingProblemsJob = registerJob({
+  ...checkListingProblemsSpec,
+  handler: async ({ jobId }) => {
+    const outcome = await listingProblemsService.checkAll();
+    console.log(`[jobs] channels.check-listing-problems ${jobId}: ${JSON.stringify(outcome)}`);
   },
 });

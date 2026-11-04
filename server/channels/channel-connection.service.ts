@@ -336,6 +336,15 @@ export const channelConnectionService = {
   },
 
   /**
+   * A batch's token source for a connection read with its sealed token: the stored one while it is
+   * fresh, judged at each call; the locked renewal only when it is about to lapse, and once per batch.
+   */
+  tokenSource(row: { id: string; accessToken: string | null; accessTokenExpiresAt: Date | null }): () => Promise<string> {
+    let renewed: string | null = null;
+    return async () => renewed ?? this.unexpiredAccessToken(row) ?? (renewed = await this.accessToken(row.id));
+  },
+
+  /**
    * A valid access token for one connection, renewed first if it is about to lapse (D8). Inside
    * the domain only: later subfeatures call marketplace verbs through here, never with a token.
    */

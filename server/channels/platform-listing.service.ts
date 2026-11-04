@@ -7,6 +7,7 @@ import { channelConnectionRepository } from "./channel-connection.repository";
 import { channelListingRepository } from "./channel-listing.repository";
 import { storedRead } from "./channel-facts.service";
 import {
+  complainedFields,
   computeListing,
   listingStatus,
   masterValues,
@@ -21,6 +22,7 @@ import {
 import { platformListingRepository, type PlatformListingRow } from "./platform-listing.repository";
 import {
   type ListingIssue,
+  type ListingField,
   type ListingOverrides,
   type ListingPhotoDTO,
   type ListingRules,
@@ -113,12 +115,13 @@ export async function ensure(orgId: string, connection: Connection, channel: Mar
 const issuesOf = (raw: unknown): ListingIssue[] => (Array.isArray(raw) ? (raw as ListingIssue[]) : []);
 
 /** Where a row stands, against its product (publish Q4). */
-export function statusOf(row: PlatformListingRow, product: Product, rules: ListingRules): { status: ListingStatusDTO; values: ListingValues; waiting: ReturnType<typeof waitingFields> } {
+export function statusOf(row: PlatformListingRow, product: Product, rules: ListingRules, resend: readonly ListingField[] = []): { status: ListingStatusDTO; values: ListingValues; waiting: ReturnType<typeof waitingFields> } {
   const computed = computeListing(masterValues(product), parseOverrides(row.overrides, product.media));
   // A whole-rupee marketplace holds the rounded price, so that is what is compared and sent (channel-listings Q13).
   const values = rules.wholeRupees ? { ...computed, price: toWholeRupees(computed.price) } : computed;
   const sent = parseSent(row.sent, product.media);
-  const waiting = waitingFields(values, sent, rules.writable);
+  // Only once on the marketplace: a draft has nothing there to complain of.
+  const waiting = waitingFields(values, sent, rules.writable, row.channelListingId !== null ? resend : []);
   return {
     values,
     waiting,
@@ -164,7 +167,8 @@ export const platformListingService = {
     if (!row) throw new NotFoundError("Listing");
     const rules = providerFor(channel).listingRules;
     const overrides = parseOverrides(row.overrides, product.media);
-    const { status, values, waiting } = statusOf(row, product, rules);
+    const daily = mirror?.problemsSince != null && issuesOf(mirror.problems).length > 0;
+    const { status, values, waiting } = statusOf(row, product, rules, daily ? complainedFields(mirror!.problems) : []);
     return {
       id: row.id,
       version: row.version,
@@ -187,7 +191,9 @@ export const platformListingService = {
       },
       status,
       waitingFields: waiting,
-      issues: issuesOf(row.issues),
+      // A send's own answer is the newer word; with none, the daily look's complaint shows on the same fields (Q23).
+      issues: issuesOf(row.issues).length > 0 || !daily ? issuesOf(row.issues) : issuesOf(mirror!.problems),
+      marketplaceProblems: issuesOf(row.issues).length === 0 && daily ? { suppressed: mirror!.suppressed } : null,
       showing: (row.showing as ListingScreenDTO["showing"]) ?? null,
       draft: row.channelListingId === null && row.createMode ? await listingCreateService.draftInfo(orgId, row, product, channel) : null,
     };

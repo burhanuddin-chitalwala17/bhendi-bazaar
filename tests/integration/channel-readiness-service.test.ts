@@ -184,6 +184,44 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
       });
     });
 
+    // design-system Q35: the products page's channel pill lists exactly what this read returns.
+    it("lists only this shop's on-sale products the channel would refuse, each with why", async () => {
+      const fx = await ensureFixtures();
+      const make = (org: string, answers: Record<string, string>, archived = false) =>
+        prisma.product.create({
+          data: {
+            slug: `${stamp}-p-${Math.random().toString(36).slice(2, 8)}`,
+            name: `${stamp} product`,
+            description: "Created by channel-readiness-service.test.ts",
+            price: 10_000,
+            categoryId: fx.categoryId,
+            orgId: org,
+            thumbnail: "/brand/bhendi-bazaar.png",
+            productType: typeKey,
+            kind: "abaya",
+            facts: facts(answers),
+            archivedAt: archived ? new Date() : null,
+          },
+          select: { id: true },
+        });
+      const ready = await make(orgId, { [FACT.COLOUR]: mapped });
+      const noColour = await make(orgId, {});
+      const archivedNoColour = await make(orgId, {}, true);
+      const theirs = await make(fx.otherOrgId, {});
+      const ids = [ready.id, noColour.id, archivedNoColour.id, theirs.id];
+      try {
+        const refused = await service.notReadyOn(orgId, CHANNEL.FLIPKART);
+        expect(refused.get(noColour.id)).toEqual([{ kind: LISTING_PROBLEM.MISSING_FACT, fact: FACT.COLOUR, label: expect.any(String) }]);
+        expect(refused.has(ready.id)).toBe(false);
+        expect(refused.has(archivedNoColour.id)).toBe(false);
+        expect(refused.has(theirs.id)).toBe(false);
+        // A channel the shop does not sell on refuses nothing, rather than everything.
+        expect((await service.notReadyOn(orgId, CHANNEL.MEESHO)).size).toBe(0);
+      } finally {
+        await prisma.product.deleteMany({ where: { id: { in: ids } } });
+      }
+    });
+
     // Spec A5: the owner changes a mapping and the next answer reflects it, with no deploy.
     it("reflects a mapping added a moment ago", async () => {
       await maps.setValue({

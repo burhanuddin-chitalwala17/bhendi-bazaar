@@ -253,6 +253,13 @@ day, time, at }`, every date already India's. **Deleted** (Q36): `PATCH /api/adm
 its schema; **`PATCH /api/admin/orders/[id]`** (`updateOrderStatusSchema`) is deleted too — an order's status is
 only the summary of its parcels.
 
+Since design-system Q37 (2026-11-05) **`GET /api/admin/orders/export`** (platform admins) takes the orders list's
+query (`adminOrderViewSchema`: `search`, `status`, `paymentStatus`, `sortBy`, `sortOrder`; unknown values ignored)
+and answers `text/csv` as an attachment named `bhendi-bazaar-orders-YYYY-MM-DD.csv`, `no-store`. Columns, in
+order: Order, Placed (India time, `YYYY-MM-DD HH:mm`), Status, Payment, Buyer, Email, Phone, City, Pincode, Items
+(units), Total (₹, two decimals from paise), Shops (`; `-joined). Over 10,000 rows it answers `422` in the error
+envelope. The rows are **`AdminOrderExportRow`** (`server/checkout/admin.order.types.ts`), built only for this export.
+
 Since order-fulfilment unit 4 the courier webhook is **`POST /api/webhooks/shipping/courier`** (was
 `/api/webhooks/shipping/shiprocket`, deleted; Shiprocket refuses a URL naming it). It requires the header **`x-api-key`** equal to
 `SHIPROCKET_WEBHOOK_TOKEN`, compared in constant time before the body is read; missing, wrong or unconfigured is
@@ -306,7 +313,9 @@ threshold that sold in the last 30 days, with the days until the first runs out)
 orders, average order, platform kept, shops selling, each `{ current, previous, changeBps }`) and
 **`AdminAttention`** (`server/analytics/attention.types.ts`: at most five `{ key, count, waiting, oldestAt,
 href }`, keys from `ADMIN_ATTENTION`) are server reads through `src/data-access-layer/admin/dashboard.dal.ts`;
-no wire shape.
+no wire shape. Since design-system Q34 (2026-11-04) **`ShopSalesOverview`** (same file: one shop's per-day
+paise and the period before, total, paid orders, average order and `payable`, each `Compared`) is read
+for the shop's Home through `src/data-access-layer/org/sales.dal.ts`; no wire shape. `HomeData.widgets` is gone.
 
 ### Listing vocabulary
 
@@ -526,6 +535,12 @@ or refused), `locationsRead`, `sending` (sent of total since sync went on) and `
 `stock`: last sent, when, `heldByMarketplace`, and an oversold order still waiting to ship, or null
 while sync is off.
 
+Since marketplace-publish Q23 a `ChannelListingDTO` carries `problems` (`{ suppressed, first, count }`
+or null: the daily look's complaint), `ChannelListingsPageDTO.counts` gains `problems` and the page
+`showingProblems`; `ListingScreenDTO` gains `marketplaceProblems` (`{ suppressed }` or null, when its
+`issues` came from the daily look); Home reads **`ListingProblemsAttentionDTO`** (`channel`, `label`,
+`problems`, `suppressed`). No route changed.
+
 Routes, both `withOrg`:
 - `PUT /api/org/[orgId]/channels/[channel]/stock-sync` — body `stock-sync.schema.ts`
   (`stockSyncChangeSchema`): `{ action: "on" | "pause" }`, from the Channels card (Q27); "on" turns a
@@ -624,7 +639,7 @@ Since product-form unit 5 the **Bhendi Bazaar team saves a shop's product** thro
 
 Since product-form unit 6 the **shop reads the team's saves** ([product-form](specs/own-store/product-form/trd.md) D13): **`ProductTeamEditDto`** (`server/catalog/product-team.ts`) is `{ id, at: Date, created: boolean, reason, changes: Array<{ field, at?, before, after }> }` — the stored `changes` as written, money first and in paise, newest entry first, and **no admin identity** (the entry is read without its `adminId`; the shop is told "Bhendi Bazaar team"). It is a server read on `/org/[orgId]/products/[id]`, not a route; an entry that does not parse or names another org is left out. The org-facing `ProductForTable` gains read-only **`teamEditedAt: Date | null`**, and Home's `HomeAttentionDto` gains **`teamEdits: HomeRead<{ count, productId }>`** — available products with `teamEditedAt` set, `productId` only when there is one.
 
-Since design-system Q29 (2026-11-04) products can be **edited in bulk**. `POST /api/org/[orgId]/products/bulk-edit` parses **`bulkProductActionSchema`** and `POST /api/admin/products/bulk-edit` **`teamBulkProductActionSchema`** (`src/lib/validation/schemas/product-bulk.schema.ts`) — a strict discriminated union on `action`: `{ action: "price", productIds, change }` where `change` is `{ mode: "set", pricePaise }` | `{ mode: "amount", deltaPaise }` | `{ mode: "percent", percent }`; `{ action: "stock", rows: Array<{ productId, orgAddressId, quantity, seenQuantity }> }`; `{ action: "archive", productIds }`; `{ action: "send", productIds, channel: "amazon" | "flipkart" }`. The team's version adds the required `reason`. At most `MAX_BULK_PRODUCTS` (200) ids, no duplicates; no server-owned field is accepted. The answer is **`BulkActionResultDTO`** `{ action, updated, skipped: Array<{ productId, reason }>, conflicts: Array<{ productId, orgAddressId, seenQuantity, currentQuantity }> }` (`server/catalog/product-bulk.types.ts`), `reason` from the closed set `BULK_SKIP_REASON`. A product of another org is skipped as `not_found`, never touched; a stock row that moved since it was read comes back as a conflict, never overwritten (Invariant 6). Percent changes round to the nearest paisa, half away from zero; a result must lie between 1 paisa and `MAX_PRICE_PAISE`. Each team change writes the same `PRODUCT_TEAM_UPDATED` entry a single team save does, so it reaches the shop's history.
+Since design-system Q29 (2026-11-04) products can be **edited in bulk**. `POST /api/org/[orgId]/products/bulk-edit` parses **`bulkProductActionSchema`** and `POST /api/admin/products/bulk-edit` **`teamBulkProductActionSchema`** (`src/lib/validation/schemas/product-bulk.schema.ts`) — a strict discriminated union on `action`: `{ action: "price", productIds, change }` where `change` is `{ mode: "set", pricePaise }` | `{ mode: "amount", deltaPaise }` | `{ mode: "percent", percent }`; `{ action: "stock", rows: Array<{ productId, orgAddressId, quantity, seenQuantity }> }`; `{ action: "archive", productIds }`; `{ action: "send", productIds, channel: "amazon" | "flipkart" }`. The team's version adds the required `reason`. At most `MAX_BULK_PRODUCTS` (200) ids, no duplicates; no server-owned field is accepted. The answer is **`BulkActionResultDTO`** `{ action, updated, skipped: Array<{ productId, reason }>, conflicts: Array<{ productId, orgAddressId, seenQuantity, currentQuantity }> }` (`server/catalog/product-bulk.types.ts`), `reason` from the closed set `BULK_SKIP_REASON`. A product of another org is skipped as `not_found`, never touched; a stock row that moved since it was read comes back as a conflict, never overwritten (Invariant 6). Percent changes round to the nearest paisa, half away from zero; a result must lie between 1 paisa and `MAX_PRICE_PAISE`. Each team change writes the same `PRODUCT_TEAM_UPDATED` entry a single team save does, so it reaches the shop's history. Since design-system Q35 (2026-11-05) the shop's `price`, `archive` and `send` take **exactly one of** `productIds` or `matching`: **`ProductListScope`** (`src/lib/validation/schemas/product-list.schema.ts`, strict: `search`, `categoryId`, `shelf`, `lowStock`, `outOfStock`, `wishlistedOnly`, `notReadyOn` — a channel from `CHANNELS`; never an org). With `matching` the server finds the products itself in the path's org (`adminProductsDAL.matchingIds`) and refuses with 422 when more than `MAX_BULK_PRODUCTS` match, rather than acting on part of the list. `stock` and the team's schema still name ids. The products list's **`ProductForTable`** gains `notReady?: NotReadyReason[]` (`server/listing/channel-readiness.service.ts`: `{ kind: "noCategory" }` | `{ kind: "missingFact" | "unmappedValue", fact, label }`), set only when the list is filtered by a channel (`?channel=`).
 
 Since design-system Q29 the org-facing **`ProductForTable`** carries **`stockByLocation`**: `Array<{ orgAddressId, quantity }>`, the rows the bulk stock dialog pre-fills and sends back as `seenQuantity`. Read-only, never accepted on a product save.
 

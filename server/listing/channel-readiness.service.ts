@@ -4,6 +4,7 @@ import {
   LISTING_PROBLEM,
   LISTING_READINESS,
   enabledChannels,
+  keepsItOff,
   readinessByChannel,
   type AttributeMapping,
   type CategoryMapping,
@@ -48,6 +49,11 @@ export interface ChannelSummaryRow {
   /** Compulsory facts missing, most common first; `fixable` when a picker answers it. */
   gaps: Array<{ fact: FactKey; label: string; count: number; fixable: boolean }>;
 }
+
+/** Why a channel would refuse one product: no category there, a compulsory fact unanswered, or an answer it has no word for. */
+export type NotReadyReason =
+  | { kind: typeof LISTING_PROBLEM.NO_CATEGORY }
+  | { kind: typeof LISTING_PROBLEM.MISSING_FACT | typeof LISTING_PROBLEM.UNMAPPED_VALUE; fact: FactKey; label: string };
 
 export interface ChannelVerdict {
   channel: Channel;
@@ -173,6 +179,25 @@ export const channelReadinessService = {
     return { rows: summarise(channels, verdicts.values()), missing: missing ? missingIn(verdicts, missing.channel, missing.fact) : [] };
   },
 
+  /**
+   * The shop's products a channel would refuse as they stand, each with what keeps it off: the
+   * products page's channel filter (design-system Q35). The same verdicts the counts come from, so
+   * a pill saying "3 to fix" lists exactly three. Empty when the channel is not one the shop uses.
+   */
+  async notReadyOn(orgId: string, channel: Channel): Promise<Map<string, NotReadyReason[]>> {
+    const channels = enabledChannels(await orgChannelRepository.forOrg(orgId));
+    if (!channels.includes(channel)) return new Map();
+    const products = await productReadinessRepository.subjectsFor(orgId);
+    if (products.length === 0) return new Map();
+    const verdicts = await this.forProducts(orgId, products);
+    const out = new Map<string, NotReadyReason[]>();
+    for (const [id, list] of verdicts) {
+      const verdict = list.find((v) => v.channel === channel);
+      if (verdict?.report.state === LISTING_READINESS.INCOMPLETE) out.set(id, reasonsOf(verdict.report.problems));
+    }
+    return out;
+  },
+
   /** The shop's products a channel would refuse for want of one fact, for its fix page (readiness-fix R2). */
   async missingFact(orgId: string, channel: Channel, fact: FactKey): Promise<string[]> {
     return (await this.readinessOf(orgId, { channel, fact })).missing;
@@ -201,6 +226,18 @@ function summarise(channels: readonly Channel[], verdicts: Iterable<ChannelVerdi
       .map(([fact, count]) => ({ fact, label: FACT_DECLARATIONS[fact]?.label ?? fact, count, fixable: FACT_DECLARATIONS[fact]?.answer === ANSWER.CHOICE }))
       .sort((a, b) => b.count - a.count),
   }));
+}
+
+/** The problems that keep it off (`keepsItOff`), worded by their fact where they have one. */
+function reasonsOf(problems: ListingReadinessReport["problems"]): NotReadyReason[] {
+  return problems.flatMap((p): NotReadyReason[] => {
+    if (!keepsItOff(p.problem)) return [];
+    if (p.problem === LISTING_PROBLEM.NO_CATEGORY) return [{ kind: LISTING_PROBLEM.NO_CATEGORY }];
+    if (p.problem === LISTING_PROBLEM.MISSING_FACT || p.problem === LISTING_PROBLEM.UNMAPPED_VALUE) {
+      return [{ kind: p.problem, fact: p.fact, label: FACT_DECLARATIONS[p.fact]?.label ?? p.fact }];
+    }
+    return [];
+  });
 }
 
 function missingIn(verdicts: Map<string, ChannelVerdict[]>, channel: Channel, fact: FactKey): string[] {

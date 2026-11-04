@@ -327,6 +327,17 @@ export const channelConnectionRepository = {
     });
   },
 
+  /** Every connected marketplace account with its sealed token, in one statement: the daily problems look (marketplace-publish Q23). */
+  async connectedWithTokens(): Promise<OrdersCheckRow[]> {
+    return await prisma.channelConnection.findMany({
+      where: { state: CONNECTION_STATE.CONNECTED },
+      select: {
+        id: true, orgId: true, channel: true, state: true, externalAccountId: true, stockSync: true,
+        stockSyncChangedAt: true, ordersCursor: true, accessToken: true, accessTokenExpiresAt: true,
+      },
+    });
+  },
+
   /** The last problem a send met, or null once one goes (D7). */
   async setStockProblem(db: Pick<typeof prisma, "channelConnection">, id: string, problem: StockProblem | null): Promise<void> {
     await db.channelConnection.updateMany({ where: { id, stockProblem: problem === null ? { not: null } : { not: problem } }, data: { stockProblem: problem } });

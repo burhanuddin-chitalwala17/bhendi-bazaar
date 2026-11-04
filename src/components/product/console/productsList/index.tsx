@@ -13,6 +13,11 @@ import { productTabs, type ProductTabKey } from "./product-tabs";
 import { useProducts } from "../useProducts";
 import type { ProductStats, ProductFilters, ProductListResult } from "../types";
 import { useProductsBasePath } from "@/components/product/console/useProductsBasePath";
+import type { ChannelSummaryRow } from "@server/listing/channel-readiness.service";
+import { CHANNEL_LABELS, type Channel } from "@server/shared/channels";
+import type { ProductListScope } from "@/lib/validation/schemas/product-list.schema";
+import { ChannelFilterNote, ChannelPills } from "./components/ChannelFilter";
+import { CHANNEL_FILTER } from "./channel-filter-copy";
 
 interface ProductsContainerProps {
   readOnly?: boolean;
@@ -26,6 +31,10 @@ interface ProductsContainerProps {
   marketplaces?: BulkMarketplace[];
   /** Where "Add a product" goes from an empty list; absent on the read-only views. */
   addHref?: string;
+  /** Each channel the shop sells on and how much of the catalogue it would take (Q35); absent off the shop's own page. */
+  channelRows?: readonly ChannelSummaryRow[];
+  /** The shop's Channels page, for "Where you sell". */
+  channelsHref?: string;
 }
 
 // Filter fields whose URL param is named differently — the pages read the short names.
@@ -34,6 +43,7 @@ const URL_PARAM_FOR: Partial<Record<keyof ProductFilters, string>> = {
   sortBy: "sort",
   sortOrder: "order",
   wishlistedOnly: "wishlisted",
+  notReadyOn: "channel",
 };
 
 /** The default shelf is available, so it stays out of the URL. */
@@ -48,12 +58,16 @@ export function ProductsContainer({
   locations,
   marketplaces = [],
   addHref,
+  channelRows = [],
+  channelsHref,
 }: ProductsContainerProps) {
   const productsBasePath = useProductsBasePath();
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  // "Select all" (Q35): every product the filters match, past this page. The server finds them.
+  const [allMatching, setAllMatching] = useState(false);
   const [bulk, setBulk] = useState<BulkAction | null>(null);
   // What the open action works on, held as picked: the result still names them once the selection clears.
   const [targets, setTargets] = useState<BulkTarget[]>([]);
@@ -68,7 +82,10 @@ export function ProductsContainer({
     setData(initialData);
     setStats(initialStats);
     // Another page or filter: what was picked is no longer on screen.
-    if (!bulk) setSelected(new Set());
+    if (!bulk) {
+      setSelected(new Set());
+      setAllMatching(false);
+    }
   }
   const { deleteProduct, setProductArchived } = useProducts({
     onSuccess: () => {
@@ -150,9 +167,19 @@ export function ProductsContainer({
         ? "out"
         : "all";
   const picked = data.products.filter((p) => selected.has(p.id));
+  const total = data.pagination.total;
+  const pageAllPicked = picked.length > 0 && picked.length === data.products.length;
+  const clearSelection = () => {
+    setSelected(new Set());
+    setAllMatching(false);
+  };
+  const matching: { scope: ProductListScope; count: number } | undefined = allMatching
+    ? { scope: scopeOf(initialFilters), count: total }
+    : undefined;
+  // Stock is entered per product and location, so it is offered only for the rows on screen.
   const actions = [
     BULK_ACTION.PRICE,
-    ...(locations ? [BULK_ACTION.STOCK] : []),
+    ...(locations && !allMatching ? [BULK_ACTION.STOCK] : []),
     BULK_ACTION.ARCHIVE,
     BULK_ACTION.SEND,
   ].map((action) => ({
@@ -163,10 +190,27 @@ export function ProductsContainer({
     },
   }));
 
+  const channelHref = (channel: Channel | undefined) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (channel) params.set(URL_PARAM_FOR.notReadyOn!, channel);
+    else params.delete(URL_PARAM_FOR.notReadyOn!);
+    params.delete("page");
+    return `${productsBasePath}?${params.toString()}`;
+  };
+  const filteredRow = channelRows.find((row) => row.channel === initialFilters.notReadyOn);
+
   return (
     <div className="space-y-4">
       <PageTabs tabs={tabs} current={current} label="Which products" />
+      <ChannelPills rows={channelRows} current={initialFilters.notReadyOn} hrefFor={channelHref} />
       <ProductsFilters filters={initialFilters} categories={categories} onFilterChange={updateFilters} />
+      {filteredRow && channelsHref && (
+        <ChannelFilterNote
+          row={filteredRow}
+          channelsHref={channelsHref}
+          fixHref={(fact) => `${productsBasePath}/fix?channel=${filteredRow.channel}&fact=${fact}`}
+        />
+      )}
       <ProductsTable
         onSetArchived={handleSetArchived}
         products={data.products}
@@ -176,7 +220,8 @@ export function ProductsContainer({
         onDelete={handleDelete}
         readOnly={readOnly}
         isPending={isPending}
-        selection={readOnly ? undefined : { selected, onChange: setSelected }}
+        selection={readOnly ? undefined : { selected, onChange: (next) => { setSelected(next); setAllMatching(false); } }}
+        notReadyChannel={filteredRow ? CHANNEL_LABELS[filteredRow.channel] : undefined}
         empty={
           current === "all" && !initialFilters.search && addHref
             ? { title: "No products yet", description: "Add your first product and it goes on sale in your shop.", action: { label: "Add a product", href: addHref } }
@@ -184,7 +229,19 @@ export function ProductsContainer({
         }
       />
       {!readOnly && (
-        <SelectionBar count={picked.length} noun="selected" actions={actions} onClear={() => setSelected(new Set())} />
+        <SelectionBar
+          count={allMatching ? total : picked.length}
+          noun="selected"
+          actions={actions}
+          onClear={clearSelection}
+          selectAll={
+            allMatching
+              ? { label: CHANNEL_FILTER.clearSelection, onClick: clearSelection }
+              : pageAllPicked && total > picked.length
+                ? { label: CHANNEL_FILTER.selectAll(total), onClick: () => setAllMatching(true) }
+                : undefined
+          }
+        />
       )}
       <BulkActionDialog
         action={bulk}
@@ -192,8 +249,22 @@ export function ProductsContainer({
         products={targets}
         locations={locations ?? []}
         marketplaces={marketplaces}
-        onDone={() => setSelected(new Set())}
+        matching={matching}
+        onDone={clearSelection}
       />
     </div>
   );
+}
+
+/** The list's filters as "Select all" sends them: which products, never which page or order. */
+function scopeOf(filters: ProductFilters): ProductListScope {
+  return {
+    search: filters.search || undefined,
+    categoryId: filters.categoryId || undefined,
+    shelf: filters.shelf,
+    lowStock: filters.lowStock || undefined,
+    outOfStock: filters.outOfStock || undefined,
+    wishlistedOnly: filters.wishlistedOnly || undefined,
+    notReadyOn: filters.notReadyOn,
+  };
 }

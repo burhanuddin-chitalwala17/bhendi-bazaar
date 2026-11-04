@@ -44,6 +44,10 @@ export interface ResourceListProps<T> {
   thumbnail?: (row: T) => ReactNode;
   /** The whole row opens this. */
   rowHref?: (row: T) => string;
+  /** The table's row opens this instead, e.g. a side panel beside the list from desktop. */
+  tableRowHref?: (row: T) => string;
+  /** The row the screen is showing beside the list: marked, and announced as current. */
+  activeKey?: string;
   /** Checkboxes, when the screen has something to do with several rows at once (SelectionBar). */
   selection?: ResourceSelection;
   /** Spoken name of a row's checkbox; defaults to its key. */
@@ -78,6 +82,8 @@ export function ResourceList<T>({
   label,
   thumbnail,
   rowHref,
+  tableRowHref,
+  activeKey,
   selection,
   rowLabel,
   state = "ready",
@@ -104,7 +110,12 @@ export function ResourceList<T>({
     ) : (
       <>
         <PhoneRows {...{ rows, keys, columns, label, thumbnail, rowHref, selection, speak }} className={FROM[tableFrom].rows} />
-        <Table {...{ rows, keys, columns, label, thumbnail, rowHref, selection, speak, sort }} className={FROM[tableFrom].table} />
+        <Table
+          {...{ rows, keys, columns, label, thumbnail, selection, speak, sort, activeKey }}
+          rowHref={tableRowHref ?? rowHref}
+          stay={tableRowHref !== undefined}
+          className={FROM[tableFrom].table}
+        />
       </>
     );
 
@@ -136,10 +147,10 @@ function toggle(selection: ResourceSelection, key: string) {
 }
 
 /** A link stretched over its row, so the whole row opens it while the checkbox stays its own target. */
-function RowLink({ href, children }: { href?: string; children: ReactNode }) {
+function RowLink({ href, stay, children }: { href?: string; stay?: boolean; children: ReactNode }) {
   if (!href) return <>{children}</>;
   return (
-    <Link href={href} prefetch={false} className="after:absolute after:inset-0 hover:underline">
+    <Link href={href} prefetch={false} scroll={stay ? false : undefined} className="after:absolute after:inset-0 hover:underline">
       {children}
     </Link>
   );
@@ -218,8 +229,10 @@ function Table<T>({
   selection,
   speak,
   sort,
+  activeKey,
+  stay,
   className,
-}: PartProps<T> & { sort: UrlSort }) {
+}: PartProps<T> & { sort: UrlSort; activeKey?: string; stay?: boolean }) {
   const allSelected = selection !== undefined && keys.length > 0 && keys.every((k) => selection.selected.has(k));
   const [first] = columns;
 
@@ -274,7 +287,8 @@ function Table<T>({
             <tr
               key={keys[i]}
               aria-selected={selection ? selection.selected.has(keys[i]) : undefined}
-              className="relative hover:bg-muted/60 aria-selected:bg-primary/5"
+              aria-current={activeKey === keys[i] ? "true" : undefined}
+              className={cn("relative hover:bg-muted/60 aria-selected:bg-primary/5", activeKey === keys[i] && "bg-primary/5")}
             >
               {selection && (
                 <td className="relative z-10 px-4">
@@ -299,7 +313,7 @@ function Table<T>({
                     <div className="flex items-center gap-3">
                       {thumbnail?.(row)}
                       <span className="font-semibold text-foreground">
-                        <RowLink href={rowHref?.(row)}>{column.cell(row)}</RowLink>
+                        <RowLink href={rowHref?.(row)} stay={stay}>{column.cell(row)}</RowLink>
                       </span>
                     </div>
                   ) : (

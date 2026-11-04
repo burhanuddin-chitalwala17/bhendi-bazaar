@@ -61,9 +61,7 @@ export const channelOrdersService = {
     await inBatches(live, READ_CONCURRENCY, async (row) => {
       // The claim already holds the token, judged again on every call; only an expiring one takes the
       // locked renewal, and a renewed one serves the rest of this shop's read.
-      let renewed: string | null = null;
-      const token = async () =>
-        renewed ?? channelConnectionService.unexpiredAccessToken(row) ?? (renewed = await channelConnectionService.accessToken(row.id));
+      const token = channelConnectionService.tokenSource(row);
       try {
         const page = await providerFor(row.channel).readOrders(token, row.externalAccountId, row.ordersCursor);
         reads.push({ row, lines: page.lines, cursor: page.cursor });

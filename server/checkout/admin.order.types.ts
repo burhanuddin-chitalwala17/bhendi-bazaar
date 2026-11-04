@@ -89,6 +89,27 @@ export interface AdminOrderRow {
   createdAt: Date;
 }
 
+/**
+ * One order as Export CSV writes it (design-system Q37). Carries the buyer's contact details, so it
+ * is built only for a platform admin's export and never sent to a page.
+ */
+export interface AdminOrderExportRow {
+  code: string;
+  createdAt: Date;
+  status: string;
+  paymentStatus: string;
+  buyerName: string;
+  buyerEmail: string;
+  phone: string;
+  city: string;
+  pincode: string;
+  /** Units, summed over the order's lines. */
+  itemCount: number;
+  /** Integer paise, as stored. */
+  grandTotal: number;
+  shops: string[];
+}
+
 export interface OrderListResult {
   orders: AdminOrderRow[];
   total: number;

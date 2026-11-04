@@ -260,15 +260,27 @@ export class PromotionRepository {
     });
   }
 
+  /** One page of a scope's offers; `filter` narrows within the scope, never widens it. */
   async listScoped(
     scope: Prisma.PromotionWhereInput,
-    { page = 1, limit = 24 }: { page?: number; limit?: number } = {},
+    {
+      page = 1,
+      limit = 24,
+      filter,
+      orderBy = [{ createdAt: "desc" }],
+    }: {
+      page?: number;
+      limit?: number;
+      filter?: Prisma.PromotionWhereInput;
+      orderBy?: Prisma.PromotionOrderByWithRelationInput[];
+    } = {},
     db: Db = prisma
   ) {
+    const where: Prisma.PromotionWhereInput = filter ? { AND: [scope, filter] } : scope;
     const [offers, total] = await Promise.all([
       db.promotion.findMany({
       relationLoadStrategy: "join",
-      where: scope,
+      where,
       skip: (page - 1) * limit,
       take: limit,
       include: {
@@ -281,14 +293,26 @@ export class PromotionRepository {
         _count: { select: { orderDiscounts: true } },
         lossConfirmedBy: { select: { name: true } },
       },
-      orderBy: { createdAt: "desc" },
+      // The id breaks ties, so a page boundary never repeats or skips an offer.
+      orderBy: [...orderBy, { id: "asc" }],
       }),
-      db.promotion.count({ where: scope }),
+      db.promotion.count({ where }),
     ]);
     return {
       offers,
       pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
     };
+  }
+
+  /** How many of a scope's offers each filter matches, counted in parallel. */
+  async countScoped<K extends string>(
+    scope: Prisma.PromotionWhereInput,
+    filters: Record<K, Prisma.PromotionWhereInput>,
+    db: Db = prisma
+  ): Promise<Record<K, number>> {
+    const keys = Object.keys(filters) as K[];
+    const counts = await Promise.all(keys.map((k) => db.promotion.count({ where: { AND: [scope, filters[k]] } })));
+    return Object.fromEntries(keys.map((k, i) => [k, counts[i]])) as Record<K, number>;
   }
 
   async createOffer(

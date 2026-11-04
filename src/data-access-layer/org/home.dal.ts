@@ -8,6 +8,8 @@ import { channelConnectionService } from "@server/channels/channel-connection.se
 import type { ChannelAttentionDTO } from "@server/channels/channel-connection.types";
 import { channelStockService } from "@server/channels/channel-stock.service";
 import type { StockAttentionDTO } from "@server/channels/channel-stock.types";
+import { listingProblemsService } from "@server/channels/listing-problems.service";
+import type { ListingProblemsAttentionDTO } from "@server/channels/platform-listing.types";
 import { enhancementService } from "@server/content/enhancement.service";
 import { productTeamService } from "@server/catalog/product-team.service";
 import type { ShareShop } from "@/lib/store-preview";
@@ -16,8 +18,8 @@ import { shareShopFor } from "./share-shop.dal";
 /** One line's read: a failure costs that line and shows its own retry, never the page (D7). */
 export type HomeRead<T> = { ok: true; value: T } | { ok: false };
 
-/** The two existing widgets Home reads a number from, by their registry key. */
-const WIDGET = { PARCELS: "pending-parcels", PAID_ORDERS: "orders" } as const;
+/** The widget Home reads "has this shop sold yet" from, by its registry key. */
+const WIDGET = { PAID_ORDERS: "orders" } as const;
 
 /**
  * "Needs you now" (Q5, Q22, Q25; design-system Q31): each line hides at zero, and fails alone. New
@@ -31,6 +33,8 @@ export interface HomeAttentionDto {
   channel: HomeRead<ChannelAttentionDTO | null>;
   /** Stock sync waiting on a location match, or listings it put out of stock (inventory-sync Q28). */
   stock: HomeRead<StockAttentionDTO | null>;
+  /** Linked listings a marketplace says need a fix, from the daily look (marketplace-publish Q23). */
+  listingProblems: HomeRead<ListingProblemsAttentionDTO | null>;
   photos: HomeRead<number>;
   /** Products the team changed, until the shop next saves each (product-form Q23). */
   teamEdits: HomeRead<{ count: number; productId: string | null }>;
@@ -42,8 +46,6 @@ export interface HomeData {
   attention: HomeAttentionDto;
   /** Q14: before the first paid order the numbers are one line, not a grid of zeros. */
   hasPaidOrder: HomeRead<boolean>;
-  /** Widget figures already read here, by registry key, so the grid does not query them twice. */
-  widgets: Record<string, WidgetData>;
   readAt: string;
 }
 
@@ -66,14 +68,14 @@ async function widgetData(key: string, ctx: WidgetContext): Promise<WidgetData> 
 export const homeDAL = {
   async forOrg(orgId: string, now: Date = new Date()): Promise<HomeData> {
     const ctx: WidgetContext = { audience: "org", orgId };
-    const [shop, setup, parcels, toPackRead, lowStock, channel, stock, photos, teamEdits, paidOrders] = await Promise.all([
+    const [shop, setup, toPackRead, lowStock, channel, stock, listingProblems, photos, teamEdits, paidOrders] = await Promise.all([
       settle("shop", async () => shareShopFor(await shopDetailsService.get(orgId))),
       settle("setup", () => orgOnboardingService.status(orgId)),
-      settle("parcels", () => widgetData(WIDGET.PARCELS, ctx)),
       settle("to pack", () => toPack(orgId)),
       settle("low stock", () => sellingLowStock(orgId, now)),
       settle("channel", async () => (await channelConnectionService.overview(orgId)).attention[0] ?? null),
       settle("stock", () => channelStockService.attention(orgId)),
+      settle("listing problems", () => listingProblemsService.attention(orgId)),
       settle("photos", () => enhancementService.countAwaitingDecision(orgId)),
       settle("team edits", () => productTeamService.teamEditedSummary(orgId)),
       settle("paid orders", () => widgetData(WIDGET.PAID_ORDERS, ctx)),
@@ -81,12 +83,8 @@ export const homeDAL = {
     return {
       shop,
       setup,
-      attention: { toPack: toPackRead, lowStock, channel, stock, photos, teamEdits },
+      attention: { toPack: toPackRead, lowStock, channel, stock, listingProblems, photos, teamEdits },
       hasPaidOrder: paidOrders.ok ? { ok: true, value: paidOrders.value.value > 0 } : paidOrders,
-      widgets: {
-        ...(parcels.ok ? { [WIDGET.PARCELS]: parcels.value } : {}),
-        ...(paidOrders.ok ? { [WIDGET.PAID_ORDERS]: paidOrders.value } : {}),
-      },
       readAt: now.toISOString(),
     };
   },

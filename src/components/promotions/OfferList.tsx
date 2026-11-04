@@ -1,50 +1,31 @@
+"use client";
+
 /**
- * An offer list, shared by both portals.
+ * The offers table, shared by both portals: rows on a phone, a table from a tablet (ResourceList).
  *
- * Presentation only — which offers it shows and who may edit them is decided by the
- * page that renders it, because scope belongs to the route, not to a component prop.
+ * Presentation only — which offers it shows and who may edit them is decided by the page that
+ * renders it, because scope belongs to the route, not to a component prop.
  */
-import { bpsToPercent, formatCurrency, formatShortDate } from "@/lib/format";
-import { Card } from "@/components/ui/card";
+import type { ReactNode } from "react";
+
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
+import { ResourceList, type ResourceColumn } from "@/components/shared/resource-list";
+import type { EmptyStateProps } from "@/components/shared/states/EmptyState";
 import { OfferActions } from "@/components/promotions/OfferActions";
+import { bpsToPercent, formatCurrency, formatShortDate } from "@/lib/format";
+import type { OfferListRow } from "@server/promotions/promotion.types";
 
-export interface OfferRow {
-  id: string;
-  label: string;
-  trigger: "AUTOMATIC" | "CODE";
-  code: string | null;
-  valueType: "PERCENT" | "AMOUNT_OFF" | "FIXED_PRICE";
-  percentBps: number | null;
-  amountOffPaise: number | null;
-  fixedPricePaise: number | null;
-  startsAt: Date;
-  endsAt: Date;
-  isActive: boolean;
-  usageLimit: number | null;
-  usageCount: number;
-  /** Platform offers only (offers-hardening D5, D6). */
-  platformBudgetPaise: number | null;
-  platformSpentPaise: number;
-  lossConfirmedAt: Date | null;
-  lossConfirmedBy: { name: string | null } | null;
-  targets: Array<{
-    category: { name: string } | null;
-    product: { name: string } | null;
-  }>;
-}
+/** @deprecated name kept for existing imports; the shape is the domain's `OfferListRow`. */
+export type OfferRow = OfferListRow;
 
 /** What the offer takes off, in the terms it was written in. */
 function value(offer: OfferRow): string {
-  if (offer.valueType === "PERCENT")
-    return `${bpsToPercent(offer.percentBps ?? 0)}% off`;
+  if (offer.valueType === "PERCENT") return `${bpsToPercent(offer.percentBps ?? 0)}% off`;
   if (offer.valueType === "AMOUNT_OFF") {
     // Same figure, two meanings — say which (promotions D5).
     const amount = formatCurrency(offer.amountOffPaise ?? 0);
-    return offer.trigger === "CODE"
-      ? `${amount} off the order`
-      : `${amount} off each item`;
+    return offer.trigger === "CODE" ? `${amount} off the order` : `${amount} off each item`;
   }
   return `${formatCurrency(offer.fixedPricePaise ?? 0)} each`;
 }
@@ -55,104 +36,115 @@ function covers(offer: OfferRow): string {
   const names = offer.targets
     .map((target) => target.category?.name ?? target.product?.name)
     .filter((name): name is string => Boolean(name));
-  return names.length > 3
-    ? `${names.slice(0, 3).join(", ")} +${names.length - 3}`
-    : names.join(", ");
+  return names.length > 3 ? `${names.slice(0, 3).join(", ")} +${names.length - 3}` : names.join(", ");
+}
+
+/** Markdowns migrated from the old column carry a placeholder end, not a deadline anyone chose. */
+const runs = (offer: OfferRow) =>
+  `${formatShortDate(offer.startsAt)} – ${offer.endsAt.getFullYear() > 2090 ? "no end date" : formatShortDate(offer.endsAt)}`;
+
+/** The one status a row shows: stopped, then the dates, then whether a running offer is used up. */
+function status(offer: OfferRow, now: Date): ReactNode {
+  if (!offer.isActive) return <StatusBadge tone="neutral">Stopped</StatusBadge>;
+  if (offer.endsAt <= now) return <StatusBadge tone="neutral">Ended</StatusBadge>;
+  if (offer.startsAt > now) return <StatusBadge tone="info">Scheduled</StatusBadge>;
+  if (offer.platformBudgetPaise !== null && offer.platformSpentPaise >= offer.platformBudgetPaise)
+    return <StatusBadge tone="warning">Budget used up</StatusBadge>;
+  if (offer.usageLimit !== null && offer.usageCount >= offer.usageLimit)
+    return <StatusBadge tone="neutral">Fully claimed</StatusBadge>;
+  return <StatusBadge tone="success">Live</StatusBadge>;
+}
+
+function usage(offer: OfferRow): ReactNode {
+  const parts = [
+    offer.usageLimit !== null ? `${offer.usageCount}/${offer.usageLimit} used` : `${offer.usageCount} used`,
+    offer.platformBudgetPaise !== null
+      ? `${formatCurrency(offer.platformSpentPaise)} of ${formatCurrency(offer.platformBudgetPaise)} used`
+      : null,
+  ].filter(Boolean);
+  return (
+    <span className="tabular-nums">
+      {parts.join(" · ")}
+      {offer.lossConfirmedAt && (
+        <span className="block text-caption text-warning">
+          Runs at a loss — confirmed by {offer.lossConfirmedBy?.name ?? "an admin"}, {formatShortDate(offer.lossConfirmedAt)}
+        </span>
+      )}
+    </span>
+  );
 }
 
 export function OfferList({
   offers,
-  now = new Date(),
+  now,
   /** Route prefix for this audience — `/admin/promotions` or `/org/<id>/promotions`. */
   basePath,
   /** API prefix for the same, since the two differ. */
   apiPath,
+  empty,
+  footer,
 }: {
   offers: OfferRow[];
+  /** The server's clock, so a row's status cannot differ between the server render and the browser's. */
   now?: Date;
   basePath: string;
   apiPath: string;
+  empty?: Pick<EmptyStateProps, "title" | "description" | "action">;
+  footer?: ReactNode;
 }) {
-  if (offers.length === 0) {
-    return <p className="text-sm text-muted-foreground">No offers yet.</p>;
-  }
+  const at = now ?? new Date();
+  const columns: ResourceColumn<OfferRow>[] = [
+    {
+      key: "label",
+      label: "Offer",
+      sortable: true,
+      phone: "title",
+      cell: (o) => (
+        <span className="inline-flex max-w-md items-center gap-2">
+          <span className="truncate">{o.label}</span>
+          {o.code && (
+            <Badge variant="outline" className="font-mono text-2xs">
+              {o.code}
+            </Badge>
+          )}
+        </span>
+      ),
+    },
+    { key: "value", label: "Discount", phone: "meta", cell: value },
+    {
+      key: "covers",
+      label: "Covers",
+      phone: "hidden",
+      cell: (o) => <span className="block max-w-xs truncate text-muted-foreground">{covers(o)}</span>,
+    },
+    { key: "endsAt", label: "Runs", sortable: true, phone: "meta", cell: (o) => <span className="tabular-nums">{runs(o)}</span> },
+    { key: "usage", label: "Used", phone: "hidden", cell: usage },
+    { key: "status", label: "Status", phone: "status", cell: (o) => status(o, at) },
+    {
+      key: "actions",
+      label: "Actions",
+      phone: "trailing",
+      align: "end",
+      cell: (o) => (
+        <OfferActions
+          editHref={`${basePath}/${o.id}/edit`}
+          stopHref={`${apiPath}/${o.id}`}
+          isActive={o.isActive && o.endsAt > at}
+          label={o.label}
+        />
+      ),
+    },
+  ];
 
   return (
-    <ul className="grid gap-3 md:grid-cols-2">
-      {offers.map((offer) => {
-        const live =
-          offer.isActive && offer.startsAt <= now && offer.endsAt > now;
-        const fullyClaimed =
-          offer.usageLimit !== null && offer.usageCount >= offer.usageLimit;
-        const budgetUsedUp =
-          offer.platformBudgetPaise !== null &&
-          offer.platformSpentPaise >= offer.platformBudgetPaise;
-        const exhausted = fullyClaimed || budgetUsedUp;
-
-        return (
-          <li key={offer.id}>
-            <Card className={`p-4 ${live && !exhausted ? "" : "opacity-70"}`}>
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <span className="font-medium">{offer.label}</span>
-                {offer.code && (
-                  <Badge variant="outline" className="font-mono text-2xs">
-                    {offer.code}
-                  </Badge>
-                )}
-                {live && !exhausted && (
-                  <StatusBadge tone="success">Live</StatusBadge>
-                )}
-                {!offer.isActive && (
-                  <StatusBadge tone="neutral">Stopped</StatusBadge>
-                )}
-                {fullyClaimed && (
-                  <StatusBadge tone="neutral">Fully claimed</StatusBadge>
-                )}
-                {budgetUsedUp && (
-                  <StatusBadge tone="warning">Budget used up</StatusBadge>
-                )}
-                {offer.isActive && offer.endsAt <= now && (
-                  <StatusBadge tone="neutral">Ended</StatusBadge>
-                )}
-                {offer.isActive && offer.startsAt > now && (
-                  <StatusBadge tone="info">Scheduled</StatusBadge>
-                )}
-              </div>
-
-              <p className="text-sm">{value(offer)}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Covers: {covers(offer)}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                {formatShortDate(offer.startsAt)} –{" "}
-                {/* Markdowns migrated from the old column carry a placeholder end date
-                    rather than a deadline anyone chose — say so instead of showing 2099. */}
-                {offer.endsAt.getFullYear() > 2090
-                  ? "no end date set"
-                  : formatShortDate(offer.endsAt)}
-                {offer.usageLimit !== null &&
-                  ` · ${offer.usageCount}/${offer.usageLimit} used`}
-                {offer.platformBudgetPaise !== null &&
-                  ` · ${formatCurrency(offer.platformSpentPaise)} of ${formatCurrency(offer.platformBudgetPaise)} used`}
-              </p>
-              {offer.lossConfirmedAt && (
-                <p className="mt-1 text-xs text-warning">
-                  Runs at a loss — confirmed by{" "}
-                  {offer.lossConfirmedBy?.name ?? "an admin"},{" "}
-                  {formatShortDate(offer.lossConfirmedAt)}
-                </p>
-              )}
-
-              <OfferActions
-                editHref={`${basePath}/${offer.id}/edit`}
-                stopHref={`${apiPath}/${offer.id}`}
-                isActive={offer.isActive}
-                label={offer.label}
-              />
-            </Card>
-          </li>
-        );
-      })}
-    </ul>
+    <ResourceList
+      label="Offers"
+      rows={offers}
+      rowKey={(o) => o.id}
+      columns={columns}
+      rowHref={(o) => `${basePath}/${o.id}/edit`}
+      empty={empty ?? { title: "No offers yet", description: "An offer you create shows here." }}
+      footer={footer}
+    />
   );
 }

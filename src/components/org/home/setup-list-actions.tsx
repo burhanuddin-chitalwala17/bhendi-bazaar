@@ -25,7 +25,7 @@ export function HideSetupButton({ orgId }: { orgId: string }) {
   );
 }
 
-/** The hidden list's one line, where More → "Setup list" lands (A6). */
+/** The hidden list's one line on Home, the way back to it (A6). */
 export function ShowSetupButton({ orgId }: { orgId: string }) {
   const router = useRouter();
   const { mutate: show, isLoading } = useMutation(() => setupApiClient.show(orgId), { onSuccess: () => router.refresh() });

@@ -98,18 +98,19 @@ export function ProductDetails(product: Product) {
       {/* Inline from a tablet up; on a phone the same actions dock above the tab bar (the page's ActionBar). */}
       <ProductBuyActions product={product} className="hidden md:flex" />
 
-      <ul className="space-y-4 rounded-card border border-border bg-card p-4">
+      {/* One card, a row each, ruled between (StorePDP): delivery, payment, returns. */}
+      <ul className="divide-y divide-border rounded-card border border-border bg-card px-4">
         {product.shippingFromPincode && (
-          <li>
+          <li className="py-3">
             <DeliveryCheck fromPincode={product.shippingFromPincode} weight={product.weight} />
           </li>
         )}
-        <li className="flex items-center gap-3 text-small">
-          <Icon name="secure" size="md" tone="primary" />
+        <li className="flex min-h-12 items-center gap-3 text-small">
+          <Icon name="secure" size="md" />
           Pay by UPI, card, net banking or wallet
         </li>
-        <li className="flex items-center gap-3 text-small">
-          <Icon name="returns" size="md" tone="primary" />
+        <li className="flex min-h-12 items-center gap-3 text-small">
+          <Icon name="returns" size="md" />
           <Link href="/policies#returns" prefetch={false} className="underline-offset-2 hover:underline">
             Return within 7 days of delivery
           </Link>

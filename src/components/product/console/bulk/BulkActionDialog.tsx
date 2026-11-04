@@ -20,6 +20,7 @@ import {
 } from "@server/catalog/product-bulk.types";
 import type { MarketplaceChannel } from "@server/channels/channel-connection.types";
 import type { BulkProductActionInput } from "@/lib/validation/schemas/product-bulk.schema";
+import type { ProductListScope } from "@/lib/validation/schemas/product-list.schema";
 import {
   DIRECTION,
   SKIP_REASON_COPY,
@@ -28,6 +29,7 @@ import {
   priceChangeFrom,
   seenAt,
   stockRowsFrom,
+  type BulkTargetSet,
   type Direction,
   type StockProduct,
 } from "./bulk-input";
@@ -56,6 +58,8 @@ interface BulkActionDialogProps {
   marketplaces: readonly BulkMarketplace[];
   /** Called once the server answered, so the list can let go of the selection. */
   onDone: () => void;
+  /** "Select all" (Q35): every product the list's filters match, found by the server; `count` is the list's total. */
+  matching?: { scope: ProductListScope; count: number };
 }
 
 /**
@@ -63,7 +67,7 @@ interface BulkActionDialogProps {
  * left and why, and any stock someone else moved meanwhile (design-system Q29). Never disabled:
  * an incomplete entry says what is missing instead (ADR-0053).
  */
-export function BulkActionDialog({ action, onClose, products, locations, marketplaces, onDone }: BulkActionDialogProps) {
+export function BulkActionDialog({ action, onClose, products, locations, marketplaces, onDone, matching }: BulkActionDialogProps) {
   const { run, running, team } = useBulkProductActions();
   const [result, setResult] = useState<BulkActionResultDTO | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -84,11 +88,12 @@ export function BulkActionDialog({ action, onClose, products, locations, marketp
   };
 
   const ids = products.map((p) => p.id);
+  const target: BulkTargetSet = matching ? { matching: matching.scope } : { productIds: ids };
   const build = (): BulkProductActionInput | string => {
     switch (action) {
       case BULK_ACTION.PRICE: {
         const parsed = priceChangeFrom({ mode, direction, text: amount });
-        return parsed.ok ? priceAction(ids, parsed.change) : parsed.message;
+        return parsed.ok ? priceAction(target, parsed.change) : parsed.message;
       }
       case BULK_ACTION.STOCK: {
         const rows = stockRowsFrom(products, locations.map((l) => l.id), stock);
@@ -96,10 +101,10 @@ export function BulkActionDialog({ action, onClose, products, locations, marketp
         return rows.length > 0 ? { action: BULK_ACTION.STOCK, rows } : BULK_COPY.nothingChanged;
       }
       case BULK_ACTION.ARCHIVE:
-        return { action: BULK_ACTION.ARCHIVE, productIds: ids };
+        return { action: BULK_ACTION.ARCHIVE, ...target };
       case BULK_ACTION.SEND: {
         const chosen = marketplaces.find((m) => m.channel === (channel || marketplaces[0]?.channel));
-        return chosen ? { action: BULK_ACTION.SEND, productIds: ids, channel: chosen.channel } : BULK_COPY.connectFirst;
+        return chosen ? { action: BULK_ACTION.SEND, ...target, channel: chosen.channel } : BULK_COPY.connectFirst;
       }
       default:
         return BULK_COPY.nothingChanged;
@@ -117,7 +122,7 @@ export function BulkActionDialog({ action, onClose, products, locations, marketp
     onDone();
   };
 
-  const title = action ? BULK_COPY.title[action](products.length) : "";
+  const title = action ? BULK_COPY.title[action](matching?.count ?? products.length) : "";
   return (
     <FormDialog open={action !== null} onOpenChange={(open) => !open && close()} title={title}>
       {result ? (

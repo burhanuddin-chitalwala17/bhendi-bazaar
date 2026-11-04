@@ -12,6 +12,295 @@
 
 ## Entries
 
+## 2026-11-05 — Store: the page column widens to 1440px
+
+- **Asked by the owner:** on a laptop the store showed ~200px of empty margin each side; the
+  prototype keeps the gutter small. `--container-page` (marketplace header, pages, footer, tab
+  bar) and the default `--container-store` go 72rem → 90rem; the gutter is unchanged (12–32px), so
+  below 1440px the margin is just the gutter. Themes that set their own store width keep it.
+- Image slots follow the width (ADR-0026): a grid tile asks 360px from `lg` (was 288), the product
+  gallery 42rem, a card banner 90rem. `storefront-journey` holds the tile to a quarter of 1440.
+- **For the owner:** the Home banner is now full-bleed, up to the screen's width; the 1600×640
+  minimum upload still passes, but 2400×960 or larger stays sharp on a 2× laptop screen.
+- Suites: tsc; unit.
+
+## 2026-11-05 — [CONTRACT] Admin orders: the order beside the list, and Export CSV
+
+- **Asked by the owner** (AdminOrders prototype; design-system Q36, Q37).
+- **Side panel (Q36):** from desktop a row opens the order beside the list instead of leaving it,
+  held in the URL (`?order=<id>`, parsed by `orderPeekSchema`), so it can be shared and is rendered
+  on the server; the open row is marked. It shows code, placed time and payment method, status and
+  payment, each parcel's items (thumbnail, quantity) and status, deliver-to, the total, and Open full
+  order; × closes it, keeping the filters. Below desktop a row opens the full page, as before (the
+  list shows rows below `lg`). `ResourceList` gains `tableRowHref` and `activeKey`; `parcelTone`
+  moves to `order-status.ts` so the panel and the parcels panel share one tone rule.
+- **Export CSV (Q37):** `GET /api/admin/orders/export`, behind `requirePlatformAdmin`, writes the
+  list's current view: one schema (`adminOrderViewSchema`) now parses the page's filters and the
+  export's, and one `viewWhere` builds both queries. Columns: order, placed (India time), status,
+  payment, buyer, email, phone, city, pincode, items, total (₹, from integer paise by integer
+  division), shops. At most 10,000 rows; a larger view is refused with 422 and asked to narrow. The
+  `ORDERS_EXPORTED` audit entry (view, count) is written first and must land. Cells starting `= + -
+  @` tab or return are prefixed with `'`; `Cache-Control: no-store`. The button is a plain link.
+- Tests: `orders-export` (integration): non-admin refused with nothing written; exactly the filtered
+  view, abandoned checkouts left out; formula defused; ₹1234.56 from 123,456 paise; audit row;
+  over-cap refusal. Mutation-tested: skipping the guard, removing the formula prefix and dropping
+  the status filter each fail it.
+- Suites: tsc; unit; integration `orders-export` 3/3.
+
+## 2026-11-05 — [CONTRACT] Seller products: channel pills replace the readiness card; "Select all" across pages
+
+- **Asked by the owner:** the "Ready to list elsewhere" card was useful but heavy. It is now one
+  pill per channel the shop sells on, beside the filters (design-system Q35): the platform's mark,
+  its name, and "All ready" or "3 to fix". A pill with products to fix filters the list to exactly
+  those (`?channel=google`, parsed against `CHANNELS`, resolved on the server like "Wishlisted
+  only"); tapping it again clears it. Filtered, a note above the list says what keeps them off
+  ("3 have no Google Shopping category · Ask the admin", "2 need a fabric · Fix them") with
+  "Where you sell", and each row carries its own reason as a warning badge. Pills scroll on a phone,
+  wrap from tablet. `channel-readiness-summary.tsx` is gone.
+- **Listing:** `channelReadinessService.notReadyOn(orgId, channel)` — the shop's on-sale products
+  that channel would refuse, each with its reasons, from the same verdicts as the pill's count.
+  `keepsItOff(problem)` is read from the readiness bands, so the refusing problems are not listed a
+  second time.
+- **Select all:** once every visible row is ticked the selection bar offers "Select all 105";
+  then "Clear selection". Price, archive and send then send the list's filters (`matching`,
+  `ProductListScope`) instead of ids; the route finds the products itself in the path's org and
+  refuses with a clear message over 200 rather than acting on part of the list. Stock stays
+  per page. The team's route is unchanged. `SelectionBar` gains an optional `selectAll` link.
+- Tests: `channel-readiness-service` gains the not-ready read (this shop only, on sale only, with its
+  reason; a channel not sold on refuses nothing); new `product-select-all` (another shop's matching
+  product never found; over the cap refused); `product-bulk-schema` gains five cases. Mutations
+  (any verdict counted, wrong reason, org scope dropped, cap loosened, exactly-one dropped, strict
+  scope loosened) each caught.
+
+## 2026-11-05 — Store Home: the banner runs edge to edge under the header, categories under it
+
+- **Asked by the owner:** keep the full banner with words over it (not the prototype's arch), make
+  it majestic, and start Home with header → banner → categories.
+  - `HeroBanner` / `HeroSlider` gain an `edge` axis: `card` (a shop's storefront, unchanged) and
+    `bleed` (Home): no rounded corners, flush under the header (lifts past the page's top padding),
+    out to the viewport's edges via a new `bleed` utility, and from tablet at the desktop
+    picture's own 5:2, so an uploaded banner is shown whole (≈576px tall at 1440px), capped at
+    the screen height. Phone keeps its 4:5 version.
+  - `MarketplaceChrome` clips sideways overflow, so `bleed`'s scrollbar-width overshoot never
+    scrolls the page.
+  - `CategoryArches` on a phone: 72–80px 4:5 arches with the name centred under them, about five
+    in view, as StoreHome draws them; tablet and desktop keep the tall 9:10 grid.
+- Suites: tsc; unit.
+
+## 2026-11-04 — Store home and category: checked against the review prototype
+
+- **Asked by the owner:** walk StoreHome, StoreHomeDesktop, StoreCategory, StoreCategoryTablet and
+  ProductTile against the code.
+  - **Product tile:** already matched (4:5 photo, heart in a round chip top right, "N% off" top
+    left, shop line, two-line name, price and strike).
+  - **Category page:** the piece count moves beside the title (`PageHeader` actions);
+    `ListingToolbar` becomes the prototype's ruled band, edge to edge of the gutter, on every
+    listing (its `count` is now optional). Under the grid, "24 of 248 · more load as you scroll"
+    (`PaginatedProductGrid` takes `total`) and a row of skeleton tiles while the next page loads;
+    "Show more" stays as the fallback for an observer that never fires.
+  - **Home:** "See all" under New this week names the count ("See all 86", the cached listing
+    count). The trust row is ruled above and below instead of boxed, icons and words in the text
+    colour. The offer strip sits on the gold tint (`bg-accent`) instead of a white card.
+- **Not built, and why:** the hero stays the admin's uploaded banner (photo with words over it),
+  not the prototype's words-beside-an-arch split: banners became uploaded desktop and phone
+  graphics (image-slots), and the banner drawer previews that shape. "From 12 shops in the bazaar"
+  needs a distinct-shop count the catalogue does not read. The offer strip lists reduced pieces
+  rather than one campaign line ("20% off georgette ridas · until Sunday"): there is no current
+  campaign to read. The phone footer stays a two-column list rather than accordion rows.
+- Suites: tsc; unit 3054/3054.
+
+## 2026-11-04 — Bag, checkout and order pages: checked against the review prototype
+
+- **Asked by the owner:** each page compared with StoreCart, StoreCheckout and StoreOrder.
+  Most already matched: lines by shop ("From … · one parcel"), the stepper, Move to saved and
+  Remove, the summary (Items, offers as −₹ in the success colour, "Worked out at checkout", Total
+  so far), the docked total and Checkout; checkout's three numbered steps, "Pay ₹…" docked; the
+  order headline, a card per parcel with its four-step bar, Track and Cancel per parcel. Fixed:
+  - **Bag:** the price sits at the end of the stepper's row, actions under it; the dashed coupon
+    row is back ("Apply a coupon at checkout", a link, because a code is priced against the order).
+  - **Checkout:** the bar is "Your bag ← · Checkout · Secure" on every size (it was hidden on a
+    phone); the order summary's lines fold on a phone and stay open from tablet; the trust row is
+    three marks across.
+  - **Order:** each parcel card leads with its first piece's photo (the stored `thumbnail`).
+  - Presentation only: no total, price or payment logic changed.
+- Suites: tsc; unit 3054/3054.
+
+## 2026-11-04 — Seller and admin screens checked against the review prototype
+
+- **Asked by the owner:** compare each designed screen with what was built.
+- **Fixed:** the shop's Orders rows now carry the product photo and when the buyer paid (both
+  in the prototype; the data was already on the parcel). `shop-order-rows.tsx`.
+- **Matched, no change:** shop Products (tabs with counts, rows on a phone and a table from
+  tablet, selection bar with Edit price / Edit stock / Archive / Send), shop Orders (Store /
+  marketplace switch, To pack · For pickup · On the way · Done with counts, the packing hint,
+  Mark packed on the row), admin Dashboard (period links, sales card and chart, Needs action,
+  Latest orders), admin Orders (status tabs with counts, search and filters, table), the
+  picture field (crop or fit, focus point, Recommended / Optional) and the eight grammar parts.
+- **Not built, by design or for lack of data:** a "Drafts" products tab (no draft state
+  exists), a Channels column and "Select all 48" on Products, a products count line in the
+  header, admin Orders' side panel and Export CSV, and a tablet frame in the banner preview.
+- Suites: tsc (bar another change in progress in `paginated-product-grid.tsx`); unit.
+
+## 2026-11-04 — Product page: brought back to the review prototype
+
+- **Asked by the owner** (live screenshot against StorePDPDesktop): the words followed the
+  prototype, the photographs did not; the gallery had not been rebuilt.
+  - **Width:** photo and words now share the page half and half from tablet up; the 3:2 split
+    drew a 4:5 photo taller than the screen.
+  - **Thumbnails:** a rail beside the photo from desktop, a line under it below that; the active
+    one is outlined, no longer scaled (it clipped inside the scroller).
+  - **Price badge** says how much is off ("20% off", whole percent rounded down so it never
+    promises more than the price gives); "Offer" only when the cut is under 1%. `OfferBadge`
+    takes `percentOff`; every `PriceDisplay` gets it.
+  - **Delivery, payment and returns** are one ruled card, a row each, icons in the text colour.
+  - Gallery classes moved to tokens (`rounded-field`, `text-caption`, `duration-*`,
+    `ease-standard`); it leaves the shape backlog.
+- **Not in the prototype and kept:** Buy now beside Add to bag (tablet up). **Not built:** the
+  "Ridas · Georgette · shop" line above the gallery (the product carries no category name yet)
+  and "Arrives by … to 400003" for a remembered PIN code (the check asks each visit).
+- Suites: tsc; unit 3054/3054.
+
+## 2026-11-04 — A listing Amazon suppresses later shows why, and is fixed and sent again from its listing [CONTRACT] [MIGRATION]
+
+- **Owner's ask (marketplace-publish Q23):** a listing Amazon suppressed or rejected after it went
+  live showed only as Inactive, with no reason and no way to fix and push again.
+- **A daily look, for every shop in one run** (`channels.check-listing-problems`, from the daily
+  maintain pass): one statement reads every connected account with its token; each account is asked
+  once (`searchListingsItems` filtered to `withIssueSeverity=ERROR`, so a clean account is one call);
+  one statement writes every answer. Two statements a day, whatever the number of shops. An account
+  that could not be read keeps what it had; a listing not named again is clean.
+- **The fix:** the Listings row reads "Suppressed" or "Needs a fix" with Amazon's sentence and **Fix**,
+  which opens the listing with the reason on its field. The field it names waits for a send, edited or
+  not, so **Review and publish** pushes it again; the look after the send clears it at once. A reason
+  on nothing we edit points to Seller Central. "Needs fixing n" filters the page; Home names the count.
+- Migration `20261104130000_listing_problems`: `ChannelListing.problems`, `problemsSince`,
+  `suppressed`. Adds columns; drops nothing. Flipkart answers none (it reports no reason).
+- `channelConnectionService.tokenSource` replaces three copies of the batch token closure.
+- Tests: `marketplace-publish.test.ts` (one read and one write for every account, counted: 2
+  statements; a clean listing clears and an unread account keeps its own; the reason on the field, a
+  resend of the unchanged field, cleared after a clean look), `listing-publish-providers.test.ts`
+  (the error filter, paging, suppression from enforcement), `home-attention.test.ts`. Mutations:
+  not clearing listings no longer named, clearing every account instead of those read, and dropping
+  the resend each failed a test. Suites: unit, integration, tsc, lint:boundary, build.
+
+## 2026-11-04 — Store: categories leave the desktop header; Home's category row becomes arches
+
+- **Asked by the owner:** the header named the same categories as Home's picture row just below
+  it. The bar now holds Shops and Offers only; categories are browsed from the picture row (every
+  size) and the footer.
+- **Home's category row follows the review prototype:** `CategoryArches` (new, `category/`) draws
+  the top-level categories, in the admin's order, as arch-topped pictures (9:10) with the name and
+  an arrow beneath, below the hero rather than above it: a swipeable line on a phone, four across
+  from tablet, five from desktop. `CategoryLanes` (the small circles) stays for a shop's filter
+  rail and a category page's children. Whether the uploaded category pictures suit the tall frame
+  is checked after deploy (owner).
+- Suites: tsc; unit.
+
+## 2026-11-04 — Offers: a table with status tabs, search and pages, for shops and the admin
+
+- **Asked by the owner:** a shop can have many offers, and a grid of big cards made one hard to
+  find. Both Offers pages (seller and admin share it) are now one `ResourceList`: compact rows on a
+  phone, a table from a tablet with Offer (and its code), Discount, Covers, Runs, Used, Status and
+  Stop. The whole row opens the offer; "Edit" is also spelled out from a tablet.
+- **Filters, all in the URL and applied on the server:** status tabs (All · Live · Scheduled ·
+  Ended · Stopped) with counts; a search over the offer's name, its code, and a covered product's
+  name or SKU; the kind (automatic or code); sort by name or end date from the column headers;
+  25 a page with Previous / Next. The form is a plain GET, so it works before any script loads.
+  An empty list says whether nothing exists yet ("New offer") or nothing matches ("Clear filters").
+- **Fix:** the list showed only the first 24 offers and had no way to the rest.
+- One status per row: Stopped, then Ended or Scheduled by date, then Budget used up or Fully
+  claimed, else Live. Stop is offered only on a running or scheduled offer.
+- `adminPromotionService.listOffers` (`OfferListQuery` → `OfferListResult`, closed sets
+  `OFFER_STATUS`, `OFFER_KIND`, `OFFER_SORTS` in `promotion.types.ts`) maps rows to an explicit
+  `OfferListRow`, replacing the page's `as unknown as` cast. `promotionRepository.listScoped` takes
+  a `filter` that is ANDed with the scope, never replacing it, and an id tie-break so pages never
+  repeat or skip; `countScoped` counts the tabs. The URL is parsed by `offerListQuerySchema`: an
+  unknown value falls back to the default, and the sort column is resolved against `OFFER_SORTS`
+  before it reaches `orderBy`. The `/api/*/promotions` list routes are unchanged.
+- Tests: `tests/integration/offers-list.test.ts` (another shop's matching offer never shows; each
+  tab holds what its badge says, a stopped offer past its end is Stopped not Ended; search finds a
+  covered SKU; counts stay within the shop) and two URL cases in `promotion-schema.test.ts`.
+  Mutation-tested: the filter replacing the scope, Ended taking stopped offers, the SKU branch and an
+  unchecked sort column each fail a test. `offer-form-loss-panel` reads both the phone rows and the table.
+- Suites: tsc (clean outside the channels files being edited in parallel); unit 3052/3052;
+  integration offers-list, offer-budget, offer-ceiling, offers-preview-charge,
+  bulk-sale-price-and-sibling-offers 43/43.
+
+## 2026-11-04 — Seller portal: Channels shows the platforms' real marks, and what is coming soon apart
+
+- **Asked by the owner:** the page was a grid of letter tiles. Each card now carries the platform's
+  own mark in its own colours (`ui/icons/platform-marks.tsx`, `PlatformMark` with a `size` axis:
+  Amazon, Flipkart, Meta from Simple Icons, CC0; Google's four-colour G), our logo for the store, a
+  one-line purpose, a state chip (feeds get On / Off), the detail, and its actions right-aligned
+  under a rule. Cards in a row share a height; padding `p-4 md:p-5`.
+- **Two sections:** "Where you sell" (store, Google, Meta, any marketplace open to connect) and
+  "Coming soon" (dashed, quiet, nothing to press): every marketplace the server reports unavailable,
+  plus Meesho (`UNBUILT_CHANNELS`; no connector exists). Meesho has no free-to-use mark, so its
+  wordmark is set in its purple until the official SVG drops into `platform-marks.tsx`.
+- **Flipkart moves to Coming soon by the existing switch, not by the UI:** remove `flipkart` from
+  `CHANNELS_CONNECT` (TRD D10, `server/channels/channel-availability.ts`) in the deployment's
+  environment. Until then the server still offers and accepts a Flipkart connect.
+- Tests: `channel-cards` gains the section split (an unavailable marketplace never sits beside a
+  Connect button); mutation-tested and caught. Suites: tsc; unit 3052/3052.
+
+## 2026-11-04 — Seller portal: two dead nav items gone, dropdown arrows inset, figure tiles aligned
+
+- **Asked by the owner:** "Setup list" in the sidebar only jumped to Home, where the list already
+  lives (and keeps a one-line Show row when hidden); "Switch shop" repeated the shop switcher at the
+  top left. Both removed from `PORTAL_NAV` and its key type; the "hidden" toast copy no longer
+  points at More.
+- **`Select`:** the browser's own arrow sat flush against the border in some engines (Photos
+  filters). The native arrow is hidden (`appearance-none`) and an `expand` icon drawn 12px in, with
+  room kept for it (`pr-10`); still a native select, so a phone opens its own picker.
+- **`DashboardWidgets` tiles** (the admin's view of a shop) follow `StatsCard`: figure, then label,
+  then caption on its own line, icon top right, equal heights in a row (the link wrapper is
+  `h-full`), one padding.
+- Suites: tsc; unit 3049/3049.
+
+## 2026-11-04 — [CONTRACT] Seller portal: Home looks like the admin dashboard, in the shop's colour
+
+- **Asked by the owner:** both are control panels, so they share one look (design-system Q34). The
+  shop's Home now has the admin's layout: period links (Today / 7 days / 30 days, in the URL) in the
+  header; a sales card with the total, its change and the day chart; four figures under it (Paid
+  orders, Average order, You'll receive, To pack now); "Needs you now" beside it from desktop, above
+  it on a phone. Before the first paid order the setup list takes the sales card's place.
+- **One component, two tones:** `SalesSummary` (`dashboard/sales-summary.tsx`) is what both the
+  admin's `SalesOverviewBlock` and the new `ShopSalesBlock` render. `SalesChart` gains a `tone` axis
+  (`platform` = brand green, `shop` = new semantic `--shop-accent`, blue); `PeriodControl` takes a
+  `basePath`.
+- **The figures:** `shopSalesOverview` reads the shop's payouts ledger in one statement
+  (`salesRepository.shopByDay`): goods less both funded discounts over live SALE and REVERSAL entries,
+  so a cancelled parcel nets out; SALE count as paid orders; payable (fees included) as You'll receive.
+  Read live, never cached (ADR-0065). The "Your numbers" widget grid and its parcels read are gone
+  from Home; the widgets stay on the admin's org view.
+- **Fix:** the floating "Admin" button no longer shows in the seller portal, where it covered the
+  page's action bar ("Add a product") and drawer footers.
+- Tests: `admin-dashboard-metrics` gains the shop read (org scoping, deleted entries, reversals,
+  India-day buckets, paise exact); each of those four guards mutation-tested and caught.
+- Suites: tsc; unit 3049/3049; integration `admin-dashboard-metrics` 8/8.
+
+## 2026-11-04 — Seller portal: a banner is added in a full drawer, with a preview of how it will look
+
+- **Asked by the owner:** the "Add a banner" dialog was a cramped centred box. It is now a drawer:
+  the whole screen on a phone, a wide right-hand panel from tablet (`SheetContent` gains a
+  `size="full"` axis). The header and the Cancel / Add banner footer stay put while the body scrolls.
+  `add-promotion-dialog.tsx` → `add-promotion-sheet.tsx`, which leaves the raw-dialog ratchet and is
+  listed as ADR-0040 case 3 (fields beside the preview they change).
+- **Preview at the top of the drawer:** desktop (5:2) and phone (4:5) frames with the picture framed
+  as it will be saved (crop or fit-in, phone focus point) and the title, line and "Shop now" over it,
+  updating as you type. The words come from the live banner's own `HeroBannerWords` (split out of
+  `HeroBanner`, with a `frame` axis), so the preview can't drift from the shop page. With no picture
+  it shows the plain shop colour, as the shop page does. `ImageSlotField` gets `showPreview` so the
+  drawer doesn't show its bare preview as well.
+- Suites: tsc; unit 3049/3049.
+
+## 2026-11-04 — Seller portal: the top bar's search icon is gone
+
+- **Found by the owner:** the magnifier in the portal's top bar only linked to the Products page. There
+  is no portal-wide search for it to open, and Products has its own search box, so a search icon that
+  navigated elsewhere was a surprise. Removed with `PortalHeader`'s `search` prop and its copy.
+- Suites: tsc; unit portal-copy, portal-sidebar-sticky, portal-nav, icons.
+
 ## 2026-11-04 — E2E smoke green again: seed before the server answers; tests speak "bag"
 
 - **Category page read "0 pieces" in CI.** Playwright starts the server, whose readiness probe loads

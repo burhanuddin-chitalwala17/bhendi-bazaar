@@ -6,6 +6,8 @@ import type { OrgSummary } from "@/domain/org";
 export type { ProductFormInput } from "@server/catalog/admin.product.types";
 import type { ProductMediaDto } from "@server/catalog/media";
 import type { ProductShelf } from "@server/catalog/product.visibility";
+import type { Channel } from "@server/shared/channels";
+import type { NotReadyReason } from "@server/listing/channel-readiness.service";
 
 export interface ProductFilters {
   /** Which shelf to list. Defaults to available; archived products are asked for. */
@@ -18,6 +20,8 @@ export interface ProductFilters {
   outOfStock?: boolean; // Stock = 0
   /** Only products at least one person has saved. Resolved to ids in the DAL. */
   wishlistedOnly?: boolean;
+  /** Only products this channel would refuse as they stand (design-system Q35). Resolved to ids in the DAL. */
+  notReadyOn?: Channel;
   minPrice?: number;
   maxPrice?: number;
   page?: number;
@@ -53,6 +57,8 @@ export interface ProductForTable {
   createdAt: Date;
   category: { id: string; name: string };
   org: { id: string; name: string; code: string };
+  /** What keeps it off the channel being filtered on (Q35); absent when the list is not filtered by one. */
+  notReady?: NotReadyReason[];
 }
 
 export interface ProductDetails {

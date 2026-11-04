@@ -14,6 +14,7 @@
 import { z } from "zod";
 import { rupeeAmount, optionalNumber, couponCodeSchema } from "./common.schemas";
 import { CONFIRM_LOSS_ERROR, CONFIRM_LOSS_PHRASE } from "@server/promotions/loss";
+import { OFFER_KIND, OFFER_SORTS, OFFER_STATUS, type OfferListQuery } from "@server/promotions/promotion.types";
 
 export const PROMOTION_VALUE_TYPES = ["PERCENT", "AMOUNT_OFF", "FIXED_PRICE"] as const;
 export const PROMOTION_TRIGGERS = ["AUTOMATIC", "CODE"] as const;
@@ -133,3 +134,20 @@ export const platformPromotionSchema = offerFields
   .superRefine(offerRules);
 
 export type PlatformPromotionFormInput = z.infer<typeof platformPromotionSchema>;
+
+/** A search parameter's first value: `?a=1&a=2` arrives as an array. */
+const first = (v: unknown) => (Array.isArray(v) ? v[0] : v);
+
+/**
+ * The offers list's URL (offers list Q1). It is hand-typeable, so an unknown value falls back to
+ * the default rather than erroring; the sort column is resolved against a closed set before it
+ * can reach `orderBy`.
+ */
+export const offerListQuerySchema = z.object({
+  status: z.preprocess(first, z.enum(OFFER_STATUS).catch(OFFER_STATUS.ALL)),
+  kind: z.preprocess(first, z.enum(OFFER_KIND).catch(OFFER_KIND.ALL)),
+  search: z.preprocess(first, z.string().trim().max(100).catch("")).default(""),
+  sortBy: z.preprocess(first, z.enum(OFFER_SORTS).catch("createdAt")),
+  sortOrder: z.preprocess(first, z.enum(["asc", "desc"]).catch("desc")),
+  page: z.preprocess(first, z.coerce.number().int().positive().max(10_000).catch(1)),
+}) satisfies z.ZodType<OfferListQuery, unknown>;

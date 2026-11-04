@@ -4,13 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { HeroBanner, type HeroBannerContent } from "./hero-banner";
+import { HeroBanner, type HeroBannerContent, type HeroEdge } from "./hero-banner";
 import { cn } from "@/lib/utils";
 
 const ADVANCE_MS = 6000;
 
 /** The banner rail, on scroll-snap so a phone swipes natively and it works before JavaScript lands. */
-export function HeroSlider({ banners }: { banners: HeroBannerContent[] }) {
+export function HeroSlider({ banners, edge = "card" }: { banners: HeroBannerContent[]; edge?: HeroEdge }) {
   const railRef = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
   const [held, setHeld] = useState(false);
@@ -94,6 +94,7 @@ export function HeroSlider({ banners }: { banners: HeroBannerContent[] }) {
             <HeroBanner
               banner={banner}
               priority={i === 0}
+              edge={edge}
               className={cn(many && "pb-12")}
             />
           </div>

@@ -1,5 +1,6 @@
 import { Icon } from "@/components/ui/icon";
-import { StatusBadge, type StatusTone } from "@/components/shared/badges/StatusBadge";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
+import { parcelTone } from "./order-status";
 import { formatCurrency } from "@/lib/format";
 import type { AdminShipmentView } from "@server/checkout/admin.order.types";
 import type { ParcelTimelineDto } from "@server/checkout/parcel-timeline";
@@ -7,12 +8,7 @@ import { Money } from "@/components/shared/Money";
 import { PickupActions } from "@/components/order/pickups/pickup-actions";
 import { ParcelTimeline } from "@/components/order/timeline/parcel-timeline";
 import { TIMELINE_READER } from "@/components/order/timeline/timeline-copy";
-import {
-  SHIPMENT_STATUS,
-  SHIPMENT_STATUS_EFFECTS,
-  SHIPMENT_STATUS_LABELS,
-  type ShipmentStatus,
-} from "@server/shipping/domain/shipping.types";
+import { SHIPMENT_STATUS_LABELS } from "@server/shipping/domain/shipping.types";
 
 /**
  * The parcels on an order: each one's booking, its timeline, and what the admin can do at its
@@ -115,18 +111,4 @@ export function ShipmentsPanel({
       })}
     </div>
   );
-}
-
-/**
- * Tone follows the effects table, not a list of status names.
- *
- * A state that owes the buyer money is the one an operator must notice, and that is already
- * recorded once in `SHIPMENT_STATUS_EFFECTS` — reading it here means a new state gets the right
- * colour by describing what it costs, rather than by someone remembering to add a case.
- */
-function parcelTone(status: ShipmentStatus): StatusTone {
-  if (status === SHIPMENT_STATUS.DELIVERED) return "success";
-  if (SHIPMENT_STATUS_EFFECTS[status]?.refundOwed) return "destructive";
-  if (status === SHIPMENT_STATUS.PACKING) return "warning";
-  return "info";
 }

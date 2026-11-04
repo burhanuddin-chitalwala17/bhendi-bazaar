@@ -26,13 +26,8 @@ export function CheckoutSummary({
     );
   }
 
-  return (
-    <div className="space-y-3 rounded-card border border-border bg-card p-4 text-small">
-      <h2 className="font-heading text-title font-semibold">
-        Order summary · {items.length === 1 ? "1 item" : `${items.length} items`}
-      </h2>
-
-      {/* Items List */}
+  const title = `Order summary · ${items.length === 1 ? "1 item" : `${items.length} items`}`;
+  const lines = (
       <div className="space-y-2 text-caption">
         {items.map((item) => {
           const itemTotal = item.price * item.quantity;
@@ -64,6 +59,22 @@ export function CheckoutSummary({
             </div>
           );
         })}
+      </div>
+  );
+
+  return (
+    <div className="space-y-3 rounded-card border border-border bg-card p-4 text-small">
+      {/* StoreCheckout: folded on a phone, where the total is what matters; open beside the steps from a tablet. */}
+      <details className="group md:hidden">
+        <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2">
+          <h2 className="font-heading text-title font-semibold">{title}</h2>
+          <Icon name="expand" size="sm" className="transition-transform duration-fast ease-standard group-open:rotate-180" />
+        </summary>
+        <div className="pt-2">{lines}</div>
+      </details>
+      <div className="hidden space-y-3 md:block">
+        <h2 className="font-heading text-title font-semibold">{title}</h2>
+        {lines}
       </div>
 
       {/* Totals Section */}

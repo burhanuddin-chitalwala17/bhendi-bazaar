@@ -231,10 +231,10 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
           shipping={totalShippingCost}
           total={totals.grandTotal}
         />
-        <ul className="space-y-2 text-small text-muted-foreground">
-          <li className="flex items-center gap-2"><Icon name="secure" size="sm" />Payments by Razorpay</li>
-          <li className="flex items-center gap-2"><Icon name="returns" size="sm" />7-day returns</li>
-          <li className="flex items-center gap-2"><Icon name="help" size="sm" />Help with your order: Contact us from Account</li>
+        <ul className="grid grid-cols-3 gap-2 text-center text-caption text-muted-foreground">
+          <li className="flex flex-col items-center gap-1.5"><Icon name="secure" size="md" />Payments by Razorpay</li>
+          <li className="flex flex-col items-center gap-1.5"><Icon name="returns" size="md" />7-day returns</li>
+          <li className="flex flex-col items-center gap-1.5"><Icon name="help" size="md" />Help from Account</li>
         </ul>
       </div>
 

@@ -25,7 +25,7 @@ export function shareSetupOf(status: OnboardingStatus): ShareSetup {
   };
 }
 
-/** The id More → "Setup list" lands on (portal-nav). */
+/** The setup list's anchor on Home. */
 export const SETUP_LIST_ID = "setup-list";
 
 /**

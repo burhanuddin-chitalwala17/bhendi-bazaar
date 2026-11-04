@@ -1,6 +1,6 @@
 import { retryBusy, rupeesFromPaise, type ListingAttributes, type TokenSource } from "../listing-read";
 import { MarketplaceAuthError, MarketplaceRequestError, MarketplaceUnavailableError, marketplaceFetch } from "../marketplace-provider";
-import type { CreateListingInput, PageMatch, PublishAnswer, PublishChanges, PublishRef, StatusAnswer } from "../publish";
+import type { CreateListingInput, ListingProblem, PageMatch, PublishAnswer, PublishChanges, PublishRef, StatusAnswer } from "../publish";
 import { LISTING_FIELD, LISTING_FIELDS, type ListingField, type ListingIssue, type ListingRules } from "../../platform-listing.types";
 import { AMAZON_IN, spApi } from "./amazon.listings";
 
@@ -167,6 +167,35 @@ export async function amazonListingStatus(token: TokenSource, account: string | 
     if (error instanceof MarketplaceRequestError && error.status === 404) return { found: false, live: null, issues: [], showing: { title: null, mainImageUrl: null } };
     throw error;
   }
+}
+
+/** Amazon hides a listing by enforcement; any of these means shoppers cannot find or buy it. */
+const SUPPRESSING = new Set(["LISTING_SUPPRESSED", "SEARCH_SUPPRESSED", "CATALOG_ITEM_REMOVED"]);
+const PROBLEM_PAGES_MAX = 50;
+
+/**
+ * Every listing with an error now (Q23): one search filtered to errors, twenty a page, so a clean
+ * account costs one call a day whatever its size. Suppressed when an issue's enforcement hides it.
+ */
+export async function amazonListingProblems(token: TokenSource, account: string | null): Promise<ListingProblem[]> {
+  if (!account) throw new MarketplaceAuthError("rejected");
+  const out: ListingProblem[] = [];
+  let pageToken: string | null = null;
+  for (let page = 0; page < PROBLEM_PAGES_MAX; page++) {
+    const query = new URLSearchParams({ marketplaceIds: AMAZON_IN, withIssueSeverity: "ERROR", includedData: "summaries,issues", pageSize: "20", ...(pageToken ? { pageToken } : {}) });
+    const body = obj(await retryBusy(() => spApi(token, "listing problems", `/listings/2021-08-01/items/${encodeURIComponent(account)}?${query.toString()}`)));
+    for (const entry of list(body.items)) {
+      const item = obj(entry);
+      const sku = str(item.sku);
+      const issues = amazonIssues(item.issues).filter((i) => i.severity === "error");
+      if (!sku || issues.length === 0) continue;
+      const suppressed = list(item.issues).some((raw) => list(obj(obj(raw).enforcements).actions).some((a) => SUPPRESSING.has(String(obj(a).action))));
+      out.push({ sku, issues, suppressed });
+    }
+    pageToken = str(obj(body.pagination).nextToken);
+    if (!pageToken) break;
+  }
+  return out;
 }
 
 /** Pages already on Amazon for a product: by barcode first, then by its name (D6). */
