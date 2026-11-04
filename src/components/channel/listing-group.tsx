@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { GROUP_STATE, type ListingGroupDTO } from "@server/channels/channel-connection.types";
 
 import { GROUP } from "./family-copy";
@@ -44,7 +44,7 @@ export function ListingGroup({ orgId, title, count, axis, label, group, intro, c
               <span className="text-xs font-medium text-warning">{GROUP.outside(group.family.name, group.outside)}</span>
             )}
           </span>
-          <ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden />
+          <Icon name="expand" className="transition-transform group-open:rotate-180" />
         </summary>
         {group && href && (
           <div className="flex flex-col gap-2 pb-3">

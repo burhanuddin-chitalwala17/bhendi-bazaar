@@ -1,19 +1,9 @@
-import { Star } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { cn } from "@/lib/utils";
 import { STAR_VALUES } from "@server/catalog/review.types";
 
-/**
- * A rating, read-only.
- *
- * No `"use client"`: five icons and a number need no browser, so this renders inside the
- * product page's own server pass wherever a rating appears — the summary, each review,
- * the tile.
- *
- * The number is always beside the stars rather than implied by them. Rounding to the
- * nearest whole star is how 4.4 and 4.6 look identical, and a shopper comparing two
- * pieces is entitled to the difference.
- */
+/** A rating, read-only, server-rendered; the number sits beside the stars, since rounding hides 4.4 vs 4.6. */
 export function ReviewStars({
   value,
   count,
@@ -41,22 +31,14 @@ export function ReviewStars({
     >
       <span aria-hidden className="inline-flex items-center gap-px">
         {STAR_VALUES.map((star) => (
-          <Star
-            key={star}
-            className={cn(
-              size === "xs" ? "size-3" : "size-4",
-              star <= filled
-                ? "fill-warning text-warning"
-                : "fill-transparent text-muted-foreground/40",
-            )}
-          />
+          <Icon key={star} name="rating" size={size === "xs" ? "xs" : "sm"} filled={star <= filled} tone={star <= filled ? "warning" : "muted"} />
         ))}
       </span>
       <span
         aria-hidden
         className={cn(
           "font-medium tabular-nums",
-          size === "xs" ? "text-4xs" : "text-2xs sm:text-xs",
+          size === "xs" ? "text-caption" : "text-small",
         )}
       >
         {value.toFixed(1)}

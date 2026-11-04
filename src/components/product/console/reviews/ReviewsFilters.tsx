@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -48,7 +48,7 @@ export function ReviewsFilters() {
           placeholder="Search reviews..."
         />
         <Button variant="default" onClick={() => apply({ search })} className="flex items-center gap-2">
-          <Search className="size-4" />
+          <Icon name="search" />
           Search
         </Button>
       </div>

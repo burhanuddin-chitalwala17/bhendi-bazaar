@@ -13,7 +13,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { useDebouncedSearch } from "@/hooks/core/useDebouncedSearch";
 import { productSearchApiClient } from "@/components/promotions/productSearchApiClient";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -83,9 +83,10 @@ export function ProductPicker({
         Products {required && <span className="text-destructive">*</span>}
       </Label>
       <div className="relative mt-1.5">
-        <Search
-          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-          aria-hidden
+        <Icon
+          name="search"
+          tone="muted"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
         />
         <Input
           id="offer-product-search"

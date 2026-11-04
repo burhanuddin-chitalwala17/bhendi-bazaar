@@ -1,12 +1,12 @@
 import { Suspense } from "react";
 
-import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fulfilmentSettingsDAL } from "@/data-access-layer/admin/fulfilment-settings.dal";
 import { FeeForm } from "@/components/payouts/fulfilment-fee/fee-form";
 import { CancelCountList } from "@/components/payouts/fulfilment-fee/cancel-count-list";
 import { FEE_COPY } from "@/components/payouts/fulfilment-fee/fee-copy";
 import { indiaDay } from "@server/shared/india-time";
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
 
 export const metadata = { title: "Fulfilment settings", robots: { index: false, follow: false } };
 
@@ -26,8 +26,8 @@ export default async function FulfilmentSettingsPage({ searchParams }: { searchP
   const lastChanged = view.updatedByName && view.updatedAt ? FEE_COPY.lastChanged(view.updatedByName, indiaDay(new Date(view.updatedAt))) : null;
 
   return (
-    <div className="max-w-5xl space-y-6">
-      <SectionHeader as="h1" title={FEE_COPY.title} />
+    <PageShell width="default">
+      <PageHeader title={FEE_COPY.title} />
       <div className="grid gap-6 lg:grid-cols-2">
         <FeeForm key={view.version} feeRupees={view.feeRupees} version={view.version} lastChanged={lastChanged} />
         {/* ux.md Partial: the saved field shows while the count loads. */}
@@ -35,6 +35,6 @@ export default async function FulfilmentSettingsPage({ searchParams }: { searchP
           <Counts pages={pages} />
         </Suspense>
       </div>
-    </div>
+    </PageShell>
   );
 }

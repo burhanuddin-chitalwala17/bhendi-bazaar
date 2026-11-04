@@ -37,7 +37,7 @@ export default async function AdminBiddingDetailPage({
       <PageHeader
         title={event.product.name}
         description={event.orgName}
-        back={{ href: "/admin/bidding", label: "Back to bidding" }}
+        back={{ href: "/admin/bidding", label: "Auctions" }}
         actions={
           <CopyLinkButton
             path={`/bid/${event.slug}`}
@@ -88,11 +88,11 @@ export default async function AdminBiddingDetailPage({
       </Card>
 
       <section className="space-y-3">
-        <h2 className="font-heading text-lg font-semibold">
+        <h2 className="font-heading text-title font-semibold">
           Bidders, highest first
         </h2>
         {event.phase === "LIVE" && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-small text-muted-foreground">
             Bidding is still running — an outcome can be recorded once it
             closes.
           </p>
@@ -114,7 +114,7 @@ function Fact({ label, value }: { label: string; value: string }) {
       <dt className="uppercase tracking-label text-muted-foreground">
         {label}
       </dt>
-      <dd className="mt-0.5 text-sm font-semibold">{value}</dd>
+      <dd className="mt-0.5 text-small font-semibold">{value}</dd>
     </div>
   );
 }

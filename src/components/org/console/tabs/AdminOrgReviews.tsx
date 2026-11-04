@@ -1,7 +1,8 @@
-import { Star } from "lucide-react";
 import { orgReviewsDAL } from "@/data-access-layer/org/reviews.dal";
 import { ReviewMedia } from "@/components/product/review-media";
-import { Badge } from "@/components/ui/badge";
+import { Icon } from "@/components/ui/icon";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
+import { EmptyState } from "@/components/shared/states/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatShortDate } from "@/lib/format";
 
@@ -20,9 +21,10 @@ export async function AdminOrgReviews({ orgId, searchParams }: Props) {
 
   if (reviews.length === 0) {
     return (
-      <p className="py-12 text-center text-sm text-muted-foreground">
-        No reviews yet.
-      </p>
+      <EmptyState
+        title="No reviews yet"
+        description="Reviews of this shop's products appear here once buyers write them."
+      />
     );
   }
 
@@ -32,25 +34,28 @@ export async function AdminOrgReviews({ orgId, searchParams }: Props) {
         <Card key={review.id}>
           <CardContent className="space-y-2 p-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
+                <span className="sr-only">Rated {review.rating} of 5</span>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
+                  <Icon
                     key={i}
-                    className={`h-4 w-4 ${i < review.rating ? "fill-warning text-warning" : "text-muted-foreground/30"}`}
+                    name="rating"
+                    filled={i < review.rating}
+                    tone={i < review.rating ? "warning" : "muted"}
                   />
                 ))}
               </div>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-caption text-muted-foreground">
                 {formatShortDate(review.createdAt)}
               </span>
             </div>
             {review.comment && (
-              <p className="text-sm">{review.comment}</p>
+              <p className="text-small">{review.comment}</p>
             )}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-caption text-muted-foreground">
               <span>{review.reviewerName}</span>
               {review.isVerified && (
-                <Badge variant="outline" className="text-2xs">Verified</Badge>
+                <StatusBadge tone="success">Verified buyer</StatusBadge>
               )}
               <span>on {review.product.name}</span>
             </div>
@@ -60,7 +65,7 @@ export async function AdminOrgReviews({ orgId, searchParams }: Props) {
           </CardContent>
         </Card>
       ))}
-      <p className="text-xs text-muted-foreground text-center">
+      <p className="text-caption text-muted-foreground text-center">
         Page {pagination.page} of {pagination.totalPages} ({pagination.total} reviews)
       </p>
     </div>

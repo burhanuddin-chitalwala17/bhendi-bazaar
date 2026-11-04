@@ -1,7 +1,5 @@
-// src/components/checkout/checkoutContainer/index.tsx
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Package } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMultiShippingRates } from "@/hooks/shipping/useMultiShippingRates";
 import { useCheckoutPayment } from "./hooks/useCheckoutPayment";
 import { CheckoutSummary } from "./components/checkout-summary";
@@ -10,7 +8,10 @@ import { useCheckoutOffers } from "./hooks/useCheckoutOffers";
 import { useCheckoutSnapshot } from "./hooks/useCheckoutSnapshot";
 import { MultiShippingSection } from "./components/MultiShippingSection";
 import { CheckoutActions } from "./components/CheckoutActions";
-import { EmptyState } from "../../components/shared/states/EmptyState";
+import { EmptyState } from "@/components/shared/states/EmptyState";
+import { SkeletonRows } from "@/components/shared/states/skeletons";
+import { Icon } from "@/components/ui/icon";
+import { checkoutStepErrors } from "./checkout-steps";
 import { CartItem } from "@/domain/cart";
 import { useAddressManager } from "@/hooks/useAddressManager";
 import { AuthenticatedAddress } from "./components/AuthenticatedAddress";
@@ -91,31 +92,16 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paymentError]);
 
-  // Validation logic - MUST be called before any returns
-  const validationErrors = useMemo(() => {
-    const errors: string[] = [];
-
-    if (!selectedAddress) {
-      errors.push("Please select a delivery address");
-    }
-
-    if (shippingGroups.length === 0) {
-      errors.push("Loading shipping options...");
-    }
-
-    // Check if all groups have a selected rate
-    const groupsWithoutRate = shippingGroups.filter((g) => !g.selectedRate);
-    if (groupsWithoutRate.length > 0) {
-      errors.push(
-        `Please select shipping for ${groupsWithoutRate.length} item group(s)`,
-      );
-    }
-
-    return errors;
-  }, [selectedAddress, shippingGroups]);
-
-  const canCheckout =
-    validationErrors.length === 0 && !isProcessing && !isShippingLoading;
+  // Errors wait for a Pay tap and sit beside the step to fix (design-system Q20).
+  const [payTapped, setPayTapped] = useState(false);
+  const stepErrors = checkoutStepErrors({
+    hasAddress: Boolean(selectedAddress),
+    shippingLoading: isShippingLoading,
+    groups: shippingGroups,
+    allocationError,
+  });
+  const canCheckout = !stepErrors.address && !stepErrors.delivery && !isProcessing;
+  const shown = payTapped ? stepErrors : { address: null, delivery: null };
 
   // What every live offer does to this basket, priced by the server.
   const offers = useCheckoutOffers(checkoutItems, user?.id ?? null);
@@ -134,8 +120,8 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
 
     return { itemsTotal, discount, grandTotal, savings: discount };
   }, [checkoutItems, totalShippingCost, offers.quote.totalDiscountPaise]);
-  // Handle checkout - MUST be defined before any returns
   const handleCheckout = async () => {
+    setPayTapped(true);
     if (!canCheckout || !selectedAddress) return;
 
     // Clear any previous errors
@@ -158,78 +144,77 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
         isBuyNow: !!buyNowProduct,
       });
     } catch (error) {
-      // Error is already set by the hook
+      // The hook has already set the message shown under Pay.
       console.error("Checkout failed:", error);
     }
   };
 
-  if (!snapshotReady) {
-    return <p className="text-sm text-muted-foreground">Loading your cart…</p>;
-  }
+  if (!snapshotReady) return <SkeletonRows count={3} thumbnail={false} />;
 
   if (checkoutItems.length === 0) {
     return (
       <EmptyState
-        icon={Package}
-        title="No items to checkout"
-        description="Add items to your cart to checkout"
+        title="Nothing to check out"
+        description="Your bag is empty. Add a piece or two first."
+        action={{ label: "Back to your bag", href: "/cart" }}
       />
     );
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+    <div className="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-10">
       <div className="space-y-6">
-        {/* Address Form */}
-
-        {user ? (
-          <AuthenticatedAddress
-            selectedAddress={selectedAddress}
-            onAddressChange={selectAddress}
-            onAddressAdded={addAddress}
-            onAddressUpdated={updateAddress}
-            addresses={addresses}
-          />
-        ) : (
-          <div className="space-y-3">
-            <p className="flex flex-wrap items-center gap-x-1 text-xs text-muted-foreground">
-              Already have an account?
-              <Button
-                variant="link"
-                type="button"
-                onClick={() => openAuthSheet()}
-                className="min-h-10 items-center font-semibold text-foreground underline underline-offset-4"
-              >
-                Sign in
-              </Button>
-            </p>
-            <GuestAddress onAddressChange={handleGuestAddress} />
-          </div>
-        )}
-
-        {/* Multi-Shipping Section */}
-        {selectedAddress && (
-          <>
-            {allocationError && (
-              <div
-                role="alert"
-                className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
-              >
-                {allocationError}
-              </div>
-            )}
-            <MultiShippingSection
-              groups={shippingGroups}
-              onRateSelect={selectRateForGroup}
-              isLoading={isShippingLoading}
+        <Step number={1} title="Deliver to" error={shown.address}>
+          {user ? (
+            <AuthenticatedAddress
+              selectedAddress={selectedAddress}
+              onAddressChange={selectAddress}
+              onAddressAdded={addAddress}
+              onAddressUpdated={updateAddress}
+              addresses={addresses}
             />
-          </>
-        )}
+          ) : (
+            <div className="space-y-3">
+              <p className="flex flex-wrap items-center gap-x-1 text-small text-muted-foreground">
+                Already have an account?
+                <Button
+                  variant="link"
+                  type="button"
+                  onClick={() => openAuthSheet()}
+                  className="min-h-10 items-center px-1 font-semibold text-foreground underline underline-offset-4"
+                >
+                  Sign in
+                </Button>
+              </p>
+              <GuestAddress onAddressChange={handleGuestAddress} />
+            </div>
+          )}
+        </Step>
+
+        <Step
+          number={2}
+          title={shippingGroups.length > 1 ? `Delivery · ${shippingGroups.length} parcels` : "Delivery"}
+          error={shown.delivery}
+        >
+          {selectedAddress ? (
+            <>
+              {allocationError && !payTapped && <p className="text-small text-muted-foreground">{allocationError}</p>}
+              <MultiShippingSection groups={shippingGroups} onRateSelect={selectRateForGroup} isLoading={isShippingLoading} />
+            </>
+          ) : (
+            <p className="text-small text-muted-foreground">Delivery options appear once you add an address.</p>
+          )}
+        </Step>
+
+        <Step number={3} title="Pay" error={paymentError}>
+          <p className="flex items-start gap-3 text-small text-muted-foreground">
+            <Icon name="secure" size="md" tone="primary" />
+            Tap Pay to choose UPI, card, net banking or a wallet in Razorpay&apos;s secure window.
+          </p>
+        </Step>
       </div>
 
-      {/* On mobile the summary must precede the CTA — a buyer sees the bill before the
-          button that commits to it. On md the summary is the right rail spanning both rows. */}
-      <div className="md:col-start-2 md:row-start-1 md:row-span-2">
+      <div className="space-y-4 md:col-start-2 md:row-span-2 md:row-start-1">
         <CouponField
           quote={offers.quote}
           appliedCode={offers.appliedCode}
@@ -238,7 +223,6 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
           onClear={offers.clearCode}
           lineCount={checkoutItems.length}
         />
-
         <CheckoutSummary
           items={checkoutItems}
           lineDiscounts={offers.quote.lineDiscounts}
@@ -247,19 +231,35 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
           shipping={totalShippingCost}
           total={totals.grandTotal}
         />
+        <ul className="space-y-2 text-small text-muted-foreground">
+          <li className="flex items-center gap-2"><Icon name="secure" size="sm" />Payments by Razorpay</li>
+          <li className="flex items-center gap-2"><Icon name="returns" size="sm" />7-day returns</li>
+          <li className="flex items-center gap-2"><Icon name="help" size="sm" />Help with your order: Contact us from Account</li>
+        </ul>
       </div>
 
-      {/* Sticky on mobile, on top of the tab bar (not under it); the bleed matches the page's own gutter. */}
-      <div className="sticky bottom-tabbar z-20 -mx-3 bg-background/95 px-3 py-3 backdrop-blur sm:-mx-6 sm:px-6 md:static md:z-auto md:m-0 md:col-start-1 md:row-start-2 md:bg-transparent md:p-0 md:backdrop-blur-none">
-        <CheckoutActions
-          canCheckout={canCheckout}
-          isProcessing={isProcessing}
-          total={totals.grandTotal}
-          onCheckout={handleCheckout}
-          validationErrors={validationErrors}
-          error={paymentError}
-        />
+      <div className="md:col-start-1 md:row-start-2">
+        <CheckoutActions isProcessing={isProcessing} total={totals.grandTotal} onPay={handleCheckout} />
       </div>
     </div>
+  );
+}
+
+/** A numbered step, with its error beside it once Pay has been tapped. */
+function Step({ number, title, error, children }: { number: number; title: string; error?: string | null; children: ReactNode }) {
+  return (
+    <section aria-labelledby={`checkout-step-${number}`} className="space-y-3 rounded-card border border-border bg-card p-4" data-invalid={error ? true : undefined}>
+      <h2 id={`checkout-step-${number}`} className="flex items-center gap-2 font-heading text-title font-semibold">
+        <span className="inline-flex size-6 items-center justify-center rounded-full bg-primary text-caption font-semibold text-primary-foreground">{number}</span>
+        {title}
+      </h2>
+      {error && (
+        <p role="alert" className="flex items-center gap-2 text-small text-destructive">
+          <Icon name="warning" size="sm" />
+          {error}
+        </p>
+      )}
+      {children}
+    </section>
   );
 }

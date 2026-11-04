@@ -1,16 +1,10 @@
-import {
-  BadgePercent,
-  Camera,
-  type LucideIcon,
-  Send,
-  Store,
-} from "lucide-react";
+import type { IconName } from "@/components/ui/icon";
 
 /** One flat price per shop, GST included, no tiers and no per-seat (BACKLOG: subscriptions). Display only. */
 export const SUBSCRIPTION_MONTHLY_PAISE = 69_900;
 
 export type SellPillar = {
-  icon: LucideIcon;
+  icon: IconName;
   eyebrow: string;
   title: string;
   points: readonly string[];
@@ -42,7 +36,7 @@ export const SELL_COPY = {
 
   pillars: [
     {
-      icon: Store,
+      icon: "shop",
       eyebrow: "Your own store",
       title: "A store you’re proud to hand out.",
       points: [
@@ -52,7 +46,7 @@ export const SELL_COPY = {
       ],
     },
     {
-      icon: Camera,
+      icon: "camera",
       eyebrow: "Photos made ready",
       title: "Phone photo in. Studio photo out.",
       points: [
@@ -62,7 +56,7 @@ export const SELL_COPY = {
       ],
     },
     {
-      icon: Send,
+      icon: "send",
       eyebrow: "Sell everywhere",
       title: "List once. Sell on five platforms.",
       points: [
@@ -72,7 +66,7 @@ export const SELL_COPY = {
       ],
     },
     {
-      icon: BadgePercent,
+      icon: "discount",
       eyebrow: "Run the business",
       title: "Orders, offers and earnings, handled.",
       points: [

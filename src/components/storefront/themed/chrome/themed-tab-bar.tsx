@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Menu, ShoppingBag, Store, Tag } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { dealsHref, landingHref, shopHref } from "../section-heading";
 import { useCartCount } from "./themed-cart-count";
 import { MoreMenu } from "./more-menu";
 
-const TAB = "flex flex-1 flex-col items-center justify-center gap-0.5 font-label text-3xs transition-colors";
+const TAB = "flex flex-1 flex-col items-center justify-center gap-0.5 font-label text-2xs transition-colors";
 const tone = (active: boolean) => (active ? "text-primary" : "text-muted-foreground");
 
 /**
@@ -30,22 +30,22 @@ export function ThemedTabBar({ handle }: { handle: string }) {
     >
       <div className="mx-auto flex h-tabbar items-stretch">
         <Link href={home} prefetch={false} className={cn(TAB, tone(pathname === home))}>
-          <Home className="size-5" />
+          <Icon name="home" size="md" />
           Home
         </Link>
         <Link href={shopHref(handle)} prefetch={false} className={cn(TAB, tone(pathname === shopHref(handle)))}>
-          <Store className="size-5" />
+          <Icon name="shop" size="md" />
           Shop
         </Link>
         <Link href={dealsHref(handle)} prefetch={false} className={cn(TAB, tone(false))}>
-          <Tag className="size-5" />
+          <Icon name="offer" size="md" />
           Deals
         </Link>
         <Link href="/cart" prefetch={false} className={cn(TAB, tone(pathname === "/cart"))}>
           <span className="relative">
-            <ShoppingBag className="size-5" />
+            <Icon name="bag" size="md" />
             {count > 0 && (
-              <span className="absolute -right-2 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-4xs font-semibold leading-none text-primary-foreground">
+              <span className="absolute -right-2 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-2xs font-semibold leading-none text-primary-foreground">
                 {count}
               </span>
             )}
@@ -54,7 +54,7 @@ export function ThemedTabBar({ handle }: { handle: string }) {
         </Link>
         <MoreMenu>
           <Button variant="ghost" type="button" className={cn(TAB, "h-auto rounded-none", tone(false))}>
-            <Menu className="size-5" />
+            <Icon name="menu" size="md" />
             More
           </Button>
         </MoreMenu>

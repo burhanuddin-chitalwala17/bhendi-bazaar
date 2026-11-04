@@ -4,7 +4,7 @@ import { Control, UseFormRegister, FieldErrors } from "react-hook-form";
 import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormInput, FormPhoneInput } from "@/components/shared/forms/FormField";
-import { Store } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 interface OrgBasicFieldsProps {
   register: UseFormRegister<OrgFormInput>;
@@ -26,8 +26,8 @@ export function OrgBasicFields({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Store className="h-5 w-5" />
-          Basic Information
+          <Icon name="shop" size="md" />
+          Basic information
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -7,7 +7,7 @@ export default async function NewBannerPage() {
   return (
     <PageShell width="narrow">
       <PageHeader
-        back={{ href: "/admin/banners", label: "Back to banners" }}
+        back={{ href: "/admin/banners", label: "Banners" }}
         title="New banner"
         description="It appends to the end of the hero; reorder from the list."
       />

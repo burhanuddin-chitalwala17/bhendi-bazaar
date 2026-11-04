@@ -2,10 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Heart } from "lucide-react";
-
 import type { WishlistProduct } from "@server/wishlist/wishlist.types";
-import { Card } from "@/components/ui/card";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { StockStatus } from "@/components/shared/StockStatus";
 import { PRODUCT_GRID_CLASSES } from "@/components/shared/product-grid";
@@ -14,14 +11,7 @@ import { EmptyState } from "@/components/shared/states/EmptyState";
 import { WishlistButton } from "@/components/wishlist/wishlist-button";
 import { useWishlist } from "@/context/WishlistContext";
 
-/**
- * The saved-products listing.
- *
- * A client component so un-hearting removes the tile immediately: the server read that
- * produced `items` is a snapshot, and the shared saved-set is what says which of them
- * are still wanted. Filtering here rather than refetching also means the removal
- * survives a failed write reverting — the tile comes back with the state.
- */
+/** Saved products; a client component so un-hearting removes the tile at once, and a failed write brings it back. */
 export function WishlistGrid({ items }: { items: WishlistProduct[] }) {
   const { isSaved } = useWishlist();
   const visible = items.filter((item) => isSaved(item.productId));
@@ -29,66 +19,43 @@ export function WishlistGrid({ items }: { items: WishlistProduct[] }) {
   if (visible.length === 0) {
     return (
       <EmptyState
-        icon={Heart}
         title="Nothing saved yet"
-        description="Tap the heart on any product to keep it here for later."
+        description="Tap the heart on any piece to keep it here for later."
+        action={{ label: "Start browsing", href: "/shop" }}
       />
     );
   }
 
   return (
-    <div className={PRODUCT_GRID_CLASSES}>
+    <ul className={PRODUCT_GRID_CLASSES}>
       {visible.map((item) => (
-        <Link
-          key={item.id}
-          href={`/product/${item.slug}`}
-          className="block"
-          prefetch={false}
-        >
-          <Card className="group h-full gap-0 overflow-hidden rounded-lg py-0 transition-all sm:rounded-xl md:hover:-translate-y-1 md:hover:shadow-lifted">
-            <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+        <li key={item.id} className="group relative flex flex-col gap-2.5">
+          <div className="relative aspect-4/5 overflow-hidden rounded-field bg-muted">
+            <Link href={`/product/${item.slug}`} prefetch={false} className="absolute inset-0">
               <Image
                 src={item.thumbnail}
                 alt={item.name}
                 fill
                 sizes={PRODUCT_TILE_SIZES}
-                className="object-cover transition-transform md:group-hover:scale-105"
+                className="object-cover transition-transform duration-slow ease-standard md:group-hover:scale-105"
               />
-              <div className="absolute right-1 top-1 z-10 sm:right-2 sm:top-2">
-                <WishlistButton
-                  productId={item.productId}
-                  className="bg-card/80 shadow-raised backdrop-blur-sm"
-                />
-              </div>
               {item.stock === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center bg-scrim/60">
-                  <span className="text-3xs font-semibold uppercase tracking-wide text-primary-foreground sm:text-sm sm:tracking-normal">
-                    Out of Stock
-                  </span>
-                </div>
+                <span className="absolute inset-x-0 bottom-0 bg-photo-scrim py-1.5 text-center text-caption font-semibold text-on-photo">
+                  Sold out
+                </span>
               )}
+            </Link>
+            <div className="absolute right-1.5 top-1.5">
+              <WishlistButton productId={item.productId} className="bg-background/90 shadow-raised backdrop-blur-sm" />
             </div>
-
-            <div className="space-y-1 p-2 sm:space-y-2 sm:p-4">
-              <h3 className="line-clamp-2 font-heading text-2xs font-semibold leading-snug tracking-tight sm:text-sm">
-                {item.name}
-              </h3>
-              <PriceDisplay
-                price={item.price}
-                salePrice={item.salePrice}
-                size="xs"
-                showBadge={false}
-              />
-              <StockStatus
-                stock={item.stock}
-                lowStockThreshold={item.lowStockThreshold}
-                size="xs"
-                variant="warn-only"
-              />
-            </div>
-          </Card>
-        </Link>
+          </div>
+          <Link href={`/product/${item.slug}`} prefetch={false} className="flex flex-col gap-0.5">
+            <h3 className="line-clamp-2 text-small font-medium text-foreground">{item.name}</h3>
+            <PriceDisplay price={item.price} salePrice={item.salePrice} size="sm" showBadge={false} />
+            <StockStatus stock={item.stock} lowStockThreshold={item.lowStockThreshold} size="xs" variant="warn-only" />
+          </Link>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

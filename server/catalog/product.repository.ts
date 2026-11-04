@@ -26,6 +26,7 @@ import { recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { coverOf, type MediaKind, type ProductMediaInput } from "@server/catalog/media";
 import { mediaAssetRepository, type MediaDb } from "@server/catalog/media-asset.repository";
 import { VERSION_FIELD, versionConflictMessage } from "@server/catalog/product-edit";
+import { BULK_PRICE_MODE, MAX_PRICE_PAISE, PRODUCT_AUDIT_ACTION, type BulkPriceChange } from "@server/catalog/product-bulk.types";
 
 /**
  * Pure, exported for tests: media rows for a Prisma nested create, in submitted order, plus the `thumbnail` the
@@ -107,8 +108,9 @@ const PRODUCT_LIST_SELECT = {
     sku: true,
     price: true,
     currency: true,
-    // Admin truth: every row, active or not (R9) — summed into `stock` on the way out.
-    stockLocations: { select: { quantity: true } },
+    // Admin truth: every row, active or not (R9) — summed into `stock` on the way out, and kept
+    // per location so a bulk stock edit can send the quantity it saw (Invariant 6).
+    stockLocations: { select: { orgAddressId: true, quantity: true } },
     lowStockThreshold: true,
     flags: true,
     thumbnail: true,
@@ -167,6 +169,11 @@ const PRODUCT_DETAILS_SELECT = {
 } satisfies Prisma.ProductSelect;
 
 /** Sum the join rows into the `stock` total every consumer already reads (D3). */
+/** A list row: the total, plus each location's count as read, for a compare-and-set edit. */
+function withStockRows<P extends { stockLocations: Array<{ orgAddressId: string; quantity: number }> }>(product: P) {
+    return { ...withStockTotal(product), stockByLocation: product.stockLocations };
+}
+
 function withStockTotal<P extends { stockLocations: Array<{ quantity: number }> }>(product: P) {
     const { stockLocations, ...rest } = product;
     return { ...rest, stock: stockLocations.reduce((sum, row) => sum + row.quantity, 0) };
@@ -240,7 +247,7 @@ export class AdminProductsRepository {
                 // statements. (The in-memory slice below stands: stock is a sum across
                 // stockLocations, so this shape cannot paginate in SQL.)
                 relationLoadStrategy: "join",
-            })).map(withStockTotal);
+            })).map(withStockRows);
 
             let filteredProducts = allProducts;
             if (outOfStock) filteredProducts = filteredProducts.filter((p) => p.stock === 0);
@@ -284,7 +291,7 @@ export class AdminProductsRepository {
         ]);
 
         return {
-            products: products.map(withStockTotal),
+            products: products.map(withStockRows),
             pagination: {
                 page,
                 limit,
@@ -682,7 +689,7 @@ export class AdminProductsRepository {
             // `resolveOrgScope` rather than taken from the token claim.
             await recordAdminActionIn(tx, {
                 adminId,
-                action: archivedAt ? "PRODUCT_ARCHIVED" : "PRODUCT_RESTORED",
+                action: archivedAt ? PRODUCT_AUDIT_ACTION.ARCHIVED : PRODUCT_AUDIT_ACTION.RESTORED,
                 resource: "Product",
                 resourceId: id,
                 metadata: { name: product.name },
@@ -1011,6 +1018,73 @@ export class AdminProductsRepository {
   async linkMediaAsset(id: string, assetId: string): Promise<void> {
     await prisma.productMedia.update({ where: { id }, data: { assetId } });
   }
+
+  /**
+   * A bulk price edit as one statement (Q29): every selected row is locked, its new price worked
+   * out in SQL, and written only where it is in range, different and allowed. Each row comes back
+   * with its before, after and verdict, so the caller can say why one was left. The edit moves the
+   * version as a form save does, so a form open on the product is refused rather than undoing it.
+   */
+  async bulkSetPriceIn(tx: Prisma.TransactionClient, scope: BulkScope, ids: readonly string[], change: BulkPriceChange, editor: ProductEditor, now: Date) {
+    const after =
+      change.mode === BULK_PRICE_MODE.SET
+        ? Prisma.sql`${change.pricePaise}::bigint`
+        : change.mode === BULK_PRICE_MODE.AMOUNT
+          ? Prisma.sql`(price::bigint + ${change.deltaPaise}::bigint)`
+          // numeric is exact decimal and ROUND on it is half away from zero.
+          : Prisma.sql`ROUND(price::numeric * (100 + ${change.percent}::numeric) / 100)::bigint`;
+    return await tx.$queryRaw<Array<{ id: string; orgId: string; before: number; after: bigint; archived: boolean; updated: boolean }>>`
+      WITH cand AS (
+        SELECT id, "orgId", price AS before, ${after} AS after, "archivedAt" IS NOT NULL AS archived
+        FROM "Product" WHERE id = ANY(${[...ids]}::text[]) ${orgClause(scope)} FOR UPDATE
+      ), upd AS (
+        UPDATE "Product" p SET price = c.after::int, version = p.version + 1, "updatedAt" = ${now},
+          "lastEditedById" = ${editor.userId}, "lastEditedAt" = ${now}, "teamEditedAt" = ${editor.team ? now : null}
+        FROM cand c
+        WHERE p.id = c.id AND c.after BETWEEN 1 AND ${MAX_PRICE_PAISE} AND c.after <> c.before
+          AND (${!scope.excludeArchived} OR NOT c.archived)
+        RETURNING p.id
+      )
+      SELECT c.id, c."orgId", c.before, c.after, c.archived, u.id IS NOT NULL AS updated
+      FROM cand c LEFT JOIN upd u ON u.id = c.id`;
+  }
+
+  /**
+   * Archive the selected products in one statement (ADR-0029), leaving out those `held` names (a
+   * live bidding event) and those already archived. The caller has taken the stock locks first, as
+   * `setArchived` does, so a checkout and a withdrawal serialise.
+   */
+  async bulkArchiveIn(tx: Prisma.TransactionClient, scope: BulkScope, ids: readonly string[], held: readonly string[], now: Date) {
+    return await tx.$queryRaw<Array<{ id: string; orgId: string; name: string; wasArchived: boolean; updated: boolean }>>`
+      WITH cand AS (
+        SELECT id, "orgId", name, "archivedAt" IS NOT NULL AS "wasArchived"
+        FROM "Product" WHERE id = ANY(${[...ids]}::text[]) ${orgClause(scope)} FOR UPDATE
+      ), upd AS (
+        UPDATE "Product" p SET "archivedAt" = ${now}, "updatedAt" = ${now}
+        FROM cand c
+        WHERE p.id = c.id AND NOT c."wasArchived" AND NOT (c.id = ANY(${[...held]}::text[]))
+        RETURNING p.id
+      )
+      SELECT c.id, c."orgId", c.name, c."wasArchived", u.id IS NOT NULL AS updated
+      FROM cand c LEFT JOIN upd u ON u.id = c.id`;
+  }
+
+  /** Which shop each of these products belongs to, and whether it is archived: what a bulk send groups by. */
+  async ownersOf(ids: readonly string[], orgId: string | null) {
+    return await prisma.product.findMany({
+      where: { id: { in: [...ids] }, ...(orgId ? { orgId } : {}) },
+      select: { id: true, orgId: true },
+    });
+  }
 }
+
+/** A bulk command's reach: one shop's products, or (the team) any shop's. */
+export interface BulkScope {
+  orgId: string | null;
+  /** The team leaves archived products alone (ADR-0029); a shop may still edit its own. */
+  excludeArchived: boolean;
+}
+
+const orgClause = (scope: BulkScope) => (scope.orgId ? Prisma.sql`AND "orgId" = ${scope.orgId}` : Prisma.empty);
 
 export const adminProductsRepository = new AdminProductsRepository();

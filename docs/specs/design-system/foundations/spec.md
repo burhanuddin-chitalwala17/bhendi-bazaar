@@ -5,7 +5,7 @@
 - **Domain:** cross-domain (front end)
 - **Phase:** 13 — Design system
 - **Verified:** 2026-11-04
-- **References:** [../spec.md](../spec.md) (programme), [../decisions.md](../decisions.md), [trd.md](trd.md), [ADR-0065](../../../adr/0065-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md), [ADR-0022](../../../adr/0022-design-decisions-go-through-tokens.md), [ADR-0049](../../../adr/0049-colour-is-a-primitive-palette-read-through-semantic-tokens.md)
+- **References:** [../spec.md](../spec.md) (programme), [../decisions.md](../decisions.md), [trd.md](trd.md), [ADR-0066](../../../adr/0066-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md), [ADR-0022](../../../adr/0022-design-decisions-go-through-tokens.md), [ADR-0049](../../../adr/0049-colour-is-a-primitive-palette-read-through-semantic-tokens.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 

@@ -23,7 +23,7 @@ export function BiddingPhaseBadge({ phase }: { phase: BiddingPhase }) {
   return (
     <Badge
       variant={variant}
-      className="text-4xs uppercase tracking-label sm:text-3xs"
+      className="text-2xs uppercase tracking-label sm:text-2xs"
     >
       {text}
     </Badge>

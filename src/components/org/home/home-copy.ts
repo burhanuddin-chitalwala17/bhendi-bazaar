@@ -3,10 +3,11 @@ import { ONBOARDING_STEP, ONBOARDING_STEPS, type OnboardingStep } from "@server/
 /** Home's words (own-store onboarding ux.md copy deck and Home state matrix). */
 export const HOME_COPY = {
   welcome: (name: string) => `Welcome, ${name}. Five steps to your first sale.`,
-  allCaughtUp: "All caught up.",
+  allCaughtUp: "All clear. Nothing needs you right now.",
+  shopLink: "Your shop link",
+  addProduct: "Add a product",
   shareShop: "Share your shop",
   needsYou: "Needs you now",
-  seeAll: (n: number) => `See all ${n}`,
   lineFailed: "Couldn't load this. Try again.",
   ordersFailed: "Couldn't load orders.",
   tryAgain: "Try again",
@@ -35,17 +36,26 @@ export const STEP_TITLE: Record<OnboardingStep, string> = {
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
+/** "5 h" under a day, "2 days" from one; never "0 h". */
+export function waited(ms: number): string {
+  const hours = Math.max(1, Math.floor(ms / 3_600_000));
+  return hours < 24 ? `${hours} h` : plural(Math.floor(hours / 24), "day", "days");
+}
+
 export const LINE_COPY = {
-  parcels: (n: number) => `${plural(n, "order", "orders")} to pack`,
-  reviews: (n: number) => `${plural(n, "new review", "new reviews")}`,
+  toPack: (n: number, waitedMs: number) => `${plural(n, "order", "orders")} to pack · oldest waiting ${waited(waitedMs)}`,
+  lowStock: (n: number, soldOut: number, soonestDays: number | null) => {
+    const what = `${plural(n, "selling product", "selling products")} low on stock`;
+    if (soldOut > 0) return `${what} · ${soldOut} sold out`;
+    if (soonestDays === null) return what;
+    return soonestDays === 0 ? `${what} · runs out today` : `${what} · runs out in about ${plural(soonestDays, "day", "days")}`;
+  },
   reconnect: (label: string) => `${label} needs you to reconnect`,
   renew: (label: string) => `${label} needs you to renew access`,
   matchLocations: (label: string) => `Match your ${label} locations so stock can be sent`,
   outOfStock: (label: string, n: number) => `${plural(n, "listing", "listings")} now out of stock on ${label}: we have 0`,
   photos: (n: number) => `${plural(n, "photo", "photos")} can be improved`,
   teamEdits: (n: number) => `Our team changed ${plural(n, "product", "products")}`,
-  auction: (minutesLeft: number) =>
-    minutesLeft < 60 ? `Auction ends in ${Math.max(1, minutesLeft)} min` : `Auction ends in ${Math.round(minutesLeft / 60)} h`,
 } as const;
 
 /** The toast after a task opened from Home is saved (R7): the step ticked, and said so. */

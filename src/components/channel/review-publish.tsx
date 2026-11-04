@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ActionBar } from "@/components/shared/action-bar";
 import { useMutation } from "@/hooks/core/useMutation";
 import { cn } from "@/lib/utils";
 import { LISTING_FIELD, type ListingField, type ReviewChangeDTO, type ReviewDTO, type ReviewValue } from "@server/channels/platform-listing.types";
@@ -80,11 +81,11 @@ export function ReviewPublish({ orgId, review, single }: { orgId: string; review
           {PUBLISH.showMore}
         </Button>
       )}
-      <div className="sticky bottom-tabbar z-10 -mx-4 border-t border-border bg-background/95 p-3 backdrop-blur md:bottom-0 md:mx-0 md:rounded-card md:border">
-        <Button type="button" className="min-h-10 w-full" pending={publish.isLoading} onClick={() => (items.length === 0 ? toast.info(PUBLISH.nothingLeft) : void publish.mutate({ items }).catch(() => undefined))}>
+      <ActionBar className="-mx-4 md:mx-0">
+        <Button type="button" className="min-h-10 w-full md:w-auto" pending={publish.isLoading} onClick={() => (items.length === 0 ? toast.info(PUBLISH.nothingLeft) : void publish.mutate({ items }).catch(() => undefined))}>
           {creating && count === review.totalChanges && review.listings.every((l) => l.creating) ? PUBLISH.create(review.label) : PUBLISH.publish(count, review.label)}
         </Button>
-      </div>
+      </ActionBar>
     </div>
   );
 }

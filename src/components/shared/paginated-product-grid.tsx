@@ -10,23 +10,9 @@ import { PRODUCT_PAGE_SIZE, type ProductPageQuery } from "@/lib/product-paging";
 import { productPagesApiClient } from "@/components/product/productPagesApiClient";
 
 /**
- * The one product listing that loads as you scroll.
- *
- * Every grid in the store goes through this — a shop's catalogue, a category, a search,
- * the offers page — so there is one fetch, one page size and one set of failure states
- * rather than four that drift.
- *
- * The **first page is rendered on the server** and handed in, so a shared link shows
- * products in its first paint and a visitor whose JavaScript never arrives still sees a
- * full screenful rather than a spinner.
- *
- * `"use client"` is earned here and pushed no further: accumulating pages and watching
- * an element is the only part of a listing that needs a browser.
- *
- * A **button as well as the observer**, always rendered while there is more. An observer
- * that never fires — an old browser, a scroll container that confuses it, a page in a
- * background tab — would otherwise leave a shop looking like it sells twelve things.
- * The button is the control; the observer only presses it early.
+ * The one product listing that loads as you scroll (design-system Q23): the first page is
+ * server-rendered and handed in; the button is the control and the observer only presses it
+ * early, since an observer that never fires would leave a shop looking like it sells twelve things.
  */
 export function PaginatedProductGrid({
   initial,
@@ -45,17 +31,14 @@ export function PaginatedProductGrid({
   /** A themed shop's page draws its theme's card (storefront-themes D8); the fetching is the same. */
   themed?: ThemedGridStyle;
 }) {
-  // Every caller builds `query` inline, so its identity changes on each render and
-  // `initial` is a fresh array from each RSC payload. Depending on either directly
-  // would re-run the effects below constantly — and the reset one would throw away
-  // pages the shopper had already loaded. A string of what actually identifies this
-  // listing is stable across renders and changes exactly when the listing does.
+  // `query` and `initial` are new on every render; this string changes only when the listing does.
   const queryKey = [
     query.handle ?? "",
     query.category ?? "",
     query.search ?? "",
     query.offersOnly ? "1" : "",
     query.heroOnly ? "1" : "",
+    query.sort ?? "",
   ].join("\u0000");
 
   const [products, setProducts] = useState(initial);
@@ -66,10 +49,7 @@ export function PaginatedProductGrid({
   const queryRef = useRef(query);
   queryRef.current = query;
 
-  // Filters live in the URL, so changing one is a fresh server render. Resetting on
-  // that is what stops a category switch appending its results underneath the previous
-  // category's — keyed on the listing rather than the array, so an unrelated re-render
-  // cannot discard loaded pages.
+  // A filter or sort change is a fresh server render; reset so its results never append under the old ones.
   const latest = useRef({ initial, initiallyDone });
   latest.current = { initial, initiallyDone };
   useEffect(() => {
@@ -87,9 +67,7 @@ export function PaginatedProductGrid({
         queryRef.current,
         products.length,
       );
-      // Filtered by id rather than concatenated blindly: a product added while someone
-      // is scrolling shifts every later row by one, and an offset page would then
-      // repeat whichever row moved across the boundary.
+      // By id: a product added mid-scroll shifts the offset, and a page would repeat a row.
       setProducts((current) => {
         const seen = new Set(current.map((product) => product.id));
         return [...current, ...page.products.filter((p) => !seen.has(p.id))];
@@ -104,9 +82,7 @@ export function PaginatedProductGrid({
     } finally {
       setLoading(false);
     }
-    // `query` is read through the ref rather than listed here: its identity changes
-    // every render, and what it names is already covered — a listing change resets
-    // `products`, which moves `products.length`.
+    // `query` is read through the ref: a listing change already resets `products.length`.
   }, [loading, done, products.length]);
 
   useEffect(() => {
@@ -117,8 +93,7 @@ export function PaginatedProductGrid({
       ([entry]) => {
         if (entry.isIntersecting) void loadMore();
       },
-      // Starts a screen early, so the next rows are usually already there by the time
-      // a shopper scrolls to them.
+      // A screen early, so the next rows are usually there before they are reached.
       { rootMargin: "600px" },
     );
     observer.observe(target);
@@ -139,8 +114,8 @@ export function PaginatedProductGrid({
       </p>
 
       {error && (
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-sm text-destructive">{error}</p>
+        <div role="alert" className="flex flex-col items-center gap-2">
+          <p className="text-small text-destructive">{error}</p>
           <Button variant="outline" size="sm" onClick={() => void loadMore()}>
             Try again
           </Button>
@@ -153,15 +128,15 @@ export function PaginatedProductGrid({
             variant="outline"
             size="sm"
             onClick={() => void loadMore()}
-            disabled={loading}
+            pending={loading}
           >
-            {loading ? "Loading…" : "Show more"}
+            Show more
           </Button>
         </div>
       )}
 
       {done && products.length > PRODUCT_PAGE_SIZE && (
-        <p className="text-center text-2xs text-muted-foreground">
+        <p className="text-center text-caption text-muted-foreground">
           That is everything.
         </p>
       )}

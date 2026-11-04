@@ -24,7 +24,7 @@ export default async function AdminEditProductPage({ params }: { params: Promise
   if (product.archivedAt) {
     return (
       <PageShell>
-        <PageHeader back={{ href: back, label: "Back to product" }} title={`Edit for shop: ${product.name}`} />
+        <PageHeader back={{ href: back, label: "Product" }} title={`Edit for shop: ${product.name}`} />
         <ArchivedNotice productId={id} />
       </PageShell>
     );

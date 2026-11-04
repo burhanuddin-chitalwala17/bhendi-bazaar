@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { useClickOutside } from "@/hooks/useClickOutside";
-import { ShieldAlert } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 
 export function ProfileMenu() {
@@ -22,24 +22,24 @@ export function ProfileMenu() {
   );
 
   async function handleLogout() {
-    console.log("Logout clicked");
-    // Clear session without navigating to the NextAuth signout page
+    // Without redirect, so the NextAuth sign-out page never shows; refresh re-renders session-dependent UI.
     await signOut({ redirect: false });
-    console.log("Session cleared");
-    // Close the menu and refresh UI
     setOpen(false);
-    router.push("/"); // optional: send them home
-    router.refresh(); // ensures any session-dependent UI re-renders
+    router.push("/");
+    router.refresh();
   }
 
   return (
     <div className="relative" ref={dropdownRef}>
       <Button
         variant="outline"
-        size="icon"
+        shape="icon"
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 w-9 items-center justify-center rounded-full border-border/70 bg-card/80 text-xs font-semibold uppercase tracking-label relative"
+        size="lg"
+        aria-label="Your account"
+        aria-expanded={open}
+        className="relative rounded-full text-caption font-semibold uppercase"
       >
         {user?.name?.charAt(0)?.toUpperCase() ?? "B"}
         {!isEmailVerified && (
@@ -47,7 +47,7 @@ export function ProfileMenu() {
         )}
       </Button>
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-56 rounded-xl border border-border/70 bg-popover/95 p-2 text-xs shadow-overlay">
+        <div className="absolute right-0 z-20 mt-2 w-56 rounded-card border border-border bg-popover p-2 text-small shadow-overlay">
           <Link
             prefetch={false}
             href="/profile"
@@ -62,7 +62,7 @@ export function ProfileMenu() {
             )}
             {!isEmailVerified && (
               <div className="mt-2 flex items-center gap-1.5 text-warning dark:text-warning">
-                <ShieldAlert className="h-3 w-3" />
+                <Icon name="security-warning" size="xs" />
                 <span className="text-2xs font-medium">Email not verified</span>
               </div>
             )}
@@ -85,7 +85,7 @@ export function ProfileMenu() {
             }}
             className="block rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            Wishlist
+            Saved
           </Link>
           <Link
             prefetch={false}
@@ -95,7 +95,7 @@ export function ProfileMenu() {
             }}
             className="block rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            Org Portal
+            Your shop
           </Link>
           <Button
             variant="ghost"
@@ -103,7 +103,7 @@ export function ProfileMenu() {
             className="mt-1 w-full justify-start text-left text-muted-foreground hover:text-foreground"
             onClick={handleLogout}
           >
-            Logout
+            Sign out
           </Button>
         </div>
       )}

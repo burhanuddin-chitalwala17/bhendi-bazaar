@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, RefreshCw, Search } from "lucide-react";
 import { OrgsTable } from "./components/OrgsTable";
 import { AddOrgModal } from "./components/AddOrgModal";
 import { useOrgs } from "./hooks/useOrgs";
@@ -12,6 +11,8 @@ import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 
 import { PageHeader } from "@/components/shared/page-shell";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { ErrorState } from "@/components/shared/states/ErrorState";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
@@ -103,22 +104,14 @@ export function OrgsContainer() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <PageHeader
-        title="Orgs Management"
-        description={`Manage orgs and vendors on your platform (${pagination.total} ${pagination.total === 1 ? "org" : "orgs"})`}
+        title="Shops"
+        description={`${pagination.total} ${pagination.total === 1 ? "shop" : "shops"} on the platform`}
         actions={
           <>
-            <Button
-              variant="ghost"
-              onClick={() => refetch()}
-              disabled={loading}
-              className="flex items-center gap-2 bg-muted text-foreground/80"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
-              />
-              {loading ? "Refreshing..." : "Refresh"}
+            <Button variant="outline" onClick={() => refetch()} pending={loading}>
+              <Icon name="refresh" />
+              Refresh
             </Button>
             <Button
               variant="default"
@@ -127,17 +120,16 @@ export function OrgsContainer() {
                 setEditingOrg(null);
                 setShowModal(true);
               }}
-              className="flex items-center gap-2"
             >
-              <Plus className="w-4 h-4" />
-              Add Org
+              <Icon name="add" />
+              Add shop
             </Button>
           </>
         }
       />
 
       {/* Filters */}
-      <div className="bg-card rounded-lg border border-border p-4">
+      <div className="rounded-card border border-border bg-card p-4">
         <div className="flex flex-wrap gap-4">
           {/* Search */}
           <div className="w-full min-w-0 grow sm:w-auto sm:min-w-64">
@@ -147,15 +139,15 @@ export function OrgsContainer() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Search by name, code, email, city..."
+                placeholder="Search by name, code, email or city…"
+                aria-label="Search shops"
                 className="flex-1"
               />
               <Button
                 variant="default"
                 onClick={handleSearch}
-                className="flex items-center gap-2"
               >
-                <Search className="w-4 h-4" />
+                <Icon name="search" />
                 Search
               </Button>
             </div>
@@ -170,18 +162,19 @@ export function OrgsContainer() {
               )
             }
           >
-            <option value="all">All Status</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Inactive Only</option>
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
           </Select>
         </div>
       </div>
 
-      {/* Error State */}
       {error && (
-        <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive">
-          {error}
-        </div>
+        <ErrorState
+          title="Shops didn't load"
+          description={error}
+          onRetry={() => void refetch()}
+        />
       )}
 
       {/* Table — rendered even when empty, so the filters that emptied it stay usable */}
@@ -196,7 +189,6 @@ export function OrgsContainer() {
         onToggleBlock={handleToggleBlock}
       />
 
-      {/* Modal */}
       <AddOrgModal
         open={showModal}
         onClose={handleCloseModal}

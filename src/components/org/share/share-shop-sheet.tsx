@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Copy, ExternalLink, MessageCircle } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import { HANDOFF_WIDE, HandoffSheet } from "@/components/shared/overlays/handoff-sheet";
@@ -65,17 +65,17 @@ export function ShareShopSheet({
         <div className="grid gap-2">
           <Button asChild size="lg" className="min-h-11">
             <a href={whatsappHref(shop.name, shop.url)} target="_blank" rel="noopener noreferrer" onClick={() => void shareOnWhatsApp()}>
-              <MessageCircle aria-hidden />
+              <Icon name="message" />
               {SHARE_COPY.whatsapp}
             </a>
           </Button>
           <Button type="button" variant="outline" size="lg" className="min-h-11" onClick={() => void copyLink()}>
-            <Copy aria-hidden />
+            <Icon name="copy" />
             {SHARE_COPY.copyLink}
           </Button>
           <Button asChild variant="ghost" size="lg" className="min-h-11">
             <Link prefetch={false} href={shop.path} target="_blank" rel="noopener noreferrer">
-              <ExternalLink aria-hidden />
+              <Icon name="external" />
               {SHARE_COPY.seeAsBuyer}
             </Link>
           </Button>

@@ -4,6 +4,7 @@ import { getToken } from "next-auth/jwt";
 import { contentSecurityPolicy, isSelfFramedPath } from "@/lib/security-headers";
 import { CROSS_SITE_REFUSED, isCrossSiteMutation } from "@/lib/same-origin";
 import { forwardStorefrontShop } from "@/lib/storefront-chrome";
+import { PLATFORM_ROLE } from "@server/identity/admin.user.types";
 
 /**
  * Edge gate for the two portals.
@@ -106,7 +107,7 @@ export async function middleware(request: NextRequest) {
 
     // Membership is not checked here — it lives in the database and can be revoked
     // mid-session, so the org layout owns it.
-    if (pathname.startsWith("/admin") && (token.platformRole ?? "USER") !== "ADMIN") {
+    if (pathname.startsWith("/admin") && (token.platformRole ?? PLATFORM_ROLE.USER) !== PLATFORM_ROLE.ADMIN) {
       return NextResponse.redirect(new URL("/", request.url));
     }
   } catch (error) {

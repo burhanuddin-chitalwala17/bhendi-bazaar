@@ -12,6 +12,240 @@
 
 ## Entries
 
+## 2026-11-04 — Review fixes for the design-system programme (/bb-review, fresh context)
+
+- **A phone-only storefront photo drew cover-cropped on tablet and desktop** while the editor's preview
+  showed it fitted: the buyer's page built its row without the phone-only rule the editor used. One
+  row-builder now serves both (`slotImageRow` in `storefront.service.ts`). Integration test: a phone-only
+  "fit it in" set draws fitted with its fill on desktop; reverting the fix failed 2 tests.
+- **Bulk stock went around `stockService`** (Invariant 6 names it as the way stock moves). It now has
+  `setCountedMany`, `lockAllOf`, `changedMany` and `markSoldOut`, and the bulk service calls only those.
+- **Stock has a ceiling:** `STOCK_MAX` (1,000,000 per location) in the product form and the bulk edit,
+  so a typo is a message rather than an int overflow and a 500.
+- **A min-and-max price filter kept only the max** (pre-existing in the listing; the new count inherited
+  it): one `price` key now carries both bounds.
+- `claimPublish`'s doc comment is back on `claimPublish`. Inventory-sync's renumbered decision (Q28,
+  sync starts on connecting) is now cited as Q28 in code comments too (channels, Home's DAL, the
+  stock-sync route and schema, three channel components).
+- Follow-ups the review raised, not done here: a team bulk send that fails at the third shop loses the
+  first two shops' audit entries; bulk stock may write to an inactive location; a lost insert race
+  reports `currentQuantity: 0`; the listing count can be cached under an unbounded category slug (as the
+  product rows already can); the pincode check calls the rates route on every product view and shares
+  checkout's rate bucket; the bulk audit is written after commit; rupee parsing in `bulk-input.ts`
+  belongs beside `src/lib/format.ts`; the bulk integration test clears the shared test shop's Amazon
+  connections, which a concurrent run can trip over.
+
+## 2026-11-04 — Synced with origin: bulk stock edits ride the one "stock changed" job
+
+- `origin/main` brought inventory-sync's one-read-one-job stock change (`channels.stock-changed`).
+  The bulk actions' `stockChangedMany` now calls the same `stockChanged` (one read, one job for the
+  whole selection) and `enqueueSoldOut` writes one job marking every archived product sold out,
+  instead of a push job per product. `enqueueMany` gives a spec's retries as `enqueue` does.
+- **Build fix found by `next build`:** the admin's pickup list (a client component) imported
+  `PICKUP_QUEUE_TAB` from `pickup-queue.ts`, which reaches the database client, so the browser
+  bundle pulled in `pg`. The tabs and row shape now live in `server/checkout/pickup-queue.types.ts`,
+  re-exported from `pickup-queue.ts`. Typecheck and tests cannot see this; only the build can.
+- Verified on the synced tree: tsc; unit 3,049/3,049; integration 635/635 (local database); `next build`.
+- **Correction to an earlier entry:** both branches numbered an inventory-sync decision Q27. Origin's
+  (one job per stock change) keeps Q27, being cited in code; "sync starts on connecting", cited as
+  inventory-sync Q27 in the 2026-11-04 stock-sync entry below, is now **Q28** in the spec, TRD and UX.
+
+## 2026-11-04 — Lucide removed; every icon through one seam; role names compared by constant (design-system foundations, last unit)
+
+- The last 16 files moved to `Icon` / `Spinner`; `lucide-react` is uninstalled. `icons.test.ts` loses its
+  ratchet and now refuses any icon-library import outside `ui/icons/` outright.
+- The remaining `"ADMIN"` / `"USER"` literals (middleware, admin guard, auth config, users table and filter)
+  compare against `PLATFORM_ROLE`; the analytics repository uses Prisma's own enum, keeping it to two domains.
+- `ARCHITECTURE.md` counts moved: 166 handlers, 14 storefront pages, 351 test files.
+- Not done in this programme: the React Compiler (TRD D7) — it changes how ~400 client components render
+  and needs its own before/after measurement (foundations A9), so it waits for the owner's visual review.
+
+## 2026-11-04 — Admin rebuilt: grouped navigation, a dashboard led by sales and its trend, dense lists (design-system/admin-console)
+
+- **Navigation:** five groups (Overview, Orders, Catalogue, Shops, Platform), one icon each, the real logo
+  inverted on the dark rail; Refunds carries its count.
+- **Dashboard** renders on the server: sales for today / 7 / 30 days with the change on the period before,
+  a hand-drawn SVG chart (current solid, previous dashed, a spoken summary; no chart package — Q13), paid
+  orders, average order, platform kept, shops selling, "Needs action" (Q31) with an all-clear, and the
+  latest orders. Each block streams and fails on its own. `dashboard-live.tsx`, its client and the two
+  orphaned `/api/admin/dashboard*` routes are deleted (route-reachability).
+- **Lists:** orders (tabs with counts from one `groupBy`), pickups, refunds, product types, payouts and
+  auctions are `ResourceList`s with URL sort and row links; chips are `StatusBadge`; every page has one
+  `PageHeader` h1; the admin group gains `error.tsx` and `loading.tsx`. The products page's meaningless
+  `revalidate` is gone (it renders per request behind the session). `FloatingAdminButton` sits above
+  the tab bar and compares by constant. Auth pages and `/sell`: icons and type only (Q14 parks the rest).
+- Tests: `admin-dashboard-view.test.tsx` (chart points per day, a zero period draws flat without NaN,
+  spoken summary, attention copy and paise, period parsing). Mutations: removing the zero-peak guard and
+  the period check each failed a test. Integration: `admin-dashboard-metrics`, `db-ops-budget`.
+- Not done: an order detail panel (rows open the order page), the shops list is still read in the browser.
+
+## 2026-11-04 — Seller portal rebuilt: products with bulk edits, orders with tab counts, Home that calls for action [CONTRACT] (design-system/seller-workspace)
+
+- **Chrome:** phone top bar is the shop switcher and search; the tab bar is Home · Products · Orders ·
+  Earnings · More (own-store Q13 replaced: Shop moves into More); Orders carries the to-pack count.
+- **Products:** tabs with counts (All, Low stock, Sold out, Archived), search, one `ResourceList`
+  (phone rows, dense table from `md:`), and selection → Price, Stock, Archive, Send to marketplace
+  (Q29), each a dialog that sends integer paise or per-location stock with what it saw, then reports
+  what changed, what was skipped and why, and what someone else changed meanwhile. The stat-card row is
+  gone; "All (archived too)" is replaced by the tabs. `ProductForTable.stockByLocation` is new.
+- **Orders:** Store / Marketplace as a segmented control; tabs with counts (To pack, For pickup — was
+  "Ready" — On the way, Done, Cancelled); "Mark packed" on the row.
+- **Home:** "Needs you now" per Q31, an all-clear, the shop link, "Add a product" docked.
+- **Everywhere:** hand-rolled save bars → `ActionBar`; the five `(org)` error boundaries → `ErrorState`
+  with retry; ten new `loading.tsx`; storefront hero and collection photos take a phone and a desktop
+  version (image-slots D10, editor side; `StorefrontSettingsInput.heroImages`, `collections[].image`).
+- Tests: `bulk-product-dialog.test.tsx` (rupees to paise, stock sends only changed cells with
+  `seenQuantity`, selection clears, an empty form warns and sends nothing); a storefront-editor
+  integration case (desktop+phone and phone-only sets; a foreign picture refused). Mutations: sending
+  `quantity` as `seenQuantity` failed 2; not clearing the selection failed 1.
+- Not done: a shop-scoped "this week" figure (needs a new read), the Q15 move of `shared/forms/*`.
+
+## 2026-11-04 — Store rebuilt, phone first: one tab bar, docked buy bar, delivery by pincode, a focused checkout [CONTRACT] (design-system/storefront-journey)
+
+- **Chrome:** tab bar Home · Shop · Saved · Bag · Account (Q21), hidden in checkout, where the header
+  becomes a back arrow to the bag (Q20); the real logo; the footer, with grievance and returns links,
+  now shows on phones too. A new `/shop` page lists every category and the catalogue.
+- **Grid:** 2 / 3 / 4 across on phone / tablet / desktop (Q19) with `sizes` to match; long grids use
+  `content-visibility` (Q23). Category, search and offers share a toolbar with a count, sort in the URL
+  and an "On offer" chip; a search with no query no longer says "undefined".
+- **Product page:** delivery by pincode from the existing rates lookup (Q25; refuses anything but six
+  digits, remembers the pincode in this browser only), price and Add to bag docked above the tab bar;
+  the bag icon drops on add and the heart pops on save; no size guide (Q28), no "ask the shop" (Q26).
+- **Bag** groups lines by shop, one parcel each; **checkout** is three steps with one "Pay ₹X" button
+  that opens Razorpay (Q27; no method picker, no cash on delivery), errors shown only after Pay; the
+  **order page** shows each parcel's progress, keeping track and cancel rules as they were.
+- **Server:** `listingWhere` is shared by the listing and a new `countProducts` (read through the cache
+  except searches and offer filters, ADR-0065); `StorefrontPageDto` gains `heroImages` and
+  `collections[].image`, and the themed hero and collections draw both versions. `PriceDisplay` uses
+  the type roles and the foreground colour.
+- Tests: `storefront-journey.test.tsx` (grid columns match `sizes`; exactly five tabs, absent in
+  checkout; pincode refused before any request; no checkout error before Pay). Mutations: removing the
+  after-Pay gate failed 1; loosening the pincode check failed 2. `org-scoping` now requires both product
+  reads to build their filter from `listingWhere`; `read-cache-tables` walks the new count.
+- Not done: the themed shop's own header and tab bar were only re-iconed; `/shop` is not yet in the
+  sitemap; the docked bar does not yet repeat "arrives by".
+
+## 2026-11-04 — Banners get a phone picture and a desktop picture, cropped exact or fitted [CONTRACT] [MIGRATION] (design-system/image-slots)
+
+- **Owner's request (Q24):** the admin's home banners and a shop's banners take a phone and a desktop
+  version. A picture a little off the slot's shape is either kept exact (cropped, choosing what stays)
+  or fitted in (edges filled with a colour sampled from it). With no phone version, a phone shows the
+  desktop picture around a focus point the uploader picks. One field (`shared/image-slot/`) and one
+  renderer (`shared/responsive-image.tsx`, `<picture>` art direction through `getImageProps`; the phone
+  file below `md:`, the desktop file from it) serve every surface. Spec and TRD:
+  `docs/specs/design-system/image-slots/`.
+- **Stored, not baked:** the crop rectangle, fit, fill and focus are kept per side and drawn with
+  `object-fit` and `object-position`, so re-cropping never re-encodes a file. The server checks
+  everything again: the picture is a ready image in the owner's own library, the crop is inside it and
+  on the slot's shape within 2%, the fill is a colour.
+- **[MIGRATION] `20261104120000_image_slots`, additive:** `Banner` and `OrgBanner` gain `phoneImageUrl`,
+  `phoneImageAssetId` (FK to `MediaAsset`, restrict) and `imageFraming`; `OrgStorefrontSlot` gains
+  `phoneAssetId` and `imageFraming`. Existing banners are backfilled to centred cover and render as
+  before. The phone URL is a column, so the cached home-banner read gains no table (ADR-0065).
+- **[CONTRACT]** banner forms send `image` instead of `imageUrl`; the hero reads `ResponsiveImageDto`
+  (CONTRACTS.md, Banners). The media library counts phone pictures as uses, so one in use cannot be
+  retired. On a phone, a banner with a picture now takes the 4:5 phone shape.
+- Removed: `BannerImageField.tsx`, `banner-image-check.ts`.
+- Tests: `image-slots`, `image-framing`, `responsive-image`, `image-slot-write` (unit),
+  `tests/integration/image-slots.test.ts` (save and read back with a crop and a phone picture; a phone
+  picture in use cannot be retired; another shop's picture refused; an old banner still renders; a
+  home banner from the platform library). Mutations: dropping the crop-bounds check failed 2 tests;
+  dropping the org scope on the library lookup failed 2.
+- Not yet: storefront photo slots use the new columns only in the database (their look sheet and
+  themed sections still take one picture); the category hero; an edit dialog for a shop's banner.
+  Not checked in a browser.
+
+## 2026-11-04 — Admin sales trend, and "Needs attention" that only calls for what can be done [CONTRACT] (design-system Q30, Q31, data side)
+
+- **Admin dashboard reads** (`server/analytics/sales.*`, read-only, live — never the read cache): per
+  India day, paid order value in paise for today / 7 / 30 days and the same span before it, cut at the
+  same time of day; paid orders, average order, platform kept (from the payouts ledger) and shops
+  selling, each with its change. Paid means `paymentStatus = paid` and not cancelled, summed from the
+  stored `grandTotal`; unpaid, failed and expired orders never count. 3 statements per load.
+- **Admin queue (Q31):** at most five, money and buyers first, nothing at zero, each linking where it is
+  resolved: refunds not yet started; parcels ready for 24 h or more and not booked; shops owed money
+  for 7 days or more; courier conflicts not dismissed. One statement. "Shops not verified" was built and
+  dropped (Q32): nothing sets the flag and no buyer sees it. Every item is a query; no column or label was added.
+- **Seller Home (Q31):** "orders to pack" counts only paid parcels still packing and says how long the
+  oldest has waited; a new low-stock line counts only products that sold in the last 30 days and says
+  when the first runs out. "New reviews" and "auction ends soon" are dropped — nothing the shop does
+  clears either. `HomeAttentionDto` changed (CONTRACTS.md); the screens come with the seller and admin
+  units.
+- Tests: `tests/integration/admin-dashboard-metrics.test.ts` (7: unpaid/expired/failed/cancelled
+  excluded, month boundary, India-midnight buckets, exact paise, platform kept nets fees, low stock
+  ignores unsold products, each queue threshold on both sides), `tests/unit/admin-attention.test.ts`,
+  `home-attention.test.ts` rewritten. Mutation: dropping the paid filter from the day series failed the
+  sums test.
+- Dropping the reviews and auction lines reverses own-store Q13 and Q22 (owner agreed, Q33).
+
+## 2026-11-04 — Bulk product actions: price, stock, archive, send, one statement each [CONTRACT] (design-system Q29, server side)
+
+- **Owner's call (Q29):** a shop, or the Bhendi Bazaar team, selects products and edits price, edits
+  stock, archives, or sends them to a connected marketplace. Routes `POST /api/org/[orgId]/products/bulk-edit`
+  and `POST /api/admin/products/bulk-edit`; shapes in CONTRACTS.md (Products). The screens come with
+  the seller-workspace unit; `useBulkProductActions` is ready for them.
+- **Optimised as asked:** no action loops over rows. Price is 3 statements and stock and archive 6,
+  whether 2 or 12 products (asserted); per-row guards (stock compare-and-set, a listing's version) sit
+  inside the one statement. New seams: `enqueueMany` (one batched job insert) and a batched audit insert.
+- **Invariants:** every statement is scoped by org (another shop's id is skipped, never touched); money
+  is paise, percent rounds half away from zero; stock is compare-and-set (Invariant 6); archive keeps
+  the single-archive rules (stock locked, live bidding refused, idempotent); the team path requires a
+  reason and writes the shop-visible history; a bulk price edit bumps `version`, so an open form is
+  refused rather than silently undoing it. Writes go through the Prisma client, so the read cache
+  clears by table (ADR-0065).
+- **Rate limits:** the two routes are portal routes behind `withOrg` / `requirePlatformAdminId`, which
+  the registry (ADR-0063) does not list by design.
+- Tests: `tests/integration/product-bulk-actions.test.ts` (9: org scoping, paise and rounding, version
+  bump, stock conflict, archive idempotence, team skips archived, foreign location, send claims and
+  in-flight, statement count flat in N), `tests/unit/product-bulk-schema.test.ts`. Mutations: dropping
+  the org scope failed the scoping test; dropping the compare-and-set failed the conflict test.
+  Not yet tested: the `bidding_live` skip on its own, the send statement count, a team send across shops.
+
+## 2026-11-04 — Page grammar: one page header, action bar, states, tabs, list, selection bar (design-system/page-grammar)
+
+- **One page title:** `PageHeader` is the only h1 (`text-headline`), with a visible back link whose
+  `label` names the parent ("Products", never "Back"). `SectionHeader` no longer renders an h1; its 19
+  h1 uses moved to `PageHeader` (a test refuses `SectionHeader as="h1"`).
+- **New shared parts:** `ActionBar` (docked above the tab bar on a phone, inline from `md:`),
+  `PageTabs` (route tabs with counts, zero hidden), `SelectionBar` (count, three actions and "More",
+  hidden at zero), `ResourceList` (one column definition: rows on a phone, a dense table from
+  `md:`/`lg:`, selection, sort in the URL with `aria-sort`); `DataTable` is now a thin wrapper over it.
+- **States:** `EmptyState` draws the arch and takes one action that may be a link; `ErrorState` has one
+  retry; skeleton blocks (`SkeletonRows`, `SkeletonTiles`, `SkeletonHeader`) replace `LoadingSpinner`,
+  which is deleted. `StatusBadge` takes `tone` (one `cva` map); `StatsCard` drops the icon-in-a-circle.
+- **Tokens:** a base `--deal` / `--deal-foreground` outside storefront themes (rose 450 on white; themes
+  still repoint it); `Button variant="inverse"` for dark surfaces, used by the selection bar;
+  `Checkbox hideLabel` for row selection with a spoken name.
+- Call sites moved mechanically (EmptyState `icon`, StatusBadge `status` → `tone`, DataTable `onSort`
+  removed — sorting is the URL's). Hand-rolled save bars, chips and raw tables are left for the
+  screen units. 14 files left the icon ratchet.
+- Tests: `page-grammar.test.tsx` (empty-state link, no h1 SectionHeader, URL sort and `aria-sort`,
+  selection bar at zero and overflow, tabs `aria-current` and zero count). Mutations: `count <= 0` →
+  `count < 0` failed the selection test; dropping the page reset failed the sort test.
+
+## 2026-11-04 — Design-system foundations: one icon seam, type roles, Button axes (design-system/foundations unit 1–2)
+
+- **Icons:** `@phosphor-icons/react` 2.1.10 added (MIT; `optimizePackageImports` in `next.config.ts`).
+  `ui/icon.tsx` draws every icon by meaning (`ui/icons/registry.ts`, 124 lucide glyphs mapped);
+  weight follows size (regular under 20px, light above). The owner-approved brand drawings
+  (`ui/icons/brand.tsx`, v2: two-tone, one motion each, off under reduced motion) override bag,
+  saved, home, shop, account, search, menu and parcel, and add rida and arch. `ui/spinner.tsx` for
+  inline progress; `Button pending` uses it.
+- **Gate:** `tests/unit/icons.test.ts` — only `ui/icons/` imports an icon library; the 208 files
+  still on lucide are a ratchet that only shrinks (ADR-0056); an unlabelled icon is `aria-hidden`.
+  Mutation: a lucide import added to `ui/spinner.tsx` failed it.
+- **Type:** seven roles (`text-display` … `text-label`), phone and desktop sizes per Q10; body text is
+  `text-body`. `text-3xs`/`text-4xs` retired (42 uses → `text-2xs`, 11px floor) and refused by
+  `design-tokens.test.ts` (mutation: a `text-3xs` in `product-card.tsx` failed it). Motion roles
+  (`duration-fast|base|slow`, `ease-standard|emphasised`, zeroed under reduced motion); shadows drawn
+  from the palette ink instead of `rgb(0 0 0)`; `--icon-accent`. All registered in `cn`.
+- **Button:** `size` and `shape` are separate axes (`size="icon-lg"` → `shape="icon" size="lg"`, 61
+  uses); `ShareButton` exposes the same axes. `layout/brand-logo.tsx` renders the platform logo,
+  inverted on dark surfaces.
+- **Rules:** ADR-0066 (Proposed; renumbered from 0065, which the read cache took) gains D8 variants
+  per axis and D9 the logo; `src/components/CLAUDE.md` states the icon, variant, type and logo rules.
+- Suites: tsc; unit gates icons, design-tokens, cn-tokens, ui-primitives, button-rows, double-submit, share-button, docs-integrity. Full suite runs after the parallel units land.
+
 ## 2026-11-04 — Stock change, review: survives the deploy that introduces it
 
 - **Found in review** of the entry below, fixed before merge: a deploy ships the site before the

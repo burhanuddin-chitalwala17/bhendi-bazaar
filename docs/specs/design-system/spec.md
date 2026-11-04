@@ -5,9 +5,9 @@
 - **Domain:** cross-domain (front end)
 - **Phase:** 13 — Design system
 - **Verified:** 2026-11-04
-- **References:** [decisions.md](decisions.md), [foundations](foundations/), [ADR-0065](../../adr/0065-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0022](../../adr/0022-design-decisions-go-through-tokens.md), [ADR-0031](../../adr/0031-one-components-home-organised-by-domain.md), [ADR-0049](../../adr/0049-colour-is-a-primitive-palette-read-through-semantic-tokens.md), [ADR-0050](../../adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md)
+- **References:** [decisions.md](decisions.md), [foundations](foundations/), [ADR-0066](../../adr/0066-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0022](../../adr/0022-design-decisions-go-through-tokens.md), [ADR-0031](../../adr/0031-one-components-home-organised-by-domain.md), [ADR-0049](../../adr/0049-colour-is-a-primitive-palette-read-through-semantic-tokens.md), [ADR-0050](../../adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md)
 
-> The parent of seven subfeatures. Each has its own spec, decisions, UX and TRD; this file holds only
+> The parent of eight subfeatures. Each has its own spec, decisions, UX and TRD; this file holds only
 > what they share and their order. Every decision, with who made it, is in decisions.md.
 
 ## What this is
@@ -45,7 +45,8 @@ Each is one outcome, ships alone, and needs the one before it.
 4. **seller-workspace** — the products list rebuilt for a phone with bulk edits, the top bar, orders.
 5. **admin-console** — grouped navigation, a dashboard led by one figure and its trend, dense tables.
 6. **brand-icons** — 6–10 icons drawn for the brand by Claude, approved by the owner (Q2).
-7. **render-performance** — Cache Components and partial prerendering, as its own migration (Q8).
+7. **image-slots** — one picture field with a phone and a desktop version, crop or fit, for admin banners, shop banners and storefront photos (Q24).
+8. **render-performance** — Cache Components and partial prerendering, after the other session's caching lands (Q8).
 
 ## Open questions
 See decisions.md.

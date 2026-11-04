@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { APP_NAME } from "@/lib/config";
 import { RETURNS_PRESET_LABEL } from "@server/catalog/shop-details.types";
@@ -18,10 +18,9 @@ export function ShopPolicies({ name, preset, note }: PoliciesSlice) {
       {/* min-h-11 keeps the tap target past 40px on a phone (ADR-0015). */}
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-heading text-base font-semibold [&::-webkit-details-marker]:hidden">
         This shop&apos;s terms
-        <ChevronDown
-          aria-hidden
-          className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
-        />
+        <span className="text-muted-foreground transition-transform duration-fast group-open:rotate-180">
+          <Icon name="expand" size="sm" />
+        </span>
       </summary>
       <div className="space-y-4 border-t border-border px-4 pb-4 pt-3">
         <p className="text-2xs text-muted-foreground">

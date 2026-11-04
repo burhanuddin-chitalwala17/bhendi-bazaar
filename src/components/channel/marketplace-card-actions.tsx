@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { useMutation } from "@/hooks/core/useMutation";
 import { CARD_STATE, type CardState, type MarketplaceChannel } from "@server/channels/channel-connection.types";
 import type { StockSyncState } from "@server/channels/channel-stock.types";
@@ -57,7 +57,7 @@ export function MarketplaceCardActions({ orgId, channel, label, state, stale, st
       <a href={href} onClick={() => setOpening(true)} aria-busy={opening}>
         {opening ? (
           <>
-            <Loader2 className="size-4 animate-spin" aria-hidden />
+            <Spinner />
             {ACTION.connecting(label)}
             {slow ? ` ${ACTION.stillWorking}` : ""}
           </>
@@ -68,7 +68,7 @@ export function MarketplaceCardActions({ orgId, channel, label, state, stale, st
     </Button>
   );
 
-  // Pause sits beside Disconnect (inventory-sync Q27): sync runs by itself, so stopping it is the exception.
+  // Pause sits beside Disconnect (inventory-sync Q28): sync runs by itself, so stopping it is the exception.
   const pauseControl = stockSync ? <StockSyncActions orgId={orgId} channel={channel} label={label} state={stockSync} /> : null;
 
   // Secondary on the states where a reconnect can return a different account: switching is
@@ -124,9 +124,8 @@ export function MarketplaceCardActions({ orgId, channel, label, state, stale, st
               variant="outline"
               className="min-h-10 w-full md:w-auto"
               onClick={() => void check.mutate().catch(() => undefined)}
-              aria-busy={check.isLoading}
+              pending={check.isLoading}
             >
-              {check.isLoading && <Loader2 className="size-4 animate-spin" aria-hidden />}
               {ACTION.checkNow}
             </Button>
           )}

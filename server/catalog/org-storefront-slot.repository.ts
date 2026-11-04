@@ -3,7 +3,7 @@
  * touching `prisma.orgStorefrontSlot` (Invariant 5); every method is scoped to one org.
  */
 
-import { StorefrontSlotKind, type Prisma } from "@prisma/client";
+import { Prisma, StorefrontSlotKind } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
 
 type SlotDb = Pick<Prisma.TransactionClient, "orgStorefrontSlot">;
@@ -11,6 +11,9 @@ type SlotDb = Pick<Prisma.TransactionClient, "orgStorefrontSlot">;
 export interface SlotWrite {
   categoryId: string | null;
   assetId: string | null;
+  /** The phone version and both framings (image-slots D10); absent from a URL-only save. */
+  phoneAssetId?: string | null;
+  imageFraming?: Prisma.InputJsonValue | typeof Prisma.JsonNull;
 }
 
 export { StorefrontSlotKind };
@@ -24,7 +27,10 @@ export const orgStorefrontSlotRepository = {
       select: {
         kind: true,
         position: true,
+        assetId: true,
         asset: { select: { ref: true } },
+        phoneAsset: { select: { ref: true } },
+        imageFraming: true,
         category: { select: { id: true, slug: true, name: true, heroImage: true } },
       },
     });
@@ -48,7 +54,15 @@ export const orgStorefrontSlotRepository = {
     await db.orgStorefrontSlot.deleteMany({ where: { orgId, kind } });
     if (!slots.length) return;
     await db.orgStorefrontSlot.createMany({
-      data: slots.map((slot, position) => ({ orgId, kind, position, categoryId: slot.categoryId, assetId: slot.assetId })),
+      data: slots.map((slot, position) => ({
+        orgId,
+        kind,
+        position,
+        categoryId: slot.categoryId,
+        assetId: slot.assetId,
+        phoneAssetId: slot.phoneAssetId ?? null,
+        imageFraming: slot.imageFraming ?? Prisma.JsonNull,
+      })),
     });
   },
 };

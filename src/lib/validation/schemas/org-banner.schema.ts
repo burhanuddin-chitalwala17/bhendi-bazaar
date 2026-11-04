@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { imageSlotInputSchema } from "./image-slot.schema";
 
 /**
  * What an org may put on its own banner.
@@ -40,7 +41,8 @@ export const orgBannerSchema = z.object({
     .max(DESCRIPTION_MAX)
     .or(z.literal(""))
     .nullish(),
-  imageUrl: z.string().url().or(z.literal("")).nullish(),
+  // Desktop and phone pictures with their framing (image-slots); the service checks they are this shop's.
+  image: imageSlotInputSchema.nullable().default(null),
   imageAlt: z.string().trim().max(TITLE_MAX).or(z.literal("")).nullish(),
   href: z
     .string()

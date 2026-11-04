@@ -2,7 +2,9 @@
  * Dates as an Indian reader means them. The server runs in UTC, so a move at 23:30 UTC is already
  * tomorrow in India; every date a person reads goes through here (order-fulfilment D5).
  */
-const ZONE = "Asia/Kolkata";
+/** The IANA zone, for SQL that buckets by India day (`AT TIME ZONE`). */
+export const INDIA_ZONE = "Asia/Kolkata";
+const ZONE = INDIA_ZONE;
 const LOCALE = "en-IN";
 
 /** "3 Nov". */

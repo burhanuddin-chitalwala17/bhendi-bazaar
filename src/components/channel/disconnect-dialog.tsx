@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { FormDialog } from "@/components/shared/overlays/form-dialog";
@@ -57,14 +56,11 @@ export function DisconnectDialog({ orgId, channel, label, open, onOpenChange }: 
           <Button
             variant="destructive"
             className="min-h-10"
-            aria-busy={disconnect.isLoading}
+            pending={disconnect.isLoading}
             onClick={() => void disconnect.mutate().catch(() => undefined)}
           >
             {disconnect.isLoading ? (
-              <>
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-                {DISCONNECT.working}
-              </>
+              DISCONNECT.working
             ) : disconnect.error ? (
               ACTION.tryAgain
             ) : (

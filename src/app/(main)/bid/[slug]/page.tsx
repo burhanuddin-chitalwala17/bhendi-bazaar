@@ -16,7 +16,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Gavel } from "lucide-react";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { biddingService } from "@server/bidding/bidding.service";
 import { NotFoundError } from "@server/shared/domain-error";
 import { appUrl } from "@server/shared/app-url";
@@ -93,7 +93,7 @@ export default async function BiddingPage({
   const isOver = event.phase !== "LIVE" && event.phase !== "SCHEDULED";
 
   return (
-    <PageShell width="default" className="px-3 pb-24 pt-4 sm:px-4 md:pb-8">
+    <PageShell width="default" className="pb-24 md:pb-8">
       <div className="grid gap-5 md:grid-cols-2 md:gap-8">
         {/* DOM order is the mobile reading order: picture, then what it is, then the
             bidding itself. On a wider screen the picture moves alongside. */}
@@ -107,21 +107,16 @@ export default async function BiddingPage({
               className="object-cover"
               preload
             />
-            <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-1 text-3xs font-semibold uppercase tracking-label text-primary-foreground">
-              <Gavel className="size-3" aria-hidden />
-              {event.phase === "LIVE"
-                ? "Live bidding"
-                : event.phase === "SCHEDULED"
-                  ? "Bidding soon"
-                  : "Bidding closed"}
-            </span>
+            <StatusBadge tone={event.phase === "LIVE" ? "success" : event.phase === "SCHEDULED" ? "info" : "neutral"} dot className="absolute left-3 top-3">
+              {event.phase === "LIVE" ? "Live bidding" : event.phase === "SCHEDULED" ? "Bidding soon" : "Bidding closed"}
+            </StatusBadge>
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
             <div className="flex items-start gap-2">
-              <h1 className="min-w-0 flex-1 font-heading text-xl font-semibold leading-tight sm:text-3xl">
+              <h1 className="min-w-0 flex-1 font-heading text-headline font-semibold">
                 {event.product.name}
               </h1>
               <ShareButton
@@ -129,11 +124,12 @@ export default async function BiddingPage({
                 title={`${event.product.name} — bidding on ${APP_NAME}`}
                 text={`Bidding is open on ${event.product.name}`}
                 variant="ghost"
-                size="icon"
+                size="lg"
+                shape="icon"
               />
             </div>
             {/* R20: what the contest is against. */}
-            <p className="text-sm text-muted-foreground">
+            <p className="text-small text-muted-foreground">
               Usually {formatCurrency(event.product.referencePricePaise)}
             </p>
           </div>
@@ -156,18 +152,18 @@ export default async function BiddingPage({
 
           {event.phase === "SCHEDULED" && (
             <div className="space-y-3 rounded-card border border-border bg-card p-4">
-              <p className="text-2xs uppercase tracking-label text-muted-foreground">
+              <p className="text-label uppercase text-muted-foreground">
                 Bidding opens
               </p>
-              <p className="font-heading text-2xl font-semibold">
+              <p className="font-heading text-headline font-semibold">
                 {absoluteWhen(event.startAt)}
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-small text-muted-foreground">
                 Opening bid {formatCurrency(event.startingBidPaise)}. Come back
                 then — or share this link with someone who will want it.
               </p>
-              <p className="text-sm font-medium tabular-nums">
-                <span className="text-2xs uppercase tracking-label text-muted-foreground">
+              <p className="text-small font-medium tabular-nums">
+                <span className="text-label uppercase text-muted-foreground">
                   Opens in{" "}
                 </span>
                 <BidCountdown
@@ -180,7 +176,7 @@ export default async function BiddingPage({
 
           {isOver && (
             <div className="space-y-3 rounded-card border border-border bg-card p-4">
-              <p className="text-2xs uppercase tracking-label text-muted-foreground">
+              <p className="text-label uppercase text-muted-foreground">
                 Bidding has closed
               </p>
               {event.soldAmountPaise !== null ? (
@@ -192,11 +188,11 @@ export default async function BiddingPage({
                   Finished at {formatCurrency(event.highestBidPaise)}
                 </p>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-small text-muted-foreground">
                   This one closed without any bids.
                 </p>
               )}
-              <p className="text-sm text-muted-foreground">
+              <p className="text-small text-muted-foreground">
                 {event.phase === "CANCELLED"
                   ? "This event was called off."
                   : `${event.bidCount} bid${event.bidCount === 1 ? "" : "s"} were placed.`}
@@ -209,7 +205,7 @@ export default async function BiddingPage({
             </div>
           )}
 
-          <p className="text-3xs leading-relaxed text-muted-foreground">
+          <p className="text-2xs leading-relaxed text-muted-foreground">
             The highest bidder is contacted directly once bidding closes. Bids
             are binding offers; who is leading is never shown, only the amount.
           </p>

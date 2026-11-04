@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowLeft, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import type { ListingPhotoDTO, ListingRules } from "@server/channels/platform-listing.types";
 
@@ -66,11 +66,11 @@ export function ListingPhotosField({
                   </span>
                 )}
                 {used && photo.warning && <span className="absolute right-1 top-1 size-2 rounded-full bg-warning" aria-hidden />}
-                {!used && <Check className="absolute inset-0 m-auto size-5 opacity-0" aria-hidden />}
+                {!used && <Icon name="done" size="md" className="absolute inset-0 m-auto opacity-0" />}
               </Button>
               {used && position > 0 && (
-                <Button type="button" variant="ghost" size="icon" className="size-10" aria-label={LISTING.moveEarlier} onClick={() => earlier(photo.id)}>
-                  <ArrowLeft aria-hidden />
+                <Button type="button" variant="ghost" shape="icon" className="size-10" aria-label={LISTING.moveEarlier} onClick={() => earlier(photo.id)}>
+                  <Icon name="back" />
                 </Button>
               )}
             </li>

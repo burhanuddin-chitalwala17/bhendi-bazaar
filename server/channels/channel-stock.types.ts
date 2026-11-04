@@ -60,7 +60,7 @@ export interface StockSyncSectionDTO {
   corrections: Array<{ title: string; theirs: number; ours: number; at: string }>;
 }
 
-/** Home's stock line (inventory-sync Q27): sync waiting on a location match, or listings we put out of stock. */
+/** Home's stock line (inventory-sync Q28): sync waiting on a location match, or listings we put out of stock. */
 export const STOCK_ATTENTION = { MATCH: "match", OUT_OF_STOCK: "outOfStock" } as const;
 export type StockAttentionKind = (typeof STOCK_ATTENTION)[keyof typeof STOCK_ATTENTION];
 

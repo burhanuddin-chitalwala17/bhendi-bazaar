@@ -2,7 +2,7 @@
 
 import { UseFormRegister, FieldErrors, UseFormWatch } from "react-hook-form";
 import { FormSelect, FormInput } from "../FormField";
-import { MapPin, Plus } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { PickupAddressSheet } from "@/components/org/pickup-address-sheet";
 import type { ProductFormInput } from "@/components/product/console/types";
@@ -60,7 +60,7 @@ export function ProductOrgShippingFields({
         orgId={selectedOrgId}
         trigger={
           <Button type="button" size="sm" variant={variant} className={className}>
-            <Plus className="mr-1 size-4" /> {label}
+            <Icon name="add" className="mr-1" /> {label}
           </Button>
         }
         onAdded={(location: OrgLocation) =>
@@ -146,7 +146,7 @@ export function ProductOrgShippingFields({
                     value={location.id}
                     {...register(`stockLocations.${index}.orgAddressId`)}
                   />
-                  <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <Icon name="location" tone="muted" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">
                       {location.name}

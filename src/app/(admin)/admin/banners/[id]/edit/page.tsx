@@ -5,6 +5,7 @@ import { BannerForm } from "@/components/banners/BannerForm";
 import { bannerLabel } from "@/lib/banner-label";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { bannerRepository } from "@server/catalog/banner.repository";
+import { toImageSlotValue } from "@server/catalog/image-framing";
 
 export default async function EditBannerPage({
   params,
@@ -19,7 +20,7 @@ export default async function EditBannerPage({
   return (
     <PageShell width="narrow">
       <PageHeader
-        back={{ href: "/admin/banners", label: "Back to banners" }}
+        back={{ href: "/admin/banners", label: "Banners" }}
         title="Edit banner"
         description={bannerLabel(banner.title)}
       />
@@ -30,7 +31,7 @@ export default async function EditBannerPage({
           title: banner.title,
           eyebrow: banner.eyebrow,
           description: banner.description,
-          imageUrl: banner.imageUrl,
+          image: toImageSlotValue(banner),
           imageAlt: banner.imageAlt,
           isActive: banner.isActive,
           actions: banner.actions.map(({ label, href, variant }) => ({

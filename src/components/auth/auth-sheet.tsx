@@ -1,7 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
-
+import { Icon } from "@/components/ui/icon";
 import {
   Sheet,
   SheetClose,
@@ -69,7 +68,7 @@ export function AuthSheet({
             aria-label="Close"
             className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            <X className="size-4" />
+            <Icon name="close" />
           </SheetClose>
         </div>
 

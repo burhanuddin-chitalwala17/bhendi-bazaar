@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Eye } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import { SHOP_DETAILS_COPY } from "./shop-details-copy";
@@ -12,7 +12,7 @@ import { useSaveAll } from "./useSaveBar";
 export function SeenBy({ children }: { children: ReactNode }) {
   return (
     <span className="inline-flex items-start gap-1">
-      <Eye aria-hidden className="mt-0.5 size-3 shrink-0" />
+      <Icon name="show" size="xs" className="mt-0.5" />
       <span>{children}</span>
     </span>
   );

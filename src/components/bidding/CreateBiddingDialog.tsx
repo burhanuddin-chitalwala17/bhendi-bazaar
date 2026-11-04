@@ -14,7 +14,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Gavel, Search } from "lucide-react";
 import { useDebouncedSearch } from "@/hooks/core/useDebouncedSearch";
 import { productSearchApiClient } from "@/components/promotions/productSearchApiClient";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Icon } from "@/components/ui/icon";
 
 export function CreateBiddingDialog({
   /** Where the create flow continues — `/org/<id>/bidding`. */
@@ -62,7 +62,7 @@ export function CreateBiddingDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <Gavel className="size-4" aria-hidden />
+          <Icon name="auction" size="sm" />
           Create bidding
         </Button>
       </DialogTrigger>
@@ -76,10 +76,7 @@ export function CreateBiddingDialog({
         </DialogHeader>
 
         <div className="relative">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
+          <Icon name="search" size="sm" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={term}
             onChange={(event) => setTerm(event.target.value)}

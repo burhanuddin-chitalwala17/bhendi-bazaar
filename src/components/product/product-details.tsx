@@ -1,201 +1,142 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
+
 import type { Product } from "@/domain/product";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
-import { cn } from "@/lib/utils";
 import { StockStatus } from "@/components/shared/StockStatus";
-import { ProductActions } from "@/components/shared/button-groups/ProductActions";
 import { ShareButton } from "@/components/shared/ShareButton";
 import { WishlistButton } from "@/components/wishlist/wishlist-button";
-import { useProductActions } from "@/hooks/product/useProductActions";
 import { ReviewStars } from "@/components/product/review-stars";
+import { DeliveryCheck } from "@/components/product/delivery-check";
+import { ProductBuyActions } from "@/components/product/product-buy-actions";
+import { ContactLauncher } from "@/components/support/contact-launcher";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 
+const label = (key: string) => key.replace(/-/g, " ");
+
+/**
+ * The product's words beside its photographs (StorePDP, StorePDPDesktop). A server component:
+ * only the heart, share, delivery check and buy buttons are client leaves.
+ */
 export function ProductDetails(product: Product) {
-  const {
-    handleAddToCart,
-    handleBuyNow,
-    isAddingToCart,
-    isBuyingNow,
-    isOutOfStock,
-    currentCartQty,
-  } = useProductActions(product);
-  // console.log("ProductDetails: ", JSON.stringify(product, null, 2));
+  const specs = [
+    ...Object.entries(product.facts ?? {}).map(([key, value]) => [label(key), String(value)] as const),
+    ...Object.entries(product.measurements ?? {}).map(([key, value]) => [label(key), `${value}"`] as const),
+  ];
 
   return (
-    <section className="space-y-3 sm:space-y-4">
-      {/* Header */}
-      <div className="space-y-1.5 sm:space-y-2">
-        <p className="text-4xs font-semibold uppercase tracking-eyebrow-wide text-muted-foreground/80 sm:text-2xs sm:tracking-display">
-          Bhendi Bazaar · {product.categorySlug.replace("-", " ")}
-        </p>
-        {/* Save and share sit beside the title rather than with the cart buttons: those
-            dock to the bottom bar on a phone, where more targets crowd the primary action. */}
-        <div className="flex items-start gap-2">
-          <h1 className="min-w-0 flex-1 font-heading text-lg font-semibold leading-tight tracking-tight sm:text-3xl">
-            {product.name}
-          </h1>
+    <section className="space-y-6">
+      <div className="space-y-2">
+        {/* Who sells it, and the way to everything else they sell (org-storefront R5). */}
+        <Link
+          href={`/store/${product.org.handle}`}
+          prefetch={false}
+          className="inline-flex min-h-10 items-center gap-1 text-small font-medium text-primary md:min-h-0"
+        >
+          {product.org.name}
+          <Icon name="next" size="xs" />
+        </Link>
+        <div className="flex items-start gap-1">
+          <h1 className="min-w-0 flex-1 font-heading text-headline font-semibold text-foreground">{product.name}</h1>
           <WishlistButton productId={product.id} className="shrink-0" />
           <ShareButton
             url={`/product/${product.slug}`}
             title={`${product.name} — Bhendi Bazaar`}
             text={`Look at this on Bhendi Bazaar: ${product.name}`}
             variant="ghost"
-            size="icon"
-            showLabel={false}
+            size="lg"
+            shape="icon"
             className="shrink-0"
           />
         </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          {/* Was `0.0 · 0 reviews` on every product in the catalogue, because the
-              columns behind it were never written (product-reviews R6a). Both numbers
-              are derived now, and with none to show the line asks instead of lying. */}
-          {product.reviewsCount > 0 ? (
-            <Link href="#reviews" className="inline-flex items-center gap-1.5">
-              <ReviewStars
-                value={product.rating}
-                count={product.reviewsCount}
-                size="xs"
-              />
-              <span className="underline-offset-2 hover:underline">
-                {product.reviewsCount === 1
-                  ? "1 review"
-                  : `${product.reviewsCount} reviews`}
-              </span>
-            </Link>
-          ) : (
-            <Link href="#reviews" className="underline-offset-2 hover:underline">
-              No reviews yet — write the first
-            </Link>
-          )}
-          {/* Who sells this, and the way through to everything else they sell
-              (org-storefront R5). Above the fold on a phone: someone deciding whether to
-              spend money wants to know who is on the other end, and this is also the
-              route most storefronts are actually found through. */}
-          <span aria-hidden className="text-muted-foreground/50">
-            ·
-          </span>
-          <span className="inline-flex items-center gap-1">
-            Sold by
-            <Link
-              href={`/store/${product.org.handle}`}
-              className="font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              {product.org.name}
-            </Link>
-          </span>
-        </div>
+        {/* Derived counts (product-reviews R6a); with none, the line asks rather than showing 0.0. */}
+        {product.reviewsCount > 0 ? (
+          <Link href="#reviews" className="inline-flex min-h-10 items-center gap-1.5 text-small md:min-h-0">
+            <ReviewStars value={product.rating} count={product.reviewsCount} size="xs" />
+            <span className="text-muted-foreground underline-offset-2 hover:underline">
+              {product.reviewsCount === 1 ? "1 review" : `${product.reviewsCount} reviews`}
+            </span>
+          </Link>
+        ) : (
+          <Link href="#reviews" className="inline-flex min-h-10 items-center text-small text-muted-foreground underline-offset-2 hover:underline md:min-h-0">
+            No reviews yet — write the first
+          </Link>
+        )}
       </div>
 
-      {/* Price - Using PriceDisplay component */}
-      <PriceDisplay
-        price={product.price}
-        salePrice={product.salePrice}
-        size="lg"
-      />
+      <div className="space-y-1">
+        <PriceDisplay price={product.price} salePrice={product.salePrice} size="lg" />
+        <p className="text-caption text-muted-foreground">Inclusive of all taxes</p>
+        <StockStatus stock={product.stock} lowStockThreshold={product.lowStockThreshold} variant="warn-only" />
+      </div>
 
-      {/* Stock Status - Using StockStatus component */}
-      <StockStatus
-        stock={product.stock}
-        lowStockThreshold={product.lowStockThreshold}
-        cartQuantity={currentCartQty}
-      />
-
-      {/* Description */}
-      <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
-        {product.description}
-      </p>
-
-      {/* Variants */}
       {product.siblings && product.siblings.length > 1 && (
         <div className="space-y-2">
-          <p className="text-3xs font-medium uppercase tracking-eyebrow text-muted-foreground sm:text-xs">
-            Also available
-          </p>
-          <div className="flex flex-wrap gap-2">
+          <p className="text-label uppercase text-muted-foreground">Also available</p>
+          <ul className="flex flex-wrap gap-2">
             {product.siblings.map((sibling) => (
-              <Link
-                key={sibling.slug}
-                href={`/product/${sibling.slug}`}
-                prefetch={false}
-                className={cn(
-                  "flex items-center gap-2 rounded-field border px-2 py-1.5 text-xs transition-colors",
-                  sibling.isCurrent
-                    ? "border-primary bg-primary/5 font-medium"
-                    : "border-border/70 hover:border-primary/40",
-                )}
-              >
-                <Image
-                  src={sibling.thumbnail}
-                  alt={sibling.name}
-                  width={32}
-                  height={32}
-                  className="rounded-field object-cover"
-                />
-                <span className="max-w-24 truncate">{sibling.name}</span>
-              </Link>
+              <li key={sibling.slug}>
+                <Link
+                  href={`/product/${sibling.slug}`}
+                  prefetch={false}
+                  aria-current={sibling.isCurrent ? "page" : undefined}
+                  className={cn(
+                    "flex min-h-10 items-center gap-2 rounded-field border px-2 py-1.5 text-small transition-colors duration-fast",
+                    sibling.isCurrent ? "border-primary bg-primary/5 font-medium" : "border-border hover:border-primary/40",
+                  )}
+                >
+                  <Image src={sibling.thumbnail} alt="" width={32} height={32} sizes="32px" className="size-8 rounded-field object-cover" />
+                  <span className="max-w-28 truncate">{sibling.name}</span>
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       )}
 
-      {/* Specifications */}
-      {(product.facts || product.measurements) && (
-        <div className="space-y-2">
-          <p className="text-3xs font-medium uppercase tracking-eyebrow text-muted-foreground sm:text-xs">
-            Specifications
-          </p>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-            {product.facts &&
-              Object.entries(product.facts).map(([key, value]) => (
-                <div key={key} className="flex justify-between col-span-2 sm:col-span-1">
-                  <dt className="text-muted-foreground capitalize">{key.replace(/-/g, " ")}</dt>
-                  <dd className="font-medium text-right">{String(value)}</dd>
+      {/* Inline from a tablet up; on a phone the same actions dock above the tab bar (the page's ActionBar). */}
+      <ProductBuyActions product={product} className="hidden md:flex" />
+
+      <ul className="space-y-4 rounded-card border border-border bg-card p-4">
+        {product.shippingFromPincode && (
+          <li>
+            <DeliveryCheck fromPincode={product.shippingFromPincode} weight={product.weight} />
+          </li>
+        )}
+        <li className="flex items-center gap-3 text-small">
+          <Icon name="secure" size="md" tone="primary" />
+          Pay by UPI, card, net banking or wallet
+        </li>
+        <li className="flex items-center gap-3 text-small">
+          <Icon name="returns" size="md" tone="primary" />
+          <Link href="/policies#returns" prefetch={false} className="underline-offset-2 hover:underline">
+            Return within 7 days of delivery
+          </Link>
+        </li>
+      </ul>
+
+      {(product.description || specs.length > 0) && (
+        <div className="space-y-3">
+          <h2 className="font-heading text-title font-semibold">The cloth</h2>
+          {product.description && <p className="whitespace-pre-line text-body text-muted-foreground">{product.description}</p>}
+          {specs.length > 0 && (
+            <dl className="grid grid-cols-1 gap-x-6 divide-y divide-border md:grid-cols-2 md:divide-y-0">
+              {specs.map(([term, value]) => (
+                <div key={term} className="flex justify-between gap-4 py-2 text-small">
+                  <dt className="capitalize text-muted-foreground">{term}</dt>
+                  <dd className="text-right font-medium">{value}</dd>
                 </div>
               ))}
-            {product.measurements &&
-              Object.entries(product.measurements).map(([key, value]) => (
-                <div key={key} className="flex justify-between col-span-2 sm:col-span-1">
-                  <dt className="text-muted-foreground capitalize">{key.replace(/-/g, " ")}</dt>
-                  <dd className="font-medium text-right">{value}&quot;</dd>
-                </div>
-              ))}
-          </dl>
+            </dl>
+          )}
         </div>
       )}
 
-      {/* Sizes (if available) */}
-      {product.options?.sizes && (
-        <div className="space-y-2">
-          <p className="text-3xs font-medium uppercase tracking-eyebrow text-muted-foreground sm:text-xs">
-            Sizes
-          </p>
-          <div className="flex flex-wrap gap-2 text-xs">
-            {product.options.sizes.map((size) => (
-              <span
-                key={size}
-                className="inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-border/80 px-3 uppercase tracking-eyebrow"
-              >
-                {size}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* One set of buttons, two positions: docked above the tab bar while the shopper
-          scrolls the description and reviews, back in the flow from md. Two copies
-          would mean two "Add to cart" targets for a screen reader. */}
-      <div className="fixed inset-x-0 bottom-tabbar z-30 border-t border-border/60 bg-background/95 px-3 py-2 backdrop-blur md:static md:inset-auto md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
-        <ProductActions
-          onAddToCart={handleAddToCart}
-          onBuyNow={handleBuyNow}
-          isOutOfStock={isOutOfStock}
-          isAddingToCart={isAddingToCart}
-          isBuyingNow={isBuyingNow}
-          biddingSlug={product.biddingSlug}
-        />
+      <div className="flex items-center gap-3 text-small text-muted-foreground">
+        <Icon name="help" size="md" />
+        <span>Questions about this piece?</span>
+        <ContactLauncher className="h-auto min-h-10 px-0 text-small font-medium text-primary hover:bg-transparent">Contact us</ContactLauncher>
       </div>
     </section>
   );

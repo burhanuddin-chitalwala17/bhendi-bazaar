@@ -5,7 +5,6 @@ import type { RefundCause } from "@server/payments/refund.types";
 /** order-fulfilment ux.md "admin refunds" and the copy deck; the build-time changes are Q38, awaiting the owner's re-sign. */
 export const REFUNDS_COPY = {
   title: "Refunds",
-  heading: (owed: number) => `Refunds · ${owed} owed`,
   empty: "No refunds owed.",
   owed: (paise: number) => `${rupees(paise)} owed`,
   startedLine: (day: string, gatewayRefundId: string) => `Started ${day} · ${gatewayRefundId}`,

@@ -7,6 +7,7 @@ import { bhendiPrismaAdapter } from "./auth-adapter";
 import { compare } from "bcryptjs";
 import { checkRateLimit, type HeaderSource } from "@/lib/rate-limit";
 import { credentialFingerprint } from "./credential-fingerprint";
+import { PLATFORM_ROLE } from "@server/identity/admin.user.types";
 
 /** next-auth hands `authorize` a plain header object; the address seam reads `get`. */
 function headersOf(raw: Record<string, unknown> | undefined): HeaderSource {
@@ -113,7 +114,7 @@ export const authOptions: NextAuthOptions = {
         // (portal-separation trd.md D3). isEmailVerified rides the same query (no extra
         // op) so the chrome reads it from the session instead of fetching /api/profile.
         const dbUser = await accountService.findSessionClaims(user.id);
-        token.platformRole = dbUser?.platformRole ?? "USER";
+        token.platformRole = dbUser?.platformRole ?? PLATFORM_ROLE.USER;
         token.isEmailVerified = dbUser?.isEmailVerified ?? false;
         // Stamped only here, at sign-in: `update` must not refresh it, or a held token could renew itself.
         token.credential = credentialFingerprint(dbUser?.passwordHash);
@@ -130,7 +131,7 @@ export const authOptions: NextAuthOptions = {
         // sign-in; likewise tokens minted before isEmailVerified rode the token. Stamp
         // both once from the database; removable when pre-2026-09 sessions have expired.
         const dbUser = await accountService.findSessionClaims(token.sub);
-        token.platformRole = dbUser?.platformRole ?? "USER";
+        token.platformRole = dbUser?.platformRole ?? PLATFORM_ROLE.USER;
         token.isEmailVerified = dbUser?.isEmailVerified ?? false;
       }
       return token;
@@ -138,7 +139,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user && token.sub) {
         session.user.id = token.sub;
-        session.user.platformRole = token.platformRole ?? "USER";
+        session.user.platformRole = token.platformRole ?? PLATFORM_ROLE.USER;
         session.user.isEmailVerified = token.isEmailVerified ?? false;
         session.credential = token.credential;
       }

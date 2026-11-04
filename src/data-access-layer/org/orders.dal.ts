@@ -33,6 +33,18 @@ class OrgOrdersDAL {
     return { orders: rows, total, hasMore: pages * SHOP_PARCELS_PAGE < total };
   });
 
+  /**
+   * What waits under each working tab, for its count. Done and Cancelled only grow, so they carry
+   * none. One row per tab is read; the count is the repository's own total.
+   */
+  tabCounts = cache(async (orgId: string): Promise<Partial<Record<ShopParcelTab, number>>> => {
+    const tabs = [SHOP_PARCEL_TAB.TO_PACK, SHOP_PARCEL_TAB.READY, SHOP_PARCEL_TAB.ON_THE_WAY] as const;
+    const totals = await Promise.all(
+      tabs.map((tab) => adminOrderRepository.listShopOrders(orgId, SHOP_TAB_STATUSES[tab], { page: 1, limit: 1, oldestFirst: false })),
+    );
+    return Object.fromEntries(tabs.map((tab, i) => [tab, totals[i].total]));
+  });
+
   getOrder = cache(async (orderId: string, orgId: string): Promise<ShopOrderView | null> => {
     return await adminOrderRepository.getShopOrder(orderId, orgId);
   });

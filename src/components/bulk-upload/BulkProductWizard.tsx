@@ -14,6 +14,8 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { SheetChoicesDTO } from "@server/catalog/bulk/bulk-sheet.service";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { ActionBar } from "@/components/shared/action-bar";
 import { matchingPaths } from "@server/catalog/bulk/image-match";
 import { bulkPhotoPath, imagesOnly, sanitizePath } from "./files";
 import { bulkImportApiClient, productBulkBase } from "./bulkImportApiClient";
@@ -285,14 +287,15 @@ export function BulkProductWizard({
       )}
 
       {(step === "uploading" || step === "creating") && (
-        <section className="rounded-xl border border-border bg-card p-4 text-sm">
+        <section className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm">
+          <Spinner />
           {step === "uploading"
             ? `Uploading photos… ${progress.done}/${progress.total}`
             : "Creating products…"}
         </section>
       )}
 
-      <div className="fixed inset-x-0 bottom-tabbar z-30 border-t border-border bg-background/95 p-3 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0">
+      <ActionBar className="-mx-4 md:mx-0">
         {waitingOnAge && sheetAge?.refusedColumn ? (
           <Button className="w-full md:w-auto" onClick={getFreshSheet}>
             {SHEET_AGE_COPY.fresh}
@@ -302,14 +305,14 @@ export function BulkProductWizard({
             {SHEET_AGE_COPY.continue}
           </Button>
         ) : rowProblems ? (
-          <div className="flex flex-col gap-2 md:flex-row">
-            <Button className="w-full md:w-auto" onClick={downloadMarked}>
-              {CHECK_COPY.downloadMarked}
-            </Button>
-            <Button variant="outline" className="w-full md:w-auto" onClick={checkSheet}>
+          <>
+            <Button variant="outline" className="flex-1 md:flex-none" onClick={checkSheet}>
               Check the sheet
             </Button>
-          </div>
+            <Button className="flex-1 md:flex-none" onClick={downloadMarked}>
+              {CHECK_COPY.downloadMarked}
+            </Button>
+          </>
         ) : step === "report" && report?.ok ? (
           <Button className="w-full md:w-auto" onClick={createAll}>
             {CHECK_COPY.createAction(report.plan.creates, report.plan.updates)}
@@ -318,12 +321,12 @@ export function BulkProductWizard({
           <Button
             className="w-full md:w-auto"
             onClick={checkSheet}
-            aria-busy={step === "checking"}
+            pending={step === "checking"}
           >
             {step === "checking" ? CHECK_COPY.reading : "Check the sheet"}
           </Button>
         )}
-      </div>
+      </ActionBar>
     </div>
   );
 }

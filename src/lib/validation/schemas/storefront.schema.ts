@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { imageSlotInputSchema } from "./image-slot.schema";
 
 import { SLUG_PATTERN } from "@server/shared/slug";
 import { SOCIAL_NETWORK_KEYS, normaliseHandle } from "@server/catalog/social-networks";
@@ -101,8 +102,16 @@ export const storefrontSettingsSchema = z.strictObject({
   hiddenSections: z.array(z.enum(HIDEABLE_BRAND_PAGE_SECTIONS)).nullish(),
   heroLine: limitedText(HERO_LINE_MAX),
   heroPhotos: z.array(z.string().url()).max(HERO_PHOTOS_MAX, `Up to ${HERO_PHOTOS_MAX} photos.`).nullish(),
+  /** Each hero photo as a desktop and phone set (image-slots D10); the server checks each against the slot. */
+  heroImages: z.array(imageSlotInputSchema).max(HERO_PHOTOS_MAX, `Up to ${HERO_PHOTOS_MAX} photos.`).nullish(),
   collections: z
-    .array(z.strictObject({ categoryId: z.string().min(1), photoUrl: z.string().url().or(z.literal("")).nullish() }))
+    .array(
+      z.strictObject({
+        categoryId: z.string().min(1),
+        photoUrl: z.string().url().or(z.literal("")).nullish(),
+        image: imageSlotInputSchema.nullish(),
+      }),
+    )
     .max(COLLECTIONS_MAX, `Up to ${COLLECTIONS_MAX} collections.`)
     .refine(distinct((c: { categoryId: string }) => c.categoryId), "Each category once.")
     .nullish(),

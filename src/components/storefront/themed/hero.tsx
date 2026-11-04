@@ -37,6 +37,7 @@ export function ThemedHero({ variant, ...hero }: HeroSlice & { variant: HeroVari
       >
         <ThemePhoto
           src={hero.photoUrl}
+          image={hero.image}
           alt={hero.name}
           initial={hero.name}
           priority
@@ -59,6 +60,7 @@ export function ThemedHero({ variant, ...hero }: HeroSlice & { variant: HeroVari
       <div className="relative">
         <ThemePhoto
           src={hero.photoUrl}
+          image={hero.image}
           alt={hero.name}
           priority
           sizes="100vw"

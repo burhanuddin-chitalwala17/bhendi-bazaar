@@ -1,10 +1,8 @@
-// components/admin/products/productView/index.tsx
-
 "use client";
 
-import { Edit, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { ProductForm } from "@/components/shared/forms/product";
 import type { ProductDetails } from "./types";
 import { useRouter } from "next/navigation";
@@ -41,29 +39,22 @@ export function ProductsView({
         help={help}
         back={{ href: productsBasePath, label: "Back to products" }}
         title={product.name}
-        description="Product Details"
+        description="Product details"
         actions={
           <>
-            <Link
-              href={`/product/${product.slug}`}
-              target="_blank"
-              prefetch={false}
-            >
-              <Button variant="outline" className="gap-2">
-                <ExternalLink className="w-4 h-4" />
-                View Live
-              </Button>
-            </Link>
-            {canEdit && (
-              <Link
-                href={`${productsBasePath}/${product.id}/edit`}
-                prefetch={false}
-              >
-                <Button className="gap-2">
-                  <Edit className="w-4 h-4" />
-                  Edit Product
-                </Button>
+            <Button asChild variant="outline">
+              <Link href={`/product/${product.slug}`} target="_blank" prefetch={false}>
+                <Icon name="external" size="sm" />
+                See it live
               </Link>
+            </Button>
+            {canEdit && (
+              <Button asChild>
+                <Link href={`${productsBasePath}/${product.id}/edit`} prefetch={false}>
+                  <Icon name="edit" size="sm" />
+                  Edit product
+                </Link>
+              </Button>
             )}
           </>
         }

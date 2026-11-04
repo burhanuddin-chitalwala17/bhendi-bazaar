@@ -1,17 +1,10 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { ErrorState } from "@/components/shared/states/ErrorState";
 import { ACTION } from "@/components/channel/channel-copy";
 import { LISTINGS } from "@/components/channel/listing-copy";
 
-/** The Listings page could not load. */
+/** The Listings page could not load. `retry` re-renders the segment (Next 16). */
 export default function ChannelListingsError({ retry }: { error: unknown; retry: () => void }) {
-  return (
-    <div role="alert" className="flex flex-col gap-3 rounded-card border border-destructive bg-destructive/10 p-4 text-sm">
-      <p>{LISTINGS.loadFailed}</p>
-      <Button variant="outline" className="min-h-10 self-start" onClick={() => retry()}>
-        {ACTION.tryAgain}
-      </Button>
-    </div>
-  );
+  return <ErrorState as="h1" title="Listings didn't load" description={LISTINGS.loadFailed} onRetry={() => retry()} retryLabel={ACTION.tryAgain} />;
 }

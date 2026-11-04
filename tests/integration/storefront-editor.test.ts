@@ -157,6 +157,44 @@ describe.skipIf(!isDisposableDb)("storefront editor (local db)", () => {
     );
   });
 
+  it("saves a hero photo as a desktop and phone set through the slot write path, and reads it back (image-slots D10)", async () => {
+    const { mediaAssetRepository } = await import("@server/catalog/media-asset.repository");
+    const phone = await mediaAssetRepository.createReady({
+      orgId, uploaderId: null, ref: `${prefix}hero-phone.webp`, objectKey: `test/${stamp}/hero-phone.webp`,
+      mimeType: "image/webp", bytes: 10, width: 1080, height: 1350,
+    });
+    const side = (url: string) => ({ url, fit: "crop" as const, crop: null, fill: null });
+    const saved = await storefrontService.saveSettings(orgId, anaId, {
+      expectedUpdatedAt: await version(),
+      heroImages: [
+        { desktop: side(`${prefix}hero.webp`), phone: side(`${prefix}hero-phone.webp`), phoneFocus: { x: 0.5, y: 0.5 } },
+        { desktop: null, phone: { url: `${prefix}hero-phone.webp`, fit: "contain" as const, crop: null, fill: "#123456" }, phoneFocus: { x: 0.5, y: 0.5 } },
+      ],
+    });
+    expect(saved.heroImages.map((i) => [i.desktop?.url ?? null, i.phone?.url ?? null])).toEqual([
+      [`${prefix}hero.webp`, `${prefix}hero-phone.webp`],
+      [null, `${prefix}hero-phone.webp`],
+    ]);
+    // Buyers' pages still draw one picture per slot: the desktop one, else the phone one.
+    expect(saved.heroPhotos).toEqual([`${prefix}hero.webp`, `${prefix}hero-phone.webp`]);
+    // A phone-only set draws on a tablet and a desktop as its phone side is framed, fitted with its
+    // fill, never cover-cropped: the buyer's page and the editor's preview read one row-builder.
+    const page = await storefrontService.storefrontPage(handle);
+    const phoneOnly = page?.heroImages[1];
+    expect(phoneOnly?.desktop).toEqual(phoneOnly?.phone);
+    expect(phoneOnly?.desktop.fit).toBe("contain");
+    expect(phoneOnly?.desktop.fill).toBe("#123456");
+    await expect(
+      storefrontService.saveSettings(orgId, anaId, {
+        expectedUpdatedAt: await version(),
+        heroImages: [{ desktop: side("https://elsewhere.test/x.webp"), phone: null, phoneFocus: { x: 0.5, y: 0.5 } }],
+      }),
+    ).rejects.toThrow("Only pictures in your own library can be used.");
+    // Back as the next test found it: one hero photo, the set released so its asset can go.
+    await storefrontService.saveSettings(orgId, anaId, { expectedUpdatedAt: await version(), heroPhotos: [`${prefix}hero.webp`] });
+    await prisma.mediaAsset.delete({ where: { id: phone.id } });
+  });
+
   it("leaves a hidden section's words out of the buyer's payload, keys kept for the preview (Q9, Q43)", async () => {
     await storefrontService.saveSettings(orgId, anaId, {
       expectedUpdatedAt: await version(),

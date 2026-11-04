@@ -1,124 +1,91 @@
-// NEW FILE: components/cart/CartItem.tsx
-
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { toast } from "sonner";
+
 import { useCartStore } from "@/store/cartStore";
-import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { StockStatus } from "@/components/shared/StockStatus";
 import type { CartItem as CartItemType } from "@/domain/cart";
 
-// Stock arrives as props from CartLineItems, which checks the whole cart in one
-// request — each row fetching its own was N round trips (and 2N queries) to answer
-// one question the endpoint already answers for the full array.
+/** One line of the bag. Stock arrives from CartLineItems, which checks the whole bag in one request. */
 export function CartItem({
   item,
   stock,
   isLoadingStock,
+  onMoveToSaved,
 }: {
   item: CartItemType;
   stock: number | null;
   isLoadingStock: boolean;
+  /** Present when the buyer can save (signed in); a guest's heart would only open sign-in. */
+  onMoveToSaved?: (item: CartItemType) => void;
 }) {
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
+  // A quick double tap on +/- is one step, not two.
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleIncrease = () => {
-    if (isUpdating) return; // Prevent multiple clicks
+  const step = (next: number) => {
+    if (isUpdating) return;
+    setIsUpdating(true);
+    if (next === 0) removeItem(item.id);
+    else updateQuantity(item.id, next);
+    setTimeout(() => setIsUpdating(false), 300);
+  };
 
+  const increase = () => {
+    // Never disabled (ADR-0053): the tap says why it can't go higher.
     if (stock !== null && item.quantity + 1 > stock) {
-      toast.error(`Only ${stock} available in stock`);
+      toast.error(stock === 0 ? "This piece has sold out" : `Only ${stock} available`);
       return;
     }
-
-    setIsUpdating(true);
-    updateQuantity(item.id, item.quantity + 1);
-    // Reset after a short delay
-    setTimeout(() => setIsUpdating(false), 300);
+    step(item.quantity + 1);
   };
 
-  const handleDecrease = () => {
-    if (isUpdating) return; // Prevent multiple clicks
-
-    setIsUpdating(true);
-    if (item.quantity - 1 === 0) {
-      removeItem(item.id);
-    } else {
-      updateQuantity(item.id, item.quantity - 1);
-    }
-    // Reset after a short delay
-    setTimeout(() => setIsUpdating(false), 300);
-  };
-
-  const isAtMaxStock = stock !== null && item.quantity >= stock;
+  const variant = [item.size && `Size ${item.size}`, item.color].filter(Boolean).join(" · ");
 
   return (
-    <div className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-card/80 p-3 text-sm">
-      <div className="min-w-0 flex-1 space-y-1">
-        <p className="text-xs font-medium uppercase tracking-eyebrow text-muted-foreground/80">
+    <li className="flex gap-3 py-4">
+      <Link href={`/product/${item.productSlug}`} prefetch={false} className="relative aspect-4/5 w-20 shrink-0 overflow-hidden rounded-field bg-muted md:w-24">
+        <Image src={item.thumbnail} alt={item.productName} fill sizes="96px" className="object-cover" />
+      </Link>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <Link href={`/product/${item.productSlug}`} prefetch={false} className="line-clamp-2 text-small font-medium text-foreground">
           {item.productName}
-        </p>
-        {(item.size || item.color) && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {item.size && <span>Size {item.size}</span>}
-            {item.color && <span>· {item.color}</span>}
-          </div>
-        )}
-        <div className="flex items-center gap-3 pt-1">
-          <span className="text-sm font-semibold">
-            {formatCurrency(item.salePrice ?? item.price)}
-          </span>
-          {item.salePrice && item.salePrice < item.price && (
-            <span className="text-xs text-muted-foreground line-through">
-              {formatCurrency(item.price)}
+        </Link>
+        {variant && <p className="text-caption text-muted-foreground">{variant}</p>}
+        <PriceDisplay price={item.price} salePrice={item.salePrice} size="sm" showBadge={false} />
+        {!isLoadingStock && stock !== null && <StockStatus stock={stock} size="xs" variant="warn-only" />}
+
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center rounded-full border border-border">
+            <Button variant="ghost" shape="icon" size="lg" type="button" aria-label="One fewer" className="rounded-full" onClick={() => step(item.quantity - 1)}>
+              <Icon name="remove" size="sm" />
+            </Button>
+            <span className="min-w-6 text-center text-small font-medium tabular-nums" aria-live="polite">
+              {item.quantity}
             </span>
-          )}
+            <Button variant="ghost" shape="icon" size="lg" type="button" aria-label="One more" className="rounded-full" onClick={increase}>
+              <Icon name="add" size="sm" />
+            </Button>
+          </div>
+          <div className="flex items-center gap-1">
+            {onMoveToSaved && (
+              <Button variant="link" size="sm" type="button" className="px-2 text-muted-foreground" onClick={() => onMoveToSaved(item)}>
+                Move to saved
+              </Button>
+            )}
+            <Button variant="link" size="sm" type="button" className="px-2 text-muted-foreground" onClick={() => removeItem(item.id)}>
+              Remove
+            </Button>
+          </div>
         </div>
-        {/* Stock Status */}
-        {!isLoadingStock && stock !== null && (
-          <StockStatus stock={stock} showText size="sm" />
-        )}
       </div>
-      <div className="flex flex-col items-end gap-2">
-        <div className="flex items-center rounded-full border border-border/70 bg-background text-sm">
-          <Button
-            variant="ghost"
-            size="icon"
-            type="button"
-            aria-label="Decrease quantity"
-            className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted"
-            onClick={handleDecrease}
-          >
-            −
-          </Button>
-          <span className="min-w-[2rem] text-center text-xs font-medium">
-            {item.quantity}
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            type="button"
-            aria-label="Increase quantity"
-            className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted"
-            onClick={handleIncrease}
-            disabled={isAtMaxStock || stock === 0}
-          >
-            +
-          </Button>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Remove item"
-          className="text-muted-foreground hover:text-destructive"
-          onClick={() => removeItem(item.id)}
-        >
-          ×
-        </Button>
-      </div>
-    </div>
+    </li>
   );
 }

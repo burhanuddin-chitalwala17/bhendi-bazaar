@@ -68,7 +68,7 @@ export function ConnectProviderModal({
 
     if (!response.success) {
       setError(
-        response.error ?? "Failed to connect. Please check your credentials.",
+        response.error ?? "That didn't connect. Check the API user's email and password.",
       );
     }
   };
@@ -77,11 +77,11 @@ export function ConnectProviderModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Connect {providerName} Account</DialogTitle>
+          <DialogTitle>Connect your {providerName} account</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <p className="rounded-xl border border-border/60 bg-muted/50 p-3 text-xs text-muted-foreground">
+          <p className="rounded-field border border-border/60 bg-muted/50 p-3 text-caption text-muted-foreground">
             These are{" "}
             <span className="font-semibold text-foreground">API user</span>{" "}
             credentials, not your {providerName} dashboard login. Create them
@@ -117,7 +117,7 @@ export function ConnectProviderModal({
           </div>
 
           {error && (
-            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">
+            <div className="rounded-field border border-destructive/30 bg-destructive/10 p-3 text-small text-destructive">
               {error}
             </div>
           )}
@@ -127,12 +127,11 @@ export function ConnectProviderModal({
               type="button"
               variant="outline"
               onClick={onClose}
-              disabled={isConnecting}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isConnecting}>
-              {isConnecting ? "Connecting..." : "Connect"}
+            <Button type="submit" pending={isConnecting}>
+              Connect
             </Button>
           </div>
         </form>

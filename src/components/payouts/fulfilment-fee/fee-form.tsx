@@ -1,7 +1,5 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { FormInput } from "@/components/shared/forms/FormField";
 import { FEE_COPY } from "./fee-copy";
@@ -23,17 +21,16 @@ export function FeeForm({ feeRupees, version, lastChanged }: { feeRupees: number
         error={form.formState.errors.feeRupees?.message}
         {...form.register("feeRupees", { valueAsNumber: true })}
       />
-      {lastChanged && <p className="text-sm text-muted-foreground">{lastChanged}</p>}
+      {lastChanged && <p className="text-small text-muted-foreground">{lastChanged}</p>}
       {form.formError && (
-        <div role="alert" className="flex flex-wrap items-center justify-between gap-2 text-sm text-destructive">
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-2 text-small text-destructive">
           <span className="break-words">{form.formError}</span>
           <Button type="button" size="sm" variant="outline" className="min-h-10" onClick={refresh}>
             {FEE_COPY.refresh}
           </Button>
         </div>
       )}
-      <Button type="submit" className="min-h-11" aria-busy={form.isSubmitting}>
-        {form.isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+      <Button type="submit" className="min-h-11" pending={form.isSubmitting}>
         {form.isSubmitting ? FEE_COPY.saving : FEE_COPY.save}
       </Button>
     </form>

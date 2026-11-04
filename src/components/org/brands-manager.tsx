@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Archive, Factory, Pencil, Plus } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -74,14 +74,14 @@ export function BrandsManager({ orgId, brands }: BrandsManagerProps) {
           type them once, not per product.
         </p>
         <Button onClick={openAdd} size="sm">
-          <Plus className="mr-1 size-4" /> Add brand
+          <Icon name="add" className="mr-1" /> Add brand
         </Button>
       </div>
 
       {brands.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
-            <Factory className="size-8 text-muted-foreground" />
+            <Icon name="factory" size="xl" tone="muted" />
             <p className="text-sm text-muted-foreground">
               No brands yet. Add one with just its name; fill in the maker when you have the pack
               in front of you.
@@ -109,7 +109,7 @@ export function BrandsManager({ orgId, brands }: BrandsManagerProps) {
                     onClick={() => openEdit(brand)}
                     aria-label={`Edit ${brand.name}`}
                   >
-                    <Pencil className="size-4" />
+                    <Icon name="edit" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -117,7 +117,7 @@ export function BrandsManager({ orgId, brands }: BrandsManagerProps) {
                     onClick={() => retire(brand)}
                     aria-label={`Retire ${brand.name}`}
                   >
-                    <Archive className="size-4" />
+                    <Icon name="archive" />
                   </Button>
                 </div>
               </CardContent>

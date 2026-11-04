@@ -4,16 +4,9 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowDown,
-  ArrowUp,
-  ImageIcon,
-  ImageOff,
-  Pencil,
-  Trash2,
-} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import {
@@ -123,23 +116,23 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                 <div className="flex items-center gap-1">
                   <Button
                     variant="outline"
-                    size="icon"
+                    shape="icon"
                     aria-label={`Move ${bannerLabel(banner.title)} up`}
                     disabled={index === 0 || frozen}
                     onClick={() => move(index, index - 1)}
                     className={TAP}
                   >
-                    <ArrowUp />
+                    <Icon name="move-up" />
                   </Button>
                   <Button
                     variant="outline"
-                    size="icon"
+                    shape="icon"
                     aria-label={`Move ${bannerLabel(banner.title)} down`}
                     disabled={index === rows.length - 1 || frozen}
                     onClick={() => move(index, index + 1)}
                     className={TAP}
                   >
-                    <ArrowDown />
+                    <Icon name="move-down" />
                   </Button>
                 </div>
 
@@ -160,16 +153,16 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                     }`}
                   >
                     {banner.imageUrl ? (
-                      <ImageOff className="size-4" />
+                      <Icon name="no-photo" />
                     ) : (
-                      <ImageIcon className="size-4" />
+                      <Icon name="photo" />
                     )}
                   </div>
                 )}
 
                 <div className="min-w-0 flex-1">
                   {banner.eyebrow && (
-                    <p className="truncate text-4xs font-semibold uppercase tracking-eyebrow text-muted-foreground">
+                    <p className="truncate text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground">
                       {banner.eyebrow}
                     </p>
                   )}
@@ -179,8 +172,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                     {bannerLabel(banner.title)}
                   </p>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <StatusBadge
-                      status={banner.isActive ? "inStock" : "outOfStock"}
+                    <StatusBadge tone={banner.isActive ? "success" : "destructive"}
                     >
                       {banner.isActive ? "Live" : "Down"}
                     </StatusBadge>
@@ -207,7 +199,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                   <Button
                     asChild
                     variant="outline"
-                    size="icon"
+                    shape="icon"
                     aria-label={`Edit ${bannerLabel(banner.title)}`}
                     className={TAP}
                   >
@@ -215,7 +207,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                       href={`/admin/banners/${banner.id}/edit`}
                       prefetch={false}
                     >
-                      <Pencil />
+                      <Icon name="edit" />
                     </Link>
                   </Button>
                   {/* Delete is fenced off from Edit rather than sitting one gap away
@@ -224,13 +216,13 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                   <div className="ms-1 border-s border-border ps-3">
                     <Button
                       variant="ghost"
-                      size="icon"
+                      shape="icon"
                       aria-label={`Delete ${bannerLabel(banner.title)}`}
                       disabled={frozen}
                       onClick={() => setConfirming(banner)}
                       className={`${TAP} text-muted-foreground hover:bg-destructive/10 hover:text-destructive`}
                     >
-                      <Trash2 />
+                      <Icon name="delete" />
                     </Button>
                   </div>
                 </div>

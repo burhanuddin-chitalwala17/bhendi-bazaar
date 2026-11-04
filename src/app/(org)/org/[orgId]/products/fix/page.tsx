@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 
 import { requireOrgMember } from "@/lib/org-auth";
 import { readinessFixDAL } from "@/data-access-layer/org/readiness-fix.dal";
-import { PageShell } from "@/components/shared/page-shell";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageShell, PageHeader } from "@/components/shared/page-shell";
 import { ReadinessFix } from "@/components/channel/readiness-fix";
 import { FIX } from "@/components/channel/readiness-fix-copy";
 
@@ -26,7 +25,7 @@ export default async function ReadinessFixPage({
   if (!page) notFound();
   return (
     <PageShell width="form">
-      <SectionHeader as="h1" help="products" title={FIX.title(page.factLabel, page.channelLabel)} />
+      <PageHeader help="products" title={FIX.title(page.factLabel, page.channelLabel)} />
       <ReadinessFix orgId={scope.orgId} page={page} />
     </PageShell>
   );

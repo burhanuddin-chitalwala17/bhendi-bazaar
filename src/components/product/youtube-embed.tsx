@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Play, VideoOff } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { youtubeEmbedUrl, youtubePosterUrl } from "@server/catalog/media";
 import { GALLERY_SLIDE_SIZES } from "@/components/product/video-player";
@@ -36,7 +36,7 @@ export function YouTubeEmbed({
   if (unavailable) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-muted px-4 text-center">
-        <VideoOff className="size-8 text-muted-foreground" aria-hidden />
+        <Icon name="no-video" size="xl" tone="muted" />
         <p className="text-sm font-medium text-muted-foreground">
           This video is no longer available
         </p>
@@ -74,7 +74,7 @@ export function YouTubeEmbed({
       <Button
         type="button"
         variant="ghost"
-        size="icon-lg"
+        shape="icon" size="lg"
         onClick={(event) => {
           event.stopPropagation();
           setPlaying(true);
@@ -82,9 +82,9 @@ export function YouTubeEmbed({
         aria-label={
           description ? `Play: ${description}` : `Play video of ${productName}`
         }
-        className="absolute left-1/2 top-1/2 z-20 size-14 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/30 bg-scrim/80 backdrop-blur-sm hover:bg-hero/90"
+        className="absolute left-1/2 top-1/2 z-20 size-14 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/30 bg-scrim/80 text-hero-foreground backdrop-blur-sm hover:bg-hero/90"
       >
-        <Play className="size-6 fill-hero-foreground text-hero-foreground" />
+        <Icon name="play" size="lg" filled />
       </Button>
     </div>
   );

@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
@@ -27,6 +27,8 @@ import {
 import { SECTION_COPY, SECTION_TITLE } from "./section-copy";
 import { ClaimsField, CollectionsField, Counter, HideField, HoursField } from "./section-fields";
 import { SlotPhotos } from "./slot-photos";
+import { IMAGE_SLOT } from "@server/catalog/image-slots";
+import type { ImageSlotValue } from "@server/catalog/image-framing";
 import { useSectionSave, useSlow } from "./useSectionSave";
 
 /**
@@ -59,7 +61,11 @@ export function SectionSheet({
             </Button>
           </div>
         )}
-        {!settings.data && !settings.error && <Loader2 className="mx-auto size-5 animate-spin text-muted-foreground" aria-hidden />}
+        {!settings.data && !settings.error && (
+          <div className="flex justify-center text-muted-foreground">
+            <Spinner size="md" />
+          </div>
+        )}
         {settings.data && (
           // Keyed on the version: "Load theirs" re-reads and starts the form from their words.
           <SectionForm
@@ -81,7 +87,7 @@ function initialValues(section: SectionKey, s: StorefrontSettingsDto): Storefron
   const fields = SECTION_FIELDS[section] ?? [];
   return {
     expectedUpdatedAt: s.updatedAt,
-    ...(fields.includes(EDITOR_FIELD.HERO_PHOTOS) && { heroPhotos: s.heroPhotos }),
+    ...(fields.includes(EDITOR_FIELD.HERO_PHOTOS) && { heroImages: s.heroImages }),
     ...(fields.includes(EDITOR_FIELD.HERO_LINE) && { heroLine: s.heroLine ?? "" }),
     ...(fields.includes(EDITOR_FIELD.COLLECTIONS) && { collections: s.collections }),
     ...(fields.includes(EDITOR_FIELD.CLAIMS) && { claims: s.claims }),
@@ -138,15 +144,16 @@ function SectionForm({
     >
       {has(EDITOR_FIELD.HERO_PHOTOS) && (
         <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">{SECTION_COPY.heroPhotosHelp}</p>
+          <p className="text-small text-muted-foreground">{SECTION_COPY.heroPhotosHelp}</p>
           <SlotPhotos
             orgId={orgId}
+            slot={IMAGE_SLOT.STOREFRONT_HERO}
             label={SECTION_COPY.heroPhotosHelp}
             max={HERO_PHOTOS_MAX}
-            value={values.heroPhotos ?? []}
-            onChange={(urls) => setValue("heroPhotos", urls, { shouldDirty: true })}
+            value={(values.heroImages ?? []) as ImageSlotValue[]}
+            onChange={(images) => setValue("heroImages", images, { shouldDirty: true })}
+            error={errors.heroImages?.message}
           />
-          {errors.heroPhotos?.message && <p className="text-sm text-destructive">{errors.heroPhotos.message}</p>}
         </div>
       )}
       {has(EDITOR_FIELD.HERO_LINE) && (
@@ -165,7 +172,7 @@ function SectionForm({
         <CollectionsField
           orgId={orgId}
           options={settings.categoryOptions}
-          value={(values.collections ?? []).map((c) => ({ categoryId: c.categoryId, photoUrl: c.photoUrl ?? null }))}
+          value={(values.collections ?? []).map((c) => ({ categoryId: c.categoryId, photoUrl: c.photoUrl ?? null, image: (c.image ?? null) as ImageSlotValue | null }))}
           onChange={(collections) => setValue("collections", collections, { shouldDirty: true })}
           error={errors.collections?.message}
         />
@@ -223,8 +230,7 @@ function SectionForm({
         </div>
       )}
 
-      <Button type="submit" size="lg" className="min-h-11 w-full">
-        {slow && <Loader2 className="animate-spin" aria-hidden />}
+      <Button type="submit" size="lg" className="min-h-11 w-full" pending={slow}>
         {slow ? SECTION_COPY.saving : SECTION_COPY.save}
       </Button>
     </form>

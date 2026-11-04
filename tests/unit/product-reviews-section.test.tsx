@@ -1,16 +1,15 @@
 /**
- * Reviews read where they matter (seller-onboarding U5; R9, D12; Q13): Home's "new reviews" line
- * lands on the product's Reviews section, which is read-only and fails alone with its own retry.
+ * Reviews read where they matter (seller-onboarding U5; R9, D12): the product's Reviews section is
+ * read-only and fails alone with its own retry. Home's "new reviews" line left under design-system
+ * Q31 (nothing a shop does clears it), so its landing tests went with it.
  */
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import type { HomeAttentionDto } from "@/data-access-layer/org/home.dal";
 import type { ReviewDto, ReviewPageDto } from "@server/catalog/review.types";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
 
 const { ProductReviewsSection } = await import("@/components/org/product-reviews-section");
-const { attentionLines } = await import("@/components/org/home/attention-lines");
 
 const review = (id: string, comment: string, isMine = false): ReviewDto => ({
   id,
@@ -31,31 +30,7 @@ const page = (reviews: ReviewDto[], hasMore = false): ReviewPageDto => ({
   hasMore,
 });
 
-const none = { ok: true as const, value: 0 };
-const attention = (productId: string | null): HomeAttentionDto => ({
-  parcels: none,
-  reviews: { ok: true, value: { count: 2, productId } },
-  channel: { ok: true, value: null },
-  stock: { ok: true, value: null },
-  photos: none,
-  auction: { ok: true, value: null },
-  teamEdits: { ok: true, value: { count: 0, productId: null } },
-});
-
 describe("reviews on the portal product page (R9)", () => {
-  it("is where Home's line lands when the new reviews share one product (Q13)", () => {
-    const [line] = attentionLines("o1", attention("p1"), new Date());
-    expect(line.ok && line.href).toMatch(/^\/org\/o1\/products\/p1#/);
-    const { container } = render(<ProductReviewsSection read={{ ok: true, page: page([review("r1", "Lovely")]) }} allReviewsHref="/org/o1/reviews" />);
-    const anchor = (line.ok ? line.href : "").split("#")[1];
-    expect(container.querySelector(`#${anchor}`)).not.toBeNull();
-  });
-
-  it("goes to the Reviews page when the new reviews span products", () => {
-    const [line] = attentionLines("o1", attention(null), new Date());
-    expect(line.ok && line.href).toBe("/org/o1/reviews");
-  });
-
   it("shows reviews newest first as given, read-only even for the shop's own account", () => {
     render(<ProductReviewsSection read={{ ok: true, page: page([review("r2", "Newer", true), review("r1", "Older")], true) }} allReviewsHref="/org/o1/reviews" />);
     const comments = screen.getAllByText(/Newer|Older/).map((node) => node.textContent);

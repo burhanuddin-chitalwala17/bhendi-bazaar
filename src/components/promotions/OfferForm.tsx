@@ -16,7 +16,6 @@
  */
 
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import {
   platformPromotionSchema,
@@ -32,6 +31,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormInput, FormSelect } from "@/components/shared/forms/FormField";
 import { Button } from "@/components/ui/button";
+import { ActionBar } from "@/components/shared/action-bar";
 import type { ZodType } from "zod";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -523,27 +523,22 @@ export function OfferForm({
         />
       </section>
 
-      {/* Docked above the tab bar on a phone, so the primary action is always reachable
-          without scrolling a long form to its foot (ADR-0016). */}
-      <div className="sticky bottom-tabbar z-10 -mx-4 border-t border-border bg-background/95 p-4 backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
-        <div className="flex gap-3">
-          <Button
-            type="submit"
-            aria-busy={isSubmitting}
-            className="flex-1 md:flex-none"
-          >
-            {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden />}
-            {isEdit ? "Save changes" : "Create offer"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.push(returnTo)}
-          >
-            Cancel
-          </Button>
-        </div>
-      </div>
+      <ActionBar className="-mx-4 md:mx-0">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push(returnTo)}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          pending={isSubmitting}
+          className="flex-1 md:flex-none"
+        >
+          {isEdit ? "Save changes" : "Create offer"}
+        </Button>
+      </ActionBar>
     </form>
   );
 }

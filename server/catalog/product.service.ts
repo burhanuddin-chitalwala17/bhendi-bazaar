@@ -27,18 +27,21 @@ export class ProductService {
       this.validateFilter(filter);
     }
 
-    if (filter?.categorySlug) {
-      // A category page lists its whole subtree (category-tree R2). Unknown
-      // slug resolves to an empty list, never to "all products".
-      const tree = await categoryRepository.listTree();
-      const root = tree.find((c) => c.slug === filter.categorySlug);
-      return await productsRepository.getProducts({
-        ...filter,
-        categoryIds: root ? collectSubtreeIds(tree, root.id) : [],
-      });
-    }
+    return await productsRepository.getProducts(await this.withSubtree(filter));
+  }
 
-    return await productsRepository.getProducts(filter);
+  /** How many products a listing holds; the same filter, subtree and visibility as its pages. */
+  async countProducts(filter: ProductFilter): Promise<number> {
+    this.validateFilter(filter);
+    return await productsRepository.countProducts(await this.withSubtree(filter));
+  }
+
+  /** A category page lists its whole subtree (category-tree R2); an unknown slug is empty, never "all products". */
+  private async withSubtree(filter: ProductFilter): Promise<ProductFilter> {
+    if (!filter?.categorySlug) return filter;
+    const tree = await categoryRepository.listTree();
+    const root = tree.find((c) => c.slug === filter.categorySlug);
+    return { ...filter, categoryIds: root ? collectSubtreeIds(tree, root.id) : [] };
   }
 
   /**

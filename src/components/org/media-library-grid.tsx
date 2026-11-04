@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { toast } from "sonner";
-import { Archive, ChevronDown, ChevronUp, Crop, Film, ImageIcon, Images, RotateCcw, Sparkles } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -160,7 +160,7 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
     return (
       <Card>
         <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
-          <Images className="size-8 text-muted-foreground" />
+          <Icon name="photos" size="xl" tone="muted" />
           <p className="text-sm text-muted-foreground">
             Nothing here yet. Photos you upload to a product, a banner or your storefront appear
             in this library.
@@ -237,15 +237,15 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
               </div>
               {open.kind === "VIDEO" && open.state !== "RETIRED" && (
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="outline" onClick={() => setPosterPickerOpen(true)} disabled={isSavingPoster}>
-                    <ImageIcon className="mr-2 size-4" />
+                  <Button type="button" variant="outline" onClick={() => setPosterPickerOpen(true)} pending={isSavingPoster}>
+                    {!isSavingPoster && <Icon name="photo" className="mr-2" />}
                     Change poster
                   </Button>
                   {/* Only where there is a choice to undo: with no photograph standing in, this
                       would put back the frame that is already showing. */}
                   {open.posterChosen && (
-                    <Button type="button" variant="ghost" onClick={() => void savePoster(open, null)} disabled={isSavingPoster}>
-                      <RotateCcw className="mr-2 size-4" />
+                    <Button type="button" variant="ghost" onClick={() => void savePoster(open, null)} pending={isSavingPoster}>
+                      {!isSavingPoster && <Icon name="undo" className="mr-2" />}
                       Use the video&apos;s own frame
                     </Button>
                   )}
@@ -317,7 +317,7 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                       aria-expanded={showUses}
                     >
                       <span className="capitalize">{describeUses(uses)}</span>
-                      {showUses ? <ChevronUp className="ml-1 size-4" aria-hidden /> : <ChevronDown className="ml-1 size-4" aria-hidden />}
+                      <Icon name={showUses ? "collapse" : "expand"} className="ml-1" />
                     </Button>
                     {showUses && (
                       <ul className="space-y-1 pl-2 text-sm">
@@ -348,17 +348,17 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                   {open.kind === "IMAGE" && (
                     <>
                       <Button type="button" variant="outline" onClick={() => setImproving(open)}>
-                        <Sparkles className="mr-2 size-4" />
+                        <Icon name="enhance" className="mr-2" />
                         Improve
                       </Button>
                       <Button type="button" variant="outline" onClick={() => setReframing(open)}>
-                        <Crop className="mr-2 size-4" />
+                        <Icon name="crop" className="mr-2" />
                         Crop
                       </Button>
                     </>
                   )}
-                  <Button type="button" variant="outline" onClick={() => retire(open)} disabled={isRetiring}>
-                    <Archive className="mr-2 size-4" />
+                  <Button type="button" variant="outline" onClick={() => retire(open)} pending={isRetiring}>
+                    {!isRetiring && <Icon name="archive" className="mr-2" />}
                     {isRetiring ? "Retiring…" : "Retire"}
                   </Button>
                 </div>
@@ -412,8 +412,8 @@ function MediaTile({ asset, large = false }: { asset: MediaAssetDto; large?: boo
     return (
       <>
         {asset.poster && <NextImage src={asset.poster} alt="" fill sizes={sizes} className="object-cover" />}
-        <span className="absolute inset-0 flex items-center justify-center bg-scrim/40">
-          <Film className={`${large ? "size-10" : "size-6"} text-hero-foreground`} aria-hidden />
+        <span className="absolute inset-0 flex items-center justify-center bg-scrim/40 text-hero-foreground">
+          <Icon name="video" size={large ? "xl" : "lg"} />
         </span>
       </>
     );

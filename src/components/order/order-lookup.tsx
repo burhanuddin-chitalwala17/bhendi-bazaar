@@ -1,4 +1,3 @@
-// src/components/order/order-lookup.tsx
 "use client";
 
 import { useAsyncData } from "@/hooks/core/useAsyncData";
@@ -8,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { OrderSummary } from "./order-summary";
-import { SectionHeader } from "../shared/SectionHeader";
+import { PageHeader } from "@/components/shared/page-shell";
 
 export function OrderLookup() {
   const [code, setCode] = useState("");
-  const [shouldFetch, setShouldFetch] = useState(false); // Add this
+  const [shouldFetch, setShouldFetch] = useState(false);
+  const [missing, setMissing] = useState(false);
   const codeId = useId();
 
   const {
@@ -26,25 +26,19 @@ export function OrderLookup() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Never a dead button (ADR-0053): an empty tap says what is needed.
+    setMissing(!code.trim());
     if (!code.trim()) return;
     setShouldFetch(true);
     await refetch();
   }
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-6 text-sm">
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4 rounded-xl border border-border/70 bg-card/80 p-5"
-      >
-        <header className="space-y-1 text-center">
-          <SectionHeader
-            overline="Track order"
-            title="Enter your Bhendi Bazaar order ID to View your order"
-          />
-        </header>
+    <div className="flex max-w-md flex-col gap-6 text-small">
+      <PageHeader title="Track an order" description="Enter the order ID from your confirmation email." />
+      <form onSubmit={handleSubmit} noValidate className="space-y-4 rounded-card border border-border bg-card p-5">
         <div className="space-y-2">
-          <Label variant="eyebrow" htmlFor={codeId} className="text-xs">
+          <Label htmlFor={codeId}>
             Order ID
           </Label>
           <Input
@@ -54,17 +48,15 @@ export function OrderLookup() {
             onChange={(e) => setCode(e.target.value.trim())}
             autoCapitalize="characters"
             autoCorrect="off"
+            aria-invalid={missing || undefined}
             className="h-10"
           />
         </div>
-        <Button
-          type="submit"
-          disabled={!code.trim() || isLoading}
-          className="w-full rounded-full text-xs font-semibold uppercase tracking-eyebrow"
-        >
-          {isLoading ? "Searching…" : "Find order"}
+        <Button type="submit" size="lg" pending={isLoading} className="w-full rounded-full">
+          Find order
         </Button>
-        {error && <p className="text-2xs text-destructive">{error}</p>}
+        {missing && <p role="alert" className="text-caption text-destructive">Enter your order ID first.</p>}
+        {error && <p role="alert" className="text-caption text-destructive">{error}</p>}
       </form>
 
       {order && (

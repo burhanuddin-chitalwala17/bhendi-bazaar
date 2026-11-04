@@ -9,12 +9,13 @@
  */
 import { notFound } from "next/navigation";
 
-import { SectionHeader } from "@/components/shared/SectionHeader";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
+import { orderChip, paymentChip } from "@/components/order/console/order-status";
 import { OrderDetailAside } from "@/components/order/console/OrderDetailAside";
 import { ShipmentsPanel } from "@/components/order/console/ShipmentsPanel";
 import { adminOrdersDAL } from "@/data-access-layer/admin/orders.dal";
-import { ORDER_STATUS, PAYMENT_STATUS } from "@server/checkout/order.types";
+import { PAYMENT_STATUS } from "@server/checkout/order.types";
 
 export default async function AdminOrderDetailsPage({
   params,
@@ -26,28 +27,24 @@ export default async function AdminOrderDetailsPage({
 
   if (!order) notFound();
   const timelines = await adminOrdersDAL.timelines(orderId);
+  const status = orderChip(order.status);
+  const payment = paymentChip(order.paymentStatus);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <SectionHeader overline="Order details" title={`Order ${order.code}`} />
-        <div className="flex items-center gap-2">
-          <Badge
-            variant={
-              order.paymentStatus === PAYMENT_STATUS.PAID
-                ? "secondary"
-                : order.paymentStatus === PAYMENT_STATUS.FAILED
-                  ? "destructive"
-                  : "outline"
-            }
-          >
-            {order.paymentStatus}
-          </Badge>
-          <Badge variant={order.status === ORDER_STATUS.CONFIRMED ? "default" : "outline"}>
-            {order.status}
-          </Badge>
-        </div>
-      </div>
+    <PageShell width="wide">
+      <PageHeader
+        eyebrow="Order"
+        title={order.code}
+        back={{ href: "/admin/orders", label: "Orders" }}
+        actions={
+          <>
+            <StatusBadge tone={status.tone} dot>
+              {status.label}
+            </StatusBadge>
+            <StatusBadge tone={payment.tone}>{payment.label}</StatusBadge>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1">
@@ -57,6 +54,6 @@ export default async function AdminOrderDetailsPage({
           <ShipmentsPanel shipments={order.shipments} timelines={timelines} paid={order.paymentStatus === PAYMENT_STATUS.PAID} />
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MapPin, Pencil, Plus, Trash2 } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -65,14 +65,14 @@ export function LocationsManager({ orgId, locations, returnTo = null }: Location
           Where your products ship from. Couriers collect at these addresses.
         </p>
         <Button onClick={openAdd} size="sm">
-          <Plus className="mr-1 h-4 w-4" /> Add location
+          <Icon name="add" className="mr-1" /> Add location
         </Button>
       </div>
 
       {locations.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
-            <MapPin className="h-8 w-8 text-muted-foreground" />
+            <Icon name="location" size="xl" tone="muted" />
             <p className="text-sm text-muted-foreground">
               No pickup locations yet. Add the shop or warehouse your parcels
               leave from.
@@ -85,7 +85,7 @@ export function LocationsManager({ orgId, locations, returnTo = null }: Location
             <Card key={location.id}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-base">{location.name}</CardTitle>
-                <StatusBadge status={location.isActive ? "inStock" : "default"}>
+                <StatusBadge tone={location.isActive ? "success" : "neutral"}>
                   {location.isActive ? "Active" : "Inactive"}
                 </StatusBadge>
               </CardHeader>
@@ -120,16 +120,18 @@ export function LocationsManager({ orgId, locations, returnTo = null }: Location
                     <Button
                       variant="ghost"
                       size="sm"
+                      aria-label={`Edit ${location.name}`}
                       onClick={() => openEdit(location)}
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Icon name="edit" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
+                      aria-label={`Delete ${location.name}`}
                       onClick={() => remove(location)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Icon name="delete" />
                     </Button>
                   </span>
                 </div>

@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Check, ChevronDown, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { APP_NAME, LOGO } from "@/lib/config";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -57,7 +57,7 @@ function OpenShopButton({ label, className }: { label: string; className?: strin
     <Button asChild size="lg" className={cn("rounded-full", className)}>
       <Link href={OPEN_SHOP_HREF} prefetch={false}>
         {label}
-        <ArrowRight />
+        <Icon name="forward" />
       </Link>
     </Button>
   );
@@ -85,7 +85,7 @@ function Hero() {
 
       <Column className="relative flex flex-col items-center gap-6 pb-section pt-10 text-center md:pt-16">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground shadow-raised">
-          <Sparkles className="size-3 text-primary" aria-hidden />
+          <Icon name="enhance" size="xs" tone="primary" />
           {COPY.hero.eyebrow}
         </span>
 
@@ -94,7 +94,7 @@ function Hero() {
           <span className="block text-primary">{COPY.hero.titleAccent}</span>
         </h1>
 
-        <p className="max-w-xl text-base text-muted-foreground md:text-xl">{COPY.hero.lead}</p>
+        <p className="max-w-xl text-body text-muted-foreground md:text-xl">{COPY.hero.lead}</p>
 
         <div className="flex flex-col items-center">
           <div className="flex items-baseline gap-1">
@@ -103,7 +103,7 @@ function Hero() {
             </span>
             <span className="text-lg text-muted-foreground">{COPY.hero.perMonth}</span>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">{COPY.hero.taxNote}</p>
+          <p className="mt-1 text-caption text-muted-foreground">{COPY.hero.taxNote}</p>
         </div>
 
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -137,7 +137,7 @@ function Suite() {
             {COPY.soon.items.map((item) => (
               <li
                 key={item}
-                className="rounded-full border border-dashed border-border bg-card px-3 py-1.5 text-xs text-muted-foreground"
+                className="rounded-full border border-dashed border-border bg-card px-3 py-1.5 text-caption text-muted-foreground"
               >
                 {item}
               </li>
@@ -150,7 +150,6 @@ function Suite() {
 }
 
 function PillarCard({ pillar, featured }: { pillar: SellPillar; featured: boolean }) {
-  const Icon = pillar.icon;
   return (
     <article
       className={cn(
@@ -166,7 +165,7 @@ function PillarCard({ pillar, featured }: { pillar: SellPillar; featured: boolea
           featured ? "bg-primary-foreground/15" : "bg-primary/10 text-primary",
         )}
       >
-        <Icon className="size-5" aria-hidden />
+        <Icon name={pillar.icon} size="md" />
       </span>
       <div className="space-y-2">
         <p
@@ -181,11 +180,8 @@ function PillarCard({ pillar, featured }: { pillar: SellPillar; featured: boolea
       </div>
       <ul className="space-y-2.5">
         {pillar.points.map((point) => (
-          <li key={point} className="flex gap-2.5 text-sm md:text-base">
-            <Check
-              className={cn("mt-0.5 size-4 shrink-0", featured ? "text-primary-foreground" : "text-primary")}
-              aria-hidden
-            />
+          <li key={point} className="flex gap-2.5 text-small md:text-body">
+            <Icon name="done" tone={featured ? "current" : "primary"} className="mt-0.5" />
             <span className={featured ? "text-primary-foreground/90" : "text-muted-foreground"}>{point}</span>
           </li>
         ))}
@@ -209,18 +205,18 @@ function Pricing() {
         <div className="w-full max-w-4xl overflow-hidden rounded-card border border-background/15 bg-background/5">
           <div className="grid md:grid-cols-5">
             <div className="flex flex-col gap-6 p-6 md:col-span-2 md:p-10">
-              <p className="text-sm font-semibold text-background/70">{COPY.pricing.planName}</p>
+              <p className="text-small font-semibold text-background/70">{COPY.pricing.planName}</p>
               <div>
                 <p className="font-heading text-7xl font-bold tracking-tight">{PRICE}</p>
-                <p className="mt-1 text-sm text-background/70">{COPY.pricing.perMonth}</p>
+                <p className="mt-1 text-small text-background/70">{COPY.pricing.perMonth}</p>
               </div>
               <OpenShopButton label={COPY.pricing.cta} className="w-full" />
-              <p className="text-xs text-background/60">{COPY.pricing.taxNote}</p>
+              <p className="text-caption text-background/60">{COPY.pricing.taxNote}</p>
             </div>
             <ul className="grid content-center gap-4 border-t border-background/15 p-6 sm:grid-cols-2 md:col-span-3 md:border-l md:border-t-0 md:p-10">
               {COPY.pricing.includes.map((item) => (
-                <li key={item} className="flex gap-2.5 text-sm">
-                  <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+                <li key={item} className="flex gap-2.5 text-small">
+                  <Icon name="done" tone="primary" className="mt-0.5" />
                   <span className="text-background/85">{item}</span>
                 </li>
               ))}
@@ -240,12 +236,12 @@ function Steps() {
         <ol className="grid w-full max-w-4xl gap-3 md:grid-cols-3">
           {COPY.steps.items.map((step, index) => (
             <li key={step.title} className="flex items-center gap-4 rounded-card border border-border bg-card p-5">
-              <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-primary font-heading text-base font-bold text-primary-foreground">
+              <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-primary font-heading text-body font-bold text-primary-foreground">
                 {index + 1}
               </span>
               <div>
                 <p className="font-heading text-lg font-bold">{step.title}</p>
-                <p className="text-sm text-muted-foreground">{step.body}</p>
+                <p className="text-small text-muted-foreground">{step.body}</p>
               </div>
             </li>
           ))}
@@ -263,14 +259,11 @@ function Faq() {
         <div className="w-full max-w-2xl divide-y divide-border rounded-card border border-border bg-card">
           {COPY.faq.items.map((item) => (
             <details key={item.q} className="group px-5 [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 text-sm font-semibold md:text-base">
+              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 text-small font-semibold md:text-body">
                 {item.q}
-                <ChevronDown
-                  className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
-                  aria-hidden
-                />
+                <Icon name="expand" tone="muted" className="transition-transform duration-fast ease-standard group-open:rotate-180" />
               </summary>
-              <p className="pb-4 text-sm text-muted-foreground">{item.a}</p>
+              <p className="pb-4 text-small text-muted-foreground">{item.a}</p>
             </details>
           ))}
         </div>

@@ -61,7 +61,7 @@ export function SignUpForm({
   return (
     <form
       onSubmit={(event) => void onSubmit(event).catch(() => {})}
-      className="space-y-3 text-sm"
+      className="space-y-3 text-small"
     >
       <AuthField id={`${id}-name`} label="Name" error={errors.name?.message}>
         <Input id={`${id}-name`} autoComplete="name" {...register("name")} />

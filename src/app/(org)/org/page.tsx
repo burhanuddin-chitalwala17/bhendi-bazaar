@@ -1,9 +1,9 @@
 import Link from "next/link";
+import { Icon } from "@/components/ui/icon";
 import { redirect } from "next/navigation";
-import { Building2 } from "lucide-react";
 import { requireSession } from "@/lib/admin-auth";
 import { orgMemberRepository } from "@server/catalog/org.member.repository";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageHeader } from "@/components/shared/page-shell";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -35,14 +35,14 @@ export default async function OrgIndexPage() {
             <Link
               prefetch={false}
               href="/org/new"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              className="rounded-lg bg-primary px-4 py-2 text-small font-medium text-primary-foreground hover:bg-primary/90"
             >
               Open your shop
             </Link>
             <Link
               prefetch={false}
               href="/"
-              className="text-sm font-medium hover:bg-muted/60"
+              className="text-small font-medium hover:bg-muted/60"
             >
               Back to Store
             </Link>
@@ -50,7 +50,7 @@ export default async function OrgIndexPage() {
         </div>
       ) : (
         <div>
-          <SectionHeader as="h1" title="Choose a shop" description="You work for more than one. Pick the one you want to work on." />
+          <PageHeader title="Choose a shop" description="You work for more than one. Pick the one you want to work on." />
 
           <ul className="mt-8 flex flex-col gap-3">
             {orgs.map((org) => (
@@ -60,12 +60,12 @@ export default async function OrgIndexPage() {
                   href={`/org/${org.id}`}
                   className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/40"
                 >
-                  <Building2 className="h-6 w-6 shrink-0 text-primary" />
+                  <Icon name="shop" size="lg" tone="primary" />
                   <span className="min-w-0">
                     <span className="block truncate font-medium">
                       {org.name}
                     </span>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-small text-muted-foreground">
                       {org.role.toLowerCase()}
                     </span>
                   </span>
@@ -77,7 +77,7 @@ export default async function OrgIndexPage() {
           <Link
             prefetch={false}
             href="/org/new"
-            className="mt-6 inline-block text-sm text-primary hover:underline"
+            className="mt-6 inline-block text-small text-primary hover:underline"
           >
             + Open another shop
           </Link>

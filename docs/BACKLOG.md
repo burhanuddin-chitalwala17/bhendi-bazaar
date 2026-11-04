@@ -35,7 +35,7 @@ What the platform solves for a small business, and where each lives. Every phase
 | **10** — Discoverability | The store is findable: every public page describes itself, every product is machine-readable, every URL answers honestly | catalog, *(cross-domain)* | ⏳ Not started — 1 spec drafted (seo) |
 | **11** — Listing: one entry, every channel | A product is described once, from its photographs, and is ready for the store, Amazon, Flipkart and Instagram from that one entry | catalog, content, listing, social, *(cross-domain)* | 🔨 In progress — 3 of 9 specs accepted (worker-foundation, seller-profile, media-library) plus 2 subfeatures accepted and 1 drafted (video-hosting); ADR-0037, ADR-0038, ADR-0039 |
 | **12** — The shop's own store | A small shop runs a store it is proud to hand out, from its phone, and no offer or order costs the platform money it did not choose to spend | catalog, checkout, promotions, shipping, notifications, payouts | 🔨 In progress — offers-hardening implemented 2026-10-29 (units 1–6); six verticals to come |
-| **13** — Design system | The store, seller portal and admin feel designed rather than assembled: one type scale, one icon voice, one page grammar, phone first | *(front end, cross-domain)* | ⏳ Not started — programme and foundations drafted 2026-11-04; ADR-0065 proposed |
+| **13** — Design system | The store, seller portal and admin feel designed rather than assembled: one type scale, one icon voice, one page grammar, phone first | *(front end, cross-domain)* | 🔨 Built 2026-11-04 (uncommitted, awaiting owner's visual review); React Compiler and follow-ups open; ADR-0066 proposed |
 
 ---
 
@@ -183,13 +183,14 @@ Added 2026-11-04 from the platform UI audit. Programme overview: [design-system]
 
 | Spec | Requirement | Status |
 |---|---|---|
-| [design-system/foundations](specs/design-system/foundations/) | Type scale (phone first), icon seam on Phosphor, motion and depth tokens, the gates | 📝 Draft — UX sign-off next |
-| design-system/page-grammar | One page header, action bar, empty/error/loading state, tabs, status badge, list-or-table | planned |
-| design-system/storefront-journey | Home, category and search, product page, cart, checkout, order page | planned |
-| design-system/seller-workspace | Products list for a phone with bulk edits, top bar, orders | planned |
-| design-system/admin-console | Grouped navigation, dashboard led by one figure, dense tables | planned |
-| design-system/brand-icons | 6–10 brand icons drafted by Claude, approved by the owner | planned |
-| design-system/render-performance | Cache Components and partial prerendering | planned |
+| [design-system/foundations](specs/design-system/foundations/) | Type scale (phone first), icon seam on Phosphor, motion and depth tokens, the gates | 🔨 Built 2026-11-04, awaiting owner review |
+| design-system/page-grammar | One page header, action bar, empty/error/loading state, tabs, status badge, list-or-table | 🔨 Built 2026-11-04, awaiting owner review |
+| design-system/storefront-journey | Home, category and search, product page, cart, checkout, order page | 🔨 Built 2026-11-04, awaiting owner review |
+| design-system/seller-workspace | Products list for a phone with bulk edits, top bar, orders | 🔨 Built 2026-11-04, awaiting owner review |
+| design-system/admin-console | Grouped navigation, dashboard led by one figure, dense tables | 🔨 Built 2026-11-04, awaiting owner review |
+| design-system/brand-icons | 6–10 brand icons drafted by Claude, approved by the owner | 🔨 Built 2026-11-04, awaiting owner review |
+| design-system/image-slots | One picture field with phone and desktop versions, crop or fit, for admin and shop banners | 🔨 Built 2026-11-04, awaiting owner review |
+| design-system/render-performance | Build on the caching that landed on main | planned |
 | design-system Q13–Q17 *(later)* | Admin chart, auth and /sell, `shared/forms/product` move, ⌘K, view transitions | parked |
 
 ---

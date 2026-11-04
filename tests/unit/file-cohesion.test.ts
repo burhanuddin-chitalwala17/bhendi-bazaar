@@ -85,11 +85,11 @@ const RECORDED: Record<string, { domains: string[]; why: string }> = {
       "each of those shapes would be better imported from its own domain at the call site.",
   },
   "src/data-access-layer/org/home.dal.ts": {
-    domains: ["analytics", "bidding", "catalog", "channels", "content"],
+    domains: ["analytics", "catalog", "channels", "content"],
     why:
       "Home's one job is to ask each area whether it needs the shop (own-store onboarding D7): parcels " +
-      "from analytics, reviews and setup from catalog, a connection from channels, photo proposals from " +
-      "content, an ending auction from bidding. Each is one service call that fails alone.",
+      "to pack and selling low stock from analytics, setup and team edits from catalog, a connection from " +
+      "channels, photo proposals from content. Each is one service call that fails alone.",
   },
   "src/data-access-layer/products.dal.ts": {
     domains: ["bidding", "catalog", "promotions"],

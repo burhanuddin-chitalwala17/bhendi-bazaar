@@ -23,7 +23,7 @@ export default async function AdminBulkForShopPage({ params }: { params: Promise
     return (
       <PageShell>
         {header}
-        <p role="status" className="break-words rounded-card border border-warning/40 bg-warning/10 p-4 text-sm text-foreground">
+        <p role="status" className="break-words rounded-card border border-warning/40 bg-warning/10 p-4 text-small text-foreground">
           {refusal ?? empty}
         </p>
         {/* "Add location" waits for an admin address surface (product-form Q37); until then, the shop's page. */}

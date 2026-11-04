@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 
 import { requireOrgMember } from "@/lib/org-auth";
 import { platformListingDAL } from "@/data-access-layer/platform-listing.dal";
-import { PageShell } from "@/components/shared/page-shell";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageShell, PageHeader } from "@/components/shared/page-shell";
 import { ListingEditor } from "@/components/channel/listing-editor";
 import { ListingLocked } from "@/components/channel/listing-locked";
 import { ListingStatusLine } from "@/components/channel/listing-status-line";
@@ -28,7 +27,7 @@ export default async function ListingPage({ params }: { params: Promise<{ orgId:
       <Link href={`/org/${scope.orgId}/products/${id}`} className="text-sm text-muted-foreground underline-offset-4 hover:underline">
         ‹ {screen.productName}
       </Link>
-      <SectionHeader as="h1" help="channels" title={LISTING.screenTitle(screen.label)} description={LISTING.intro(screen.label)} />
+      <PageHeader help="channels" title={LISTING.screenTitle(screen.label)} description={LISTING.intro(screen.label)} />
       <div>
         <ListingStatusLine status={screen.status} label={screen.label} />
       </div>

@@ -1,31 +1,41 @@
-// components/shared/states/ErrorState.tsx
+import type { ReactNode } from "react";
 
-import { AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
+import { StateActionButton, type StateAction } from "./state-action";
 
-interface ErrorStateProps {
+export interface ErrorStateProps {
+  /** What happened, in the viewer's words: "Orders didn't load". */
   title?: string;
-  message: string;
-  retry?: () => void;
+  /** Why, and what did not change. */
+  description: ReactNode;
+  /** Try the same thing again — an error boundary's `retry`. */
+  onRetry?: () => void;
+  retryLabel?: string;
+  /** Instead of a retry, a way out (a server page has no handler to pass). */
+  action?: StateAction;
+  /** `h1` when the error is the whole page (an error boundary). */
+  as?: "h1" | "h2" | "h3";
+  className?: string;
 }
 
+/** Something failed: what happened, and one thing to do about it. */
 export function ErrorState({
   title = "Something went wrong",
-  message,
-  retry,
+  description,
+  onRetry,
+  retryLabel = "Try again",
+  action,
+  as: Heading = "h2",
+  className,
 }: ErrorStateProps) {
+  const next = onRetry ? { label: retryLabel, onClick: onRetry } : action;
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="mb-4 rounded-full bg-destructive/10 p-3">
-        <AlertCircle className="h-6 w-6 text-destructive" />
-      </div>
-      <h3 className="mb-2 text-lg font-semibold">{title}</h3>
-      <p className="mb-6 max-w-md text-sm text-muted-foreground">{message}</p>
-      {retry && (
-        <Button onClick={retry} variant="outline">
-          Try Again
-        </Button>
-      )}
+    <div role="alert" className={cn("flex flex-col items-start gap-3 py-10", className)}>
+      <Icon name="warning" size="lg" tone="destructive" />
+      <Heading className="text-title font-semibold text-foreground">{title}</Heading>
+      <div className="max-w-md text-small text-muted-foreground">{description}</div>
+      {next && <StateActionButton action={next} />}
     </div>
   );
 }

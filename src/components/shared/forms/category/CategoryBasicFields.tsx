@@ -24,8 +24,8 @@ export function CategoryBasicFields({
   productTypeOptions = [],
 }: CategoryBasicFieldsProps) {
   return (
-    <div className="bg-card rounded-lg border border-border p-6">
-      <h2 className="text-lg font-semibold text-foreground mb-4">
+    <div className="rounded-card border border-border bg-card p-6">
+      <h2 className="text-title font-semibold text-foreground mb-4">
         Basic Information
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

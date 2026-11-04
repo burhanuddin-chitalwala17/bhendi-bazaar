@@ -25,7 +25,7 @@ const twMerge = extendTailwindMerge({
       // elevation *roles*, not sizes
       shadow: [{ shadow: ["raised", "lifted", "overlay", "inset-field", "tile"] }],
       // the sub-`text-xs` scale, and the storefront type roles a theme repoints
-      "font-size": [{ text: ["2xs", "3xs", "4xs", "headline", "title", "body", "tag", "price"] }],
+      "font-size": [{ text: ["2xs", "display", "headline", "title", "body", "small", "caption", "label", "tag", "price"] }],
       // storefront faces and theme colour roles (storefront-themes D2, D3)
       "font-family": [{ font: ["display", "label"] }],
       // `deal` and `feature` are fills only: as text on the page they fall below AA.
@@ -34,8 +34,8 @@ const twMerge = extendTailwindMerge({
       // a theme's drawn pattern where a photo is missing (Q17)
       "bg-image": [{ bg: ["theme-pattern"] }],
       "max-w": [{ "max-w": ["store"] }],
-      "duration": [{ duration: ["theme"] }],
-      "ease": [{ ease: ["theme"] }],
+      "duration": [{ duration: ["theme", "fast", "base", "slow"] }],
+      "ease": [{ ease: ["theme", "standard", "emphasised"] }],
       // `@utility max-h-overlay` — the one cap token. `none` is here because
       // tailwind-merge 3.4 omits it from its own `max-h` group, so `max-h-none` was
       // not recognised either and could not override anything.

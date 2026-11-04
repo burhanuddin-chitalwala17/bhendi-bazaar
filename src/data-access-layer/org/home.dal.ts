@@ -1,15 +1,14 @@
 import { orgOnboardingService } from "@server/catalog/org-onboarding.service";
 import type { OnboardingStatus } from "@server/catalog/org-onboarding.types";
-import { reviewService, type NewReviews } from "@server/catalog/review.service";
 import { shopDetailsService } from "@server/catalog/shop-details.service";
 import { DASHBOARD_WIDGETS, fetchWidget, type WidgetContext, type WidgetData } from "@server/analytics/widgets";
+import { sellingLowStock, toPack } from "@server/analytics/attention.service";
+import type { SellingLowStock, ToPack } from "@server/analytics/attention.types";
 import { channelConnectionService } from "@server/channels/channel-connection.service";
 import type { ChannelAttentionDTO } from "@server/channels/channel-connection.types";
 import { channelStockService } from "@server/channels/channel-stock.service";
 import type { StockAttentionDTO } from "@server/channels/channel-stock.types";
 import { enhancementService } from "@server/content/enhancement.service";
-import { biddingService } from "@server/bidding/bidding.service";
-import { isAcceptingBids } from "@server/bidding/bidding-window";
 import { productTeamService } from "@server/catalog/product-team.service";
 import type { ShareShop } from "@/lib/store-preview";
 import { shareShopFor } from "./share-shop.dal";
@@ -19,22 +18,20 @@ export type HomeRead<T> = { ok: true; value: T } | { ok: false };
 
 /** The two existing widgets Home reads a number from, by their registry key. */
 const WIDGET = { PARCELS: "pending-parcels", PAID_ORDERS: "orders" } as const;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
-export interface HomeAuction {
-  productName: string;
-  endsAt: string;
-}
-
-/** "Needs you now" (Q5, Q22, Q25): each line hides at zero, and fails alone. */
+/**
+ * "Needs you now" (Q5, Q22, Q25; design-system Q31): each line hides at zero, and fails alone. New
+ * reviews and an ending auction left it under Q31: neither has an action that clears it.
+ */
 export interface HomeAttentionDto {
-  parcels: HomeRead<number>;
-  reviews: HomeRead<NewReviews>;
+  /** Paid parcels still packing: the shop's to resolve, unlike one waiting on a courier. */
+  toPack: HomeRead<ToPack>;
+  /** Low stock on products that sold in the last 30 days (Q31). */
+  lowStock: HomeRead<SellingLowStock>;
   channel: HomeRead<ChannelAttentionDTO | null>;
-  /** Stock sync waiting on a location match, or listings it put out of stock (inventory-sync Q27). */
+  /** Stock sync waiting on a location match, or listings it put out of stock (inventory-sync Q28). */
   stock: HomeRead<StockAttentionDTO | null>;
   photos: HomeRead<number>;
-  auction: HomeRead<HomeAuction | null>;
   /** Products the team changed, until the shop next saves each (product-form Q23). */
   teamEdits: HomeRead<{ count: number; productId: string | null }>;
 }
@@ -65,37 +62,26 @@ async function widgetData(key: string, ctx: WidgetContext): Promise<WidgetData> 
   return fetchWidget(widget, ctx);
 }
 
-const valueOf = (read: HomeRead<WidgetData>): HomeRead<number> =>
-  read.ok ? { ok: true, value: read.value.value } : read;
-
-/** A live auction ending within a day, soonest first. */
-async function endingAuction(orgId: string, now: Date): Promise<HomeAuction | null> {
-  const ending = (await biddingService.listForOrg(orgId))
-    .filter((event) => isAcceptingBids(event, now) && event.endAt.getTime() - now.getTime() <= DAY_MS)
-    .sort((a, b) => a.endAt.getTime() - b.endAt.getTime())[0];
-  return ending ? { productName: ending.product.name, endsAt: ending.endAt.toISOString() } : null;
-}
-
 /** Home asks each area whether it needs the shop (own-store onboarding D7). */
 export const homeDAL = {
   async forOrg(orgId: string, now: Date = new Date()): Promise<HomeData> {
     const ctx: WidgetContext = { audience: "org", orgId };
-    const [shop, setup, parcels, reviews, channel, stock, photos, auction, teamEdits, paidOrders] = await Promise.all([
+    const [shop, setup, parcels, toPackRead, lowStock, channel, stock, photos, teamEdits, paidOrders] = await Promise.all([
       settle("shop", async () => shareShopFor(await shopDetailsService.get(orgId))),
       settle("setup", () => orgOnboardingService.status(orgId)),
       settle("parcels", () => widgetData(WIDGET.PARCELS, ctx)),
-      settle("reviews", () => reviewService.newForOrg(orgId, now)),
+      settle("to pack", () => toPack(orgId)),
+      settle("low stock", () => sellingLowStock(orgId, now)),
       settle("channel", async () => (await channelConnectionService.overview(orgId)).attention[0] ?? null),
       settle("stock", () => channelStockService.attention(orgId)),
       settle("photos", () => enhancementService.countAwaitingDecision(orgId)),
-      settle("auction", () => endingAuction(orgId, now)),
       settle("team edits", () => productTeamService.teamEditedSummary(orgId)),
       settle("paid orders", () => widgetData(WIDGET.PAID_ORDERS, ctx)),
     ]);
     return {
       shop,
       setup,
-      attention: { parcels: valueOf(parcels), reviews, channel, stock, photos, auction, teamEdits },
+      attention: { toPack: toPackRead, lowStock, channel, stock, photos, teamEdits },
       hasPaidOrder: paidOrders.ok ? { ok: true, value: paidOrders.value.value > 0 } : paidOrders,
       widgets: {
         ...(parcels.ok ? { [WIDGET.PARCELS]: parcels.value } : {}),

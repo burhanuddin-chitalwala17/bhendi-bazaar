@@ -1,6 +1,7 @@
 import { prisma } from "@server/shared/prisma";
 import { AVAILABLE } from "@server/catalog/product.visibility";
 import { LIVE_PARCEL_WHERE, PAID_ORDER_WHERE as PAID_ORDER, PARCEL_WITH_SHOP } from "@server/checkout/order.types";
+import { PlatformRole } from "@prisma/client";
 
 /**
  * The dashboard widgets' reads. Analytics is the documented read-only exception to
@@ -52,6 +53,6 @@ export const widgetsRepository = {
   },
 
   customerCount() {
-    return prisma.user.count({ where: { platformRole: "USER" } });
+    return prisma.user.count({ where: { platformRole: PlatformRole.USER } });
   },
 };

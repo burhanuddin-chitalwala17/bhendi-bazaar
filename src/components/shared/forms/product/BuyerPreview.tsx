@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import NextImage from "next/image";
-import { Film } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { rupeesToPaise } from "@/lib/format";
@@ -50,7 +50,7 @@ export function BuyerPreview({
           ))}
           {hasVideo && (
             <span className="flex size-14 shrink-0 items-center justify-center rounded-field bg-muted">
-              <Film className="size-5 text-muted-foreground" aria-label="Video" />
+              <Icon name="video" size="md" tone="muted" label="Video" />
             </span>
           )}
         </div>

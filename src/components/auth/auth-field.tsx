@@ -18,7 +18,7 @@ export function AuthField({
     <div className="space-y-1">
       <label
         htmlFor={id}
-        className="text-xs font-medium uppercase tracking-eyebrow"
+        className="text-caption font-medium uppercase tracking-eyebrow"
       >
         {label}
       </label>
@@ -41,4 +41,4 @@ export function OrDivider() {
 }
 
 export const PRIMARY_BUTTON =
-  "mt-2 h-10 w-full rounded-full text-xs font-semibold uppercase tracking-eyebrow";
+  "mt-2 h-10 w-full rounded-full text-caption font-semibold uppercase tracking-eyebrow";

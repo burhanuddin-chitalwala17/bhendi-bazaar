@@ -1,13 +1,11 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonHeader, SkeletonRows } from "@/components/shared/states/skeletons";
 
-/** Rows in their final places (ux.md "admin not-packed flag", Loading). */
-export default function PickupsLoading() {
+/** Rows in their final places (ux.md admin pickups and refunds, Loading). */
+export default function Loading() {
   return (
-    <div className="space-y-3">
-      <Skeleton className="h-8 w-32" />
-      {Array.from({ length: 3 }, (_, i) => (
-        <Skeleton key={i} className="h-24 rounded-card" />
-      ))}
+    <div className="space-y-6" role="status" aria-label="Loading">
+      <SkeletonHeader />
+      <SkeletonRows count={4} thumbnail={false} />
     </div>
   );
 }

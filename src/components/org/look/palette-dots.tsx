@@ -27,7 +27,7 @@ export function PaletteDots({
             key={palette.key}
             type="button"
             variant="ghost"
-            size="icon"
+            shape="icon"
             role="radio"
             aria-checked={chosen}
             aria-label={palette.label}

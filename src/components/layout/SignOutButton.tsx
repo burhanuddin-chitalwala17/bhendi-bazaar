@@ -2,11 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 
 // The one interactive leaf of the portal header — everything above it stays server-rendered.
-export function SignOutButton() {
+export function SignOutButton({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -20,10 +21,11 @@ export function SignOutButton() {
       variant="ghost"
       type="button"
       onClick={handleSignOut}
-      className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+      aria-label={compact ? "Sign out" : undefined}
+      className={cn("text-muted-foreground hover:text-foreground", compact && "max-md:size-10 max-md:p-0")}
     >
-      <LogOut className="h-4 w-4" />
-      Sign out
+      <Icon name="sign-out" size="sm" />
+      <span className={cn(compact && "max-md:sr-only")}>Sign out</span>
     </Button>
   );
 }

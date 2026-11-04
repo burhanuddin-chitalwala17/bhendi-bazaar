@@ -1,10 +1,7 @@
-// NEW: components/layout/navbar/NavbarSearch.tsx
-
 "use client";
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -13,6 +10,8 @@ import { useClickOutside } from "@/hooks/useClickOutside";
 import { useSearchSuggestions } from "@/hooks/useSearchSuggestions";
 import { useDebounce } from "@/hooks/core/useDebounce";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { Spinner } from "@/components/ui/spinner";
 
 export function NavbarSearch() {
   const router = useRouter();
@@ -37,14 +36,17 @@ export function NavbarSearch() {
   }
 
   return (
-    <div className="relative flex-1" ref={searchRef}>
+    <div className="relative min-w-0 flex-1 lg:max-w-sm lg:ml-auto" ref={searchRef}>
       <form
         onSubmit={handleSearchSubmit}
-        className="flex items-center gap-2 rounded-full border border-border/70 bg-card/80 px-3 py-1.5"
+        role="search"
+        className="flex h-10 items-center gap-2 rounded-full border border-border bg-card px-3"
       >
-        <Search className="h-4 w-4 text-muted-foreground" />
+        <Icon name="search" size="sm" tone="muted" />
         <Input
-          placeholder="Search the bazaar…"
+          type="search"
+          aria-label="Search the bazaar"
+          placeholder="Search ridas, abayas, shops"
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -57,14 +59,17 @@ export function NavbarSearch() {
 
       {/* Suggestions Dropdown */}
       {showSuggestions && search.length >= 2 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border/70 rounded-xl shadow-overlay z-50 max-h-96 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border/70 rounded-card shadow-overlay z-50 max-h-96 overflow-y-auto">
           {loading ? (
-            <div className="p-4 text-sm text-muted-foreground">Loading...</div>
+            <div className="flex items-center gap-2 p-4 text-small text-muted-foreground">
+              <Spinner size="sm" />
+              Searching
+            </div>
           ) : (
             <>
               {suggestions.products.length > 0 && (
                 <div className="p-2">
-                  <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <p className="px-3 py-2 text-label uppercase text-muted-foreground">
                     Products
                   </p>
                   {suggestions.products.map((product) => (
@@ -84,10 +89,10 @@ export function NavbarSearch() {
                         width={40}
                         height={53}
                         sizes="40px"
-                        className="w-10 aspect-[3/4] object-cover rounded"
+                        className="aspect-3/4 w-10 rounded object-cover"
                       />
                       <div>
-                        <p className="text-sm font-medium">{product.name}</p>
+                        <p className="text-small font-medium">{product.name}</p>
                         <PriceDisplay
                           price={product.price}
                           salePrice={product.salePrice}
@@ -102,7 +107,7 @@ export function NavbarSearch() {
 
               {suggestions.categories.length > 0 && (
                 <div className="p-2 border-t border-border/70">
-                  <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <p className="px-3 py-2 text-label uppercase text-muted-foreground">
                     Categories
                   </p>
                   {suggestions.categories.map((category) => (
@@ -114,7 +119,7 @@ export function NavbarSearch() {
                         setShowSuggestions(false);
                         setSearch("");
                       }}
-                      className="block px-3 py-2 hover:bg-muted rounded-lg text-sm"
+                      className="block px-3 py-2 hover:bg-muted rounded-lg text-small"
                     >
                       {category.name}
                     </Link>

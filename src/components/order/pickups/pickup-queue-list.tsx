@@ -1,109 +1,108 @@
+"use client";
+
 import Link from "next/link";
 
-import type { PickupQueueRow, PickupQueueTab } from "@server/checkout/pickup-queue";
-import { PICKUP_QUEUE_TAB } from "@server/checkout/pickup-queue";
+import type { PickupQueueRow, PickupQueueTab } from "@server/checkout/pickup-queue.types";
+import { PICKUP_QUEUE_TAB } from "@server/checkout/pickup-queue.types";
 import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
 import { formatPhone } from "@server/shared/phone";
-import { cn } from "@/lib/utils";
+import { ResourceList } from "@/components/shared/resource-list";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { PickupActions } from "./pickup-actions";
-import { QUEUE_COPY, READY_AMBER_HOURS, parcelOf, pickupDue, readyFor, waitingFor } from "./pickups-copy";
+import { QUEUE_COPY, READY_AMBER_HOURS, parcelOf, pickupDue, pickupsHref, readyFor, waitingFor } from "./pickups-copy";
 
-/** ux.md "admin pickups", Ready and Booked: cards on phone and tablet, a table at `lg:`. Oldest first. */
+/** ux.md "admin pickups", Ready and Booked: rows on phone and tablet, a table at `lg:`. Oldest first. */
 export function PickupQueueList({
   rows,
   tab,
-  filterHref,
+  filter,
 }: {
   rows: PickupQueueRow[];
   tab: PickupQueueTab;
-  /** The same tab narrowed to one shop or city (ux.md "Many items"). */
-  filterHref: (filter: { shop?: string; city?: string }) => string;
+  /** The filters in force; a shop or city link narrows the same tab (ux.md "Many items"). */
+  filter: { shop?: string; city?: string };
 }) {
   const status = tab === PICKUP_QUEUE_TAB.READY ? SHIPMENT_STATUS.READY_FOR_PICKUP : SHIPMENT_STATUS.PICKUP_BOOKED;
-  const view = rows.map((row) => {
-    const of = parcelOf(row.parcelCode, row.parcelsInOrder);
-    const parcel = (
-      <>
-        <Link href={`/admin/orders/${row.orderId}`} prefetch={false} className="font-medium text-primary hover:underline">
-          {row.parcelCode}
-        </Link>
-        {of && <span className="text-muted-foreground"> · {of}</span>}
-      </>
-    );
-    const shop = (
-      <span className="break-words">
-        <Link href={filterHref({ shop: row.orgId })} prefetch={false} className="hover:underline">
-          {row.shopName}
-        </Link>
-        {" · "}
-        <Link href={filterHref({ city: row.city })} prefetch={false} className="hover:underline">
-          {row.city}
-        </Link>{" "}
-        <strong>{row.pincode}</strong>
-        {row.shopPhone ? ` · ${formatPhone(row.shopPhone)}` : ""}
-      </span>
-    );
-    const amber = row.readyHours !== null && row.readyHours >= READY_AMBER_HOURS;
-    const flag =
-      tab === PICKUP_QUEUE_TAB.READY ? (
-        amber ? (
-          <span className="font-medium text-warning">
-            {waitingFor(row.readyHours ?? 0)} · {readyFor(row.readyHours ?? 0)}
-          </span>
-        ) : null
-      ) : row.daysOverdue > 0 ? (
-        <span className="font-medium text-destructive">
-          {pickupDue(row.daysOverdue)} · {QUEUE_COPY.noCourierUpdate}
-        </span>
-      ) : null;
-    const booking =
-      tab === PICKUP_QUEUE_TAB.BOOKED ? (
-        <span className="break-words text-muted-foreground">
-          {row.pickupDay} · {row.courierName} · {row.trackingNumber}
-        </span>
-      ) : null;
-    const actions = <PickupActions parcel={{ ...row, status, pickupDay: row.pickupDay }} />;
-    return { row, parcel, shop, flag, booking, actions };
-  });
+  const narrow = (f: { shop?: string; city?: string }) => pickupsHref(tab, { ...filter, ...f });
 
   return (
-    <>
-      <ul className="grid grid-cols-1 gap-3 lg:hidden">
-        {view.map(({ row, parcel, shop, flag, booking, actions }) => (
-          <li key={row.shipmentId} className={cn("flex flex-col gap-2 rounded-card border bg-card p-4", flag && "border-warning")}>
-            <div className="min-w-0 space-y-1 text-sm">
-              <p>{parcel}</p>
-              <p>{shop}</p>
-              {booking && <p>{booking}</p>}
-              {flag && <p>{flag}</p>}
-            </div>
-            {actions}
-          </li>
-        ))}
-      </ul>
-      <table className="hidden w-full text-sm lg:table">
-        <thead className="text-left text-muted-foreground">
-          <tr>
-            <th className="py-2">Parcel</th>
-            <th className="py-2">Pickup address</th>
-            <th className="py-2">{tab === PICKUP_QUEUE_TAB.BOOKED ? "Booking" : "Waiting"}</th>
-            <th className="py-2" />
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {view.map(({ row, parcel, shop, flag, booking, actions }) => (
-            <tr key={row.shipmentId}>
-              <td className="py-2">{parcel}</td>
-              <td className="max-w-xs py-2">{shop}</td>
-              <td className="py-2">
-                {booking}
-                {flag && <div>{flag}</div>}
-              </td>
-              <td className="py-2 text-right">{actions}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
+    <ResourceList
+      label={tab === PICKUP_QUEUE_TAB.READY ? "Parcels ready to book" : "Booked pickups"}
+      rows={rows}
+      rowKey={(row) => row.shipmentId}
+      tableFrom="lg"
+      empty={{ title: "Nothing waiting", description: QUEUE_COPY.empty }}
+      columns={[
+        {
+          key: "parcel",
+          label: "Parcel",
+          phone: "title",
+          cell: (row) => {
+            const of = parcelOf(row.parcelCode, row.parcelsInOrder);
+            return (
+              <>
+                <Link href={`/admin/orders/${row.orderId}`} prefetch={false} className="font-mono text-primary hover:underline">
+                  {row.parcelCode}
+                </Link>
+                {of && <span className="font-normal text-muted-foreground"> · {of}</span>}
+              </>
+            );
+          },
+        },
+        {
+          key: "address",
+          label: "Pickup address",
+          phone: "meta",
+          cell: (row) => (
+            <span className="whitespace-normal">
+              <Link href={narrow({ shop: row.orgId })} prefetch={false} className="hover:underline">
+                {row.shopName}
+              </Link>
+              {" · "}
+              <Link href={narrow({ city: row.city })} prefetch={false} className="hover:underline">
+                {row.city}
+              </Link>{" "}
+              <span className="font-medium">{row.pincode}</span>
+              {row.shopPhone ? ` · ${formatPhone(row.shopPhone)}` : ""}
+            </span>
+          ),
+        },
+        {
+          key: "when",
+          label: tab === PICKUP_QUEUE_TAB.BOOKED ? "Booking" : "Waiting",
+          cell: (row) => {
+            if (tab === PICKUP_QUEUE_TAB.READY) {
+              const hours = row.readyHours ?? 0;
+              return row.readyHours !== null && hours >= READY_AMBER_HOURS ? (
+                <StatusBadge tone="warning">
+                  {waitingFor(hours)} · {readyFor(hours)}
+                </StatusBadge>
+              ) : (
+                <span className="text-muted-foreground">{waitingFor(hours)}</span>
+              );
+            }
+            return (
+              <span className="flex flex-col gap-1 whitespace-normal">
+                <span className="text-muted-foreground">
+                  {row.pickupDay} · {row.courierName} · <span className="font-mono">{row.trackingNumber}</span>
+                </span>
+                {row.daysOverdue > 0 && (
+                  <StatusBadge tone="destructive">
+                    {pickupDue(row.daysOverdue)} · {QUEUE_COPY.noCourierUpdate}
+                  </StatusBadge>
+                )}
+              </span>
+            );
+          },
+        },
+        {
+          key: "actions",
+          label: "Action",
+          align: "end",
+          phone: "trailing",
+          cell: (row) => <PickupActions parcel={{ ...row, status, pickupDay: row.pickupDay }} />,
+        },
+      ]}
+    />
   );
 }

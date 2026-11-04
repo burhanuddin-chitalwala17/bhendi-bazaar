@@ -57,7 +57,7 @@ export function ListingRow({ orgId, shopName, channel, label, listing, href, ind
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground md:w-40 md:flex-col md:items-end md:gap-1 lg:w-48">
             {status && (
-              <StatusBadge status={listing.status === LISTING_STATUS.LIVE ? "connected" : "muted"}>{status}</StatusBadge>
+              <StatusBadge tone={listing.status === LISTING_STATUS.LIVE ? "success" : "neutral"}>{status}</StatusBadge>
             )}
             {money && <span className="tabular-nums">{money}</span>}
           </div>

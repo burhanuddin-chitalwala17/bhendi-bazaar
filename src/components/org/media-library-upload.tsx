@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Upload } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { buildImagePath } from "@server/catalog/image-paths";
 import { isVideoContentType } from "@server/catalog/video";
@@ -103,8 +103,8 @@ export function MediaLibraryUpload({ orgId, orgCode }: MediaLibraryUploadProps) 
 
   return (
     <>
-      <Button type="button" onClick={() => input.current?.click()} disabled={progress !== null} size="sm">
-        {progress ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Upload className="mr-2 size-4" />}
+      <Button type="button" onClick={() => input.current?.click()} pending={progress !== null} size="sm">
+        {!progress && <Icon name="upload" className="mr-2" />}
         {progress ? (progress.total > 1 ? `Uploading ${progress.done}/${progress.total}…` : "Uploading…") : "Upload photos or a video"}
       </Button>
       <input ref={input} type="file" accept="image/*,video/*" multiple onChange={handleFiles} className="hidden" />

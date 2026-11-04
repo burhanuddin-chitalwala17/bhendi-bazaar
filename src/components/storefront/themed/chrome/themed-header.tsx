@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Input } from "@/components/ui/input";
 import { ThemePhoto } from "../theme-photo";
@@ -46,7 +46,7 @@ export function ThemedHeader({
 
         <form action={shopHref(handle)} role="search" className="ml-auto flex min-w-0 flex-1 justify-end">
           <label className="flex w-full max-w-xs items-center gap-2 rounded-field border border-border bg-card px-3 py-1.5 text-muted-foreground">
-            <Search className="size-4 shrink-0" aria-hidden />
+            <Icon name="search" size="sm" />
             <span className="sr-only">Search {name}</span>
             <Input
               type="search"

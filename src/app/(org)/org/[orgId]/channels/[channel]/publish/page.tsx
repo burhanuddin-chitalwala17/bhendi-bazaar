@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 
 import { requireOrgMember } from "@/lib/org-auth";
 import { platformListingDAL } from "@/data-access-layer/platform-listing.dal";
-import { PageShell } from "@/components/shared/page-shell";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageShell, PageHeader } from "@/components/shared/page-shell";
 import { ReviewPublish } from "@/components/channel/review-publish";
 import { PUBLISH } from "@/components/channel/platform-listing-copy";
 
@@ -26,7 +25,7 @@ export default async function ReviewPublishPage({
   if (!review) notFound();
   return (
     <PageShell width="narrow">
-      <SectionHeader as="h1" help="channels" title={PUBLISH.reviewTitle(review.label)} description={PUBLISH.nothingSent} />
+      <PageHeader help="channels" title={PUBLISH.reviewTitle(review.label)} description={PUBLISH.nothingSent} />
       <ReviewPublish orgId={scope.orgId} review={review} single={listing ?? null} />
     </PageShell>
   );

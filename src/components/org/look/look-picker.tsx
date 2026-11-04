@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Undo2 } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import { ShareShopSheet } from "@/components/org/share/share-shop-sheet";
@@ -101,7 +101,7 @@ export function LookPicker({ look, share }: { look: StorefrontLookState; share: 
           )}
           {previous && (
             <Button type="button" variant="outline" className="min-h-11" onClick={() => setSwitchingBack(true)}>
-              <Undo2 aria-hidden />
+              <Icon name="undo" />
               {LOOK_COPY.switchBack(lookName(previous.theme))}
             </Button>
           )}

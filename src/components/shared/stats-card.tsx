@@ -1,51 +1,29 @@
-/**
- * Stats Card Component
- * Reusable card for displaying dashboard statistics
- */
-
-import { LucideIcon } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface StatsCardProps {
+  /** What the number counts: "Revenue today". */
   title: string;
   value: string | number;
-  icon: LucideIcon;
   description?: string;
-  trend?: {
-    value: number;
-    isPositive: boolean;
-  };
+  /** Change against the previous period, in percent. */
+  trend?: { value: number; isPositive: boolean };
 }
 
-export function StatsCard({
-  title,
-  value,
-  icon: Icon,
-  description,
-  trend,
-}: StatsCardProps) {
+/** The number first, then what it is. No decorative icon: the figure is the thing to read. */
+export function StatsCard({ title, value, description, trend }: StatsCardProps) {
   return (
-    <div className="bg-card rounded-lg border border-border p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold text-foreground mt-2">{value}</p>
-          {description && (
-            <p className="text-sm text-muted-foreground mt-1">{description}</p>
-          )}
-          {trend && (
-            <p
-              className={`text-sm mt-2 ${
-                trend.isPositive ? "text-success" : "text-destructive"
-              }`}
-            >
-              {trend.isPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
-            </p>
-          )}
-        </div>
-        <div className="p-3 bg-primary/10 rounded-lg">
-          <Icon className="w-6 h-6 text-primary" />
-        </div>
-      </div>
-    </div>
+    <Card className="gap-1 p-4">
+      <p className="font-heading text-headline font-semibold tabular-nums text-foreground">{value}</p>
+      <p className="text-small text-muted-foreground">{title}</p>
+      {description && <p className="text-caption text-muted-foreground">{description}</p>}
+      {trend && (
+        <p className={cn("text-caption font-medium tabular-nums", trend.isPositive ? "text-success" : "text-destructive")}>
+          <span className="sr-only">{trend.isPositive ? "Up" : "Down"} </span>
+          <span aria-hidden>{trend.isPositive ? "↑" : "↓"} </span>
+          {Math.abs(trend.value)}%
+        </p>
+      )}
+    </Card>
   );
 }

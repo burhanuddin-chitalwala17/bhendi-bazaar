@@ -3,16 +3,17 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Icon, type IconName } from "@/components/ui/icon";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 export interface PortalNavItem {
   title: string;
   /** Absent for an item that runs `onSelect` instead of opening a page. */
   href?: string;
-  icon: LucideIcon;
+  /** A name from the icon seam. A component is accepted only until the admin sidebar migrates (ADR-0066 ratchet). */
+  icon: IconName | React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   /** Match this href exactly (dashboards), rather than as a prefix (sections). */
   exact?: boolean;
   /** One line under the title (own-store onboarding R5). */
@@ -81,13 +82,13 @@ export function PortalSidebar({
       {!bottom && (
         <Button
           variant="outline"
-          size="icon"
+          shape="icon"
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Open navigation"
           className="fixed left-3 top-2.5 z-40 flex h-9 w-9 items-center justify-center border-border bg-card text-foreground md:hidden"
         >
-          <Menu className="h-5 w-5" />
+          <Icon name="menu" size="md" />
         </Button>
       )}
 
@@ -113,13 +114,13 @@ export function PortalSidebar({
       >
         <Button
           variant="ghost"
-          size="icon"
+          shape="icon"
           type="button"
           onClick={() => setOpen(false)}
           aria-label="Close navigation"
           className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground md:hidden"
         >
-          <X className="h-5 w-5" />
+          <Icon name="close" size="md" />
         </Button>
 
         <div className={cn(bottom && "md:hidden lg:block")}>{header}</div>
@@ -129,7 +130,7 @@ export function PortalSidebar({
           {sections.map((section, index) => (
             <div key={section.label ?? index} className="space-y-1">
               {section.label && (
-                <p className="px-4 text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground md:sr-only lg:not-sr-only">
+                <p className="px-4 text-label uppercase text-muted-foreground md:sr-only lg:not-sr-only">
                   {section.label}
                 </p>
               )}
@@ -150,9 +151,10 @@ export function PortalSidebar({
           <Link
             prefetch={false}
             href="/"
-            className="flex items-center justify-center gap-2 px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className="flex min-h-11 items-center justify-center gap-3 px-4 py-2 text-small text-muted-foreground transition-colors hover:text-foreground"
           >
-            ← Back to Store
+            <BrandLogo size="sm" />
+            Back to the store
           </Link>
         </div>
       </aside>
@@ -191,17 +193,17 @@ function PortalNavLink({
   active: boolean;
   onNavigate: () => void;
 }) {
-  const { title, href, icon: Icon, purpose, onSelect, count } = item;
+  const { title, href, icon, purpose, onSelect, count } = item;
   const tone = active ? "bg-primary/10 font-medium text-primary" : "text-foreground/80 hover:bg-muted/60";
   const body = (
     <>
-      <Icon className="h-5 w-5 shrink-0" aria-hidden />
+      <NavIcon icon={icon} />
       <span className={cn("min-w-0 text-left", rail && "md:sr-only lg:not-sr-only")}>
         <span className="block">{title}</span>
-        {purpose && <span className="block text-xs font-normal text-muted-foreground">{purpose}</span>}
+        {purpose && <span className="block text-caption font-normal text-muted-foreground">{purpose}</span>}
       </span>
       {count ? (
-        <span className={cn("ml-auto rounded-full bg-primary/10 px-2 text-xs font-medium tabular-nums text-primary", rail && "md:hidden lg:inline")}>
+        <span className={cn("ml-auto rounded-full bg-primary/10 px-2 text-caption font-medium tabular-nums text-primary", rail && "md:hidden lg:inline")}>
           {count}
         </span>
       ) : null}
@@ -244,4 +246,10 @@ function PortalNavLink({
       {body}
     </Link>
   );
+}
+
+function NavIcon({ icon }: { icon: PortalNavItem["icon"] }) {
+  if (typeof icon === "string") return <Icon name={icon} size="md" />;
+  const Legacy = icon;
+  return <Legacy className="h-5 w-5 shrink-0" aria-hidden />;
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ResponsivePicker } from "@/components/shared/overlays/responsive-picker";
@@ -10,6 +9,7 @@ import {
   filterCountries,
   type CountryCode,
 } from "@server/shared/countries";
+import { Icon } from "@/components/ui/icon";
 
 interface CountryPickerProps {
   value: string | null | undefined;
@@ -63,10 +63,7 @@ export function CountryPicker({
           <span className={value ? "" : "text-muted-foreground"}>
             {value ? countryName(value) : blankLabel}
           </span>
-          <ChevronsUpDown
-            className="size-4 shrink-0 text-muted-foreground"
-            aria-hidden
-          />
+          <Icon name="choose" size="sm" className="shrink-0 text-muted-foreground" />
         </Button>
       }
     >
@@ -97,7 +94,7 @@ export function CountryPicker({
                 onClick={() => pick(null)}
               >
                 <span className="text-muted-foreground">{blankLabel}</span>
-                {!value && <Check className="size-4" aria-hidden />}
+                {!value && <Icon name="done" size="sm" />}
               </Button>
             </li>
           )}
@@ -115,7 +112,7 @@ export function CountryPicker({
               >
                 <span>{option.name}</span>
                 {option.code === value && (
-                  <Check className="size-4" aria-hidden />
+                  <Icon name="done" size="sm" />
                 )}
               </Button>
             </li>

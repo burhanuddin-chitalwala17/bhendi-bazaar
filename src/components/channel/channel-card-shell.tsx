@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 
-import { StatusBadge } from "@/components/shared/badges/StatusBadge";
+import { StatusBadge, type StatusTone } from "@/components/shared/badges/StatusBadge";
 
 type ChipTone = "connected" | "attention" | "problem" | "muted";
+const CHIP_TONE: Record<ChipTone, StatusTone> = { connected: "success", attention: "warning", problem: "destructive", muted: "neutral" };
 
 interface ChannelCardShellProps {
   label: string;
@@ -26,7 +27,7 @@ export function ChannelCardShell({ label, chip, headerAction, children }: Channe
           </span>
           <h2 className="truncate text-base font-semibold">{label}</h2>
         </div>
-        {chip ? <StatusBadge status={chip.tone}>{chip.text}</StatusBadge> : headerAction}
+        {chip ? <StatusBadge tone={CHIP_TONE[chip.tone]}>{chip.text}</StatusBadge> : headerAction}
       </div>
       {children}
     </article>

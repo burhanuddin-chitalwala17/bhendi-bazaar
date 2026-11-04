@@ -37,6 +37,20 @@ export class AdminLogRepository {
     });
   }
 
+  /** Many entries in one statement: a bulk action records each product it changed. */
+  async createLogs(entries: readonly CreateLogInput[], db: AuditDb = prisma): Promise<void> {
+    if (entries.length === 0) return;
+    await db.adminLog.createMany({
+      data: entries.map((data) => ({
+        adminId: data.adminId,
+        action: data.action,
+        resource: data.resource,
+        resourceId: data.resourceId,
+        metadata: (data.metadata ?? {}) as Prisma.InputJsonValue,
+      })),
+    });
+  }
+
   /**
    * One resource's entries of the given actions, newest first, without who wrote them: for a reader
    * the acting admin is never shown to (product-form D13).

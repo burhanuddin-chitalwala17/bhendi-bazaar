@@ -10,8 +10,8 @@ export function SimilarProducts({ products }: SimilarProductsProps) {
   if (!products.length) return null;
 
   return (
-    <section className="space-y-3">
-      <SectionHeader overline="Pieces from nearby lanes" title="Similar" />
+    <section className="space-y-4">
+      <SectionHeader title="You may also like" description="Pieces from nearby lanes" />
       <ProductGrid products={products} />
     </section>
   );

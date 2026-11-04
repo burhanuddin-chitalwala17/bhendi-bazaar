@@ -158,8 +158,17 @@ describe("the source says so too", () => {
   });
 
   it.each(PUBLIC_READS)("%s spreads FROM_ACTIVE_ORG in the file", (name) => {
-    const block = source.split(/\n  (?:async |private static )/).find((b) => b.startsWith(name));
+    // A listing's page and its count share one where-builder, so the clause is checked there.
+    const at = name === "getProducts" ? "listingWhere" : name;
+    const block = source.split(/\n  (?:async |private static |private async )/).find((b) => b.startsWith(at));
     expect(block, `${name} is no longer in the repository`).toBeDefined();
     expect(block).toContain("FROM_ACTIVE_ORG");
+  });
+
+  it("a listing's page and its count both build their where from listingWhere", () => {
+    for (const name of ["getProducts", "countProducts"]) {
+      const block = source.split(/\n  (?:async |private static |private async )/).find((b) => b.startsWith(name));
+      expect(block, `${name} is no longer in the repository`).toContain("this.listingWhere(filter)");
+    }
   });
 });

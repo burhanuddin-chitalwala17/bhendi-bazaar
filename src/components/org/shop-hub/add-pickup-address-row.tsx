@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronRight, MapPin } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import { PickupAddressSheet } from "@/components/org/pickup-address-sheet";
@@ -20,13 +20,13 @@ export function AddPickupAddressRow({ orgId }: { orgId: string }) {
           variant="ghost"
           className="flex h-auto min-h-14 w-full items-center justify-start gap-3 whitespace-normal rounded-card border border-border bg-card p-4 text-left font-normal hover:bg-muted/60"
         >
-          <MapPin className="size-5 shrink-0 text-primary" aria-hidden />
+          <Icon name="location" size="md" tone="primary" />
           <span className="min-w-0 flex-1">
             <span className="block font-medium text-foreground">{SHOP_HUB_COPY.addresses}</span>
             <span className="block text-sm text-muted-foreground">{SHOP_HUB_COPY.addressesNone}</span>
           </span>
           <span className="shrink-0 text-sm font-medium text-primary">{SHOP_HUB_COPY.add}</span>
-          <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          <Icon name="next" tone="muted" />
         </Button>
       }
     />

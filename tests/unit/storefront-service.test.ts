@@ -284,14 +284,11 @@ describe("the payload the editor actually sends", () => {
       "@/lib/validation/schemas/org-banner.schema"
     );
     expect(
-      orgBannerSchema.safeParse({ imageUrl: "https://cdn.test/eid.webp" })
+      orgBannerSchema.safeParse({ image: { desktop: { url: "https://cdn.test/eid.webp", fit: "crop" } } })
         .success,
     ).toBe(true);
 
-    await storefrontService.addBanner("org-1", {
-      title: "   ",
-      imageUrl: "https://cdn.test/eid.webp",
-    });
+    await storefrontService.addBanner("org-1", { title: "   " });
     expect(bannerCreate).toHaveBeenCalledWith(
       "org-1",
       expect.objectContaining({ title: null }),

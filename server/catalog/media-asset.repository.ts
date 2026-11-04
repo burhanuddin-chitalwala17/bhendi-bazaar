@@ -23,6 +23,9 @@ const USE_RELATIONS = [
   "storefrontSlots",
   "orgBanners",
   "banners",
+  "orgBannerPhones",
+  "storefrontSlotPhones",
+  "bannerPhones",
   "postersFor",
 ] as const;
 
@@ -231,6 +234,18 @@ export class MediaAssetRepository {
     });
   }
 
+  /**
+   * A ready picture in this owner's library by the URL a slot field carries (image-slots trd D7). A
+   * null org is the platform's own: a shop's picture never resolves for a home banner, nor another
+   * shop's for this one.
+   */
+  async findReadyImageByRef(orgId: string | null, ref: string, db: MediaDb = prisma) {
+    return await db.mediaAsset.findFirst({
+      where: { orgId, ref, kind: MediaAssetKind.IMAGE, state: MediaAssetState.READY },
+      select: { id: true, ref: true, width: true, height: true },
+    });
+  }
+
   /** Confirm only moves a PENDING row; a second confirm is a no-op reported as `false`. */
   async confirm(id: string, dims: ConfirmedDimensions, db: MediaDb = prisma) {
     const result = await db.mediaAsset.updateMany({
@@ -420,8 +435,14 @@ export class MediaAssetRepository {
         where: { OR: [{ logoUrl: inRefs }, { heroUrl: inRefs }] },
         select: { logoUrl: true, heroUrl: true },
       }),
-      prisma.orgBanner.findMany({ where: { imageUrl: inRefs }, select: { imageUrl: true } }),
-      prisma.banner.findMany({ where: { imageUrl: inRefs }, select: { imageUrl: true } }),
+      prisma.orgBanner.findMany({
+        where: { OR: [{ imageUrl: inRefs }, { phoneImageUrl: inRefs }] },
+        select: { imageUrl: true, phoneImageUrl: true },
+      }),
+      prisma.banner.findMany({
+        where: { OR: [{ imageUrl: inRefs }, { phoneImageUrl: inRefs }] },
+        select: { imageUrl: true, phoneImageUrl: true },
+      }),
     ]);
     const used = new Set<string>();
     media.forEach((r) => used.add(r.ref));
@@ -430,8 +451,10 @@ export class MediaAssetRepository {
       if (r.logoUrl) used.add(r.logoUrl);
       if (r.heroUrl) used.add(r.heroUrl);
     });
-    orgBanners.forEach((r) => r.imageUrl && used.add(r.imageUrl));
-    banners.forEach((r) => r.imageUrl && used.add(r.imageUrl));
+    for (const r of [...orgBanners, ...banners]) {
+      if (r.imageUrl) used.add(r.imageUrl);
+      if (r.phoneImageUrl) used.add(r.phoneImageUrl);
+    }
     return used;
   }
 
@@ -478,6 +501,9 @@ export class MediaAssetRepository {
         storefrontSlots: { select: { orgId: true, kind: true, category: { select: { name: true } } } },
         orgBanners: { select: { id: true, title: true } },
         banners: { select: { id: true, title: true } },
+        orgBannerPhones: { select: { id: true, title: true } },
+        storefrontSlotPhones: { select: { orgId: true, category: { select: { name: true } } } },
+        bannerPhones: { select: { id: true, title: true } },
         derivatives: { select: { id: true, source: true } },
         postersFor: { select: { id: true } },
       },
@@ -495,6 +521,13 @@ export class MediaAssetRepository {
       ),
       ...asset.orgBanners.map((row) => ({ kind: "storefront-banner" as const, id: row.id, label: row.title ?? "Storefront banner", slot: null })),
       ...asset.banners.map((row) => ({ kind: "home-banner" as const, id: row.id, label: row.title ?? "Home banner", slot: null })),
+      ...asset.orgBannerPhones.map((row) => ({ kind: "storefront-banner" as const, id: row.id, label: `${row.title ?? "Storefront banner"} (phone)`, slot: null })),
+      ...asset.storefrontSlotPhones.map((row) =>
+        row.category
+          ? { kind: "storefront-collection" as const, id: row.orgId, label: `${row.category.name} (phone)`, slot: null }
+          : { kind: "storefront-hero" as const, id: row.orgId, label: "Storefront hero (phone)", slot: null },
+      ),
+      ...asset.bannerPhones.map((row) => ({ kind: "home-banner" as const, id: row.id, label: `${row.title ?? "Home banner"} (phone)`, slot: null })),
       ...asset.postersFor.map((row) => ({ kind: "video-poster" as const, id: row.id, label: "Video poster", slot: null })),
     ];
   }

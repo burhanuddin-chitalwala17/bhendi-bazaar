@@ -429,7 +429,7 @@ export const channelListingRepository = {
     });
   },
 
-  /** Linked listings the marketplace last showed in stock and that we have sent to since: Home's out-of-stock check (inventory-sync Q27). */
+  /** Linked listings the marketplace last showed in stock and that we have sent to since: Home's out-of-stock check (inventory-sync Q28). */
   async sentAfterRead(connectionId: string) {
     const rows = await prisma.channelListing.findMany({
       where: { connectionId, productId: { not: null }, goneAt: null, quantity: { gt: 0 }, stockSentAt: { not: null } },

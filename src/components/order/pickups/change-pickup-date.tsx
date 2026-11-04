@@ -1,8 +1,8 @@
 "use client";
 
-import { CalendarClock, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { FormInput } from "@/components/shared/forms/FormField";
 import { FormDialog } from "@/components/shared/overlays/form-dialog";
 import { BOOKING_COPY, DATE_COPY } from "./pickups-copy";
@@ -25,8 +25,8 @@ export function ChangePickupDate({
 
   return (
     <>
-      <Button size="sm" variant="outline" className="min-h-10" onClick={() => setOpen(true)}>
-        <CalendarClock className="mr-2 size-4" />
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+        <Icon name="schedule" />
         {DATE_COPY.open}
       </Button>
       <FormDialog open={open} onOpenChange={setOpen} title={DATE_COPY.title} description={DATE_COPY.current(pickupDay)}>
@@ -40,19 +40,18 @@ export function ChangePickupDate({
             {...form.register("estimatedDelivery")}
           />
           {form.formError && (
-            <div role="alert" className="flex flex-wrap items-center justify-between gap-2 text-sm text-destructive">
+            <div role="alert" className="flex flex-wrap items-center justify-between gap-2 text-small text-destructive">
               <span className="break-words">{form.formError}</span>
-              <Button type="button" size="sm" variant="outline" className="min-h-10" onClick={refresh}>
+              <Button type="button" size="sm" variant="outline" onClick={refresh}>
                 {DATE_COPY.refresh}
               </Button>
             </div>
           )}
           <div className="flex flex-col gap-2 md:flex-row-reverse">
-            <Button type="submit" className="min-h-11" aria-busy={form.isSubmitting}>
-              {form.isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+            <Button type="submit" size="lg" pending={form.isSubmitting}>
               {form.isSubmitting ? DATE_COPY.saving : DATE_COPY.save}
             </Button>
-            <Button type="button" variant="outline" className="min-h-11" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" size="lg" onClick={() => setOpen(false)}>
               {DATE_COPY.keep}
             </Button>
           </div>

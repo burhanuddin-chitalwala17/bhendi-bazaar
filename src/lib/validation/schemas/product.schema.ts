@@ -3,6 +3,10 @@ import { optionalNumber, rupeeAmount } from "./common.schemas";
 import { ProductFlag } from "@server/catalog/product.flags";
 import { MEDIA_KINDS, MAX_MEDIA_PER_PRODUCT } from "@server/catalog/media";
 
+/** Units at one location: far past any shop, and inside the column's int range so a typo is a message, not a 500. */
+export const STOCK_MAX = 1_000_000;
+const STOCK_TOO_HIGH = "That is more stock than one location can hold — check the number";
+
 /** A picker's "none" option submits `""`; the column stores null. Without this, "On its own" failed `min(1)`. */
 const unselectedIsNull = <T extends z.ZodType>(inner: T) =>
   z.preprocess((value) => (typeof value === "string" && value.trim() === "" ? null : value), inner.nullable().optional());
@@ -110,7 +114,7 @@ const productFields = z
       .array(
         z.object({
           orgAddressId: z.string().min(1),
-          quantity: z.number().int("Stock must be a whole number").min(0, "Stock cannot be negative"),
+          quantity: z.number().int("Stock must be a whole number").min(0, "Stock cannot be negative").max(STOCK_MAX, STOCK_TOO_HIGH),
           // The client's claim of what it loaded, not a server-owned value: the save is a
           // compare-and-set against it, so a stale editor is refused rather than winning.
           seenQuantity: z.number().int().min(0).optional(),

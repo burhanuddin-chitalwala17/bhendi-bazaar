@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import type { ListingStatusDTO } from "@server/channels/platform-listing.types";
 
 import { ago } from "./listing-copy";
@@ -8,11 +8,11 @@ import { statusText, statusTone } from "./platform-listing-copy";
 const clock = () => Date.now();
 
 const TONE = {
-  success: "bg-success/10 text-success",
-  info: "bg-info/10 text-info",
-  muted: "bg-muted text-muted-foreground",
-  destructive: "bg-destructive/10 text-destructive",
-  warning: "bg-warning/10 text-warning",
+  success: "success",
+  info: "info",
+  muted: "neutral",
+  destructive: "destructive",
+  warning: "warning",
 } as const;
 
 /**
@@ -21,9 +21,8 @@ const TONE = {
  */
 export function ListingStatusLine({ status, label, className }: { status: ListingStatusDTO; label: string; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium", TONE[statusTone(status.status)], className)}>
-      <span className="size-1.5 shrink-0 rounded-full bg-current" aria-hidden />
+    <StatusBadge tone={TONE[statusTone(status.status)]} dot className={className}>
       {statusText(status, label, (iso) => ago(iso, clock()))}
-    </span>
+    </StatusBadge>
   );
 }

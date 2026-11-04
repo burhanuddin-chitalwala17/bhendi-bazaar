@@ -1,13 +1,12 @@
-// components/shared/SectionHeader.tsx
+import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { PageHelp } from "@/components/layout/page-help";
 import type { PortalNavKey } from "@/components/layout/portal-nav";
 
 interface SectionHeaderProps {
-  overline?: string; // "BHENDI BAZAAR"
+  overline?: string;
   title: string;
   description?: string;
   action?: {
@@ -15,7 +14,8 @@ interface SectionHeaderProps {
     href?: string;
     onClick?: () => void;
   };
-  as?: "h1" | "h2" | "h3";
+  /** A section title only. The page's h1 is `PageHeader`, so a page has exactly one. */
+  as?: "h2" | "h3";
   /** A portal navigation key: renders "?" beside the title (onboarding R5). */
   help?: PortalNavKey;
   className?: string;
@@ -32,40 +32,27 @@ export function SectionHeader({
 }: SectionHeaderProps) {
   return (
     <header className={cn("space-y-1", className)}>
-      {overline && (
-        <p className="text-4xs font-semibold uppercase tracking-eyebrow-wide text-muted-foreground/80 sm:text-2xs sm:tracking-display">
-          {overline}
-        </p>
-      )}
-      <div className="flex items-baseline justify-between gap-3 sm:gap-4">
-        <div className="space-y-0.5 sm:space-y-1">
+      {overline && <p className="text-label uppercase text-muted-foreground">{overline}</p>}
+      <div className="flex items-baseline justify-between gap-3 md:gap-4">
+        <div className="space-y-0.5">
           <div className="flex items-center gap-1">
-            <Heading className="font-heading text-base font-semibold tracking-tight sm:text-2xl">
-              {title}
-            </Heading>
+            <Heading className="font-heading text-title font-semibold">{title}</Heading>
             {help && <PageHelp help={help} />}
           </div>
-          {description && (
-            <p className="text-2xs text-muted-foreground sm:text-sm">
-              {description}
-            </p>
-          )}
+          {description && <p className="text-small text-muted-foreground">{description}</p>}
         </div>
-        {action && (
-          <>
-            {action.href ? (
-              <Button asChild variant="outline" size="sm">
-                <Link href={action.href} prefetch={false}>
-                  {action.label}
-                </Link>
-              </Button>
-            ) : (
-              <Button onClick={action.onClick} variant="outline" size="sm">
+        {action &&
+          (action.href ? (
+            <Button asChild variant="outline" size="sm">
+              <Link href={action.href} prefetch={false}>
                 {action.label}
-              </Button>
-            )}
-          </>
-        )}
+              </Link>
+            </Button>
+          ) : (
+            <Button onClick={action.onClick} variant="outline" size="sm">
+              {action.label}
+            </Button>
+          ))}
       </div>
     </header>
   );

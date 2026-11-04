@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import { FormInput } from "../FormField";
@@ -32,12 +32,12 @@ export function KeyFeaturesField({ form }: { form: ProductForm }) {
           <Button
             type="button"
             variant="ghost"
-            size="icon"
+            shape="icon"
             className="min-h-10 min-w-10"
             aria-label={`Remove key feature ${index + 1}`}
             onClick={() => set(features.filter((__, i) => i !== index))}
           >
-            <X aria-hidden />
+            <Icon name="close" />
           </Button>
         </div>
       ))}
@@ -49,7 +49,7 @@ export function KeyFeaturesField({ form }: { form: ProductForm }) {
         className="min-h-10 self-start"
         onClick={() => (features.length < MAX_FEATURES ? set([...features, ""]) : undefined)}
       >
-        <Plus aria-hidden /> {features.length < MAX_FEATURES ? "Add a point" : "Five is the most a marketplace shows"}
+        <Icon name="add" /> {features.length < MAX_FEATURES ? "Add a point" : "Five is the most a marketplace shows"}
       </Button>
     </fieldset>
   );

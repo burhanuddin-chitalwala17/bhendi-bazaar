@@ -6,6 +6,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ActionBar } from "@/components/shared/action-bar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FAMILY_MAX_MEMBERS } from "@server/channels/channel-family.types";
 import type { ChannelListingDTO } from "@server/channels/channel-connection.types";
@@ -34,8 +35,7 @@ export function GroupPicker({ orgId, listings, cancelHref }: { orgId: string; li
           </li>
         ))}
       </ul>
-      <div className="fixed inset-x-0 bottom-tabbar z-10 flex items-center gap-2 border-t bg-card p-3 md:static md:border-0 md:bg-transparent md:p-0">
-        <strong className="flex-1 text-sm">{GROUP.picked(picked.length)}</strong>
+      <ActionBar className="-mx-4 md:mx-0" status={<strong className="text-foreground">{GROUP.picked(picked.length)}</strong>}>
         <Button asChild variant="outline" className="min-h-10">
           <Link href={cancelHref}>{GROUP.cancel}</Link>
         </Button>
@@ -48,7 +48,7 @@ export function GroupPicker({ orgId, listings, cancelHref }: { orgId: string; li
             {GROUP.continue}
           </Button>
         )}
-      </div>
+      </ActionBar>
     </div>
   );
 }

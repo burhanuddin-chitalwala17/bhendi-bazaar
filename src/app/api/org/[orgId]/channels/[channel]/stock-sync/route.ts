@@ -1,6 +1,6 @@
 /**
  * PUT /api/org/[orgId]/channels/[channel]/stock-sync - pause stock sync, or turn it back on, from the
- * Channels card (inventory-sync Q27). Turning on sends every linked product's count.
+ * Channels card (inventory-sync Q28). Turning on sends every linked product's count.
  */
 
 import { NextResponse } from "next/server";

@@ -26,7 +26,7 @@ import {
   type ThemeKey,
 } from "@server/catalog/storefront-themes";
 import type { HeroBannerContent } from "@/components/home/hero-banner";
-import { isRenderableImageUrl } from "@server/catalog/image-paths";
+import { toResponsiveImage } from "@server/catalog/image-framing";
 import { categoriesDAL } from "@/data-access-layer/categories.dal";
 import { productsDAL } from "@/data-access-layer/products.dal";
 import type { Category } from "@/domain/category";
@@ -225,9 +225,7 @@ export const storefrontDAL = {
       id: row.id,
       title: row.title ?? undefined,
       description: row.description ?? undefined,
-      image: isRenderableImageUrl(row.imageUrl)
-        ? { src: row.imageUrl, alt: row.imageAlt ?? row.title ?? "" }
-        : undefined,
+      image: toResponsiveImage(row, row.imageAlt ?? row.title ?? "") ?? undefined,
       // One action, labelled generically: an org sets where a promotion points, not
       // the words on the button, so there is one less field to get wrong.
       actions: row.href ? [{ label: "Shop now", href: row.href }] : undefined,

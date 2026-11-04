@@ -3,9 +3,9 @@
 import { useId } from "react";
 import { useFieldArray } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
@@ -17,14 +17,16 @@ import {
   bannerFormSchema,
   type BannerFormSchemaInput,
 } from "@/lib/validation/schemas/banner.schema";
-import { BannerImageField } from "./BannerImageField";
+import { ImageSlotField } from "@/components/shared/image-slot/image-slot-field";
+import { uploadApiClient } from "@/components/shared/uploadApiClient";
+import { IMAGE_SLOT } from "@server/catalog/image-slots";
 import { bannersApiClient } from "./bannersApiClient";
 
 const EMPTY: BannerFormSchemaInput = {
   title: null,
   eyebrow: null,
   description: null,
-  imageUrl: null,
+  image: null,
   imageAlt: null,
   isActive: true,
   actions: [],
@@ -58,7 +60,7 @@ export function BannerForm({
   });
 
   const errors = form.formState.errors;
-  const imageUrl = form.watch("imageUrl");
+  const image = form.watch("image");
   // One prefix, so each label can point at the control it names.
   const id = useId();
   const fieldId = (name: string) => `${id}-${name}`;
@@ -66,7 +68,7 @@ export function BannerForm({
   return (
     <form onSubmit={form.onSubmit} className="space-y-5">
       {form.formError && (
-        <p className="rounded-field border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <p className="rounded-field border border-destructive/30 bg-destructive/10 px-4 py-3 text-small text-destructive">
           {form.formError}
         </p>
       )}
@@ -102,15 +104,19 @@ export function BannerForm({
         <Textarea id={fieldId("description")} rows={3} {...form.register("description")} />
       </FormField>
 
-      <BannerImageField
-        value={imageUrl ?? null}
-        onChange={(url) =>
-          form.setValue("imageUrl", url, { shouldDirty: true })
-        }
-        disabled={form.isSubmitting}
+      <ImageSlotField
+        slot={IMAGE_SLOT.HOME_BANNER}
+        label="Background picture"
+        value={image ?? null}
+        onChange={(next) => form.setValue("image", next, { shouldDirty: true })}
+        upload={async (file) => {
+          const [url] = await uploadApiClient.uploadFiles("/api/admin/upload", "banners", [file], { identifier: "banner" });
+          return url;
+        }}
+        error={errors.image?.message}
       />
 
-      {imageUrl && (
+      {image && (
         <FormField
           id={fieldId("imageAlt")}
           label="Image description"
@@ -170,12 +176,12 @@ export function BannerForm({
             <Button
               type="button"
               variant="outline"
-              size="icon"
+              shape="icon"
               aria-label={`Remove button ${index + 1}`}
               onClick={() => remove(index)}
               className="h-10 w-full sm:h-9 sm:w-9"
             >
-              <Trash2 />
+              <Icon name="delete" />
             </Button>
           </div>
         ))}
@@ -186,11 +192,11 @@ export function BannerForm({
             onClick={() => append({ label: "", href: "", variant: "PRIMARY" })}
             className="h-10 w-full rounded-full text-2xs font-semibold uppercase tracking-eyebrow sm:w-auto"
           >
-            <Plus /> Add button
+            <Icon name="add" /> Add button
           </Button>
         )}
         {errors.actions?.message && (
-          <p className="text-xs text-destructive">{errors.actions.message}</p>
+          <p className="text-caption text-destructive">{errors.actions.message}</p>
         )}
       </fieldset>
 

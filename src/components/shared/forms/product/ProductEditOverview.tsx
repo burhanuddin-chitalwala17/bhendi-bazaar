@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
+import { ActionBar } from "@/components/shared/action-bar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ProductMediaInput } from "@server/catalog/media";
@@ -162,7 +163,7 @@ export function ProductEditOverview({
                         </span>
                       )}
                     </span>
-                    <ChevronRight aria-hidden className="shrink-0 text-muted-foreground" />
+                    <Icon name="next" tone="muted" />
                   </Button>
                 </li>
               );
@@ -174,7 +175,7 @@ export function ProductEditOverview({
           {open && (
             <div className="flex items-center gap-2">
               <Button type="button" variant="ghost" size="sm" className="md:hidden" onClick={() => setOpen(null)}>
-                <ChevronLeft aria-hidden />
+                <Icon name="previous" />
                 All sections
               </Button>
               <h2 data-testid="section-title" className="text-lg font-semibold text-foreground">
@@ -235,12 +236,11 @@ export function ProductEditOverview({
         </div>
       )}
 
-      <div className="sticky bottom-0 z-30 -mx-4 border-t border-border bg-background px-4 pb-safe pt-3 md:mx-0 md:px-0">
-        <Button type="button" size="lg" className="w-full md:w-auto" aria-busy={isSubmitting} onClick={() => void save()}>
-          {isSubmitting && <Loader2 className="animate-spin" />}
+      <ActionBar dock="edge" className="-mx-4 md:mx-0">
+        <Button type="button" size="lg" className="w-full md:w-auto" pending={isSubmitting} onClick={() => void save()}>
           {isSubmitting ? "Saving…" : saveLabel}
         </Button>
-      </div>
+      </ActionBar>
     </form>
   );
 }

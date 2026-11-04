@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2 } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
+import { ActionBar } from "@/components/shared/action-bar";
 import type { FieldErrors } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import type { ProductMediaManager } from "@/components/product/product-media-manager";
@@ -222,7 +223,7 @@ export function ProductStepsForm({
                 onClick={() => steps.goTo(step.key)}
               >
                 {count > 0 ? `${step.label} · ${count}` : step.label}
-                {done && <Check aria-hidden />}
+                {done && <Icon name="done" />}
               </Button>
             );
           })}
@@ -306,36 +307,38 @@ export function ProductStepsForm({
       </div>
 
       {/* The org portal has no tab bar, so the bar sits on the screen's own edge. */}
-      <div className="sticky bottom-0 z-30 -mx-4 space-y-2 border-t border-border bg-background px-4 pb-safe pt-3 md:mx-0 md:px-0">
-        {errorTotal > 0 && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="w-full justify-between text-destructive"
-            onClick={() => steps.showFirstError(errors)}
-          >
-            <span>{thingsToFix(errorTotal)} · Show</span>
+      <ActionBar
+        dock="edge"
+        className="-mx-4 md:mx-0"
+        status={
+          errorTotal > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="w-full justify-between text-destructive"
+              onClick={() => steps.showFirstError(errors)}
+            >
+              <span>{thingsToFix(errorTotal)} · Show</span>
+            </Button>
+          )
+        }
+      >
+        {!steps.isFirst && (
+          <Button type="button" variant="outline" size="lg" className="flex-1 sm:flex-none" onClick={steps.back}>
+            Back
           </Button>
         )}
-        <div className="flex gap-2">
-          {!steps.isFirst && (
-            <Button type="button" variant="outline" size="lg" className="flex-1 sm:flex-none" onClick={steps.back}>
-              Back
-            </Button>
-          )}
-          {steps.isReview ? (
-            <Button type="button" size="lg" className="flex-1" aria-busy={isSubmitting} onClick={() => void putOnSale()}>
-              {isSubmitting && <Loader2 className="animate-spin" />}
-              {isSubmitting ? "Putting on sale…" : saveLabel}
-            </Button>
-          ) : (
-            <Button type="button" size="lg" className="flex-1" onClick={steps.next}>
-              Next
-            </Button>
-          )}
-        </div>
-      </div>
+        {steps.isReview ? (
+          <Button type="button" size="lg" className="flex-1" pending={isSubmitting} onClick={() => void putOnSale()}>
+            {isSubmitting ? "Putting on sale…" : saveLabel}
+          </Button>
+        ) : (
+          <Button type="button" size="lg" className="flex-1" onClick={steps.next}>
+            Next
+          </Button>
+        )}
+      </ActionBar>
     </form>
   );
 }
@@ -353,7 +356,7 @@ function SuccessScreen({ product, onStartAnother }: { product: ProductDetails; o
   return (
     <div className="space-y-6 rounded-card border border-border bg-card p-6 text-center">
       <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-success/10">
-        <Check className="size-7 text-success" aria-hidden />
+        <Icon name="success" size="xl" tone="success" />
       </div>
       <div className="space-y-1">
         <h2 className="text-xl font-semibold text-foreground">On sale now</h2>

@@ -1,11 +1,8 @@
-// src/app/(main)/checkout/page.tsx
-
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageHeader } from "@/components/shared/page-shell";
 import { CheckoutContainer } from "@/components/checkout";
 import { productsDAL } from "@/data-access-layer/products.dal";
 import { CartItem } from "@/domain/cart";
 import { uuidv4 } from "zod";
-import { PackageX } from "lucide-react";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { NotFoundError } from "@server/shared/domain-error";
 
@@ -26,9 +23,9 @@ export default async function CheckoutPage({
     if (!buyNowProduct) {
       return (
         <EmptyState
-          icon={PackageX}
-          title="That item is no longer available"
-          description="It may have sold out or been taken down. Your cart is unchanged."
+          title="That piece is no longer available"
+          description="It may have sold out or been taken down. Your bag is unchanged."
+          action={{ label: "Back to the shop", href: "/shop" }}
         />
       );
     }
@@ -49,10 +46,8 @@ export default async function CheckoutPage({
 
   return (
     <div className="space-y-6">
-      <SectionHeader
-        overline="Checkout"
-        title="Finalise your Bhendi Bazaar order"
-      />
+      {/* The focused top bar names the page on a phone; the h1 stays for assistive tech. */}
+      <PageHeader title="Checkout" className="sr-only md:not-sr-only" />
 
       {/* Keyed: a different buy-now item is a different checkout, with its own snapshot. */}
       <CheckoutContainer key={buyNow ?? "cart"} buyNowProduct={buyNowProductCartItem} />

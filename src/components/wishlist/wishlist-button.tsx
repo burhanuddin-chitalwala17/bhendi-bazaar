@@ -1,17 +1,12 @@
 "use client";
 
-import { Heart } from "lucide-react";
+import { useState } from "react";
 import { useWishlist } from "@/context/WishlistContext";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 
-/**
- * The heart. A client leaf inside otherwise-server product surfaces, the same shape
- * ShareButton takes on the product page.
- *
- * It sits inside the card's `<Link>`, so the click has to be stopped from navigating —
- * hearting a tile must save it, not open it.
- */
+/** The heart: a client leaf on server product surfaces. It stops the click so saving never opens the product. */
 export function WishlistButton({
   productId,
   showLabel = false,
@@ -24,30 +19,33 @@ export function WishlistButton({
   const { isSaved, isPending, toggle } = useWishlist();
   const saved = isSaved(productId);
   const pending = isPending(productId);
+  // Pops once a save has landed; a failed write reverts `saved`, so it never pops for nothing.
+  const [popped, setPopped] = useState(false);
 
   return (
     <Button
       type="button"
       variant="ghost"
-      // size-9 is the floor for a tap target (ADR-0015) and all a 105px tile can
-      // spare; the icon inside carries the visual size instead.
-      size="icon"
+      shape="icon"
+      size="lg"
       aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}
       aria-pressed={saved}
       disabled={pending}
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        void toggle(productId);
+        const saving = !saved;
+        setPopped(false);
+        void toggle(productId).then(() => setPopped(saving));
       }}
       className={cn(
         "rounded-full disabled:opacity-60",
-        showLabel && "w-auto gap-2 px-3 text-2xs font-medium",
+        showLabel && "w-auto gap-2 px-3 text-small font-medium",
         saved ? "text-favorite" : "text-muted-foreground",
         className,
       )}
     >
-      <Heart className={cn("size-4", saved && "fill-favorite")} />
+      <Icon name="saved" size={showLabel ? "md" : "sm"} filled={saved} motion={popped && saved} />
       {showLabel && <span>{saved ? "Saved" : "Save"}</span>}
     </Button>
   );

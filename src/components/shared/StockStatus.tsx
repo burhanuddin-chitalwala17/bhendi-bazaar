@@ -1,5 +1,3 @@
-// components/shared/StockStatus.tsx
-
 import { cn } from "@/lib/utils";
 
 interface StockStatusProps {
@@ -32,22 +30,22 @@ export function StockStatus({
     ? {
         color: "bg-destructive",
         textColor: "text-destructive",
-        label: "Out of Stock",
+        label: "Sold out",
       }
     : isLowStock
       ? {
           color: "bg-warning",
           textColor: "text-warning",
-          label: isXs ? `Only ${stock} left` : `Only ${stock} left in stock!`,
+          label: `Only ${stock} left`,
         }
       : {
           color: "bg-success",
           textColor: "text-success",
-          label: "In Stock",
+          label: "In stock",
         };
 
   const dotSize = isXs ? "h-1 w-1" : size === "sm" ? "h-1.5 w-1.5" : "h-2 w-2";
-  const textSize = isXs ? "text-3xs" : size === "sm" ? "text-xs" : "text-sm";
+  const textSize = isXs ? "text-caption" : "text-small";
 
   return (
     <div className="space-y-1">
@@ -68,8 +66,8 @@ export function StockStatus({
         )}
       </div>
       {cartQuantity > 0 && remaining > 0 && (
-        <p className="text-xs text-muted-foreground">
-          {cartQuantity} in cart • {remaining} more available
+        <p className="text-caption text-muted-foreground">
+          {cartQuantity} in your bag · {remaining} more available
         </p>
       )}
     </div>

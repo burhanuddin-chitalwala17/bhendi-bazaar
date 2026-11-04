@@ -5,9 +5,10 @@
  * the table with its reorder and delete controls.
  */
 import Link from "next/link";
-import { Plus, Upload } from "lucide-react";
 
-import { PageHeader } from "@/components/shared/page-shell";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { CategoriesFilters } from "@/components/category/console/CategoriesFilters";
 import { CategoriesTable } from "@/components/category/console/CategoriesTable";
@@ -45,28 +46,24 @@ export default async function AdminCategoriesPage({
   });
 
   return (
-    <div className="space-y-6">
+    <PageShell width="wide">
       <PageHeader
         title="Categories"
-        description="Manage product categories and organization"
+        description="The categories buyers browse, in the order they see them."
         actions={
           <>
-            <Link
-              prefetch={false}
-              href="/admin/categories/bulk"
-              className="flex items-center gap-2 rounded-field border border-border px-4 py-2 hover:bg-muted"
-            >
-              <Upload className="size-4" />
-              <span className="hidden sm:inline">Bulk upload</span>
-            </Link>
-            <Link
-              prefetch={false}
-              href="/admin/categories/new"
-              className="flex items-center gap-2 rounded-field bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
-            >
-              <Plus className="size-4" />
-              Add Category
-            </Link>
+            <Button asChild variant="outline">
+              <Link prefetch={false} href="/admin/categories/bulk">
+                <Icon name="upload" />
+                Bulk upload
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link prefetch={false} href="/admin/categories/new">
+                <Icon name="add" />
+                Add category
+              </Link>
+            </Button>
           </>
         }
       />
@@ -82,6 +79,6 @@ export default async function AdminCategoriesPage({
         totalPages={totalPages}
         total={total}
       />
-    </div>
+    </PageShell>
   );
 }

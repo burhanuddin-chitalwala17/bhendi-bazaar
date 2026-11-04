@@ -1,5 +1,7 @@
-import { apiRequest } from "@/lib/api-client";
+import { apiRequest, TRANSFER_TIMEOUT_MS } from "@/lib/api-client";
 import type { ProductFormInput, ProductDetails } from "./types";
+import type { BulkActionResultDTO } from "@server/catalog/product-bulk.types";
+import type { BulkProductActionInput, TeamBulkProductActionInput } from "@/lib/validation/schemas/product-bulk.schema";
 
 export class ProductsApiClient {
   /**
@@ -42,5 +44,17 @@ export class ProductsApiClient {
 
   updateProduct(id: string, data: ProductFormInput): Promise<ProductDetails | null> {
     return apiRequest(`${this.baseUrl}/${id}`, { method: "PATCH", body: data });
+  }
+
+  /**
+   * A bulk action on selected products (design-system Q29). The shop's portal scopes it to its own
+   * products; the team's carries the reason the shop will read.
+   */
+  bulkEdit(input: BulkProductActionInput): Promise<BulkActionResultDTO> {
+    return apiRequest(`/api/org/${this.orgId}/products/bulk-edit`, { method: "POST", body: input, timeoutMs: TRANSFER_TIMEOUT_MS });
+  }
+
+  teamBulkEdit(input: TeamBulkProductActionInput): Promise<BulkActionResultDTO> {
+    return apiRequest("/api/admin/products/bulk-edit", { method: "POST", body: input, timeoutMs: TRANSFER_TIMEOUT_MS });
   }
 }

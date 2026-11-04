@@ -1,73 +1,54 @@
-// components/shared/badges/StatusBadge.tsx
-
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 
+import { cn } from "@/lib/utils";
+
+/**
+ * The one status chip. A state is one word and one tone, so "Live" reads the same on every
+ * screen and a palette change is a token edit, not a hunt through hand-rolled chips.
+ */
 const statusBadgeVariants = cva(
-  "text-2xs font-semibold uppercase tracking-eyebrow",
+  "inline-flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-field px-2 text-caption font-semibold",
   {
     variants: {
-      // Washes are the status colour at low opacity, so a status reads the same
-      // everywhere and a palette change is one token edit, not a hunt.
-      status: {
-        default: "bg-secondary text-secondary-foreground",
-        offer: "bg-success/15 text-success",
-        featured: "bg-accent/40 text-accent-foreground",
-        hero: "bg-info/15 text-info",
-        lowStock: "bg-warning/15 text-warning",
-        outOfStock: "bg-destructive/15 text-destructive",
-        inStock: "bg-success/15 text-success",
-        pending: "bg-warning/15 text-warning",
-        paid: "bg-success/15 text-success",
-        failed: "bg-destructive/15 text-destructive",
-        // A marketplace connection's health (channel-connectors ux.md).
-        connected: "bg-success/15 text-success",
-        attention: "bg-warning/15 text-warning",
-        problem: "bg-destructive/15 text-destructive",
-        muted: "bg-muted text-muted-foreground",
+      tone: {
+        success: "bg-success/15 text-success",
+        warning: "bg-warning/15 text-warning",
+        info: "bg-info/15 text-info",
+        neutral: "bg-muted text-muted-foreground",
+        destructive: "bg-destructive/15 text-destructive",
+        deal: "bg-deal text-deal-foreground",
       },
     },
-    defaultVariants: {
-      status: "default",
-    },
+    defaultVariants: { tone: "neutral" },
   },
 );
 
-interface StatusBadgeProps extends VariantProps<typeof statusBadgeVariants> {
-  children: React.ReactNode;
+export type StatusTone = NonNullable<VariantProps<typeof statusBadgeVariants>["tone"]>;
+
+export interface StatusBadgeProps extends VariantProps<typeof statusBadgeVariants> {
+  children: ReactNode;
+  /** A lifecycle state (an order moving) carries a dot; a fact (a discount) does not. */
+  dot?: boolean;
   className?: string;
 }
 
-export function StatusBadge({ status, children, className }: StatusBadgeProps) {
+export function StatusBadge({ tone, dot, children, className }: StatusBadgeProps) {
   return (
-    <Badge className={cn(statusBadgeVariants({ status }), className)}>
+    <span data-tone={tone ?? "neutral"} className={cn(statusBadgeVariants({ tone }), className)}>
+      {dot && <span aria-hidden className="size-1.5 rounded-full bg-current" />}
       {children}
-    </Badge>
+    </span>
   );
 }
 
-// Specific badge components for common use cases
+// Success, not deal: PriceDisplay renders outside a theme scope, where `--deal` is unset.
 export function OfferBadge() {
-  return <StatusBadge status="offer">Offer</StatusBadge>;
+  return <StatusBadge tone="success">Offer</StatusBadge>;
 }
 
-export function DefaultBadge() {
-  return <StatusBadge status="default">Default</StatusBadge>;
-}
-
-export function StockBadge({
-  stock,
-  threshold = 10,
-}: {
-  stock: number;
-  threshold?: number;
-}) {
-  if (stock === 0) {
-    return <StatusBadge status="outOfStock">Out of Stock</StatusBadge>;
-  }
-  if (stock <= threshold) {
-    return <StatusBadge status="lowStock">Low Stock</StatusBadge>;
-  }
-  return <StatusBadge status="inStock">In Stock</StatusBadge>;
+export function StockBadge({ stock, threshold = 10 }: { stock: number; threshold?: number }) {
+  if (stock === 0) return <StatusBadge tone="neutral">Sold out</StatusBadge>;
+  if (stock <= threshold) return <StatusBadge tone="warning">Low stock · {stock}</StatusBadge>;
+  return <StatusBadge tone="success">In stock</StatusBadge>;
 }

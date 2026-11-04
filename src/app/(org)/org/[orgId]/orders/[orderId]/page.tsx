@@ -2,12 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { orgOrdersDAL } from "@/data-access-layer/org/orders.dal";
-import { SectionHeader } from "@/components/shared/SectionHeader";
 import { ShopParcelCard } from "@/components/org/parcels/shop-parcel-card";
 import { SHOP_PARCEL_COPY } from "@/components/org/parcels/parcel-copy";
 import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
 import { ShopOrdersRefused } from "@/components/org/parcels/shop-orders-refused";
 import { shopScopeOrRefused } from "../shop-scope";
+import { PageHeader } from "@/components/shared/page-shell";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -33,7 +33,7 @@ export default async function OrgOrderDetailPage({ params }: { params: Promise<{
   return (
     <div className="max-w-4xl space-y-4 pb-24 lg:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <SectionHeader as="h1" help="orders" title={order.code} />
+        <PageHeader help="orders" title={order.code} />
         <Link href={`/org/${orgId}/orders`} className="min-h-10 text-sm text-primary hover:underline" prefetch={false}>
           {SHOP_PARCEL_COPY.allOrders}
         </Link>

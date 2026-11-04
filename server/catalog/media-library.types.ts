@@ -84,6 +84,10 @@ export interface ReferenceCounts {
   storefrontSlots: number;
   orgBanners: number;
   banners: number;
+  /** The phone versions of the same (image-slots trd D2): shown, so a use like the desktop picture. */
+  orgBannerPhones: number;
+  storefrontSlotPhones: number;
+  bannerPhones: number;
   /** The videos this photograph stands in for (spec R8): a poster in use is a photograph in use. */
   postersFor: number;
   /** Pictures made from this one. Counted, never added to the uses — see `MediaAssetDto.derivedCount`. */

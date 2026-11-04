@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { DataTable, Column } from "@/components/shared/data-table";
-import { Edit, Ban, CheckCircle, XCircle, MapPin, Eye, ShieldOff } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Icon } from "@/components/ui/icon";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import type { OrgWithStats } from "@/domain/org";
 import type { Pagination } from "@/types/shared";
 import { formatPhone } from "@server/shared/phone";
@@ -29,144 +29,91 @@ export function OrgsTable({
   onToggleBlock,
 }: OrgsTableProps) {
   const { page, limit, total, totalPages } = pagination;
-  const startItem = total === 0 ? 0 : (page - 1) * limit + 1;
-  const endItem = Math.min(page * limit, total);
 
   const columns: Column<OrgWithStats>[] = [
     {
-      key: "code",
-      label: "Code",
-      render: (org) => (
-        <span className="font-mono text-sm font-medium">{org.code}</span>
-      ),
-    },
-    {
       key: "name",
-      label: "Organisation",
+      label: "Shop",
+      phone: "title",
       render: (org) => (
-        <Link href={`/admin/orgs/${org.id}`} className="flex items-center gap-3 hover:underline">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center text-primary-foreground font-semibold">
-            {org.name.substring(0, 2).toUpperCase()}
-          </div>
-          <div>
-            <p className="font-medium">{org.name}</p>
-            <p className="text-sm text-muted-foreground">{org.email}</p>
-          </div>
+        <Link href={`/admin/orgs/${org.id}`} prefetch={false} className="flex items-center gap-3 hover:underline">
+          <span
+            aria-hidden
+            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-small font-semibold text-muted-foreground"
+          >
+            {org.name.charAt(0).toUpperCase()}
+          </span>
+          <span className="min-w-0">
+            <span className="block font-medium">{org.name}</span>
+            <span className="block font-mono text-caption font-normal text-muted-foreground">{org.code}</span>
+          </span>
         </Link>
       ),
     },
     {
-      key: "location",
-      label: "Location",
+      key: "contact",
+      label: "Contact",
+      phone: "hidden",
       render: (org) => (
-        <div className="flex items-start gap-2">
-          <MapPin className="w-4 h-4 text-muted-foreground/70 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-foreground">
-              {org.contactPerson || "—"}
-            </p>
-            <p className="text-muted-foreground">{org.email}</p>
-          </div>
+        <div className="text-small">
+          <p className="text-foreground">{org.contactPerson || "—"}</p>
+          <p className="text-muted-foreground">{org.email}</p>
         </div>
       ),
     },
     {
       key: "phone",
       label: "Phone",
-      render: (org) => (
-        <div className="text-sm space-y-1">
-          {org.phone && (
-            <p className="font-medium text-foreground">
-              {formatPhone(org.phone)}
-            </p>
-          )}
-        </div>
-      ),
+      phone: "hidden",
+      render: (org) => (org.phone ? formatPhone(org.phone) : "—"),
     },
     {
-      key: "stats",
+      key: "products",
       label: "Products",
-      render: (org) => (
-        <div className="flex items-center gap-4">
-          <div>
-            <p className="text-2xl font-bold text-foreground">
-              {org.productCount || 0}
-            </p>
-            <p className="text-xs text-muted-foreground">Products</p>
-          </div>
-          <div className="h-8 w-px bg-muted" />
-          <div>
-            <p className="text-2xl font-bold text-primary">
-              {org.totalStock || 0}
-            </p>
-            <p className="text-xs text-muted-foreground">Stock</p>
-          </div>
-        </div>
-      ),
+      phone: "meta",
+      render: (org) => `${org.productCount || 0} products`,
+    },
+    {
+      key: "stock",
+      label: "Stock",
+      phone: "meta",
+      render: (org) => `${org.totalStock || 0} in stock`,
     },
     {
       key: "status",
       label: "Status",
-      render: (org) => (
-        <div className="flex flex-col gap-1">
-          <Badge
-            variant={org.isActive ? "default" : "secondary"}
-            className={org.isActive ? "bg-success" : ""}
-          >
-            {org.isActive ? (
-              <>
-                <CheckCircle className="mr-1 h-3 w-3" />
-                Active
-              </>
-            ) : (
-              <>
-                <XCircle className="mr-1 h-3 w-3" />
-                Inactive
-              </>
-            )}
-          </Badge>
-          {org.isBlocked && (
-            <Badge variant="destructive">
-              <Ban className="mr-1 h-3 w-3" />
-              Blocked
-            </Badge>
-          )}
-        </div>
-      ),
+      phone: "status",
+      render: (org) =>
+        org.isBlocked ? (
+          <StatusBadge tone="destructive" dot>Blocked</StatusBadge>
+        ) : (
+          <StatusBadge tone={org.isActive ? "success" : "neutral"} dot>
+            {org.isActive ? "Active" : "Inactive"}
+          </StatusBadge>
+        ),
     },
     {
       key: "actions",
       label: "Actions",
+      phone: "trailing",
       render: (org) => (
         <div className="flex items-center gap-2">
-          {/* ⭐ NEW: View button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onView(org)}
-            className="text-muted-foreground hover:bg-muted/60"
-            title="View org details"
-          >
-            <Eye className="w-4 h-4" />
+          <Button variant="ghost" size="sm" onClick={() => onView(org)} aria-label={`View ${org.name}`} className="hidden md:inline-flex">
+            <Icon name="show" />
+            View
           </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onEdit(org)}
-            className="text-info hover:bg-info/10"
-            title="Edit org"
-          >
-            <Edit className="w-4 h-4" />
+          <Button variant="outline" size="sm" onClick={() => onEdit(org)} aria-label={`Edit ${org.name}`}>
+            <Icon name="edit" />
+            Edit
           </Button>
-
           <Button
-            variant="ghost"
-            size="icon"
+            variant="outline"
+            size="sm"
             onClick={() => onToggleBlock(org)}
-            className={org.isBlocked ? "text-success hover:bg-success/10" : "text-destructive hover:bg-destructive/10"}
+            aria-label={`${org.isBlocked ? "Unblock" : "Block"} ${org.name}`}
           >
-            {org.isBlocked ? <ShieldOff className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
+            <Icon name={org.isBlocked ? "secure" : "block"} />
+            {org.isBlocked ? "Unblock" : "Block"}
           </Button>
         </div>
       ),
@@ -174,26 +121,17 @@ export function OrgsTable({
   ];
 
   return (
-    <div className="space-y-3">
-      {/* Showing X-Y of Z results */}
-      <div className="flex justify-between items-center text-sm text-muted-foreground">
-        <p>
-          Showing {startItem} to {endItem} of {total} orgs
-        </p>
-      </div>
-      <div className="overflow-x-auto">
-        <DataTable
-          data={orgs}
-          columns={columns}
-          totalPages={totalPages}
-          currentPage={page}
-          totalItems={total}
-          pageSize={limit}
-          onPageChange={onPageChange}
-          onPageSizeChange={onPageSizeChange}
-          isLoading={isLoading}
-        />
-      </div>
-    </div>
+    <DataTable
+      data={orgs}
+      columns={columns}
+      label="Shops"
+      totalPages={totalPages}
+      currentPage={page}
+      totalItems={total}
+      pageSize={limit}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
+      isLoading={isLoading}
+    />
   );
 }

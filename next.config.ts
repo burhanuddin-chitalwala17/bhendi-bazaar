@@ -12,6 +12,10 @@ assertRateLimitConfigAtBuild();
 const nextConfig: NextConfig = {
   // Next's own list plus Googlebot, so Google gets the canonical and title in <head> rather than
   // streamed into <body> (docs/GTM-READINESS.md B10). Setting this replaces the default, hence the extension.
+  experimental: {
+    // Next optimises lucide by default but not Phosphor: without this every icon module is bundled.
+    optimizePackageImports: ["@phosphor-icons/react"],
+  },
   htmlLimitedBots: new RegExp(`${HTML_LIMITED_BOT_UA_RE.source}|Googlebot`, "i"),
   async headers() {
     // The per-request Content-Security-Policy is set in src/middleware.ts, which is where

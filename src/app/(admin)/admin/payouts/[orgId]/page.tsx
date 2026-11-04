@@ -5,7 +5,6 @@
  * so the last line explains the gap between the first two rather than needing a
  * caption (org-payouts UI approach).
  */
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { payoutsDAL } from "@/data-access-layer/payouts.dal";
@@ -14,7 +13,7 @@ import { Card } from "@/components/ui/card";
 import { CommercialTerms } from "@/components/payouts/CommercialTerms";
 import { SettleEntries } from "@/components/payouts/SettleEntries";
 import { SettlementList } from "@/components/payouts/SettlementList";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
 
 export default async function AdminOrgPayoutPage({
   params,
@@ -35,38 +34,31 @@ export default async function AdminOrgPayoutPage({
   if (!org) notFound();
 
   return (
-    <div className="space-y-5">
-      <div>
-        <Link
-          href="/admin/payouts"
-          className="text-xs text-muted-foreground hover:underline"
-          prefetch={false}
-        >
-          ← All payouts
-        </Link>
-        <SectionHeader as="h1" title={org.name}
-          description={`${org.code} · default commission ${org.commissionBps / 100}%`}
-        />
-      </div>
+    <PageShell width="wide">
+      <PageHeader
+        back={{ href: "/admin/payouts", label: "Payouts" }}
+        title={org.name}
+        description={`${org.code} · default commission ${org.commissionBps / 100}%`}
+      />
 
       {/* Two figures because they differ and both matter (D7). */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Card className="p-4">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          <p className="text-caption uppercase tracking-label text-muted-foreground">
             Owed
           </p>
-          <p className="text-xl font-semibold tabular-nums">
+          <p className="font-heading text-headline font-semibold tabular-nums">
             {formatCurrency(owedPaise)}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          <p className="text-caption uppercase tracking-label text-muted-foreground">
             Unclaimed
           </p>
-          <p className="text-xl font-semibold tabular-nums">
+          <p className="font-heading text-headline font-semibold tabular-nums">
             {formatCurrency(unclaimedPaise)}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-caption text-muted-foreground">
             Not yet in a settlement
           </p>
         </Card>
@@ -83,6 +75,6 @@ export default async function AdminOrgPayoutPage({
       <SettleEntries orgId={org.id} entries={entries} />
 
       <SettlementList settlements={settlements} />
-    </div>
+    </PageShell>
   );
 }

@@ -12,7 +12,7 @@
  */
 
 import { useCallback, useState } from "react";
-import { Check } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { FormField, FormInput, fieldMessageIds } from "@/components/shared/forms/FormField";
@@ -172,7 +172,7 @@ export function BidPanel({
 
       {placed !== null && (
         <div className="flex items-start gap-2 rounded-card border border-success/40 bg-success/10 p-3 text-success">
-          <Check className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <Icon name="done" size="sm" className="mt-0.5" />
           <div>
             <p className="text-sm font-medium">
               Your bid of {formatCurrency(placed)} is in

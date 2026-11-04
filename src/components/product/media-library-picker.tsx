@@ -1,6 +1,6 @@
 import { useState } from "react";
 import NextImage from "next/image";
-import { Check, Film, Images, Youtube, type LucideIcon } from "lucide-react";
+import { Icon, type IconName } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { TaskDialog } from "@/components/shared/overlays/task-dialog";
 import { PRODUCT_GRID_CLASSES } from "@/components/shared/product-grid";
@@ -29,10 +29,10 @@ type Kind = MediaAssetDto["kind"];
 
 const ALL_KINDS: readonly Kind[] = ["IMAGE", "VIDEO", "VIDEO_EMBED"];
 
-const TABS: Record<Kind, { label: string; Icon: LucideIcon }> = {
-  IMAGE: { label: "Photos", Icon: Images },
-  VIDEO: { label: "Videos", Icon: Film },
-  VIDEO_EMBED: { label: "YouTube", Icon: Youtube },
+const TABS: Record<Kind, { label: string; icon: IconName }> = {
+  IMAGE: { label: "Photos", icon: "photos" },
+  VIDEO: { label: "Videos", icon: "video" },
+  VIDEO_EMBED: { label: "YouTube", icon: "youtube" },
 };
 
 /**
@@ -65,7 +65,7 @@ export function MediaLibraryPicker({
       {kinds.length > 1 && (
         <div className="flex shrink-0 flex-wrap gap-2">
           {kinds.map((tab) => {
-            const { label, Icon } = TABS[tab];
+            const { label, icon } = TABS[tab];
             return (
               <Button
                 key={tab}
@@ -74,7 +74,7 @@ export function MediaLibraryPicker({
                 variant={kind === tab ? "default" : "outline"}
                 onClick={() => setKind(tab)}
               >
-                <Icon className="mr-1 size-4" /> {label}
+                <Icon name={icon} className="mr-1" /> {label}
               </Button>
             );
           })}
@@ -150,11 +150,8 @@ function PickerPages({
                 }
               >
                 {isTaken && (
-                  <span className="absolute inset-0 z-10 flex items-center justify-center bg-scrim/40">
-                    <Check
-                      className="size-6 text-hero-foreground"
-                      aria-hidden
-                    />
+                  <span className="absolute inset-0 z-10 flex items-center justify-center bg-scrim/40 text-hero-foreground">
+                    <Icon name="done" size="lg" />
                   </span>
                 )}
                 {asset.kind === "VIDEO_EMBED" ? (
@@ -171,11 +168,8 @@ function PickerPages({
                         className="object-cover"
                       />
                     )}
-                    <span className="absolute inset-0 flex items-center justify-center bg-scrim/40">
-                      <Film
-                        className="size-6 text-hero-foreground"
-                        aria-hidden
-                      />
+                    <span className="absolute inset-0 flex items-center justify-center bg-scrim/40 text-hero-foreground">
+                      <Icon name="video" size="lg" />
                     </span>
                     {asset.state !== "READY" && (
                       <span className="absolute bottom-1 left-1 rounded-full bg-scrim/80 px-2 py-0.5 text-xs text-hero-foreground">

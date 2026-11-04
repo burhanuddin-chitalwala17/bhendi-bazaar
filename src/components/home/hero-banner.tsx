@@ -1,7 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { ResponsiveImage } from "@/components/shared/responsive-image";
+import type { ResponsiveImageDto } from "@server/catalog/image-framing";
 import { cn } from "@/lib/utils";
 
 export type HeroAction = {
@@ -18,16 +19,11 @@ export type HeroBannerContent = {
   title?: string;
   description?: string;
   /** Optional. Without one the banner falls back to the brand gradient scene. */
-  image?: { src: string; alt: string };
+  image?: ResponsiveImageDto;
   actions?: HeroAction[];
 };
 
-/**
- * One hero banner: background, words, and up to a couple of calls to action, all
- * passed in. Nothing about a specific campaign lives here — the copy and the
- * destinations come from `src/lib/home-banners.ts`, so a new banner is a config
- * entry rather than a component.
- */
+/** One hero banner: a photograph (or the plain brand surface), its words, and up to two actions, all passed in. */
 export function HeroBanner({
   banner,
   priority = false,
@@ -39,77 +35,47 @@ export function HeroBanner({
   className?: string;
 }) {
   const { eyebrow, title, description, image, actions } = banner;
-  // A banner with nothing to read is the artwork and nothing else: no scrim to darken
-  // it, no hover that dims it, and no empty text column holding the layout open.
-  const hasWords = Boolean(
-    eyebrow || title || description || (actions && actions.length > 0),
-  );
+  // Artwork with nothing to read gets no scrim and no empty column.
+  const hasWords = Boolean(eyebrow || title || description || (actions && actions.length > 0));
 
   return (
-    // A phone shows one screenful at a time; a full-height brand hero spends it on
-    // something nobody came to buy. Compact banner on mobile, the full scene from sm.
     <div
       className={cn(
-        "group relative isolate flex h-60 items-center overflow-hidden rounded-xl border border-border/70 px-4 py-6 text-hero-foreground sm:h-80 sm:rounded-2xl sm:px-10 sm:py-10 lg:h-96",
-        !image && "bg-gradient-to-br from-hero via-hero/90 to-scrim",
+        "relative isolate flex items-end overflow-hidden rounded-card px-5 py-6 text-hero-foreground md:items-center md:px-10 md:py-10",
+        // A picture gets the phone shape it was framed for (image-slots D9); without one, the plain brand surface.
+        image ? "aspect-banner-phone max-h-svh md:aspect-auto md:h-80 lg:h-96" : "min-h-60 bg-hero md:min-h-80",
         className,
       )}
     >
-      {image ? (
+      {image && (
         <>
-          <Image
-            src={image.src}
-            alt={image.alt}
-            fill
+          <ResponsiveImage
+            image={image}
             preload={priority}
-            sizes="(min-width: 1024px) 72rem, 100vw"
-            className="-z-10 object-cover"
+            sizes={{ phone: "100vw", desktop: "(min-width: 1024px) 72rem, 100vw" }}
+            className="-z-10"
           />
-          {/* Heaviest on the left where the words sit; absent with no words. Always shown: words
-              revealed only on hover went unread by every desktop visitor who didn't point at them. */}
+          {/* Under the words: from the bottom on a phone, from the left where they sit on a desktop. */}
           {hasWords && (
-            <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-scrim/85 via-scrim/55 to-scrim/20" />
+            <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-t from-scrim/85 via-scrim/40 to-transparent md:bg-gradient-to-r md:via-scrim/50 md:to-scrim/10" />
           )}
-        </>
-      ) : (
-        <>
-          <div className="pointer-events-none absolute -left-10 -top-20 -z-10 size-64 rounded-full border border-primary/15" />
-          <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-tr from-scrim/40 via-transparent to-hero-foreground/10" />
         </>
       )}
 
       {hasWords && (
-        <div className="relative max-w-xl space-y-2 sm:space-y-4">
-          {eyebrow && (
-            <p className="text-4xs font-semibold uppercase tracking-eyebrow-wide text-hero-foreground/70 sm:text-2xs sm:tracking-display">
-              {eyebrow}
-            </p>
-          )}
-          {title && (
-            <h2 className="line-clamp-2 font-heading text-xl font-semibold leading-tight tracking-tight sm:text-4xl">
-              {title}
-            </h2>
-          )}
-          {description && (
-            <p className="line-clamp-2 text-xs leading-snug text-hero-foreground/80 sm:line-clamp-3 sm:text-base sm:leading-normal">
-              {description}
-            </p>
-          )}
+        <div className="relative max-w-xl space-y-2 md:space-y-3">
+          {eyebrow && <p className="text-label uppercase text-hero-foreground/80">{eyebrow}</p>}
+          {title && <h2 className="line-clamp-3 font-heading text-headline font-semibold md:text-display">{title}</h2>}
+          {description && <p className="line-clamp-2 text-small text-hero-foreground/85 md:line-clamp-3 md:text-body">{description}</p>}
           {actions && actions.length > 0 && (
             <div className="flex flex-wrap gap-3 pt-2">
               {actions.map((action) => (
                 <Button
                   key={action.href}
                   asChild
-                  variant={
-                    action.variant === "secondary" ? "outline" : "default"
-                  }
-                  className={cn(
-                    "rounded-full px-6 text-xs font-semibold uppercase tracking-eyebrow",
-                    action.variant === "secondary"
-                      ? "border-primary/20 bg-transparent text-hero-foreground hover:bg-hero/40"
-                      : "bg-primary text-hero hover:bg-primary/80",
-                  )}
+                  size="lg"
+                  variant={action.variant === "secondary" ? "inverse" : "secondary"}
+                  className="min-h-10 rounded-full"
                 >
                   <Link href={action.href} prefetch={false}>
                     {action.label}

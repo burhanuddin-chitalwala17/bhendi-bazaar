@@ -1,7 +1,5 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { FormDialog } from "@/components/shared/overlays/form-dialog";
 import { REFUNDS_COPY } from "./refunds-copy";
@@ -12,16 +10,15 @@ export function StartRefund({ refundId, amountPaise, retry = false }: { refundId
   const refund = useStartRefund(refundId, amountPaise);
   return (
     <>
-      <Button size="sm" variant={retry ? "outline" : "default"} className="min-h-10" onClick={() => refund.setOpen(true)}>
+      <Button size="sm" variant={retry ? "outline" : "default"} onClick={() => refund.setOpen(true)}>
         {retry ? REFUNDS_COPY.tryAgain : REFUNDS_COPY.open(amountPaise)}
       </Button>
       <FormDialog open={refund.open} onOpenChange={refund.setOpen} title={REFUNDS_COPY.open(amountPaise)} description={REFUNDS_COPY.confirmIntro(amountPaise)}>
         <div className="flex flex-col gap-2 pt-2 md:flex-row-reverse">
-          <Button type="button" variant="destructive" className="min-h-11" onClick={refund.start} aria-busy={refund.starting}>
-            {refund.starting && <Loader2 className="mr-2 size-4 animate-spin" />}
+          <Button type="button" variant="destructive" size="lg" onClick={refund.start} pending={refund.starting}>
             {refund.starting ? REFUNDS_COPY.refunding : REFUNDS_COPY.confirm(amountPaise)}
           </Button>
-          <Button type="button" variant="outline" className="min-h-11" onClick={() => refund.setOpen(false)}>
+          <Button type="button" variant="outline" size="lg" onClick={() => refund.setOpen(false)}>
             {REFUNDS_COPY.keep}
           </Button>
         </div>

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ActionBar } from "@/components/shared/action-bar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -61,9 +62,7 @@ export function ReadinessFix({ orgId, page }: { orgId: string; page: FixPageDTO 
       )}
       {fix.done.length > 0 && <DoneList fix={fix} />}
       {fix.selected.size > 0 && (
-        <div className="sticky bottom-tabbar z-10 -mx-4 flex flex-col gap-2 border-t border-border bg-background/95 p-3 backdrop-blur md:bottom-0 md:mx-0 md:flex-row md:items-center md:rounded-card md:border">
-          <span className="text-sm font-semibold">{FIX.setSelected(page.factLabel, fix.selected.size)}</span>
-          <div className="flex min-w-0 flex-1 gap-2">
+        <ActionBar className="-mx-4 md:mx-0" status={<span className="font-semibold text-foreground">{FIX.setSelected(page.factLabel, fix.selected.size)}</span>}>
             <div className="min-w-0 flex-1">
               <Select aria-label={FIX.setSelected(page.factLabel, fix.selected.size)} value={bulkValue} onChange={(e) => setBulkValue(e.target.value)}>
                 <option value="">{FIX.pick}</option>
@@ -80,8 +79,7 @@ export function ReadinessFix({ orgId, page }: { orgId: string; page: FixPageDTO 
             >
               {FIX.setButton}
             </Button>
-          </div>
-        </div>
+        </ActionBar>
       )}
     </div>
   );

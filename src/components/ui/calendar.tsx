@@ -1,8 +1,8 @@
 "use client";
 
 import { DayPicker, type DayPickerProps } from "react-day-picker";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Icon } from "./icon";
 
 /**
  * The one calendar (ADR-0031), react-day-picker dressed in our tokens: its stylesheet is not
@@ -42,7 +42,7 @@ export function Calendar({ className, classNames, ...props }: DayPickerProps) {
       }}
       components={{
         Chevron: ({ orientation }) =>
-          orientation === "left" ? <ChevronLeft className="size-4" aria-hidden /> : <ChevronRight className="size-4" aria-hidden />,
+          orientation === "left" ? <Icon name="previous" size="sm" /> : <Icon name="next" size="sm" />,
       }}
       {...props}
     />

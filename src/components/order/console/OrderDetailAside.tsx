@@ -1,5 +1,4 @@
-import { CreditCard, Mail, MapPin, Phone, User } from "lucide-react";
-
+import { Icon, type IconName } from "@/components/ui/icon";
 import { formatCurrency, formatShortDate } from "@/lib/format";
 import { formatPhone } from "@server/shared/phone";
 import type { AdminOrderDetail } from "@server/checkout/admin.order.types";
@@ -11,23 +10,23 @@ export function OrderDetailAside({ order }: { order: AdminOrderDetail }) {
 
   return (
     <div className="space-y-6">
-      <Card title="Customer" icon={<User className="size-5" />}>
+      <Card title="Buyer" icon="account">
         <p className="font-medium">{address?.fullName || "Guest"}</p>
         {address?.mobile && (
           <p className="flex items-center gap-2">
-            <Phone className="size-4 text-muted-foreground/70" />
+            <Icon name="phone" tone="muted" />
             {formatPhone(address.mobile)}
           </p>
         )}
         {address?.email && (
           <p className="flex items-center gap-2">
-            <Mail className="size-4 text-muted-foreground/70" />
+            <Icon name="email" tone="muted" />
             {address.email}
           </p>
         )}
       </Card>
 
-      <Card title="Delivery address" icon={<MapPin className="size-5" />}>
+      <Card title="Delivery address" icon="location">
         {address ? (
           <div className="space-y-1 text-foreground/80">
             <p>{address.addressLine1}</p>
@@ -42,7 +41,7 @@ export function OrderDetailAside({ order }: { order: AdminOrderDetail }) {
         )}
       </Card>
 
-      <Card title="Order summary" icon={<CreditCard className="size-5" />}>
+      <Card title="Order summary" icon="card">
         <Row label="Items total" value={formatCurrency(order.itemsTotal)} />
         <Row label="Shipping" value={formatCurrency(order.shippingTotal)} />
         {order.discount > 0 && (
@@ -52,19 +51,19 @@ export function OrderDetailAside({ order }: { order: AdminOrderDetail }) {
             className="text-success"
           />
         )}
-        <div className="flex justify-between border-t pt-2 text-base font-semibold">
+        <div className="flex justify-between border-t border-border pt-2 text-body font-semibold">
           <span>Grand total</span>
           <span><Money paise={order.grandTotal} /></span>
         </div>
       </Card>
 
-      <div className="space-y-3 rounded-card border border-border bg-card p-6 text-sm">
+      <div className="space-y-3 rounded-card border border-border bg-card p-4 text-small md:p-6">
         <Row label="Order date" value={formatShortDate(order.createdAt)} />
         <Row label="Payment method" value={order.paymentMethod || "—"} />
         {order.paymentId && (
-          <div className="flex justify-between text-xs">
+          <div className="flex justify-between gap-3 text-caption">
             <span className="text-muted-foreground">Payment ID</span>
-            <span className="font-mono">{order.paymentId}</span>
+            <span className="min-w-0 truncate font-mono">{order.paymentId}</span>
           </div>
         )}
       </div>
@@ -78,16 +77,16 @@ function Card({
   children,
 }: {
   title: string;
-  icon: React.ReactNode;
+  icon: IconName;
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-4 rounded-card border border-border bg-card p-6">
-      <h2 className="flex items-center gap-2 text-lg font-semibold">
-        {icon}
+    <section className="space-y-4 rounded-card border border-border bg-card p-4 md:p-6">
+      <h2 className="flex items-center gap-2 text-title font-semibold">
+        <Icon name={icon} size="md" tone="muted" />
         {title}
       </h2>
-      <div className="space-y-2 text-sm">{children}</div>
+      <div className="space-y-2 text-small">{children}</div>
     </section>
   );
 }

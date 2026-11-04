@@ -80,7 +80,7 @@ export function BidLadder({
                 <p className="text-sm font-semibold">
                   {formatCurrency(bid.amountPaise)}
                   {index === 0 && (
-                    <span className="ml-2 text-3xs uppercase tracking-label text-muted-foreground">
+                    <span className="ml-2 text-2xs uppercase tracking-label text-muted-foreground">
                       Highest
                     </span>
                   )}
@@ -91,7 +91,7 @@ export function BidLadder({
                   {bid.bidderEmail && ` · ${bid.bidderEmail}`}
                   {!bid.bidderEmail && " · no email — cannot be emailed"}
                 </p>
-                <p className="mt-0.5 text-3xs text-muted-foreground">
+                <p className="mt-0.5 text-2xs text-muted-foreground">
                   {bid.isRegistered ? "Registered account" : "Guest"} ·{" "}
                   {new Intl.DateTimeFormat("en-IN", {
                     dateStyle: "medium",

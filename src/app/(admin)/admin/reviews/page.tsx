@@ -11,7 +11,7 @@
  * Filters live in the URL so the server can answer them; the client leaves are the filter bar and
  * the table with its dialog and withdraw action.
  */
-import { PageHeader } from "@/components/shared/page-shell";
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { adminReviewsDAL } from "@/data-access-layer/admin/reviews.dal";
 import { ReviewsFilters } from "@/components/product/console/reviews/ReviewsFilters";
 import { ReviewsTable } from "@/components/product/console/reviews/ReviewsTable";
@@ -59,15 +59,13 @@ export default async function AdminReviewsPage({
   });
 
   return (
-    <div className="space-y-6">
+    <PageShell width="wide">
       <PageHeader
         title="Reviews"
         description="Read, withdraw and restore customer reviews. Nothing here is deleted."
       />
 
-      <div className="rounded-card border border-border bg-card p-4">
-        <ReviewsFilters />
-      </div>
+      <ReviewsFilters />
 
       <ReviewsTable
         reviews={reviews}
@@ -76,6 +74,6 @@ export default async function AdminReviewsPage({
         totalPages={totalPages}
         total={total}
       />
-    </div>
+    </PageShell>
   );
 }

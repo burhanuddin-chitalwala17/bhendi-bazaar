@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Youtube } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { youtubePosterUrl } from "@server/catalog/media";
 
 interface YouTubePosterProps {
@@ -19,8 +19,8 @@ export function YouTubePoster({ ref_, sizes, alt = "" }: YouTubePosterProps) {
   return (
     <>
       <Image src={youtubePosterUrl(ref_)} alt={alt} fill sizes={sizes} className="object-cover" unoptimized />
-      <span className="absolute inset-0 flex items-center justify-center bg-scrim/40">
-        <Youtube className="size-6 text-hero-foreground" aria-hidden />
+      <span className="absolute inset-0 flex items-center justify-center bg-scrim/40 text-hero-foreground">
+        <Icon name="youtube" size="lg" />
       </span>
     </>
   );

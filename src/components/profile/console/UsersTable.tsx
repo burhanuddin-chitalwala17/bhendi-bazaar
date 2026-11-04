@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { toast } from "sonner";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import { useMutation } from "@/hooks/core/useMutation";
 import { adminUserApiClient } from "@/components/profile/console/adminUserApiClient";
 import type { AdminUser } from "@/domain/admin";
-import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { formatCurrency, formatShortDate } from "@/lib/format";
 import { formatPhone } from "@server/shared/phone";
 import { Button } from "@/components/ui/button";
+import { PLATFORM_ROLE } from "@server/identity/admin.user.types";
 
 interface Props {
   users: AdminUser[];
@@ -47,7 +47,7 @@ export function UsersTable({ users, page, pageSize, totalPages, total }: Props) 
     ({ id, isBlocked }: { id: string; isBlocked: boolean }) =>
       adminUserApiClient.toggleBlockUser(id, isBlocked),
     {
-      successMessage: "User status updated successfully!",
+      successMessage: "User updated",
       onSuccess: () => router.refresh(),
     },
   );
@@ -56,12 +56,13 @@ export function UsersTable({ users, page, pageSize, totalPages, total }: Props) 
     {
       key: "name",
       label: "User",
+      phone: "title",
       render: (user) => (
-        <Link href={`/admin/users/${user.id}`} className="block hover:underline">
-          <p className="font-medium">{user.name || "N/A"}</p>
-          <p className="text-sm text-muted-foreground">{user.email}</p>
+        <Link href={`/admin/users/${user.id}`} prefetch={false} className="block hover:underline">
+          <span className="block font-medium">{user.name || "No name"}</span>
+          <span className="block text-small font-normal text-muted-foreground">{user.email}</span>
           {user.mobile && (
-            <p className="text-sm text-muted-foreground">{formatPhone(user.mobile)}</p>
+            <span className="block text-small font-normal text-muted-foreground">{formatPhone(user.mobile)}</span>
           )}
         </Link>
       ),
@@ -69,52 +70,47 @@ export function UsersTable({ users, page, pageSize, totalPages, total }: Props) 
     {
       key: "platformRole",
       label: "Role",
-      render: (user) => (
-        <span
-          className={cn(
-            "rounded-full px-3 py-1 text-xs font-medium",
-            user.platformRole === "ADMIN"
-              ? "bg-accent/40 text-accent-foreground"
-              : "bg-muted text-foreground",
-          )}
-        >
-          {user.platformRole}
-        </span>
-      ),
+      phone: "meta",
+      render: (user) =>
+        user.platformRole === PLATFORM_ROLE.ADMIN ? <StatusBadge tone="info">Admin</StatusBadge> : "Buyer",
     },
-    { key: "ordersCount", label: "Orders", render: (user) => user.ordersCount || 0 },
+    { key: "ordersCount", label: "Orders", phone: "meta", render: (user) => `${user.ordersCount || 0} orders` },
     {
       key: "totalSpent",
-      label: "Total Spent",
+      label: "Total spent",
+      phone: "hidden",
       render: (user) => formatCurrency(user.totalSpent || 0),
     },
     {
       key: "createdAt",
       label: "Joined",
       sortable: true,
+      phone: "hidden",
       render: (user) => formatShortDate(user.createdAt),
     },
     {
       key: "isBlocked",
       label: "Status",
+      phone: "status",
+      render: (user) => (
+        <StatusBadge tone={user.isBlocked ? "destructive" : "success"} dot>
+          {user.isBlocked ? "Blocked" : "Active"}
+        </StatusBadge>
+      ),
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      phone: "trailing",
       render: (user) => (
         <Button
-          variant="ghost"
-          onClick={() =>
-            toggleBlock({ id: user.id, isBlocked: !user.isBlocked }).then(() =>
-              toast.success("User status updated successfully!"),
-            )
-          }
-          disabled={isTogglingBlock}
-          className={cn(
-            "rounded-full px-3 py-1 text-xs font-medium",
-            user.isBlocked
-              ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
-              : "bg-success/15 text-success hover:bg-success/25",
-            isTogglingBlock && "cursor-not-allowed opacity-50",
-          )}
+          variant="outline"
+          size="sm"
+          pending={isTogglingBlock}
+          onClick={() => toggleBlock({ id: user.id, isBlocked: !user.isBlocked }).catch(() => {})}
+          aria-label={`${user.isBlocked ? "Unblock" : "Block"} ${user.name || user.email}`}
         >
-          {user.isBlocked ? "Blocked" : "Active"}
+          {user.isBlocked ? "Unblock" : "Block"}
         </Button>
       ),
     },
@@ -123,6 +119,7 @@ export function UsersTable({ users, page, pageSize, totalPages, total }: Props) 
   return (
     <DataTable
       data={users}
+      label="Users"
       columns={columns}
       totalPages={totalPages}
       currentPage={page}
@@ -130,7 +127,6 @@ export function UsersTable({ users, page, pageSize, totalPages, total }: Props) 
       pageSize={pageSize}
       onPageChange={(next) => go({ page: String(next) })}
       onPageSizeChange={(limit) => go({ limit: String(limit), page: "" })}
-      onSort={(key, order) => go({ sortBy: key, sortOrder: order })}
     />
   );
 }

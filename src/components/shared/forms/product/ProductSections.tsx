@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Check, ChevronDown, Info } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -270,7 +270,7 @@ export function AlsoAsks({ hints }: { hints: ChannelHint[] }) {
     <ul aria-label="What other places ask" className="space-y-1 rounded-card border border-border bg-muted/40 p-3 text-sm">
       {asking.map((hint) => (
         <li key={hint.channel} className="flex items-start gap-2">
-          <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <Icon name="info" tone="muted" className="mt-0.5" />
           <span>{alsoAsks(hint)}</span>
         </li>
       ))}
@@ -302,7 +302,7 @@ export function ReviewReadiness({
       {checking && <p className="text-muted-foreground">Checking…</p>}
       {storeReady && (
         <p className="flex items-center gap-2 text-success">
-          <Check aria-hidden className="size-4 shrink-0" />
+          <Icon name="done" />
           Ready for your store
         </p>
       )}
@@ -317,7 +317,7 @@ export function ReviewReadiness({
             </li>
           ) : hint.ready ? (
             <li key={hint.channel} className="flex items-center gap-2 text-muted-foreground">
-              <Check aria-hidden className="size-4 shrink-0" />
+              <Icon name="done" />
               Ready for {hint.label}
             </li>
           ) : null,
@@ -339,7 +339,7 @@ export function MoreOptions({ open, onToggle, children }: { open: boolean; onTog
         onClick={onToggle}
       >
         More options
-        <ChevronDown aria-hidden className={cn("transition-transform", open && "rotate-180")} />
+        <Icon name="expand" className={cn("transition-transform", open && "rotate-180")} />
       </Button>
       {open && <div className="space-y-4 border-t border-border p-4">{children}</div>}
     </div>

@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { AlertCircle, CheckCircle } from "lucide-react";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
 import { useCategoryForm } from "@/components/category/useCategoryForm";
 import { categoryFormSchemaFor } from "@/lib/validation/schemas/category.schema";
@@ -16,6 +15,7 @@ import {
 import type { AdminCategory, CreateCategoryInput } from "@/domain/admin";
 
 import { PageHeader } from "@/components/shared/page-shell";
+import { Icon } from "@/components/ui/icon";
 interface CategoryFormProps {
   category?: AdminCategory;
   isEdit?: boolean;
@@ -115,7 +115,7 @@ export function CategoryForm({
       <PageHeader
         back={{
           href: returnUrl || "/admin/categories",
-          label: "Back to categories",
+          label: "Categories",
         }}
         title={isEdit ? "Edit Category" : "Create New Category"}
         description={
@@ -128,14 +128,14 @@ export function CategoryForm({
       {/* Error/Success Messages */}
       {formError && (
         <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <Icon name="warning" size="md" className="shrink-0 mt-0.5" />
           <p>{formError}</p>
         </div>
       )}
 
       {successMessage && (
         <div className="bg-success/10 border border-success/30 text-success px-4 py-3 rounded-lg flex items-start gap-3">
-          <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <Icon name="success" size="md" className="shrink-0 mt-0.5" />
           <p>{successMessage}</p>
         </div>
       )}

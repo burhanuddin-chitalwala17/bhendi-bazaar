@@ -2,7 +2,8 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useState } from "react";
-import { CheckCircle, XCircle } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import { useMutation } from "@/hooks/core/useMutation";
@@ -113,7 +114,7 @@ export function ReviewsTable({ reviews, page, pageSize, totalPages, total }: Pro
       label: "Status",
       render: (review) => {
         const state = stateOf(review);
-        return <Badge variant={state.variant}>{state.label}</Badge>;
+        return <StatusBadge tone={state.tone}>{state.label}</StatusBadge>;
       },
     },
     {
@@ -135,12 +136,12 @@ export function ReviewsTable({ reviews, page, pageSize, totalPages, total }: Pro
         return (
           <Button
             variant="ghost"
-            size="icon"
+            shape="icon"
             title={withdrawn ? "Restore" : "Withdraw"}
-            className={withdrawn ? "text-success" : "text-warning"}
+            aria-label={withdrawn ? "Restore" : "Withdraw"}
             onClick={() => setWithdrawn({ id: review.id, withdrawn: !withdrawn })}
           >
-            {withdrawn ? <CheckCircle className="size-4" /> : <XCircle className="size-4" />}
+            {withdrawn ? <Icon name="success" tone="success" /> : <Icon name="error" tone="warning" />}
           </Button>
         );
       },
@@ -158,7 +159,6 @@ export function ReviewsTable({ reviews, page, pageSize, totalPages, total }: Pro
         pageSize={pageSize}
         onPageChange={(next) => go({ page: String(next) })}
         onPageSizeChange={(limit) => go({ limit: String(limit), page: "" })}
-        onSort={(key, order) => go({ sortBy: key, sortOrder: order })}
       />
 
       {/* The review itself, in full. A queue that cannot show one cannot moderate. */}
@@ -177,7 +177,7 @@ export function ReviewsTable({ reviews, page, pageSize, totalPages, total }: Pro
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Stars rating={opened.rating} />
-                  <Badge variant={stateOf(opened).variant}>{stateOf(opened).label}</Badge>
+                  <StatusBadge tone={stateOf(opened).tone}>{stateOf(opened).label}</StatusBadge>
                   {opened.isVerified && <Badge variant="secondary">Verified purchase</Badge>}
                 </div>
 

@@ -58,6 +58,7 @@ class ProductsDAL {
         salePrice: buyerPriceOf(product, context),
         currency: product.currency,
         stock: product.stock,
+        stockByLocation: product.stockByLocation,
         lowStockThreshold: product.lowStockThreshold,
         // A dead store URL would throw in next/image and blank the whole list.
         thumbnail: isRenderableImageUrl(product.thumbnail) ? product.thumbnail : LOGO.ICON,

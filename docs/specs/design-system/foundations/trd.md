@@ -4,7 +4,7 @@
 - **Domain:** cross-domain (front end)
 - **Phase:** 13 — Design system
 - **Verified:** 2026-11-04
-- **References:** [spec.md](spec.md), [../decisions.md](../decisions.md), [ADR-0065](../../../adr/0065-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md), the 2026-11-04 audit spike (four reports: storefront, seller portal, admin, icons and render speed)
+- **References:** [spec.md](spec.md), [../decisions.md](../decisions.md), [ADR-0066](../../../adr/0066-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md), the 2026-11-04 audit spike (four reports: storefront, seller portal, admin, icons and render speed)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
 

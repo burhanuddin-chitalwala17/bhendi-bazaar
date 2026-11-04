@@ -106,12 +106,11 @@ describe("the history section", () => {
 
 describe("Home's line (Q23)", () => {
   const quiet = (teamEdits: HomeAttentionDto["teamEdits"]): HomeAttentionDto => ({
-    parcels: { ok: true, value: 0 },
-    reviews: { ok: true, value: { count: 0, productId: null } },
+    toPack: { ok: true, value: { count: 0, oldestPaidAt: null } },
+    lowStock: { ok: true, value: { count: 0, soldOut: 0, soonestDays: null } },
     channel: { ok: true, value: null },
     stock: { ok: true, value: null },
     photos: { ok: true, value: 0 },
-    auction: { ok: true, value: null },
     teamEdits,
   });
   const now = new Date("2026-11-01T10:00:00Z");

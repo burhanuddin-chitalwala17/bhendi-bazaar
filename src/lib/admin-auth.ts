@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth-config";
 import { accountService } from "@server/identity/account.service";
 import { UnauthorizedError, ForbiddenError } from "@server/shared/domain-error";
 import { credentialFingerprint } from "@/lib/credential-fingerprint";
+import { PLATFORM_ROLE } from "@server/identity/admin.user.types";
 
 /**
  * The signed-in session, or a thrown failure.
@@ -74,7 +75,7 @@ export async function optionalActiveSession(
  */
 async function resolvePlatformAdmin(): Promise<Session> {
   const session = await requireSession();
-  if (session.user.platformRole !== "ADMIN") {
+  if (session.user.platformRole !== PLATFORM_ROLE.ADMIN) {
     throw new ForbiddenError("This area is restricted to platform administrators");
   }
 
@@ -85,7 +86,7 @@ async function resolvePlatformAdmin(): Promise<Session> {
       "Your session is no longer valid. Sign out and sign in again."
     );
   }
-  if (admin.isBlocked || admin.platformRole !== "ADMIN") {
+  if (admin.isBlocked || admin.platformRole !== PLATFORM_ROLE.ADMIN) {
     throw new ForbiddenError("This area is restricted to platform administrators");
   }
 

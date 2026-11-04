@@ -2,30 +2,35 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Ellipsis } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { MORE_TAB, PORTAL_NAV, activeTabKey, portalHref } from "@/components/layout/portal-nav";
+import { Icon } from "@/components/ui/icon";
+import { MORE_TAB, PORTAL_NAV, activeTabKey, portalHref, type PortalNavKey } from "@/components/layout/portal-nav";
 
-// The shop's phone navigation (own-store onboarding D2, own-store Q13): the four tabs PORTAL_NAV
-// marks, then More, which opens the grouped list. Same shape as the storefront's bar; hidden from md.
+// The shop's phone navigation: Home · Products · Orders · Earnings, then More, which opens the
+// grouped list. Same shape as the storefront's bar; hidden from md.
 
 const TAB_CLASSES =
-  "flex h-full flex-1 flex-col items-center justify-center gap-0.5 rounded-none text-3xs font-medium transition-colors";
+  "relative flex h-full flex-1 flex-col items-center justify-center gap-0.5 rounded-none text-2xs font-medium transition-colors duration-fast ease-standard";
 
 function tabTone(active: boolean) {
   return active ? "text-primary" : "text-muted-foreground";
 }
 
+/** Work waiting under a tab, from data the layout already read. Nothing at zero. */
+export type TabCounts = Partial<Record<PortalNavKey, number>>;
+
 export function OrgTabBar({
   orgId,
   moreOpen,
   onMore,
+  counts = {},
 }: {
   orgId: string;
   moreOpen: boolean;
   onMore: () => void;
+  counts?: TabCounts;
 }) {
   const pathname = usePathname();
   const active = activeTabKey(orgId, pathname);
@@ -38,18 +43,30 @@ export function OrgTabBar({
     >
       <div className="flex h-tabbar items-stretch">
         {tabs.map((tab) => {
-          const Icon = tab.icon;
           const isActive = active === tab.key && !moreOpen;
+          const label = tab.tabLabel ?? tab.label;
+          const count = counts[tab.key] ?? 0;
           return (
             <Link
               key={tab.key}
               prefetch={false}
               href={portalHref(tab, orgId) ?? `/org/${orgId}`}
               aria-current={isActive ? "page" : undefined}
+              aria-label={count > 0 ? `${label}, ${count} waiting` : undefined}
               className={cn(TAB_CLASSES, tabTone(isActive))}
             >
-              <Icon className="size-5" aria-hidden />
-              {tab.label}
+              <span className="relative">
+                <Icon name={tab.icon} size="md" filled={isActive} />
+                {count > 0 && (
+                  <span
+                    aria-hidden
+                    className="absolute -right-2.5 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-2xs font-semibold leading-none tabular-nums text-primary-foreground"
+                  >
+                    {count > 99 ? "99+" : count}
+                  </span>
+                )}
+              </span>
+              {label}
             </Link>
           );
         })}
@@ -60,7 +77,7 @@ export function OrgTabBar({
           aria-expanded={moreOpen}
           className={cn(TAB_CLASSES, tabTone(moreOpen || active === MORE_TAB))}
         >
-          <Ellipsis className="size-5" aria-hidden />
+          <Icon name="menu" size="md" />
           More
         </Button>
       </div>

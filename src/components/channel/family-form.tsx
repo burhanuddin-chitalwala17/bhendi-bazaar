@@ -3,9 +3,9 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ActionBar } from "@/components/shared/action-bar";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -326,12 +326,11 @@ export function FamilyForm({
         </p>
       )}
       <p className="text-center text-xs text-muted-foreground">{FAMILY.allOrNone}</p>
-      <div className="fixed inset-x-0 bottom-tabbar z-10 border-t bg-card p-3 md:static md:border-0 md:bg-transparent md:p-0">
-        <Button type="submit" className="min-h-10 w-full md:w-auto" aria-busy={form.isSubmitting}>
-          {form.isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden />}
+      <ActionBar className="-mx-4 md:mx-0">
+        <Button type="submit" className="min-h-10 w-full md:w-auto" pending={form.isSubmitting}>
           {form.isSubmitting ? FAMILY.saving : adding ? FAMILY.add(included) : FAMILY.save(included)}
         </Button>
-      </div>
+      </ActionBar>
     </form>
   );
 }

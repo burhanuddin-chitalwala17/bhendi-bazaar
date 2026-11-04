@@ -1,8 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Package } from "lucide-react";
-
 import { ProfileCard } from "@/components/profile/profile-card";
 import { AddressesSection } from "@/components/profile/addresses-section";
 import { RecentOrdersSection } from "@/components/profile/recent-orders-section";
@@ -41,7 +39,7 @@ export function ProfileSections({
 
   return (
     <div className="space-y-6">
-      {error && <ErrorState message={error} />}
+      {error && <ErrorState title="That didn't save" description={error} />}
 
       <section>
         <ProfileCard
@@ -70,7 +68,6 @@ export function ProfileSections({
       <section>
         {orders.length === 0 ? (
           <EmptyState
-            icon={Package}
             title="No orders found"
             description="You haven't placed any orders yet."
           />

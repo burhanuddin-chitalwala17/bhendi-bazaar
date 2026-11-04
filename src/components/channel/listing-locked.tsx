@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Lock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { HandoffSheet, HANDOFF_WIDE } from "@/components/shared/overlays/handoff-sheet";
 import type { ListingScreenDTO } from "@server/channels/platform-listing.types";
 
@@ -50,7 +50,7 @@ function LockedRow({ orgId, productId, name, value }: { orgId: string; productId
           <span className="text-sm text-muted-foreground">{name}</span>
           <span className="flex items-center gap-2 text-sm tabular-nums">
             {value}
-            <Lock className="size-3.5 text-muted-foreground" aria-hidden />
+            <Icon name="lock" size="xs" tone="muted" />
           </span>
         </Button>
       }

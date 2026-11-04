@@ -1,8 +1,8 @@
 "use client";
 
-import { Loader2, PackageCheck } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { ActionBar } from "@/components/shared/action-bar";
 import { FormDialog } from "@/components/shared/overlays/form-dialog";
 import { SHOP_ORDERS_COPY, SHOP_PARCEL_COPY } from "./parcel-copy";
 import { useMarkReady } from "./useMarkReady";
@@ -14,24 +14,36 @@ interface Props {
   firstOrder: boolean;
   /** Docked above the phone's tab bar only when it is the page's one action, so two never stack. */
   docked: boolean;
+  /** The list card's shorter word for the same act ("Mark packed"); the parcel page keeps its own. */
+  label?: string;
 }
 
 /**
- * "Ready for pickup" on a parcel still being packed (spec R3). Phone: docked above the tab bar
- * (ADR-0016); `lg:` sits in the card header. Never disabled (R15).
+ * "Ready for pickup" on a parcel still being packed (spec R3): the shop marks it packed and we
+ * book the courier. Docked in the page's ActionBar when it is the one action. Never disabled (R15).
  */
-export function ReadyForPickup({ orgId, shipmentId, firstOrder, docked }: Props) {
+export function ReadyForPickup({ orgId, shipmentId, firstOrder, docked, label }: Props) {
   const ready = useMarkReady(orgId, shipmentId);
+  const button = (
+    <Button className={docked ? "min-h-11 w-full md:w-auto" : undefined} size={docked ? "default" : "sm"} onClick={ready.open} pending={ready.sending}>
+      {!ready.sending && <Icon name="parcel" size="sm" />}
+      {ready.sending ? SHOP_PARCEL_COPY.marking : (label ?? SHOP_PARCEL_COPY.ready)}
+    </Button>
+  );
+  const hint = firstOrder ? SHOP_PARCEL_COPY.firstUseHint : undefined;
 
   return (
     <>
-      <div className={docked ? "fixed inset-x-0 bottom-tabbar z-10 border-t bg-card p-3 lg:static lg:border-0 lg:bg-transparent lg:p-0" : "w-full lg:w-auto"}>
-        <Button className="min-h-11 w-full lg:w-auto" onClick={ready.open} aria-busy={ready.sending}>
-          {ready.sending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <PackageCheck className="mr-2 size-4" />}
-          {ready.sending ? SHOP_PARCEL_COPY.marking : SHOP_PARCEL_COPY.ready}
-        </Button>
-        {firstOrder && <p className="mt-2 text-sm text-muted-foreground">{SHOP_PARCEL_COPY.firstUseHint}</p>}
-      </div>
+      {docked ? (
+        <ActionBar className="-mx-4 md:mx-0" status={hint}>
+          {button}
+        </ActionBar>
+      ) : (
+        <div>
+          {button}
+          {hint && <p className="mt-2 text-small text-muted-foreground">{hint}</p>}
+        </div>
+      )}
 
       <FormDialog
         open={ready.confirming}
@@ -39,8 +51,7 @@ export function ReadyForPickup({ orgId, shipmentId, firstOrder, docked }: Props)
         title={SHOP_PARCEL_COPY.confirmTitle}
         description={SHOP_PARCEL_COPY.confirmBody}
       >
-        <Button className="mt-4 min-h-11 w-full" onClick={ready.confirm} aria-busy={ready.sending}>
-          {ready.sending && <Loader2 className="mr-2 size-4 animate-spin" />}
+        <Button className="mt-4 min-h-11 w-full" onClick={ready.confirm} pending={ready.sending}>
           {ready.sending ? SHOP_PARCEL_COPY.marking : SHOP_PARCEL_COPY.confirmYes}
         </Button>
       </FormDialog>

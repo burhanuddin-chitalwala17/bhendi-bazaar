@@ -6,6 +6,8 @@
  * one all-or-nothing create.
  */
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { ActionBar } from "@/components/shared/action-bar";
 import { matchingPaths } from "@server/catalog/bulk/image-match";
 import { imagesOnly, sanitizePath } from "./files";
 import { bulkImportApiClient } from "./bulkImportApiClient";
@@ -159,14 +161,15 @@ export function BulkCategoryWizard() {
       )}
 
       {(step === "uploading" || step === "creating") && (
-        <section className="rounded-xl border border-border bg-card p-4 text-sm">
+        <section className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm">
+          <Spinner />
           {step === "uploading"
             ? "Uploading hero images…"
             : "Creating categories…"}
         </section>
       )}
 
-      <div className="fixed inset-x-0 bottom-tabbar z-30 border-t border-border bg-background/95 p-3 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0">
+      <ActionBar className="-mx-4 md:mx-0">
         {step === "report" && report?.ok ? (
           <Button className="w-full md:w-auto" onClick={createAll}>
             Create {report.rows.length} categories
@@ -175,14 +178,14 @@ export function BulkCategoryWizard() {
           <Button
             className="w-full md:w-auto"
             onClick={check}
-            disabled={
+            pending={
               step === "checking" || step === "uploading" || step === "creating"
             }
           >
             {step === "checking" ? "Checking…" : "Check the sheet"}
           </Button>
         )}
-      </div>
+      </ActionBar>
     </div>
   );
 }

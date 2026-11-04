@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@/hooks/core/useMutation";
 import { orgApiClient } from "@/components/org/console/orgApiClient";
 import { Button } from "@/components/ui/button";
-import { Ban, ShieldOff } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 interface Props {
   orgId: string;
@@ -20,7 +20,7 @@ export function OrgBlockToggle({ orgId, isBlocked }: Props) {
         ? orgApiClient.unblockOrg(orgId)
         : orgApiClient.blockOrg(orgId),
     {
-      successMessage: isBlocked ? "Organisation unblocked" : "Organisation blocked",
+      successMessage: isBlocked ? "Shop unblocked" : "Shop blocked",
       onSuccess: () => router.refresh(),
     },
   );
@@ -30,16 +30,16 @@ export function OrgBlockToggle({ orgId, isBlocked }: Props) {
       variant={isBlocked ? "outline" : "destructive"}
       size="sm"
       onClick={() => toggle()}
-      disabled={isLoading}
+      pending={isLoading}
     >
       {isBlocked ? (
         <>
-          <ShieldOff className="mr-1 h-3.5 w-3.5" />
+          <Icon name="secure" />
           Unblock
         </>
       ) : (
         <>
-          <Ban className="mr-1 h-3.5 w-3.5" />
+          <Icon name="block" />
           Block
         </>
       )}

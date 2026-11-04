@@ -138,3 +138,16 @@ export const ADMIN_CANCEL_COPY = {
   successBooked: (awb: string) => `Cancelled. Now cancel AWB ${awb} on Shiprocket.`,
   openShiprocket: "Open Shiprocket",
 } as const;
+
+export const NOT_PACKED_TAB = "not-packed";
+export const PICKUPS_BASE = "/admin/orders/pickups";
+
+/** A pickups URL keeping only the filters given; `page` 1 is left out. */
+export function pickupsHref(tab: string, filter: { shop?: string; city?: string; page?: number; shown?: number }): string {
+  const q = new URLSearchParams({ tab });
+  if (filter.shown) q.set("shown", String(filter.shown));
+  if (filter.shop) q.set("shop", filter.shop);
+  if (filter.city) q.set("city", filter.city);
+  if (filter.page && filter.page > 1) q.set("page", String(filter.page));
+  return `${PICKUPS_BASE}?${q.toString()}`;
+}

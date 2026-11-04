@@ -1,6 +1,4 @@
-// hooks/product/useProductActions.ts
-
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useCartStore } from "@/store/cartStore";
@@ -13,6 +11,8 @@ export function useProductActions(product: Product) {
 
   const [isAddingToCart, startAddToCart] = useTransition();
   const [isBuyingNow, startBuyNow] = useTransition();
+  // The bag's drop plays once per add that landed; cleared first so a second add replays it.
+  const [justAdded, setJustAdded] = useState(false);
 
   const isOutOfStock = product.stock === 0;
   /**
@@ -37,11 +37,11 @@ export function useProductActions(product: Product) {
 
     if (currentCartQty + 1 > product.stock) {
       toast.warning(
-        `Cannot add more. Maximum ${product.stock} available (${currentCartQty} already in cart)`
+        `Only ${product.stock} available, and ${currentCartQty} already in your bag`
       );
       return;
     }
-    // after stock validation done
+    setJustAdded(false);
     startAddToCart(
       () =>
         new Promise((resolve) => {
@@ -58,12 +58,12 @@ export function useProductActions(product: Product) {
               shippingFromPincode: product.shippingFromPincode,
               org: product.org,
             });
-            toast.success("Added to cart");
+            toast.success("Added to your bag");
+            setJustAdded(true);
             resolve(undefined);
           }, 300);
         })
     );
-    // console.log("CartItems: ", JSON.stringify(items, null, 2));
   };
 
   const handleBuyNow = () => {
@@ -79,12 +79,11 @@ export function useProductActions(product: Product) {
 
     if (currentCartQty >= product.stock) {
       toast.error(
-        `You already have ${currentCartQty} in your cart (maximum available)`
+        `You already have all ${currentCartQty} available in your bag`
       );
       return;
     }
 
-    // Navigate to checkout with product ID in URL
     startBuyNow(() => {
       router.push(`/checkout?buyNow=${product.slug}`);
     });
@@ -95,6 +94,7 @@ export function useProductActions(product: Product) {
     handleBuyNow,
     isAddingToCart,
     isBuyingNow,
+    justAdded,
     isOutOfStock,
     currentCartQty,
     remainingStock,

@@ -4,7 +4,7 @@
 
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { ProductForm } from "@/components/shared/forms/product";
 import { useProducts } from "../useProducts";
 import type { ProductDetails } from "../types";
@@ -76,13 +76,13 @@ export function ProductEditContainer({
       {/* Messages */}
       {error && (
         <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <Icon name="error" size="md" className="mt-0.5" />
           <p>{error}</p>
         </div>
       )}
       {successMessage && (
         <div className="bg-success/10 border border-success/30 text-success px-4 py-3 rounded-lg flex items-start gap-3">
-          <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <Icon name="success" size="md" className="mt-0.5" />
           <p>{successMessage}</p>
         </div>
       )}

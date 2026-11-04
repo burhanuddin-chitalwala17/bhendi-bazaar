@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, type Ref } from "react";
-import { ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
@@ -13,6 +12,7 @@ import {
   splitPhone,
   type PhoneParts,
 } from "@server/shared/phone";
+import { Icon } from "./icon";
 
 interface PhoneInputProps {
   /** E.164, a legacy bare Indian number, or "". */
@@ -94,10 +94,7 @@ export function PhoneInput({
         <span aria-hidden="true" className="tabular-nums">
           {parts.country} +{callingCodeOf(parts.country)}
         </span>
-        <ChevronDown
-          aria-hidden="true"
-          className="size-4 text-muted-foreground"
-        />
+        <Icon name="expand" size="sm" className="text-muted-foreground" />
         <select
           aria-label="Country code"
           value={parts.country}

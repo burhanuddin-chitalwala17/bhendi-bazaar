@@ -1,3 +1,4 @@
+import type { ResponsiveImageDto } from "@server/catalog/image-framing";
 import type { Product } from "@/domain/product";
 import type { ShopReviewDto } from "@server/catalog/review.types";
 import type { BrandOwner } from "@server/catalog/brand-page-sections";
@@ -19,6 +20,8 @@ export interface ThemedPageData {
   logoUrl: string | null;
   /** Up to three, the first being what a link preview shows. */
   heroPhotos: string[];
+  /** The same photos framed for phone and desktop (image-slots D10); empty for a pre-editor cover. */
+  heroImages?: ResponsiveImageDto[];
   heroLine: string | null;
   tagline: string | null;
   /** Everything on sale, for "Shop all {n}". */
@@ -49,6 +52,8 @@ export interface CollectionTile {
   slug: string;
   name: string;
   photoUrl: string | null;
+  /** The shop's own framed photo (image-slots D10); without it the tile draws `photoUrl`. */
+  image?: ResponsiveImageDto | null;
 }
 
 export interface ShopClaim {
@@ -66,6 +71,8 @@ export interface HeroSlice {
   name: string;
   logoUrl: string | null;
   photoUrl: string | null;
+  /** The first hero photo framed for phone and desktop (image-slots D10). */
+  image: ResponsiveImageDto | null;
   line: string | null;
   since: number;
   productCount: number;
@@ -127,6 +134,7 @@ export const heroSlice = (page: ThemedPageData): HeroSlice => ({
   name: page.name,
   logoUrl: page.logoUrl,
   photoUrl: page.heroPhotos[0] ?? null,
+  image: page.heroImages?.[0] ?? null,
   line: page.heroLine ?? page.tagline,
   since: page.since,
   productCount: page.productCount,

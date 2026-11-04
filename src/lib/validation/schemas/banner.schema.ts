@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BannerActionVariant } from "@prisma/client";
+import { imageSlotInputSchema } from "./image-slot.schema";
 
 /**
  * The accepted shape of a banner payload. Parsed by the route and used as the admin
@@ -51,7 +52,8 @@ export const bannerFormSchema = z.object({
     ),
   eyebrow: blankToNull(60).default(null),
   description: blankToNull(400).default(null),
-  imageUrl: blankToNull(2048).default(null),
+  // Desktop and phone pictures with their framing (image-slots); the server checks them again.
+  image: imageSlotInputSchema.nullable().default(null),
   imageAlt: blankToNull(160).default(null),
   isActive: z.boolean().default(true),
   // Two is what the banner lays out; a third would wrap onto its own line on a phone.

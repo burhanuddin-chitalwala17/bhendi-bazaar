@@ -36,6 +36,15 @@ export async function recordAdminAction(entry: CreateLogInput): Promise<void> {
   }
 }
 
+/** `recordAdminAction` for many entries, in one statement; never throws (ADR-0021). */
+export async function recordAdminActions(entries: readonly CreateLogInput[]): Promise<void> {
+  try {
+    await adminLogRepository.createLogs(entries);
+  } catch (error) {
+    console.error("Audit trail write failed; the action itself succeeded", { count: entries.length, error });
+  }
+}
+
 /**
  * Record an action inside the transaction that performs it — both commit or neither.
  *

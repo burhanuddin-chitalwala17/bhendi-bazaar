@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Mail, AlertCircle, CheckCircle } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { authApiClient } from "@/components/auth/authApiClient";
@@ -98,46 +98,46 @@ export function EmailVerificationBanner() {
       <div className="mx-auto max-w-page px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3 flex-1">
-            <Mail className="h-5 w-5 text-warning dark:text-warning shrink-0" />
+            <Icon name="email" size="md" tone="warning" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-warning">
+              <p className="text-small font-medium text-warning">
                 Please verify your email address
               </p>
-              <p className="text-xs text-warning/80 mt-0.5">
+              <p className="mt-0.5 text-caption text-warning">
                 Check your inbox for a verification link or{" "}
                 <Button
                   variant="link"
                   onClick={handleResendEmail}
-                  disabled={isResending}
-                  className="underline hover:no-underline font-semibold"
+                  pending={isResending}
+                  className="h-auto p-0 font-semibold underline hover:no-underline"
                 >
-                  {isResending ? "Sending..." : "resend email"}
+                  resend email
                 </Button>
               </p>
             </div>
           </div>
           <Button
             variant="ghost"
-            size="icon"
+            shape="icon"
             onClick={handleClose}
             className="-m-2 flex h-10 w-10 items-center justify-center text-warning hover:text-warning/80"
             aria-label="Dismiss"
           >
-            <X className="h-5 w-5" />
+            <Icon name="close" size="md" />
           </Button>
         </div>
 
         {resendMessage && (
-          <div className="mt-2 flex items-center gap-2 text-sm">
+          <div className="mt-2 flex items-center gap-2 text-small">
             {resendMessage.includes("success") ||
             resendMessage.includes("sent") ? (
               <>
-                <CheckCircle className="h-4 w-4 text-success" />
+                <Icon name="success" size="sm" tone="success" />
                 <span className="text-success">{resendMessage}</span>
               </>
             ) : (
               <>
-                <AlertCircle className="h-4 w-4 text-destructive" />
+                <Icon name="error" size="sm" tone="destructive" />
                 <span className="text-destructive">{resendMessage}</span>
               </>
             )}

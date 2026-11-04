@@ -42,14 +42,15 @@ describe("PORTAL_NAV", () => {
     expect(orphans).toEqual([]);
   });
 
-  it("has four tabs, then More, in the own-store Q13 order (spec R6)", () => {
-    expect(PORTAL_NAV.filter((e) => e.tab).map((e) => e.label)).toEqual(["Home", "Orders", "Products", "Shop"]);
+  it("has four tabs, then More, in the design-system order: money and buyers before the shop", () => {
+    expect(PORTAL_NAV.filter((e) => e.tab).map((e) => e.tabLabel ?? e.label)).toEqual(["Home", "Products", "Orders", "Earnings"]);
   });
 
   it("lights one tab on every page — its own, its section's, or More (spec A3)", () => {
     expect(activeTabKey(ORG, `/org/${ORG}`)).toBe("home");
     expect(activeTabKey(ORG, `/org/${ORG}/orders/x`)).toBe("orders");
-    expect(activeTabKey(ORG, `/org/${ORG}/locations`)).toBe("shop");
+    expect(activeTabKey(ORG, `/org/${ORG}/earnings`)).toBe("earnings");
+    expect(activeTabKey(ORG, `/org/${ORG}/locations`)).toBe(MORE_TAB);
     expect(activeTabKey(ORG, `/org/${ORG}/channels/x/listings`)).toBe(MORE_TAB);
   });
 

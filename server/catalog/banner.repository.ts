@@ -5,7 +5,8 @@
 
 import { cache } from "react";
 import { prisma } from "@server/shared/prisma";
-import type { AdminBanner, BannerInput } from "@server/catalog/banner.types";
+import type { AdminBanner, BannerActionInput } from "@server/catalog/banner.types";
+import type { ImageSlotColumns } from "@server/catalog/image-slot-write";
 import { nextBannerOrder } from "@server/catalog/banner.order";
 
 const SELECT = {
@@ -14,6 +15,9 @@ const SELECT = {
   eyebrow: true,
   description: true,
   imageUrl: true,
+  imageAssetId: true,
+  phoneImageUrl: true,
+  imageFraming: true,
   imageAlt: true,
   order: true,
   isActive: true,
@@ -22,6 +26,16 @@ const SELECT = {
     orderBy: { order: "asc" },
   },
 } as const;
+
+/** What a write stores: the words, the actions, and the picture columns `resolveImageSlot` produced. */
+export type BannerWrite = ImageSlotColumns & {
+  title: string | null;
+  eyebrow: string | null;
+  description: string | null;
+  imageAlt: string | null;
+  isActive: boolean;
+  actions: BannerActionInput[];
+};
 
 class BannerRepository {
   /** The storefront read. Memoised per request like every other hot read. The nested
@@ -53,7 +67,7 @@ class BannerRepository {
   }
 
   /** Appends. `order` is never taken from the caller — only `reorder` sets it. */
-  async create(data: BannerInput): Promise<AdminBanner> {
+  async create(data: BannerWrite): Promise<AdminBanner> {
     const last = await prisma.banner.findFirst({
       orderBy: { order: "desc" },
       select: { order: true },
@@ -71,7 +85,7 @@ class BannerRepository {
 
   /** Actions are replaced wholesale: they are ordered and unnamed, so diffing them
    *  by index would rename rows rather than move them. */
-  async update(id: string, data: BannerInput): Promise<AdminBanner> {
+  async update(id: string, data: BannerWrite): Promise<AdminBanner> {
     const { actions, ...banner } = data;
     return prisma.$transaction(async (tx) => {
       await tx.bannerAction.deleteMany({ where: { bannerId: id } });

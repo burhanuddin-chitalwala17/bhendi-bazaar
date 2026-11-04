@@ -1,13 +1,13 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { FORM_FACTOR_QUERY, useMediaQuery } from "@/hooks/core/useMediaQuery";
 import { cn } from "@/lib/utils";
+import { Icon } from "@/components/ui/icon";
 
 /** What a hand-off becomes from `lg:`: a popover beside its control, or a 28rem side sheet. */
 export const HANDOFF_WIDE = { POPOVER: "popover", SIDE: "side" } as const;
@@ -60,8 +60,8 @@ export function HandoffSheet({ open, onOpenChange, trigger, title, closeLabel, d
             {description && <SheetDescription>{description}</SheetDescription>}
           </div>
           <SheetClose asChild>
-            <Button variant="ghost" size="icon" className="size-11 shrink-0" aria-label={closeLabel}>
-              <X className="size-4" />
+            <Button variant="ghost" shape="icon" className="size-11 shrink-0" aria-label={closeLabel}>
+              <Icon name="close" size="sm" />
             </Button>
           </SheetClose>
         </div>

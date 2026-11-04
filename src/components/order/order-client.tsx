@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Package, Truck, MapPin, ExternalLink } from "lucide-react";
 import { OrderSummary } from "@/components/order/order-summary";
-import { SectionHeader } from "../shared/SectionHeader";
-import { Badge } from "@/components/ui/badge";
+import { Icon } from "@/components/ui/icon";
+import { StatusBadge, type StatusTone } from "@/components/shared/badges/StatusBadge";
+import { cn } from "@/lib/utils";
 import type { Order, Shipment } from "@/domain/order";
 import { ORDER_STATUS, PAYMENT_STATUS } from "@server/checkout/order.types";
 import type { BuyerCancelView } from "@server/checkout/buyer-cancel-view";
@@ -16,17 +16,51 @@ import { PARCEL_REFUND } from "@server/checkout/parcel-cancel.types";
 import { ParcelTimeline } from "@/components/order/timeline/parcel-timeline";
 import { TIMELINE_READER } from "@/components/order/timeline/timeline-copy";
 import { orderHeadline } from "./order-headline";
+import { PageHeader } from "@/components/shared/page-shell";
 
-const STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  [ORDER_STATUS.PENDING_PAYMENT]: { label: "Awaiting Payment", className: "bg-warning text-warning-foreground" },
-  [ORDER_STATUS.CONFIRMED]: { label: "Confirmed", className: "bg-info text-info-foreground" },
-  [ORDER_STATUS.PROCESSING]: { label: "Processing", className: "bg-info text-info-foreground" },
-  [ORDER_STATUS.PACKED]: { label: "Packed", className: "bg-primary text-primary-foreground" },
-  [ORDER_STATUS.SHIPPED]: { label: "Shipped", className: "bg-primary text-primary-foreground" },
-  [ORDER_STATUS.DELIVERED]: { label: "Delivered", className: "bg-success text-success-foreground" },
-  [ORDER_STATUS.CANCELLED]: { label: "Cancelled", className: "bg-muted text-muted-foreground" },
-  [ORDER_STATUS.FAILED]: { label: "Payment Failed", className: "bg-destructive text-destructive-foreground" },
+const STATUS_LABELS: Record<string, { label: string; tone: StatusTone }> = {
+  [ORDER_STATUS.PENDING_PAYMENT]: { label: "Awaiting payment", tone: "warning" },
+  [ORDER_STATUS.CONFIRMED]: { label: "Confirmed", tone: "info" },
+  [ORDER_STATUS.PROCESSING]: { label: "Being packed", tone: "info" },
+  [ORDER_STATUS.PACKED]: { label: "Packed", tone: "info" },
+  [ORDER_STATUS.SHIPPED]: { label: "On its way", tone: "success" },
+  [ORDER_STATUS.DELIVERED]: { label: "Delivered", tone: "success" },
+  [ORDER_STATUS.CANCELLED]: { label: "Cancelled", tone: "neutral" },
+  [ORDER_STATUS.FAILED]: { label: "Payment failed", tone: "destructive" },
 };
+
+/** A parcel's journey as four steps; the courier's finer states fold into the one they belong to. */
+export const PARCEL_STEPS = ["Packed", "Shipped", "Out for delivery", "Delivered"] as const;
+const STEP_OF: Record<string, number> = {
+  [SHIPMENT_STATUS.PACKING]: -1,
+  [SHIPMENT_STATUS.READY_FOR_PICKUP]: 0,
+  [SHIPMENT_STATUS.PICKUP_BOOKED]: 0,
+  [SHIPMENT_STATUS.PICKED_UP]: 1,
+  [SHIPMENT_STATUS.IN_TRANSIT]: 1,
+  [SHIPMENT_STATUS.OUT_FOR_DELIVERY]: 2,
+  [SHIPMENT_STATUS.DELIVERY_FAILED]: 2,
+  [SHIPMENT_STATUS.DELIVERED]: 3,
+};
+
+/** How far along the four steps a parcel is; null off the forward path (cancelled, returned, lost). */
+export function parcelStep(status: string): number | null {
+  return status in STEP_OF ? STEP_OF[status] : null;
+}
+
+function ParcelProgress({ status }: { status: string }) {
+  const reached = parcelStep(status);
+  if (reached === null) return null;
+  return (
+    <ol aria-label="Parcel progress" className="grid grid-cols-4 gap-1">
+      {PARCEL_STEPS.map((label, i) => (
+        <li key={label} aria-current={i === reached ? "step" : undefined} className="space-y-1.5">
+          <span className={cn("block h-1 rounded-full", i <= reached ? "bg-primary" : "bg-muted")} />
+          <span className={cn("block text-caption", i <= reached ? "text-foreground" : "text-muted-foreground", i === reached && "font-semibold")}>{label}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 /** The states a booked arrival day is still worth promising in (ux.md "Success: booked"). */
 const ARRIVING: readonly string[] = [
@@ -69,24 +103,37 @@ function ShipmentCard({ shipment, timeline, cancel }: { shipment: Shipment; time
   const refundState = !refund ? PARCEL_REFUND.NONE : refund.started ? PARCEL_REFUND.STARTED : PARCEL_REFUND.OWED;
   const withRefund = timeline ? { ...timeline, refund: refundState } : timeline;
   return (
-    <div className="flex flex-col gap-2 rounded-card border border-border/70 bg-muted/30 p-3 text-sm">
-      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-        <Truck className="h-3.5 w-3.5" />
-        <span>Shipment {shipment.code}</span>
+    <section aria-label={`Parcel ${shipment.code}`} className="flex flex-col gap-3 rounded-card border border-border bg-card p-4 text-small">
+      <div className="flex items-start gap-3">
+        <Icon name="parcel" size="md" tone="muted" />
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-foreground">{shipment.org?.name ? `From ${shipment.org.name}` : `Parcel ${shipment.code}`}</p>
+          <p className="text-caption text-muted-foreground">
+            {shipment.items.map((item) => `${item.productName} × ${item.quantity}`).join(", ")}
+          </p>
+        </div>
       </div>
-      {eta && <p className="font-medium">{BUYER_COPY.arrivesBy(eta)}</p>}
+      {eta && <p className="font-semibold">{BUYER_COPY.arrivesBy(eta)}</p>}
+      <ParcelProgress status={shipment.status} />
       {shipment.trackingUrl && ARRIVING.includes(shipment.status) && (
         <Link
           href={shipment.trackingUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-10 items-center gap-1 text-sm text-primary hover:underline"
+          className="inline-flex min-h-10 items-center gap-1 self-start font-medium text-primary hover:underline"
         >
-          {BUYER_COPY.track} <ExternalLink className="h-3 w-3" />
+          {BUYER_COPY.track} <Icon name="external" size="xs" />
         </Link>
       )}
       {refundText && <p className="font-medium">{refundText}</p>}
-      <ParcelTimeline timeline={withRefund} reader={TIMELINE_READER.BUYER} />
+      <details className="group">
+        <summary className="min-h-10 cursor-pointer list-none py-2 text-caption font-medium text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            Every update <Icon name="expand" size="xs" />
+          </span>
+        </summary>
+        <ParcelTimeline timeline={withRefund} reader={TIMELINE_READER.BUYER} />
+      </details>
       {canAct && cancel.viewerOwns && (
         <BuyerCancel
           orderId={cancel.orderId}
@@ -100,7 +147,7 @@ function ShipmentCard({ shipment, timeline, cancel }: { shipment: Shipment; time
       {canAct && !cancel.viewerOwns && (
         <ContactLauncher className="min-h-11 w-full border sm:w-auto">{BUYER_CANCEL_COPY.contactUs}</ContactLauncher>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -131,47 +178,40 @@ export function OrderClient({ order, timelines, cancelView, viewerOwns }: OrderC
 
   return (
     <div className="space-y-6">
-      <header className="space-y-3">
-        <SectionHeader as="h1" overline="Order" {...orderHeadline(order.status)} />
-      </header>
+      <PageHeader
+        eyebrow={`Order ${order.code}`}
+        back={viewerOwns ? { href: "/orders", label: "Your orders" } : undefined}
+        actions={statusInfo && <StatusBadge tone={statusInfo.tone} dot>{statusInfo.label}</StatusBadge>}
+        {...orderHeadline(order.status)}
+      />
 
-      {/* Order status + tracking */}
-      <section className="space-y-3 rounded-card border border-border/70 bg-card/80 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Package className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Order Status</span>
-          </div>
-          {statusInfo && (
-            <Badge className={statusInfo.className}>{statusInfo.label}</Badge>
-          )}
+      <div className="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-10">
+        <div className="space-y-3">
+          {order.shipments.length > 1 && <p className="text-small font-medium">{BUYER_COPY.parcels(order.shipments.length)}</p>}
+          {order.shipments.map((shipment) => (
+            <ShipmentCard key={shipment.id} shipment={shipment} timeline={timelines[shipment.id]} cancel={cancel} />
+          ))}
+          {cancelView.couponsBack.map((code) => (
+            <p key={code} className="text-small">{BUYER_CANCEL_COPY.couponBack(code)}</p>
+          ))}
         </div>
 
-        {order.address && (
-          <div className="flex items-start gap-2 text-xs text-muted-foreground">
-            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span>
-              {order.address.fullName}, {order.address.city}{" "}
-              {order.address.pincode}
-            </span>
+        <div className="space-y-4">
+          {order.address && (
+            <p className="flex items-start gap-2 rounded-card border border-border bg-card p-4 text-small text-muted-foreground">
+              <Icon name="location" size="md" />
+              <span>
+                {order.address.fullName} · {order.address.city} {order.address.pincode}
+              </span>
+            </p>
+          )}
+          <OrderSummary order={order} showShare={true} />
+          <div className="flex items-center gap-2 text-small text-muted-foreground">
+            <Icon name="help" size="md" />
+            <span>Need help with this order?</span>
+            <ContactLauncher className="h-auto min-h-10 px-0 text-small font-medium text-primary hover:bg-transparent">Contact us</ContactLauncher>
           </div>
-        )}
-
-        {order.shipments.length > 0 && (
-          <div className="space-y-2 pt-1">
-            {order.shipments.length > 1 && <p className="text-sm font-medium">{BUYER_COPY.parcels(order.shipments.length)}</p>}
-            {order.shipments.map((shipment) => (
-              <ShipmentCard key={shipment.id} shipment={shipment} timeline={timelines[shipment.id]} cancel={cancel} />
-            ))}
-            {cancelView.couponsBack.map((code) => (
-              <p key={code} className="text-sm">{BUYER_CANCEL_COPY.couponBack(code)}</p>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <div className="grid gap-6 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-        <OrderSummary order={order} showShare={true} />
+        </div>
       </div>
     </div>
   );

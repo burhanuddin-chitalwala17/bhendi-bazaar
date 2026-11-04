@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { CheckCircle2, ChevronRight, Circle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { Card, CardContent } from "@/components/ui/card";
 import { RefreshButton } from "@/components/channel/refresh-button";
 import { cn } from "@/lib/utils";
@@ -51,7 +51,7 @@ export function SetupList({ orgId, setup, share }: { orgId: string; setup: HomeR
       <Card id={SETUP_LIST_ID} className="py-4">
         <CardContent className="flex flex-wrap items-center justify-between gap-3">
           <p className="flex items-center gap-2 text-sm font-medium">
-            <CheckCircle2 className="size-5 shrink-0 text-success" aria-hidden />
+            <Icon name="success" size="md" tone="success" />
             {HOME_COPY.setUp}
           </p>
           {share && (
@@ -79,7 +79,7 @@ export function SetupList({ orgId, setup, share }: { orgId: string; setup: HomeR
     <Card id={SETUP_LIST_ID} className="py-4">
       <CardContent className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-heading text-base font-semibold">{HOME_COPY.setupTitle(status.doneCount)}</h2>
+          <h2 className="font-heading text-title font-semibold">{HOME_COPY.setupTitle(status.doneCount)}</h2>
           <HideSetupButton orgId={orgId} />
         </div>
         <ol className="space-y-1">
@@ -90,14 +90,14 @@ export function SetupList({ orgId, setup, share }: { orgId: string; setup: HomeR
             const body = (
               <>
                 {step.done ? (
-                  <CheckCircle2 className="size-5 shrink-0 text-success" aria-hidden />
+                  <Icon name="success" size="md" tone="success" />
                 ) : (
-                  <Circle className={cn("size-5 shrink-0", isNext ? "text-primary" : "text-muted-foreground")} aria-hidden />
+                  <Icon name="dot" size="md" tone={isNext ? "primary" : "muted"} />
                 )}
                 <span className={cn("min-w-0 flex-1 text-sm", step.done && "text-muted-foreground line-through", isNext && "font-semibold")}>
                   {STEP_TITLE[step.key]}
                 </span>
-                {href && <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />}
+                {href && <Icon name="next" size="sm" tone="muted" />}
               </>
             );
             const row = (

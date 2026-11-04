@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ImagePlus } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { APP_NAME } from "@/lib/config";
 import {
@@ -159,7 +159,7 @@ export function ThemedSections({ theme, page, preview = false }: { theme: ThemeK
             {node}
             {askPhoto && (
               <span className="absolute right-gutter top-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-3 py-1.5 font-label text-tag text-foreground shadow-overlay">
-                <ImagePlus className="size-3.5" aria-hidden />
+                <Icon name="add-photo" size="xs" />
                 {PREVIEW_COPY.addPhoto}
               </span>
             )}

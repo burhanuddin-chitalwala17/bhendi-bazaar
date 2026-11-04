@@ -105,11 +105,11 @@ export function GuestAddress({
   return (
     <div className="space-y-3">
       {/* A caption over a group of controls, not a label for one of them. */}
-      <span className="text-xs font-medium uppercase tracking-eyebrow text-muted-foreground/80">
+      <span className="text-caption font-medium uppercase tracking-eyebrow text-muted-foreground/80">
         Delivery Address
       </span>
 
-      <div className="rounded-xl border border-border/70 bg-card/80 p-4">
+      <div className="rounded-card border border-border/70 bg-card/80 p-4">
         <AddressFields
           register={register}
           control={control}

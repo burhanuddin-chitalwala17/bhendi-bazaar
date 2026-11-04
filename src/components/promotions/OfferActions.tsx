@@ -13,8 +13,8 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Pencil, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { useMutation } from "@/hooks/core/useMutation";
 import { offersApiClient } from "@/components/promotions/offersApiClient";
 
@@ -45,12 +45,12 @@ export function OfferActions({
     <div className="mt-3 flex gap-2 border-t border-border pt-3">
       <Button asChild variant="outline" size="sm">
         <Link href={editHref} prefetch={false}>
-          <Pencil className="size-3.5" aria-hidden /> Edit
+          <Icon name="edit" size="xs" /> Edit
         </Link>
       </Button>
       {isActive && (
-        <Button variant="ghost" size="sm" onClick={stop} disabled={isStopping}>
-          <Square className="size-3.5" aria-hidden />
+        <Button variant="ghost" size="sm" onClick={stop} pending={isStopping}>
+          {!isStopping && <Icon name="square" size="xs" />}
           {isStopping ? "Stopping…" : "Stop"}
         </Button>
       )}

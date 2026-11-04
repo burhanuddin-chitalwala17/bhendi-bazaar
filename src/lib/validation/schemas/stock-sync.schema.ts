@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** Pause stock sync for one marketplace, or turn it back on, from the Channels card (inventory-sync Q27). */
+/** Pause stock sync for one marketplace, or turn it back on, from the Channels card (inventory-sync Q28). */
 export const stockSyncChangeSchema = z.object({ action: z.enum(["on", "pause"]) });
 export type StockSyncChangeInput = z.input<typeof stockSyncChangeSchema>;
 

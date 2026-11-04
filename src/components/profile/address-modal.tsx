@@ -1,13 +1,13 @@
 "use client";
 
 import type { DeliveryAddress } from "@/domain/profile";
-import { X, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormActions } from "../shared/button-groups/FormActions";
 import { AddressFields } from "../shared/forms/AddressFields";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { addAddressSchema } from "@/lib/validation/schemas/address.schema";
 import { formatPhone } from "@server/shared/phone";
+import { Icon } from "@/components/ui/icon";
 
 interface AddressModalProps {
   mode: "view" | "edit" | "add";
@@ -53,12 +53,12 @@ export function AddressModal({
           </div>
           <Button
             variant="outline"
-            size="icon"
+            shape="icon"
             type="button"
             onClick={onClose}
             className="flex h-10 w-10 items-center justify-center rounded-full border-border/60 text-xs"
           >
-            <X className="h-4 w-4" />
+            <Icon name="close" size="sm" />
           </Button>
         </div>
 
@@ -144,7 +144,7 @@ function AddressViewMode({
           onClick={onStartEdit}
           className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
         >
-          <Edit3 className="mr-1 h-3 w-3" />
+          <Icon name="edit" size="xs" className="mr-1" />
           Edit
         </Button>
       </div>

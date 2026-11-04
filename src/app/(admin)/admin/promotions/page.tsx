@@ -2,10 +2,10 @@
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminPromotionService } from "@server/promotions/admin.promotion.service";
 import Link from "next/link";
-import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OfferList, type OfferRow } from "@/components/promotions/OfferList";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { Icon } from "@/components/ui/icon";
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
 
 export default async function AdminPromotionsPage() {
   await requirePlatformAdmin();
@@ -17,20 +17,23 @@ export default async function AdminPromotionsPage() {
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <SectionHeader as="h1" title="Offers" description="Platform-funded offers. These apply across every organisation's goods, and the platform bears whatever an organisation's own offer does not already cover." />
-        <Button asChild>
-          <Link href="/admin/promotions/new" prefetch={false}>
-            <Plus className="size-4" aria-hidden /> New offer
-          </Link>
-        </Button>
-      </div>
+    <PageShell width="wide">
+      <PageHeader
+        title="Offers"
+        description="Platform-funded offers. They apply across every shop's goods, and the platform bears whatever a shop's own offer does not already cover."
+        actions={
+          <Button asChild>
+            <Link href="/admin/promotions/new" prefetch={false}>
+              <Icon name="add" /> New offer
+            </Link>
+          </Button>
+        }
+      />
       <OfferList
         offers={offers.offers}
         basePath="/admin/promotions"
         apiPath="/api/admin/promotions"
       />
-    </div>
+    </PageShell>
   );
 }

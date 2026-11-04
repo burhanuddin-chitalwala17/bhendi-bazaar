@@ -2,10 +2,10 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useState } from "react";
-import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 
 /** The category search, held in the URL so the server can answer it ([ADR-0034]). */
 export function CategoriesFilters() {
@@ -28,11 +28,12 @@ export function CategoriesFilters() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && apply()}
-        placeholder="Search categories..."
+        placeholder="Search categories…"
+        aria-label="Search categories"
         className="flex-1"
       />
       <Button variant="default" onClick={apply} className="flex items-center gap-2">
-        <Search className="size-4" />
+        <Icon name="search" />
         Search
       </Button>
     </div>

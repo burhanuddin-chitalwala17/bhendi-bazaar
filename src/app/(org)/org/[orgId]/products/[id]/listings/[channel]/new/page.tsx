@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 
 import { requireOrgMember } from "@/lib/org-auth";
 import { platformListingDAL } from "@/data-access-layer/platform-listing.dal";
-import { PageShell } from "@/components/shared/page-shell";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageShell, PageHeader } from "@/components/shared/page-shell";
 import { PutOnMarketplace } from "@/components/channel/put-on-marketplace";
 import { CREATE } from "@/components/channel/platform-listing-copy";
 
@@ -20,7 +19,7 @@ export default async function PutOnMarketplacePage({ params }: { params: Promise
   if (!start) notFound();
   return (
     <PageShell width="narrow">
-      <SectionHeader as="h1" help="channels" title={CREATE.putOn(start.label)} description={start.productName} />
+      <PageHeader help="channels" title={CREATE.putOn(start.label)} description={start.productName} />
       <PutOnMarketplace orgId={scope.orgId} start={start} />
     </PageShell>
   );

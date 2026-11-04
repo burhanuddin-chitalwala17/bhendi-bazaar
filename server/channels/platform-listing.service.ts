@@ -78,7 +78,7 @@ const writableOnly = (values: Partial<ListingValues>, rules: ListingRules): List
  * Make a row for each linked product that has none, with what is live (D3): the marketplace's copy
  * kept wherever it differs, and `sent` as the computed listing, so nothing waits.
  */
-async function ensure(orgId: string, connection: Connection, channel: MarketplaceChannel, productIds: readonly string[]): Promise<void> {
+export async function ensure(orgId: string, connection: Connection, channel: MarketplaceChannel, productIds: readonly string[]): Promise<void> {
   if (productIds.length === 0) return;
   const [products, mirrors, rows] = await Promise.all([
     productService.forListing(orgId, productIds),

@@ -1,10 +1,12 @@
 /**
  * Admin Orders Page — a server component ([ADR-0034]).
  *
- * Filters live in the URL, so the server answers the question the URL asks. Two client leaves
- * remain: the filter bar, and the status control on each row.
+ * Filters live in the URL, so the server answers the question the URL asks. The status is a tab
+ * (a link); search and payment are the one client leaf.
  */
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
+import { PageTabs } from "@/components/shared/page-tabs";
+import { ORDER_TABS } from "@/components/order/console/order-status";
 import { adminOrdersDAL } from "@/data-access-layer/admin/orders.dal";
 import { OrdersFilters } from "@/components/order/console/OrdersFilters";
 import { OrdersTable } from "@/components/order/console/OrdersTable";
@@ -38,23 +40,50 @@ export default async function AdminOrdersPage({
   const page = resolvePageNumber(one("page"));
   const limit = resolvePageSize(one("limit"), DEFAULT_PAGE_SIZE);
 
-  const { orders, total, totalPages } = await adminOrdersDAL.list({
-    search: one("search") || undefined,
-    status: oneOf(Object.values(ORDER_STATUS), one("status")),
-    paymentStatus: oneOf(Object.values(PAYMENT_STATUS), one("paymentStatus")),
-    page,
-    limit,
-    sortBy: resolveSortBy(one("sortBy"), SORTABLE, "createdAt"),
-    sortOrder: resolveSortOrder(one("sortOrder")),
-  });
+  const status = oneOf(Object.values(ORDER_STATUS), one("status"));
+  const [{ orders, total, totalPages }, counts] = await Promise.all([
+    adminOrdersDAL.list({
+      search: one("search") || undefined,
+      status,
+      paymentStatus: oneOf(Object.values(PAYMENT_STATUS), one("paymentStatus")),
+      page,
+      limit,
+      sortBy: resolveSortBy(one("sortBy"), SORTABLE, "createdAt"),
+      sortOrder: resolveSortOrder(one("sortOrder")),
+    }),
+    adminOrdersDAL.statusCounts(),
+  ]);
+
+  // A tab keeps the search and payment filter; it starts again at page one.
+  const tabHref = (tabStatus: string | null) => {
+    const next = new URLSearchParams();
+    for (const key of ["search", "paymentStatus"])
+      if (one(key)) next.set(key, one(key)!);
+    if (tabStatus) next.set("status", tabStatus);
+    const query = next.toString();
+    return query ? `/admin/orders?${query}` : "/admin/orders";
+  };
+  const all = Object.values(counts).reduce((sum, n) => sum + n, 0);
 
   return (
-    <div className="space-y-6">
-      <SectionHeader overline="Orders" title="Orders" />
+    <PageShell width="wide">
+      <PageHeader
+        title="Orders"
+        description="Every order on the platform, newest first."
+      />
 
-      <div className="rounded-lg border border-border bg-card p-4">
-        <OrdersFilters />
-      </div>
+      <PageTabs
+        label="Order status"
+        current={status ?? "all"}
+        tabs={ORDER_TABS.map((tab) => ({
+          key: tab.key,
+          label: tab.label,
+          href: tabHref(tab.status),
+          count: tab.status ? counts[tab.status] : all,
+        }))}
+      />
+
+      <OrdersFilters />
 
       <OrdersTable
         orders={orders}
@@ -63,6 +92,6 @@ export default async function AdminOrdersPage({
         totalPages={totalPages}
         total={total}
       />
-    </div>
+    </PageShell>
   );
 }

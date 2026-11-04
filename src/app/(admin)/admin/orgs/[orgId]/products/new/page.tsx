@@ -41,7 +41,7 @@ export default async function AdminNewProductForShopPage({ params }: { params: P
     return (
       <PageShell>
         <PageHeader back={{ href: `/admin/orgs/${orgId}`, label: org.name }} title="Add product for this shop" />
-        <p role="status" className="rounded-card border border-warning/40 bg-warning/10 p-4 text-sm text-foreground">
+        <p role="status" className="rounded-card border border-warning/40 bg-warning/10 p-4 text-small text-foreground">
           {org.name} has no pickup address yet. Add one for them first.
         </p>
         {/* "Add location" waits for an admin address surface (decisions Q37); until then, back to the shop. */}

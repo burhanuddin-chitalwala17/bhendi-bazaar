@@ -1,8 +1,8 @@
 "use client";
 
-import { Loader2, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { FormDialog } from "@/components/shared/overlays/form-dialog";
 import { CancelReasons } from "@/components/order/cancel/cancel-reasons";
 import { CancelRefused } from "@/components/order/cancel/cancel-refused";
@@ -18,8 +18,8 @@ export function AdminCancelParcel({ shipmentId }: { shipmentId: string }) {
 
   return (
     <>
-      <Button size="sm" variant="outline" className="min-h-10" onClick={() => cancel.setOpen(true)}>
-        <XCircle className="mr-2 size-4" />
+      <Button size="sm" variant="outline" onClick={() => cancel.setOpen(true)}>
+        <Icon name="parcel-cancelled" />
         {ADMIN_CANCEL_COPY.open}
       </Button>
       <FormDialog
@@ -42,16 +42,15 @@ export function AdminCancelParcel({ shipmentId }: { shipmentId: string }) {
               otherError={errors.other?.message}
             />
             {cancel.form.formError && (
-              <p role="alert" className="text-sm text-destructive">
+              <p role="alert" className="text-small text-destructive">
                 {cancel.form.formError}
               </p>
             )}
             <div className="flex flex-col gap-2 md:flex-row-reverse">
-              <Button type="submit" variant="destructive" className="min-h-11" aria-busy={cancel.form.isSubmitting}>
-                {cancel.form.isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+              <Button type="submit" variant="destructive" size="lg" pending={cancel.form.isSubmitting}>
                 {cancel.form.isSubmitting ? ADMIN_CANCEL_COPY.cancelling : ADMIN_CANCEL_COPY.confirm}
               </Button>
-              <Button type="button" variant="outline" className="min-h-11" onClick={() => cancel.setOpen(false)}>
+              <Button type="button" variant="outline" size="lg" onClick={() => cancel.setOpen(false)}>
                 {ADMIN_CANCEL_COPY.keep}
               </Button>
             </div>

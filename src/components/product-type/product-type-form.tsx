@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { AlertCircle } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import { FormInput, FormSelect, FormTextarea } from "@/components/shared/forms/FormField";
@@ -117,15 +117,15 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
       {error && (
         <p
           role="alert"
-          className="flex items-start gap-2 rounded-field border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+          className="flex items-start gap-2 rounded-field border border-destructive/30 bg-destructive/10 p-3 text-small text-destructive"
         >
-          <AlertCircle className="mt-0.5 size-4 shrink-0" />
+          <Icon name="error" className="mt-0.5" />
           {error}
         </p>
       )}
 
       <section className="rounded-card border border-border bg-card p-4 md:p-6">
-        <h2 className="mb-4 text-lg font-semibold text-foreground">What it is</h2>
+        <h2 className="mb-4 text-title font-semibold text-foreground">What it is</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <FormInput
             label="Name"
@@ -152,8 +152,8 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
       </section>
 
       <section className="rounded-card border border-border bg-card p-4 md:p-6">
-        <h2 className="text-lg font-semibold text-foreground">What it asks</h2>
-        <p className="mb-4 mt-1 text-sm text-muted-foreground">
+        <h2 className="text-title font-semibold text-foreground">What it asks</h2>
+        <p className="mb-4 mt-1 text-small text-muted-foreground">
           Each line says which marketplaces mark it compulsory somewhere. Leaving one out is
           allowed; it means a listing there will be refused until it is answered.
         </p>
@@ -179,8 +179,8 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
       </section>
 
       <section className="rounded-card border border-border bg-card p-4 md:p-6">
-        <h2 className="text-lg font-semibold text-foreground">What it measures</h2>
-        <p className="mb-4 mt-1 text-sm text-muted-foreground">
+        <h2 className="text-title font-semibold text-foreground">What it measures</h2>
+        <p className="mb-4 mt-1 text-small text-muted-foreground">
           The unit is fixed for the type, never chosen per product — a free unit is how
           centimetres and inches end up in one column.
         </p>
@@ -222,13 +222,13 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
       </section>
 
       <section className="rounded-card border border-border bg-card p-4 md:p-6">
-        <h2 className="text-lg font-semibold text-foreground">What makes two sell separately</h2>
-        <p className="mb-4 mt-1 text-sm text-muted-foreground">
+        <h2 className="text-title font-semibold text-foreground">What makes two sell separately</h2>
+        <p className="mb-4 mt-1 text-small text-muted-foreground">
           Only something the type asks about. An abaya varies by colour; an attar by its bottle
           size.
         </p>
         {axisCandidates.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Choose a question or a measurement first.</p>
+          <p className="text-small text-muted-foreground">Choose a question or a measurement first.</p>
         ) : (
           <ul className="grid grid-cols-1 gap-2 md:grid-cols-3">
             {axisCandidates.map((candidate) => (
@@ -245,8 +245,8 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
       </section>
 
       <section className="rounded-card border border-border bg-card p-4 md:p-6">
-        <h2 className="text-lg font-semibold text-foreground">The kinds it holds</h2>
-        <p className="mb-4 mt-1 text-sm text-muted-foreground">
+        <h2 className="text-title font-semibold text-foreground">The kinds it holds</h2>
+        <p className="mb-4 mt-1 text-small text-muted-foreground">
           One per line, as <code>key:Label</code>. A kind decides which category a marketplace
           lists it under — abaya, burqa and rida are kinds, not types of their own.
         </p>
@@ -260,7 +260,7 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
       </section>
 
       <div className="flex flex-wrap gap-3">
-        <Button type="submit" disabled={saving}>
+        <Button type="submit" pending={saving}>
           {saving ? "Saving…" : isEdit ? "Save changes" : "Create type"}
         </Button>
         <Button type="button" variant="outline" onClick={() => router.back()}>

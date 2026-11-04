@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 
 /**
  * The whole point of an event is the link (spec R9), so copying it is a first-class
@@ -46,11 +46,7 @@ export function CopyLinkButton({
       onClick={copy}
       className={className}
     >
-      {copied ? (
-        <Check className="size-4" aria-hidden />
-      ) : (
-        <Copy className="size-4" aria-hidden />
-      )}
+      <Icon name={copied ? "done" : "copy"} />
       {copied ? "Copied" : label}
     </Button>
   );

@@ -45,10 +45,10 @@ export function AuthPageHost({
         <p className="text-2xs font-semibold uppercase tracking-display text-muted-foreground/80">
           {copy.eyebrow}
         </p>
-        <h1 className="font-heading text-xl font-semibold tracking-tight">
+        <h1 className="font-heading text-title font-semibold tracking-tight">
           {copy.title}
         </h1>
-        <p className="text-xs text-muted-foreground">{copy.description}</p>
+        <p className="text-caption text-muted-foreground">{copy.description}</p>
       </header>
 
       {view === "signin" && (

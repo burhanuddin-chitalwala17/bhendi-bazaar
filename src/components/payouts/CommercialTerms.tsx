@@ -13,7 +13,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFieldArray } from "react-hook-form";
-import { X } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -100,8 +100,8 @@ export function CommercialTerms({
       <Card className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium">Commission</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-small font-medium">Commission</p>
+            <p className="text-caption text-muted-foreground">
               {bpsToPercent(commissionBps)}% by default
               {current.length > 0 &&
                 ` · ${current.length} category ${current.length === 1 ? "rate" : "rates"}`}
@@ -118,13 +118,13 @@ export function CommercialTerms({
 
   return (
     <Card className="space-y-4 p-4">
-      <p className="text-sm font-medium">Commission</p>
+      <p className="text-small font-medium">Commission</p>
 
-      {formError && <p className="text-xs text-destructive">{formError}</p>}
+      {formError && <p className="text-caption text-destructive">{formError}</p>}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <Label htmlFor="commission" className="text-xs">
+          <Label htmlFor="commission" className="text-caption">
             Default rate (%)
           </Label>
           <Input
@@ -137,17 +137,17 @@ export function CommercialTerms({
             aria-invalid={!!errors.commissionPercent}
             {...register("commissionPercent", { valueAsNumber: true })}
           />
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-caption text-muted-foreground">
             Charged where no category rate covers an item.
           </p>
           {errors.commissionPercent?.message && (
-            <p className="mt-1 text-xs text-destructive">
+            <p className="mt-1 text-caption text-destructive">
               {errors.commissionPercent.message}
             </p>
           )}
         </div>
         <div>
-          <Label htmlFor="maxDiscount" className="text-xs">
+          <Label htmlFor="maxDiscount" className="text-caption">
             Their discount ceiling (%)
           </Label>
           <Input
@@ -160,11 +160,11 @@ export function CommercialTerms({
             aria-invalid={!!errors.maxDiscountPercent}
             {...register("maxDiscountPercent", { valueAsNumber: true })}
           />
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-caption text-muted-foreground">
             How deep they may discount their own goods.
           </p>
           {errors.maxDiscountPercent?.message && (
-            <p className="mt-1 text-xs text-destructive">
+            <p className="mt-1 text-caption text-destructive">
               {errors.maxDiscountPercent.message}
             </p>
           )}
@@ -172,8 +172,8 @@ export function CommercialTerms({
       </div>
 
       <div className="space-y-2">
-        <Label className="text-xs">Category rates</Label>
-        <p className="text-xs text-muted-foreground">
+        <Label className="text-caption">Category rates</Label>
+        <p className="text-caption text-muted-foreground">
           A rate on a category covers everything beneath it, unless a child sets
           its own.
         </p>
@@ -182,7 +182,7 @@ export function CommercialTerms({
           return (
             <div key={rate.id}>
               <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate text-sm">
+                <span className="min-w-0 flex-1 truncate text-small">
                   {nameOf(rate.categoryId)}
                 </span>
                 <Input
@@ -204,10 +204,10 @@ export function CommercialTerms({
                   aria-label={`Remove the ${nameOf(rate.categoryId)} rate`}
                   onClick={() => rates.remove(index)}
                 >
-                  <X className="size-4" aria-hidden />
+                  <Icon name="close" />
                 </Button>
               </div>
-              {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+              {error && <p className="mt-1 text-caption text-destructive">{error}</p>}
             </div>
           );
         })}
@@ -223,7 +223,7 @@ export function CommercialTerms({
                 ratePercent: Number.NaN,
               })
             }
-            className="mt-1 h-10 w-full rounded-md bg-background text-sm"
+            className="mt-1 h-10 w-full rounded-field bg-background text-small"
             aria-label="Add a category rate"
           >
             <option value="">＋ Add a category rate…</option>
@@ -238,7 +238,7 @@ export function CommercialTerms({
 
       {/* Changing a rate never rewrites a settlement: every rate is snapshotted onto
           the line that used it when the entry was written (R4). */}
-      <p className="text-xs text-muted-foreground">
+      <p className="text-caption text-muted-foreground">
         Applies to orders from now on. Entries already recorded keep the rates
         they were written with.
       </p>

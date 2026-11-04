@@ -9,7 +9,7 @@ import Cropper, {
 // The library ships its stylesheet rather than injecting one: without it the frame has no bounds
 // and the picture is laid out by the page's own image reset, which is to say not shown at all.
 import "react-easy-crop/react-easy-crop.css";
-import { Check, Loader2, RotateCcw, RotateCw } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { TaskDialog } from "@/components/shared/overlays/task-dialog";
 import {
@@ -200,20 +200,21 @@ function CropFrame({
           <Button
             type="button"
             variant="outline"
-            size="icon-lg"
+            shape="icon" size="lg"
             aria-label="Rotate left"
             onClick={whenFree(() => setRotation((current) => rotateBy(current, -90)))}
           >
-            <RotateCcw />
+            {/* No counter-clockwise drawing in the registry; the clockwise one, mirrored. */}
+            <Icon name="rotate" className="-scale-x-100" />
           </Button>
           <Button
             type="button"
             variant="outline"
-            size="icon-lg"
+            shape="icon" size="lg"
             aria-label="Rotate right"
             onClick={whenFree(() => setRotation((current) => rotateBy(current, 90)))}
           >
-            <RotateCw />
+            <Icon name="rotate" />
           </Button>
         </div>
         <p className="text-xs text-muted-foreground" role={hint ? "status" : undefined}>
@@ -248,9 +249,9 @@ function CropFrame({
           type="button"
           size="lg"
           onClick={applyCrop}
-          aria-busy={busy}
+          pending={busy}
         >
-          {busy ? <Loader2 className="animate-spin" /> : <Check />}
+          {!busy && <Icon name="done" />}
           {busy ? "Uploading…" : "Use this crop"}
         </Button>
       </div>

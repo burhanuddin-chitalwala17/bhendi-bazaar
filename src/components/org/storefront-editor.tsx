@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -110,7 +110,7 @@ export function StorefrontEditor({
             </code>
             <Button asChild variant="ghost" size="sm">
               <Link href={`/store/${settings.handle}`} target="_blank">
-                <ExternalLink />
+                <Icon name="external" />
                 Open
               </Link>
             </Button>

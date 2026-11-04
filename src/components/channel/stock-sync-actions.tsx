@@ -12,7 +12,7 @@ import { channelsApiClient } from "./channelsApiClient";
 import { STOCK } from "./stock-copy";
 
 /**
- * Pause on the Channels card, and Turn back on once paused (inventory-sync Q27). Sync starts by itself
+ * Pause on the Channels card, and Turn back on once paused (inventory-sync Q28). Sync starts by itself
  * on connecting, so this is for exceptions, kept off the daily Listings screen.
  */
 export function StockSyncActions({ orgId, channel, label, state }: { orgId: string; channel: MarketplaceChannel; label: string; state: StockSyncState }) {

@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Check, EyeOff, Minus } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
+import { Icon } from "@/components/ui/icon";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import {
   brandPageShowing,
   brandPageStanding,
@@ -76,24 +76,24 @@ export function BrandPageStanding({
 function StandingMark({ status }: { status: BrandPageSectionStatus }) {
   if (status.standing === "showing") {
     return (
-      <Badge variant="outline" className="mt-0.5 gap-1 border-success/40 text-success">
-        <Check className="size-3" aria-hidden />
+      <StatusBadge tone="success" className="mt-0.5">
+        <Icon name="done" size="xs" />
         Showing
-      </Badge>
+      </StatusBadge>
     );
   }
   if (status.standing === "hidden") {
     return (
-      <Badge variant="outline" className="mt-0.5 gap-1 text-muted-foreground">
-        <EyeOff className="size-3" aria-hidden />
+      <StatusBadge tone="neutral" className="mt-0.5">
+        <Icon name="hide" size="xs" />
         Hidden
-      </Badge>
+      </StatusBadge>
     );
   }
   return (
-    <Badge variant="outline" className="mt-0.5 gap-1 border-warning/40 text-warning">
-      <Minus className="size-3" aria-hidden />
+    <StatusBadge tone="warning" className="mt-0.5">
+      <Icon name="time" size="xs" />
       Waiting
-    </Badge>
+    </StatusBadge>
   );
 }

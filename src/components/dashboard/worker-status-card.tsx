@@ -1,5 +1,5 @@
-import { Activity, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
 import { workerStatus, type WorkerStatus } from "@server/shared/jobs";
 import { RedriveFailedJobsButton } from "./redrive-failed-jobs-button";
 import { WorkerJobsList } from "./worker-jobs-list";
@@ -35,10 +35,10 @@ export async function WorkerStatusCard() {
     return (
       <Card className="border-destructive/40">
         <CardContent className="flex items-center gap-4 pt-5">
-          <AlertTriangle className="h-8 w-8 shrink-0 text-destructive" aria-hidden />
+          <Icon name="warning" size="lg" tone="destructive" />
           <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground">Worker</p>
-            <p className="text-sm text-destructive">
+            <p className="text-small font-medium text-foreground">Worker</p>
+            <p className="text-small text-destructive">
               Status unavailable — see the server log. Usually the deployment is missing
               APP_ENV.
             </p>
@@ -51,18 +51,15 @@ export async function WorkerStatusCard() {
   return (
     <Card className={status.stale ? "border-destructive/40" : undefined}>
       <CardContent className="flex flex-wrap items-center gap-4 pt-5">
-        <Activity
-          className={`h-8 w-8 shrink-0 ${status.stale ? "text-destructive" : "text-primary"}`}
-          aria-hidden
-        />
+        <Icon name="activity" size="lg" tone={status.stale ? "destructive" : "primary"} />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-foreground">
+          <p className="text-small font-medium text-foreground">
             Worker{" "}
             <span className={status.stale ? "text-destructive" : "text-muted-foreground"}>
               {status.lastSeenAt ? `last seen ${ago(status.lastSeenAt, now)}` : "never seen"}
             </span>
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-small text-muted-foreground">
             {status.waiting} waiting · {status.active} running · {status.failed} failed ·{" "}
             {status.completedDay} done in 24h
             {status.version ? ` · ${shortVersion(status.version)}` : ""}

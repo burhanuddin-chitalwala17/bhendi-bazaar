@@ -38,7 +38,7 @@ export function useOrgs(filters: OrgListFilters) {
     } catch (err) {
       const message = err instanceof Error ? err.message : "";
       setError(message);
-      toast.error(message || "Failed to load orgs");
+      toast.error(message || "Shops didn't load");
     } finally {
       setLoading(false);
     }
@@ -51,7 +51,7 @@ export function useOrgs(filters: OrgListFilters) {
   const createOrg = async (data: OrgFormInput) => {
     try {
       await orgApiClient.createOrg(data);
-      toast.success("Organisation created successfully");
+      toast.success("Shop created");
       await loadOrgs();
     } catch (err) {
       // Presentation belongs to useServerForm; rethrow so field details survive.
@@ -62,7 +62,7 @@ export function useOrgs(filters: OrgListFilters) {
   const updateOrg = async (id: string, data: Partial<OrgFormInput>) => {
     try {
       await orgApiClient.updateOrg(id, data);
-      toast.success("Organisation updated successfully");
+      toast.success("Shop updated");
       await loadOrgs();
     } catch (err) {
       // Presentation belongs to useServerForm; rethrow so field details survive.
@@ -73,10 +73,10 @@ export function useOrgs(filters: OrgListFilters) {
   const blockOrg = async (id: string) => {
     try {
       await orgApiClient.blockOrg(id);
-      toast.success("Organisation blocked");
+      toast.success("Shop blocked");
       await loadOrgs();
     } catch (err) {
-      toast.error((err instanceof Error && err.message) || "Failed to block org");
+      toast.error((err instanceof Error && err.message) || "The shop wasn't blocked");
       throw err;
     }
   };
@@ -84,10 +84,10 @@ export function useOrgs(filters: OrgListFilters) {
   const unblockOrg = async (id: string) => {
     try {
       await orgApiClient.unblockOrg(id);
-      toast.success("Organisation unblocked");
+      toast.success("Shop unblocked");
       await loadOrgs();
     } catch (err) {
-      toast.error((err instanceof Error && err.message) || "Failed to unblock org");
+      toast.error((err instanceof Error && err.message) || "The shop wasn't unblocked");
       throw err;
     }
   };

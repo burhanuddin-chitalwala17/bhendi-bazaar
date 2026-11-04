@@ -24,6 +24,7 @@ export function ThemedCollections({
           <Link key={tile.slug} href={href(tile.slug)} prefetch={false} className="block text-center">
             <ThemePhoto
               src={tile.photoUrl}
+              image={tile.image}
               alt={tile.name}
               initial={tile.name}
               sizes="(min-width: 1024px) 1200px, 100vw"
@@ -53,6 +54,7 @@ export function ThemedCollections({
             <Link href={href(tile.slug)} prefetch={false} className="block space-y-2 text-center">
               <ThemePhoto
                 src={tile.photoUrl}
+                image={tile.image}
                 alt={tile.name}
                 initial={tile.name}
                 sizes={circles ? "(min-width: 768px) 120px, 25vw" : "(min-width: 768px) 224px, 160px"}

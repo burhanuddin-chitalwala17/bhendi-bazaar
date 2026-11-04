@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Store } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { MarketplaceChrome } from "@/components/layout/marketplace-chrome";
 import { PageShell } from "@/components/shared/page-shell";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageHeader } from "@/components/shared/page-shell";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { storefrontDAL } from "@/data-access-layer/storefront.dal";
 import { appUrl } from "@server/shared/app-url";
@@ -30,11 +30,10 @@ export default async function ShopDirectoryPage() {
   return (
     <MarketplaceChrome>
       <PageShell width="wide">
-        <SectionHeader overline="Directory" title="Shops on Bhendi Bazaar" />
+        <PageHeader title="Shops" description="Every shop trading on Bhendi Bazaar." />
 
         {shops.length === 0 ? (
           <EmptyState
-            icon={Store}
             title="No shops yet"
             description="Nobody is trading here just yet. Check back soon."
           />
@@ -44,7 +43,7 @@ export default async function ShopDirectoryPage() {
               <li key={shop.handle}>
                 <Link
                   href={`/store/${shop.handle}`}
-                  className="flex items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors hover:bg-accent"
+                  className="flex items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors duration-fast hover:bg-muted"
                 >
                   {shop.logoUrl ? (
                     <div className="relative size-12 shrink-0 overflow-hidden rounded-card bg-muted">
@@ -58,7 +57,7 @@ export default async function ShopDirectoryPage() {
                     </div>
                   ) : (
                     <div className="flex size-12 shrink-0 items-center justify-center rounded-card bg-muted">
-                      <Store className="size-5 text-muted-foreground" />
+                      <Icon name="shop" size="md" tone="muted" />
                     </div>
                   )}
                   <div className="min-w-0">

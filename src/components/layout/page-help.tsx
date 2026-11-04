@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CircleHelp } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import { HANDOFF_WIDE, HandoffSheet } from "@/components/shared/overlays/handoff-sheet";
@@ -30,8 +30,8 @@ export function PageHelp({ help }: { help: PortalNavKey }) {
       closeLabel={HINT_COPY.close}
       description={content.purpose}
       trigger={
-        <Button variant="ghost" size="icon" className="size-11 shrink-0" aria-label={HINT_COPY.pageHelp}>
-          <CircleHelp className="size-5" />
+        <Button variant="ghost" shape="icon" className="size-11 shrink-0" aria-label={HINT_COPY.pageHelp}>
+          <Icon name="question" size="md" />
         </Button>
       }
     >

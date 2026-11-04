@@ -1,3 +1,5 @@
+import type { ResponsiveImageDto } from "@server/catalog/image-framing";
+import type { ImageSlotValue } from "@server/catalog/image-framing";
 import type { ShopReviewDto } from "@server/catalog/review.types";
 import { socialLinksFrom, type SocialLink } from "@server/catalog/social-networks";
 import {
@@ -78,6 +80,8 @@ export interface StorefrontPageDto extends BrandPageDto {
   heroLine: string | null;
   /** Up to three, the first being what a link preview shows (Q10). */
   heroPhotos: string[];
+  /** The same photos with their phone version and framing, as `ResponsiveImage` draws them (image-slots D10). */
+  heroImages: ResponsiveImageDto[];
   /** The categories the shop picked, in its order; empty means it picked none. */
   collections: StorefrontCollectionDto[];
   /** From the shop's fixed list, labels resolved (Q21); never a figure. */
@@ -90,6 +94,8 @@ export interface StorefrontCollectionDto {
   slug: string;
   name: string;
   photoUrl: string | null;
+  /** The shop's own photo with its framing (image-slots D10); absent when it falls back to the category's. */
+  image?: ResponsiveImageDto | null;
 }
 
 export interface StorefrontClaimDto {
@@ -207,7 +213,9 @@ export interface StorefrontSettingsDto {
   updatedAt: string;
   heroLine: string | null;
   heroPhotos: string[];
-  collections: Array<{ categoryId: string; photoUrl: string | null }>;
+  /** The same hero photos as picture sets with their framing, for the look sheet's field (image-slots D10). */
+  heroImages: ImageSlotValue[];
+  collections: Array<{ categoryId: string; photoUrl: string | null; image: ImageSlotValue | null }>;
   claims: Array<{ key: ClaimKey; detail: string | null }>;
   openingHours: OpeningHours | null;
   storefrontHiddenSections: HideableSection[];

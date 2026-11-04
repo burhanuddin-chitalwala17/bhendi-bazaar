@@ -42,7 +42,7 @@ export default async function NewBiddingEventPage({
         help="bidding"
         title="Set up bidding"
         description={facts.name}
-        back={{ href: `/org/${scope.orgId}/bidding`, label: "Back to bidding" }}
+        back={{ href: `/org/${scope.orgId}/bidding`, label: "Bidding" }}
       />
       <BiddingForm
         action={`/api/org/${scope.orgId}/bidding`}

@@ -1,9 +1,6 @@
-// src/components/checkoutContainer/checkout-summary.tsx
-
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
-import { SectionHeader } from "@/components/shared/SectionHeader";
 import { CartItem } from "@/domain/cart";
-import { Truck } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { formatCurrency } from "@/lib/format";
 
 interface CheckoutSummaryProps {
@@ -25,18 +22,18 @@ export function CheckoutSummary({
 }: CheckoutSummaryProps) {
   if (!items.length) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Your basket is empty. Return to the bazaar to add a few treasures first.
-      </p>
+      <p className="text-small text-muted-foreground">Your bag is empty.</p>
     );
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-border/70 bg-card/80 p-4 text-sm">
-      <SectionHeader overline="Bill" title="Order Summary" />
+    <div className="space-y-3 rounded-card border border-border bg-card p-4 text-small">
+      <h2 className="font-heading text-title font-semibold">
+        Order summary · {items.length === 1 ? "1 item" : `${items.length} items`}
+      </h2>
 
       {/* Items List */}
-      <div className="space-y-2 text-xs">
+      <div className="space-y-2 text-caption">
         {items.map((item) => {
           const itemTotal = item.price * item.quantity;
           const itemSavings =
@@ -55,7 +52,7 @@ export function CheckoutSummary({
 
               {/* Show savings for this item if applicable */}
               {itemSavings > 0 && (
-                <div className="flex items-baseline justify-between gap-2 text-2xs">
+                <div className="flex items-baseline justify-between gap-2 text-caption">
                   <span className="text-muted-foreground/60">
                     Offer applied
                   </span>
@@ -70,7 +67,7 @@ export function CheckoutSummary({
       </div>
 
       {/* Totals Section */}
-      <div className="mt-2 space-y-1 border-t border-dashed border-border/70 pt-2 text-xs">
+      <div className="mt-2 space-y-1 border-t border-dashed border-border pt-2 text-caption">
         {/* Subtotal */}
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Subtotal</span>
@@ -80,37 +77,31 @@ export function CheckoutSummary({
         {/* Discount */}
         {discount > 0 && (
           <div className="flex items-center justify-between text-success">
-            <span>Discount</span>
+            <span>Offers</span>
             <span className="font-medium">- {formatCurrency(discount)}</span>
           </div>
         )}
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
-            <Truck className="h-3 w-3" />
-            <span>Shipping</span>
+            <Icon name="delivery" size="xs" />
+            <span>Delivery</span>
           </div>
           {shipping > 0 ? (
             <span className="font-medium">{formatCurrency(shipping)}</span>
           ) : (
-            <span className="text-xs text-muted-foreground">Select method</span>
+            <span className="text-muted-foreground">After your address</span>
           )}
         </div>
 
         {/* Final Total */}
-        <div className="mt-2 flex items-center justify-between border-t border-border/70 pt-2 text-sm font-semibold">
-          <span>Total</span>
+        <div className="mt-2 flex items-center justify-between border-t border-border pt-2 text-small font-semibold">
+          <span>To pay</span>
           <PriceDisplay price={total} size="sm" />
         </div>
       </div>
 
-      {/* Update description at bottom (lines 96-99): */}
-      {shipping === 0 && (
-        <p className="pt-1 text-2xs text-muted-foreground">
-          Shipping charges will be calculated based on your location and
-          selected delivery method.
-        </p>
-      )}
+
     </div>
   );
 }

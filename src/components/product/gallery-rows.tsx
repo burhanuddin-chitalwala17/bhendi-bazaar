@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, type ChangeEvent, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, Camera, Images, Loader2, Sparkles, Star, TriangleAlert, X } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,7 @@ export function CaptureBanner({
   const fix = fixForWarnings(warnings);
   return (
     <Alert className="border-warning/40 [&>svg]:text-warning">
-      <TriangleAlert aria-hidden />
+      <Icon name="warning" tone="warning" />
       <AlertTitle className="text-warning">Worth another look</AlertTitle>
       <AlertDescription>
         <ul className="list-disc pl-4 text-muted-foreground">
@@ -54,11 +54,11 @@ export function CaptureBanner({
         <div className="mt-3 flex flex-wrap gap-2">
           {fix && onImprove && (
             <Button type="button" size="lg" onClick={() => onImprove(fix)}>
-              <Sparkles /> Improve
+              <Icon name="enhance" /> Improve
             </Button>
           )}
           <Button type="button" variant="outline" size="lg" onClick={onRemove}>
-            <X /> Remove
+            <Icon name="close" /> Remove
           </Button>
           <Button type="button" variant="ghost" size="lg" onClick={onKeep}>
             Keep anyway
@@ -149,14 +149,14 @@ export function SlotRow({
               if (busy) onBusy();
               else inputRef.current?.click();
             }}
-            aria-busy={uploading}
+            pending={uploading}
           >
-            {uploading ? <Loader2 className="animate-spin" /> : <Camera />}
+            {!uploading && <Icon name="camera" />}
             {uploading ? "Uploading…" : "Take or choose a photo"}
           </Button>
           {canPickFromLibrary && (
             <Button type="button" variant="outline" size="lg" onClick={onPickFromLibrary}>
-              <Images /> From library
+              <Icon name="photos" /> From library
             </Button>
           )}
         </div>
@@ -192,12 +192,12 @@ export function SlotRow({
       <div className="flex flex-wrap gap-2">
         {!item.isThumbnail && (
           <Button type="button" variant="outline" size="lg" onClick={onCover}>
-            <Star /> Cover
+            <Icon name="rating" /> Cover
           </Button>
         )}
         {onImprove && (
           <Button type="button" variant="outline" size="lg" onClick={() => onImprove()}>
-            <Sparkles /> Improve…
+            <Icon name="enhance" /> Improve…
           </Button>
         )}
         <Button type="button" variant="outline" size="lg" onClick={onMoveToExtra}>
@@ -206,11 +206,11 @@ export function SlotRow({
         <Button
           type="button"
           variant="outline"
-          size="icon-lg"
+          shape="icon" size="lg"
           onClick={onRemove}
           aria-label={`Remove the ${slot.label} photo`}
         >
-          <X />
+          <Icon name="close" />
         </Button>
       </div>
       {warnings.length > 0 && (
@@ -306,36 +306,36 @@ export function ExtraRow({
         <Button
           type="button"
           variant="outline"
-          size="icon-lg"
+          shape="icon" size="lg"
           // moveExtra is a no-op at the ends, so the button need not be greyed (A8).
           onClick={() => onMove(-1)}
           aria-label={`Move ${label} earlier`}
         >
-          <ArrowUp />
+          <Icon name="move-up" />
         </Button>
         <Button
           type="button"
           variant="outline"
-          size="icon-lg"
+          shape="icon" size="lg"
           onClick={() => onMove(1)}
           aria-label={`Move ${label} later`}
         >
-          <ArrowDown />
+          <Icon name="move-down" />
         </Button>
         {/* Only a photograph can be the cover — the option is absent on a video rather than
             present and rejected. */}
         {!isVideo && !item.isThumbnail && (
           <Button type="button" variant="outline" size="lg" onClick={onCover}>
-            <Star /> Cover
+            <Icon name="rating" /> Cover
           </Button>
         )}
         {!isVideo && onImprove && (
           <Button type="button" variant="outline" size="lg" onClick={() => onImprove()}>
-            <Sparkles /> Improve…
+            <Icon name="enhance" /> Improve…
           </Button>
         )}
-        <Button type="button" variant="outline" size="icon-lg" onClick={onRemove} aria-label={`Remove ${label}`}>
-          <X />
+        <Button type="button" variant="outline" shape="icon" size="lg" onClick={onRemove} aria-label={`Remove ${label}`}>
+          <Icon name="close" />
         </Button>
       </div>
       {warnings.length > 0 && (

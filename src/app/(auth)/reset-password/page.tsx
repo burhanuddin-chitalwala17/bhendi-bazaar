@@ -20,7 +20,7 @@ export default async function ResetPasswordPage({
   if (!value) {
     return (
       <div className="space-y-4 text-center">
-        <h1 className="text-xl font-semibold">Invalid reset link</h1>
+        <h1 className="text-title font-semibold">Invalid reset link</h1>
         <p className="text-muted-foreground">
           This password reset link is invalid or has expired.
         </p>
@@ -37,10 +37,10 @@ export default async function ResetPasswordPage({
         <p className="text-2xs font-semibold uppercase tracking-display text-muted-foreground/80">
           Reset password
         </p>
-        <h1 className="font-heading text-xl font-semibold tracking-tight">
+        <h1 className="font-heading text-title font-semibold tracking-tight">
           Create new password
         </h1>
-        <p className="text-xs text-muted-foreground">Enter your new password below.</p>
+        <p className="text-caption text-muted-foreground">Enter your new password below.</p>
       </header>
 
       <ResetPasswordForm token={value} />

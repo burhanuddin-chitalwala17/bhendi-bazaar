@@ -12,6 +12,11 @@ import type {
 } from "@server/checkout/admin.order.types";
 
 export class AdminOrderService {
+  /** Visible orders by status, for the console's tabs. */
+  countByStatus(): Promise<Record<string, number>> {
+    return adminOrderRepository.countByStatus();
+  }
+
   /**
    * Get paginated list of orders
    */

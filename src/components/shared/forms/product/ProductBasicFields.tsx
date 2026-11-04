@@ -3,7 +3,6 @@
 import { UseFormRegister, FieldErrors, UseFormSetValue } from "react-hook-form";
 import { FormInput, FormSelect, FormTextarea } from "../FormField";
 import type { ProductFormInput } from "@/components/product/console/types";
-import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface ProductBasicFieldsProps {

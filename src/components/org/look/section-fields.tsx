@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,9 @@ import { CLAIM_DETAIL_MAX, MAX_CLAIMS } from "@server/catalog/storefront-claims"
 import { WEEKDAYS } from "@server/catalog/storefront-hours";
 import { COLLECTIONS_MAX } from "@server/catalog/storefront-themes";
 import { COUNTER_FROM, SEARCH_CATEGORIES_FROM, SECTION_COPY } from "./section-copy";
-import { SlotPhotos } from "./slot-photos";
+import { ImageSlotField } from "@/components/shared/image-slot/image-slot-field";
+import { IMAGE_SLOT } from "@server/catalog/image-slots";
+import { shopUpload } from "./slot-photos";
 
 /** ux.md section sheet, Long content: "112 / 120" from 80% of the limit. */
 export function Counter({ length, max }: { length: number; max: number }) {
@@ -30,7 +32,7 @@ export function Counter({ length, max }: { length: number; max: number }) {
 function Choice({ pressed, onClick, children }: { pressed: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <Button type="button" variant={pressed ? "default" : "outline"} aria-pressed={pressed} className="min-h-11 justify-start" onClick={onClick}>
-      {pressed && <Check aria-hidden />}
+      {pressed && <Icon name="done" />}
       {children}
     </Button>
   );
@@ -126,7 +128,7 @@ export function CollectionsField({
     } else if (value.length >= COLLECTIONS_MAX) {
       setRefused(true);
     } else {
-      onChange([...value, { categoryId, photoUrl: null }]);
+      onChange([...value, { categoryId, photoUrl: null, image: null }]);
     }
   };
   if (!options.length) return <p className="text-sm text-muted-foreground">{SECTION_COPY.noCategories}</p>;
@@ -152,14 +154,12 @@ export function CollectionsField({
               </Choice>
               {chosen && (
                 <div className="pl-2">
-                  <SlotPhotos
-                    orgId={orgId}
+                  <ImageSlotField
+                    slot={IMAGE_SLOT.STOREFRONT_COLLECTION}
                     label={option.name}
-                    max={1}
-                    value={chosen.photoUrl ? [chosen.photoUrl] : []}
-                    onChange={(urls) =>
-                      onChange(value.map((c) => (c.categoryId === option.id ? { ...c, photoUrl: urls[0] ?? null } : c)))
-                    }
+                    value={chosen.image}
+                    onChange={(image) => onChange(value.map((c) => (c.categoryId === option.id ? { ...c, image } : c)))}
+                    upload={shopUpload(orgId)}
                   />
                 </div>
               )}

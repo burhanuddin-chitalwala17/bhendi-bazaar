@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CategoryBreadcrumb } from "@/components/category/category-breadcrumb";
-import { CategoryHero } from "@/components/category/category-hero";
 import { CategoryLanes } from "@/components/category/category-lanes";
 import { PaginatedProductGrid } from "@/components/shared/paginated-product-grid";
 import { EmptyState } from "@/components/shared/states/EmptyState";
-import { Package } from "lucide-react";
+import { PageHeader } from "@/components/shared/page-shell";
+import { ListingToolbar, parseSort, type ListingFilter } from "@/components/shared/listing-toolbar";
 import { productsDAL } from "@/data-access-layer/products.dal";
 import { categoriesDAL } from "@/data-access-layer/categories.dal";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/config";
@@ -16,7 +16,11 @@ import { breadcrumbJsonLd } from "@/lib/structured-data";
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ sort?: string; offers?: string }>;
 }
+
+/** The filters a category offers; each is one the listing route already carries forward. */
+const FILTERS: ListingFilter[] = [{ label: "On offer", param: "offers", value: "1" }];
 
 /** An unknown slug is a 404, never an empty page that answers 200 (seo R7). */
 const getCategory = (slug: string) =>
@@ -51,15 +55,17 @@ export async function generateMetadata({
   };
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
-  const { slug } = await params;
+export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const sort = parseSort(query.sort);
+  const offersOnly = query.offers === "1";
+  const filter = { categorySlug: slug, offerOnly: offersOnly };
 
-  // Independent reads, fetched together rather than in a four-step waterfall. The three
-  // category shapes all resolve against the same request-memoised tree, so they add no
-  // queries; lanes are below this one only, and the ancestor trail points back up.
-  const [category, page, lanes, ancestors] = await Promise.all([
+  // Independent reads, together; the category shapes share one request-memoised tree.
+  const [category, page, count, lanes, ancestors] = await Promise.all([
     getCategory(slug),
-    productsDAL.getPage({ categorySlug: slug }),
+    productsDAL.getPage(filter, { sort }),
+    productsDAL.countListing(filter),
     categoriesDAL.getDescendants(slug),
     categoriesDAL.getAncestors(slug),
   ]);
@@ -73,21 +79,33 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         ])}
       />
       <CategoryBreadcrumb ancestors={ancestors} current={category} />
-      <CategoryHero category={category} />
+      <PageHeader title={category.name} description={category.description || undefined} />
       <CategoryLanes categories={lanes} />
+      <ListingToolbar
+        basePath={`/category/${category.slug}`}
+        params={{ sort: sort === "newest" ? undefined : sort, offers: offersOnly ? "1" : undefined }}
+        count={count}
+        filters={FILTERS}
+      />
       {page.products.length > 0 ? (
-          <PaginatedProductGrid
-            initial={page.products}
-            initiallyDone={page.done}
-            query={{ category: slug }}
-          />
-        ) : (
-          <EmptyState
-            icon={Package}
-            title="No products in this category yet"
-            description="Browse the other categories meanwhile"
-          />
-        )}
+        <PaginatedProductGrid
+          initial={page.products}
+          initiallyDone={page.done}
+          query={{ category: slug, offersOnly, sort }}
+        />
+      ) : offersOnly ? (
+        <EmptyState
+          title="Nothing here is on offer right now"
+          description="Every piece in this category is at its usual price today."
+          action={{ label: "Show everything", href: `/category/${category.slug}` }}
+        />
+      ) : (
+        <EmptyState
+          title="No pieces in this category yet"
+          description="Shops add new pieces every week. Browse the rest of the bazaar meanwhile."
+          action={{ label: "Browse the shop", href: "/shop" }}
+        />
+      )}
     </div>
   );
 }

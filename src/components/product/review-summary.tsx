@@ -19,7 +19,7 @@ export function ReviewSummary({ summary }: { summary: ProductRating }) {
         </p>
         <div className="space-y-0.5">
           <ReviewStars value={average} count={count} />
-          <p className="text-3xs text-muted-foreground sm:text-2xs">
+          <p className="text-2xs text-muted-foreground sm:text-2xs">
             {count === 1 ? "1 review" : `${count} reviews`}
           </p>
         </div>
@@ -32,7 +32,7 @@ export function ReviewSummary({ summary }: { summary: ProductRating }) {
           const forStar = histogram[star];
           const share = count === 0 ? 0 : (forStar / count) * 100;
           return (
-            <li key={star} className="flex items-center gap-2 text-3xs sm:text-2xs">
+            <li key={star} className="flex items-center gap-2 text-2xs sm:text-2xs">
               <span className="w-3 text-right tabular-nums text-muted-foreground">
                 {star}
               </span>

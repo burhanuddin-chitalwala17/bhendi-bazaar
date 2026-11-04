@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Plus } from "lucide-react";
 import type { DeliveryAddress } from "@/domain/profile";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AddressModal } from "./address-modal";
-import { LoadingSpinner } from "../shared/states/LoadingSpinner";
+import { SkeletonRows } from "../shared/states/skeletons";
 import { EmptyState } from "../shared/states/EmptyState";
 import { LoadingSkeleton } from "../shared/states/LoadingSkeleton";
 import { SectionHeader } from "../shared/SectionHeader";
+import { Icon } from "@/components/ui/icon";
 
 interface AddressesSectionProps {
   addresses: DeliveryAddress[];
@@ -79,7 +79,11 @@ export function AddressesSection({
   }
 
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div role="status" aria-label="Loading your addresses">
+        <SkeletonRows count={3} thumbnail={false} />
+      </div>
+    );
   }
 
   return (
@@ -95,20 +99,19 @@ export function AddressesSection({
             </div>
             <Button
               type="button"
-              size="icon-lg"
+              shape="icon" size="lg"
               variant="outline"
               onClick={handleAddClick}
               disabled={loading || saving}
               className="shrink-0 rounded-full"
             >
-              <Plus className="h-4 w-4" />
+              <Icon name="add" size="sm" />
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-3 pt-4">
           {!loading && !hasAddresses && (
             <EmptyState
-              icon={MapPin}
               title="You don't have any saved addresses yet"
               description="Add one to speed up checkout."
             />

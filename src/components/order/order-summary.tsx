@@ -1,5 +1,4 @@
 import type { Order } from "@/domain/order";
-import { SectionHeader } from "../shared/SectionHeader";
 import { PriceDisplay } from "../shared/PriceDisplay";
 import { ShareButton } from "../shared/ShareButton";
 import { DownloadBillButton } from "./download-bill-button";
@@ -22,24 +21,16 @@ export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
         }`
       : null;
 
-  // Flatten all items from all shipments
   const allItems = order.shipments.flatMap((shipment) => shipment.items);
 
   return (
-    <section className="bill-print space-y-3 rounded-xl border border-border/70 bg-card/80 p-4 text-sm">
-      <header className="flex flex-wrap items-baseline justify-between gap-2">
+    <section className="bill-print space-y-3 rounded-card border border-border bg-card p-4 text-small">
+      <header className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <SectionHeader
-            overline="Bill summary"
-            title={`Order ${order.code}`}
-          />
+          <h2 className="font-heading text-title font-semibold">Bill · {order.code}</h2>
+          {paymentLabel && <p className="text-caption text-muted-foreground">{paymentLabel}</p>}
         </div>
-        <div className="flex items-center gap-2">
-          {paymentLabel && (
-            <p className="text-2xs font-medium uppercase tracking-eyebrow text-primary">
-              {paymentLabel}
-            </p>
-          )}
+        <div className="flex items-center gap-1">
           {showShare && (
             <>
               <DownloadBillButton className="print:hidden" />
@@ -48,7 +39,8 @@ export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
                 title={`Order ${order.code} - Bhendi Bazaar`}
                 text={`Check out my order from Bhendi Bazaar`}
                 variant="ghost"
-                size="icon"
+                size="lg"
+                shape="icon"
                 showLabel={false}
                 className="print:hidden"
               />
@@ -56,7 +48,7 @@ export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
           )}
         </div>
       </header>
-      <div className="space-y-1 text-xs">
+      <div className="space-y-1">
         {allItems.map((item, index) => (
           <div
             key={`${item.productId}-${index}`}
@@ -75,24 +67,24 @@ export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
           </div>
         ))}
       </div>
-      <div className="mt-2 space-y-1 border-t border-dashed border-border/70 pt-2 text-xs">
+      <div className="mt-2 space-y-1 border-t border-border pt-2">
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Subtotal</span>
           <PriceDisplay price={order.itemsTotal} size="sm" />
         </div>
         {order.shippingTotal > 0 && (
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Shipping</span>
+            <span className="text-muted-foreground">Delivery</span>
             <PriceDisplay price={order.shippingTotal} size="sm" />
           </div>
         )}
         {order.discount > 0 && (
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Savings</span>
+            <span className="text-muted-foreground">Offers</span>
             <PriceDisplay price={order.discount} size="sm" />
           </div>
         )}
-        <div className="mt-1 flex items-center justify-between text-sm font-semibold">
+        <div className="mt-1 flex items-center justify-between text-body font-semibold">
           <span>Total</span>
           <PriceDisplay price={order.grandTotal} size="sm" />
         </div>

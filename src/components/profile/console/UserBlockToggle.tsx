@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@/hooks/core/useMutation";
 import { adminUserApiClient } from "@/components/profile/console/adminUserApiClient";
 import { Button } from "@/components/ui/button";
-import { Ban, ShieldOff } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 interface Props {
   userId: string;
@@ -27,18 +27,18 @@ export function UserBlockToggle({ userId, isBlocked }: Props) {
       variant={isBlocked ? "outline" : "destructive"}
       size="sm"
       onClick={() => toggle()}
-      disabled={isLoading}
+      pending={isLoading}
       className="w-full"
     >
       {isBlocked ? (
         <>
-          <ShieldOff className="mr-2 h-4 w-4" />
-          Unblock User
+          <Icon name="secure" />
+          Unblock user
         </>
       ) : (
         <>
-          <Ban className="mr-2 h-4 w-4" />
-          Block User
+          <Icon name="block" />
+          Block user
         </>
       )}
     </Button>

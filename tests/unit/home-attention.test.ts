@@ -1,6 +1,6 @@
-// Home's "Needs you now" (seller-onboarding R2, D7; Q13, Q22, Q25): a zero hides its line, a failed
-// read keeps it with a retry rather than pretending nothing needs the shop, and the toast after a
-// task says the step and the new count (R7).
+// Home's "Needs you now" (seller-onboarding R2, D7; Q22, Q25; design-system Q31): a zero hides its
+// line, a failed read keeps it with a retry rather than pretending nothing needs the shop, buyers and
+// money come first, five at most; and the toast after a task says the step and the new count (R7).
 import { describe, expect, it } from "vitest";
 import { CARD_STATE } from "@server/channels/channel-connection.types";
 import { STOCK_ATTENTION } from "@server/channels/channel-stock.types";
@@ -10,59 +10,66 @@ import { attentionLines } from "@/components/org/home/attention-lines";
 import { doneToast } from "@/components/org/home/home-copy";
 
 const now = new Date("2026-11-01T10:00:00Z");
+const HOUR = 3_600_000;
 const quiet = (): HomeAttentionDto => ({
-  parcels: { ok: true, value: 0 },
-  reviews: { ok: true, value: { count: 0, productId: null } },
+  toPack: { ok: true, value: { count: 0, oldestPaidAt: null } },
+  lowStock: { ok: true, value: { count: 0, soldOut: 0, soonestDays: null } },
   channel: { ok: true, value: null },
   stock: { ok: true, value: null },
   photos: { ok: true, value: 0 },
-  auction: { ok: true, value: null },
   teamEdits: { ok: true, value: { count: 0, productId: null } },
 });
 
 describe("needs you now", () => {
-  it("is empty when nothing needs the shop", () => {
+  it("is empty when nothing needs the shop, so the page shows its all-clear", () => {
     expect(attentionLines("o1", quiet(), now)).toEqual([]);
   });
 
   it("keeps a failed read as its own retry line, never as nothing to do", () => {
-    const lines = attentionLines("o1", { ...quiet(), parcels: { ok: false }, photos: { ok: false } }, now);
-    expect(lines.map((line) => [line.key, line.ok])).toEqual([["parcels", false], ["photos", false]]);
+    const lines = attentionLines("o1", { ...quiet(), toPack: { ok: false }, photos: { ok: false } }, now);
+    expect(lines.map((line) => [line.key, line.ok])).toEqual([["toPack", false], ["photos", false]]);
     expect(lines[0].text).toBe("Couldn't load orders.");
   });
 
-  it("opens the product when every new review is on one, else the Reviews page (Q13)", () => {
-    const one = attentionLines("o1", { ...quiet(), reviews: { ok: true, value: { count: 2, productId: "p1" } } }, now);
-    expect(one[0]).toMatchObject({ text: "2 new reviews", href: "/org/o1/products/p1#reviews" });
-    const many = attentionLines("o1", { ...quiet(), reviews: { ok: true, value: { count: 2, productId: null } } }, now);
-    expect(many[0]).toMatchObject({ href: "/org/o1/reviews" });
+  it("says how long the longest-waiting buyer has waited (Q31)", () => {
+    const paid = (ms: number) => ({ ok: true as const, value: { count: 3, oldestPaidAt: new Date(now.getTime() - ms).toISOString() } });
+    expect(attentionLines("o1", { ...quiet(), toPack: paid(5 * HOUR) }, now)[0]).toMatchObject({ text: "3 orders to pack · oldest waiting 5 h", href: "/org/o1/orders" });
+    expect(attentionLines("o1", { ...quiet(), toPack: paid(50 * HOUR) }, now)[0]).toMatchObject({ text: "3 orders to pack · oldest waiting 2 days" });
+    expect(attentionLines("o1", { ...quiet(), toPack: paid(60_000) }, now)[0]).toMatchObject({ text: "3 orders to pack · oldest waiting 1 h" });
   });
 
-  it("asks for the location match that stock sync waits on, on that marketplace's Listings (inventory-sync Q27)", () => {
+  it("words selling low stock by what is sold out, else by when the first runs out, and opens the low-stock filter", () => {
+    const low = (soldOut: number, soonestDays: number | null) => attentionLines("o1", { ...quiet(), lowStock: { ok: true, value: { count: 2, soldOut, soonestDays } } }, now)[0];
+    expect(low(1, 4)).toMatchObject({ text: "2 selling products low on stock · 1 sold out", href: "/org/o1/products?lowStock=true" });
+    expect(low(0, 4)).toMatchObject({ text: "2 selling products low on stock · runs out in about 4 days" });
+    expect(low(0, 1)).toMatchObject({ text: "2 selling products low on stock · runs out in about 1 day" });
+    expect(low(0, 0)).toMatchObject({ text: "2 selling products low on stock · runs out today" });
+  });
+
+  it("asks for the location match that stock sync waits on, on that marketplace's Listings (inventory-sync Q28)", () => {
     const lines = attentionLines("o1", { ...quiet(), stock: { ok: true, value: { channel: "amazon", label: "Amazon", kind: STOCK_ATTENTION.MATCH, count: 0 } } }, now);
     expect(lines[0]).toMatchObject({ text: "Match your Amazon locations so stock can be sent", href: "/org/o1/channels/amazon/listings" });
   });
 
-  it("says what each area needs, in order (Q22)", () => {
+  it("puts buyers and money first and shows at most five (Q31)", () => {
     const lines = attentionLines(
       "o1",
       {
-        parcels: { ok: true, value: 1 },
-        reviews: { ok: true, value: { count: 0, productId: null } },
+        toPack: { ok: true, value: { count: 1, oldestPaidAt: new Date(now.getTime() - 2 * HOUR).toISOString() } },
+        lowStock: { ok: true, value: { count: 2, soldOut: 0, soonestDays: 3 } },
         channel: { ok: true, value: { channel: "amazon" as never, label: "Amazon", state: CARD_STATE.NEEDS_RECONNECT, reapproveBy: null } },
         stock: { ok: true, value: { channel: "amazon", label: "Amazon", kind: STOCK_ATTENTION.OUT_OF_STOCK, count: 2 } },
         photos: { ok: true, value: 3 },
-        auction: { ok: true, value: { productName: "Shawl", endsAt: new Date(now.getTime() + 2 * 3_600_000).toISOString() } },
-        teamEdits: { ok: true, value: { count: 0, productId: null } },
+        teamEdits: { ok: true, value: { count: 1, productId: null } },
       },
       now,
     );
     expect(lines.map((line) => line.text)).toEqual([
-      "1 order to pack",
+      "1 order to pack · oldest waiting 2 h",
       "Amazon needs you to reconnect",
       "2 listings now out of stock on Amazon: we have 0",
+      "2 selling products low on stock · runs out in about 3 days",
       "3 photos can be improved",
-      "Auction ends in 2 h",
     ]);
   });
 });

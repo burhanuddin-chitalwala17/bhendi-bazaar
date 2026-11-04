@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 
 import { requireOrgMember } from "@/lib/org-auth";
 import { channelFamilyDAL } from "@/data-access-layer/channel-family.dal";
-import { SectionHeader } from "@/components/shared/SectionHeader";
-import { PageShell } from "@/components/shared/page-shell";
+import { PageShell, PageHeader } from "@/components/shared/page-shell";
 import { FamilyForm } from "@/components/channel/family-form";
 import { FAMILY } from "@/components/channel/family-copy";
 
@@ -33,8 +32,7 @@ export default async function FamilyPage({
 
   return (
     <PageShell width="narrow">
-      <SectionHeader
-        as="h1"
+      <PageHeader
         help="channels"
         title={detail.family ? FAMILY.titleAdd(detail.family.name) : FAMILY.titleNew}
         description={FAMILY.subtitle(detail.label, detail.members.length, word)}

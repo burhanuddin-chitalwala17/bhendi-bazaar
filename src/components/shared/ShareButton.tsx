@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Share2 } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { ShareDialog } from "./ShareDialog";
 
 interface ShareButtonProps {
@@ -9,7 +9,8 @@ interface ShareButtonProps {
   title?: string;
   text?: string;
   variant?: "default" | "outline" | "ghost" | "link";
-  size?: "default" | "sm" | "lg" | "icon";
+  size?: "default" | "sm" | "lg";
+  shape?: "default" | "icon";
   className?: string;
   showLabel?: boolean;
 }
@@ -20,18 +21,17 @@ export function ShareButton({
   text,
   variant = "outline",
   size = "sm",
+  shape = "default",
   className,
   showLabel,
 }: ShareButtonProps) {
-  // `size="icon"` is a fixed size-9 square, so a label cannot fit: the content
-  // overflows and `justify-center` pushes the icon outside the box, onto whatever
-  // sits beside it. Defaulted rather than left to each caller to remember.
-  const withLabel = showLabel ?? size !== "icon";
+  // An icon-shaped button is a fixed square; a label would overflow it.
+  const withLabel = showLabel ?? shape !== "icon";
 
   return (
     <ShareDialog url={url} title={title} text={text}>
-      <Button variant={variant} size={size} className={className}>
-        <Share2 className="h-4 w-4" />
+      <Button variant={variant} size={size} shape={shape} className={className} aria-label={withLabel ? undefined : "Share"}>
+        <Icon name="share" size={shape === "icon" ? "md" : "sm"} />
         {withLabel && <span>Share</span>}
       </Button>
     </ShareDialog>

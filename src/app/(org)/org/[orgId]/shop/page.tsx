@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, IdCard, LayoutTemplate, MapPin, Star } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Icon, type IconName } from "@/components/ui/icon";
 
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { RefreshButton } from "@/components/channel/refresh-button";
@@ -19,7 +18,7 @@ type HubRowKey = (typeof HUB_ROW)[keyof typeof HUB_ROW];
 
 interface HubRow {
   key: HubRowKey;
-  icon: LucideIcon;
+  icon: IconName;
   href: string;
   /** null when the row's read failed: it shows its own retry. */
   status: string | null;
@@ -33,21 +32,21 @@ function rowsFor(data: ShopHubData, orgId: string): HubRow[] {
   return [
     {
       key: HUB_ROW.DETAILS,
-      icon: IdCard,
+      icon: "id-card",
       href: `${base}/shop/details`,
       status: data.details.ok ? (missing === 0 ? SHOP_HUB_COPY.detailsDone : SHOP_HUB_COPY.detailsToAdd(missing)) : null,
       done: data.details.ok && missing === 0,
     },
     {
       key: HUB_ROW.PAGE,
-      icon: LayoutTemplate,
+      icon: "layout",
       href: `${base}/storefront`,
       status: page ? SHOP_HUB_COPY.pageShowing(page.showing, page.total) : data.page.ok ? SHOP_HUB_COPY.pageNotLive : null,
       done: page !== null && page.showing > 0,
     },
     {
       key: HUB_ROW.ADDRESSES,
-      icon: MapPin,
+      icon: "location",
       href: `${base}/locations`,
       status: data.addresses.ok
         ? data.addresses.value.active === 0
@@ -58,7 +57,7 @@ function rowsFor(data: ShopHubData, orgId: string): HubRow[] {
     },
     {
       key: HUB_ROW.REVIEWS,
-      icon: Star,
+      icon: "rating",
       href: `${base}/reviews`,
       status: data.reviews.ok
         ? data.reviews.value.count === 0
@@ -90,7 +89,7 @@ export default async function ShopHubPage({ params }: { params: Promise<{ orgId:
     <PageShell width="wide">
       <PageHeader help="shop" title={SHOP_HUB_COPY.title} description={SHOP_HUB_COPY.help} />
       {data.share && <ShopLinkCard orgId={scope.orgId} shop={data.share} />}
-      {allDone && <p className="text-sm font-medium text-foreground">{SHOP_HUB_COPY.allDone}</p>}
+      {allDone && <p className="text-small font-medium text-foreground">{SHOP_HUB_COPY.allDone}</p>}
       <ul className="grid gap-3 lg:grid-cols-2">
         {rows.map((row) => (
           <li key={row.key}>
@@ -108,14 +107,13 @@ export default async function ShopHubPage({ params }: { params: Promise<{ orgId:
 }
 
 function HubRowView({ row, title }: { row: HubRow; title: string }) {
-  const Icon = row.icon;
   if (row.status === null) {
     return (
       <div className="flex min-h-14 flex-wrap items-center gap-3 rounded-card border border-border bg-card p-4">
-        <Icon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+        <Icon name={row.icon} size="md" tone="muted" />
         <div className="min-w-0 flex-1">
           <p className="font-medium text-foreground">{title}</p>
-          <p className="text-sm text-muted-foreground">{SHOP_HUB_COPY.rowFailed}</p>
+          <p className="text-small text-muted-foreground">{SHOP_HUB_COPY.rowFailed}</p>
         </div>
         <RefreshButton label={SHOP_HUB_COPY.tryAgain} />
       </div>
@@ -127,13 +125,13 @@ function HubRowView({ row, title }: { row: HubRow; title: string }) {
       href={row.href}
       className="flex min-h-14 items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors hover:bg-muted/60"
     >
-      <Icon className="size-5 shrink-0 text-primary" aria-hidden />
+      <Icon name={row.icon} size="md" tone="primary" />
       <span className="min-w-0 flex-1">
         <span className="block font-medium text-foreground">{title}</span>
-        <span className="block text-sm text-muted-foreground">{row.status}</span>
+        <span className="block text-small text-muted-foreground">{row.status}</span>
       </span>
-      <span className="shrink-0 text-sm font-medium text-primary">{row.done ? SHOP_HUB_COPY.open : SHOP_HUB_COPY.add}</span>
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+      <span className="shrink-0 text-small font-medium text-primary">{row.done ? SHOP_HUB_COPY.open : SHOP_HUB_COPY.add}</span>
+      <Icon name="next" size="sm" tone="muted" />
     </Link>
   );
 }

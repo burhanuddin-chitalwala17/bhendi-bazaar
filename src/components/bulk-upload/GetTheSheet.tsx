@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
 import type { SheetChoicesDTO } from "@server/catalog/bulk/bulk-sheet.service";
 import { Button } from "@/components/ui/button";
+import { ActionBar } from "@/components/shared/action-bar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/format";
@@ -112,19 +112,26 @@ export function GetTheSheet({
         </aside>
       </div>
 
-      <div className="fixed inset-x-0 bottom-tabbar z-30 space-y-2 border-t border-border bg-background/95 p-3 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0">
-        {refused && <p className="text-sm text-destructive">{SHEET_COPY.REFUSED}</p>}
-        {status === "failed" && <p className="text-sm text-destructive">{SHEET_COPY.FAILED}</p>}
-        {tabs.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            {tabs.length} tab{tabs.length === 1 ? "" : "s"}: {tabs.join(", ")}
-          </p>
-        )}
-        <Button className="w-full md:w-auto" onClick={download} aria-busy={status === "making"}>
-          {status === "making" && slow && <Loader2 className="animate-spin" aria-hidden />}
+      <ActionBar
+        className="-mx-4 md:mx-0"
+        status={
+          refused || status === "failed" || tabs.length > 0 ? (
+            <>
+              {refused && <p className="text-destructive">{SHEET_COPY.REFUSED}</p>}
+              {status === "failed" && <p className="text-destructive">{SHEET_COPY.FAILED}</p>}
+              {tabs.length > 0 && (
+                <p>
+                  {tabs.length} tab{tabs.length === 1 ? "" : "s"}: {tabs.join(", ")}
+                </p>
+              )}
+            </>
+          ) : null
+        }
+      >
+        <Button className="w-full md:w-auto" onClick={download} pending={status === "making"}>
           {status === "making" && slow ? SHEET_COPY.MAKING : status === "failed" ? "Try again" : "Download sheet"}
         </Button>
-      </div>
+      </ActionBar>
     </div>
   );
 }

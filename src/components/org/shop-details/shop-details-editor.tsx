@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ExternalLink, Eye } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,12 +81,12 @@ export function ShopDetailsEditor({
       <div className="space-y-6 lg:col-span-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 font-heading text-lg font-semibold">
-            <Eye aria-hidden className="size-4" />
+            <Icon name="show" />
             {SHOP_DETAILS_COPY.buyersPart}
           </h2>
           <Button asChild variant="outline" size="sm">
             <Link href={`/store/${details.handle}`} target="_blank">
-              <ExternalLink />
+              <Icon name="external" />
               {SHOP_DETAILS_COPY.seeAsBuyer}
             </Link>
           </Button>

@@ -1,28 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/shared/page-shell";
+import { ErrorState } from "@/components/shared/states/ErrorState";
 
-/** What a page shows when it failed to render: the fact, a retry, and a way out. */
+/** What a page shows when it failed to render: the fact, a retry, and a way out in the words. */
 export function PageError({ retry, digest }: { retry: () => void; digest?: string }) {
   return (
-    <PageShell width="narrow" className="py-12">
-      <div role="alert" className="flex flex-col items-start gap-3 text-sm">
-        <h1 className="text-lg font-semibold">Something went wrong on our side</h1>
-        <p className="text-muted-foreground">
-          Nothing you did caused this. Try again, or go back to the home page.
-          {digest ? ` Reference: ${digest}.` : ""}
-        </p>
-        <div className="flex gap-2">
-          <Button className="min-h-10" onClick={retry}>
-            Try again
-          </Button>
-          <Button asChild variant="outline" className="min-h-10">
-            <Link href="/">Home</Link>
-          </Button>
-        </div>
-      </div>
+    <PageShell width="narrow">
+      <ErrorState
+        as="h1"
+        title="Something went wrong on our side"
+        description={
+          <p>
+            Nothing you did caused this. Try again, or go back to the{" "}
+            <Link href="/" className="font-medium text-foreground underline underline-offset-4">
+              home page
+            </Link>
+            .{digest ? ` Reference: ${digest}.` : ""}
+          </p>
+        }
+        onRetry={retry}
+      />
     </PageShell>
   );
 }

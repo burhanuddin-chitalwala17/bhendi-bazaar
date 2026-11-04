@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import NextImage from "next/image";
-import { ArrowLeft, Check, Loader2, RotateCcw, Sparkles, X } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { TaskDialog } from "@/components/shared/overlays/task-dialog";
 import {
@@ -181,7 +182,7 @@ export function ImproveDialog({
                 className="h-auto w-full justify-start whitespace-normal py-3 text-left"
                 onClick={() => choose(candidate)}
               >
-                <Sparkles />
+                <Icon name="enhance" />
                 <span className="min-w-0">
                   <span className="block font-medium">
                     {TOOL_COPY[candidate].label}
@@ -208,7 +209,7 @@ export function ImproveDialog({
               className="shrink-0 self-start"
               onClick={() => setChoosing(null)}
             >
-              <ArrowLeft /> All improvements
+              <Icon name="back" /> All improvements
             </Button>
           )}
           <ul
@@ -241,7 +242,7 @@ export function ImproveDialog({
         <>
           <Frame src={target.ref} alt="The photo being improved">
             <span className="absolute inset-0 flex items-center justify-center gap-2 bg-scrim/40 text-sm font-medium text-hero-foreground">
-              <Loader2 className="animate-spin" aria-hidden /> Improving…
+              <Spinner /> Improving…
             </span>
           </Frame>
           <p className="text-xs text-muted-foreground">
@@ -264,7 +265,6 @@ export function ImproveDialog({
               variant={showing === "before" ? "default" : "outline"}
               aria-pressed={showing === "before"}
               onClick={() => setShowing("before")}
-              disabled={busy}
             >
               Before
             </Button>
@@ -275,7 +275,6 @@ export function ImproveDialog({
               variant={showing === "after" ? "default" : "outline"}
               aria-pressed={showing === "after"}
               onClick={() => setShowing("after")}
-              disabled={busy}
             >
               After
             </Button>
@@ -299,22 +298,18 @@ export function ImproveDialog({
               size="lg"
               className="flex-1"
               onClick={() => void drop()}
-              disabled={busy}
+              pending={busy}
             >
-              <X /> Discard
+              {!busy && <Icon name="close" />} Discard
             </Button>
             <Button
               type="button"
               size="lg"
               className="flex-1"
               onClick={() => void keep()}
-              disabled={busy}
+              pending={busy}
             >
-              {run.phase === "deciding" ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                <Check />
-              )}
+              {!busy && <Icon name="done" />}
               Accept
             </Button>
           </div>
@@ -333,7 +328,7 @@ export function ImproveDialog({
               size="lg"
               onClick={() => (tool ? start(tool, setting) : reset())}
             >
-              <RotateCcw /> Retry
+              <Icon name="refresh" /> Retry
             </Button>
             <Button type="button" variant="ghost" size="lg" onClick={close}>
               Close

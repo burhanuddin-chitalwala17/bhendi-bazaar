@@ -2,14 +2,15 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { Share2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { ShareShopSheet } from "@/components/org/share/share-shop-sheet";
 import { SHARE_COPY } from "@/components/org/share/share-copy";
 import type { ShareSetup } from "@/components/org/share/useShareShop";
 import type { ShareShop } from "@/lib/store-preview";
 import { DoneToast } from "./home-leaves";
+import { HOME_COPY } from "./home-copy";
 
 /**
  * Home's link with its Share (R10, D13). After the first product is saved, the toast offers Share
@@ -30,10 +31,14 @@ export function HomeShareLink({
   const [open, setOpen] = useState(false);
   const openSheet = useCallback(() => setOpen(true), []);
   return (
-    <div className="flex min-w-0 items-center gap-2">
-      <Link href={shop.path} target="_blank" className="block min-w-0 truncate text-sm text-primary underline-offset-4 hover:underline">
-        {shop.url}
-      </Link>
+    <div className="flex min-w-0 items-center gap-3 rounded-card border border-border bg-card p-3">
+      <Icon name="shop" size="md" tone="primary" />
+      <div className="min-w-0 flex-1">
+        <p className="text-caption text-muted-foreground">{HOME_COPY.shopLink}</p>
+        <Link href={shop.path} target="_blank" className="block truncate text-small font-medium text-foreground underline-offset-4 hover:underline">
+          {shop.url}
+        </Link>
+      </div>
       <ShareShopSheet
         orgId={orgId}
         shop={shop}
@@ -42,7 +47,7 @@ export function HomeShareLink({
         onOpenChange={setOpen}
         trigger={
           <Button type="button" variant="outline" size="sm" className="min-h-11 shrink-0">
-            <Share2 aria-hidden />
+            <Icon name="share" size="sm" />
             {SHARE_COPY.open}
           </Button>
         }

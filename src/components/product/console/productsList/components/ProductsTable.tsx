@@ -1,18 +1,19 @@
-// components/admin/productsContainer/components/ProductsTable.tsx
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
-import { Eye, Heart } from "lucide-react";
-import { DataTable, Column } from "@/components/shared/data-table";
-import { PriceDisplay } from "@/components/shared/PriceDisplay";
-import { StockBadge } from "@/components/shared/badges/StatusBadge";
-import { ProductFlag, isNewArrival } from "@/types/product";
-import { ProductForTable } from "../../types";
-import { ProductRowMenu } from "./ProductRowMenu";
+
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { ListPagination, ResourceList, type ResourceColumn, type ResourceSelection } from "@/components/shared/resource-list";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { TeamEditBadge } from "@/components/product/team/team-edit-badge";
-import { Pagination } from "@/types/shared";
+import { formatCount, formatCurrency } from "@/lib/format";
+import type { Pagination } from "@/types/shared";
+import type { ProductForTable } from "../../types";
+import { ProductRowMenu } from "./ProductRowMenu";
 import { useProductsBasePath } from "@/components/product/console/useProductsBasePath";
+import { productStatus } from "./product-status";
 
 interface ProductsTableProps {
   products: ProductForTable[];
@@ -22,14 +23,16 @@ interface ProductsTableProps {
   onDelete: (id: string, name: string) => void;
   /** Archive a product, or restore it (ADR-0029). */
   onSetArchived: (id: string, archived: boolean, name: string) => void;
-  onEdit: (id: string) => void;
-  onView: (id: string) => void;
-  onSort: (sortBy: string, sortOrder: "asc" | "desc") => void;
   isPending: boolean;
   /** The platform's cross-vendor list is for looking, not touching — products belong to orgs. */
   readOnly?: boolean;
+  /** Checkboxes for the bulk actions; absent on a read-only list. */
+  selection?: ResourceSelection;
+  /** What the empty list says, which depends on the filter it is showing. */
+  empty: { title: string; description: string; action?: { label: string; href: string } };
 }
 
+/** The products list: a row per product on a phone, a dense table from a tablet (one component). */
 export function ProductsTable({
   products,
   pagination,
@@ -37,180 +40,133 @@ export function ProductsTable({
   onPageSizeChange,
   onDelete,
   onSetArchived,
-  onEdit,
-  onView,
-  onSort,
   isPending,
   readOnly = false,
+  selection,
+  empty,
 }: ProductsTableProps) {
-  const productsBasePath = useProductsBasePath();
-  const columns: Column<ProductForTable>[] = [
+  const basePath = useProductsBasePath();
+
+  const columns: ResourceColumn<ProductForTable>[] = [
     {
       key: "name",
       label: "Product",
-      render: (product) => (
-        <div className="flex items-center gap-3">
-          <Image
-            src={product.thumbnail}
-            alt={product.name}
-            // An archived product is dimmed rather than hidden: the org asked to see
-            // it, and the state has to be legible at a glance on a phone.
-            className={`w-12 h-12 object-cover rounded${product.archivedAt ? " opacity-50" : ""}`}
-            width={48}
-            height={48}
-            sizes="48px"
-          />
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <p
-                className={`font-medium${product.archivedAt ? " text-muted-foreground" : ""}`}
-              >
-                {product.name}
-              </p>
-              {product.archivedAt && (
-                <span className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded">
-                  Archived
-                </span>
-              )}
-            </div>
-            {product.teamEditedAt && <TeamEditBadge at={product.teamEditedAt} />}
-            <p className="text-sm text-muted-foreground">
-              {product.category.name}
-            </p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "sku",
-      label: "SKU",
-      render: (product) => (
-        <span className="font-mono text-sm">{product.sku || "—"}</span>
+      sortable: true,
+      phone: "title",
+      cell: (p) => (
+        <span className={p.archivedAt ? "text-muted-foreground" : undefined}>{p.name}</span>
       ),
     },
     {
       key: "price",
       label: "Price",
       sortable: true,
-      render: (product) => (
-        <PriceDisplay
-          price={product.price}
-          salePrice={product.salePrice}
-          size="sm"
-          showBadge={false}
-        />
+      align: "end",
+      phone: "meta",
+      cell: (p) => (
+        <span>
+          {formatCurrency(p.salePrice ?? p.price)}
+          {p.salePrice != null && p.salePrice < p.price && (
+            <span className="ml-1 text-muted-foreground line-through">{formatCurrency(p.price)}</span>
+          )}
+        </span>
       ),
     },
     {
       key: "stock",
       label: "Stock",
       sortable: true,
-      render: (product) => (
-        <div className="flex items-center gap-2">
-          <span className="font-semibold">{product.stock}</span>
-          <StockBadge
-            stock={product.stock}
-            threshold={product.lowStockThreshold}
-          />
-        </div>
+      align: "end",
+      phone: "meta",
+      cell: (p) => (
+        <span className={p.stock > 0 && p.stock <= p.lowStockThreshold ? "text-warning" : undefined}>
+          {formatCount(p.stock)} in stock
+        </span>
       ),
     },
+    { key: "sku", label: "SKU", phone: "hidden", cell: (p) => <span className="font-mono">{p.sku || "—"}</span> },
+    { key: "category", label: "Category", phone: "hidden", cell: (p) => p.category.name },
     {
-      // Not sortable: the count is merged in after the page is selected, so sorting on
-      // it would only reorder the ten rows already fetched — a ranking that lies.
+      // Not sortable: the count is merged in after the page is selected, so sorting on it would
+      // only reorder the rows already fetched — a ranking that lies.
       key: "wishlistCount",
       label: "Wishlisted",
-      render: (product) =>
-        product.wishlistCount > 0 ? (
-          <span
-            className="flex items-center gap-1.5 text-destructive"
-            title={`Saved by ${product.wishlistCount} ${
-              product.wishlistCount === 1 ? "user" : "users"
-            }`}
-          >
-            <Heart className="w-4 h-4 fill-current" />
-            <span className="font-semibold">{product.wishlistCount}</span>
+      align: "end",
+      phone: "hidden",
+      cell: (p) =>
+        p.wishlistCount > 0 ? (
+          <span className="inline-flex items-center gap-1" title={`Saved by ${p.wishlistCount} ${p.wishlistCount === 1 ? "buyer" : "buyers"}`}>
+            <Icon name="saved" size="xs" tone="muted" />
+            {formatCount(p.wishlistCount)}
           </span>
         ) : (
-          <span
-            className="text-muted-foreground"
-            title="Nobody has saved this yet"
-          >
-            —
-          </span>
+          <span className="text-muted-foreground">—</span>
         ),
     },
     {
-      key: "badges",
-      label: "Badges",
-      render: (product) => (
-        <div className="flex flex-wrap gap-1">
-          {product.flags?.includes(ProductFlag.FEATURED) && (
-            <span className="px-2 py-1 bg-accent/40 text-accent-foreground text-xs rounded-field">
-              Featured
-            </span>
-          )}
-          {product.salePrice != null && product.salePrice < product.price && (
-            <span className="px-2 py-1 bg-destructive/15 text-destructive text-xs rounded-field">
-              Offer
-            </span>
-          )}
-          {product.flags.includes(ProductFlag.HERO) && (
-            <span className="px-2 py-1 bg-info/15 text-info text-xs rounded-field">
-              Hero
-            </span>
-          )}
-          {isNewArrival(product.createdAt) && (
-            <span className="px-2 py-1 bg-success/15 text-success text-xs rounded-field">
-              New
-            </span>
-          )}
-          {product.flags.includes(ProductFlag.CLEARANCE_SALE) && (
-            <span className="px-2 py-1 bg-warning/15 text-warning text-xs rounded-field">
-              Clearance
-            </span>
-          )}
-        </div>
-      ),
+      key: "status",
+      label: "Status",
+      phone: "status",
+      cell: (p) => {
+        const status = productStatus(p);
+        return (
+          <span className="flex flex-col items-end gap-1 md:items-start">
+            <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+            {p.teamEditedAt && <span className="hidden md:block"><TeamEditBadge at={p.teamEditedAt} /></span>}
+          </span>
+        );
+      },
     },
     {
       key: "actions",
       label: "Actions",
-      // The platform list is read-only, so it keeps the one action it has inline.
-      render: (product) =>
+      phone: "trailing",
+      cell: (p) =>
         readOnly ? (
-          <Link
-            prefetch={false}
-            href={`${productsBasePath}/${product.id}`}
-            className="inline-flex size-10 items-center justify-center text-muted-foreground hover:bg-muted/60 rounded-lg transition-colors"
-            title="View product"
-          >
-            <Eye className="w-4 h-4" />
-          </Link>
+          <Button asChild variant="ghost" shape="icon">
+            <Link prefetch={false} href={`${basePath}/${p.id}`} aria-label={`View ${p.name}`}>
+              <Icon name="show" size="sm" />
+            </Link>
+          </Button>
         ) : (
-          <ProductRowMenu
-            product={product}
-            productsBasePath={productsBasePath}
-            onSetArchived={onSetArchived}
-            onDelete={onDelete}
-            disabled={isPending}
-          />
+          <ProductRowMenu product={p} productsBasePath={basePath} onSetArchived={onSetArchived} onDelete={onDelete} disabled={isPending} />
         ),
     },
   ];
 
   return (
-    <DataTable
-      data={products}
+    <ResourceList
+      label="Products"
+      rows={products}
+      rowKey={(p) => p.id}
+      rowLabel={(p) => p.name}
       columns={columns}
-      totalPages={pagination.totalPages}
-      currentPage={pagination.page}
-      totalItems={pagination.total}
-      pageSize={pagination.limit}
-      onPageChange={onPageChange}
-      onPageSizeChange={onPageSizeChange}
-      onSort={onSort}
-      isLoading={isPending}
+      rowHref={(p) => `${basePath}/${p.id}`}
+      selection={readOnly ? undefined : selection}
+      state={isPending ? "loading" : "ready"}
+      sortParams={{ by: "sort", order: "order" }}
+      empty={empty}
+      thumbnail={(p) => (
+        <Image
+          src={p.thumbnail}
+          alt=""
+          width={48}
+          height={48}
+          sizes="48px"
+          className={p.archivedAt ? "size-12 rounded-field object-cover opacity-50" : "size-12 rounded-field object-cover"}
+        />
+      )}
+      footer={
+        <ListPagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          shown={products.length}
+          pageSize={pagination.limit}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
+      }
     />
   );
 }

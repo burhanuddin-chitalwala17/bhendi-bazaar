@@ -1,40 +1,41 @@
-// components/shared/states/EmptyState.tsx
+import type { ReactNode } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 
-import { LucideIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
+import { StateActionButton, type StateAction } from "./state-action";
 
-interface EmptyStateProps {
-  icon?: LucideIcon;
+const emptyStateVariants = cva("flex flex-col gap-3 py-10", {
+  variants: {
+    align: {
+      start: "items-start text-left",
+      center: "items-center text-center",
+    },
+  },
+  defaultVariants: { align: "start" },
+});
+
+// The arch is decoration; gold is the brand's warmer voice for a first-run empty.
+const MARK_TONE = { muted: "text-muted-foreground", gold: "text-accent" } as const;
+
+export interface EmptyStateProps extends VariantProps<typeof emptyStateVariants> {
   title: string;
-  description: string;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
+  description: ReactNode;
+  /** One way forward. An href works from a server page; onClick needs a client parent. */
+  action?: StateAction;
+  tone?: keyof typeof MARK_TONE;
+  as?: "h2" | "h3";
+  className?: string;
 }
 
-export function EmptyState({
-  icon: Icon,
-  title,
-  description,
-  action,
-}: EmptyStateProps) {
+/** Nothing here yet: the brand arch, what this place is for, and one thing to do about it. */
+export function EmptyState({ title, description, action, align, tone = "muted", as: Heading = "h2", className }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      {Icon && (
-        <div className="mb-4 rounded-full bg-muted p-3">
-          <Icon className="h-6 w-6 text-muted-foreground" />
-        </div>
-      )}
-      <h3 className="mb-2 text-lg font-semibold">{title}</h3>
-      <p className="mb-6 max-w-md text-sm text-muted-foreground">
-        {description}
-      </p>
-      {action && (
-        <Button onClick={action.onClick} variant="outline">
-          {action.label}
-        </Button>
-      )}
+    <div className={cn(emptyStateVariants({ align }), className)}>
+      <Icon name="arch" size="2xl" className={MARK_TONE[tone]} />
+      <Heading className="text-title font-semibold text-foreground">{title}</Heading>
+      <p className="max-w-md text-small text-muted-foreground">{description}</p>
+      {action && <StateActionButton action={action} />}
     </div>
   );
 }

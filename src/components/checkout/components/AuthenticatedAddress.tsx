@@ -23,9 +23,7 @@ export function AuthenticatedAddress({
   const [showAddressSelector, setShowAddressSelector] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
 
-  // No default address by decision (addresses-as-entities D3): the buyer picks,
-  // every time. Nothing is auto-selected — the Continue button stays disabled until
-  // they do, which is the honest version of "which address did you mean?".
+  // No default address (addresses-as-entities D3): the buyer picks every time; Pay says so if they haven't.
 
   const handleSaveNewAddress = async (address: DeliveryAddress) => {
     onAddressAdded(address);
@@ -39,10 +37,6 @@ export function AuthenticatedAddress({
     <div className="space-y-6">
       {/* Address Selection */}
       <div className="space-y-3">
-        {/* A caption over a group of controls, not a label for one of them. */}
-        <span className="text-xs font-medium uppercase tracking-eyebrow text-muted-foreground/80">
-          Delivery Address
-        </span>
         <AddressSelector
           selectedAddress={selectedAddress}
           addresses={addresses}
@@ -50,11 +44,11 @@ export function AuthenticatedAddress({
           onToggle={() => setShowAddressSelector(!showAddressSelector)}
           onSelect={(address) => {
             onAddressChange(address);
-            setShowAddressSelector(false); // ✅ Close selector after selection
+            setShowAddressSelector(false);
           }}
           onAddNew={() => {
             setShowAddressModal(true);
-            setShowAddressSelector(false); // ✅ Close selector when opening modal
+            setShowAddressSelector(false);
           }}
         />
       </div>

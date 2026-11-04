@@ -4,6 +4,12 @@ import type { PlatformRole } from "@prisma/client";
  * Admin User Management Domain Types
  */
 
+/** The platform roles, declared once (closed sets are compared by constant). Mirrors the Prisma enum. */
+export const PLATFORM_ROLE = {
+  USER: "USER",
+  ADMIN: "ADMIN",
+} as const satisfies Record<PlatformRole, PlatformRole>;
+
 export interface AdminUser {
   id: string;
   name: string | null;

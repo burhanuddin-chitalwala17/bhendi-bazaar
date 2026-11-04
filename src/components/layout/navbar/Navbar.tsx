@@ -2,107 +2,112 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Headset, ShoppingBag } from "lucide-react";
+import { useSession } from "next-auth/react";
+
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/store/cartStore";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { BrandLogo } from "@/components/layout/brand-logo";
+import { useAuthSheet } from "@/context/AuthSheetContext";
+import { isFocusedFlow } from "@/components/layout/mobile-tab-bar";
 import { NavbarSearch } from "./NavbarSearch";
 import { ProfileMenu } from "./ProfileMenu";
-import { ContactLauncher } from "@/components/support/contact-launcher";
-import Image from "next/image";
-import { APP_NAME, LOGO } from "@/lib/config";
-import { useSession } from "next-auth/react";
-import { useAuthSheet } from "@/context/AuthSheetContext";
 
-export function Navbar() {
+export interface NavLink {
+  href: string;
+  label: string;
+}
+
+const ICON_LINK =
+  "relative inline-flex size-10 items-center justify-center rounded-full text-foreground transition-colors duration-fast hover:bg-muted";
+
+/** The store's top bar: logo, search and bag on a phone (the tab bar carries the rest); the full row from `lg`. */
+export function Navbar({ links = [] }: { links?: NavLink[] }) {
   const pathname = usePathname();
-  const items = useCartStore((state) => state.items);
-  const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  const hasCartItems = cartCount > 0;
-
+  const cartCount = useCartStore((state) => state.items.reduce((sum, item) => sum + item.quantity, 0));
   const { data: session } = useSession();
-  const user = session?.user;
   const { open: openAuthSheet } = useAuthSheet();
 
+  if (isFocusedFlow(pathname)) return <FocusedBar />;
+
   return (
-    <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
-      {/* One compact row on a phone — logo, search, account. Cart and orders live in
-          MobileTabBar; categories are the lane row the pages render below this, so
-          nothing the old second row carried was lost (ADR-0015 rule 2, ADR-0016). */}
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-3 sm:h-20 sm:gap-4 sm:px-6 lg:px-8">
-        <Link
-          href="/"
-          className="flex shrink-0 items-center gap-2"
-          prefetch={false}
-        >
-          <Image
-            src={LOGO.FULL}
-            alt={APP_NAME}
-            width={160}
-            height={160}
-            // Fetched early but never ahead of the page's own LCP image, which preloads.
-            fetchPriority="high"
-            className="h-8 w-auto sm:h-16"
-          />
+    <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
+      <div className="mx-auto flex h-14 max-w-page items-center gap-2 px-3 sm:px-6 md:h-16 md:gap-4 lg:px-8">
+        <Link href="/" prefetch={false} className="flex shrink-0 items-center">
+          <BrandLogo size="sm" priority className="md:h-10" />
         </Link>
+
+        {links.length > 0 && (
+          <nav aria-label="Browse" className="hidden items-center gap-5 lg:flex">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                prefetch={false}
+                aria-current={pathname === link.href ? "page" : undefined}
+                className={cn(
+                  "text-small font-medium text-muted-foreground transition-colors duration-fast hover:text-foreground",
+                  pathname === link.href && "text-foreground",
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         <NavbarSearch />
 
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          {user ? (
-            <ProfileMenu />
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => openAuthSheet()}
-              className="hidden rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-eyebrow md:inline-flex lg:px-4"
-            >
-              Login
-            </Button>
-          )}
-
-          {!user && (
-            <Link
-              prefetch={false}
-              href="/orders"
-              className={cn(
-                "hidden px-1 py-2 text-xs font-medium uppercase tracking-eyebrow text-muted-foreground transition-colors md:block",
-                pathname === "/orders" && "text-primary",
-              )}
-            >
-              Orders
-            </Link>
-          )}
-
-          {/* Desktop only: on a phone Contact us is the tab bar's first tab (ADR-0015 rule). */}
-          <ContactLauncher
-            className={cn(
-              buttonVariants({ variant: "outline" }),
-              "hidden items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-eyebrow md:inline-flex",
+        <div className="flex shrink-0 items-center gap-1">
+          <Link href="/wishlist" prefetch={false} aria-label="Saved" className={cn(ICON_LINK, "hidden md:inline-flex")}>
+            <Icon name="saved" size="md" filled={pathname === "/wishlist"} />
+          </Link>
+          <div className="hidden md:block">
+            {session?.user ? (
+              <ProfileMenu />
+            ) : (
+              <Button type="button" variant="ghost" shape="icon" size="lg" aria-label="Sign in" onClick={() => openAuthSheet()} className="rounded-full">
+                <Icon name="account" size="md" />
+              </Button>
             )}
+          </div>
+          {/* Always opens: an empty bag is a page with somewhere to go, not a dead control. */}
+          <Link
+            href="/cart"
+            prefetch={false}
+            aria-label={cartCount > 0 ? `Bag, ${cartCount} items` : "Bag"}
+            className={ICON_LINK}
           >
-            <Headset className="h-4 w-4" />
-            Contact us
-          </ContactLauncher>
-
-          <Button
-            asChild={true}
-            variant={hasCartItems ? "default" : "outline"}
-            className="relative hidden items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-eyebrow md:inline-flex"
-          >
-            {/* Always opens: an empty cart is a page with somewhere to go, not a dead control. */}
-            <Link prefetch={false} href="/cart">
-              <ShoppingBag className="mr-1 h-4 w-4" />
-              Cart
-              {cartCount > 0 && (
-                <span className="ml-2 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-2xs font-semibold leading-none text-primary-foreground">
-                  {cartCount}
-                </span>
-              )}
-            </Link>
-          </Button>
+            <Icon name="bag" size="md" filled={pathname === "/cart"} />
+            {cartCount > 0 && (
+              <span className="absolute right-0.5 top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-2xs font-semibold leading-none text-primary-foreground">
+                {cartCount}
+              </span>
+            )}
+          </Link>
         </div>
+      </div>
+    </header>
+  );
+}
+
+/** Checkout's bar (design-system Q20): one way back to the bag, the title, and a word on safety. */
+function FocusedBar() {
+  return (
+    <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
+      <div className="mx-auto flex h-14 max-w-page items-center gap-2 px-3 sm:px-6 md:h-16 lg:px-8">
+        <Link href="/cart" prefetch={false} aria-label="Back to bag" className={ICON_LINK}>
+          <Icon name="back" size="lg" />
+        </Link>
+        <Link href="/" prefetch={false} className="hidden shrink-0 md:flex">
+          <BrandLogo size="sm" />
+        </Link>
+        <p className="flex-1 font-heading text-title font-semibold md:text-center">Checkout</p>
+        <p className="inline-flex items-center gap-1 text-caption text-muted-foreground">
+          <Icon name="secure" size="sm" tone="success" />
+          Secure
+        </p>
       </div>
     </header>
   );

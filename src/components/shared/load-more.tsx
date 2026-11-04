@@ -44,7 +44,7 @@ export function LoadMore({ onMore, done, loading, error, count, noun }: LoadMore
       </p>
       {error && (
         <div className="flex flex-col items-center gap-2">
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-small text-destructive">{error}</p>
           <Button type="button" variant="outline" size="sm" onClick={onMore}>
             Try again
           </Button>
@@ -52,8 +52,8 @@ export function LoadMore({ onMore, done, loading, error, count, noun }: LoadMore
       )}
       {!done && !error && (
         <div className="flex justify-center">
-          <Button type="button" variant="outline" size="sm" onClick={onMore} disabled={loading}>
-            {loading ? "Loading…" : "Show more"}
+          <Button type="button" variant="outline" size="sm" onClick={onMore} pending={loading}>
+            Show more
           </Button>
         </div>
       )}

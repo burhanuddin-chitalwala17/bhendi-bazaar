@@ -3,7 +3,7 @@ import { bannerRepository } from "@server/catalog/banner.repository";
 import { cachedRead, CACHED_READ_EXPIRY } from "@server/shared/read-cache";
 import type { HeroBannerContent } from "@/components/home/hero-banner";
 import type { AdminBanner } from "@server/catalog/banner.types";
-import { isRenderableImageUrl } from "@server/catalog/image-paths";
+import { toResponsiveImage } from "@server/catalog/image-framing";
 
 export const BANNER_TABLES = ["Banner", "BannerAction"] as const;
 
@@ -17,9 +17,7 @@ export function toHeroBanner(banner: AdminBanner): HeroBannerContent {
     description: banner.description ?? undefined,
     // A URL on the retired store is the same as no image here, not a crash: next/image
     // throws on a host it cannot serve and takes the page with it (OPERATIONS.md).
-    image: isRenderableImageUrl(banner.imageUrl)
-      ? { src: banner.imageUrl, alt: banner.imageAlt ?? "" }
-      : undefined,
+    image: toResponsiveImage(banner, banner.imageAlt ?? "") ?? undefined,
     actions: banner.actions.map((action) => ({
       label: action.label,
       href: action.href,

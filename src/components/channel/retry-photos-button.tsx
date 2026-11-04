@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@/hooks/core/useMutation";
@@ -20,8 +19,7 @@ export function RetryPhotosButton({ orgId, channel, listingId }: { orgId: string
     onError: () => toast.error(SETTLE_TOAST.failed),
   });
   return (
-    <Button variant="outline" size="sm" onClick={() => void retry.mutate().catch(() => undefined)} aria-busy={retry.isLoading}>
-      {retry.isLoading && <Loader2 className="size-4 animate-spin" aria-hidden />}
+    <Button variant="outline" size="sm" onClick={() => void retry.mutate().catch(() => undefined)} pending={retry.isLoading}>
       {SETTLE_ACTION.tryAgain}
     </Button>
   );

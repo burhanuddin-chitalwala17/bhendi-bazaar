@@ -1,26 +1,64 @@
-import { DashboardWidgets } from "@/components/dashboard/DashboardWidgets";
-import { AdminDashboardLive } from "@/components/dashboard/dashboard-live";
+import { Suspense } from "react";
+
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
+import { SkeletonRows, SkeletonTiles } from "@/components/shared/states/skeletons";
+import { LatestOrdersBlock } from "@/components/dashboard/latest-orders";
+import { NeedsActionBlock } from "@/components/dashboard/needs-action";
+import { parsePeriod } from "@/components/dashboard/period";
+import { PeriodControl } from "@/components/dashboard/period-control";
+import { SalesOverviewBlock } from "@/components/dashboard/sales-overview";
 import { WorkerStatusCard } from "@/components/dashboard/worker-status-card";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { formatDate } from "@/lib/format";
 
 /**
- * The platform dashboard: key metrics come from the widget registry (the same
- * declarations the org portal renders, platform-scoped — dashboard-widgets R1–R4),
- * server-rendered; the live period/status/activity view stays a client island.
+ * The platform dashboard (design-system Q30, Q31): sales for a period from the URL, what needs the
+ * admin now, and the newest orders. Rendered on the server; each block streams behind its own
+ * Suspense and fails alone, so one slow or broken read never holds the page.
  */
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const period = parsePeriod((await searchParams).period);
+  const here = `/admin?period=${period}`;
+
   return (
-    <div className="space-y-8">
-      <SectionHeader
-        overline="Welcome to Bhendi Bazaar Admin Panel"
+    <PageShell width="wide">
+      <PageHeader
         title="Dashboard"
+        description={`${formatDate(new Date(), { weekday: "long", day: "numeric", month: "long" })} · all shops`}
+        actions={<PeriodControl current={period} />}
       />
 
-      <DashboardWidgets ctx={{ audience: "platform" }} basePath="/admin" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Suspense key={period} fallback={<SalesSkeleton />}>
+            <SalesOverviewBlock period={period} retryHref={here} />
+          </Suspense>
+        </div>
+        <Suspense fallback={<SkeletonRows count={4} thumbnail={false} />}>
+          <NeedsActionBlock period={period} retryHref={here} />
+        </Suspense>
+      </div>
 
-      <WorkerStatusCard />
+      <Suspense fallback={<SkeletonRows count={5} thumbnail={false} />}>
+        <LatestOrdersBlock retryHref={here} />
+      </Suspense>
 
-      <AdminDashboardLive />
+      <Suspense fallback={<Skeleton className="h-24 rounded-card" />}>
+        <WorkerStatusCard />
+      </Suspense>
+    </PageShell>
+  );
+}
+
+function SalesSkeleton() {
+  return (
+    <div className="space-y-4" role="status" aria-label="Loading sales">
+      <Skeleton className="h-72 rounded-card" />
+      <SkeletonTiles count={4} className="sm:grid-cols-2 lg:grid-cols-4" />
     </div>
   );
 }

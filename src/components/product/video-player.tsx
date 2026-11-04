@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { Film, Play } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ProductMediaRendition } from "@server/catalog/media";
@@ -11,9 +11,8 @@ import { formatDuration } from "@/lib/format";
 import { pickRendition } from "@/lib/video-renditions";
 import { FORM_FACTOR_QUERY } from "@/hooks/core/useMediaQuery";
 
-/** The gallery slide's slot, and the default for a surface that does not say (ADR-0026):
- *  full width until `lg`, then half the 72rem page column (`lg:grid-cols-2` on the product page). */
-export const GALLERY_SLIDE_SIZES = "(min-width: 1024px) 36rem, 100vw";
+/** The gallery slide's slot (ADR-0026): the full phone, half a tablet, three fifths of the 72rem page on a desktop. */
+export const GALLERY_SLIDE_SIZES = "(min-width: 1024px) 43rem, (min-width: 768px) 50vw, 100vw";
 
 
 interface VideoPlayerProps {
@@ -126,7 +125,7 @@ export function VideoPlayer({
         <Image src={poster} alt={title} fill sizes={sizes} className="object-cover select-none" draggable={false} />
       ) : (
         <span className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-          <Film className="size-10" aria-hidden />
+          <Icon name="video" size="xl" />
         </span>
       )}
       {durationMs !== null && (
@@ -139,15 +138,15 @@ export function VideoPlayer({
         <Button
           type="button"
           variant="ghost"
-          size="icon-lg"
+          shape="icon" size="lg"
           onClick={(event) => {
             event.stopPropagation();
             play();
           }}
           aria-label={`Play video: ${title}`}
-          className="absolute left-1/2 top-1/2 z-20 size-14 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/30 bg-scrim/80 backdrop-blur-sm hover:bg-hero/90"
+          className="absolute left-1/2 top-1/2 z-20 size-14 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/30 bg-scrim/80 text-hero-foreground backdrop-blur-sm hover:bg-hero/90"
         >
-          <Play className="size-6 fill-hero-foreground text-hero-foreground" />
+          <Icon name="play" size="lg" filled />
         </Button>
       )}
     </div>

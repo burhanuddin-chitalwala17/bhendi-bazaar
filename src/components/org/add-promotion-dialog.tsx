@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +15,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { FormInput } from "@/components/shared/forms/FormField";
-import { ImageUpload } from "@/components/shared/image-upload";
+import { ImageSlotField } from "@/components/shared/image-slot/image-slot-field";
+import { uploadApiClient } from "@/components/shared/uploadApiClient";
+import { IMAGE_SLOT } from "@server/catalog/image-slots";
+import type { ImageSlotValue } from "@server/catalog/image-framing";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { orgStorefrontApiClient } from "@/components/org/orgStorefrontApiClient";
 import {
@@ -50,8 +53,8 @@ export function AddPromotionDialog({
   // production, and CLAUDE.md keeps it out of `src/lib/config.ts` for that reason.
   const origin = typeof window === "undefined" ? "" : window.location.origin;
   const [open, setOpen] = useState(false);
-  // Outside the form: `ImageUpload` owns its own value and posts on its own.
-  const [imageUrl, setImageUrl] = useState("");
+  // Outside the form: the field uploads on its own; the form sends what it holds.
+  const [image, setImage] = useState<ImageSlotValue | null>(null);
 
   const {
     register,
@@ -65,15 +68,15 @@ export function AddPromotionDialog({
       title: "",
       description: "",
       href: "",
-      imageUrl: "",
+      image: null,
       imageAlt: "",
       isActive: true,
     },
     successMessage: "Banner added — it is live on your shop now.",
-    submit: (data) => orgStorefrontApiClient.addBanner(orgId, { ...data, imageUrl: imageUrl || null }),
+    submit: (data) => orgStorefrontApiClient.addBanner(orgId, { ...data, image }),
     onSuccess: () => {
       reset();
-      setImageUrl("");
+      setImage(null);
       setOpen(false);
       router.refresh();
     },
@@ -83,7 +86,7 @@ export function AddPromotionDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm">
-          <Plus />
+          <Icon name="add" />
           Add banner
         </Button>
       </DialogTrigger>
@@ -128,12 +131,16 @@ export function AddPromotionDialog({
             nothing laid over it.
           </p>
 
-          <ImageUpload
+          <ImageSlotField
+            slot={IMAGE_SLOT.ORG_BANNER}
             label="Picture (optional)"
-            value={imageUrl ? [imageUrl] : []}
-            onChange={(urls) => setImageUrl(urls[0] ?? "")}
-            maxImages={1}
-            endpoint={`/api/org/${orgId}/upload`}
+            value={image}
+            onChange={setImage}
+            upload={async (file) => {
+              const [url] = await uploadApiClient.uploadFiles(`/api/org/${orgId}/upload`, "products", [file]);
+              return url;
+            }}
+            error={errors.image?.message}
           />
 
           {/* Anything with no field to sit on — a permission failure, a conflict on

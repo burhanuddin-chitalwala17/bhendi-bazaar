@@ -1,85 +1,56 @@
-// components/admin/productsContainer/components/ProductsFilters.tsx
 "use client";
 
 import { useState } from "react";
-import { Heart, Search } from "lucide-react";
+
 import { Switch } from "@/components/ui/switch";
-import type { ProductFilters } from "../../types";
-import type { ProductShelf } from "@server/catalog/product.visibility";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
+import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import type { ProductFilters } from "../../types";
 
 interface ProductsFiltersProps {
   filters: ProductFilters;
   categories: Array<{ id: string; name: string }>;
   onFilterChange: (filters: Partial<ProductFilters>) => void;
-  isPending: boolean;
 }
 
-export function ProductsFilters({
-  filters,
-  categories,
-  onFilterChange,
-  isPending,
-}: ProductsFiltersProps) {
+/** Search, then the narrower filters. Shelf and stock are the tabs above, not here. */
+export function ProductsFilters({ filters, categories, onFilterChange }: ProductsFiltersProps) {
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
 
-  const handleSearch = () => {
-    onFilterChange({ search: searchTerm, page: 1 });
-  };
-
-  const handleStockFilter = (value: string) => {
-    onFilterChange({
-      lowStock: value === "low" ? true : undefined,
-      outOfStock: value === "out" ? true : undefined,
-      page: 1,
-    });
-  };
-
-  const currentStockFilter = filters.lowStock
-    ? "low"
-    : filters.outOfStock
-      ? "out"
-      : "";
-
   return (
-    <div className="bg-card rounded-lg border border-border p-4">
-      <div className="flex flex-wrap gap-4">
-        {/* Search */}
-        <div className="w-full min-w-0 grow sm:w-auto sm:min-w-64">
-          <div className="flex gap-2">
-            <Input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Search by name, SKU..."
-              disabled={isPending}
-              className="flex-1 disabled:opacity-50"
-            />
-            <Button
-              variant="default"
-              onClick={handleSearch}
-              disabled={isPending}
-              className="flex items-center gap-2"
-            >
-              <Search className="w-4 h-4" />
-              Search
-            </Button>
-          </div>
-        </div>
+    <div className="space-y-3 md:flex md:items-center md:gap-4 md:space-y-0">
+      <form
+        role="search"
+        className="flex min-w-0 flex-1 gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onFilterChange({ search: searchTerm.trim() || undefined, page: 1 });
+        }}
+      >
+        <Input
+          id="search"
+          type="search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search by name or SKU"
+          aria-label="Search products"
+          className="flex-1"
+        />
+        <Button type="submit" variant="outline" shape="icon" aria-label="Search">
+          <Icon name="search" size="sm" />
+        </Button>
+      </form>
 
-        {/* Category Filter */}
+      <div className="flex items-center gap-4">
         <Select
           value={filters.categoryId || ""}
-          onChange={(e) =>
-            onFilterChange({ categoryId: e.target.value || undefined, page: 1 })
-          }
-          disabled={isPending}
-          className="disabled:opacity-50"
+          onChange={(e) => onFilterChange({ categoryId: e.target.value || undefined, page: 1 })}
+          aria-label="Category"
+          className="min-w-0 flex-1 md:w-48 md:flex-none"
         >
-          <option value="">All Categories</option>
+          <option value="">All categories</option>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name}
@@ -87,60 +58,16 @@ export function ProductsFilters({
           ))}
         </Select>
 
-        {/* Shelf filter — available, archived, or both (ADR-0029). Full width at base
-            so it stacks on a phone rather than crowding the row. */}
-        <Select
-          value={filters.shelf || "available"}
-          onChange={(e) =>
-            onFilterChange({ shelf: e.target.value as ProductShelf, page: 1 })
-          }
-          disabled={isPending}
-          aria-label="Filter by whether the product is archived"
-          className="w-full disabled:opacity-50 sm:w-auto"
-        >
-          <option value="available">Available</option>
-          <option value="archived">Archived</option>
-          <option value="all">All</option>
-        </Select>
-
-        {/* Stock Filter */}
-        <Select
-          value={currentStockFilter}
-          onChange={(e) => handleStockFilter(e.target.value)}
-          disabled={isPending}
-          className="disabled:opacity-50"
-        >
-          <option value="">All Stock</option>
-          <option value="low">Low Stock</option>
-          <option value="out">Out of Stock</option>
-        </Select>
-
-        {/* Wishlisted only. A filter, so it goes through onFilterChange like the
-            others — the server picks the page, and paging stays honest. */}
-        <div className="flex items-center gap-2">
+        {/* Wishlisted only goes through onFilterChange like the others: the server picks the page. */}
+        <div className="flex shrink-0 items-center gap-2">
           <Switch
             id="wishlisted-only"
             checked={!!filters.wishlistedOnly}
-            disabled={isPending}
-            onCheckedChange={(checked) =>
-              onFilterChange({ wishlistedOnly: checked || undefined, page: 1 })
-            }
-            thumbIcon={
-              <Heart
-                className={`w-3 h-3 ${
-                  filters.wishlistedOnly
-                    ? "fill-current text-primary"
-                    : "text-muted-foreground"
-                }`}
-              />
-            }
+            onCheckedChange={(checked) => onFilterChange({ wishlistedOnly: checked || undefined, page: 1 })}
+            thumbIcon={<Icon name="saved" size="xs" filled={!!filters.wishlistedOnly} tone={filters.wishlistedOnly ? "primary" : "muted"} />}
           />
-          {/* A 24px switch is under the 36px floor, so the label is the rest of the
-              target — `button` is labelable, so clicking it toggles (ADR-0015). */}
-          <label
-            htmlFor="wishlisted-only"
-            className="cursor-pointer select-none"
-          >
+          {/* The switch is under the 40px floor, so the label is the rest of the target (ADR-0015). */}
+          <label htmlFor="wishlisted-only" className="min-h-10 cursor-pointer select-none content-center text-small">
             Wishlisted only
           </label>
         </div>

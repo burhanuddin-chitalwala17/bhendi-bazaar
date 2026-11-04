@@ -402,7 +402,7 @@ export const channelConnectionRepository = {
   },
 
   /** The read state of one connection, and what the read job needs to act. */
-  /** What deciding whether sync may start needs (inventory-sync Q27). */
+  /** What deciding whether sync may start needs (inventory-sync Q28). */
   async syncOf(id: string) {
     return await prisma.channelConnection.findUnique({ where: { id }, select: { id: true, orgId: true, state: true, stockSync: true } });
   },

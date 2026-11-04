@@ -18,8 +18,8 @@ export function CategoryStylingFields({
   const accent = selected ? CATEGORY_ACCENTS[selected] : undefined;
 
   return (
-    <div className="bg-card rounded-lg border border-border p-6">
-      <h2 className="text-lg font-semibold text-foreground mb-4">Styling</h2>
+    <div className="rounded-card border border-border bg-card p-6">
+      <h2 className="text-title font-semibold text-foreground mb-4">Styling</h2>
       <div className="space-y-4">
         <FormSelect label="Accent Color" required {...register("accent")}>
           {CATEGORY_ACCENT_KEYS.map((key) => (
@@ -32,9 +32,9 @@ export function CategoryStylingFields({
         {/* Color Preview */}
         <div className="flex items-center gap-2">
           <div
-            className={`w-12 h-12 rounded-lg border-2 border-border ${accent?.swatch ?? ""}`}
+            className={`size-12 rounded-field border-2 border-border ${accent?.swatch ?? ""}`}
           />
-          <span className="text-sm text-muted-foreground">Preview</span>
+          <span className="text-small text-muted-foreground">Preview</span>
         </div>
       </div>
     </div>

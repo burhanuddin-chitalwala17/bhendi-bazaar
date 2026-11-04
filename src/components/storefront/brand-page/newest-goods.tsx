@@ -1,5 +1,3 @@
-import { Package } from "lucide-react";
-
 import { ProductGrid } from "@/components/shared/product-grid";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { EmptyState } from "@/components/shared/states/EmptyState";
@@ -29,7 +27,6 @@ export function NewestGoods({ handle, name, products }: NewestSlice) {
         <ProductGrid products={products} />
       ) : (
         <EmptyState
-          icon={Package}
           title="Nothing here just yet"
           description={`${name} has not listed anything for sale. Come back soon.`}
         />

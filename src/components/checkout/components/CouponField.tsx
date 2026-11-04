@@ -10,7 +10,7 @@
  */
 
 import { useState } from "react";
-import { Tag, X } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/format";
@@ -50,12 +50,12 @@ export function CouponField({
 
   if (applied) {
     return (
-      <div className="rounded-xl border border-success/40 bg-success/5 p-3 text-sm">
+      <div className="rounded-card border border-success/40 bg-success/5 p-3 text-small">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="flex items-center gap-2 font-medium">
-              <Tag className="size-4 shrink-0 text-success" aria-hidden />
-              <span className="truncate font-mono text-xs">{appliedCode}</span>
+              <Icon name="offer" size="sm" tone="success" />
+              <span className="truncate font-mono text-caption">{appliedCode}</span>
               <span className="text-success">
                 −{formatCurrency(applied.amountPaise)}
               </span>
@@ -63,7 +63,7 @@ export function CouponField({
             {/* Coverage from data, not from a rule the browser re-derives. Saying it
                 here is what stops "why was it only ₹100 off" reaching support. */}
             {covered > 0 && covered < lineCount && (
-              <p className="mt-0.5 text-xs text-muted-foreground">
+              <p className="mt-0.5 text-caption text-muted-foreground">
                 Covers {covered} of {lineCount} items
               </p>
             )}
@@ -75,7 +75,7 @@ export function CouponField({
             onClick={onClear}
             aria-label={`Remove coupon ${appliedCode}`}
           >
-            <X className="size-4" aria-hidden />
+            <Icon name="close" size="sm" />
           </Button>
         </div>
       </div>
@@ -107,7 +107,7 @@ export function CouponField({
 
       {/* A refused code says why, and what would fix it where that is knowable. */}
       {quote.rejection && (
-        <p className="text-xs text-destructive">
+        <p className="text-caption text-destructive">
           {quote.rejection.message}
           {quote.rejection.shortfallPaise !== undefined &&
             ` Add ${formatCurrency(quote.rejection.shortfallPaise)} more of the items it covers.`}

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, Copy, FilePlus, Search } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -83,9 +83,9 @@ export function CopyFromPicker({
     <DropdownMenu onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline">
-          <Copy />
+          <Icon name="copy" />
           Copy from product
-          <ChevronDown />
+          <Icon name="expand" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent ref={contentRef} align="end" className="w-80">
@@ -95,7 +95,7 @@ export function CopyFromPicker({
         {/* Sticky so the box stays in reach while a long list scrolls beneath it. */}
         <div className="sticky -top-1 z-10 bg-popover px-1 pb-1">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Icon name="search" tone="muted" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
               ref={searchRef}
               type="search"
@@ -116,7 +116,7 @@ export function CopyFromPicker({
               onPointerLeave={keepFocusInSearch}
               onSelect={() => router.push(newProductPath)}
             >
-              <FilePlus />
+              <Icon name="file-add" />
               Start blank instead
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -144,7 +144,7 @@ export function CopyFromPicker({
                   {option.sku}
                 </span>
               )}
-              {option.id === selectedId && <Check />}
+              {option.id === selectedId && <Icon name="done" />}
             </DropdownMenuItem>
           ))
         )}

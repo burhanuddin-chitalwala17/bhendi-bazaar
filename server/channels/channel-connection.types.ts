@@ -84,7 +84,7 @@ export interface ChannelCardDTO {
   /** Amazon only: the date its yearly re-approval falls due (ISO). */
   reapproveBy: string | null;
   reason: ConnectionError | null;
-  /** Stock sync, on by itself once connected (inventory-sync Q27); paused only by the shop. Null when not connected. */
+  /** Stock sync, on by itself once connected (inventory-sync Q28); paused only by the shop. Null when not connected. */
   stockSync: StockSyncState | null;
 }
 

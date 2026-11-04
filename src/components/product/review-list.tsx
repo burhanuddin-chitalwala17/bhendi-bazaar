@@ -116,29 +116,29 @@ export function ReviewList({
               <>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <ReviewStars value={review.rating} size="xs" />
-                  <p className="text-2xs font-medium sm:text-xs">
+                  <p className="text-caption font-medium">
                     {review.authorName}
                   </p>
                   {review.isVerifiedPurchase && (
-                    <Badge variant="secondary" className="text-4xs sm:text-3xs">
+                    <Badge variant="secondary" className="text-2xs sm:text-2xs">
                       Verified purchase
                     </Badge>
                   )}
                   <time
                     dateTime={review.createdAt}
-                    className="text-4xs text-muted-foreground sm:text-3xs"
+                    className="text-2xs text-muted-foreground sm:text-2xs"
                   >
                     {formatDay(review.createdAt)}
                   </time>
                 </div>
 
                 {review.title && (
-                  <p className="font-heading text-2xs font-semibold sm:text-sm">
+                  <p className="font-heading text-small font-semibold">
                     {review.title}
                   </p>
                 )}
                 {review.comment && (
-                  <p className="whitespace-pre-line text-2xs leading-relaxed text-muted-foreground sm:text-sm">
+                  <p className="whitespace-pre-line text-small text-muted-foreground">
                     {review.comment}
                   </p>
                 )}

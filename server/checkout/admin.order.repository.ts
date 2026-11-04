@@ -153,6 +153,12 @@ export class AdminOrderRepository {
     return { orders: orders.map(withWireItems), total };
   }
 
+  /** How many visible orders sit in each status: one grouped count, for the console's tab counts. */
+  async countByStatus(): Promise<Record<string, number>> {
+    const rows = await prisma.order.groupBy({ by: ["status"], where: VISIBLE_ORDER_WHERE, _count: { _all: true } });
+    return Object.fromEntries(rows.map((row) => [row.status, row._count._all]));
+  }
+
   /**
    * Get single order by ID
    */

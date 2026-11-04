@@ -8,7 +8,7 @@ import { CancelParcel } from "./cancel-parcel";
 import { ReadyForPickup } from "./ready-for-pickup";
 import { ParcelLines } from "./parcel-lines";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import type { ParcelTimelineDto } from "@server/checkout/parcel-timeline";
 import { ParcelTimeline } from "@/components/order/timeline/parcel-timeline";
 import { TIMELINE_READER } from "@/components/order/timeline/timeline-copy";
@@ -48,34 +48,34 @@ export function ShopParcelCard({
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
         <div className="min-w-0">
           <CardTitle className="text-base">{parcel.code}</CardTitle>
-          <p className="text-sm text-muted-foreground">{parcelOfLine(parcel.position, parcel.ofCount, parcel.status)}</p>
+          <p className="text-small text-muted-foreground">{parcelOfLine(parcel.position, parcel.ofCount, parcel.status)}</p>
         </div>
         {packing ? (
           <ReadyForPickup orgId={orgId} shipmentId={parcel.id} firstOrder={firstOrder} docked={docked} />
         ) : (
-          <StatusBadge status={justReady ? "paid" : "default"}>{SHOP_STATUS_LINE[parcel.status]}</StatusBadge>
+          <StatusBadge tone={justReady ? "success" : "neutral"}>{SHOP_STATUS_LINE[parcel.status]}</StatusBadge>
         )}
       </CardHeader>
       <CardContent className="space-y-3">
-        {justReady && <p className="text-sm font-medium text-success">{SHOP_PARCEL_COPY.successReady}</p>}
+        {justReady && <p className="text-small font-medium text-success">{SHOP_PARCEL_COPY.successReady}</p>}
         {booked && parcel.pickupDay && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-card border bg-muted/40 p-3">
-            <p className="break-words text-sm font-medium">
+            <p className="break-words text-small font-medium">
               {SHOP_PARCEL_COPY.booked(parcel.pickupDay, parcel.courierName, parcel.trackingNumber)}
             </p>
             <Button asChild variant="outline" size="sm" className="min-h-10">
               <a href={`/api/org/${orgId}/shipments/${parcel.id}/label`} download>
-                <Download className="mr-2 size-4" />
+                <Icon name="download" size="sm" />
                 {SHOP_PARCEL_COPY.downloadLabel}
               </a>
             </Button>
           </div>
         )}
-        {cancelled && feePaise > 0 && <p className="text-sm text-muted-foreground">{SHOP_CANCEL_COPY.feeLine(feePaise)}</p>}
+        {cancelled && feePaise > 0 && <p className="text-small text-muted-foreground">{SHOP_CANCEL_COPY.feeLine(feePaise)}</p>}
         <ParcelLines items={parcel.items} />
         <ParcelTimeline timeline={timeline} reader={TIMELINE_READER.SHOP} />
         {cancellable && <CancelParcel orgId={orgId} shipmentId={parcel.id} packing={packing} feeNowPaise={feeNowPaise} />}
-        <div className="flex justify-between border-t pt-3 text-sm text-muted-foreground">
+        <div className="flex justify-between border-t pt-3 text-small text-muted-foreground">
           <span>{parcel.courierName ? `${parcel.courierName}${parcel.trackingNumber ? ` · ${parcel.trackingNumber}` : ""}` : SHOP_STATUS_LINE[parcel.status]}</span>
           <span>{formatCurrency(parcel.parcelValue)}</span>
         </div>

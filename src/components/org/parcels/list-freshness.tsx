@@ -21,7 +21,7 @@ export function ListFreshness() {
 
   if (minutes <= STALE_AFTER_MIN) return null;
   return (
-    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+    <div className="flex items-center gap-3 text-small text-muted-foreground">
       <span>{updatedAgo(minutes)}</span>
       <Button
         variant="outline"

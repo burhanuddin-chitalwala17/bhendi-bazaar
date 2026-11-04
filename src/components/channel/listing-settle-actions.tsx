@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@/hooks/core/useMutation";
@@ -66,9 +65,8 @@ export function ListingSettleActions({ orgId, channel, label, listingId }: Listi
         variant="ghost"
         className="min-h-10"
         onClick={() => void leaveOff.mutate().catch(() => undefined)}
-        aria-busy={leaveOff.isLoading}
+        pending={leaveOff.isLoading}
       >
-        {leaveOff.isLoading && <Loader2 className="size-4 animate-spin" aria-hidden />}
         {SETTLE_ACTION.leaveOff}
       </Button>
     </div>

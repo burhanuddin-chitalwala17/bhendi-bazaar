@@ -4,7 +4,7 @@ import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { resolveShotList } from "@server/catalog/shot-list";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { Film } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { toast } from "sonner";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
@@ -451,7 +451,7 @@ export function ProductForm({
                   {/* A hosted video has a poster once the worker is done; until then a film mark (video-hosting R3). */}
                   {item.kind === "VIDEO" && !item.poster ? (
                     <span className="absolute inset-0 flex items-center justify-center">
-                      <Film className="size-8 text-muted-foreground" aria-hidden />
+                      <Icon name="video" size="xl" tone="muted" />
                     </span>
                   ) : (
                     <Image

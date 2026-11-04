@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
 import { FormInput, FormPhoneInput } from "@/components/shared/forms/FormField";
@@ -117,8 +116,7 @@ export function OpenShopForm({ accountEmail, storeBase }: { accountEmail?: strin
         error={errors.email?.message}
         {...register("email")}
       />
-      <Button type="submit" className="h-11 w-full" aria-busy={isSubmitting}>
-        {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden />}
+      <Button type="submit" className="h-11 w-full" pending={isSubmitting}>
         {isSubmitting ? COPY.submitting : COPY.submit}
       </Button>
       {slow && (

@@ -1,14 +1,11 @@
-// src/components/admin/shipping/ProviderCard.tsx
-
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import type { ShippingProvider } from "../types";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
 
 interface ProviderCardProps {
   provider: ShippingProvider;
@@ -45,24 +42,16 @@ export function ProviderCard({
                   unoptimized
                 />
               )}
-              <h3 className="text-lg font-semibold">{provider.name}</h3>
+              <h3 className="text-title font-semibold">{provider.name}</h3>
             </div>
-            <div className="flex items-center justify-end gap-2">
-              <div
-                className={cn(
-                  "h-2 w-2 rounded-full",
-                  provider.isConnected ? "bg-success" : "bg-destructive",
-                )}
-              />
-              <span className="text-sm text-muted-foreground">
-                {provider.isConnected ? "Connected" : "Not Connected"}
-              </span>
-            </div>
+            <StatusBadge tone={provider.isConnected ? "success" : "neutral"} dot>
+              {provider.isConnected ? "Connected" : "Not connected"}
+            </StatusBadge>
           </div>
 
           {/* Description */}
           {provider.description && (
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-small text-muted-foreground mt-2">
               {provider.description}
             </p>
           )}
@@ -72,7 +61,7 @@ export function ProviderCard({
             {provider.isConnected ? (
               <div className="space-y-2">
                 {provider.accountInfo && "email" in provider.accountInfo ? (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-caption text-muted-foreground">
                     {provider.accountInfo.email as string}
                   </p>
                 ) : null}
@@ -80,14 +69,14 @@ export function ProviderCard({
                   variant="outline"
                   size="sm"
                   onClick={onDisconnect}
-                  disabled={isDisconnecting}
+                  pending={isDisconnecting}
                 >
-                  {isDisconnecting ? "Disconnecting..." : "Disconnect"}
+                  Disconnect
                 </Button>
               </div>
             ) : (
-              <Button size="sm" onClick={onConnect} disabled={isConnecting}>
-                {isConnecting ? "Connecting..." : "Connect Account"}
+              <Button size="sm" onClick={onConnect} pending={isConnecting}>
+                Connect account
               </Button>
             )}
           </div>
@@ -98,10 +87,10 @@ export function ProviderCard({
               href={provider.websiteUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-info hover:underline flex items-center gap-1 mt-2"
+              className="mt-2 inline-flex min-h-10 items-center gap-1 text-small text-info hover:underline"
             >
-              Visit Website
-              <ExternalLink className="w-3 h-3" />
+              Visit website
+              <Icon name="external" size="xs" />
             </a>
           )}
         </div>

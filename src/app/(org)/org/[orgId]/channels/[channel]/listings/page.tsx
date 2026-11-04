@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 
 import { requireOrgMember } from "@/lib/org-auth";
 import { channelListingsDAL, type ListingsTab } from "@/data-access-layer/channel-listings.dal";
-import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,6 +22,7 @@ import { LISTINGS } from "@/components/channel/listing-copy";
 import { LISTINGS_SETTLE } from "@/components/channel/settle-copy";
 import { READ_ERROR, READ_STATE } from "@server/channels/channel-connection.types";
 import { CHANNEL } from "@server/shared/channels";
+import { PageHeader } from "@/components/shared/page-shell";
 
 export const metadata = {
   title: "Listings",
@@ -100,7 +100,7 @@ export default async function ChannelListingsPage({
         </div>
       )}
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <SectionHeader as="h1" help="channels" title={LISTINGS.title(label)} />
+        <PageHeader help="channels" title={LISTINGS.title(label)} />
         {canRead && !running && <ReadAgainButton orgId={scope.orgId} channel={page.channel} />}
         {!canRead && (
           <Button asChild variant="outline" className="min-h-10 w-full md:w-auto">

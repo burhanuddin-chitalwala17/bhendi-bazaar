@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { orgReviewsDAL } from "@/data-access-layer/org/reviews.dal";
 import { ReviewMedia } from "@/components/product/review-media";
@@ -51,16 +51,16 @@ export default async function OrgReviewsPage({
                   <CardContent className="pt-4">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium">{review.product.name}</span>
-                      <span className="flex items-center gap-1 text-sm">
-                        <Star className="h-4 w-4 fill-warning text-warning" />
+                      <span className="flex items-center gap-1 text-small">
+                        <Icon name="rating" size="sm" filled tone="warning" />
                         {review.rating}
                       </span>
                     </div>
                     {review.title && (
-                      <p className="mt-1 text-sm font-medium">{review.title}</p>
+                      <p className="mt-1 text-small font-medium">{review.title}</p>
                     )}
                     {review.comment && (
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <p className="mt-1 text-small text-muted-foreground">
                         {review.comment}
                       </p>
                     )}

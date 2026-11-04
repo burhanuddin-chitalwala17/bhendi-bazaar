@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Copy, ExternalLink, Share2 } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import { ShareShopSheet } from "@/components/org/share/share-shop-sheet";
@@ -29,18 +29,18 @@ export function ShopLinkCard({ orgId, shop }: { orgId: string; shop: ShareShop }
           setup={null}
           trigger={
             <Button type="button" size="lg" className="min-h-11">
-              <Share2 aria-hidden />
+              <Icon name="share" />
               {SHARE_COPY.open}
             </Button>
           }
         />
         <Button type="button" variant="outline" size="lg" className="min-h-11" onClick={() => void copyLink()}>
-          <Copy aria-hidden />
+          <Icon name="copy" />
           {SHARE_COPY.copyLink}
         </Button>
         <Button asChild variant="ghost" size="lg" className="min-h-11">
           <Link prefetch={false} href={shop.path} target="_blank" rel="noopener noreferrer">
-            <ExternalLink aria-hidden />
+            <Icon name="external" />
             {SHARE_COPY.seeAsBuyer}
           </Link>
         </Button>

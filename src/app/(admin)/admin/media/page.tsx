@@ -4,7 +4,7 @@ import { MediaAssetKind, MediaAssetSource, MediaAssetState } from "@prisma/clien
 
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { MediaTakedown } from "@/components/org/media-takedown";
 import { mediaAssetService } from "@server/catalog/media-asset.service";
@@ -104,7 +104,7 @@ export default async function AdminMediaPage({
         ))}
       </nav>
 
-      <p className="text-sm text-muted-foreground tabular-nums">
+      <p className="text-small text-muted-foreground tabular-nums">
         {pagination.total} {pagination.total === 1 ? "item" : "items"}
       </p>
 
@@ -126,16 +126,14 @@ export default async function AdminMediaPage({
             </div>
 
             <div className="flex flex-wrap gap-1">
-              <Badge variant="outline">{KIND_LABEL[asset.kind] ?? asset.kind}</Badge>
-              <Badge variant="outline">{SOURCE_LABEL[asset.source] ?? asset.source}</Badge>
+              <StatusBadge>{KIND_LABEL[asset.kind] ?? asset.kind}</StatusBadge>
+              <StatusBadge>{SOURCE_LABEL[asset.source] ?? asset.source}</StatusBadge>
               {asset.state === MediaAssetState.RETIRED && (
-                <Badge variant="outline" className="text-muted-foreground">
-                  Retired
-                </Badge>
+                <StatusBadge tone="warning">Retired</StatusBadge>
               )}
             </div>
 
-            <dl className="space-y-0.5 text-sm text-muted-foreground">
+            <dl className="space-y-0.5 text-small text-muted-foreground">
               <div>
                 <dt className="sr-only">Whose</dt>
                 <dd>{asset.orgId ? (orgName.get(asset.orgId) ?? "An organisation") : "The platform"}</dd>
@@ -165,7 +163,7 @@ export default async function AdminMediaPage({
       </ul>
 
       {assets.length === 0 && (
-        <p className="text-sm text-muted-foreground">Nothing matches. Try another shop or clear the filters.</p>
+        <p className="text-small text-muted-foreground">Nothing matches. Try another shop or clear the filters.</p>
       )}
 
       {pagination.totalPages > 1 && (
@@ -173,7 +171,7 @@ export default async function AdminMediaPage({
           <Button asChild variant="ghost" size="sm" disabled={pagination.page <= 1}>
             <Link href={linkTo({ page: String(Math.max(1, pagination.page - 1)) })}>Previous</Link>
           </Button>
-          <span className="text-sm text-muted-foreground tabular-nums">
+          <span className="text-small text-muted-foreground tabular-nums">
             Page {pagination.page} of {pagination.totalPages}
           </span>
           <Button asChild variant="ghost" size="sm" disabled={pagination.page >= pagination.totalPages}>

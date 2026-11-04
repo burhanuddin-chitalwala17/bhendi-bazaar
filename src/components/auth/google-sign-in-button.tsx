@@ -24,7 +24,7 @@ export function GoogleSignInButton({
         beforeRedirect?.();
         void signIn("google", { callbackUrl });
       }}
-      className="h-10 w-full rounded-full text-xs font-semibold uppercase tracking-eyebrow"
+      className="h-10 w-full rounded-full text-caption font-semibold uppercase tracking-eyebrow"
     >
       <GoogleIcon />
       Continue with Google

@@ -7,15 +7,16 @@
  */
 
 import { prisma } from "@server/shared/prisma";
+import type { ImageSlotColumns } from "@server/catalog/image-slot-write";
 
-export interface OrgBannerInput {
+/** Picture columns come from `resolveImageSlot` (image-slots D7); the rest is whitelisted by the service. */
+export type OrgBannerInput = ImageSlotColumns & {
   title: string | null;
   description: string | null;
-  imageUrl: string | null;
   imageAlt: string | null;
   href: string | null;
   isActive: boolean;
-}
+};
 
 export const orgBannerRepository = {
   /** Everything this org has, live or taken down, in its chosen order. */
@@ -36,9 +37,19 @@ export const orgBannerRepository = {
         title: true,
         description: true,
         imageUrl: true,
+        phoneImageUrl: true,
+        imageFraming: true,
         imageAlt: true,
         href: true,
       },
+    });
+  },
+
+  /** One of this org's banners, for a write that must know the picture it already has. */
+  async findForOrg(orgId: string, id: string) {
+    return await prisma.orgBanner.findFirst({
+      where: { id, orgId },
+      select: { imageUrl: true, imageAssetId: true },
     });
   },
 

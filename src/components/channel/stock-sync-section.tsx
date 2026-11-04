@@ -7,7 +7,7 @@ import { LocationMatchSheet } from "./location-match-sheet";
 import { STOCK } from "./stock-copy";
 
 /**
- * Stock sync on a marketplace's Listings page, only when it needs the shop (inventory-sync Q27): sync
+ * Stock sync on a marketplace's Listings page, only when it needs the shop (inventory-sync Q28): sync
  * runs on its own once connected, so a healthy sync shows nothing. Pause lives on the Channels card.
  */
 export function StockSyncSection({ orgId, section, locations }: { orgId: string; section: StockSyncSectionDTO; locations: LocationMatchDTO }) {

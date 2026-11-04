@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductDetails } from "@/components/product/product-details";
+import { ProductBuyActions } from "@/components/product/product-buy-actions";
+import { ActionBar } from "@/components/shared/action-bar";
+import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { Reviews } from "@/components/product/reviews";
 import { SimilarProducts } from "@/components/product/similar-products";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
@@ -76,14 +79,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
     throw error;
   }
   return (
-    // pb-16 clears the docked Add-to-cart bar, which is fixed and so out of flow.
-    <div className="space-y-6 pb-16 sm:space-y-8 md:pb-0">
+    <div className="space-y-8 md:space-y-12">
       {(() => {
         const ld = productJsonLd(appUrl(), product);
         return ld ? <JsonLd data={ld} /> : null;
       })()}
       <Suspense fallback={<ProductPageSkeleton />}>
-        <div className="grid gap-4 sm:gap-8 lg:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-[3fr_2fr] lg:gap-12">
           <ProductGallery {...product} />
           <ProductDetails {...product} />
         </div>
@@ -95,6 +97,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <Suspense fallback={<LoadingSkeleton />}>
         <SimilarFor slug={slug} />
       </Suspense>
+      {/* The phone's docked price and Add to bag, above the tab bar; inline in the details from a tablet up. */}
+      <ActionBar className="-mx-3 sm:-mx-6 md:hidden" status={<DockedPrice price={product.price} salePrice={product.salePrice} />}>
+        <ProductBuyActions product={product} className="min-w-40" />
+      </ActionBar>
     </div>
   );
 }
@@ -106,4 +112,13 @@ async function SimilarFor({ slug }: { slug: string }) {
     return [];
   });
   return <SimilarProducts products={products} />;
+}
+
+function DockedPrice({ price, salePrice }: { price: number; salePrice?: number }) {
+  return (
+    <span className="flex flex-col">
+      <PriceDisplay price={price} salePrice={salePrice} size="md" showBadge={false} />
+      <span className="text-caption text-muted-foreground">Inclusive of all taxes</span>
+    </span>
+  );
 }

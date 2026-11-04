@@ -8,7 +8,7 @@
 import { useId, useState, useRef } from "react";
 import NextImage from "next/image";
 import { toast } from "sonner";
-import { Upload, X } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { useLocalPreviews } from "@/hooks/core/useLocalPreviews";
 import { useMutation } from "@/hooks/core/useMutation";
 import { Button } from "@/components/ui/button";
@@ -119,17 +119,17 @@ export function ImageUpload({
             <div className="absolute inset-0 transition-all flex items-center justify-center gap-2">
               <Button
                 variant="destructive"
-                size="icon"
+                shape="icon"
                 type="button"
                 onClick={() => handleRemove(index)}
                 className="opacity-0 group-hover:opacity-100 hover:bg-destructive transition-opacity"
               >
-                <X className="w-4 h-4" />
+                <Icon name="close" size="sm" />
               </Button>
               {index > 0 && (
                 <Button
                   variant="ghost"
-                  size="icon"
+                  shape="icon"
                   type="button"
                   onClick={() => handleReorder(index, index - 1)}
                   className="opacity-0 group-hover:opacity-100 bg-info hover:bg-info transition-opacity"
@@ -140,7 +140,7 @@ export function ImageUpload({
               {index < value.length - 1 && (
                 <Button
                   variant="ghost"
-                  size="icon"
+                  shape="icon"
                   type="button"
                   onClick={() => handleReorder(index, index + 1)}
                   className="opacity-0 group-hover:opacity-100 bg-info hover:bg-info transition-opacity"
@@ -177,7 +177,7 @@ export function ImageUpload({
               </>
             ) : (
               <>
-                <Upload className="w-8 h-8 text-muted-foreground/70" />
+                <Icon name="upload" size="xl" className="text-muted-foreground/70" />
                 <span className="text-sm text-muted-foreground">
                   Upload Image
                 </span>

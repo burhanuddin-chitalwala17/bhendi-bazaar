@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { Switch } from "@/components/ui/switch";
+import { ActionBar } from "@/components/shared/action-bar";
 import { FormInput, FormTextarea } from "@/components/shared/forms/FormField";
 import { paiseToRupees, rupeesToPaise } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -227,14 +228,14 @@ function FeaturesInput({ features, max, label, errors, onChange }: { features: s
               error={errors[index] ?? (max && feature.length > max ? LISTING.overLimit(label, max, "point") : undefined)}
             />
           </div>
-          <Button type="button" variant="ghost" size="icon" className="size-10" aria-label={LISTING.removePoint(index + 1)} onClick={() => onChange(features.filter((_, i) => i !== index))}>
-            <X aria-hidden />
+          <Button type="button" variant="ghost" shape="icon" className="size-10" aria-label={LISTING.removePoint(index + 1)} onClick={() => onChange(features.filter((_, i) => i !== index))}>
+            <Icon name="close" />
           </Button>
         </div>
       ))}
       {features.length < 5 && (
         <Button type="button" variant="outline" size="sm" className="min-h-10 self-start" onClick={() => onChange([...features, ""])}>
-          <Plus aria-hidden /> {LISTING.addPoint}
+          <Icon name="add" /> {LISTING.addPoint}
         </Button>
       )}
     </div>
@@ -245,8 +246,10 @@ function FeaturesInput({ features, max, label, errors, onChange }: { features: s
 function SaveBar({ orgId, screen, dirty, pending }: { orgId: string; screen: ListingScreenDTO; dirty: boolean; pending: boolean }) {
   const waiting = screen.waitingFields.length;
   return (
-    <div className="sticky bottom-tabbar z-10 -mx-4 flex items-center justify-between gap-3 border-t border-border bg-background/95 p-3 backdrop-blur md:bottom-0 md:mx-0 md:rounded-card md:border">
-      <span className={cn("text-sm", waiting > 0 && !dirty && "font-semibold")}>{dirty ? "" : waiting > 0 ? LISTING.waiting(waiting) : LISTING.nothingWaiting}</span>
+    <ActionBar
+      className="-mx-4 md:mx-0"
+      status={dirty ? null : <span className={cn(waiting > 0 && "font-semibold")}>{waiting > 0 ? LISTING.waiting(waiting) : LISTING.nothingWaiting}</span>}
+    >
       {dirty || waiting === 0 ? (
         <Button type="submit" size="sm" className="min-h-10" pending={pending}>
           {LISTING.save}
@@ -256,6 +259,6 @@ function SaveBar({ orgId, screen, dirty, pending }: { orgId: string; screen: Lis
           <Link href={`/org/${orgId}/channels/${screen.channel}/publish?listing=${screen.id}`}>{LISTING.reviewAndPublish}</Link>
         </Button>
       )}
-    </div>
+    </ActionBar>
   );
 }

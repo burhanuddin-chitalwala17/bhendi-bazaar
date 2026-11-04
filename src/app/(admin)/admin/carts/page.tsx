@@ -4,8 +4,8 @@
  * Filters live in the URL so the server can answer. The client leaves are the filter selects,
  * and the table with its detail dialog and reminder action.
  */
-import { PageHeader } from "@/components/shared/page-shell";
-import { PriceDisplay } from "@/components/shared/PriceDisplay";
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
+import { Money } from "@/components/shared/Money";
 import { adminCartsDAL } from "@/data-access-layer/admin/carts.dal";
 import { CartsFilters } from "@/components/cart/console/CartsFilters";
 import { CartsTable } from "@/components/cart/console/CartsTable";
@@ -39,16 +39,18 @@ export default async function AdminCartsPage({
   });
 
   return (
-    <div className="space-y-6">
+    <PageShell width="wide">
       <PageHeader
-        title="Abandoned Carts"
-        description="Carts left behind, and what they are worth"
-        actions={<PriceDisplay price={totalValue || 0} size="lg" />}
+        title="Open carts"
+        description="Carts buyers left behind, and what they are worth."
+        actions={
+          <p className="text-small text-muted-foreground">
+            Worth <Money paise={totalValue || 0} className="font-semibold text-foreground" />
+          </p>
+        }
       />
 
-      <div className="rounded-lg border border-border bg-card p-4">
-        <CartsFilters />
-      </div>
+      <CartsFilters />
 
       <CartsTable
         carts={carts}
@@ -57,6 +59,6 @@ export default async function AdminCartsPage({
         totalPages={totalPages}
         total={total}
       />
-    </div>
+    </PageShell>
   );
 }

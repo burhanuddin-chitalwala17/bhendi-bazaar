@@ -11,12 +11,13 @@
  */
 
 import { prisma } from "@server/shared/prisma";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { ConflictError } from "@server/shared/domain-error";
 import { uniqueViolationFields } from "@server/shared/constraint";
-import { enqueue } from "@server/shared/jobs/jobs.enqueue";
+import { enqueue, type EnqueueTx } from "@server/shared/jobs/jobs.enqueue";
 import { stockChangedSpec } from "@server/shared/jobs/stock-changed.job";
 import { STOCK_FIELD } from "@server/catalog/product-edit";
+import type { BulkStockRow } from "@server/catalog/product-bulk.types";
 
 /** `prisma`, or the `tx` of a `$transaction` — enough of either to move stock. */
 export type ProductStockDb = Pick<typeof prisma, "productStock" | "$queryRawUnsafe">;
@@ -280,6 +281,78 @@ export class StockRepository {
     }
     if (rows.length) await tx.productStock.createMany({ data: [...rows] });
     await stockChanged(tx, [...replaceForProductIds, ...rows.map((r) => r.productId)]);
+  }
+
+  /**
+   * Lock every stocked row of these products, as `lockAll` does for one, in one statement: a bulk
+   * archive's guard runs behind it (ADR-0029, Invariant 6). Scoped to the shop when one acts.
+   */
+  async lockAllOf(productIds: readonly string[], orgId: string | null, tx: ProductStockDb = prisma): Promise<void> {
+    await tx.productStock.updateMany({
+      where: { productId: { in: [...productIds] }, quantity: { gte: 1 }, ...(orgId ? { product: { orgId } } : {}) },
+      data: { quantity: { increment: 0 } },
+    });
+  }
+
+  /**
+   * A bulk stock edit (Q29): every row a compare-and-set against what the editor saw, all in one
+   * statement. A row is written only where the database still holds `seenQuantity` (no row counts
+   * as 0); one that moved is returned with what it holds now, never overwritten (Invariant 6). A
+   * product outside the shop, or a location outside the product's shop, matches nothing. Set to
+   * 0 removes the row, as `adjust` does.
+   */
+  async bulkSetCountedIn(
+    tx: Pick<typeof prisma, "$queryRaw">,
+    orgId: string | null,
+    excludeArchived: boolean,
+    rows: readonly BulkStockRow[],
+  ) {
+    const column = <K extends keyof BulkStockRow>(key: K) => rows.map((row) => row[key]);
+    const result = await tx.$queryRaw<Array<{ productId: string; orgAddressId: string; archived: boolean; current: number | null; written: boolean }>>`
+      WITH v AS (
+        SELECT * FROM unnest(${column("productId")}::text[], ${column("orgAddressId")}::text[], ${column("quantity")}::int[], ${column("seenQuantity")}::int[])
+          AS v(pid, aid, qty, seen)
+      ), ok AS (
+        SELECT v.*, p."archivedAt" IS NOT NULL AS archived, (${!excludeArchived} OR p."archivedAt" IS NULL) AND v.qty <> v.seen AS go
+        FROM v
+        JOIN "Product" p ON p.id = v.pid ${orgId ? Prisma.sql`AND p."orgId" = ${orgId}` : Prisma.empty}
+        JOIN "OrgAddress" oa ON oa.id = v.aid AND oa."orgId" = p."orgId"
+      ), cur AS (
+        SELECT ps."productId", ps."orgAddressId", ps.quantity FROM "ProductStock" ps
+        JOIN ok ON ps."productId" = ok.pid AND ps."orgAddressId" = ok.aid FOR UPDATE OF ps
+      ), upd AS (
+        UPDATE "ProductStock" ps SET quantity = ok.qty FROM ok
+        WHERE ps."productId" = ok.pid AND ps."orgAddressId" = ok.aid AND ps.quantity = ok.seen AND ok.qty > 0 AND ok.go
+        RETURNING ps."productId", ps."orgAddressId"
+      ), del AS (
+        DELETE FROM "ProductStock" ps USING ok
+        WHERE ps."productId" = ok.pid AND ps."orgAddressId" = ok.aid AND ps.quantity = ok.seen AND ok.qty = 0 AND ok.go
+        RETURNING ps."productId", ps."orgAddressId"
+      ), ins AS (
+        INSERT INTO "ProductStock" ("productId", "orgAddressId", quantity)
+        SELECT ok.pid, ok.aid, ok.qty FROM ok
+        WHERE ok.seen = 0 AND ok.qty > 0 AND ok.go AND NOT EXISTS (SELECT 1 FROM cur WHERE cur."productId" = ok.pid AND cur."orgAddressId" = ok.aid)
+        ON CONFLICT DO NOTHING
+        RETURNING "productId", "orgAddressId"
+      ), done AS (
+        SELECT "productId", "orgAddressId" FROM upd UNION ALL SELECT "productId", "orgAddressId" FROM del
+        UNION ALL SELECT "productId", "orgAddressId" FROM ins
+      )
+      SELECT ok.pid AS "productId", ok.aid AS "orgAddressId", ok.archived, cur.quantity AS current,
+        EXISTS (SELECT 1 FROM done WHERE done."productId" = ok.pid AND done."orgAddressId" = ok.aid) AS written
+      FROM ok LEFT JOIN cur ON cur."productId" = ok.pid AND cur."orgAddressId" = ok.aid`;
+    return result;
+  }
+
+  /** `stockChanged` for a bulk edit: one read of every total and one job, whatever the number (inventory-sync Q27). */
+  async stockChangedMany(productIds: readonly string[], tx: ProductStockDb & EnqueueTx = prisma): Promise<void> {
+    await stockChanged(tx, productIds);
+  }
+
+  /** Archived products sell nowhere: one job tells their marketplaces each is sold out (inventory-sync Q6, Q27). */
+  async enqueueSoldOut(productIds: readonly string[], tx: EnqueueTx): Promise<void> {
+    if (productIds.length === 0) return;
+    await enqueue(tx, stockChangedSpec, { products: productIds.map((productId) => ({ productId, soldOut: true })) });
   }
 
   /**

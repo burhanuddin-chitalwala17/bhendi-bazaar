@@ -1,5 +1,3 @@
-// app/(admin)/admin/products/page.tsx
-
 import { Suspense } from "react";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
@@ -7,16 +5,14 @@ import { ProductsContainer } from "@/components/product/console/productsList";
 import { ProductsTableSkeleton } from "@/components/product/console/productsList/components/ProductsTableSkeleton";
 import type { Metadata } from "next";
 import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
 
-// ⚡ ISR - Revalidate every 5 minutes
-export const revalidate = 300;
-
-// ⚡ Generate metadata for SEO
+// No `revalidate`: the page reads its searchParams and sits behind the admin session, so it is
+// rendered per request and an ISR window never applied to it.
 export const metadata: Metadata = {
   title: "Admin: products",
   description: "Manage your product catalog",
-  robots: { index: false, follow: false }, // Don't index admin pages
+  robots: { index: false, follow: false }
 };
 
 interface ProductsPageProps {
@@ -39,20 +35,16 @@ export default async function ProductsPage({
   searchParams,
 }: ProductsPageProps) {
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <SectionHeader as="h1" title="Products" description="Every organisation's catalogue, for support — products are managed in each org's own portal" />
-      </div>
+    <PageShell width="wide">
+      <PageHeader title="Products" description="Every shop's catalogue, for support. Shops manage their products in their own portal." />
 
-      {/* ⚡ Suspense for streaming */}
       <Suspense fallback={<ProductsTableSkeleton />}>
         <ProductsData searchParams={searchParams} />
       </Suspense>
-    </div>
+    </PageShell>
   );
 }
 
-// ✅ Separate async component for data fetching
 async function ProductsData({ searchParams }: ProductsPageProps) {
   const params = await searchParams;
 
@@ -76,7 +68,6 @@ async function ProductsData({ searchParams }: ProductsPageProps) {
     wishlistedOnly: params.wishlisted === "true" ? true : undefined,
   };
 
-  // ⚡ Parallel data fetching
   const [productsData, stats, categoryList] = await Promise.all([
     adminProductsDAL.getProducts(filters),
     // null: this is the platform's cross-vendor view, so every org counts.

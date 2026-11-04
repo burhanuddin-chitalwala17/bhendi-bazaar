@@ -46,14 +46,14 @@ export async function Reviews({ product }: { product: Product }) {
         </>
       ) : (
         // R5: an empty panel tells a shopper nothing. This asks.
-        <p className="text-2xs text-muted-foreground sm:text-sm">
+        <p className="text-small text-muted-foreground">
           No reviews yet. If you have this piece, yours would be the first — how it
           fits and how the fabric feels is what the next buyer is trying to find out.
         </p>
       )}
 
       <div className="space-y-2">
-        <h3 className="font-heading text-2xs font-semibold sm:text-sm">
+        <h3 className="font-heading text-small font-semibold">
           {hasReviews ? "Write a review" : "Be the first to review it"}
         </h3>
         <ReviewForm productId={product.id} />

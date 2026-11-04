@@ -10,16 +10,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  Archive,
-  ArchiveRestore,
-  Copy,
-  Edit,
-  Eye,
-  MoreHorizontal,
-  Trash2,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import {
   Dialog,
   DialogContent,
@@ -61,12 +53,10 @@ export function ProductRowMenu({
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            size="icon"
-            disabled={disabled}
-            title="Actions"
+            shape="icon"
+            aria-label={`Actions for ${product.name}`}
           >
-            <MoreHorizontal className="w-4 h-4" />
-            <span className="sr-only">Actions for {product.name}</span>
+            <Icon name="more" size="sm" />
           </Button>
         </DropdownMenuTrigger>
 
@@ -75,7 +65,7 @@ export function ProductRowMenu({
         <DropdownMenuContent align="end">
           <DropdownMenuItem asChild>
             <Link prefetch={false} href={`${productsBasePath}/${product.id}`}>
-              <Eye />
+              <Icon name="show" />
               View
             </Link>
           </DropdownMenuItem>
@@ -84,7 +74,7 @@ export function ProductRowMenu({
               prefetch={false}
               href={`${productsBasePath}/${product.id}/edit`}
             >
-              <Edit />
+              <Icon name="edit" />
               Edit
             </Link>
           </DropdownMenuItem>
@@ -93,7 +83,7 @@ export function ProductRowMenu({
               prefetch={false}
               href={`${productsBasePath}/new?copyFrom=${encodeURIComponent(product.id)}`}
             >
-              <Copy />
+              <Icon name="copy" />
               Copy product
             </Link>
           </DropdownMenuItem>
@@ -102,7 +92,7 @@ export function ProductRowMenu({
               onSetArchived(product.id, !product.archivedAt, product.name)
             }
           >
-            {product.archivedAt ? <ArchiveRestore /> : <Archive />}
+            <Icon name={product.archivedAt ? "restore" : "archive"} />
             {product.archivedAt ? "Restore" : "Archive"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -110,7 +100,7 @@ export function ProductRowMenu({
             variant="destructive"
             onSelect={() => setConfirmingDelete(true)}
           >
-            <Trash2 />
+            <Icon name="delete" />
             Delete…
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -138,13 +128,13 @@ export function ProductRowMenu({
             </Button>
             <Button
               variant="destructive"
-              disabled={disabled}
+              pending={disabled}
               onClick={() => {
                 setConfirmingDelete(false);
                 onDelete(product.id, product.name);
               }}
             >
-              <Trash2 className="w-4 h-4" />
+              <Icon name="delete" size="sm" />
               Delete permanently
             </Button>
           </DialogFooter>

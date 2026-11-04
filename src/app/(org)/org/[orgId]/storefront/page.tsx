@@ -1,6 +1,6 @@
 import Link from "next/link";
+import { Icon } from "@/components/ui/icon";
 import { notFound } from "next/navigation";
-import { ChevronRight, Palette } from "lucide-react";
 
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { StorefrontEditor } from "@/components/org/storefront-editor";
@@ -49,9 +49,9 @@ export default async function OrgStorefrontPage({
         href={`/org/${orgId}/storefront/look`}
         className="flex min-h-14 items-center gap-3 rounded-card border border-border bg-card p-4 transition-colors hover:bg-muted/60"
       >
-        <Palette className="size-5 shrink-0 text-primary" aria-hidden />
+        <Icon name="palette" size="md" tone="primary" />
         <span className="min-w-0 flex-1 font-medium text-foreground">{LOOK_COPY.title}</span>
-        <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <Icon name="next" size="sm" tone="muted" />
       </Link>
       <StorefrontBannersManager
         orgId={orgId}

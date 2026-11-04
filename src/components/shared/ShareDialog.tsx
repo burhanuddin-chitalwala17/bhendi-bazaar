@@ -12,17 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useShare } from "@/hooks/core/useShare";
 import { SOCIAL_BRAND } from "@/lib/social-brand";
-import {
-  Share2,
-  Copy,
-  Check,
-  Mail,
-  MessageCircle,
-  Facebook,
-  Twitter,
-  Instagram,
-  Linkedin,
-} from "lucide-react";
+import { Icon, type IconName } from "@/components/ui/icon";
 
 interface ShareDialogProps {
   url: string;
@@ -35,7 +25,7 @@ interface ShareDialogProps {
 interface ShareOption {
   id: string;
   name: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: IconName;
   color: string;
   hoverColor: string;
   action: () => void;
@@ -121,7 +111,7 @@ export function ShareDialog({
     {
       id: "facebook",
       name: "Facebook",
-      icon: Facebook,
+      icon: "facebook",
       color: SOCIAL_BRAND.facebook.color,
       hoverColor: SOCIAL_BRAND.facebook.hover,
       action: handleFacebook,
@@ -129,7 +119,7 @@ export function ShareDialog({
     {
       id: "twitter",
       name: "X (Twitter)",
-      icon: Twitter,
+      icon: "x-social",
       color: SOCIAL_BRAND.twitter.color,
       hoverColor: SOCIAL_BRAND.twitter.hover,
       action: handleTwitter,
@@ -137,7 +127,7 @@ export function ShareDialog({
     {
       id: "whatsapp",
       name: "WhatsApp",
-      icon: MessageCircle,
+      icon: "message",
       color: SOCIAL_BRAND.whatsapp.color,
       hoverColor: SOCIAL_BRAND.whatsapp.hover,
       action: handleWhatsApp,
@@ -145,7 +135,7 @@ export function ShareDialog({
     {
       id: "linkedin",
       name: "LinkedIn",
-      icon: Linkedin,
+      icon: "linkedin",
       color: SOCIAL_BRAND.linkedin.color,
       hoverColor: SOCIAL_BRAND.linkedin.hover,
       action: handleLinkedIn,
@@ -153,7 +143,7 @@ export function ShareDialog({
     {
       id: "email",
       name: "Email",
-      icon: Mail,
+      icon: "email",
       color: SOCIAL_BRAND.email.color,
       hoverColor: SOCIAL_BRAND.email.hover,
       action: handleEmail,
@@ -161,7 +151,7 @@ export function ShareDialog({
     {
       id: "instagram",
       name: "Instagram",
-      icon: Instagram,
+      icon: "instagram",
       color: SOCIAL_BRAND.instagram.color,
       hoverColor: SOCIAL_BRAND.instagram.hover,
       action: handleInstagram,
@@ -173,8 +163,8 @@ export function ShareDialog({
       <DialogTrigger asChild>
         {children || (
           <Button variant="outline" size="sm" className={triggerClassName}>
-            <Share2 className="h-4 w-4" />
-            <span className="ml-2">Share</span>
+            <Icon name="share" size="sm" />
+            <span>Share</span>
           </Button>
         )}
       </DialogTrigger>
@@ -193,9 +183,9 @@ export function ShareDialog({
                 className={`flex flex-col items-center gap-2 rounded-lg border border-border/70 p-4 transition-all ${option.hoverColor} hover:border-border`}
               >
                 <div className={`${option.color}`}>
-                  <option.icon className="h-6 w-6" />
+                  <Icon name={option.icon} size="lg" />
                 </div>
-                <span className="text-xs font-medium text-center line-clamp-1">
+                <span className="line-clamp-1 text-center text-caption font-medium">
                   {option.name}
                 </span>
               </Button>
@@ -211,15 +201,15 @@ export function ShareDialog({
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 {copySuccess ? (
-                  <Check className="h-5 w-5 shrink-0 text-success" />
+                  <Icon name="done" size="md" tone="success" />
                 ) : (
-                  <Copy className="h-5 w-5 shrink-0 text-muted-foreground" />
+                  <Icon name="copy" size="md" tone="muted" />
                 )}
                 <div className="flex flex-col items-start flex-1 min-w-0">
-                  <span className="text-sm font-medium">
-                    {copySuccess ? "Copied!" : "Copy Link"}
+                  <span className="text-small font-medium">
+                    {copySuccess ? "Copied" : "Copy link"}
                   </span>
-                  <span className="text-xs text-muted-foreground truncate w-full">
+                  <span className="w-full truncate text-caption text-muted-foreground">
                     {url}
                   </span>
                 </div>

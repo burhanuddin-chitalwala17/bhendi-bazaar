@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import type { DateRange } from "react-day-picker";
-import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { ResponsivePicker } from "@/components/shared/overlays/responsive-picker";
 import { DAY_RANGE_PRESETS, formatDayRange, fromDayKey, toDayKey, type DayRange } from "@/lib/date-range";
+import { Icon } from "@/components/ui/icon";
 
 interface DateRangeFieldProps {
   value: DayRange;
@@ -53,7 +53,7 @@ export function DateRangeField({ value, onChange, names = { from: "from", to: "t
         trigger={
           <Button type="button" variant="outline" className="w-full justify-between font-normal" aria-haspopup="dialog">
             <span className={value.from || value.to ? "" : "text-muted-foreground"}>{formatDayRange(value)}</span>
-            <CalendarDays className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            <Icon name="calendar" size="sm" className="shrink-0 text-muted-foreground" />
           </Button>
         }
       >

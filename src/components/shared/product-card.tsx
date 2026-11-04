@@ -1,101 +1,57 @@
 import Image from "next/image";
 import Link from "next/link";
+
 import { percentOff, type Product } from "@/domain/product";
-import { Card } from "@/components/ui/card";
-import { PriceDisplay } from "./PriceDisplay";
-import { StockStatus } from "./StockStatus";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { WishlistButton } from "@/components/wishlist/wishlist-button";
-import { ReviewStars } from "@/components/product/review-stars";
+import { PriceDisplay } from "./PriceDisplay";
 
-// The phone tile is 3-up at ~105px wide (ADR-0016), so everything here is sized for
-// that first and grows at `sm`. Anything that cannot survive 105px — the tracked-out
-// category overline, the "SALE" word badge — is dropped below `sm` rather than
-// truncated, and the discount is carried by the corner chip instead.
 /**
- * What the tile actually occupies, matching PRODUCT_GRID_CLASSES: 2-up on a phone and
- * from `md`, 3-up from `lg` inside the 72rem page. Declared next to the tile and
- * shared with the wishlist grid so the two cannot drift — a `sizes` that overstates the
- * slot is how a 105px tile ends up downloading a 1600px image (ADR-0026).
+ * The slot a tile occupies, per PRODUCT_GRID_CLASSES: half a phone, a third of a tablet, a quarter
+ * of the 72rem page from `lg`. Moves with the grid (design-system Q19), or a tile downloads more
+ * than it shows (ADR-0026). `tests/unit/product-grid-sizes.test.ts` holds the two together.
  */
-export const PRODUCT_TILE_SIZES =
-  "(min-width: 1024px) 384px, 50vw";
+export const PRODUCT_TILE_SIZES = "(min-width: 1024px) 288px, (min-width: 768px) 33vw, 50vw";
 
+/** One product in a grid: the photograph first, then who sells it, what it is and what it costs. */
 export function ProductCard(product: Product) {
-  const discountPercent = percentOff(product);
+  const off = percentOff(product);
+  const soldOut = product.stock === 0;
 
   return (
-    // Prefetch off: the grid puts up to 12 of these in view at once, and with every
-    // storefront route dynamic, Next's staleTimes.dynamic of 0 discards each payload.
-    <Link href={`/product/${product.slug}`} className="block" prefetch={false}>
-      {/* py-0/gap-0 override Card's defaults so the image bleeds to the card edge */}
-      <Card className="group h-full gap-0 overflow-hidden rounded-lg py-0 transition-all sm:rounded-xl md:hover:-translate-y-1 md:hover:shadow-lifted">
-        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+    <div className="group relative flex flex-col gap-2.5">
+      <div className="relative aspect-4/5 overflow-hidden rounded-field bg-muted">
+        {/* Prefetch off: a grid puts a dozen in view and a dynamic route's prefetch is discarded unused. */}
+        <Link href={`/product/${product.slug}`} prefetch={false} className="absolute inset-0">
           <Image
             src={product.thumbnail}
             alt={product.name}
             fill
             sizes={PRODUCT_TILE_SIZES}
-            className="object-cover transition-transform md:group-hover:scale-105"
+            className="object-cover transition-transform duration-slow ease-standard md:group-hover:scale-105"
           />
-
-          {discountPercent > 0 && product.stock > 0 && (
-            <span className="absolute left-1 top-1 rounded bg-destructive px-1 py-0.5 text-4xs font-bold leading-none text-primary-foreground sm:left-2 sm:top-2 sm:px-1.5 sm:py-1 sm:text-3xs">
-              {discountPercent}% OFF
+          {soldOut && (
+            <span className="absolute inset-x-0 bottom-0 bg-photo-scrim py-1.5 text-center text-caption font-semibold text-on-photo">
+              Sold out
             </span>
           )}
-
-          {/* Opposite the discount chip. Above the out-of-stock scrim in the DOM so it
-              stays tappable — a sold-out product is still worth saving for later. */}
-          <div className="absolute right-1 top-1 z-10 sm:right-2 sm:top-2">
-            <WishlistButton
-              productId={product.id}
-              className="bg-card/80 shadow-raised backdrop-blur-sm"
-            />
-          </div>
-
-          {product.stock === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center bg-scrim/60">
-              <span className="text-3xs font-semibold uppercase tracking-wide text-primary-foreground sm:text-sm sm:tracking-normal">
-                Out of Stock
-              </span>
-            </div>
-          )}
+        </Link>
+        {off > 0 && !soldOut && (
+          <StatusBadge tone="deal" className="pointer-events-none absolute left-1.5 top-1.5">
+            {off}% off
+          </StatusBadge>
+        )}
+        {/* Outside the link so saving never opens the product; a sold-out piece is still worth saving. */}
+        <div className="absolute right-1.5 top-1.5">
+          <WishlistButton productId={product.id} className="bg-background/90 shadow-raised backdrop-blur-sm" />
         </div>
+      </div>
 
-        <div className="space-y-1 p-2 sm:space-y-2 sm:p-4">
-          <p className="hidden text-2xs font-semibold uppercase tracking-eyebrow-wide text-muted-foreground/80 sm:block">
-            {product.categorySlug?.replace("-", " ")}
-          </p>
-          <h3 className="line-clamp-2 font-heading text-2xs font-semibold leading-snug tracking-tight sm:text-sm">
-            {product.name}
-          </h3>
-
-          {/* Only when there is something to show: a rating of 0.0 on a 105px tile is
-              a line of noise, and it is what every tile used to carry (R6, A1). */}
-          {product.reviewsCount > 0 && (
-            <ReviewStars
-              value={product.rating}
-              count={product.reviewsCount}
-              size="xs"
-              className="text-muted-foreground"
-            />
-          )}
-
-          <PriceDisplay
-            price={product.price}
-            salePrice={product.salePrice}
-            size="xs"
-            showBadge={false}
-          />
-
-          <StockStatus
-            stock={product.stock}
-            lowStockThreshold={product.lowStockThreshold}
-            size="xs"
-            variant="warn-only"
-          />
-        </div>
-      </Card>
-    </Link>
+      <Link href={`/product/${product.slug}`} prefetch={false} className="flex flex-col gap-0.5">
+        {product.org?.name && <span className="truncate text-caption text-muted-foreground">{product.org.name}</span>}
+        <h3 className="line-clamp-2 text-small font-medium text-foreground">{product.name}</h3>
+        <PriceDisplay price={product.price} salePrice={product.salePrice} size="sm" showBadge={false} className="mt-0.5" />
+      </Link>
+    </div>
   );
 }

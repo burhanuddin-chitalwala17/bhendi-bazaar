@@ -2,7 +2,7 @@
  * `cn` resolves this project's own tokens (ADR-0022).
  *
  * `tailwind-merge` only de-duplicates classes it can assign to a group. It knows
- * nothing about `rounded-card`, `max-h-overlay` or `text-4xs`, so before `cn` was
+ * nothing about `rounded-card`, `max-h-overlay` or `text-2xs`, so before `cn` was
  * taught them an override kept *both* classes and the stylesheet's order silently
  * decided the winner. The image lightbox is what found it: `max-h-none rounded-none`
  * over the dialog's `max-h-overlay rounded-card` left the cap in place, so a full-screen
@@ -25,8 +25,12 @@ describe("cn resolves custom tokens", () => {
     ["shadow-lifted", "shadow-overlay"],
     ["shadow-inset-field", "shadow-none"],
     ["text-2xs", "text-sm"],
-    ["text-3xs", "text-base"],
-    ["text-4xs", "text-lg"],
+    ["text-display", "text-3xl"],
+    ["text-small", "text-base"],
+    ["text-caption", "text-lg"],
+    ["text-label", "text-sm"],
+    ["duration-fast", "duration-500"],
+    ["ease-standard", "ease-in"],
     ["tracking-eyebrow", "tracking-normal"],
     ["tracking-eyebrow-wide", "tracking-tight"],
     ["tracking-label", "tracking-wide"],

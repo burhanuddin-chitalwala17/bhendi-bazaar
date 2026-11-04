@@ -1,6 +1,6 @@
 /**
- * Regression: the bidding page passed `size="icon"` without `showLabel={false}`, and
- * the label defaulted to on. `size="icon"` is a fixed `size-9` square, so icon plus
+ * Regression: the bidding page passed `shape="icon"` without `showLabel={false}`, and
+ * the label defaulted to on. `shape="icon"` is a fixed `size-9` square, so icon plus
  * label overflowed it and `justify-center` pushed the icon outside the box — onto the
  * product heading beside it, with the hover background left behind on the label only.
  * Pairing the two props by hand is what failed, so the label now follows the size.
@@ -11,7 +11,7 @@ import { ShareButton } from "@/components/shared/ShareButton";
 
 describe("ShareButton", () => {
   it("renders no label at icon size, so nothing overflows the square", () => {
-    render(<ShareButton url="/bid/abc" size="icon" variant="ghost" />);
+    render(<ShareButton url="/bid/abc" shape="icon" variant="ghost" />);
 
     expect(screen.queryByText("Share")).toBeNull();
   });
@@ -27,7 +27,7 @@ describe("ShareButton", () => {
     expect(screen.queryByText("Share")).toBeNull();
     unmount();
 
-    render(<ShareButton url="/o/1" size="icon" showLabel />);
+    render(<ShareButton url="/o/1" shape="icon" showLabel />);
     expect(screen.getByText("Share")).toBeInTheDocument();
   });
 });

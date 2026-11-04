@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Package } from "lucide-react";
-
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -191,7 +189,6 @@ export default async function StorefrontPage({
             </>
           ) : (
             <EmptyState
-              icon={Package}
               title={filtering ? "Nothing matches" : "Nothing here just yet"}
               description={
                 filtering

@@ -34,6 +34,29 @@ export async function enqueue<T>(
 }
 
 /**
+ * Write one job per payload in the caller's transaction, as one statement (bulk product actions,
+ * Q29): the same commit-or-roll-back as `enqueue`, without a round trip per job. pg-boss's `insert`
+ * notifies the worker on commit as `send` does.
+ */
+export async function enqueueMany<T>(tx: EnqueueTx, definition: JobSpec<T>, payloads: readonly T[]): Promise<void> {
+  if (payloads.length === 0) return;
+  const jobs = payloads.map((payload) => {
+    const group = definition.group?.(payload);
+    const priority = definition.priority?.(payload);
+    const data: JobEnvelope = { type: definition.type, payload: definition.schema.parse(payload) };
+    return {
+      data,
+      ...(group ? { group: { id: group } } : {}),
+      ...(priority !== undefined ? { priority } : {}),
+      // The same retries `enqueue` gives a spec that asks for them.
+      ...(definition.retry ? { retryLimit: definition.retry.limit, retryDelay: definition.retry.delaySeconds, retryBackoff: true } : {}),
+    };
+  });
+  const boss = await jobsClient();
+  await boss.insert(JOBS_QUEUE, jobs, { db: fromPrisma(tx) });
+}
+
+/**
  * Write a job to run after a delay, at most one per `onePerSeconds` slot for its type: the shape of
  * work that repeats only while there is something to do, so an idle worker pays nothing
  * (inventory-sync Q23). A job already in the slot means this one is not needed: answers false.

@@ -24,6 +24,21 @@ export type { ProductStockDb, StockAdjustment, StockLine };
  * is how the guard and the write stay one statement inside one transaction.
  */
 export const stockService = {
+  /**
+   * Bulk stock edits (design-system Q29): set counted stock across products and locations against
+   * what the editor saw, in one guarded statement; a row that moved comes back as a conflict.
+   */
+  setCountedMany: (...args: Parameters<typeof stockRepository.bulkSetCountedIn>) => stockRepository.bulkSetCountedIn(...args),
+
+  /** Take the stock row locks of many products, ahead of a check that must be ordered behind them. */
+  lockAllOf: (...args: Parameters<typeof stockRepository.lockAllOf>) => stockRepository.lockAllOf(...args),
+
+  /** Tell the marketplaces these products' stock changed: one read and one job (inventory-sync Q27). */
+  changedMany: (...args: Parameters<typeof stockRepository.stockChangedMany>) => stockRepository.stockChangedMany(...args),
+
+  /** Tell the marketplaces these archived products sell nowhere (inventory-sync Q6). */
+  markSoldOut: (...args: Parameters<typeof stockRepository.enqueueSoldOut>) => stockRepository.enqueueSoldOut(...args),
+
   /** Where this product physically is, at active locations with something left. */
   stockByLocation: (productId: string, db?: ProductStockDb) =>
     stockRepository.stockByLocation(productId, db),

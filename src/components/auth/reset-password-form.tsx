@@ -2,9 +2,9 @@
 
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { AuthField, PRIMARY_BUTTON } from "@/components/auth/auth-field";
 import { PasswordInput } from "@/components/auth/password-input";
 import { useServerForm } from "@/hooks/core/useServerForm";
@@ -45,10 +45,10 @@ export function ResetPasswordForm({ token }: { token: string }) {
   if (done) {
     return (
       <div className="space-y-4 rounded-card border border-success/30 bg-success/10 p-6 text-center">
-        <CheckCircle className="mx-auto size-12 text-success" />
+        <Icon name="success" size="2xl" tone="success" className="mx-auto" />
         <div className="space-y-2">
           <h2 className="font-semibold text-success">Password reset</h2>
-          <p className="text-sm text-success">
+          <p className="text-small text-success">
             Your password has been changed. Taking you to sign in…
           </p>
         </div>
@@ -86,7 +86,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
       </AuthField>
 
       {(formError || errors.token) && (
-        <p className="rounded-field bg-destructive/10 p-3 text-sm text-destructive">
+        <p className="rounded-field bg-destructive/10 p-3 text-small text-destructive">
           {formError ?? errors.token?.message}
         </p>
       )}

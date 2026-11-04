@@ -1,146 +1,73 @@
-"use client";
+import { BrandLogo } from "@/components/layout/brand-logo";
+import { PortalSidebar, type PortalNavGroup } from "@/components/layout/PortalSidebar";
 
-import { PortalSidebar } from "@/components/layout/PortalSidebar";
-import {
-  LayoutDashboard,
-  Package,
-  ShoppingCart,
-  Users,
-  FolderTree,
-  Radio,
-  Star,
-  ShoppingBag,
-  Truck,
-  Store,
-  Tag,
-  Wallet,
-  GalleryHorizontal,
-  Gavel,
-  Sparkles,
-  Layers,
-  Images,
-  Settings,
-  Undo2,
-} from "lucide-react";
+const REFUNDS_HREF = "/admin/orders/refunds";
 
-const navItems = [
+/** The admin's places, grouped by what they are about (design-system admin canvas). One icon per meaning. */
+const NAV: PortalNavGroup[] = [
+  { label: "Overview", items: [{ title: "Dashboard", href: "/admin", icon: "dashboard", exact: true }] },
   {
-    title: "Dashboard",
-    href: "/admin",
-    icon: LayoutDashboard,
+    label: "Orders",
+    items: [
+      { title: "Orders", href: "/admin/orders", icon: "orders" },
+      { title: "Pickups", href: "/admin/orders/pickups", icon: "parcel" },
+      { title: "Refunds", href: REFUNDS_HREF, icon: "returns" },
+      { title: "Open carts", href: "/admin/carts", icon: "bag" },
+    ],
   },
   {
-    title: "Orders",
-    href: "/admin/orders",
-    icon: ShoppingCart,
+    label: "Catalogue",
+    items: [
+      { title: "Products", href: "/admin/products", icon: "products" },
+      { title: "Categories", href: "/admin/categories", icon: "categories" },
+      { title: "Product types", href: "/admin/product-types", icon: "layers" },
+      { title: "Media", href: "/admin/media", icon: "photos" },
+      { title: "Photo enhancements", href: "/admin/enhancements", icon: "enhance" },
+      { title: "Banners", href: "/admin/banners", icon: "carousel" },
+      { title: "Offers", href: "/admin/promotions", icon: "offer" },
+      { title: "Auctions", href: "/admin/bidding", icon: "auction" },
+    ],
   },
   {
-    title: "Pickups",
-    href: "/admin/orders/pickups",
-    icon: Truck,
+    label: "Shops",
+    items: [
+      { title: "Shops", href: "/admin/orgs", icon: "shop" },
+      { title: "Payouts", href: "/admin/payouts", icon: "payout" },
+      { title: "Channels", href: "/admin/channels", icon: "connect" },
+      { title: "Reviews", href: "/admin/reviews", icon: "rating" },
+    ],
   },
   {
-    title: "Refunds",
-    href: "/admin/orders/refunds",
-    icon: Undo2,
-  },
-  {
-    title: "Products",
-    href: "/admin/products",
-    icon: Package,
-  },
-  {
-    title: "Categories",
-    href: "/admin/categories",
-    icon: FolderTree,
-  },
-  {
-    title: "Product Types",
-    href: "/admin/product-types",
-    icon: Layers,
-  },
-  {
-    title: "Media",
-    href: "/admin/media",
-    icon: Images,
-  },
-  {
-    title: "Channels",
-    href: "/admin/channels",
-    icon: Radio,
-  },
-  {
-    title: "Banners",
-    href: "/admin/banners",
-    icon: GalleryHorizontal,
-  },
-  {
-    title: "Offers",
-    href: "/admin/promotions",
-    icon: Tag,
-  },
-  {
-    title: "Bidding",
-    href: "/admin/bidding",
-    icon: Gavel,
-  },
-  {
-    title: "Payouts",
-    href: "/admin/payouts",
-    icon: Wallet,
-  },
-  {
-    title: "Enhancements",
-    href: "/admin/enhancements",
-    icon: Sparkles,
-  },
-  {
-    title: "Users",
-    href: "/admin/users",
-    icon: Users,
-  },
-  {
-    title: "Organisations",
-    href: "/admin/orgs",
-    icon: Store,
-  },
-  {
-    title: "Reviews",
-    href: "/admin/reviews",
-    icon: Star,
-  },
-  {
-    title: "Abandoned Carts",
-    href: "/admin/carts",
-    icon: ShoppingBag,
-  },
-  {
-    title: "Settings",
-    href: "/admin/settings/fulfilment",
-    icon: Settings,
-  },
-  {
-    title: "Shipping Providers",
-    href: "/admin/shipping/providers",
-    icon: Truck,
+    label: "Platform",
+    items: [
+      { title: "Users", href: "/admin/users", icon: "team" },
+      { title: "Shipping providers", href: "/admin/shipping/providers", icon: "delivery" },
+      { title: "Fulfilment settings", href: "/admin/settings/fulfilment", icon: "settings" },
+    ],
   },
 ];
 
-/** Counts the server read for the nav (order-fulfilment ux.md: "Refunds" with a count). */
+/**
+ * The admin's navigation, on the dark surface: `.dark` re-scopes the surface tokens for the
+ * sidebar alone, and `contents` keeps the aside the layout's flex child. Counts are only the
+ * ones the layout already read (order-fulfilment ux.md: "Refunds" with a count).
+ */
 export function AdminSidebar({ refundsNotStarted = 0 }: { refundsNotStarted?: number }) {
+  const groups = NAV.map((group) => ({
+    ...group,
+    items: group.items.map((item) => (item.href === REFUNDS_HREF ? { ...item, count: refundsNotStarted } : item)),
+  }));
   return (
-    <PortalSidebar
-      header={
-        <div className="border-b border-border p-6">
-          <h2 className="font-heading text-xl font-bold">Bhendi Bazaar</h2>
-          <p className="text-sm text-muted-foreground">Admin Panel</p>
-        </div>
-      }
-      items={navItems.map((item) => ({
-        ...item,
-        exact: item.href === "/admin",
-        count: item.href === "/admin/orders/refunds" ? refundsNotStarted : undefined,
-      }))}
-    />
+    <div className="dark contents">
+      <PortalSidebar
+        header={
+          <div className="flex items-center gap-3 border-b border-border p-5">
+            <BrandLogo size="sm" tone="light" />
+            <span className="text-label uppercase text-muted-foreground">Admin</span>
+          </div>
+        }
+        groups={groups}
+      />
+    </div>
   );
 }

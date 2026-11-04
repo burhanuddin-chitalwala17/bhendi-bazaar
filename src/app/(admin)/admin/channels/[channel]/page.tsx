@@ -11,7 +11,7 @@ import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { adminChannelRegisterDAL } from "@/data-access-layer/admin/channel-register.dal";
 import { UnmappedValueRow } from "@/components/channel/unmapped-value-row";
 import { NotSoldButton } from "@/components/channel/not-sold-button";
@@ -37,15 +37,15 @@ export default async function AdminChannelPage({
 
       <section className="space-y-3">
         <div>
-          <h2 className="text-lg font-semibold">Answers with no word here</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-title font-semibold">Answers with no word here</h2>
+          <p className="text-small text-muted-foreground">
             Only what products actually answer. One decision clears every product using that
             value — and changes it for them all, so a correction works the same way.
           </p>
         </div>
         {view.unmappedValues.length === 0 ? (
           <Card>
-            <CardContent className="py-6 text-sm text-muted-foreground">
+            <CardContent className="py-6 text-small text-muted-foreground">
               Every answer this catalogue gives has a word on {view.label}.
             </CardContent>
           </Card>
@@ -67,8 +67,8 @@ export default async function AdminChannelPage({
       {view.unmappedCategories.length > 0 && (
         <section className="space-y-3">
           <div>
-            <h2 className="text-lg font-semibold">Products with nowhere to go</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-title font-semibold">Products with nowhere to go</h2>
+            <p className="text-small text-muted-foreground">
               These types sell here but no category on {view.label} has been chosen for them.
             </p>
           </div>
@@ -86,7 +86,7 @@ export default async function AdminChannelPage({
                         <span className="text-muted-foreground"> · {entry.kind}</span>
                       )}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-small text-muted-foreground">
                       {entry.products} {entry.products === 1 ? "product" : "products"}
                     </p>
                   </div>
@@ -107,8 +107,8 @@ export default async function AdminChannelPage({
       {view.notSold.length > 0 && (
         <section className="space-y-3">
           <div>
-            <h2 className="text-lg font-semibold">Not sold on {view.label}</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-title font-semibold">Not sold on {view.label}</h2>
+            <p className="text-small text-muted-foreground">
               Decided, not overlooked — so they stay off the list above. Change your mind here and
               they go back to it, with the choice still to make.
             </p>
@@ -127,7 +127,7 @@ export default async function AdminChannelPage({
                         <span className="text-muted-foreground"> · {entry.kind}</span>
                       )}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-small text-muted-foreground">
                       {entry.products} {entry.products === 1 ? "product" : "products"}, sold on
                       this store only
                     </p>
@@ -149,8 +149,8 @@ export default async function AdminChannelPage({
       {view.nearestFits.length > 0 && (
         <section className="space-y-3">
           <div>
-            <h2 className="text-lg font-semibold">Listed as the nearest they have</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-title font-semibold">Listed as the nearest they have</h2>
+            <p className="text-small text-muted-foreground">
               Not work to do — decisions already taken. Every product they affect shows the note
               below, every time.
             </p>
@@ -164,9 +164,9 @@ export default async function AdminChannelPage({
                       {fit.productType}
                       {fit.kind && <span className="text-muted-foreground"> · {fit.kind}</span>}
                     </p>
-                    <Badge variant="secondary">{fit.theirCategory}</Badge>
+                    <StatusBadge tone="info">{fit.theirCategory}</StatusBadge>
                   </div>
-                  {fit.note && <p className="text-sm text-muted-foreground">{fit.note}</p>}
+                  {fit.note && <p className="text-small text-muted-foreground">{fit.note}</p>}
                 </li>
               ))}
             </ul>

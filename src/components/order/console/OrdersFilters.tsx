@@ -2,22 +2,21 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useState } from "react";
-import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ORDER_STATUS, PAYMENT_STATUS } from "@server/checkout/order.types";
-import { titleCase } from "@/lib/format";
+import { Icon } from "@/components/ui/icon";
+import { PAYMENT_STATUS } from "@server/checkout/order.types";
+import { paymentChip } from "./order-status";
 
 /**
  * The console's order filters, held in the URL so the server can answer the question the URL
  * asks ([ADR-0034]). A filtered view is then shareable and survives the back button, which
  * `useState` never gave.
  *
- * The option lists are derived from `ORDER_STATUS` and `PAYMENT_STATUS` rather than retyped:
- * they were eleven string literals, which is how a filter comes to offer a status the domain
- * has stopped using.
+ * The order status is the page's tabs; payment is derived from `PAYMENT_STATUS` rather than
+ * retyped, which is how a filter comes to offer a status the domain has stopped using.
  */
 export function OrdersFilters() {
   const router = useRouter();
@@ -36,34 +35,29 @@ export function OrdersFilters() {
   };
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-3 md:flex-row md:items-center">
       <div className="flex flex-1 gap-2">
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && apply({ search })}
-          placeholder="Search by code, customer, email..."
+          placeholder="Order code, buyer or email"
+          aria-label="Search orders"
         />
-        <Button variant="default" onClick={() => apply({ search })} className="flex items-center gap-2">
-          <Search className="size-4" />
+        <Button variant="default" onClick={() => apply({ search })}>
+          <Icon name="search" />
           Search
         </Button>
       </div>
 
-      <Select value={params.get("status") ?? ""} onChange={(e) => apply({ status: e.target.value })}>
-        <option value="">All Statuses</option>
-        {Object.values(ORDER_STATUS).map((status) => (
-          <option key={status} value={status}>{titleCase(status)}</option>
-        ))}
-      </Select>
-
       <Select
         value={params.get("paymentStatus") ?? ""}
         onChange={(e) => apply({ paymentStatus: e.target.value })}
+        aria-label="Payment"
       >
-        <option value="">All Payments</option>
+        <option value="">Any payment</option>
         {Object.values(PAYMENT_STATUS).map((status) => (
-          <option key={status} value={status}>{titleCase(status)}</option>
+          <option key={status} value={status}>{paymentChip(status).label}</option>
         ))}
       </Select>
     </div>

@@ -1,100 +1,105 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
-import NextImage from "next/image";
-import { ImagePlus, Loader2, X } from "lucide-react";
+import { useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { ImageSlotField } from "@/components/shared/image-slot/image-slot-field";
+import { uploadApiClient } from "@/components/shared/uploadApiClient";
+import type { ImageSlotKey } from "@server/catalog/image-slots";
+import type { ImageSlotValue } from "@server/catalog/image-framing";
 import { SECTION_COPY } from "./section-copy";
-import { usePhotoUploads } from "./usePhotoUploads";
+
+/** Uploads land in this shop's library: the only pictures its storefront may use (image-slots D7). */
+export function shopUpload(orgId: string) {
+  return async (file: File) => {
+    const [url] = await uploadApiClient.uploadFiles(`/api/org/${orgId}/upload`, "products", [file]);
+    return url;
+  };
+}
 
 /**
- * A section's photos (ux.md section sheet): thumbnails in order, remove, add. Past the limit the
- * add button stays and says so on tap rather than going grey (owner rule: never disable a button).
+ * A section's photos as picture sets (image-slots D10): each a desktop and a phone version at the
+ * slot's shape, in order, with Remove. An empty set is a photo being added. Past the limit, Add
+ * stays and says so on tap rather than going grey (owner rule: never disable a button).
  */
 export function SlotPhotos({
   orgId,
+  slot,
   value,
   onChange,
   max,
   label,
+  error,
 }: {
   orgId: string;
-  value: string[];
-  onChange: (urls: string[]) => void;
+  slot: ImageSlotKey;
+  value: ImageSlotValue[];
+  onChange: (images: ImageSlotValue[]) => void;
   max: number;
   label: string;
+  error?: string;
 }) {
-  const input = useRef<HTMLInputElement>(null);
   const id = useId();
-  // An upload finishes after renders the user caused meanwhile (a removal): append to what is there then.
-  const latest = useRef(value);
-  useEffect(() => {
-    latest.current = value;
-  }, [value]);
-  const photos = usePhotoUploads(orgId, (urls) => onChange([...latest.current, ...urls].slice(0, max)));
-  const full = value.length >= max;
+  // A set being filled in has no picture yet, so it lives here until it has one.
+  const [adding, setAdding] = useState(false);
+  const [full, setFull] = useState(false);
+  const upload = shopUpload(orgId);
 
   return (
-    <div className="space-y-2">
-      <ul className="flex flex-wrap gap-2" aria-label={label}>
-        {value.map((url, index) => (
-          <li key={url} className="relative size-20 overflow-hidden rounded-field border border-border bg-muted">
-            <NextImage src={url} alt="" fill sizes="80px" className="object-cover" />
-            <Button
-              type="button"
-              size="icon"
-              variant="secondary"
-              aria-label={`${SECTION_COPY.removePhoto} ${index + 1}`}
-              className="absolute right-1 top-1 size-7"
-              onClick={() => onChange(value.filter((u) => u !== url))}
-            >
-              <X aria-hidden />
+    <div className="space-y-4">
+      <ol className="space-y-4" aria-label={label}>
+        {value.map((image, index) => (
+          <li key={index} className="space-y-2 rounded-card border border-border p-3">
+            <ImageSlotField
+              slot={slot}
+              label={`${SECTION_COPY.photo} ${index + 1}`}
+              value={image}
+              onChange={(next) => onChange(next ? value.map((v, i) => (i === index ? next : v)) : value.filter((_, i) => i !== index))}
+              upload={upload}
+            />
+            <Button type="button" variant="ghost" size="sm" onClick={() => onChange(value.filter((_, i) => i !== index))}>
+              <Icon name="delete" size="sm" />
+              {`${SECTION_COPY.removePhoto} ${index + 1}`}
             </Button>
           </li>
         ))}
-        {photos.uploading > 0 && (
-          <li className="flex size-20 flex-col items-center justify-center gap-1 rounded-field border border-dashed border-border text-2xs text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" aria-hidden />
-            {SECTION_COPY.uploading}
+        {adding && (
+          <li className="rounded-card border border-dashed border-border p-3">
+            <ImageSlotField
+              slot={slot}
+              label={`${SECTION_COPY.photo} ${value.length + 1}`}
+              value={null}
+              onChange={(next) => {
+                if (!next) return;
+                setAdding(false);
+                onChange([...value, next]);
+              }}
+              upload={upload}
+            />
           </li>
         )}
-      </ul>
-      <Button
-        type="button"
-        variant="outline"
-        className="min-h-11"
-        aria-describedby={full ? `${id}-full` : undefined}
-        onClick={() => (full ? input.current?.blur() : input.current?.click())}
-      >
-        <ImagePlus aria-hidden />
-        {SECTION_COPY.addPhotoButton}
-      </Button>
-      {full && (
-        <p id={`${id}-full`} className="text-sm text-muted-foreground">
+      </ol>
+      {!adding && (
+        <Button
+          type="button"
+          variant="outline"
+          aria-describedby={full ? `${id}-full` : undefined}
+          onClick={() => (value.length >= max ? setFull(true) : setAdding(true))}
+        >
+          <Icon name="add-photo" size="sm" />
+          {SECTION_COPY.addPhotoButton}
+        </Button>
+      )}
+      {full && value.length >= max && (
+        <p id={`${id}-full`} className="text-small text-muted-foreground">
           {max === 1 ? "One photo here. Remove it to add another." : `Up to ${max} photos. Remove one to add another.`}
         </p>
       )}
-      <input
-        ref={input}
-        type="file"
-        accept="image/*"
-        multiple={max > 1}
-        className="hidden"
-        onChange={(event) => {
-          const files = Array.from(event.target.files ?? []).slice(0, Math.max(0, max - value.length));
-          event.target.value = "";
-          void photos.upload(files);
-        }}
-      />
-      {photos.refused && <p role="alert" className="text-sm text-destructive">{photos.refused}</p>}
-      {photos.failedCount > 0 && (
-        <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive">
-          {SECTION_COPY.notUploaded(photos.failedCount)}
-          <Button type="button" size="sm" variant="outline" onClick={() => void photos.retry()}>
-            {SECTION_COPY.tryAgain}
-          </Button>
-        </div>
+      {error && (
+        <p role="alert" className="text-small text-destructive">
+          {error}
+        </p>
       )}
     </div>
   );

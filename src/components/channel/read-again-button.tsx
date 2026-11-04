@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@/hooks/core/useMutation";
@@ -27,9 +26,8 @@ export function ReadAgainButton({ orgId, channel }: { orgId: string; channel: Ma
       variant="outline"
       className="min-h-10 w-full md:w-auto"
       onClick={() => void read.mutate().catch(() => undefined)}
-      aria-busy={read.isLoading}
+      pending={read.isLoading}
     >
-      {read.isLoading && <Loader2 className="size-4 animate-spin" aria-hidden />}
       {LISTINGS.readAgain}
     </Button>
   );

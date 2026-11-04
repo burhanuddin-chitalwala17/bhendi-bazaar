@@ -6,7 +6,7 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
+import { Icon } from "./icon";
 
 interface MultiSelectProps {
   label: string;
@@ -55,7 +55,7 @@ export function MultiSelect({
                 onClick={() => handleRemove(item)}
                 className="hover:text-primary"
               >
-                <X className="w-3 h-3" />
+                <Icon name="close" size="xs" />
               </button>
             </span>
           ))}

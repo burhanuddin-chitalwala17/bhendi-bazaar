@@ -1,8 +1,8 @@
 import { CARD_STATE } from "@server/channels/channel-connection.types";
 import { STOCK_ATTENTION } from "@server/channels/channel-stock.types";
+import { ATTENTION_CAP } from "@server/analytics/attention.types";
 import type { HomeAttentionDto } from "@/data-access-layer/org/home.dal";
 import { TEAM_HISTORY_ANCHOR } from "@/components/product/team/team-edit-copy";
-import { PRODUCT_REVIEWS_ANCHOR } from "@/components/org/product-reviews-section";
 import { HOME_COPY, LINE_COPY } from "./home-copy";
 
 export type AttentionLine =
@@ -10,25 +10,24 @@ export type AttentionLine =
   | { key: string; ok: false; text: string; action: string };
 
 /**
- * "Needs you now", in order (Q5, Q22, Q25): a zero hides its line, a failed read keeps it with its
- * own retry, so one broken source never hides the others or pretends there is nothing to do.
+ * "Needs you now" (Q5, Q22, Q25; design-system Q31): buyers and money first, at most five. A zero
+ * hides its line; a failed read keeps it with its own retry, so one broken source never hides the
+ * others or pretends there is nothing to do.
  */
 export function attentionLines(orgId: string, a: HomeAttentionDto, now: Date): AttentionLine[] {
   const base = `/org/${orgId}`;
   const failed = (key: string): AttentionLine => ({ key, ok: false, text: HOME_COPY.lineFailed, action: HOME_COPY.tryAgain });
   const lines: AttentionLine[] = [];
 
-  if (!a.parcels.ok) lines.push({ key: "parcels", ok: false, text: HOME_COPY.ordersFailed, action: HOME_COPY.retry });
-  else if (a.parcels.value > 0) lines.push({ key: "parcels", ok: true, text: LINE_COPY.parcels(a.parcels.value), href: `${base}/orders` });
-
-  if (!a.reviews.ok) lines.push(failed("reviews"));
-  else if (a.reviews.value.count > 0) {
-    const { count, productId } = a.reviews.value;
-    // All on one product: open it there (Q13); otherwise the Reviews page.
-    const href = productId ? `${base}/products/${productId}#${PRODUCT_REVIEWS_ANCHOR}` : `${base}/reviews`;
-    lines.push({ key: "reviews", ok: true, text: LINE_COPY.reviews(count), href });
+  // Buyers who paid and wait on the shop's packing.
+  if (!a.toPack.ok) lines.push({ key: "toPack", ok: false, text: HOME_COPY.ordersFailed, action: HOME_COPY.retry });
+  else if (a.toPack.value.count > 0) {
+    const { count, oldestPaidAt } = a.toPack.value;
+    const waitedMs = oldestPaidAt ? now.getTime() - new Date(oldestPaidAt).getTime() : 0;
+    lines.push({ key: "toPack", ok: true, text: LINE_COPY.toPack(count, waitedMs), href: `${base}/orders` });
   }
 
+  // Sales stopped on a marketplace.
   if (!a.channel.ok) lines.push(failed("channel"));
   else if (a.channel.value) {
     const { label, state } = a.channel.value;
@@ -43,14 +42,15 @@ export function attentionLines(orgId: string, a: HomeAttentionDto, now: Date): A
     lines.push({ key: "stock", ok: true, text, href: `${base}/channels/${channel}/listings` });
   }
 
+  // Sales about to stop: only what sold in the last 30 days (Q31).
+  if (!a.lowStock.ok) lines.push(failed("lowStock"));
+  else if (a.lowStock.value.count > 0) {
+    const { count, soldOut, soonestDays } = a.lowStock.value;
+    lines.push({ key: "lowStock", ok: true, text: LINE_COPY.lowStock(count, soldOut, soonestDays), href: `${base}/products?lowStock=true` });
+  }
+
   if (!a.photos.ok) lines.push(failed("photos"));
   else if (a.photos.value > 0) lines.push({ key: "photos", ok: true, text: LINE_COPY.photos(a.photos.value), href: `${base}/library` });
-
-  if (!a.auction.ok) lines.push(failed("auction"));
-  else if (a.auction.value) {
-    const minutes = Math.ceil((new Date(a.auction.value.endsAt).getTime() - now.getTime()) / 60_000);
-    lines.push({ key: "auction", ok: true, text: LINE_COPY.auction(minutes), href: `${base}/bidding` });
-  }
 
   // Last: the team's fixes are worth a look, never urgent (product-form Q23).
   if (!a.teamEdits.ok) lines.push(failed("teamEdits"));
@@ -60,5 +60,5 @@ export function attentionLines(orgId: string, a: HomeAttentionDto, now: Date): A
     lines.push({ key: "teamEdits", ok: true, text: LINE_COPY.teamEdits(count), href });
   }
 
-  return lines;
+  return lines.slice(0, ATTENTION_CAP);
 }

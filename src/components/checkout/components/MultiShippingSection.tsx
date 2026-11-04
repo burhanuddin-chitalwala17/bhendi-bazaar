@@ -1,6 +1,6 @@
 "use client";
 
-import { Package, Truck, MapPin, Clock } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
@@ -47,12 +47,12 @@ export function MultiShippingSection({
     <div className="space-y-4">
       {/* Multi-shipment notice */}
       {hasMultipleShipments && (
-        <div className="rounded-lg bg-info/10 border border-info/30 p-3 text-sm">
+        <div className="rounded-field border border-border bg-muted p-3 text-small">
           <div className="flex items-start gap-2">
-            <Package className="h-4 w-4 text-info mt-0.5 shrink-0" />
+            <Icon name="parcel" size="sm" tone="primary" className="mt-0.5" />
             <div>
-              <p className="font-medium text-info">Multiple Shipments</p>
-              <p className="text-info mt-1">
+              <p className="font-medium text-foreground">{groups.length} parcels</p>
+              <p className="mt-1 text-muted-foreground">
                 Your order will arrive in{" "}
                 <span className="font-semibold">
                   {groups.length} separate parcels
@@ -113,29 +113,29 @@ function ShippingGroupCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
           {showGroupNumber && (
-            <p className="text-xs font-medium text-muted-foreground">
+            <p className="text-caption font-medium text-muted-foreground">
               Parcel {groupNumber} of {totalGroups}
             </p>
           )}
           <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <Icon name="shop" size="sm" tone="muted" />
             {/* Two warehouses can share a city, so the location's own name leads
                 and the city is secondary detail (stock-locations D12). */}
-            <p className="text-sm font-medium">
+            <p className="text-small font-medium">
               Ships from{" "}
               {group.locationName
                 ? `${group.locationName} (${group.fromCity})`
                 : `${group.fromCity}, ${group.fromState}`}
             </p>
           </div>
-          <p className="text-xs text-muted-foreground">Org: {group.orgName}</p>
+          <p className="text-caption text-muted-foreground">From {group.orgName}</p>
         </div>
 
         <div className="shrink-0 text-right">
-          <p className="text-xs text-muted-foreground">Items</p>
-          <p className="text-sm font-semibold">{group.items.length}</p>
+          <p className="text-caption text-muted-foreground">Items</p>
+          <p className="text-small font-semibold">{group.items.length}</p>
           {group.billableWeightKg !== undefined && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-caption text-muted-foreground">
               billed as {group.billableWeightKg} kg
             </p>
           )}
@@ -143,7 +143,7 @@ function ShippingGroupCard({
       </div>
 
       {/* Items preview */}
-      <div className="text-xs text-muted-foreground">
+      <div className="text-caption text-muted-foreground">
         {group.items
           .slice(0, 2)
           .map((item: { id: string; productName: string }, idx: number) => (
@@ -160,21 +160,17 @@ function ShippingGroupCard({
       {/* Shipping rates */}
       {group.isLoading ? (
         <div className="py-2">
-          <p className="text-sm text-muted-foreground">
-            Loading shipping options...
-          </p>
+          <p className="text-small text-muted-foreground">Working out delivery…</p>
         </div>
       ) : group.error ? (
-        <div className="py-2 text-sm text-destructive">{group.error}</div>
+        <div className="py-2 text-small text-destructive">{group.error}</div>
       ) : !group.serviceable ? (
-        <div className="py-2 text-sm text-warning">
-          Shipping not available to this location
+        <div className="py-2 text-small text-warning">
+          This shop doesn&apos;t deliver to this PIN code yet
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">
-            Select shipping method:
-          </p>
+          <p className="text-caption font-medium text-muted-foreground">Choose delivery</p>
           {group.rates.map((rate) => (
             <Button
               variant="ghost"
@@ -182,7 +178,7 @@ function ShippingGroupCard({
               type="button"
               onClick={() => onRateSelect(rate)}
               className={`
-                h-auto w-full justify-start whitespace-normal p-3 rounded-lg border-2 transition-all text-left
+                h-auto w-full justify-start whitespace-normal p-3 rounded-field border-2 transition-all text-left
                 ${
                   group.selectedRate?.courierCode === rate.courierCode
                     ? "border-primary bg-primary/5"
@@ -193,12 +189,12 @@ function ShippingGroupCard({
               <div className="flex w-full items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <Truck className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm font-medium">{rate.courierName}</p>
+                    <Icon name="delivery" size="sm" tone="muted" />
+                    <p className="text-small font-medium">{rate.courierName}</p>
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-3 mt-1 text-caption text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
+                      <Icon name="time" size="xs" />
                       {formatDeliveryEstimate(rate.estimatedDays)}
                     </span>
                     {rate.mode && (
@@ -210,7 +206,7 @@ function ShippingGroupCard({
                 </div>
 
                 <div className="text-right">
-                  <p className="text-sm font-semibold">
+                  <p className="text-small font-semibold">
                     {formatShippingCost(rate.rate)}
                   </p>
                 </div>

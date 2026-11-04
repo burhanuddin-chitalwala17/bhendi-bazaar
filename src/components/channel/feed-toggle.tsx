@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@/hooks/core/useMutation";
@@ -25,10 +24,9 @@ export function FeedToggle({ orgId, channel, on }: { orgId: string; channel: Fee
       variant="outline"
       size="sm"
       className="min-h-10"
-      aria-busy={toggle.isLoading}
+      pending={toggle.isLoading}
       onClick={() => void toggle.mutate().catch(() => undefined)}
     >
-      {toggle.isLoading && <Loader2 className="size-4 animate-spin" aria-hidden />}
       {on ? ACTION.turnOff : ACTION.turnOn}
     </Button>
   );

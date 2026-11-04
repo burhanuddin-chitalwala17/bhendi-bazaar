@@ -2,7 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -120,7 +120,7 @@ export function HandleChangeDialog({
           {/* R4g: all four consequences, before confirming, with the real values. */}
           <div className="space-y-2 rounded-field border border-warning/40 bg-warning/10 p-3 text-sm">
             <p className="flex items-center gap-2 font-medium text-foreground">
-              <AlertTriangle className="size-4 text-warning" />
+              <Icon name="warning" tone="warning" />
               Before you change it
             </p>
             <ul className="list-disc space-y-1 pl-5 text-muted-foreground">

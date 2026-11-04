@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,12 +12,15 @@ import { useMutation } from "@/hooks/core/useMutation";
 import { bannerLabel } from "@/lib/banner-label";
 import { AddPromotionDialog } from "@/components/org/add-promotion-dialog";
 import { orgStorefrontApiClient } from "@/components/org/orgStorefrontApiClient";
+import type { ImageSlotValue } from "@server/catalog/image-framing";
 
 export interface ManagedBanner {
   id: string;
   title: string | null;
   description: string | null;
   imageUrl: string | null;
+  /** Both pictures as the editor holds them, so a take-down sends them back unchanged (image-slots). */
+  image: ImageSlotValue | null;
   imageAlt: string | null;
   href: string | null;
   isActive: boolean;
@@ -127,7 +130,7 @@ export function StorefrontBannersManager({
                     </p>
                   )}
                 </div>
-                <StatusBadge status={banner.isActive ? "inStock" : "default"}>
+                <StatusBadge tone={banner.isActive ? "success" : "neutral"}>
                   {banner.isActive ? "Live" : "Down"}
                 </StatusBadge>
                 <div className="flex shrink-0 items-center gap-1">
@@ -135,21 +138,21 @@ export function StorefrontBannersManager({
                   {index > 0 && (
                     <Button
                       variant="ghost"
-                      size="icon"
+                      shape="icon"
                       aria-label={`Move ${bannerLabel(banner.title)} up`}
                       onClick={() => move(index, -1)}
                     >
-                      <ArrowUp />
+                      <Icon name="move-up" />
                     </Button>
                   )}
                   {index < banners.length - 1 && (
                     <Button
                       variant="ghost"
-                      size="icon"
+                      shape="icon"
                       aria-label={`Move ${bannerLabel(banner.title)} down`}
                       onClick={() => move(index, 1)}
                     >
-                      <ArrowDown />
+                      <Icon name="move-down" />
                     </Button>
                   )}
                   <Checkbox
@@ -159,12 +162,11 @@ export function StorefrontBannersManager({
                   />
                   <Button
                     variant="ghost"
-                    size="icon"
+                    shape="icon"
                     aria-label={`Delete ${bannerLabel(banner.title)}`}
-                    className="text-destructive"
                     onClick={() => remove(banner)}
                   >
-                    <Trash2 />
+                    <Icon name="delete" tone="destructive" />
                   </Button>
                 </div>
               </li>

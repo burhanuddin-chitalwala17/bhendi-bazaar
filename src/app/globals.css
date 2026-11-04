@@ -80,14 +80,9 @@
    across six near-identical sizes, 78 `tracking-[…]` across nine — which is what made
    a redesign a hundred-file edit while a rebrand stayed a one-file edit. (ADR-0022) */
 @theme {
-  /* Type steps below Tailwind's `text-xs` (0.75rem). The 3-up phone tile lives
-     entirely down here (ADR-0016), which is why the scale needs three of them.
-     Size-only, no paired line-height: the literals these replaced set font-size and
-     nothing else, so pairing leading here would silently reflow ~90 call sites.
-     Leading stays an explicit `leading-*` decision at the call site. */
-  --text-2xs: 0.6875rem; /* 11px — the tile's body and label size */
-  --text-3xs: 0.625rem; /* 10px — category lane captions */
-  --text-4xs: 0.5625rem; /* 9px  — the smallest thing legible on a 105px tile */
+  /* The one step below Tailwind's `text-xs`: 11px, the floor (design-system R2). 10px and 9px
+     were retired on 2026-11-04; nothing renders smaller than this. */
+  --text-2xs: 0.6875rem;
 
   /* Tracking. One design idea — the tracked-out uppercase eyebrow — had drifted into
      nine values between 0.12em and 0.35em. Four steps, because the eyebrow genuinely
@@ -104,6 +99,9 @@
      draws, mirroring BANNER_IMAGE in src/lib/config.ts; a test asserts the two agree.
      Cropping between the two is inherent — the field hint is where that is explained. */
   --aspect-banner-source: 5 / 2;
+  /* The phone version's shape (image-slots): the hero takes it below md when it has a picture.
+     Mirrors IMAGE_SLOTS in server/catalog/image-slots.ts; tests/unit/image-slots.test.ts holds them. */
+  --aspect-banner-phone: 4 / 5;
 
   /* The storefront column. The layout and the verification banner that spans it were
      two separate `max-w-6xl` literals; a token is what keeps them the same column. */
@@ -113,12 +111,13 @@
      answer "what is this thing" — which is the question a redesign changes. Values are
      Tailwind's own steps, so adopting them moved nothing. */
   --shadow-raised:
-    0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    0 1px 2px 0 color-mix(in oklab, var(--ink-100) 7%, transparent),
+    0 1px 3px 0 color-mix(in oklab, var(--ink-100) 6%, transparent);
   --shadow-lifted:
-    0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-overlay:
-    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-inset-field: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    0 2px 6px 0 color-mix(in oklab, var(--ink-100) 7%, transparent),
+    0 8px 24px 0 color-mix(in oklab, var(--ink-100) 6%, transparent);
+  --shadow-overlay: 0 12px 40px 0 color-mix(in oklab, var(--ink-100) 16%, transparent);
+  --shadow-inset-field: 0 1px 2px 0 color-mix(in oklab, var(--ink-100) 5%, transparent);
 
   /* Semantic shape. The radius steps are a scale; these say which step a surface takes, so
      card corners can move without dragging every input and button with them. Here, not in
@@ -128,12 +127,25 @@
 
   /* Storefront type roles, repointed per theme. Every size is a `clamp()` with a rem floor
      and a rem term, so browser zoom still scales it (never viewport-only). */
-  --text-headline: clamp(1.75rem, 1.4rem + 1.6vw, 2.5rem);
-  --text-headline--line-height: 1.1;
-  --text-title: clamp(1.25rem, 1.1rem + 0.8vw, 1.75rem);
-  --text-title--line-height: 1.2;
-  --text-body: 1rem;
+  /* The platform's seven roles (design-system Q10): a phone size and a desktop size each, phone
+     smaller and tighter, never a desktop size squeezed down. Themes repoint headline, title, body. */
+  --text-display: clamp(1.75rem, 1.2rem + 2.2vw, 3rem);
+  --text-display--line-height: 1.08;
+  --text-display--letter-spacing: -0.015em;
+  --text-headline: clamp(1.375rem, 1.05rem + 1.35vw, 2rem);
+  --text-headline--line-height: 1.18;
+  --text-title: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+  --text-title--line-height: 1.3;
+  --text-body: clamp(0.9375rem, 0.9rem + 0.15vw, 1rem);
   --text-body--line-height: 1.5;
+  --text-small: clamp(0.8125rem, 0.78rem + 0.12vw, 0.875rem);
+  --text-small--line-height: 1.45;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+  /* The one uppercase run a section may carry; `uppercase` goes with it at the call site. */
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1.3;
+  --text-label--letter-spacing: 0.08em;
   --text-tag: 0.75rem;
   --text-tag--line-height: 1.3;
   --text-price: 1rem;
@@ -147,6 +159,13 @@
   --spacing-grid: clamp(0.75rem, 0.6rem + 0.6vw, 1.25rem);
   --container-store: 72rem;
   --ease-theme: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Motion as roles: three speeds, two curves (foundations R8). Reduced motion zeroes them below. */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasised: cubic-bezier(0.3, 0.7, 0.4, 1);
 }
 
 /* Primitive palette — every colour the system owns, named by family and lightness
@@ -335,6 +354,11 @@
   /* A saved product. Its own role rather than `destructive`, which means "this will
      break something" — a filled heart is the opposite of a warning. */
   --favorite: var(--pink-580);
+  /* The gold in a brand icon: the lit doorway, the keystone, the twine (design-system Q2). */
+  --icon-accent: var(--gold-780);
+  /* A discount outside a storefront theme; themes repoint it (storefront-themes D3). */
+  --deal: var(--rose-450);
+  --deal-foreground: var(--grey-1000);
   --border: var(--parchment-900);
   --input: var(--parchment-900);
   --ring: var(--emerald-700-soft);
@@ -374,6 +398,9 @@
   --warning: var(--amber-780);
   --info: var(--blue-720);
   --favorite: var(--pink-700);
+  --icon-accent: var(--gold-820);
+  --deal: var(--rose-650);
+  --deal-foreground: var(--grey-140);
   --border: var(--ink-320);
   --input: var(--ink-300);
   --ring: var(--emerald-700);
@@ -984,6 +1011,101 @@
   }
 }
 
+/* Motion roles as utilities (`duration-fast`, `ease-standard`); Tailwind's numeric steps stay for one-offs. */
+@utility duration-fast {
+  transition-duration: var(--duration-fast);
+}
+@utility duration-base {
+  transition-duration: var(--duration-base);
+}
+@utility duration-slow {
+  transition-duration: var(--duration-slow);
+}
+@utility ease-standard {
+  transition-timing-function: var(--ease-standard);
+}
+@utility ease-emphasised {
+  transition-timing-function: var(--ease-emphasised);
+}
+
+/* Brand icons (src/components/ui/icons/brand.tsx): a soft fill, an outline, a detail, one accent.
+   `data-filled` is the selected state; `data-motion` plays the drawing's motion once. */
+.bb-icon * {
+  transform-box: view-box;
+}
+.bb-icon .bb-f {
+  fill: currentColor;
+  opacity: 0.16;
+}
+.bb-icon .bb-l,
+.bb-icon .bb-x {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.bb-icon .bb-d {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.5;
+}
+.bb-icon[data-filled] .bb-f {
+  opacity: 1;
+}
+.bb-icon[data-filled] .bb-d {
+  stroke: var(--background);
+  opacity: 0.85;
+}
+.bb-icon .bb-x-door {
+  fill: color-mix(in oklab, var(--icon-accent) 70%, transparent);
+}
+.bb-icon .bb-x-key {
+  fill: var(--icon-accent);
+  stroke: none;
+}
+.bb-icon .bb-x-bow {
+  stroke: var(--icon-accent);
+}
+.bb-icon .bb-x-burst {
+  opacity: 0;
+}
+.bb-icon[data-motion].bb-m-drop { animation: bb-drop 520ms var(--ease-emphasised) 1; }
+.bb-icon[data-motion].bb-m-pop { transform-origin: 128px 136px; animation: bb-pop 460ms var(--ease-emphasised) 1; }
+.bb-icon[data-motion].bb-m-nod { animation: bb-nod 420ms var(--ease-standard) 1; }
+.bb-icon[data-motion].bb-m-sway { transform-origin: 128px 40px; animation: bb-sway 1200ms ease-in-out 1; }
+.bb-icon[data-motion].bb-m-awn { transform-origin: 128px 96px; animation: bb-awn 520ms var(--ease-standard) 1; }
+.bb-icon[data-motion] .bb-x-swing { transform-origin: 128px 96px; animation: bb-swing 900ms ease-in-out 1; }
+.bb-icon[data-motion] .bb-x-burst { transform-origin: 128px 120px; animation: bb-burst 520ms ease-out 1; }
+.bb-icon[data-motion] .bb-x-door { transform-origin: 128px 216px; animation: bb-door 520ms var(--ease-emphasised) 1; }
+.bb-icon[data-motion] .bb-x-glint { stroke-dasharray: 70; animation: bb-glint 900ms ease-in-out 1; }
+.bb-icon[data-motion] .bb-x-bow { stroke-dasharray: 300; animation: bb-draw 900ms ease-in-out 1; }
+.bb-icon[data-motion] .bb-x-key { animation: bb-shimmer 1200ms ease-in-out 1; }
+@keyframes bb-drop { 0% { transform: translateY(0); } 30% { transform: translateY(-14px); } 65% { transform: translateY(4px); } 100% { transform: translateY(0); } }
+@keyframes bb-pop { 0% { transform: scale(1); } 25% { transform: scale(0.82); } 60% { transform: scale(1.14); } 100% { transform: scale(1); } }
+@keyframes bb-nod { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes bb-sway { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(2.5deg); } 70% { transform: rotate(-2.5deg); } }
+@keyframes bb-awn { 0%, 100% { transform: scaleY(1); } 40% { transform: scaleY(1.08); } 75% { transform: scaleY(0.98); } }
+@keyframes bb-swing { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-12deg); } 50% { transform: rotate(8deg); } 75% { transform: rotate(-4deg); } }
+@keyframes bb-burst { 0% { opacity: 0; transform: scale(0.6); } 40% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.2); } }
+@keyframes bb-door { 0% { transform: scaleY(0.15); } 100% { transform: scaleY(1); } }
+@keyframes bb-glint { 0% { stroke-dashoffset: 70; } 50% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -70; } }
+@keyframes bb-draw { 0% { stroke-dashoffset: 300; } 100% { stroke-dashoffset: 0; } }
+@keyframes bb-shimmer { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+  .bb-icon,
+  .bb-icon * {
+    animation: none !important;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -993,7 +1115,7 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground text-body;
     /* Grey flash on every tap is the clearest browser tell in a WebView. */
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;

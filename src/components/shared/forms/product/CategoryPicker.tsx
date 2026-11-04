@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ResponsivePicker } from "@/components/shared/overlays/responsive-picker";
@@ -116,12 +116,12 @@ export function CategoryPicker({
             <span className={selected ? "text-foreground" : "text-muted-foreground"}>
               {selected?.path ?? "Pick a category"}
             </span>
-            <ChevronDown aria-hidden />
+            <Icon name="expand" />
           </Button>
         }
       >
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Icon name="search" tone="muted" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
             type="search"
             value={query}

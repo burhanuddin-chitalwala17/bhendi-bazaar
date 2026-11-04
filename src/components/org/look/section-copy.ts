@@ -12,6 +12,7 @@ export const SECTION_COPY = {
   notUploaded: (n: number) => `${n} ${n === 1 ? "photo" : "photos"} didn't upload.`,
   tryAgain: "Try again",
   addPhotoButton: "Add photo",
+  photo: "Photo",
   removePhoto: "Remove photo",
   save: "Save",
   saving: "Saving…",

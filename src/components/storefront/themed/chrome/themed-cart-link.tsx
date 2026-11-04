@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingBag } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { useCartCount } from "./themed-cart-count";
 
@@ -15,9 +15,9 @@ export function ThemedCartLink() {
       aria-label={count > 0 ? `Cart, ${count} items` : "Cart"}
       className="relative hidden shrink-0 text-foreground md:inline-flex"
     >
-      <ShoppingBag className="size-5" />
+      <Icon name="bag" size="md" />
       {count > 0 && (
-        <span className="absolute -right-2 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-4xs font-semibold leading-none text-primary-foreground">
+        <span className="absolute -right-2 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-2xs font-semibold leading-none text-primary-foreground">
           {count}
         </span>
       )}

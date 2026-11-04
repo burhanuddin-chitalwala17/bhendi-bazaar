@@ -1,6 +1,5 @@
-import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
-
 import { Card, CardContent } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { CHANNEL_LABELS } from "@server/shared/channels";
 import { LISTING_PROBLEM, LISTING_READINESS } from "@server/listing/channel-readiness";
@@ -55,7 +54,7 @@ export function ListingReadinessPanel({ verdicts }: ListingReadinessPanelProps) 
                 <ul className="space-y-1">
                   {report.problems.map((problem, index) => (
                     <li key={index} className="flex items-start gap-2 text-sm">
-                      <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+                      <Icon name="info" tone="muted" className="mt-0.5" />
                       <span>{wordFor(problem)}</span>
                     </li>
                   ))}
@@ -73,7 +72,7 @@ function BandLabel({ state }: { state: ChannelVerdict["report"]["state"] }) {
   if (state === LISTING_READINESS.READY) {
     return (
       <span className="flex items-center gap-1.5 text-sm text-success">
-        <CheckCircle2 className="size-4 shrink-0" aria-hidden />
+        <Icon name="success" />
         Nothing missing
       </span>
     );
@@ -85,7 +84,7 @@ function BandLabel({ state }: { state: ChannelVerdict["report"]["state"] }) {
         state === LISTING_READINESS.INCOMPLETE ? "text-warning" : "text-muted-foreground",
       )}
     >
-      <AlertTriangle className="size-4 shrink-0" aria-hidden />
+      <Icon name="warning" />
       {state === LISTING_READINESS.INCOMPLETE ? "Something is missing" : "Worth a look"}
     </span>
   );

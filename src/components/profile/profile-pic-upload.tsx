@@ -2,7 +2,8 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { Upload, X, Loader2 } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { useMutation } from "@/hooks/core/useMutation";
 import { uploadApiClient } from "@/components/shared/uploadApiClient";
@@ -155,7 +156,7 @@ export function ProfilePicUpload({
         {/* Preview or Avatar */}
         {uploading ? (
           <div className="flex h-24 w-24 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Spinner size="xl" className="text-primary" />
           </div>
         ) : preview ? (
           /* The file just picked, as a local data URL: no Blob egress to save, and
@@ -183,7 +184,7 @@ export function ProfilePicUpload({
 
         {!uploading && (
           <>
-            <Upload className="h-5 w-5 text-muted-foreground" />
+            <Icon name="upload" size="md" className="text-muted-foreground" />
             <div className="text-center text-xs">
               <p className="font-medium text-foreground">
                 Drop image here or click to upload
@@ -199,7 +200,7 @@ export function ProfilePicUpload({
       {/* Error Message */}
       {error && (
         <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-xs text-destructive">
-          <X className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <Icon name="close" size="xs" className="mt-0.5" />
           <p>{error}</p>
         </div>
       )}

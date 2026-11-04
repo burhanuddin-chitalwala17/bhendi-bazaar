@@ -19,6 +19,9 @@ class OrdersDAL {
     return adminOrderService.getOrders(filters);
   });
 
+  /** Visible orders per status, one grouped count: the tabs' numbers. */
+  statusCounts = cache(async (): Promise<Record<string, number>> => adminOrderService.countByStatus());
+
   detail = cache(async (id: string): Promise<AdminOrderDetail | null> => {
     return adminOrderService.getOrderById(id);
   });

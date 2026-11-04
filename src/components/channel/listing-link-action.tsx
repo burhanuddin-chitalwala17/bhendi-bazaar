@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@/hooks/core/useMutation";
@@ -62,9 +61,8 @@ export function ListingLinkAction({ orgId, channel, listingId, kind }: ListingLi
       size="sm"
       className="min-h-10 shrink-0"
       onClick={() => void action.mutate().catch(() => undefined)}
-      aria-busy={action.isLoading}
+      pending={action.isLoading}
     >
-      {action.isLoading && <Loader2 className="size-4 animate-spin" aria-hidden />}
       {label}
     </Button>
   );

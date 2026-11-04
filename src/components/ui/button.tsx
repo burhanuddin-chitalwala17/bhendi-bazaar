@@ -1,9 +1,9 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { Spinner } from "./spinner";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-field text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 aria-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive data-[error]:animate-pulse data-[error]:ring-2 data-[error]:ring-destructive/40 data-[error]:border-destructive",
@@ -20,19 +20,29 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // On a dark surface (the selection bar): a quiet button that inherits the surface's light text.
+        inverse: "bg-background/10 text-background hover:bg-background/20",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
         sm: "min-h-10 md:min-h-0 md:h-8 rounded-field gap-1.5 px-3 has-[>svg]:px-2.5",
         lg: "h-10 rounded-field px-6 has-[>svg]:px-4",
-        icon: "size-9",
-        "icon-sm": "size-8",
-        "icon-lg": "size-10",
+      },
+      // A separate axis from size (ADR-0066 D9): a square icon button at any size.
+      shape: {
+        default: "",
+        icon: "p-0 has-[>svg]:p-0",
       },
     },
+    compoundVariants: [
+      { shape: "icon", size: "default", className: "size-9" },
+      { shape: "icon", size: "sm", className: "size-10 md:size-8 md:min-h-0" },
+      { shape: "icon", size: "lg", className: "size-10" },
+    ],
     defaultVariants: {
       variant: "default",
       size: "default",
+      shape: "default",
     },
   },
 );
@@ -43,6 +53,7 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  shape = "default",
   asChild = false,
   pending = false,
   onClick,
@@ -66,9 +77,10 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
+      data-shape={shape}
       data-pending={pending || undefined}
       aria-busy={pending || undefined}
-      className={cn(buttonVariants({ variant, size, className }), pending && "cursor-progress")}
+      className={cn(buttonVariants({ variant, size, shape, className }), pending && "cursor-progress")}
       // Only a pending button gets a handler of ours: a server component renders this primitive
       // too, and cannot pass a function. `pending` is client state, so that never meets one.
       onClick={pending ? ignoreClick : onClick}
@@ -76,7 +88,7 @@ function Button({
     >
       {pending && !asChild ? (
         <>
-          <Loader2 className="animate-spin" aria-hidden />
+          <Spinner />
           {children}
         </>
       ) : (

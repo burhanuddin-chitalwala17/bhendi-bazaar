@@ -101,6 +101,30 @@ export const platformListingRepository = {
   },
 
   /**
+   * `claimPublish` for many listings in one statement (bulk send, design-system Q29): each claimed
+   * only at the version it was read at and only from a state a send may start from. Returns the
+   * ids claimed; one that moved or is already sending is left out.
+   */
+  async claimPublishMany(
+    orgId: string,
+    items: ReadonlyArray<{ id: string; seenVersion: number; pending: ListingOverrides }>,
+    now: Date,
+    db: Db,
+  ): Promise<string[]> {
+    if (items.length === 0) return [];
+    const rows = await db.$queryRaw<Array<{ id: string }>>`
+      UPDATE "PlatformListing" pl
+      SET pending = v.pending, "publishState" = ${PUBLISH_STATE.SENT}, "publishedAt" = ${now}, "checkCount" = 0,
+        "nextCheckAt" = NULL, issues = '[]'::jsonb, version = pl.version + 1, "updatedAt" = ${now}
+      FROM unnest(${items.map((i) => i.id)}::text[], ${items.map((i) => i.seenVersion)}::int[], ${items.map((i) => JSON.stringify(i.pending))}::text[]::jsonb[])
+        AS v(id, seen, pending)
+      WHERE pl.id = v.id AND pl."orgId" = ${orgId} AND pl.version = v.seen
+        AND pl."publishState" IN (${PUBLISH_STATE.IDLE}, ${PUBLISH_STATE.ATTENTION}, ${PUBLISH_STATE.UNANSWERED})
+      RETURNING pl.id`;
+    return rows.map((row) => row.id);
+  },
+
+  /**
    * Claim a reviewed listing for a publish (marketplace-publish D3): only at the version reviewed and
    * with nothing in flight. Records what is being sent; bumps the version so a later edit is new.
    */

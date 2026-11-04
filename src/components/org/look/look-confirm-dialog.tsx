@@ -1,6 +1,5 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 
 import { FormDialog } from "@/components/shared/overlays/form-dialog";
 import { Button } from "@/components/ui/button";
@@ -68,8 +67,7 @@ export function LookConfirmDialog({
             </Button>
           )}
           {!gone && (
-            <Button type="button" className="min-h-11" aria-busy={write.busy} onClick={() => void write.run()}>
-              {write.slow && <Loader2 className="animate-spin" aria-hidden />}
+            <Button type="button" className="min-h-11" pending={write.slow} aria-busy={write.busy} onClick={() => void write.run()}>
               {write.slow ? busyLabel : label}
             </Button>
           )}

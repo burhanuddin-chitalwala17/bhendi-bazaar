@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { StatusBadge, type StatusTone } from "@/components/shared/badges/StatusBadge";
 import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { workerJobsApiClient } from "@/components/dashboard/workerJobsApiClient";
 
@@ -15,11 +15,11 @@ function ago(iso: string, now: Date): string {
   return hours < 48 ? `${hours} h ago` : `${Math.round(hours / 24)} days ago`;
 }
 
-const STATE_VARIANT: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  active: "default",
-  created: "secondary",
-  retry: "secondary",
-  completed: "outline",
+const STATE_TONE: Record<string, StatusTone> = {
+  active: "info",
+  created: "neutral",
+  retry: "warning",
+  completed: "success",
   failed: "destructive",
   cancelled: "destructive",
 };
@@ -51,26 +51,27 @@ export function WorkerJobsList() {
   return (
     <div className="w-full">
       <Button type="button" variant="ghost" size="sm" onClick={toggle} aria-expanded={open} className="-ml-2">
-        {open ? <ChevronUp className="mr-1 size-4" aria-hidden /> : <ChevronDown className="mr-1 size-4" aria-hidden />}
+        <Icon name={open ? "collapse" : "expand"} />
         {open ? "Hide jobs" : "Show recent jobs"}
       </Button>
       {open && (
         <div className="mt-2 space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">The newest twenty, both queues.</p>
-            <Button type="button" variant="ghost" size="sm" onClick={() => void refetch()} disabled={loading} aria-label="Refresh jobs">
-              <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} aria-hidden />
+            <p className="text-caption text-muted-foreground">The newest twenty, both queues.</p>
+            <Button type="button" variant="ghost" size="sm" onClick={() => void refetch()} pending={loading}>
+              <Icon name="refresh" />
+              Refresh
             </Button>
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          {jobs !== null && jobs.length === 0 && <p className="text-sm text-muted-foreground">No jobs yet.</p>}
+          {error && <p className="text-small text-destructive">{error}</p>}
+          {jobs !== null && jobs.length === 0 && <p className="text-small text-muted-foreground">No jobs yet.</p>}
           {jobs && jobs.length > 0 && (
-            <ul className="divide-y divide-border text-sm">
+            <ul className="divide-y divide-border text-small">
               {jobs.map((job) => (
-                <li key={job.id} className="flex flex-col gap-1 py-2 sm:flex-row sm:items-center sm:gap-3">
-                  <Badge variant={STATE_VARIANT[job.state] ?? "outline"} className="w-fit">
+                <li key={job.id} className="flex flex-col gap-1 py-2 md:flex-row md:items-center md:gap-3">
+                  <StatusBadge tone={STATE_TONE[job.state] ?? "neutral"} className="w-fit">
                     {job.state}
-                  </Badge>
+                  </StatusBadge>
                   <span className="font-medium">{job.type}</span>
                   <span className="text-muted-foreground">
                     {job.completedAt
@@ -81,7 +82,7 @@ export function WorkerJobsList() {
                     {job.attempts > 0 ? ` · attempt ${job.attempts + 1}` : ""}
                     {job.queue !== "jobs" ? " · parked" : ""}
                   </span>
-                  {job.error && <span className="truncate text-destructive sm:ml-auto sm:max-w-xs">{job.error}</span>}
+                  {job.error && <span className="truncate text-destructive md:ml-auto md:max-w-xs">{job.error}</span>}
                 </li>
               ))}
             </ul>

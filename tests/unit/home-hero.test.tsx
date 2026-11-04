@@ -48,7 +48,8 @@ describe("HomeHero", () => {
  * permanently dimmed image was showing up.
  */
 describe("HeroBanner with no words", () => {
-  const image = { src: "/eid.webp", alt: "Ridas on a rail" };
+  const side = { src: "/eid.webp", fit: "crop" as const, position: { x: 0.5, y: 0.5 }, fill: null };
+  const image = { alt: "Ridas on a rail", phone: side, desktop: side };
 
   it("renders the picture with no scrim over it", () => {
     const { container } = render(

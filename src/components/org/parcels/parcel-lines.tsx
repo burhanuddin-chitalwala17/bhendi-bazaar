@@ -19,7 +19,7 @@ export function ParcelLines({ items }: { items: ShipmentItem[] }) {
     <div>
       <ul className="divide-y">
         {shown.map((item) => (
-          <li key={`${item.productId}-${item.size ?? ""}-${item.color ?? ""}`} className="flex items-start justify-between gap-3 py-2 text-sm">
+          <li key={`${item.productId}-${item.size ?? ""}-${item.color ?? ""}`} className="flex items-start justify-between gap-3 py-2 text-small">
             <span className="line-clamp-2 min-w-0 break-words">
               {item.productName}
               {(item.size || item.color) && (

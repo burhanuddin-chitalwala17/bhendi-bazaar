@@ -13,10 +13,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, PencilLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Icon } from "@/components/ui/icon";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
+import { SelectionBar } from "@/components/shared/selection-bar";
+import { SETTLEMENT_STATUS_BADGE, type SettlementStatus } from "@/components/payouts/settlement-status";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/lib/format";
 import { useMutation } from "@/hooks/core/useMutation";
@@ -34,7 +36,7 @@ export interface LedgerEntryRow {
   isNegativeMargin: boolean;
   isManuallyEdited: boolean;
   deletedAt: Date | null;
-  settlementStatus: "PENDING" | "PAID" | "CANCELLED" | null;
+  settlementStatus: SettlementStatus | null;
 }
 
 export function SettleEntries({
@@ -77,7 +79,7 @@ export function SettleEntries({
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-semibold">Entries</h2>
+        <h2 className="text-small font-semibold">Entries</h2>
         {claimable.length > 0 && (
           <Button
             variant="ghost"
@@ -98,7 +100,7 @@ export function SettleEntries({
       </div>
 
       {entries.length === 0 && (
-        <p className="text-sm text-muted-foreground">Nothing recorded yet.</p>
+        <p className="text-small text-muted-foreground">Nothing recorded yet.</p>
       )}
 
       <ul className="space-y-3">
@@ -121,33 +123,28 @@ export function SettleEntries({
                       aria-label={`Include ${entry.orderId ?? "adjustment"} in a settlement`}
                     />
                   )}
-                  <span className="font-mono text-xs text-muted-foreground">
+                  <span className="font-mono text-caption text-muted-foreground">
                     {entry.orderId ?? "manual adjustment"}
                   </span>
                   {entry.settlementStatus && (
-                    <Badge variant="outline" className="text-2xs">
-                      {entry.settlementStatus.toLowerCase()}
-                    </Badge>
+                    <StatusBadge tone={SETTLEMENT_STATUS_BADGE[entry.settlementStatus].tone}>
+                      {SETTLEMENT_STATUS_BADGE[entry.settlementStatus].label}
+                    </StatusBadge>
                   )}
                   {entry.isManuallyEdited && (
-                    <Badge variant="outline" className="gap-1 text-2xs">
-                      <PencilLine className="size-3" aria-hidden /> edited
-                    </Badge>
+                    <StatusBadge>
+                      <Icon name="edit" size="xs" /> Edited
+                    </StatusBadge>
                   )}
-                  {entry.deletedAt && (
-                    <Badge variant="outline" className="text-2xs">
-                      removed
-                    </Badge>
-                  )}
+                  {entry.deletedAt && <StatusBadge>Removed</StatusBadge>}
                   {entry.isNegativeMargin && (
-                    <Badge className="gap-1 bg-warning/15 text-warning text-2xs">
-                      <AlertTriangle className="size-3" aria-hidden /> below
-                      cost
-                    </Badge>
+                    <StatusBadge tone="warning">
+                      <Icon name="warning" size="xs" /> Below cost
+                    </StatusBadge>
                   )}
                 </div>
 
-                <dl className="space-y-1.5 text-sm">
+                <dl className="space-y-1.5 text-small">
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted-foreground">Buyer paid</dt>
                     <dd className="tabular-nums">
@@ -166,14 +163,14 @@ export function SettleEntries({
                       <Money paise={entry.platformNetPaise} />
                     </dd>
                   </div>
-                  <div className="flex justify-between gap-4 pt-1 text-xs text-muted-foreground">
+                  <div className="flex justify-between gap-4 pt-1 text-caption text-muted-foreground">
                     <dt>Commission</dt>
                     <dd className="tabular-nums">
                       {formatCurrency(entry.commissionPaise)}
                     </dd>
                   </div>
                   {entry.campaignCostPaise > 0 && (
-                    <div className="flex justify-between gap-4 text-xs text-muted-foreground">
+                    <div className="flex justify-between gap-4 text-caption text-muted-foreground">
                       <dt>Campaign cost</dt>
                       <dd className="tabular-nums">
                         −{formatCurrency(entry.campaignCostPaise)}
@@ -187,27 +184,13 @@ export function SettleEntries({
         })}
       </ul>
 
-      {/* Docked above the tab bar so the action stays reachable while scrolling a long
-          ledger — the selection is meaningless if you have to scroll back to use it. */}
-      {selected.length > 0 && (
-        <div className="sticky bottom-tabbar z-10 -mx-4 border-t border-border bg-background/95 p-4 backdrop-blur md:mx-0 md:rounded-lg md:border">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm">
-              <span className="font-semibold tabular-nums">
-                {formatCurrency(selectedTotal)}
-              </span>
-              <span className="text-muted-foreground">
-                {" "}
-                across {selected.length}{" "}
-                {selected.length === 1 ? "entry" : "entries"}
-              </span>
-            </p>
-            <Button onClick={settle} disabled={isSaving}>
-              {isSaving ? "Creating…" : "Create settlement"}
-            </Button>
-          </div>
-        </div>
-      )}
+      <SelectionBar
+        count={selected.length}
+        noun={`${selected.length === 1 ? "entry" : "entries"} · ${formatCurrency(selectedTotal)}`}
+        onClear={() => setSelected([])}
+        actions={[{ label: "Create settlement", onClick: settle, pending: isSaving }]}
+      />
     </section>
   );
 }
+

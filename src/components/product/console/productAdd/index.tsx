@@ -4,7 +4,7 @@
 
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { useRouter } from "next/navigation";
-import { Copy } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { toast } from "sonner";
 import { ProductForm } from "@/components/shared/forms/product";
 import { useProducts } from "../useProducts";
@@ -121,7 +121,7 @@ export function ProductAddContainer({
               />
               {copySource && (
                 <p className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <Copy className="mt-0.5 size-4 shrink-0" aria-hidden />
+                  <Icon name="copy" className="mt-0.5" />
                   <span>
                     Copied from <strong>{copySource.name}</strong> — description, category, details
                     and flags. Add photos, a name, price and stock.

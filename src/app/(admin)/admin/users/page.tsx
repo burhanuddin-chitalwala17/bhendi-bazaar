@@ -7,7 +7,7 @@
  * `GET /api/admin/users`. Two client leaves remain, for the two things that genuinely need
  * the browser — typing in the filter bar and blocking a user.
  */
-import { PageHeader } from "@/components/shared/page-shell";
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { adminUsersDAL } from "@/data-access-layer/admin/users.dal";
 import { UsersFilters } from "@/components/profile/console/UsersFilters";
 import { UsersTable } from "@/components/profile/console/UsersTable";
@@ -48,12 +48,10 @@ export default async function AdminUsersPage({
   });
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Users" description="Manage platform users" />
+    <PageShell width="wide">
+      <PageHeader title="Users" description="Everyone with an account: buyers, shop members and admins." />
 
-      <div className="rounded-lg border border-border bg-card p-4">
-        <UsersFilters />
-      </div>
+      <UsersFilters />
 
       <UsersTable
         users={users}
@@ -62,6 +60,6 @@ export default async function AdminUsersPage({
         totalPages={totalPages}
         total={total}
       />
-    </div>
+    </PageShell>
   );
 }

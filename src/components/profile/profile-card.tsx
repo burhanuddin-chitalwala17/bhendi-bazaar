@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Camera, Edit3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { User } from "@/domain/profile";
 import { ProfilePicUpload } from "./profile-pic-upload";
-import { LoadingSpinner } from "../shared/states/LoadingSpinner";
+import { SkeletonRows } from "../shared/states/skeletons";
 import { SectionHeader } from "../shared/SectionHeader";
 import { FormActions } from "../shared/button-groups/FormActions";
 import { FormInput, FormPhoneInput } from "../shared/forms/FormField";
@@ -18,6 +17,7 @@ import {
   type ProfileInfoFormInput,
 } from "@/lib/validation/schemas/profile.schemas";
 import { formatPhone } from "@server/shared/phone";
+import { Icon } from "@/components/ui/icon";
 
 interface ProfileCardProps {
   user: User | null;
@@ -70,8 +70,8 @@ export function ProfileCard({
 
   if (loading) {
     return (
-      <div className="flex justify-center py-8">
-        <LoadingSpinner />
+      <div role="status" aria-label="Loading your profile">
+        <SkeletonRows count={1} />
       </div>
     );
   }
@@ -90,7 +90,7 @@ export function ProfileCard({
               disabled={loading}
               className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
             >
-              <Edit3 className="mr-1 h-3 w-3" />
+              <Icon name="edit" size="xs" className="mr-1" />
               Edit
             </Button>
           )}
@@ -123,7 +123,7 @@ export function ProfileCard({
                   className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background shadow-raised"
                   title="Change profile picture"
                 >
-                  <Camera className="h-4 w-4" />
+                  <Icon name="camera" size="sm" />
                 </Button>
               )}
             </div>

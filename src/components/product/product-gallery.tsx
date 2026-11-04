@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import type { Product } from "@/domain/product";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, Film, Play } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { LazyImageLightbox } from "@/components/shared/LazyImageLightbox";
 import { YouTubeEmbed } from "@/components/product/youtube-embed";
@@ -191,10 +191,10 @@ export function ProductGallery(product: Product) {
     <div className="space-y-2 sm:space-y-3">
       {/* Edge-to-edge on a phone — the gutter around a hero image is the clearest
           "this is a web page" tell, and 24px of it is 24px off the product. */}
-      <div className="group relative -mx-3 sm:mx-0">
+      <div className="group relative -mx-3 sm:-mx-6 md:mx-0">
         <div
           ref={imageContainerRef}
-          className={`relative aspect-[3/4] overflow-hidden ${isVideoSlide ? "cursor-default" : "cursor-zoom-in"} border-border/70 bg-gradient-to-b from-hero via-hero/90 to-scrim touch-pan-x touch-pan-y sm:rounded-2xl sm:border`}
+          className={`relative aspect-4/5 overflow-hidden ${isVideoSlide ? "cursor-default" : "cursor-zoom-in"} border-border bg-muted touch-pan-x touch-pan-y md:rounded-card md:border`}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -203,8 +203,6 @@ export function ProductGallery(product: Product) {
           onMouseLeave={handleMouseLeave}
           onClick={openLightbox}
         >
-          {/* Decorative gradient overlay */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(250,250,249,0.12),transparent_55%)] pointer-events-none z-10" />
 
           {/* Image slider */}
           <div
@@ -249,7 +247,7 @@ export function ProductGallery(product: Product) {
                         />
                       ) : (
                         <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                          <Film className="size-10" aria-hidden />
+                          <Icon name="video" size="xl" />
                           <span className="text-xs">
                             {item.state === "failed" ? "This video is not available" : "Video is being prepared"}
                           </span>
@@ -304,28 +302,28 @@ export function ProductGallery(product: Product) {
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-lg"
+                shape="icon" size="lg"
                 onClick={(e) => {
                   e.stopPropagation();
                   handlePrevious();
                 }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm"
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 text-hero-foreground hover:bg-hero/90 border border-primary/30 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm"
                 aria-label="Previous image"
               >
-                <ChevronLeft className="size-5 text-hero-foreground" />
+                <Icon name="previous" size="md" />
               </Button>
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-lg"
+                shape="icon" size="lg"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleNext();
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm"
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 text-hero-foreground hover:bg-hero/90 border border-primary/30 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm"
                 aria-label="Next image"
               >
-                <ChevronRight className="size-5 text-hero-foreground" />
+                <Icon name="next" size="md" />
               </Button>
             </>
           )}
@@ -362,7 +360,7 @@ export function ProductGallery(product: Product) {
               type="button"
               variant="ghost"
               onClick={() => goToIndex(() => index)}
-              className={`relative shrink-0 w-16 h-auto p-0 aspect-[3/4] sm:w-20 rounded-lg border-2 overflow-hidden ${
+              className={`relative shrink-0 w-16 h-auto p-0 aspect-4/5 sm:w-20 rounded-field border-2 overflow-hidden ${
                 activeIndex === index
                   ? "border-primary ring-2 ring-ring/30 scale-105"
                   : "border-border/70 hover:border-primary/50 opacity-70 hover:opacity-100"
@@ -376,7 +374,7 @@ export function ProductGallery(product: Product) {
             >
               {item.kind === "VIDEO" && !item.poster ? (
                 <span className="absolute inset-0 flex items-center justify-center bg-muted">
-                  <Film className="size-5 text-muted-foreground" aria-hidden />
+                  <Icon name="video" size="md" tone="muted" />
                 </span>
               ) : (
                 <Image
@@ -395,11 +393,8 @@ export function ProductGallery(product: Product) {
               )}
               {/* A video is identifiable before it is opened, without hover (R4). */}
               {item.kind !== "IMAGE" && (
-                <span className="absolute inset-0 z-10 flex items-center justify-center bg-scrim/40">
-                  <Play
-                    className="size-5 fill-hero-foreground text-hero-foreground"
-                    aria-hidden
-                  />
+                <span className="absolute inset-0 z-10 flex items-center justify-center bg-scrim/40 text-hero-foreground">
+                  <Icon name="play" size="md" filled />
                 </span>
               )}
               {/* Active indicator */}
@@ -413,7 +408,7 @@ export function ProductGallery(product: Product) {
 
       {/* Mobile pinch zoom instruction */}
       <div className="text-center md:hidden">
-        <p className="text-3xs text-muted-foreground/70">
+        <p className="text-2xs text-muted-foreground/70">
           Swipe to navigate • Pinch to zoom
         </p>
       </div>

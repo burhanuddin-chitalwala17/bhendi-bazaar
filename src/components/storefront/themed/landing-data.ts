@@ -17,6 +17,7 @@ export function themedPageData(page: StorefrontPage, now: Date = new Date()): Th
     logoUrl: page.logoUrl,
     // A cover chosen before the editor existed still fills the hero (Q11: nothing a shop gave is lost).
     heroPhotos: page.heroPhotos.length ? page.heroPhotos : page.heroUrl ? [page.heroUrl] : [],
+    heroImages: page.heroPhotos.length ? page.heroImages : [],
     heroLine: page.heroLine,
     tagline: page.tagline,
     productCount: page.productCount,

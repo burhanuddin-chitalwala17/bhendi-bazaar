@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ComponentProps } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -27,7 +27,7 @@ export function PasswordInput({
         className="absolute right-0 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground"
         aria-label={visible ? "Hide password" : "Show password"}
       >
-        {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+        <Icon name={visible ? "hide" : "show"} />
       </Button>
     </div>
   );

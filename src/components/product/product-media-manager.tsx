@@ -33,7 +33,8 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import NextImage from "next/image";
-import { Camera, Film, Images, Loader2, Plus, Upload, Youtube } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
+import { Spinner } from "@/components/ui/spinner";
 import { useLocalPreviews } from "@/hooks/core/useLocalPreviews";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -705,14 +706,15 @@ export function ProductMediaManager({
                 type="button"
                 variant="outline"
                 size="lg"
-                // Spinner while uploading; a tap then says to wait rather than opening (openAdd).
+                // Spinner while uploading; a tap then says to wait rather than opening (openAdd), which
+                // `pending` would swallow, so the spinner is drawn here.
                 aria-busy={isUploading && uploadingSlot === null}
                 className="sm:w-auto"
               >
                 {isUploading && uploadingSlot === null ? (
-                  <Loader2 className="animate-spin" />
+                  <Spinner />
                 ) : (
-                  <Plus />
+                  <Icon name="add" />
                 )}
                 {isUploading && uploadingSlot === null
                   ? progress.total > 1
@@ -724,13 +726,13 @@ export function ProductMediaManager({
           >
             <div className="flex flex-col gap-1">
               <Button type="button" variant="ghost" size="lg" className="h-auto justify-start whitespace-normal py-3" onClick={() => addFrom("camera")}>
-                <Camera /> Take photo
+                <Icon name="camera" /> Take photo
               </Button>
               <Button type="button" variant="ghost" size="lg" className="h-auto justify-start whitespace-normal py-3" onClick={() => addFrom("files")}>
-                <Upload /> Choose photos or video
+                <Icon name="upload" /> Choose photos or video
               </Button>
               <Button type="button" variant="ghost" size="lg" className="h-auto justify-start whitespace-normal py-3" onClick={() => addFrom("link")}>
-                <Youtube /> Add YouTube link
+                <Icon name="youtube" /> Add YouTube link
               </Button>
             </div>
           </ResponsivePicker>
@@ -742,7 +744,7 @@ export function ProductMediaManager({
               onClick={() => (atCapacity ? setNotice(CAPACITY_NOTICE) : openPicker(null))}
               className="sm:w-auto"
             >
-              <Images /> From library
+              <Icon name="photos" /> From library
             </Button>
           )}
         </div>
@@ -757,7 +759,7 @@ export function ProductMediaManager({
             className="h-10"
           />
           <Button type="button" variant="outline" size="lg" onClick={addVideo}>
-            <Youtube /> Add video
+            <Icon name="youtube" /> Add video
           </Button>
         </div>
 
@@ -837,8 +839,8 @@ function MediaThumb({ item, preview, poster = null }: { item: ProductMediaInput;
     return (
       <div className="relative size-16 shrink-0 overflow-hidden rounded-field bg-muted">
         {poster && <NextImage src={poster} alt="" fill sizes="64px" className="object-cover" />}
-        <span className="absolute inset-0 flex items-center justify-center bg-scrim/40">
-          <Film className="size-5 text-hero-foreground" aria-hidden />
+        <span className="absolute inset-0 flex items-center justify-center bg-scrim/40 text-hero-foreground">
+          <Icon name="video" size="md" />
         </span>
       </div>
     );
@@ -863,8 +865,8 @@ function MediaThumb({ item, preview, poster = null }: { item: ProductMediaInput;
         />
       )}
       {item.kind === "YOUTUBE" && (
-        <span className="absolute inset-0 flex items-center justify-center bg-scrim/40">
-          <Youtube className="size-5 text-hero-foreground" aria-hidden />
+        <span className="absolute inset-0 flex items-center justify-center bg-scrim/40 text-hero-foreground">
+          <Icon name="youtube" size="md" />
         </span>
       )}
     </div>

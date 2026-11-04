@@ -1,5 +1,3 @@
-// hooks/checkout/useCheckoutPayment.ts
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -47,20 +45,7 @@ export function useCheckoutPayment() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * NEW: Process payment with multiple shipments
-   * Production-ready flow with post-payment fulfillment
-   *
-   * Flow:
-   * 1. Validate stock
-   * 2. Create order (pending_payment)
-   * 3. Create payment
-   * 4. On payment success:
-   *    - Update order (paid)
-   *    - Fulfill order (create with providers)
-   *    - Clear cart
-   *    - Redirect
-   */
+  /** Stock check, then a pending order, then Razorpay; the server confirms payment (ADR-0005). */
   const processPaymentWithShipments = async (
     orderData: ProcessPaymentWithShipmentsInput,
   ) => {
@@ -68,9 +53,6 @@ export function useCheckoutPayment() {
     setIsProcessing(true);
 
     try {
-      console.log("🛒 Starting checkout with multiple shipments...");
-
-      // Step 0: Validate stock for all items across all groups
       const allItems = orderData.shippingGroups.flatMap((group) => group.items);
       const stockCheck = await stockApiClient.check(
         allItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
@@ -79,12 +61,10 @@ export function useCheckoutPayment() {
       if (!stockCheck.available) {
         const outOfStock = stockCheck.items.filter((i) => !i.available);
         throw new Error(
-          `Sorry, ${outOfStock[0].name} is out of stock. Please update your cart.`,
+          `${outOfStock[0].name} has just sold out. Remove it from your bag to carry on.`,
         );
       }
 
-      // Step 1: Create order with shipments (pending payment & fulfillment)
-      console.log("📦 Creating order with shipments...");
       const order = await orderApiClient.createOrderWithShipments({
         // Lines carry product + quantity only; the server prices them from the
         // catalogue and refuses if its total differs from the one displayed below.
@@ -138,8 +118,6 @@ export function useCheckoutPayment() {
         return order;
       }
 
-      // Step 2: Create payment gateway order
-      console.log("💳 Creating Razorpay payment order...");
       const paymentOrder = await paymentGatewayApiClient.createPaymentOrder({
         localOrderId: order.id,
         customer: {
@@ -159,8 +137,6 @@ export function useCheckoutPayment() {
       const stopListening = () =>
         window.removeEventListener("pagehide", releaseOnLeave);
 
-      // Step 3: Open Razorpay checkout
-      console.log("🔐 Opening Razorpay checkout modal...");
       await openRazorpayCheckout(paymentOrder, {
         onSuccess: async (response) => {
           stopListening();
@@ -179,20 +155,17 @@ export function useCheckoutPayment() {
             // included — anything else in the cart stays (seamless-sign-in D12).
             useCartStore.getState().removeLines(allItems);
 
-            // Step 7: Redirect to order page
-            console.log("🎉 Redirecting to order page...");
             router.push(`/order/${order.id}`);
           } catch (error) {
             console.error("Failed to process after payment:", error);
             setError(
-              "Payment succeeded but post-payment processing failed. Your order is saved. Order ID: " +
-                order.code,
+              `Your payment went through, but we couldn't finish up here. Your order ${order.code} is saved — check Your orders.`,
             );
           }
         },
         onFailure: async (error) => {
           stopListening();
-          console.error("❌ Payment failed:", error);
+          console.error("Payment failed:", error);
           // The gateway records the failure itself; this releases what the order is
           // holding, and only after the gateway confirms nothing was captured
           // (checkout-abandonment D1/D2).
@@ -202,11 +175,10 @@ export function useCheckoutPayment() {
           const description = (
             error as { error?: { description?: string } } | null
           )?.error?.description;
-          setError(description || "Payment failed. Please try again.");
+          setError(description || "The payment didn't go through. Nothing was charged; try again.");
           setIsProcessing(false);
         },
         onDismiss: () => {
-          console.log("⚠️  Payment modal dismissed");
           stopListening();
           // The common case, not the exception: most people who open a payment window
           // close it. The goods go back on sale now rather than at the next sweep

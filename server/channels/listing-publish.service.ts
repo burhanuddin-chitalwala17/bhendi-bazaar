@@ -1,6 +1,17 @@
 import { prisma } from "@server/shared/prisma";
 import { CHANNEL_LABELS } from "@server/shared/channels";
-import { enqueue } from "@server/shared/jobs/jobs.enqueue";
+import { enqueue, enqueueMany } from "@server/shared/jobs/jobs.enqueue";
+import {
+  BULK_ACTION,
+  BULK_ACTOR,
+  BULK_SKIP_REASON,
+  PRODUCT_AUDIT_ACTION,
+  type BulkActionResultDTO,
+  type BulkActor,
+  type BulkSkippedDTO,
+} from "@server/catalog/product-bulk.types";
+import { productBulkService } from "@server/catalog/product-bulk.service";
+import { recordAdminActions } from "@server/shared/audit/audit.service";
 import { productService } from "@server/catalog/product.service";
 
 import { CONNECTION_STATE, type MarketplaceChannel } from "./channel-connection.types";
@@ -11,7 +22,7 @@ import { computeListing, masterValues, parseOverrides, parseSent, snapshot, toWh
 import { checkListingsSpec, enqueueListingCheck, LISTING_CHECK_AFTER_SECONDS, LISTING_CHECK_EVERY_SECONDS, publishListingSpec } from "./listing-publish.job";
 import { listingCreateService } from "./listing-create.service";
 import { platformListingRepository, type PlatformListingRow } from "./platform-listing.repository";
-import { connectionFor, statusOf } from "./platform-listing.service";
+import { connectionFor, ensure, statusOf } from "./platform-listing.service";
 import {
   LISTING_FIELD,
   PUBLISH_STATE,
@@ -37,6 +48,15 @@ import { marketplacePhotoUrls } from "./listing-photos-out";
  */
 
 type Product = Awaited<ReturnType<typeof productService.forListing>>[number];
+
+/** What a bulk send answers: the products whose send was queued, and why each other was left. */
+export interface BulkSendResult {
+  sent: string[];
+  skipped: BulkSkippedDTO[];
+}
+
+/** The states a send may start from, as `claimPublish` guards them. */
+const SENDABLE = new Set<string>([PUBLISH_STATE.IDLE, PUBLISH_STATE.ATTENTION, PUBLISH_STATE.UNANSWERED]);
 
 const BIG_CHANGE = 0.3;
 const issuesOf = (raw: unknown): ListingIssue[] => (Array.isArray(raw) ? (raw as ListingIssue[]) : []);
@@ -213,6 +233,90 @@ export const listingPublishService = {
       else refused.push(item.id);
     }
     return { sent, refused };
+  },
+
+  /**
+   * Send what is waiting on each selected product's listing on one marketplace (bulk actions,
+   * design-system Q29): every waiting field, claimed at the version read here, as the review's
+   * publish would claim it, in one statement; one send job each, inserted in the same transaction
+   * (ADR-0038). A product with no listing there, nothing waiting, or a send already on its way is
+   * left out with its reason. The listings are made first with what is live, as the screen does (D3).
+   */
+  async publishProducts(orgId: string, channelName: string, productIds: readonly string[]): Promise<BulkSendResult> {
+    const { connection, channel } = await connectionFor(orgId, channelName);
+    const rules = providerFor(channel).listingRules;
+    await ensure(orgId, connection, channel, productIds);
+    return await prisma.$transaction(async (tx) => {
+      const products = new Map((await productService.forListing(orgId, productIds, tx)).map((p) => [p.id, p]));
+      const rows = new Map((await platformListingRepository.forProducts(connection.id, productIds, tx)).map((r) => [r.productId, r]));
+      const skipped: BulkSkippedDTO[] = [];
+      const claims: Array<{ id: string; productId: string; seenVersion: number; pending: ListingOverrides }> = [];
+      for (const productId of productIds) {
+        const product = products.get(productId);
+        const row = rows.get(productId);
+        const reason = !product
+          ? BULK_SKIP_REASON.NOT_FOUND
+          : !row
+            ? BULK_SKIP_REASON.NOT_ON_MARKETPLACE
+            : !SENDABLE.has(row.publishState)
+              ? BULK_SKIP_REASON.SEND_IN_PROGRESS
+              : null;
+        if (reason || !product || !row) {
+          skipped.push({ productId, reason: reason ?? BULK_SKIP_REASON.NOT_FOUND });
+          continue;
+        }
+        const { values, waiting } = statusOf(row, product, rules);
+        const pending = pick(snapshot(values, rules.writable), waiting.filter((f) => rules.writable.includes(f)));
+        if (Object.keys(pending).length === 0 && row.channelListingId !== null) {
+          skipped.push({ productId, reason: BULK_SKIP_REASON.NOTHING_TO_SEND });
+          continue;
+        }
+        claims.push({ id: row.id, productId, seenVersion: row.version, pending });
+      }
+      const claimed = new Set(await platformListingRepository.claimPublishMany(orgId, claims, new Date(), tx));
+      for (const claim of claims) if (!claimed.has(claim.id)) skipped.push({ productId: claim.productId, reason: BULK_SKIP_REASON.SEND_IN_PROGRESS });
+      const sent = claims.filter((claim) => claimed.has(claim.id));
+      await enqueueMany(tx, publishListingSpec, sent.map((claim) => ({ listingId: claim.id, orgId })));
+      return { sent: sent.map((claim) => claim.productId), skipped };
+    });
+  },
+
+  /**
+   * The bulk Send action for a shop or for the team (Q29). A shop sends its own; the team's
+   * selection is split by the shop each product belongs to, since a connection is a shop's. Each
+   * queued send is recorded on the trail after commit, never failing the action (ADR-0021).
+   */
+  async bulkSend(actor: BulkActor, channelName: MarketplaceChannel, productIds: readonly string[]): Promise<BulkActionResultDTO> {
+    const byOrg = new Map<string, string[]>();
+    const skipped: BulkSkippedDTO[] = [];
+    if (actor.kind === BULK_ACTOR.ORG) byOrg.set(actor.orgId, [...productIds]);
+    else {
+      const owners = new Map((await productBulkService.ownersOf(productIds, null)).map((o) => [o.id, o.orgId]));
+      for (const id of productIds) {
+        const orgId = owners.get(id);
+        if (orgId) byOrg.set(orgId, [...(byOrg.get(orgId) ?? []), id]);
+        else skipped.push({ productId: id, reason: BULK_SKIP_REASON.NOT_FOUND });
+      }
+    }
+    const sent: Array<{ productId: string; orgId: string }> = [];
+    for (const [orgId, ids] of byOrg) {
+      // The team's selection may span a shop with no connection there: its products are not on it.
+      const result = actor.kind === BULK_ACTOR.TEAM && !(await channelConnectionRepository.find(orgId, channelName))
+        ? { sent: [], skipped: ids.map((productId) => ({ productId, reason: BULK_SKIP_REASON.NOT_ON_MARKETPLACE })) }
+        : await this.publishProducts(orgId, channelName, ids);
+      sent.push(...result.sent.map((productId) => ({ productId, orgId })));
+      skipped.push(...result.skipped);
+    }
+    await recordAdminActions(
+      sent.map(({ productId, orgId }) => ({
+        adminId: actor.userId,
+        action: PRODUCT_AUDIT_ACTION.SENT,
+        resource: "Product",
+        resourceId: productId,
+        metadata: { orgId, channel: channelName, ...(actor.kind === BULK_ACTOR.TEAM ? { reason: actor.reason } : {}) },
+      })),
+    );
+    return { action: BULK_ACTION.SEND, updated: sent.length, skipped, conflicts: [] };
   },
 
   /**

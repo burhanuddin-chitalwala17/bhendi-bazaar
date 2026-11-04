@@ -1,9 +1,9 @@
 "use client";
 
 import { useId, useState } from "react";
-import { ArrowLeft, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import {
@@ -45,7 +45,7 @@ export function ForgotPasswordForm({
       onClick={() => onSwitchView("signin")}
       className={SWITCH_LINK}
     >
-      <ArrowLeft className="mr-1 size-3" />
+      <Icon name="back" size="xs" className="mr-1" />
       Back to sign in
     </Button>
   );
@@ -57,9 +57,9 @@ export function ForgotPasswordForm({
           role="status"
           className="space-y-2 rounded-card border border-success/30 bg-success/10 p-4 text-center"
         >
-          <Mail className="mx-auto size-8 text-success" />
+          <Icon name="email" size="xl" tone="success" className="mx-auto" />
           <p className="font-semibold text-success">Check your inbox</p>
-          <p className="text-sm text-success">
+          <p className="text-small text-success">
             If an account exists with this email, you&apos;ll receive a password
             reset link shortly.
           </p>
@@ -72,7 +72,7 @@ export function ForgotPasswordForm({
   return (
     <form
       onSubmit={(event) => void onSubmit(event).catch(() => {})}
-      className="space-y-3 text-sm"
+      className="space-y-3 text-small"
     >
       <AuthField id={`${id}-email`} label="Email" error={errors.email?.message}>
         <Input

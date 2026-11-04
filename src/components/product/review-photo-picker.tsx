@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { Camera, X } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -89,20 +89,20 @@ export function ReviewPhotoPicker({
             <Button
               type="button"
               variant="ghost"
-              size="icon"
+              shape="icon"
               aria-label="Remove this photo"
               className="absolute -right-2 -top-2 rounded-full bg-transparent p-0 hover:bg-transparent"
               onClick={() => onChange(photos.filter((kept) => kept !== photo))}
             >
               <span className="flex size-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground ring-2 ring-background shadow-raised transition-transform hover:scale-110">
-                <X className="size-3" />
+                <Icon name="close" size="xs" />
               </span>
             </Button>
           </div>
         ))}
 
         {busy > 0 && (
-          <span className="flex size-18 items-center justify-center rounded-card bg-muted text-4xs text-muted-foreground">
+          <span className="flex size-18 items-center justify-center rounded-card bg-muted text-2xs text-muted-foreground">
             Uploading…
           </span>
         )}
@@ -111,13 +111,13 @@ export function ReviewPhotoPicker({
           <Button
             type="button"
             variant="outline"
-            size="icon-lg"
+            shape="icon" size="lg"
             aria-label="Add a photo of what arrived"
             disabled={disabled}
             onClick={() => input.current?.click()}
             className="size-18"
           >
-            <Camera className="size-5" />
+            <Icon name="camera" size="md" />
           </Button>
         )}
       </div>
@@ -137,7 +137,7 @@ export function ReviewPhotoPicker({
         }}
       />
 
-      <p className="text-4xs text-muted-foreground sm:text-3xs">
+      <p className="text-2xs text-muted-foreground sm:text-2xs">
         Up to {MAX_REVIEW_PHOTOS} photos of the piece as it arrived. Yours, shown inside
         your review.
       </p>

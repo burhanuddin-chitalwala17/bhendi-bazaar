@@ -2,9 +2,12 @@ import { Suspense } from "react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardWidgets } from "@/components/dashboard/DashboardWidgets";
-import { PageHelp } from "@/components/layout/page-help";
+import { ActionBar } from "@/components/shared/action-bar";
+import { PageHeader } from "@/components/shared/page-shell";
+import { SkeletonHeader, SkeletonRows } from "@/components/shared/states/skeletons";
 import { RefreshButton } from "@/components/channel/refresh-button";
 import { attentionLines } from "@/components/org/home/attention-lines";
 import { HOME_COPY, doneToast } from "@/components/org/home/home-copy";
@@ -56,31 +59,31 @@ async function HomeBody({ orgId, done }: { orgId: string; done: unknown }) {
     <div className="space-y-6">
       {doneStep && setup && !productToast && <DoneToast message={doneToast(doneStep, setup.doneCount)} />}
 
-      <header className="space-y-1">
-        <div className="flex items-start gap-1">
-          <h1 className="line-clamp-2 min-w-0 font-heading text-2xl font-semibold text-foreground">{shop?.name ?? "Home"}</h1>
-          <PageHelp help="home" />
-        </div>
-        {shop && <HomeShareLink orgId={orgId} shop={shop} setup={shareSetup} productToast={productToast} />}
-        {shop && setup && !setup.complete && <p className="text-sm text-muted-foreground">{HOME_COPY.welcome(shop.name)}</p>}
-      </header>
+      <PageHeader
+        help="home"
+        title={shop?.name ?? "Home"}
+        description={shop && setup && !setup.complete ? HOME_COPY.welcome(shop.name) : undefined}
+      />
 
       {setup?.complete && lines.length === 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-card p-4">
-          <p className="text-sm font-medium text-foreground">{HOME_COPY.allCaughtUp}</p>
+          <p className="flex items-center gap-2 text-small font-medium text-foreground">
+            <Icon name="success" size="md" tone="success" />
+            {HOME_COPY.allCaughtUp}
+          </p>
           {shop ? (
             <ShareShopSheet
               orgId={orgId}
               shop={shop}
               setup={shareSetup}
               trigger={
-                <Button type="button" variant="outline" size="sm" className="min-h-11">
+                <Button type="button" variant="outline" size="sm">
                   {HOME_COPY.shareShop}
                 </Button>
               }
             />
           ) : (
-            <Button asChild variant="outline" size="sm" className="min-h-11">
+            <Button asChild variant="outline" size="sm">
               <Link href={`/org/${orgId}/shop`}>{HOME_COPY.shareShop}</Link>
             </Button>
           )}
@@ -92,14 +95,16 @@ async function HomeBody({ orgId, done }: { orgId: string; done: unknown }) {
         <SetupList orgId={orgId} setup={home.setup} share={shop} />
       </div>
 
+      {shop && <HomeShareLink orgId={orgId} shop={shop} setup={shareSetup} productToast={productToast} />}
+
       <section className="space-y-3" aria-labelledby="your-numbers">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="your-numbers" className="font-heading text-base font-semibold">{HOME_COPY.numbers}</h2>
+          <h2 id="your-numbers" className="font-heading text-title font-semibold">{HOME_COPY.numbers}</h2>
           <UpdatedLine readAt={home.readAt} />
         </div>
         {!home.hasPaidOrder.ok ? (
           <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-muted-foreground">{HOME_COPY.lineFailed}</p>
+            <p className="text-small text-muted-foreground">{HOME_COPY.lineFailed}</p>
             <RefreshButton label={HOME_COPY.tryAgain} />
           </div>
         ) : home.hasPaidOrder.value ? (
@@ -110,9 +115,18 @@ async function HomeBody({ orgId, done }: { orgId: string; done: unknown }) {
             prefetched={home.widgets}
           />
         ) : (
-          <p className="text-sm text-muted-foreground">{HOME_COPY.numbersBeforeFirstOrder}</p>
+          <p className="text-small text-muted-foreground">{HOME_COPY.numbersBeforeFirstOrder}</p>
         )}
       </section>
+
+      <ActionBar className="-mx-4 md:mx-0">
+        <Button asChild>
+          <Link href={`/org/${orgId}/products/new`} prefetch={false}>
+            <Icon name="add" size="sm" />
+            {HOME_COPY.addProduct}
+          </Link>
+        </Button>
+      </ActionBar>
     </div>
   );
 }
@@ -120,16 +134,13 @@ async function HomeBody({ orgId, done }: { orgId: string; done: unknown }) {
 /** ux Home Loading: a skeleton per section while Home reads. */
 function HomeSkeleton() {
   return (
-    <div className="space-y-6" aria-busy="true">
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-2/3" />
-        <Skeleton className="h-4 w-1/2" />
-      </div>
+    <div className="space-y-6" role="status" aria-label="Loading your shop">
+      <SkeletonHeader />
       <div className="space-y-3 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
-        <Skeleton className="h-32" />
-        <Skeleton className="h-48" />
+        <SkeletonRows count={3} thumbnail={false} />
+        <SkeletonRows count={5} thumbnail={false} />
       </div>
-      <Skeleton className="h-24" />
+      <Skeleton className="h-16 rounded-card" />
     </div>
   );
 }

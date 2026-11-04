@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Key, Eye, EyeOff } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 export function ChangePasswordModal() {
   const [open, setOpen] = useState(false);
@@ -58,7 +58,7 @@ export function ChangePasswordModal() {
           size="sm"
           className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
         >
-          <Key className="mr-1 h-3 w-3" />
+          <Icon name="key" size="xs" className="mr-1" />
           Change Password
         </Button>
       </DialogTrigger>
@@ -131,11 +131,11 @@ export function ChangePasswordModal() {
           >
             {showPasswords ? (
               <>
-                <EyeOff className="h-4 w-4" /> Hide passwords
+                <Icon name="hide" size="sm" /> Hide passwords
               </>
             ) : (
               <>
-                <Eye className="h-4 w-4" /> Show passwords
+                <Icon name="show" size="sm" /> Show passwords
               </>
             )}
           </Button>

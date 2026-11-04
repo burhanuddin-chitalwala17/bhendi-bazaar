@@ -2,11 +2,12 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useState } from "react";
-import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { PLATFORM_ROLE } from "@server/identity/admin.user.types";
 
 /**
  * The console's user filters, held in the URL rather than in component state.
@@ -39,14 +40,15 @@ export function UsersFilters() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && apply({ search })}
-          placeholder="Search by name, email, mobile..."
+          placeholder="Search by name, email or mobile…"
+          aria-label="Search users"
         />
         <Button
           variant="default"
           onClick={() => apply({ search })}
           className="flex items-center gap-2"
         >
-          <Search className="size-4" />
+          <Icon name="search" />
           Search
         </Button>
       </div>
@@ -55,16 +57,16 @@ export function UsersFilters() {
         value={params.get("platformRole") ?? ""}
         onChange={(e) => apply({ platformRole: e.target.value })}
       >
-        <option value="">All Roles</option>
-        <option value="USER">User</option>
-        <option value="ADMIN">Admin</option>
+        <option value="">All roles</option>
+        <option value={PLATFORM_ROLE.USER}>User</option>
+        <option value={PLATFORM_ROLE.ADMIN}>Admin</option>
       </Select>
 
       <Select
         value={params.get("isBlocked") ?? ""}
         onChange={(e) => apply({ isBlocked: e.target.value })}
       >
-        <option value="">All Status</option>
+        <option value="">All statuses</option>
         <option value="active">Active</option>
         <option value="blocked">Blocked</option>
       </Select>

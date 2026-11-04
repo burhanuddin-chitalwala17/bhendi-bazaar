@@ -15,6 +15,8 @@ import { parseStoredFacts, parseStoredMeasurements } from "@server/listing/listi
 import { promotionService } from "@server/promotions/promotion.service";
 import { listResourceActions, recordAdminAction } from "@server/shared/audit/audit.service";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
+import { productBulkService } from "@server/catalog/product-bulk.service";
+import { BULK_ACTION, BULK_ACTOR, type BulkActionResultDTO, type BulkPriceChange, type BulkStockRow } from "@server/catalog/product-bulk.types";
 
 type TeamInput = Omit<ProductFormInput, "orgId" | "reason"> & { reason: string };
 type ProductRecord = Awaited<ReturnType<typeof productsService.getProductById>>;
@@ -44,6 +46,24 @@ export class ProductTeamService {
     const product = await productsService.updateProduct(id, { ...data, orgId }, { userId: adminId, team: true });
     await this.record(adminId, PRODUCT_TEAM_ACTION.UPDATED, id, orgId, reason, before);
     return product;
+  }
+
+  /**
+   * The team's bulk price, stock or archive on selected shop products (design-system Q29): the
+   * shop's own bulk commands with the admin as editor, each product's trail entry carrying the reason.
+   */
+  async bulkEdit(
+    adminId: string,
+    reason: string,
+    input:
+      | { action: typeof BULK_ACTION.PRICE; productIds: string[]; change: BulkPriceChange }
+      | { action: typeof BULK_ACTION.STOCK; rows: BulkStockRow[] }
+      | { action: typeof BULK_ACTION.ARCHIVE; productIds: string[] },
+  ): Promise<BulkActionResultDTO> {
+    const actor = { kind: BULK_ACTOR.TEAM, userId: adminId, reason } as const;
+    if (input.action === BULK_ACTION.PRICE) return await productBulkService.setPrice(actor, input.productIds, input.change);
+    if (input.action === BULK_ACTION.STOCK) return await productBulkService.setStock(actor, input.rows);
+    return await productBulkService.archive(actor, input.productIds);
   }
 
   /** Back on sale for its shop; the archive trail records it as every restore is (ADR-0029). */

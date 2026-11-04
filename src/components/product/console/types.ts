@@ -40,6 +40,8 @@ export interface ProductForTable {
   salePrice?: number;
   currency: string;
   stock: number;
+  /** Each location's count as read; a bulk stock edit sends it back as `seenQuantity` (Invariant 6). */
+  stockByLocation: Array<{ orgAddressId: string; quantity: number }>;
   lowStockThreshold: number;
   thumbnail: string;
   /** How many users have this saved. Demand, read-only — never sorted or filtered on. */

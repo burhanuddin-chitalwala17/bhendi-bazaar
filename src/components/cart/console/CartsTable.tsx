@@ -3,12 +3,19 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
-import { Eye, ShoppingCart } from "lucide-react";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import type { AbandonedCart } from "@/domain/admin";
 import { formatCurrency, formatShortDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Money } from "@/components/shared/Money";
 
 interface Props {
@@ -53,59 +60,51 @@ export function CartsTable({ carts, page, pageSize, totalPages, total }: Props) 
     {
       key: "userName",
       label: "Customer",
-      render: (cart) => (
-        <div>
-          <p className="font-medium">{cart.userName || "Guest"}</p>
-          <p className="text-sm text-muted-foreground">{cart.userEmail}</p>
-        </div>
-      ),
+      phone: "title",
+      render: (cart) => cart.userName || "Guest",
+    },
+    {
+      key: "userEmail",
+      label: "Email",
+      phone: "hidden",
+      render: (cart) => <span className="text-muted-foreground">{cart.userEmail}</span>,
     },
     {
       key: "itemsCount",
       label: "Items",
-      render: (cart) => (
-        <div className="flex items-center gap-2">
-          <ShoppingCart className="size-4 text-muted-foreground/70" />
-          <span className="font-semibold">{cart.itemsCount}</span>
-        </div>
-      ),
+      phone: "meta",
+      render: (cart) => `${cart.itemsCount} ${cart.itemsCount === 1 ? "item" : "items"}`,
     },
     {
       key: "totalValue",
-      label: "Cart Value",
-      render: (cart) => (
-        <span className="font-semibold text-primary"><Money paise={cart.totalValue} /></span>
-      ),
+      label: "Cart value",
+      phone: "meta",
+      render: (cart) => <Money paise={cart.totalValue} />,
     },
     {
       key: "daysSinceUpdate",
       label: "Abandoned",
+      phone: "meta",
       render: (cart) => (
-        <div>
-          <p className="font-medium">
-            {cart.daysSinceUpdate} {cart.daysSinceUpdate === 1 ? "day" : "days"} ago
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {formatShortDate(cart.updatedAt)}
-          </p>
-        </div>
+        <span title={formatShortDate(cart.updatedAt)}>
+          {cart.daysSinceUpdate} {cart.daysSinceUpdate === 1 ? "day" : "days"} ago
+        </span>
       ),
     },
     {
       key: "actions",
       label: "Actions",
+      phone: "trailing",
       render: (cart) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSelected(cart)}
-            className="text-info hover:bg-info/10"
-            title="View cart details"
-          >
-            <Eye className="size-4" />
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setSelected(cart)}
+          aria-label={`View ${cart.userName || "guest"}'s cart`}
+        >
+          <Icon name="show" />
+          View
+        </Button>
       ),
     },
   ];
@@ -115,6 +114,7 @@ export function CartsTable({ carts, page, pageSize, totalPages, total }: Props) 
       <DataTable
         data={carts}
         columns={columns}
+        label="Abandoned carts"
         totalPages={totalPages}
         currentPage={page}
         totalItems={total}
@@ -123,93 +123,63 @@ export function CartsTable({ carts, page, pageSize, totalPages, total }: Props) 
         onPageSizeChange={(limit) => go({ limit: String(limit), page: "" })}
       />
 
-      {selected && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/50 px-4"
-          onClick={() => setSelected(null)}
-        >
-          <div
-            className="max-h-overlay w-full max-w-2xl overflow-y-auto rounded-lg bg-card p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold">Cart Details</h2>
-              <Button
-                variant="ghost"
-                onClick={() => setSelected(null)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                ✕
-              </Button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="border-b pb-4">
-                <h3 className="mb-2 font-semibold text-foreground">Customer</h3>
-                <p className="text-sm">
-                  <span className="text-muted-foreground">Name:</span> {selected.userName || "N/A"}
-                </p>
-                <p className="text-sm">
-                  <span className="text-muted-foreground">Email:</span> {selected.userEmail || "N/A"}
-                </p>
-                <p className="text-sm">
-                  <span className="text-muted-foreground">Abandoned:</span>{" "}
-                  {selected.daysSinceUpdate} days ago
-                </p>
+      {/* The details of one row beside the list it came from: a side panel (ADR-0040 case 3). */}
+      <Sheet open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
+        <SheetContent side="adaptive">
+          {selected && (
+            <div className="space-y-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <SheetTitle>{selected.userName || "Guest"}&apos;s cart</SheetTitle>
+                  <SheetDescription>
+                    {selected.userEmail || "No email"} · abandoned {selected.daysSinceUpdate}{" "}
+                    {selected.daysSinceUpdate === 1 ? "day" : "days"} ago
+                  </SheetDescription>
+                </div>
+                <SheetClose asChild>
+                  <Button variant="ghost" shape="icon" aria-label="Close">
+                    <Icon name="close" />
+                  </Button>
+                </SheetClose>
               </div>
 
-              <div>
-                <h3 className="mb-2 font-semibold text-foreground">
-                  Cart Items ({selected.itemsCount})
+              <section className="space-y-2">
+                <h3 className="text-small font-semibold text-foreground">
+                  {selected.itemsCount} {selected.itemsCount === 1 ? "item" : "items"}
                 </h3>
-                <div className="space-y-2">
+                <ul className="divide-y divide-border rounded-card border border-border">
                   {selected.items.map((item, index) => (
-                    <div
-                      key={`${item.productId}-${index}`}
-                      className="flex items-center gap-3 rounded-lg bg-background p-3"
-                    >
+                    <li key={`${item.productId}-${index}`} className="flex items-center gap-3 p-3">
                       <Image
                         src={item.thumbnail}
                         alt={item.productName}
-                        width={64}
-                        height={85}
-                        sizes="64px"
-                        className="aspect-[3/4] w-16 rounded object-cover"
+                        width={48}
+                        height={64}
+                        sizes="48px"
+                        className="aspect-[3/4] w-12 rounded-field object-cover"
                       />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{item.productName}</p>
-                        <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-small font-medium">{item.productName}</p>
+                        <p className="text-caption text-muted-foreground">Qty {item.quantity}</p>
                       </div>
-                      <p className="font-semibold">
+                      <p className="text-small font-semibold tabular-nums">
                         {formatCurrency(item.effectivePrice * item.quantity)}
                       </p>
-                    </div>
+                    </li>
                   ))}
-                </div>
-              </div>
+                </ul>
+              </section>
 
-              <div className="border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold">Total Value:</span>
-                  <span className="text-2xl font-bold text-primary">
-                    <Money paise={selected.totalValue} />
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelected(null)}
-                  className="text-foreground/80 hover:bg-muted/60"
-                >
-                  Close
-                </Button>
+              <div className="flex items-center justify-between border-t border-border pt-4">
+                <span className="text-small text-muted-foreground">Cart value</span>
+                <span className="text-title font-semibold tabular-nums">
+                  <Money paise={selected.totalValue} />
+                </span>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

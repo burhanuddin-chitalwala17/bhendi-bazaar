@@ -427,44 +427,38 @@ export class ProductsRepository {
   // explicit limit to ≤100 (product.service.ts); this bounds the no-limit case.
   private static readonly MAX_LIST_ROWS = 200;
 
+  /** The buyer-visible rows a listing filter names; one builder so a count and its page agree. */
+  private async listingWhere(filter: ProductFilter): Promise<Prisma.ProductWhereInput> {
+    const { orgId, ids, categorySlug, categoryIds, search, minPrice, maxPrice, offerOnly, ownOffersOnly, featuredOnly, heroOnly } = filter;
+    return {
+      ...AVAILABLE,
+      ...FROM_ACTIVE_ORG,
+      // Scoped to one shop when a storefront asks; resolved server-side from the
+      // handle, so no query parameter can widen it (ADR-0030 decision 6).
+      ...(orgId ? { orgId } : {}),
+      ...(ids ? { id: { in: ids } } : {}),
+      // categoryIds (a resolved subtree) wins over a bare slug, which matches only the category's own products.
+      ...(categoryIds ? { categoryId: { in: categoryIds } } : { category: { slug: categorySlug } }),
+      ...(search && { name: { contains: search, mode: "insensitive" as const } }),
+      // One `price` key: two spreads would let the maximum overwrite the minimum.
+      ...((minPrice || maxPrice) && { price: { ...(minPrice && { gte: minPrice }), ...(maxPrice && { lte: maxPrice }) } }),
+      ...(offerOnly ? await offerFilter(ownOffersOnly && orgId ? orgId : undefined) : {}),
+      ...(featuredOnly && { flags: { has: "FEATURED" } }),
+      ...(heroOnly && { flags: { has: ProductFlag.HERO } }),
+    };
+  }
+
+  /** How many products a listing holds, for its "248 pieces" line; limit and offset do not apply. */
+  async countProducts(filter: ProductFilter): Promise<number> {
+    return await prisma.product.count({ where: await this.listingWhere(filter) });
+  }
+
   async getProducts(filter: ProductFilter) {
-    const {
-      orgId,
-      ids,
-      categorySlug,
-      categoryIds,
-      search,
-      minPrice,
-      maxPrice,
-      offerOnly,
-      ownOffersOnly,
-      featuredOnly,
-      heroOnly,
-      limit,
-      offset,
-    } = filter;
+    const { limit, offset } = filter;
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
-        // categoryIds (a resolved subtree) wins over a bare slug, which matches
-        // only the category's own products.
-        where: {
-          ...AVAILABLE,
-          ...FROM_ACTIVE_ORG,
-          // Scoped to one shop when a storefront asks; resolved server-side from the
-          // handle, so no query parameter can widen it (ADR-0030 decision 6).
-          ...(orgId ? { orgId } : {}),
-          ...(ids ? { id: { in: ids } } : {}),
-          ...(categoryIds
-            ? { categoryId: { in: categoryIds } }
-            : { category: { slug: categorySlug } }),
-          ...(search && { name: { contains: search, mode: "insensitive" } }),
-          ...(minPrice && { price: { gte: minPrice } }),
-          ...(maxPrice && { price: { lte: maxPrice } }),
-          ...(offerOnly ? await offerFilter(ownOffersOnly && orgId ? orgId : undefined) : {}),
-          ...(featuredOnly && { flags: { has: "FEATURED" } }),
-          ...(heroOnly && { flags: { has: ProductFlag.HERO } }),
-        },
+        where: await this.listingWhere(filter),
         include: {
           ...PRODUCT_INCLUDE,
         },

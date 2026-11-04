@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Star } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -147,26 +147,19 @@ export function ReviewForm({
               key={star}
               type="button"
               variant="ghost"
-              size="icon"
+              shape="icon"
               aria-label={`${star} ${star === 1 ? "star" : "stars"}`}
               aria-pressed={rating === star}
               onClick={() =>
                 form.setValue("rating", star, { shouldValidate: true })
               }
             >
-              <Star
-                className={cn(
-                  "size-5",
-                  star <= rating
-                    ? "fill-warning text-warning"
-                    : "fill-transparent text-muted-foreground/50",
-                )}
-              />
+              <Icon name="rating" size="md" filled={star <= rating} tone={star <= rating ? "warning" : "muted"} />
             </Button>
           ))}
         </div>
         {form.formState.errors.rating && (
-          <p className="text-3xs text-destructive sm:text-2xs">
+          <p className="text-caption text-destructive">
             {form.formState.errors.rating.message}
           </p>
         )}
@@ -180,7 +173,7 @@ export function ReviewForm({
           {...form.register("title")}
         />
         {form.formState.errors.title && (
-          <p className="text-3xs text-destructive sm:text-2xs">
+          <p className="text-caption text-destructive">
             {form.formState.errors.title.message}
           </p>
         )}
@@ -195,7 +188,7 @@ export function ReviewForm({
           {...form.register("comment")}
         />
         {form.formState.errors.comment && (
-          <p className="text-3xs text-destructive sm:text-2xs">
+          <p className="text-caption text-destructive">
             {form.formState.errors.comment.message}
           </p>
         )}
@@ -211,7 +204,7 @@ export function ReviewForm({
           disabled={form.isSubmitting}
         />
         {form.formState.errors.photos && (
-          <p className="text-3xs text-destructive sm:text-2xs">
+          <p className="text-caption text-destructive">
             {form.formState.errors.photos.message}
           </p>
         )}
@@ -239,7 +232,7 @@ export function ReviewForm({
       </div>
 
       {!isSignedIn && (
-        <p className="text-3xs text-muted-foreground sm:text-2xs">
+        <p className="text-2xs text-muted-foreground sm:text-2xs">
           You will be asked to sign in before it posts. What you have written stays
           here.
         </p>

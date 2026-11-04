@@ -86,6 +86,10 @@ model MediaAsset {
   orgBanners       OrgBanner[]         @relation("OrgBannerImage")
   storefrontSlots  OrgStorefrontSlot[] @relation("StorefrontSlotImage")
   banners          Banner[]            @relation("BannerImage")
+  /// The phone versions of the same three (image-slots trd D2): a use like the desktop picture.
+  orgBannerPhones      OrgBanner[]         @relation("OrgBannerPhoneImage")
+  storefrontSlotPhones OrgStorefrontSlot[] @relation("StorefrontSlotPhoneImage")
+  bannerPhones         Banner[]            @relation("BannerPhoneImage")
   /// The enhancements asked of this photograph, and the one this photograph was accepted from (image-enhancement trd D1).
   enhancementsFrom Enhancement[]       @relation("EnhancementSource")
   enhancementOf    Enhancement[]       @relation("EnhancementResult")
@@ -833,11 +837,16 @@ model OrgStorefrontSlot {
   category   Category?          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   assetId    String?
   asset      MediaAsset?        @relation("StorefrontSlotImage", fields: [assetId], references: [id], onDelete: Restrict)
+  /// The phone version and how each is framed (image-slots trd D2, D10).
+  phoneAssetId String?
+  phoneAsset   MediaAsset?      @relation("StorefrontSlotPhoneImage", fields: [phoneAssetId], references: [id], onDelete: Restrict)
+  imageFraming Json?
   createdAt  DateTime           @default(now())
 
   @@unique([orgId, kind, position])
   @@index([categoryId])
   @@index([assetId])
+  @@index([phoneAssetId])
 }
 
 enum StorefrontSlotKind {
@@ -1391,6 +1400,12 @@ model OrgBanner {
   imageAssetId String?
   imageAsset   MediaAsset? @relation("OrgBannerImage", fields: [imageAssetId], references: [id], onDelete: Restrict)
   imageAlt     String?
+  /// The phone version and how each is framed (image-slots trd D2): the URL beside its asset, framing
+  /// parsed on read by `server/catalog/image-framing.ts`, never cast.
+  phoneImageUrl     String?
+  phoneImageAssetId String?
+  phoneImageAsset   MediaAsset? @relation("OrgBannerPhoneImage", fields: [phoneImageAssetId], references: [id], onDelete: Restrict)
+  imageFraming      Json?
 
   /// Where it points — always inside this org's own storefront (R2c), enforced in the
   /// schema that parses it rather than by the column's type.
@@ -1954,6 +1969,12 @@ model Banner {
   imageAssetId String?
   imageAsset   MediaAsset?    @relation("BannerImage", fields: [imageAssetId], references: [id], onDelete: Restrict)
   imageAlt     String?
+  /// The phone version and how each is framed (image-slots trd D2). The URL is kept beside the id so
+  /// the cached home read never joins MediaAsset (ADR-0065).
+  phoneImageUrl     String?
+  phoneImageAssetId String?
+  phoneImageAsset   MediaAsset? @relation("BannerPhoneImage", fields: [phoneImageAssetId], references: [id], onDelete: Restrict)
+  imageFraming      Json?
   /// Server-owned. A create appends to the end; only the reorder route rewrites it.
   order        Int            @default(0)
   /// Taken down, not deleted — the copy and artwork survive for the next run.

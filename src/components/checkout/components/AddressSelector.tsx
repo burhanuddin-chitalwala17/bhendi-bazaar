@@ -1,8 +1,6 @@
-// components/checkout/AddressSelector.tsx
-
 "use client";
 
-import { MapPin, ChevronRight } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -32,7 +30,7 @@ export function AddressSelector({
   if (addresses.length === 0) {
     return (
       <Card className="p-5">
-        <p className="mb-3 text-sm text-muted-foreground">
+        <p className="mb-3 text-small text-muted-foreground">
           You don&apos;t have any saved addresses.
         </p>
         <Button
@@ -41,7 +39,7 @@ export function AddressSelector({
           onClick={onAddNew}
           className="w-full"
         >
-          <MapPin className="mr-2 h-4 w-4" />
+          <Icon name="location" size="sm" />
           Add delivery address
         </Button>
       </Card>
@@ -62,14 +60,14 @@ export function AddressSelector({
           className="flex h-auto w-full items-start justify-between gap-4 whitespace-normal p-5 text-left hover:bg-muted/30"
         >
           <div className="flex min-w-0 gap-3">
-            <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-info" />
+            <Icon name="location" size="md" tone="primary" className="mt-0.5" />
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="font-semibold">
                   {selectedAddress.fullName}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-small text-muted-foreground">
                 {[
                   selectedAddress.addressLine1,
                   selectedAddress.addressLine2,
@@ -82,17 +80,14 @@ export function AddressSelector({
               </p>
             </div>
           </div>
-          <ChevronRight
-            className={cn(
-              "h-5 w-5 shrink-0 text-muted-foreground transition-transform",
-              listOpen && "rotate-90",
-            )}
-          />
+          <span className={cn("shrink-0 text-muted-foreground transition-transform duration-fast", listOpen && "rotate-90")}>
+            <Icon name="next" size="md" />
+          </span>
         </Button>
       ) : (
         <div className="flex items-center gap-3 p-5 pb-2">
-          <MapPin className="h-5 w-5 text-info" />
-          <span className="text-sm font-medium">Choose a delivery address</span>
+          <Icon name="location" size="md" tone="primary" />
+          <span className="text-small font-medium">Choose a delivery address</span>
         </div>
       )}
 
@@ -116,14 +111,14 @@ export function AddressSelector({
                 }}
                 className="flex h-auto w-full items-start justify-start gap-3 whitespace-normal border-border bg-card p-3 text-left hover:bg-muted/50"
               >
-                <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                <Icon name="location" size="sm" tone="muted" className="mt-0.5" />
                 <div className="flex-1 space-y-0.5">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">
                       {address.label || address.fullName}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-caption text-muted-foreground">
                     {[address.addressLine1, address.city, address.pincode]
                       .filter(Boolean)
                       .join(", ")}
@@ -141,7 +136,7 @@ export function AddressSelector({
               }}
               className="flex w-full items-center justify-center gap-2 border-2 border-dashed border-muted-foreground/30 p-3 text-muted-foreground hover:border-muted-foreground/50 hover:bg-muted/50"
             >
-              <MapPin className="h-4 w-4" />
+              <Icon name="add" size="sm" />
               Add new address
             </Button>
           </div>

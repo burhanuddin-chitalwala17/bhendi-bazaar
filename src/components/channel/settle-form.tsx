@@ -4,9 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ActionBar } from "@/components/shared/action-bar";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -322,8 +322,7 @@ export function SettleForm({ orgId, shopName, orgCode, detail, categories, backH
               className="sr-only"
               onChange={(e) => void uploadPhoto(e.target.files?.[0])}
             />
-            <Button type="button" variant="outline" className="min-h-10" onClick={() => fileInput.current?.click()} aria-busy={uploading}>
-              {uploading && <Loader2 className="size-4 animate-spin" aria-hidden />}
+            <Button type="button" variant="outline" className="min-h-10" onClick={() => fileInput.current?.click()} pending={uploading}>
               {SETTLE_ACTION.addPhoto}
             </Button>
           </div>
@@ -478,9 +477,8 @@ export function SettleForm({ orgId, shopName, orgCode, detail, categories, backH
         </p>
       )}
 
-      <div className="fixed inset-x-0 bottom-tabbar z-10 border-t bg-card p-3 md:static md:border-0 md:bg-transparent md:p-0">
-        <Button type="submit" className="min-h-10 w-full md:w-auto" aria-busy={form.isSubmitting}>
-          {form.isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden />}
+      <ActionBar className="-mx-4 md:mx-0" status={slow ? SETTLE_ACTION.stillSaving : null}>
+        <Button type="submit" className="min-h-10 w-full md:w-auto" pending={form.isSubmitting}>
           {form.isSubmitting
             ? product
               ? SETTLE_ACTION.saving
@@ -489,8 +487,7 @@ export function SettleForm({ orgId, shopName, orgCode, detail, categories, backH
               ? SETTLE_ACTION.linkAndSave
               : SETTLE_ACTION.addProduct}
         </Button>
-        {slow && <p className="mt-1 text-xs text-muted-foreground">{SETTLE_ACTION.stillSaving}</p>}
-      </div>
+      </ActionBar>
     </form>
   );
 }

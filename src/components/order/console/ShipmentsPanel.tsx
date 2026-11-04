@@ -1,6 +1,5 @@
-import { CheckCircle2, Clock, MapPin, Package, Truck, XCircle } from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
+import { Icon } from "@/components/ui/icon";
+import { StatusBadge, type StatusTone } from "@/components/shared/badges/StatusBadge";
 import { formatCurrency } from "@/lib/format";
 import type { AdminShipmentView } from "@server/checkout/admin.order.types";
 import type { ParcelTimelineDto } from "@server/checkout/parcel-timeline";
@@ -32,13 +31,14 @@ export function ShipmentsPanel({
 }) {
   return (
     <div className="space-y-6">
-      <h2 className="flex items-center gap-2 text-xl font-semibold">
-        <Truck className="size-6" />
-        Shipments ({shipments.length})
+      <h2 className="flex items-center gap-2 text-title font-semibold">
+        <Icon name="parcel" size="md" tone="muted" />
+        Parcels
+        <span className="text-small font-normal tabular-nums text-muted-foreground">{shipments.length}</span>
       </h2>
 
       {shipments.length === 0 && (
-        <p className="rounded-card border border-border bg-card p-6 text-sm text-muted-foreground">
+        <p className="rounded-card border border-border bg-card p-4 text-small text-muted-foreground md:p-6">
           Nothing has been packed for this order yet.
         </p>
       )}
@@ -47,40 +47,37 @@ export function ShipmentsPanel({
         return (
           <section
             key={shipment.id}
-            className="space-y-4 rounded-card border border-border bg-card p-6"
+            className="space-y-4 rounded-card border border-border bg-card p-4 md:p-6"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="mb-2 flex items-center gap-2">
-                  <StatusIcon status={shipment.status} />
-                  <h3 className="text-lg font-semibold">{shipment.code}</h3>
-                </div>
-                <div className="space-y-1 text-sm text-muted-foreground">
+                <h3 className="mb-2 font-mono text-body font-semibold">{shipment.code}</h3>
+                <div className="space-y-1 text-small text-muted-foreground">
                   <p className="flex items-center gap-2">
-                    <MapPin className="size-4" />
-                    From: {shipment.fromCity}, {shipment.fromState}
+                    <Icon name="location" />
+                    From {shipment.fromCity}, {shipment.fromState}
                   </p>
                   {shipment.packageWeight !== null && (
                     <p className="flex items-center gap-2">
-                      <Package className="size-4" />
-                      Weight: {shipment.packageWeight}kg
+                      <Icon name="parcel" />
+                      {shipment.packageWeight} kg
                     </p>
                   )}
                   <p>Shipping: <Money paise={shipment.shippingCost} /></p>
                 </div>
               </div>
-              <Badge variant={badgeVariant(shipment.status)}>
+              <StatusBadge tone={parcelTone(shipment.status)} dot>
                 {SHIPMENT_STATUS_LABELS[shipment.status] ?? shipment.status}
-              </Badge>
+              </StatusBadge>
             </div>
 
-            <div className="border-t pt-4">
-              <h4 className="mb-2 text-sm font-medium">Items</h4>
+            <div className="border-t border-border pt-4">
+              <h4 className="mb-2 text-small font-medium">Items</h4>
               <div className="space-y-2">
                 {shipment.items.map((item) => (
                   <div
                     key={`${item.productId}-${item.size ?? ""}-${item.color ?? ""}`}
-                    className="flex justify-between text-sm"
+                    className="flex justify-between gap-3 text-small"
                   >
                     <span className="text-foreground/80">
                       {item.productName} × {item.quantity}
@@ -94,14 +91,15 @@ export function ShipmentsPanel({
             </div>
 
             {shipment.trackingNumber && (
-              <div className="space-y-1 rounded-card border border-primary/30 bg-primary/10 p-4 text-sm">
+              <div className="space-y-1 rounded-card border border-primary/30 bg-primary/10 p-4 text-small">
                 {shipment.pickupDay && <p className="font-medium">Pickup {shipment.pickupDay}</p>}
                 <p className="break-words">
                   {shipment.courierName ?? "—"} · <span className="font-mono">{shipment.trackingNumber}</span>
                 </p>
                 {shipment.trackingUrl && (
-                  <a href={shipment.trackingUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-primary underline">
-                    Track shipment →
+                  <a href={shipment.trackingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-1 text-primary underline">
+                    Track parcel
+                    <Icon name="external" size="xs" />
                   </a>
                 )}
               </div>
@@ -109,7 +107,7 @@ export function ShipmentsPanel({
 
             {paid && <PickupActions parcel={{ ...shipment, shipmentId: shipment.id }} />}
 
-            <div className="border-t pt-4">
+            <div className="border-t border-border pt-4">
               <ParcelTimeline timeline={timelines[shipment.id]} reader={TIMELINE_READER.ADMIN} />
             </div>
           </section>
@@ -126,20 +124,9 @@ export function ShipmentsPanel({
  * recorded once in `SHIPMENT_STATUS_EFFECTS` — reading it here means a new state gets the right
  * colour by describing what it costs, rather than by someone remembering to add a case.
  */
-function badgeVariant(status: ShipmentStatus) {
-  if (status === SHIPMENT_STATUS.DELIVERED) return "secondary" as const;
-  return SHIPMENT_STATUS_EFFECTS[status]?.refundOwed ? ("destructive" as const) : ("outline" as const);
-}
-
-function StatusIcon({ status }: { status: ShipmentStatus }) {
-  if (status === SHIPMENT_STATUS.DELIVERED) {
-    return <CheckCircle2 className="size-5 text-success" aria-hidden />;
-  }
-  if (SHIPMENT_STATUS_EFFECTS[status]?.refundOwed) {
-    return <XCircle className="size-5 text-destructive" aria-hidden />;
-  }
-  if (status === SHIPMENT_STATUS.PACKING) {
-    return <Clock className="size-5 text-warning" aria-hidden />;
-  }
-  return <Package className="size-5 text-muted-foreground" aria-hidden />;
+function parcelTone(status: ShipmentStatus): StatusTone {
+  if (status === SHIPMENT_STATUS.DELIVERED) return "success";
+  if (SHIPMENT_STATUS_EFFECTS[status]?.refundOwed) return "destructive";
+  if (status === SHIPMENT_STATUS.PACKING) return "warning";
+  return "info";
 }

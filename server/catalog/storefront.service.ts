@@ -42,6 +42,10 @@ import {
 import { CLAIM_LABEL, claimsFor, readClaims, type ClaimKey } from "@server/catalog/storefront-claims";
 import { readOpeningHours, type OpeningHours } from "@server/catalog/storefront-hours";
 import { orgStorefrontSlotRepository, StorefrontSlotKind } from "@server/catalog/org-storefront-slot.repository";
+import { resolveImageSlot, type CurrentImage, type ImageSlotWriteInput } from "@server/catalog/image-slot-write";
+import { IMAGE_SLOT } from "@server/catalog/image-slots";
+import { readImageFraming, toImageSlotValue, toResponsiveImage, type ImageSlotRow, type ImageSlotValue } from "@server/catalog/image-framing";
+
 import { categoryRepository } from "@server/catalog/category.read.repository";
 import { mediaAssetService } from "@server/catalog/media-asset.service";
 import { prisma } from "@server/shared/prisma";
@@ -63,6 +67,21 @@ import {
 import { isValidSlug } from "@server/shared/slug";
 
 /**
+ * A storefront slot as both the editor and the buyer's page read it (image-slots D10). A phone-only set
+ * keeps `assetId` on the phone picture, so legacy readers of `assetId` still draw it; its framing's empty
+ * desktop side says so, and then there is no desktop picture. One builder, so the editor's preview and
+ * the buyer's page cannot disagree about it.
+ */
+const slotImageRow = (slot: { asset: { ref: string } | null; phoneAsset: { ref: string } | null; imageFraming: unknown }): ImageSlotRow => {
+  const phoneOnly = slot.imageFraming != null && readImageFraming(slot.imageFraming).desktop === null;
+  return {
+    imageUrl: phoneOnly ? null : (slot.asset?.ref ?? null),
+    phoneImageUrl: slot.phoneAsset?.ref ?? null,
+    imageFraming: slot.imageFraming,
+  };
+};
+
+/**
  * Looks only since org-profile U2 (D3): the facts are Shop details', so two editors never share a
  * column. The themed page's content joins them (storefront-themes D13); the accent is retired.
  */
@@ -72,7 +91,10 @@ export interface StorefrontSettingsInput {
   hiddenSections?: HideableBrandPageSection[] | null;
   heroLine?: string | null;
   heroPhotos?: string[] | null;
-  collections?: Array<{ categoryId: string; photoUrl?: string | null }> | null;
+  /** Each hero photo as a desktop and phone set with its framing (image-slots D10); supersedes `heroPhotos`. */
+  heroImages?: ImageSlotWriteInput[] | null;
+  /** `image`, when sent, supersedes `photoUrl` for that collection (D10). */
+  collections?: Array<{ categoryId: string; photoUrl?: string | null; image?: ImageSlotWriteInput | null }> | null;
   claims?: Array<{ key: ClaimKey; detail?: string | null }> | null;
   openingHours?: OpeningHours | null;
   storefrontHiddenSections?: HideableSection[] | null;
@@ -82,7 +104,8 @@ export interface StorefrontSettingsInput {
 export interface BannerInput {
   title?: string | null;
   description?: string | null;
-  imageUrl?: string | null;
+  /** Both pictures and their framing, resolved against this org's library (image-slots D7). */
+  image?: ImageSlotWriteInput | null;
   imageAlt?: string | null;
   href?: string | null;
   isActive?: boolean;
@@ -90,6 +113,11 @@ export interface BannerInput {
 
 /** Empty strings from a form mean "cleared", not "set to nothing". */
 const orNull = (value: string | null | undefined) => value?.trim() || null;
+
+/** A slot's pictures as the editor's field holds them. A slot saved before D10 has no framing: its one picture is the desktop one. */
+function slotImageValue(slot: { asset: { ref: string } | null; phoneAsset: { ref: string } | null; imageFraming: unknown }): ImageSlotValue | null {
+  return toImageSlotValue(slotImageRow(slot));
+}
 
 /**
  * A JSON column has two kinds of nothing. `null` tells Prisma to leave the column as it is,
@@ -101,12 +129,14 @@ const jsonOrNull = (value: unknown) =>
     ? Prisma.JsonNull
     : (value as Prisma.InputJsonValue);
 
-/** Whitelisted field by field — the payload is never spread into a write. */
-function normaliseBanner(input: BannerInput): OrgBannerInput {
+/** Whitelisted field by field — the payload is never spread into a write. A shop's pictures come only
+ *  from its own library (spec R7). */
+async function normaliseBanner(orgId: string, input: BannerInput, current: CurrentImage | null): Promise<OrgBannerInput> {
+  const image = await resolveImageSlot(IMAGE_SLOT.ORG_BANNER, orgId, input.image ?? null, current);
   return {
+    ...image,
     title: orNull(input.title),
     description: orNull(input.description),
-    imageUrl: orNull(input.imageUrl),
     imageAlt: orNull(input.imageAlt),
     href: orNull(input.href),
     isActive: input.isActive ?? true,
@@ -198,10 +228,18 @@ export const storefrontService = {
       dispatchDays,
       heroLine: profile.heroLine?.trim() || null,
       heroPhotos: slots.filter((s) => s.kind === StorefrontSlotKind.HERO && s.asset).map((s) => s.asset!.ref),
+      heroImages: slots
+        .filter((s) => s.kind === StorefrontSlotKind.HERO && s.asset)
+        .flatMap((s) => toResponsiveImage(slotImageRow(s), brand.name) ?? []),
       collections: shown(SECTION.COLLECTIONS)
         ? slots
             .filter((s) => s.kind === StorefrontSlotKind.COLLECTION && s.category)
-            .map((s) => ({ slug: s.category!.slug, name: s.category!.name, photoUrl: s.asset?.ref ?? (s.category!.heroImage || null) }))
+            .map((s) => ({
+              slug: s.category!.slug,
+              name: s.category!.name,
+              photoUrl: s.asset?.ref ?? (s.category!.heroImage || null),
+              image: s.asset ? toResponsiveImage(slotImageRow(s), s.category!.name) : null,
+            }))
         : [],
       claims: readClaims(profile.claims, productType).map((c) => ({ label: CLAIM_LABEL[c.key], detail: c.detail })),
       openingHours: shown(SECTION.VISIT) ? readOpeningHours(profile.openingHours) : null,
@@ -248,9 +286,10 @@ export const storefrontService = {
       openingHours: readOpeningHours(openingHours),
       storefrontHiddenSections: readHiddenSections(storefrontHiddenSections),
       heroPhotos: slots.filter((s) => s.kind === StorefrontSlotKind.HERO && s.asset).map((s) => s.asset!.ref),
+      heroImages: slots.flatMap((s) => (s.kind === StorefrontSlotKind.HERO ? [slotImageValue(s)].filter((v) => v !== null) : [])),
       collections: slots
         .filter((s) => s.kind === StorefrontSlotKind.COLLECTION && s.category)
-        .map((s) => ({ categoryId: s.category!.id, photoUrl: s.asset?.ref ?? null })),
+        .map((s) => ({ categoryId: s.category!.id, photoUrl: s.asset?.ref ?? null, image: slotImageValue(s) })),
       claimOptions: claimsFor(productType).map((key) => ({ key, label: CLAIM_LABEL[key] })),
       categoryOptions: categories
         .filter((c) => sold.has(c.id))
@@ -289,15 +328,42 @@ export const storefrontService = {
       if (!asset) throw new DomainError(NOT_A_PHOTO, { status: 400, field });
       return asset.id;
     };
+    // A picture already on a slot keeps its place even if it predates the library's sizes (image-slots R8).
+    const existing = input.heroImages != null || input.collections?.some((c) => c.image !== undefined)
+      ? await orgStorefrontSlotRepository.listForOrg(orgId)
+      : [];
+    const currentOf = (url: string | undefined): CurrentImage | null => {
+      const slot = url ? existing.find((s) => s.asset?.ref === url) : undefined;
+      return slot ? { imageUrl: url!, imageAssetId: slot.assetId } : null;
+    };
+    // One set, resolved against this shop's library: the same write path as its banners (D7).
+    const imageSlot = async (slot: typeof IMAGE_SLOT.STOREFRONT_HERO | typeof IMAGE_SLOT.STOREFRONT_COLLECTION, image: ImageSlotWriteInput | null, field: string) => {
+      const columns = await resolveImageSlot(slot, orgId, image, currentOf(image?.desktop?.url), field);
+      return {
+        assetId: columns.imageAssetId ?? columns.phoneImageAssetId,
+        phoneAssetId: columns.phoneImageAssetId,
+        imageFraming: columns.imageAssetId || columns.phoneImageAssetId ? columns.imageFraming : Prisma.JsonNull,
+      };
+    };
     const hero =
-      input.heroPhotos == null
-        ? input.heroPhotos
-        : await Promise.all(input.heroPhotos.map(async (url) => ({ categoryId: null, assetId: await assetOf(url, "heroPhotos") })));
+      input.heroImages != null
+        ? (
+            await Promise.all(
+              input.heroImages.map(async (image) => ({ categoryId: null, ...(await imageSlot(IMAGE_SLOT.STOREFRONT_HERO, image, "heroImages")) })),
+            )
+          ).filter((slot) => slot.assetId !== null)
+        : input.heroPhotos == null
+          ? input.heroPhotos
+          : await Promise.all(input.heroPhotos.map(async (url) => ({ categoryId: null, assetId: await assetOf(url, "heroPhotos") })));
     const collections =
       input.collections == null
         ? input.collections
         : await Promise.all(
-            input.collections.map(async (c) => ({ categoryId: c.categoryId, assetId: await assetOf(c.photoUrl, "collections") })),
+            input.collections.map(async (c) =>
+              c.image !== undefined
+                ? { categoryId: c.categoryId, ...(await imageSlot(IMAGE_SLOT.STOREFRONT_COLLECTION, c.image, "collections")) }
+                : { categoryId: c.categoryId, assetId: await assetOf(c.photoUrl, "collections") },
+            ),
           );
 
     const now = new Date();
@@ -406,24 +472,30 @@ export const storefrontService = {
 
   /** This org's banners, live and taken down, for its own editor. */
   async listBanners(orgId: string) {
-    return await orgBannerRepository.listForOrg(orgId);
+    const rows = await orgBannerRepository.listForOrg(orgId);
+    return rows.map((row) => ({
+      id: row.id,
+      orgId: row.orgId,
+      title: row.title,
+      description: row.description,
+      imageUrl: row.imageUrl,
+      image: toImageSlotValue(row),
+      imageAlt: row.imageAlt,
+      href: row.href,
+      isActive: row.isActive,
+    }));
   },
 
   async addBanner(orgId: string, input: BannerInput) {
     const href = await this.resolveOwnHref(orgId, input.href);
-    return await orgBannerRepository.create(
-      orgId,
-      normaliseBanner({ ...input, href }),
-    );
+    return await orgBannerRepository.create(orgId, await normaliseBanner(orgId, { ...input, href }, null));
   },
 
   async editBanner(orgId: string, id: string, input: BannerInput) {
     const href = await this.resolveOwnHref(orgId, input.href);
-    const updated = await orgBannerRepository.update(
-      orgId,
-      id,
-      normaliseBanner({ ...input, href }),
-    );
+    const current = await orgBannerRepository.findForOrg(orgId, id);
+    if (!current) throw new NotFoundError("Banner not found");
+    const updated = await orgBannerRepository.update(orgId, id, await normaliseBanner(orgId, { ...input, href }, current));
     if (!updated) throw new NotFoundError("Banner not found");
   },
 

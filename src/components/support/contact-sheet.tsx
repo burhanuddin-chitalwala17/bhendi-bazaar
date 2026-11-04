@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CheckCircle2, FileText, Mail, MessageCircle, X } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 
 import {
   Sheet,
@@ -83,7 +83,7 @@ export function ContactSheet({
             aria-label="Close"
             className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            <X className="size-4" />
+            <Icon name="close" size="sm" />
           </SheetClose>
         </div>
 
@@ -96,9 +96,9 @@ export function ContactSheet({
               onClick={() => handleOpenChange(false)}
               className={OPTION_ROW}
             >
-              <MessageCircle
-                className={`size-5 shrink-0 ${SOCIAL_BRAND.whatsapp.color}`}
-              />
+              <span className={SOCIAL_BRAND.whatsapp.color}>
+                <Icon name="message" size="md" />
+              </span>
               <span className="min-w-0">
                 <span className="block text-sm font-semibold">WhatsApp</span>
                 <span className="block text-2xs text-muted-foreground">
@@ -113,7 +113,7 @@ export function ContactSheet({
               onClick={() => setStep("message")}
               className={OPTION_ROW}
             >
-              <Mail className="size-5 shrink-0 text-muted-foreground" />
+              <Icon name="email" size="md" tone="muted" />
               <span className="min-w-0">
                 <span className="block text-sm font-semibold">
                   Send a message
@@ -130,7 +130,7 @@ export function ContactSheet({
               onClick={() => handleOpenChange(false)}
               className={OPTION_ROW}
             >
-              <FileText className="size-5 shrink-0 text-muted-foreground" />
+              <Icon name="file" size="md" tone="muted" />
               <span className="min-w-0">
                 <span className="block text-sm font-semibold">Store policies</span>
                 <span className="block text-2xs text-muted-foreground">
@@ -152,7 +152,7 @@ export function ContactSheet({
         {step === "sent" && (
           <div className="space-y-3 pt-1 text-sm">
             <p className="flex items-center gap-2 text-success">
-              <CheckCircle2 className="size-5 shrink-0" />
+              <Icon name="success" size="md" />
               Thank you — we have your message.
             </p>
             <p className="text-2xs text-muted-foreground">

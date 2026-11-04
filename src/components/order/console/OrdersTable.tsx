@@ -1,13 +1,13 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { DataTable, Column } from "@/components/shared/data-table";
-import type { AdminOrderRow } from "@server/checkout/admin.order.types";
-import { cn } from "@/lib/utils";
-import { formatShortDate, titleCase } from "@/lib/format";
-import { ORDER_STATUS, PAYMENT_STATUS } from "@server/checkout/order.types";
+import { ListPagination, ResourceList, type ResourceColumn } from "@/components/shared/resource-list";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { Money } from "@/components/shared/Money";
+import { formatShortDate } from "@/lib/format";
+import type { AdminOrderRow } from "@server/checkout/admin.order.types";
+import { orderChip, paymentChip } from "./order-status";
 
 interface Props {
   orders: AdminOrderRow[];
@@ -17,12 +17,35 @@ interface Props {
   total: number;
 }
 
+/** The order's columns, shared with the dashboard's latest orders so the two cannot disagree. */
+const ORDER_COLUMNS: ResourceColumn<AdminOrderRow>[] = [
+  { key: "code", label: "Order", cell: (o) => <span className="font-mono">{o.code}</span>, phone: "title" },
+  { key: "buyer", label: "Buyer", cell: (o) => o.customerName || "Guest", phone: "meta" },
+  { key: "total", label: "Total", cell: (o) => <Money paise={o.grandTotal || 0} />, sortable: true, align: "end", phone: "meta" },
+  {
+    key: "status",
+    label: "Status",
+    cell: (o) => {
+      const chip = orderChip(o.status);
+      return <StatusBadge tone={chip.tone} dot>{chip.label}</StatusBadge>;
+    },
+    phone: "status",
+  },
+  {
+    key: "payment",
+    label: "Payment",
+    cell: (o) => {
+      const chip = paymentChip(o.paymentStatus);
+      return <StatusBadge tone={chip.tone}>{chip.label}</StatusBadge>;
+    },
+    phone: "hidden",
+  },
+  { key: "createdAt", label: "Placed", cell: (o) => formatShortDate(o.createdAt), sortable: true, phone: "meta" },
+];
+
 /**
  * The rows. The status is read-only: it summarises the parcels (order-fulfilment D4, Q30), which
- * move from the pickup queue and the order's own screen.
- *
- * Paging and sorting navigate rather than refetch — the page above is a server component
- * ([ADR-0034]) and the URL is where the query lives.
+ * move from the pickup queue and the order's own screen. Paging navigates; the URL is the query.
  */
 export function OrdersTable({ orders, page, pageSize, totalPages, total }: Props) {
   const router = useRouter();
@@ -38,84 +61,40 @@ export function OrdersTable({ orders, page, pageSize, totalPages, total }: Props
     router.push(`${pathname}?${next.toString()}`);
   };
 
-  const columns: Column<AdminOrderRow>[] = [
-    {
-      key: "code",
-      label: "Order Code",
-      sortable: true,
-      render: (order) => (
-        <a
-          href={`/admin/orders/${order.id}`}
-          className="font-mono font-semibold text-primary hover:underline"
-        >
-          {order.code}
-        </a>
-      ),
-    },
-    {
-      key: "userName",
-      label: "Customer",
-      render: (order) => <p className="font-medium">{order.customerName || "Guest"}</p>,
-    },
-    {
-      key: "grandTotal",
-      label: "Total",
-      render: (order) => (
-        <span className="font-semibold"><Money paise={order.grandTotal || 0} /></span>
-      ),
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (order) => (
-        <span
-          className={cn(
-            "rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground",
-            order.status === ORDER_STATUS.SHIPPED && "bg-accent/40 text-accent-foreground",
-            order.status === ORDER_STATUS.DELIVERED && "bg-success/15 text-success",
-          )}
-        >
-          {titleCase(order.status)}
-        </span>
-      ),
-    },
-    {
-      key: "paymentStatus",
-      label: "Payment",
-      render: (order) => (
-        <span
-          className={cn(
-            "rounded-full px-3 py-1 text-xs font-medium",
-            order.paymentStatus === PAYMENT_STATUS.PAID && "bg-success/15 text-success",
-            order.paymentStatus === PAYMENT_STATUS.FAILED && "bg-destructive/15 text-destructive",
-            order.paymentStatus !== PAYMENT_STATUS.PAID &&
-              order.paymentStatus !== PAYMENT_STATUS.FAILED &&
-              "bg-warning/15 text-warning",
-          )}
-        >
-          {titleCase(order.paymentStatus || PAYMENT_STATUS.PENDING)}
-        </span>
-      ),
-    },
-    {
-      key: "createdAt",
-      label: "Date",
-      sortable: true,
-      render: (order) => formatShortDate(order.createdAt),
-    },
-  ];
-
   return (
-    <DataTable
-      data={orders}
-      columns={columns}
-      totalPages={totalPages}
-      currentPage={page}
-      totalItems={total}
-      pageSize={pageSize}
-      onPageChange={(next) => go({ page: String(next) })}
-      onPageSizeChange={(limit) => go({ limit: String(limit), page: "" })}
-      onSort={(key, order) => go({ sortBy: key, sortOrder: order })}
+    <ResourceList
+      label="Orders"
+      rows={orders}
+      rowKey={(o) => o.id}
+      rowHref={(o) => `/admin/orders/${o.id}`}
+      columns={ORDER_COLUMNS}
+      empty={{ title: "No orders here", description: "Orders that match this view appear here." }}
+      footer={
+        <ListPagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          shown={orders.length}
+          pageSize={pageSize}
+          onPageChange={(next) => go({ page: String(next) })}
+          onPageSizeChange={(limit) => go({ limit: String(limit), page: "" })}
+        />
+      }
+    />
+  );
+}
+
+/** The newest few, for the dashboard: the same columns, no paging, sort stays with the orders page. */
+export function LatestOrdersList({ orders }: { orders: AdminOrderRow[] }) {
+  return (
+    <ResourceList
+      label="Latest orders"
+      rows={orders}
+      rowKey={(o) => o.id}
+      rowHref={(o) => `/admin/orders/${o.id}`}
+      columns={ORDER_COLUMNS.map((c) => ({ ...c, sortable: false }))}
+      tableFrom="lg"
+      empty={{ title: "No orders yet", description: "The newest orders appear here as they are placed." }}
     />
   );
 }

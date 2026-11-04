@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { X } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { MAX_ZOOM_SCALE, ZOOMABLE_IMAGE_SIZES } from "@server/catalog/media";
 import {
@@ -223,11 +223,11 @@ export function ImageLightbox({
           <Button
             type="button"
             variant="ghost"
-            size="icon-lg"
-            className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 z-30 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full backdrop-blur-sm"
+            shape="icon" size="lg"
+            className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 z-30 bg-scrim/80 text-hero-foreground hover:bg-hero/90 border border-primary/30 rounded-full backdrop-blur-sm"
             aria-label="Close full view"
           >
-            <X className="size-5 text-hero-foreground" />
+            <Icon name="close" size="md" />
           </Button>
         </DialogClose>
 

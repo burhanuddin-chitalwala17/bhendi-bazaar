@@ -1,22 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { HeroBanner, type HeroBannerContent } from "./hero-banner";
 import { cn } from "@/lib/utils";
 
 const ADVANCE_MS = 6000;
 
-/**
- * The banner rail. Built on scroll-snap rather than a transform track, so a phone
- * gets native momentum swipe for free and the whole thing still works before the
- * JavaScript lands — the same pattern the offers strip and category lanes already use.
- *
- * `"use client"` is earned here and nowhere else in the hero: HeroBanner stays a
- * server component, and only the rail around it needs state.
- */
+/** The banner rail, on scroll-snap so a phone swipes natively and it works before JavaScript lands. */
 export function HeroSlider({ banners }: { banners: HeroBannerContent[] }) {
   const railRef = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
@@ -114,28 +107,28 @@ export function HeroSlider({ banners }: { banners: HeroBannerContent[] }) {
           <Button
             type="button"
             variant="ghost"
-            size="icon"
+            shape="icon"
             aria-label="Previous banner"
             onClick={() => {
               setStopped(true);
               goTo(index - 1);
             }}
-            className="absolute left-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-scrim/40 text-hero-foreground hover:bg-scrim/60 sm:flex"
+            className="absolute left-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-scrim/40 text-hero-foreground hover:bg-scrim/60 md:flex"
           >
-            <ChevronLeft />
+            <Icon name="previous" size="md" />
           </Button>
           <Button
             type="button"
             variant="ghost"
-            size="icon"
+            shape="icon"
             aria-label="Next banner"
             onClick={() => {
               setStopped(true);
               goTo(index + 1);
             }}
-            className="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-scrim/40 text-hero-foreground hover:bg-scrim/60 sm:flex"
+            className="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-scrim/40 text-hero-foreground hover:bg-scrim/60 md:flex"
           >
-            <ChevronRight />
+            <Icon name="next" size="md" />
           </Button>
 
           {/* The scrim is gone at rest on desktop, so the dots carry their own ground
@@ -147,7 +140,7 @@ export function HeroSlider({ banners }: { banners: HeroBannerContent[] }) {
                   key={banner.id}
                   type="button"
                   variant="ghost"
-                  size="icon"
+                  shape="icon"
                   aria-label={`Go to banner ${i + 1}`}
                   aria-current={i === index}
                   onClick={() => {
@@ -158,7 +151,7 @@ export function HeroSlider({ banners }: { banners: HeroBannerContent[] }) {
                 >
                   <span
                     className={cn(
-                      "block h-1.5 rounded-full transition-all",
+                      "block h-1.5 rounded-full transition-all duration-base",
                       i === index
                         ? "w-5 bg-hero-foreground"
                         : "w-1.5 bg-hero-foreground/50",

@@ -1,11 +1,11 @@
-// src/components/admin/shipping/ProvidersContainer.tsx
-
 "use client";
 
 import { useShippingProviders } from "@/components/shipping/providers-console/hooks/useShippingProviders";
 import { ProviderCard } from "./component/ProviderCard";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/shared/states/EmptyState";
+import { ErrorState } from "@/components/shared/states/ErrorState";
+import { SkeletonTiles } from "@/components/shared/states/skeletons";
 import { useState } from "react";
 import { ConnectProviderModal } from "./component/ConnectProviderModal";
 import type { ConnectionRequestBody } from "./types";
@@ -74,50 +74,30 @@ export function ProvidersContainer() {
     await disconnectProvider(providerId);
   };
 
-  // Loading state
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="p-6 animate-pulse">
-              <div className="h-6 bg-muted rounded w-1/4 mb-2" />
-              <div className="h-4 bg-muted rounded w-3/4" />
-            </Card>
-          ))}
-        </div>
+      <div role="status" aria-label="Loading shipping providers">
+        <SkeletonTiles count={3} />
       </div>
     );
   }
 
-  // Error state
   if (error && providers.length === 0) {
     return (
-      <Card className="p-8 text-center border-destructive/30 bg-destructive/10">
-        <p className="text-destructive font-semibold mb-2">
-          Failed to load providers
-        </p>
-        <p className="text-sm text-destructive mb-4">{error}</p>
-        <Button onClick={refreshProviders} variant="outline">
-          Try Again
-        </Button>
-      </Card>
+      <ErrorState
+        title="Shipping providers didn't load"
+        description={error}
+        onRetry={refreshProviders}
+      />
     );
   }
 
-  // Empty state
   if (providers.length === 0) {
     return (
-      <div className="space-y-4">
-        <Card className="p-8 text-center">
-          <p className="text-muted-foreground mb-2">
-            No shipping providers configured yet.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Contact your developer to set up shipping providers.
-          </p>
-        </Card>
-      </div>
+      <EmptyState
+        title="No shipping providers yet"
+        description="A provider is registered by a data migration; once one exists, connect its account here."
+      />
     );
   }
 
@@ -128,7 +108,7 @@ export function ProvidersContainer() {
         {/* Error banner (if any, but providers exist) */}
         {error && (
           <Card className="p-4 border-warning/30 bg-warning/10">
-            <p className="text-sm text-warning">{error}</p>
+            <p className="text-small text-warning">{error}</p>
           </Card>
         )}
 

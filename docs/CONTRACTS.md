@@ -110,6 +110,8 @@ Two further shapes worth naming. Action `href` must be **relative** — the hero
 
 The read side does not cross this boundary: the storefront hero is a server component reading `bannersDAL.getActiveBanners()`, so there is no storefront route handler and no wire shape to keep in step.
 
+Since image-slots (design-system Q24, 2026-11-04) a banner carries **a picture per form factor**. In `BannerFormSchemaInput` and `OrgBannerFormInput`, `imageUrl` is replaced by **`image: ImageSlotInput | null`** (`imageSlotInputSchema`, `src/lib/validation/schemas/image-slot.schema.ts`): `{ desktop: Side | null, phone: Side | null, phoneFocus: { x, y } }`, a `Side` being `{ url, fit: "crop" | "contain", crop: { x, y, width, height } | null, fill: "#rrggbb" | null }`. The crop travels as **fractions of the picture** (0–1), so it survives the upload's downscale; the server turns it into pixels with the asset's own size, refuses a crop outside the picture or off the slot's shape by more than 2%, and refuses "fit it in" without a fill. The picture must be a ready image in the owner's own library (the platform's for a home banner, the shop's for its banner), and a picture of anyone else is refused. Slot shapes are declared once in `server/catalog/image-slots.ts`. Stored as `imageFraming` (`server/catalog/image-framing.ts`, parsed on read, never cast; a missing or invalid value reads as centred cover) plus real `phoneImageAssetId` / `phoneImageUrl` columns, so the media library still knows a phone picture is in use. `AdminBanner` gains `imageAssetId`, `phoneImageUrl` and `imageFraming`. The server read `HeroBannerContent.image` changes from `{ src, alt }` to **`ResponsiveImageDto`** `{ alt, phone, desktop }`, each `{ src, fit, position, fill }`, both always filled: the phone falls back to the desktop picture around the chosen focus on the server.
+
 ### Seller profile
 
 The storefront's public organisation shape is `Storefront` in `src/data-access-layer/storefront.dal.ts` — identity (`id`, `handle`, `name`) plus the public face (`about`, `tagline`, `logoUrl`, `heroUrl`, `accent`, `deliveryPolicy`, `returnsPolicy`). Since [seller-profile](specs/seller-profile/) PR 1 it is built from `OrgProfile` through `PUBLIC_PROFILE_SELECT` and `PUBLIC_ORG_IDENTITY_SELECT` in `server/catalog/org-profile.repository.ts`, and `tests/unit/storefront-public-dto.test.ts` holds both selects to an allowlist: a column added to `Org` cannot reach a buyer. The shape itself did not change in that PR, so the entry carries no `[CONTRACT]`.
@@ -212,6 +214,12 @@ sheet's `claimOptions` and `categoryOptions`. **`StorefrontPageDto`** gains `her
 (`{ slug, name, photoUrl }`), `claims` (`{ label, detail }`), `openingHours` and `themedHiddenSections`; a hidden
 section's content is left out (story's `about` and `owner` too). **`StorefrontLookState`** gains `suggested: { theme,
 label } | null`. `MediaUseDto.kind` gains `storefront-collection`; `ReferenceCounts` gains `storefrontSlots`.
+Since image-slots D10 (2026-11-04) a storefront photo has a phone and a desktop version: `StorefrontSettingsInput`
+gains optional **`heroImages`** (≤3 `ImageSlotInput`, the banner shape in Banners below) and
+**`collections[].image`** (`ImageSlotInput`); each is resolved through `resolveImageSlot`, org-scoped, and the
+slot's own photo stays the desktop picture (else the phone one) so `heroPhotos` and `photoUrl` keep working.
+`StorefrontSettingsDto` returns `heroImages: ImageSlotValue[]` and `collections[].image`; `StorefrontPageDto`
+gains `heroImages: ResponsiveImageDto[]` and `collections[].image?: ResponsiveImageDto | null`. Additive.
 
 Since order-fulfilment unit 2 a shop's orders read as **`ShopOrderView`** / **`ShopParcelView`**
 (`server/checkout/shop-parcel.types.ts`): only the shop's own parcels on paid orders, each with `status`,
@@ -290,7 +298,15 @@ the server only (Home), never sent by a route. Two routes, `withOrg`, no body, e
 `{ ok: true }` and idempotent: `POST`/`DELETE /api/org/[orgId]/setup/hidden` (hide, unhide) and
 `POST /api/org/[orgId]/setup/shared` (the first share). Caller: `src/components/org/home/setupApiClient.ts`.
 **`HomeAttentionDto`** (`src/data-access-layer/org/home.dal.ts`) is a server read for Home's lines,
-each `{ ok: true, value } | { ok: false }`; no wire shape.
+each `{ ok: true, value } | { ok: false }`; no wire shape. Since design-system Q31 (2026-11-04) it carries
+`toPack` (paid parcels still packing, with the oldest wait) and `lowStock` (products at or under their
+threshold that sold in the last 30 days, with the days until the first runs out) in place of `parcels`,
+`reviews` and `auction`; `HomeAuction` is gone. The admin dashboard's **`SalesOverview`**
+(`server/analytics/sales.types.ts`: per-day paise for the period and the one before, totals, paid
+orders, average order, platform kept, shops selling, each `{ current, previous, changeBps }`) and
+**`AdminAttention`** (`server/analytics/attention.types.ts`: at most five `{ key, count, waiting, oldestAt,
+href }`, keys from `ADMIN_ATTENTION`) are server reads through `src/data-access-layer/admin/dashboard.dal.ts`;
+no wire shape.
 
 ### Listing vocabulary
 
@@ -607,6 +623,10 @@ Since product-form unit 4 an edit is a **compare-and-set on `Product.version`** 
 Since product-form unit 5 the **Bhendi Bazaar team saves a shop's product** through admin twins of those routes ([product-form](specs/own-store/product-form/trd.md) D11, D12): `POST /api/admin/orgs/[id]/products` parses **`teamProductFormSchema`** and `PATCH /api/admin/products/[id]` **`teamProductEditSchema`** (the shop's edit without `orgId`) — the shop's schemas plus a required **`reason`** (string, trimmed, 3–200; "Say why — the shop will read it."). The org is the path's or the product's; a body `orgId` is never used. An archived product is a **409** "This product is archived. Restore it to edit."; `POST /api/admin/products/[id]/restore` answers `{ id, archivedAt }`. Each team save writes one `AdminLog` row (`resource: "Product"`, action `PRODUCT_TEAM_CREATED` | `PRODUCT_TEAM_UPDATED`, declared in `server/catalog/product-team.ts`) with metadata `{ orgId, reason, changes: Array<{ field, at?, before, after }> }`, money first and in paise; a stock change's `at` is `"{location name} ({orgAddressId})"`. The org-facing `ProductDetails` gains read-only **`archivedAt?: Date | null`**.
 
 Since product-form unit 6 the **shop reads the team's saves** ([product-form](specs/own-store/product-form/trd.md) D13): **`ProductTeamEditDto`** (`server/catalog/product-team.ts`) is `{ id, at: Date, created: boolean, reason, changes: Array<{ field, at?, before, after }> }` — the stored `changes` as written, money first and in paise, newest entry first, and **no admin identity** (the entry is read without its `adminId`; the shop is told "Bhendi Bazaar team"). It is a server read on `/org/[orgId]/products/[id]`, not a route; an entry that does not parse or names another org is left out. The org-facing `ProductForTable` gains read-only **`teamEditedAt: Date | null`**, and Home's `HomeAttentionDto` gains **`teamEdits: HomeRead<{ count, productId }>`** — available products with `teamEditedAt` set, `productId` only when there is one.
+
+Since design-system Q29 (2026-11-04) products can be **edited in bulk**. `POST /api/org/[orgId]/products/bulk-edit` parses **`bulkProductActionSchema`** and `POST /api/admin/products/bulk-edit` **`teamBulkProductActionSchema`** (`src/lib/validation/schemas/product-bulk.schema.ts`) — a strict discriminated union on `action`: `{ action: "price", productIds, change }` where `change` is `{ mode: "set", pricePaise }` | `{ mode: "amount", deltaPaise }` | `{ mode: "percent", percent }`; `{ action: "stock", rows: Array<{ productId, orgAddressId, quantity, seenQuantity }> }`; `{ action: "archive", productIds }`; `{ action: "send", productIds, channel: "amazon" | "flipkart" }`. The team's version adds the required `reason`. At most `MAX_BULK_PRODUCTS` (200) ids, no duplicates; no server-owned field is accepted. The answer is **`BulkActionResultDTO`** `{ action, updated, skipped: Array<{ productId, reason }>, conflicts: Array<{ productId, orgAddressId, seenQuantity, currentQuantity }> }` (`server/catalog/product-bulk.types.ts`), `reason` from the closed set `BULK_SKIP_REASON`. A product of another org is skipped as `not_found`, never touched; a stock row that moved since it was read comes back as a conflict, never overwritten (Invariant 6). Percent changes round to the nearest paisa, half away from zero; a result must lie between 1 paisa and `MAX_PRICE_PAISE`. Each team change writes the same `PRODUCT_TEAM_UPDATED` entry a single team save does, so it reaches the shop's history.
+
+Since design-system Q29 the org-facing **`ProductForTable`** carries **`stockByLocation`**: `Array<{ orgAddressId, quantity }>`, the rows the bulk stock dialog pre-fills and sends back as `seenQuantity`. Read-only, never accepted on a product save.
 
 The three shipping-origin fields — `shippingFromPincode`, `shippingFromCity`, `shippingFromLocation` — are an all-or-none group: either all three are present or all three are absent. Enforced in `productFormSchema`, so both the form and the route apply it. Absent is spelled `NULL`, never `''`; readers treat absence as "fall back to the org's default address". That fallback is evaluated on four separate read paths, and one of them mixes a product's pincode with its org's city; [stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) replaces all three fields with a foreign key and removes the fallback.
 

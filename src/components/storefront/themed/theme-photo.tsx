@@ -1,6 +1,8 @@
 import Image from "next/image";
 
 import { cn } from "@/lib/utils";
+import { ResponsiveImage } from "@/components/shared/responsive-image";
+import type { ResponsiveImageDto } from "@server/catalog/image-framing";
 
 /**
  * A photo slot that is never an empty box (R10, Q17): the image through the optimizer at the
@@ -9,6 +11,7 @@ import { cn } from "@/lib/utils";
  */
 export function ThemePhoto({
   src,
+  image,
   alt,
   sizes,
   initial,
@@ -16,6 +19,8 @@ export function ThemePhoto({
   className,
 }: {
   src: string | null;
+  /** The phone and desktop framing the shop chose (image-slots D10); wins over `src` when present. */
+  image?: ResponsiveImageDto | null;
   alt: string;
   sizes: string;
   /** Drawn on the pattern when there is no photo; omit where no mark belongs. */
@@ -25,7 +30,9 @@ export function ThemePhoto({
 }) {
   return (
     <div className={cn("relative overflow-hidden", className)}>
-      {src ? (
+      {image ? (
+        <ResponsiveImage image={image} sizes={{ phone: sizes, desktop: sizes }} preload={priority} />
+      ) : src ? (
         <Image src={src} alt={alt} fill sizes={sizes} priority={priority} className="object-cover" />
       ) : (
         <div

@@ -1,8 +1,10 @@
 import { orgOrdersDAL } from "@/data-access-layer/org/orders.dal";
 import { PageHeader } from "@/components/shared/page-shell";
 import Link from "next/link";
-import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { PageTabs } from "@/components/shared/page-tabs";
+import { EmptyState } from "@/components/shared/states/EmptyState";
 import { Input } from "@/components/ui/input";
 import { ShopOrderList } from "@/components/org/parcels/shop-order-list";
 import { ListFreshness } from "@/components/org/parcels/list-freshness";
@@ -31,11 +33,16 @@ export default async function OrgOrdersPage({
   if (!scope) return <ShopOrdersRefused />;
   const orgId = scope.orgId;
   const raw = await searchParams;
+  // Store or marketplace: a segmented control, two links, so each is a URL (inventory-sync Q10).
   const tabs = (active: "store" | "marketplace") => (
-    <nav className="flex gap-2" aria-label="Orders">
+    <nav aria-label={SHOP_ORDERS_COPY.where} className="inline-flex rounded-field bg-muted p-1">
       {(["store", "marketplace"] as const).map((t) => (
-        <Button key={t} asChild size="sm" variant={t === active ? "default" : "outline"} className="min-h-10">
-          <Link href={t === "store" ? `/org/${orgId}/orders` : `/org/${orgId}/orders?tab=marketplace`} aria-current={t === active ? "page" : undefined}>
+        <Button key={t} asChild size="sm" variant={t === active ? "outline" : "ghost"} className={t === active ? "shadow-none" : "text-muted-foreground"}>
+          <Link
+            href={t === "store" ? `/org/${orgId}/orders` : `/org/${orgId}/orders?tab=marketplace`}
+            prefetch={false}
+            aria-current={t === active ? "page" : undefined}
+          >
             {t === "store" ? MARKETPLACE_ORDERS.tabStore : MARKETPLACE_ORDERS.tabMarketplace}
           </Link>
         </Button>
@@ -59,7 +66,10 @@ export default async function OrgOrdersPage({
   const tab = isShopParcelTab(raw.status) ? raw.status : SHOP_PARCEL_TAB.TO_PACK;
   const pages = Math.max(1, Number.parseInt(typeof raw.more === "string" ? raw.more : "1", 10) || 1);
   const search = typeof raw.search === "string" ? raw.search.trim() : "";
-  const { orders, hasMore } = await orgOrdersDAL.list(orgId, tab, pages, search || undefined);
+  const [{ orders, hasMore }, counts] = await Promise.all([
+    orgOrdersDAL.list(orgId, tab, pages, search || undefined),
+    orgOrdersDAL.tabCounts(orgId),
+  ]);
   const firstUse = orders.length === 0 && !search && (await orgOrdersDAL.list(orgId, "all", 1)).total === 0;
   const tabHref = (t: ShopParcelTab) => `/org/${orgId}/orders?status=${t}`;
   const moreHref = `/org/${orgId}/orders?status=${tab}&more=${pages + 1}${search ? `&search=${encodeURIComponent(search)}` : ""}`;
@@ -68,40 +78,37 @@ export default async function OrgOrdersPage({
     <div className="space-y-4">
       <PageHeader help="orders" title={SHOP_ORDERS_COPY.title} />
       {tabs("store")}
-      <nav className="flex gap-2 overflow-x-auto" aria-label="Parcels">
-        {Object.values(SHOP_PARCEL_TAB).map((t) => (
-          <Button key={t} asChild size="sm" variant={t === tab ? "default" : "outline"} className="min-h-10 shrink-0">
-            <Link href={tabHref(t)} aria-current={t === tab ? "page" : undefined}>
-              {SHOP_TAB_LABEL[t]}
-            </Link>
-          </Button>
-        ))}
-      </nav>
+      <PageTabs
+        label={SHOP_ORDERS_COPY.status}
+        current={tab}
+        tabs={Object.values(SHOP_PARCEL_TAB).map((t) => ({ key: t, label: SHOP_TAB_LABEL[t], href: tabHref(t), count: counts[t] }))}
+      />
+      {tab === SHOP_PARCEL_TAB.TO_PACK && orders.length > 0 && <p className="text-small text-muted-foreground">{SHOP_ORDERS_COPY.toPackHint}</p>}
       <form className="flex gap-2" action={`/org/${orgId}/orders`}>
         <input type="hidden" name="status" value={tab} />
-        <Input name="search" defaultValue={search} placeholder={SHOP_ORDERS_COPY.search} aria-label={SHOP_ORDERS_COPY.search} className="min-h-10 flex-1" />
-        <Button type="submit" variant="outline" className="min-h-10" aria-label={SHOP_ORDERS_COPY.search}>
-          <Search className="size-4" />
+        <Input type="search" name="search" defaultValue={search} placeholder={SHOP_ORDERS_COPY.search} aria-label={SHOP_ORDERS_COPY.search} className="flex-1" />
+        <Button type="submit" variant="outline" shape="icon" aria-label={SHOP_ORDERS_COPY.search}>
+          <Icon name="search" size="sm" />
         </Button>
       </form>
       <ListFreshness />
 
       {firstUse ? (
-        <div className="rounded-card border bg-card p-6 text-center">
-          <p className="text-sm text-muted-foreground">{SHOP_ORDERS_COPY.firstUse}</p>
-          <Button asChild variant="outline" className="mt-3 min-h-10">
-            <Link href={`/org/${orgId}/storefront`}>{SHOP_ORDERS_COPY.shareShop}</Link>
-          </Button>
-        </div>
+        <EmptyState
+          className="rounded-card border border-border bg-card px-4"
+          title={SHOP_ORDERS_COPY.noOrders}
+          description={SHOP_ORDERS_COPY.firstUse}
+          action={{ label: SHOP_ORDERS_COPY.shareShop, href: `/org/${orgId}/shop` }}
+        />
       ) : orders.length === 0 ? (
-        <p className="rounded-card border bg-card p-6 text-center text-sm text-muted-foreground">{SHOP_TAB_EMPTY[tab]}</p>
+        <EmptyState className="rounded-card border border-border bg-card px-4" title={SHOP_TAB_EMPTY[tab]} description={SHOP_ORDERS_COPY.emptyTab} />
       ) : (
-        <ShopOrderList orders={orders} orderHref={(id) => `/org/${orgId}/orders/${id}`} />
+        <ShopOrderList orders={orders} orgId={orgId} orderHref={(id) => `/org/${orgId}/orders/${id}`} />
       )}
 
       {hasMore && (
-        <Button asChild variant="outline" className="min-h-10 w-full">
-          <Link href={moreHref} scroll={false}>{SHOP_ORDERS_COPY.loadMore}</Link>
+        <Button asChild variant="outline" className="w-full">
+          <Link href={moreHref} scroll={false} prefetch={false}>{SHOP_ORDERS_COPY.loadMore}</Link>
         </Button>
       )}
     </div>

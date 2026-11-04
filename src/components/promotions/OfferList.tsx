@@ -7,6 +7,7 @@
 import { bpsToPercent, formatCurrency, formatShortDate } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { OfferActions } from "@/components/promotions/OfferActions";
 
 export interface OfferRow {
@@ -99,34 +100,22 @@ export function OfferList({
                   </Badge>
                 )}
                 {live && !exhausted && (
-                  <Badge className="bg-success/15 text-success text-2xs">
-                    Live
-                  </Badge>
+                  <StatusBadge tone="success">Live</StatusBadge>
                 )}
                 {!offer.isActive && (
-                  <Badge variant="outline" className="text-2xs">
-                    Stopped
-                  </Badge>
+                  <StatusBadge tone="neutral">Stopped</StatusBadge>
                 )}
                 {fullyClaimed && (
-                  <Badge variant="outline" className="text-2xs">
-                    Fully claimed
-                  </Badge>
+                  <StatusBadge tone="neutral">Fully claimed</StatusBadge>
                 )}
                 {budgetUsedUp && (
-                  <Badge variant="secondary" className="text-2xs">
-                    Budget used up
-                  </Badge>
+                  <StatusBadge tone="warning">Budget used up</StatusBadge>
                 )}
                 {offer.isActive && offer.endsAt <= now && (
-                  <Badge variant="outline" className="text-2xs">
-                    Ended
-                  </Badge>
+                  <StatusBadge tone="neutral">Ended</StatusBadge>
                 )}
                 {offer.isActive && offer.startsAt > now && (
-                  <Badge variant="outline" className="text-2xs">
-                    Scheduled
-                  </Badge>
+                  <StatusBadge tone="info">Scheduled</StatusBadge>
                 )}
               </div>
 

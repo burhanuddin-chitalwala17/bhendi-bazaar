@@ -17,7 +17,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useFieldArray } from "react-hook-form";
-import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormInput, FormSelect } from "@/components/shared/forms/FormField";
@@ -29,6 +28,7 @@ import {
   MAX_BIDDING_DAYS,
   type BiddingFormInput,
 } from "@/lib/validation/schemas/bidding.schema";
+import { Icon } from "@/components/ui/icon";
 
 interface BiddingFormProduct {
   id: string;
@@ -200,11 +200,11 @@ export function BiddingForm({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon"
+                  shape="icon"
                   onClick={() => quickBids.remove(index)}
                   aria-label={`Remove button ${index + 1}`}
                 >
-                  <X className="size-4" aria-hidden />
+                  <Icon name="close" size="sm" />
                 </Button>
               )}
             </div>
@@ -217,7 +217,7 @@ export function BiddingForm({
             size="sm"
             onClick={() => quickBids.append(100 as never)}
           >
-            <Plus className="size-4" aria-hidden />
+            <Icon name="add" size="sm" />
             Add a button
           </Button>
         )}

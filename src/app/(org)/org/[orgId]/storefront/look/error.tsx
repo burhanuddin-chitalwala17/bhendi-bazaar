@@ -1,16 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { ErrorState } from "@/components/shared/states/ErrorState";
 import { LOOK_COPY } from "@/components/org/look/look-copy";
 
-/** The picker could not read the shop (ux.md picker, Retryable error). */
-export default function LookPickerError({ retry }: { error: Error; retry: () => void }) {
-  return (
-    <div role="alert" className="flex flex-col gap-3 rounded-card border border-destructive bg-destructive/10 p-4 text-sm">
-      <p>{LOOK_COPY.themesFailed}</p>
-      <Button variant="outline" className="min-h-11 self-start" onClick={() => retry()}>
-        {LOOK_COPY.tryAgain}
-      </Button>
-    </div>
-  );
+/** The picker could not read the shop (ux.md picker, Retryable error). `retry` re-renders the segment (Next 16). */
+export default function LookPickerError({ retry }: { error: unknown; retry: () => void }) {
+  return <ErrorState as="h1" title="Looks didn't load" description={LOOK_COPY.themesFailed} onRetry={() => retry()} retryLabel={LOOK_COPY.tryAgain} />;
 }

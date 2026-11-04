@@ -1,7 +1,7 @@
 import { requireOrgMember } from "@/lib/org-auth";
 import { BulkProductWizard } from "@/components/bulk-upload/BulkProductWizard";
-import { SectionHeader } from "@/components/shared/SectionHeader";
 import { getBulkSheetChoices } from "@/data-access-layer/org/bulk-sheet.dal";
+import { PageHeader } from "@/components/shared/page-shell";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -16,7 +16,7 @@ export default async function BulkUploadPage({
 
   return (
     <div className="space-y-6">
-      <SectionHeader as="h1" help="products" title="Add many at once" description="One sheet and a folder of photos" />
+      <PageHeader help="products" title="Add many at once" description="One sheet and a folder of photos" />
       <BulkProductWizard orgId={scope.orgId} choices={choices} />
     </div>
   );

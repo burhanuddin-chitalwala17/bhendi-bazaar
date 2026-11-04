@@ -10,7 +10,7 @@ import {
   bannerFormSchema,
   reorderBannersSchema,
 } from "@/lib/validation/schemas/banner.schema";
-import { describeBannerImageProblem } from "@/components/banners/banner-image-check";
+import { IMAGE_SLOT, IMAGE_SLOTS, describeShapeProblem, isOffShape } from "@server/catalog/image-slots";
 import { isCompleteReorder, nextBannerOrder } from "@server/catalog/banner.order";
 import { readFileSync } from "node:fs";
 import { toHeroBanner } from "@/data-access-layer/banners.dal";
@@ -25,7 +25,7 @@ describe("bannerFormSchema", () => {
     const parsed = bannerFormSchema.parse(minimal);
     expect(parsed.title).toBe("Eid picks");
     expect(parsed.eyebrow).toBeNull();
-    expect(parsed.imageUrl).toBeNull();
+    expect(parsed.image).toBeNull();
     expect(parsed.isActive).toBe(true);
     expect(parsed.actions).toEqual([]);
   });
@@ -127,6 +127,9 @@ describe("toHeroBanner", () => {
     eyebrow: null,
     description: null,
     imageUrl: null,
+    imageAssetId: null,
+    phoneImageUrl: null,
+    imageFraming: null,
     imageAlt: null,
     order: 0,
     isActive: true,
@@ -142,7 +145,7 @@ describe("toHeroBanner", () => {
 
   it("carries an image only when there is a url", () => {
     expect(toHeroBanner({ ...row, imageUrl: "https://x/y.jpg", imageAlt: "Abayas" }).image)
-      .toEqual({ src: "https://x/y.jpg", alt: "Abayas" });
+      .toMatchObject({ alt: "Abayas", desktop: { src: "https://x/y.jpg" }, phone: { src: "https://x/y.jpg" } });
   });
 
   it("survives an image with no description", () => {
@@ -161,33 +164,31 @@ describe("toHeroBanner", () => {
   });
 });
 
-describe("describeBannerImageProblem", () => {
-  it("passes the stated size", () => {
-    expect(describeBannerImageProblem(BANNER_IMAGE.width, BANNER_IMAGE.height)).toBeNull();
-  });
+// The picture check moved to the slot declarations (image-slots): a shape off 5:2 is no longer
+// refused but offered Keep it exact or Fit it in; a narrow one is still named.
+describe("the home banner's desktop picture", () => {
+  const desktop = IMAGE_SLOTS[IMAGE_SLOT.HOME_BANNER].desktop;
 
-  it("passes a larger image at the same shape", () => {
-    expect(describeBannerImageProblem(3200, 1280)).toBeNull();
+  it("passes the stated size, and a larger one at the same shape", () => {
+    expect(describeShapeProblem(BANNER_IMAGE.width, BANNER_IMAGE.height, desktop)).toBeNull();
+    expect(describeShapeProblem(3200, 1280, desktop)).toBeNull();
+    expect(isOffShape(3200, 1280, desktop)).toBe(false);
   });
 
   it("names the width it got when the image is too small", () => {
-    const problem = describeBannerImageProblem(800, 320);
+    const problem = describeShapeProblem(800, 320, desktop);
     expect(problem).toContain("800px");
     expect(problem).toContain(`${BANNER_IMAGE.width}px`);
   });
 
-  // A square hero would be cropped to a letterbox, losing most of the picture.
-  it("refuses a shape too far from 5:2", () => {
-    expect(describeBannerImageProblem(2000, 2000)).toContain("2000×2000");
-  });
-
-  it("allows a little slack around 5:2", () => {
-    expect(describeBannerImageProblem(1600, 610)).toBeNull(); // 2.62:1
-    expect(describeBannerImageProblem(1600, 680)).toBeNull(); // 2.35:1
+  it("asks for a choice when the shape is off, rather than refusing it", () => {
+    expect(isOffShape(2000, 2000, desktop)).toBe(true);
+    expect(isOffShape(1600, 660, desktop)).toBe(true);
+    expect(describeShapeProblem(2000, 2000, desktop)).toBeNull();
   });
 
   it("treats an unreadable image as a problem, not a pass", () => {
-    expect(describeBannerImageProblem(0, 0)).not.toBeNull();
+    expect(describeShapeProblem(0, 0, desktop)).not.toBeNull();
   });
 });
 
@@ -268,6 +269,9 @@ describe("a URL we cannot render", () => {
       eyebrow: null,
       description: null,
       imageUrl: DEAD,
+      imageAssetId: null,
+      phoneImageUrl: null,
+      imageFraming: null,
       imageAlt: null,
       order: 0,
       isActive: true,

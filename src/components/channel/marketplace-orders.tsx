@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { ORDER_LINE_STATE, type MarketplaceOrderDTO } from "@server/channels/channel-stock.types";
 
@@ -23,10 +24,10 @@ export function MarketplaceOrders({ orders, hasMore, moreHref }: { orders: Marke
             </span>
             <span className="text-muted-foreground">{MARKETPLACE_ORDERS.line(o.orderId, o.amountPaise === null ? null : formatCurrency(o.amountPaise), o.label)}</span>
             <span className="flex flex-wrap gap-2">
-              {o.oversold && <span className="rounded-full bg-destructive/10 px-2 text-xs font-semibold text-destructive">{MARKETPLACE_ORDERS.oversold}</span>}
-              {o.beforeSync && <span className="rounded-full bg-muted px-2 text-xs text-muted-foreground">{MARKETPLACE_ORDERS.beforeSync}</span>}
-              {o.unlinked && <span className="rounded-full bg-warning/10 px-2 text-xs text-warning">{MARKETPLACE_ORDERS.unlinked}</span>}
-              {o.locationGuessed && <span className="rounded-full bg-warning/10 px-2 text-xs text-warning">{MARKETPLACE_ORDERS.locationGuessed}</span>}
+              {o.oversold && <StatusBadge tone="destructive">{MARKETPLACE_ORDERS.oversold}</StatusBadge>}
+              {o.beforeSync && <StatusBadge tone="neutral">{MARKETPLACE_ORDERS.beforeSync}</StatusBadge>}
+              {o.unlinked && <StatusBadge tone="warning">{MARKETPLACE_ORDERS.unlinked}</StatusBadge>}
+              {o.locationGuessed && <StatusBadge tone="warning">{MARKETPLACE_ORDERS.locationGuessed}</StatusBadge>}
               {o.state === ORDER_LINE_STATE.CANCELLED && <span className="text-xs text-muted-foreground">{MARKETPLACE_ORDERS.cancelled}</span>}
             </span>
           </li>

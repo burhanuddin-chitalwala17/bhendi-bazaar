@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { PortalSidebar, type PortalNavGroup, type PortalNavItem } from "@/components/layout/PortalSidebar";
-import { OrgTabBar } from "@/components/layout/org-tab-bar";
+import { OrgTabBar, type TabCounts } from "@/components/layout/org-tab-bar";
 import {
   PORTAL_ACTION,
   PORTAL_GROUP_LABEL,
@@ -24,10 +24,12 @@ export function OrgSidebar({
   orgId,
   orgs,
   signedIn,
+  counts,
 }: {
   orgId: string;
   orgs: SwitcherOrg[];
   signedIn: boolean;
+  counts?: TabCounts;
 }) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -40,13 +42,14 @@ export function OrgSidebar({
     icon: entry.icon,
     href: portalHref(entry, orgId) ?? undefined,
     active: entry.key === activeKey,
+    count: counts?.[entry.key],
     onSelect:
       "action" in entry.target && entry.target.action === PORTAL_ACTION.CONTACT
         ? () => setHelpOpen(true)
         : undefined,
   });
 
-  // Tabs with no group (Home, Shop) lead the list, so the sidebar alone still reaches them.
+  // Home has no group and leads the list, so the sidebar alone still reaches them.
   const groups: PortalNavGroup[] = [
     { items: PORTAL_NAV.filter((entry) => !entry.group).map(toItem) },
     ...PORTAL_GROUPS.map((group) => ({
@@ -64,7 +67,7 @@ export function OrgSidebar({
         open={moreOpen}
         onOpenChange={setMoreOpen}
       />
-      <OrgTabBar orgId={orgId} moreOpen={moreOpen} onMore={() => setMoreOpen(true)} />
+      <OrgTabBar orgId={orgId} moreOpen={moreOpen} onMore={() => setMoreOpen(true)} counts={counts} />
       <ContactSheet open={helpOpen} onOpenChange={setHelpOpen} signedIn={signedIn} />
     </>
   );

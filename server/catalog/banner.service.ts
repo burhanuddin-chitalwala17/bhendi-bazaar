@@ -4,6 +4,9 @@ import { recordAdminAction } from "@server/shared/audit/audit.service";
 import { NotFoundError, DomainError } from "@server/shared/domain-error";
 import { toInternalPath } from "@server/shared/internal-href";
 import type { AdminBanner, BannerInput } from "@server/catalog/banner.types";
+import type { BannerWrite } from "@server/catalog/banner.repository";
+import { resolveImageSlot, type CurrentImage } from "@server/catalog/image-slot-write";
+import { IMAGE_SLOT } from "@server/catalog/image-slots";
 
 /**
  * Store the path, whatever was pasted.
@@ -12,10 +15,8 @@ import type { AdminBanner, BannerInput } from "@server/catalog/banner.types";
  * on the field rather than quietly rewritten, because a hero banner is the most
  * prominent surface the store has and a wrong destination there is expensive.
  */
-function withInternalHrefs(data: BannerInput): BannerInput {
-  return {
-    ...data,
-    actions: data.actions.map((action, index) => {
+function withInternalHrefs(data: BannerInput): BannerInput["actions"] {
+  return data.actions.map((action, index) => {
       const href = toInternalPath(action.href);
       if (!href) {
         throw new DomainError(
@@ -24,7 +25,22 @@ function withInternalHrefs(data: BannerInput): BannerInput {
         );
       }
       return { ...action, href };
-    }),
+    });
+}
+
+/** Field by field: the payload is never spread into a write (Invariant 4). Home banners are the
+ *  platform's, so their pictures come from the platform's library (null org). */
+async function toWrite(data: BannerInput, current: CurrentImage | null): Promise<BannerWrite> {
+  const actions = withInternalHrefs(data);
+  const image = await resolveImageSlot(IMAGE_SLOT.HOME_BANNER, null, data.image, current);
+  return {
+    title: data.title,
+    eyebrow: data.eyebrow,
+    description: data.description,
+    imageAlt: data.imageAlt,
+    isActive: data.isActive,
+    actions,
+    ...image,
   };
 }
 
@@ -40,7 +56,7 @@ class BannerService {
   }
 
   async create(adminId: string, data: BannerInput): Promise<AdminBanner> {
-    const banner = await bannerRepository.create(withInternalHrefs(data));
+    const banner = await bannerRepository.create(await toWrite(data, null));
     await recordAdminAction({
       adminId,
       action: "BANNER_CREATED",
@@ -56,8 +72,8 @@ class BannerService {
     id: string,
     data: BannerInput,
   ): Promise<AdminBanner> {
-    await this.getById(id);
-    const banner = await bannerRepository.update(id, withInternalHrefs(data));
+    const current = await this.getById(id);
+    const banner = await bannerRepository.update(id, await toWrite(data, current));
     await recordAdminAction({
       adminId,
       action: "BANNER_UPDATED",

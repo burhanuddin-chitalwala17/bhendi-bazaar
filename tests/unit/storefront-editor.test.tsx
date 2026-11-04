@@ -149,7 +149,7 @@ describe("the preview draws what only its owner needs (ux.md preview: Empty; Q43
 });
 
 const settings = (overrides: Partial<StorefrontSettingsDto> = {}): StorefrontSettingsDto => ({
-  handle: "noor", name: "Noor", heroUrl: null, hiddenSections: [], updatedAt: at, heroLine: null, heroPhotos: [],
+  handle: "noor", name: "Noor", heroUrl: null, hiddenSections: [], updatedAt: at, heroLine: null, heroPhotos: [], heroImages: [],
   collections: [], claims: [], openingHours: null, storefrontHiddenSections: [],
   claimOptions: claimsFor("jewellery").map((key) => ({ key, label: CLAIM_LABEL[key] })),
   categoryOptions: [], ...overrides,

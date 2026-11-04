@@ -9,7 +9,7 @@ import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { enhancementService } from "@server/content/enhancement.service";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { EnhancementSettingsForm } from "@/components/content/enhancement-settings-form";
 import { OrgEnhancementPolicyForm } from "@/components/content/org-enhancement-policy-form";
 import { formatCurrency } from "@/lib/format";
@@ -34,8 +34,8 @@ export default async function AdminEnhancementsPage() {
 
       <Card className="gap-4 p-4 sm:p-6">
         <div className="space-y-1">
-          <h2 className="font-heading text-lg font-semibold">The platform’s numbers</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="font-heading text-title font-semibold">The platform’s numbers</h2>
+          <p className="text-small text-muted-foreground">
             {settings.configured
               ? "Changing these takes effect on the next request — no deploy."
               : "Nothing has been saved yet, so these are the numbers the code falls back to. Saving makes them the platform's."}
@@ -44,7 +44,7 @@ export default async function AdminEnhancementsPage() {
 
         <EnhancementSettingsForm settings={settings} />
 
-        <p className={`text-sm ${capReached ? "text-destructive" : "text-muted-foreground"}`}>
+        <p className={`text-small ${capReached ? "text-destructive" : "text-muted-foreground"}`}>
           Spent today: <strong>{formatCurrency(spentTodayPaise)}</strong> of{" "}
           {formatCurrency(settings.dailyCapPaise)}
           {capReached && " — enhancement is stopped for every shop until tomorrow."}
@@ -52,10 +52,10 @@ export default async function AdminEnhancementsPage() {
       </Card>
 
       <section className="space-y-3">
-        <h2 className="font-heading text-lg font-semibold">Shops this month</h2>
+        <h2 className="font-heading text-title font-semibold">Shops this month</h2>
 
         {orgs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-small text-muted-foreground">
             No shop has improved a photo this month, and none has a rule of its own.
           </p>
         ) : (
@@ -70,10 +70,10 @@ export default async function AdminEnhancementsPage() {
                         {org.code}
                       </p>
                     </div>
-                    {org.paused && <Badge variant="destructive">Paused</Badge>}
+                    {org.paused && <StatusBadge tone="destructive">Paused</StatusBadge>}
                   </div>
 
-                  <dl className="grid grid-cols-2 gap-2 text-sm">
+                  <dl className="grid grid-cols-2 gap-2 text-small">
                     <div>
                       <dt className="text-2xs uppercase tracking-eyebrow text-muted-foreground">
                         Used

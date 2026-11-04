@@ -37,6 +37,11 @@ const ALLOWLIST: Record<string, { rules: readonly string[]; reason: string }> = 
     reason:
       "ImageResponse renders through Satori, which implements a small subset of HTML and does not know next/image. It runs server-side per OG render, so no browser fetches this.",
   },
+  "src/components/shared/responsive-image.tsx": {
+    rules: ["raw <img> elements"],
+    reason:
+      "Art direction (image-slots trd D6): the <img> inside <picture> carries getImageProps' own optimizer srcset and sizes, as the Next.js docs prescribe; next/image cannot render a <source> per form factor.",
+  },
   "src/components/shared/image-upload.tsx": {
     rules: ["raw <img> elements"],
     reason:

@@ -29,7 +29,7 @@ export const orgStorefrontApiClient = {
   revertLook: (orgId: string, lookVersion: number) =>
     apiRequest<StorefrontLookState>(`/api/org/${orgId}/storefront/look/revert`, { method: "POST", body: { lookVersion } }),
 
-  addBanner: (orgId: string, data: Omit<OrgBannerFormInput, "imageUrl"> & { imageUrl: string | null }) =>
+  addBanner: (orgId: string, data: OrgBannerFormInput) =>
     apiRequest<unknown>(banners(orgId), { method: "POST", body: data }),
 
   updateBanner: (orgId: string, banner: ManagedBanner) =>

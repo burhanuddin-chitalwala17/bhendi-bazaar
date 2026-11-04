@@ -15,11 +15,19 @@ export const SHOP_ORDERS_COPY = {
   loadMore: "Load more",
   refresh: "Refresh",
   open: "Open",
+  markPacked: "Mark packed",
+  noOrders: "No orders yet",
+  emptyTab: "A new order shows up under To pack, and we email you.",
+  toPackHint: "Pack these, then mark them packed. We book the courier for you.",
+  store: "Store",
+  marketplace: "Marketplace",
+  where: "Where the order came from",
+  status: "Parcel status",
 } as const;
 
 export const SHOP_TAB_LABEL: Record<ShopParcelTab, string> = {
   [SHOP_PARCEL_TAB.TO_PACK]: "To pack",
-  [SHOP_PARCEL_TAB.READY]: "Ready",
+  [SHOP_PARCEL_TAB.READY]: "For pickup",
   [SHOP_PARCEL_TAB.ON_THE_WAY]: "On the way",
   [SHOP_PARCEL_TAB.DONE]: "Done",
   [SHOP_PARCEL_TAB.CANCELLED]: "Cancelled",

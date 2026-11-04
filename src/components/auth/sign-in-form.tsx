@@ -31,7 +31,7 @@ export interface AuthFormHost {
 }
 
 export const SWITCH_LINK =
-  "inline-flex min-h-10 items-center text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline";
+  "inline-flex min-h-10 items-center text-caption text-muted-foreground underline-offset-4 hover:text-foreground hover:underline";
 
 /**
  * Sign in — the one form the page and the sheet both render (seamless-sign-in D1).
@@ -78,7 +78,7 @@ export function SignInForm({
   return (
     <form
       onSubmit={(event) => void onSubmit(event).catch(() => {})}
-      className="space-y-3 text-sm"
+      className="space-y-3 text-small"
     >
       <AuthField id={`${id}-email`} label="Email" error={errors.email?.message}>
         <Input

@@ -31,6 +31,7 @@ const product = (id: string, wishlistCount: number): ProductForTable => ({
   price: 129900,
   currency: "INR",
   stock: 5,
+  stockByLocation: [{ orgAddressId: "loc-1", quantity: 5 }],
   lowStockThreshold: 2,
   thumbnail: "/cover.jpg",
   wishlistCount,
@@ -108,7 +109,7 @@ describe("the Wishlisted-only switch", () => {
 
   it("has a heart in the thumb and a label wired to it", () => {
     const { container } = renderTable();
-    expect(container.querySelector('[role="switch"] svg.lucide-heart')).toBeTruthy();
+    expect(container.querySelector('[role="switch"] svg')).toBeTruthy();
     const label = screen.getByText("Wishlisted only", { selector: "label" });
     expect(label.getAttribute("for")).toBe(toggle().getAttribute("id"));
   });

@@ -28,7 +28,7 @@ export function BuyersSay({ reviews }: BuyersSaySlice) {
               <ReviewStars value={review.rating} size="xs" />
               <p className="text-2xs font-medium sm:text-xs">{review.authorName}</p>
               {review.isVerifiedPurchase && (
-                <Badge variant="secondary" className="text-4xs sm:text-3xs">
+                <Badge variant="secondary" className="text-2xs sm:text-2xs">
                   Verified purchase
                 </Badge>
               )}

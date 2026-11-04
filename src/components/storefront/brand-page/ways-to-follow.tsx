@@ -1,10 +1,4 @@
-import {
-  Facebook,
-  Instagram,
-  Twitter,
-  Youtube,
-  type LucideIcon,
-} from "lucide-react";
+import { Icon, type IconName } from "@/components/ui/icon";
 
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Button } from "@/components/ui/button";
@@ -12,11 +6,11 @@ import type { SocialNetwork } from "@server/catalog/social-networks";
 import type { SocialSlice } from "./sections";
 
 /** One glyph per allowlisted network. Adding a network here means adding it to the allowlist first. */
-const ICONS: Record<SocialNetwork, LucideIcon> = {
-  instagram: Instagram,
-  facebook: Facebook,
-  youtube: Youtube,
-  x: Twitter,
+const ICONS: Record<SocialNetwork, IconName> = {
+  instagram: "instagram",
+  facebook: "facebook",
+  youtube: "youtube",
+  x: "x-social",
 };
 
 /**
@@ -30,7 +24,7 @@ export function WaysToFollow({ name, links }: SocialSlice) {
       <SectionHeader overline="The shop" title={`Follow ${name}`} />
       <ul className="flex flex-wrap gap-2">
         {links.map((link) => {
-          const Icon = ICONS[link.network];
+          const glyph = ICONS[link.network];
           return (
             <li key={link.network}>
               <Button asChild variant="outline" size="sm">
@@ -40,7 +34,7 @@ export function WaysToFollow({ name, links }: SocialSlice) {
                   rel="noopener noreferrer me"
                   aria-label={`${name} on ${link.label}`}
                 >
-                  <Icon aria-hidden />
+                  <Icon name={glyph} size="md" />
                   <span>@{link.handle}</span>
                 </a>
               </Button>

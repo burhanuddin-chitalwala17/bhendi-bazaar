@@ -12,7 +12,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
+import { SETTLEMENT_STATUS_BADGE, type SettlementStatus } from "@/components/payouts/settlement-status";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency, formatShortDate } from "@/lib/format";
@@ -26,7 +27,7 @@ export interface SettlementRow {
   id: string;
   code: string;
   amountPaise: number;
-  status: "PENDING" | "PAID" | "CANCELLED";
+  status: SettlementStatus;
   reference: string | null;
   paidAt: Date | null;
 }
@@ -65,36 +66,29 @@ export function SettlementList({
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-semibold">Settlements</h2>
+      <h2 className="text-small font-semibold">Settlements</h2>
       <ul className="space-y-2">
         {settlements.map((settlement) => (
           <li
             key={settlement.id}
-            className="rounded-lg border border-border bg-card p-3"
+            className="rounded-card border border-border bg-card p-3"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="flex items-center gap-2">
-                  <span className="font-mono text-xs">{settlement.code}</span>
-                  <Badge
-                    variant="outline"
-                    className={`text-2xs ${
-                      settlement.status === "PAID"
-                        ? "border-success text-success"
-                        : ""
-                    }`}
-                  >
-                    {settlement.status.toLowerCase()}
-                  </Badge>
+                  <span className="font-mono text-caption">{settlement.code}</span>
+                  <StatusBadge tone={SETTLEMENT_STATUS_BADGE[settlement.status].tone} dot>
+                    {SETTLEMENT_STATUS_BADGE[settlement.status].label}
+                  </StatusBadge>
                 </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
+                <p className="mt-0.5 text-caption text-muted-foreground">
                   {settlement.status === "PAID" && settlement.paidAt
                     ? `Paid ${formatShortDate(settlement.paidAt)}`
                     : "Not yet transferred"}
                   {settlement.reference ? ` · ${settlement.reference}` : ""}
                 </p>
               </div>
-              <span className="text-sm font-semibold tabular-nums">
+              <span className="text-small font-semibold tabular-nums">
                 {formatCurrency(settlement.amountPaise)}
               </span>
             </div>
@@ -107,7 +101,7 @@ export function SettlementList({
                 <Button
                   size="sm"
                   variant="ghost"
-                  disabled={busy}
+                  pending={busy}
                   onClick={() =>
                     send(
                       settlement.id,
@@ -124,7 +118,7 @@ export function SettlementList({
             {recording === settlement.id && (
               <div className="mt-3 space-y-2 border-t border-border pt-3">
                 <div>
-                  <Label htmlFor={`ref-${settlement.id}`} className="text-xs">
+                  <Label htmlFor={`ref-${settlement.id}`} className="text-caption">
                     Bank reference
                   </Label>
                   <Input
@@ -136,7 +130,7 @@ export function SettlementList({
                   />
                   {/* The reference is what makes the ledger checkable against a bank
                       statement, which is the whole point of recording the transfer. */}
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-caption text-muted-foreground">
                     Recorded against {formatCurrency(settlement.amountPaise)}.
                     Once saved, the amount and reference are fixed — a
                     correction is a new entry.
@@ -145,7 +139,7 @@ export function SettlementList({
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    disabled={busy}
+                    pending={busy}
                     onClick={() =>
                       send(
                         settlement.id,
@@ -157,7 +151,7 @@ export function SettlementList({
                       )
                     }
                   >
-                    {busy ? "Saving…" : "Confirm payment"}
+                    Confirm payment
                   </Button>
                   <Button
                     size="sm"

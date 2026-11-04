@@ -3,7 +3,6 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Edit, MoveDown, MoveUp, Trash2 } from "lucide-react";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import { useMutation } from "@/hooks/core/useMutation";
@@ -12,6 +11,7 @@ import type { AdminCategory } from "@/domain/admin";
 import { CATEGORY_ACCENTS } from "@/lib/category-accent";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { formatShortDate } from "@/lib/format";
 
 interface Props {
@@ -43,17 +43,17 @@ export function CategoriesTable({ categories, page, pageSize, totalPages, total 
 
   const { mutate: deleteCategory, isLoading: isDeleting } = useMutation(
     adminCategoryApiClient.deleteCategory,
-    { successMessage: "Category deleted successfully!", onSuccess: () => router.refresh() },
+    { successMessage: "Category deleted", onSuccess: () => router.refresh() },
   );
 
   const { mutate: reorder, isLoading: isUpdating } = useMutation(
     ({ id, order }: { id: string; order: number }) =>
       adminCategoryApiClient.updateCategory(id, { order }),
-    { successMessage: "Category reordered successfully!", onSuccess: () => router.refresh() },
+    { successMessage: "Order saved", onSuccess: () => router.refresh() },
   );
 
   const confirmDelete = (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"? This will also affect products in this category.`)) {
+    if (!confirm(`Delete \"${name}\"? Products in it lose this category.`)) {
       return;
     }
     // `useMutation` toasts both outcomes and rethrows; catching keeps a failed delete from also
@@ -63,79 +63,82 @@ export function CategoriesTable({ categories, page, pageSize, totalPages, total 
 
   const columns: Column<AdminCategory>[] = [
     {
-      key: "order",
-      label: "Order",
-      sortable: true,
-      render: (category) => (
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-sm text-muted-foreground">{category.order}</span>
-          <div className="flex flex-col gap-1">
-            <Button
-              variant="ghost"
-              onClick={() => void reorder({ id: category.id, order: category.order - 1 }).catch(() => {})}
-              disabled={category.order === 0 || isUpdating}
-              className={cn("p-0.5 text-muted-foreground/70 hover:text-foreground", isUpdating && "cursor-not-allowed opacity-50")}
-              title="Move up"
-            >
-              <MoveUp className="size-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => void reorder({ id: category.id, order: category.order + 1 }).catch(() => {})}
-              disabled={isUpdating}
-              className={cn("p-0.5 text-muted-foreground/70 hover:text-foreground", isUpdating && "cursor-not-allowed opacity-50")}
-              title="Move down"
-            >
-              <MoveDown className="size-3" />
-            </Button>
-          </div>
-        </div>
-      ),
-    },
-    {
       key: "name",
       label: "Category",
       sortable: true,
+      phone: "title",
       render: (category) => (
-        <div className="flex items-center gap-3">
-          <div
+        <Link href={`/admin/categories/${category.id}/edit`} prefetch={false} className="flex items-center gap-3 hover:underline">
+          <span
+            aria-hidden
             className={cn(
-              "flex size-12 items-center justify-center rounded-card border border-border",
+              "flex size-10 shrink-0 items-center justify-center rounded-field border border-border text-caption font-medium text-foreground/80",
               CATEGORY_ACCENTS[category.accent].swatch,
             )}
           >
-            <span className="text-xs font-medium text-foreground/80">
-              {category.name.substring(0, 2).toUpperCase()}
-            </span>
-          </div>
-          <div>
-            <p className="font-medium">{category.name}</p>
-            <p className="text-sm text-muted-foreground">/{category.slug}</p>
-          </div>
+            {category.name.substring(0, 2).toUpperCase()}
+          </span>
+          <span className="min-w-0">
+            <span className="block font-medium">{category.name}</span>
+            <span className="block text-small font-normal text-muted-foreground">/{category.slug}</span>
+          </span>
+        </Link>
+      ),
+    },
+    {
+      key: "order",
+      label: "Order",
+      sortable: true,
+      phone: "hidden",
+      render: (category) => (
+        <div className="flex items-center gap-1">
+          <span className="w-6 font-mono text-small tabular-nums text-muted-foreground">{category.order}</span>
+          <Button
+            variant="ghost"
+            shape="icon"
+            size="sm"
+            onClick={() => void reorder({ id: category.id, order: category.order - 1 }).catch(() => {})}
+            disabled={category.order === 0}
+            pending={isUpdating}
+            aria-label={`Move ${category.name} up`}
+          >
+            <Icon name="move-up" />
+          </Button>
+          <Button
+            variant="ghost"
+            shape="icon"
+            size="sm"
+            onClick={() => void reorder({ id: category.id, order: category.order + 1 }).catch(() => {})}
+            pending={isUpdating}
+            aria-label={`Move ${category.name} down`}
+          >
+            <Icon name="move-down" />
+          </Button>
         </div>
       ),
     },
     {
       key: "description",
       label: "Description",
+      phone: "hidden",
       render: (category) => (
-        <p className="max-w-md truncate text-sm text-muted-foreground">{category.description}</p>
+        <p className="max-w-md truncate text-small text-muted-foreground">{category.description}</p>
       ),
     },
     {
       key: "productsCount",
       label: "Products",
-      render: (category) => (
-        <span className="font-semibold text-foreground">{category.productsCount || 0}</span>
-      ),
+      phone: "meta",
+      render: (category) => `${category.productsCount || 0} products`,
     },
     {
       key: "heroImage",
-      label: "Hero Image",
+      label: "Hero image",
+      phone: "hidden",
       render: (category) => (
         <Image
           src={category.heroImage}
-          alt={category.name}
+          alt=""
           width={64}
           height={40}
           sizes="64px"
@@ -147,32 +150,30 @@ export function CategoriesTable({ categories, page, pageSize, totalPages, total 
       key: "createdAt",
       label: "Created",
       sortable: true,
+      phone: "hidden",
       render: (category) => formatShortDate(category.createdAt),
     },
     {
       key: "actions",
       label: "Actions",
+      phone: "trailing",
       render: (category) => (
         <div className="flex items-center gap-2">
-          <Link
-            prefetch={false}
-            href={`/admin/categories/${category.id}/edit`}
-            className="rounded-field p-2 text-info transition-colors hover:bg-info/10"
-            title="Edit category"
-          >
-            <Edit className="size-4" />
-          </Link>
+          <Button asChild variant="outline" size="sm" className="hidden md:inline-flex">
+            <Link prefetch={false} href={`/admin/categories/${category.id}/edit`} aria-label={`Edit ${category.name}`}>
+              <Icon name="edit" />
+              Edit
+            </Link>
+          </Button>
           <Button
-            variant="ghost"
+            variant="outline"
+            size="sm"
             onClick={() => confirmDelete(category.id, category.name)}
-            disabled={isDeleting}
-            className={cn(
-              "rounded-field p-2 text-destructive transition-colors hover:bg-destructive/10",
-              isDeleting && "cursor-not-allowed opacity-50",
-            )}
-            title="Delete category"
+            pending={isDeleting}
+            aria-label={`Delete ${category.name}`}
           >
-            <Trash2 className="size-4" />
+            <Icon name="delete" />
+            Delete
           </Button>
         </div>
       ),
@@ -182,6 +183,7 @@ export function CategoriesTable({ categories, page, pageSize, totalPages, total 
   return (
     <DataTable
       data={categories}
+      label="Categories"
       columns={columns}
       totalPages={totalPages}
       currentPage={page}
@@ -189,7 +191,6 @@ export function CategoriesTable({ categories, page, pageSize, totalPages, total 
       pageSize={pageSize}
       onPageChange={(next) => go({ page: String(next) })}
       onPageSizeChange={(limit) => go({ limit: String(limit), page: "" })}
-      onSort={(key, order) => go({ sortBy: key, sortOrder: order })}
     />
   );
 }

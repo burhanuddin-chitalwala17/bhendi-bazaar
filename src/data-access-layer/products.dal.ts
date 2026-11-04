@@ -327,6 +327,15 @@ export const productsDAL = {
     };
   },
 
+  /** How many products a listing holds. Shared like a first page: never a search or an offer set, which a visitor chooses. */
+  countListing: async (filter: ProductFilter): Promise<number> => {
+    const { limit: _l, offset: _o, ...where } = filter;
+    const shareable = !where.offerOnly && !where.search;
+    return shareable
+      ? catalogueRead("product-count", [where], () => productService.countProducts(where))
+      : productService.countProducts(where);
+  },
+
   /** Slugs only, for the sitemap — no relations, no offer resolution. */
   listSlugs: async (): Promise<string[]> => {
     const rows = await productsRepository.listSlugs();

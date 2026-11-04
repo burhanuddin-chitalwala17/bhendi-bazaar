@@ -220,7 +220,7 @@ export const channelStockService = {
   },
 
   /**
-   * Sync starts on its own (Q27, superseding Q4): connecting means keeping the marketplace's counts
+   * Sync starts on its own (Q28, superseding Q4): connecting means keeping the marketplace's counts
    * ours, so once every location is matched a connection still off is turned on. Paused stays paused.
    */
   async startIfReady(connectionId: string): Promise<boolean> {
@@ -240,14 +240,14 @@ export const channelStockService = {
     await start(connection.id, orgId);
   },
 
-  /** Pause, from the Channels card (Q27): nothing is sent until the shop turns it back on. */
+  /** Pause, from the Channels card (Q28): nothing is sent until the shop turns it back on. */
   async pause(orgId: string, channelName: string): Promise<void> {
     const { connection } = await connectionOf(orgId, channelName);
     if (!(await channelConnectionRepository.setStockSync(prisma, connection.id, orgId, STOCK_SYNC.PAUSED, new Date()))) throw new NotFoundError("Connection");
   },
 
   /**
-   * What Home flags (Q27): sync waiting on a location match, else listings our sends put out of stock
+   * What Home flags (Q28): sync waiting on a location match, else listings our sends put out of stock
    * that the marketplace last showed in stock. A warning, never a gate (ADR-0053).
    */
   async attention(orgId: string): Promise<StockAttentionDTO | null> {

@@ -1,23 +1,4 @@
-import {
-  Gavel,
-  House,
-  IdCard,
-  Images,
-  LayoutTemplate,
-  LifeBuoy,
-  ListChecks,
-  MapPin,
-  Package,
-  Plug,
-  Repeat,
-  ShoppingCart,
-  Star,
-  Store,
-  Tag,
-  Tags,
-  Wallet,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import type { IconName } from "@/components/ui/icon";
 
 /**
  * The shop portal's one navigation list (own-store onboarding D1): the phone tab bar, More and the
@@ -62,43 +43,37 @@ export interface PortalNavEntry {
   label: string;
   /** One line, shown under the label wherever the item is listed (R5). */
   purpose: string;
-  icon: LucideIcon;
+  icon: IconName;
   target: PortalNavTarget;
-  /** Absent for the tabs that stand on their own (Home, Shop). */
+  /** Absent only for Home, which stands on its own. */
   group?: PortalGroup;
-  /** A bottom-bar tab on a phone (own-store Q13). */
+  /** A bottom-bar tab on a phone (design-system revamp: Home · Products · Orders · Earnings). */
   tab?: boolean;
+  /** The tab bar's one word, where the full label would not fit under an icon. */
+  tabLabel?: string;
   /** Further sections a tab counts as its own, so it stays marked on them. */
   alsoActiveOn?: string[];
 }
 
 export const PORTAL_NAV: readonly PortalNavEntry[] = [
-  { key: "home", label: "Home", purpose: "What needs you today", icon: House, target: { page: "" }, tab: true },
-  { key: "orders", label: "Orders", purpose: "Pack and track parcels", icon: ShoppingCart, target: { page: "orders" }, group: PORTAL_GROUP.SELL, tab: true },
-  { key: "products", label: "Products", purpose: "Add and edit what you sell", icon: Package, target: { page: "products" }, group: PORTAL_GROUP.SELL, tab: true },
-  {
-    key: "shop",
-    label: "Shop",
-    purpose: "Your link and what buyers see",
-    icon: Store,
-    target: { page: "shop" },
-    tab: true,
-    alsoActiveOn: ["storefront", "locations", "reviews"],
-  },
-  { key: "listing", label: "Brands and defaults", purpose: "Facts every product starts with", icon: Tags, target: { page: "listing" }, group: PORTAL_GROUP.SELL },
-  { key: "library", label: "Photos", purpose: "All your pictures in one place", icon: Images, target: { page: "library" }, group: PORTAL_GROUP.SELL },
-  { key: "storefront", label: "Shop page", purpose: "What buyers see", icon: LayoutTemplate, target: { page: "storefront" }, group: PORTAL_GROUP.SHOP },
-  { key: "locations", label: "Pickup addresses", purpose: "Where couriers collect from", icon: MapPin, target: { page: "locations" }, group: PORTAL_GROUP.SHOP },
-  { key: "reviews", label: "Reviews", purpose: "What buyers say", icon: Star, target: { page: "reviews" }, group: PORTAL_GROUP.SHOP },
-  { key: "promotions", label: "Offers", purpose: "Discounts you run", icon: Tag, target: { page: "promotions" }, group: PORTAL_GROUP.GROW },
-  { key: "channels", label: "Channels", purpose: "Sell on Amazon, Flipkart and more", icon: Plug, target: { page: "channels" }, group: PORTAL_GROUP.GROW },
-  { key: "bidding", label: "Bidding", purpose: "Auctions for one-off pieces", icon: Gavel, target: { page: "bidding" }, group: PORTAL_GROUP.GROW },
-  { key: "earnings", label: "Money you'll receive", purpose: "What you earned and when it's paid", icon: Wallet, target: { page: "earnings" }, group: PORTAL_GROUP.MONEY },
-  { key: "details", label: "Shop details", purpose: "Name, contact, tax", icon: IdCard, target: { page: "shop/details" }, group: PORTAL_GROUP.SETTINGS },
+  { key: "home", label: "Home", purpose: "What needs you today", icon: "home", target: { page: "" }, tab: true },
+  { key: "products", label: "Products", purpose: "Add and edit what you sell", icon: "products", target: { page: "products" }, group: PORTAL_GROUP.SELL, tab: true },
+  { key: "orders", label: "Orders", purpose: "Pack and track parcels", icon: "orders", target: { page: "orders" }, group: PORTAL_GROUP.SELL, tab: true },
+  { key: "shop", label: "Shop", purpose: "Your link and what buyers see", icon: "shop", target: { page: "shop" }, group: PORTAL_GROUP.SHOP },
+  { key: "listing", label: "Brands and defaults", purpose: "Facts every product starts with", icon: "layers", target: { page: "listing" }, group: PORTAL_GROUP.SELL },
+  { key: "library", label: "Photos", purpose: "All your pictures in one place", icon: "photos", target: { page: "library" }, group: PORTAL_GROUP.SELL },
+  { key: "storefront", label: "Shop page", purpose: "What buyers see", icon: "layout", target: { page: "storefront" }, group: PORTAL_GROUP.SHOP },
+  { key: "locations", label: "Pickup addresses", purpose: "Where couriers collect from", icon: "location", target: { page: "locations" }, group: PORTAL_GROUP.SHOP },
+  { key: "reviews", label: "Reviews", purpose: "What buyers say", icon: "rating", target: { page: "reviews" }, group: PORTAL_GROUP.SHOP },
+  { key: "promotions", label: "Offers", purpose: "Discounts you run", icon: "offer", target: { page: "promotions" }, group: PORTAL_GROUP.GROW },
+  { key: "channels", label: "Channels", purpose: "Sell on Amazon, Flipkart and more", icon: "connect", target: { page: "channels" }, group: PORTAL_GROUP.GROW },
+  { key: "bidding", label: "Bidding", purpose: "Auctions for one-off pieces", icon: "auction", target: { page: "bidding" }, group: PORTAL_GROUP.GROW },
+  { key: "earnings", label: "Money you'll receive", purpose: "What you earned and when it's paid", icon: "payout", target: { page: "earnings" }, group: PORTAL_GROUP.MONEY, tab: true, tabLabel: "Earnings" },
+  { key: "details", label: "Shop details", purpose: "Name, contact, tax", icon: "id-card", target: { page: "shop/details" }, group: PORTAL_GROUP.SETTINGS },
   // Home's setup list carries this id; when hidden it keeps a "Show" row there (onboarding U3).
-  { key: "setup", label: "Setup list", purpose: "Your five first steps", icon: ListChecks, target: { page: "#setup-list" }, group: PORTAL_GROUP.SETTINGS },
-  { key: "help", label: "Help", purpose: "Ask us anything", icon: LifeBuoy, target: { action: PORTAL_ACTION.CONTACT }, group: PORTAL_GROUP.SETTINGS },
-  { key: "switch", label: "Switch shop", purpose: "Work on another shop", icon: Repeat, target: { href: "/org" }, group: PORTAL_GROUP.SETTINGS },
+  { key: "setup", label: "Setup list", purpose: "Your five first steps", icon: "checklist", target: { page: "#setup-list" }, group: PORTAL_GROUP.SETTINGS },
+  { key: "help", label: "Help", purpose: "Ask us anything", icon: "support", target: { action: PORTAL_ACTION.CONTACT }, group: PORTAL_GROUP.SETTINGS },
+  { key: "switch", label: "Switch shop", purpose: "Work on another shop", icon: "repeat", target: { href: "/org" }, group: PORTAL_GROUP.SETTINGS },
 ];
 
 /** The href an entry opens for one shop, or null for an action. */

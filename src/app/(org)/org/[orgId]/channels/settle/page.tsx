@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 
 import { requireOrgMember } from "@/lib/org-auth";
 import { channelSettleDAL } from "@/data-access-layer/channel-settle.dal";
-import { SectionHeader } from "@/components/shared/SectionHeader";
-import { PageShell } from "@/components/shared/page-shell";
+import { PageShell, PageHeader } from "@/components/shared/page-shell";
 import { RefreshButton } from "@/components/channel/refresh-button";
 import { SettleForm } from "@/components/channel/settle-form";
 import { SETTLE, SETTLE_ACTION } from "@/components/channel/settle-copy";
@@ -37,8 +36,7 @@ export default async function SettleListingPage({
 
   return (
     <PageShell width="narrow">
-      <SectionHeader
-        as="h1"
+      <PageHeader
         help="channels"
         title={detail.product ? SETTLE.titleMatch(detail.product.name) : SETTLE.titleNew}
         description={[detail.primary.label, detail.primary.sku].join(" · ")}
