@@ -7,7 +7,7 @@
 import "dotenv/config";
 import { afterAll, beforeAll, describe, expect, it, vi, type MockInstance } from "vitest";
 import { ensureFixtures, isDisposableDb } from "../helpers/test-db";
-import { tablesRead } from "@server/shared/table-writes";
+import { onTableWrites, tablesRead } from "@server/shared/table-writes";
 import { installReadCache, resetReadCache, type ReadCache } from "@server/shared/read-cache";
 
 process.env.PRISMA_LOG_QUERIES = "1";
@@ -81,11 +81,28 @@ describe.skipIf(!isDisposableDb)("cached reads name every table they read (local
     const { bannersDAL } = await import("@/data-access-layer/banners.dal");
     await bannersDAL.getActiveBanners();
     const { reviewService } = await import("@server/catalog/review.service");
-    await reviewService.getPage(product.id, 1, null);
+    await reviewService.getPage(product.id, 1, null, { shared: true });
 
     expect([...seen.keys()].sort()).toEqual(
       expect.arrayContaining(["active-banners", "all-categories", "display-bidding-locks", "family-siblings", "review-page", "display-price-context", "product-by-slug", "product-rows", "rating-rows", "similar-products"]),
     );
+  });
+
+  it("a write through the real client reaches a listener with its table, raw and in a transaction too", async () => {
+    const { prisma } = await import("@server/shared/prisma");
+    const heard: string[] = [];
+    const stop = onTableWrites((tables) => heard.push(...tables));
+    try {
+      await prisma.product.update({ where: { id: created!.productId }, data: { description: "fixture, edited" } });
+      await prisma.$executeRaw`UPDATE "ProductStock" SET "quantity" = "quantity" WHERE "productId" = ${created!.productId}`;
+      await prisma.$transaction(async (tx) => {
+        await tx.productFamily.update({ where: { id: created!.familyId }, data: { name: `RCT family edited ${Date.now()}` } });
+      });
+      await prisma.product.findUnique({ where: { id: created!.productId }, select: { id: true } });
+    } finally {
+      stop();
+    }
+    expect(new Set(heard)).toEqual(new Set(["Product", "ProductStock", "ProductFamily"]));
   });
 
   it("no cached read touches a table it did not declare", () => {

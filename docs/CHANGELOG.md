@@ -12,6 +12,23 @@
 
 ## Entries
 
+## 2026-11-04 — Storefront cache, review: bounded age, a clear after commit, only cached tables, input cannot fill it
+
+- **Found in review** of the entry below, fixed before merge:
+  - Next serves an expired entry and refreshes it behind the response, so its `revalidate` bounded
+    nothing: each entry now carries when it was read and is read live past its limit.
+  - A write's statement runs before its transaction commits, so a page rendered in between could
+    re-cache the old row: the clear is now repeated after the response (`after()`).
+  - A write to any table queued a clear: now only tables some cached read declares (`CACHED_TABLES`).
+  - Searches, later pages, arbitrary review ids and over-long slugs no longer add cache entries.
+  - The auction lock goes through `suspendsPurchase`; the bidding CLAUDE.md and CONTRACTS.md are updated.
+  - The listings page's progress line moves every 4 seconds again (it showed only on refresh); the
+    15-minute "still reading" state is recorded (channel-import Q21, ux.md, trd.md D10).
+- **Tests:** `tests/unit/read-cache-money.test.ts` fails if checkout, cart, payments, payouts, the
+  promotion engine or their routes touch the cache (mutation: cart on the display context went red);
+  the age limit (mutation: serving the old entry went red); the write wiring through the real client,
+  raw SQL and a transaction included.
+
 ## 2026-11-04 — Storefront page views stop re-reading the database; the listings page stops re-rendering itself
 
 - **Why:** the database meters every statement, and the store was spending about 15,000 a day. Each

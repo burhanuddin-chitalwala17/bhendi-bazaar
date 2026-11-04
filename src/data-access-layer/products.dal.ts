@@ -46,11 +46,20 @@ export const PRODUCT_ROW_TABLES = ["Product", "Category", "Org", "ProductStock",
 const catalogueRead = <T>(key: string, args: readonly unknown[], read: () => Promise<T>): Promise<T> =>
   cachedRead(key, args, { tables: PRODUCT_ROW_TABLES, seconds: CACHED_READ_EXPIRY.catalogue }, read);
 
-/** Which products are on offer moves with the clock, so an offer-filtered list is read live. */
+/** The longest list page and slug kept; past these a request is read live, so input cannot fill the cache. */
+const SHARED_PAGE_MAX = 48;
+const SHARED_SLUG_MAX = 120;
+
+/**
+ * Whether a list is shared across requests. Not when chosen by being on offer (membership moves
+ * with the clock), nor a search, a later page or an unbounded list: each would add an entry per
+ * distinct request, and a visitor chooses those.
+ */
+const isShareable = (filter: ProductFilter): boolean =>
+  !filter.offerOnly && !filter.search && !filter.offset && filter.limit !== undefined && filter.limit <= SHARED_PAGE_MAX;
+
 const productRows = (filter: ProductFilter) =>
-  filter.offerOnly
-    ? productService.getProducts(filter)
-    : catalogueRead("product-rows", [filter], () => productService.getProducts(filter));
+  isShareable(filter) ? catalogueRead("product-rows", [filter], () => productService.getProducts(filter)) : productService.getProducts(filter);
 
 const mapProduct = (
   product: ProductWithRelations,
@@ -161,8 +170,8 @@ const offerPrice = (
  * saves. Bounded by the rows in hand — which on a price-sorted listing is the
  * repository's row cap rather than one page, the ceiling trd.md D5 names.
  */
-const ratingsFor = (products: ProductWithRelations[]): Promise<RatingContext> =>
-  loadRatingContext(products.map((product) => product.id));
+const ratingsFor = (products: ProductWithRelations[], shared = true): Promise<RatingContext> =>
+  loadRatingContext(products.map((product) => product.id), { shared });
 
 export const productsDAL = {
   getProducts: async (filter: ProductFilter): Promise<Product[]> => {
@@ -174,7 +183,7 @@ export const productsDAL = {
         loadDisplayBiddingLockContext(),
       ]);
       const rows = products.filter((p) => p !== null);
-      const ratings = await ratingsFor(rows);
+      const ratings = await ratingsFor(rows, isShareable(filter));
       return rows.map((product) => mapProduct(product, context, locks, ratings));
     } catch (error) {
       throw new Error("Failed to fetch products", { cause: error });
@@ -201,7 +210,9 @@ export const productsDAL = {
   getProductBySlug: async (slug: string): Promise<Product> => {
     try {
       const [product, context, locks] = await Promise.all([
-        catalogueRead("product-by-slug", [slug], () => productsRepository.getProductBySlug(slug)),
+        slug.length <= SHARED_SLUG_MAX
+          ? catalogueRead("product-by-slug", [slug], () => productsRepository.getProductBySlug(slug))
+          : productsRepository.getProductBySlug(slug),
         loadDisplayPriceContext(),
         loadDisplayBiddingLockContext(),
       ]);
@@ -257,7 +268,7 @@ export const productsDAL = {
       loadDisplayBiddingLockContext(),
     ]);
     const rows = products.filter((p) => p !== null);
-    const ratings = await ratingsFor(rows);
+    const ratings = await ratingsFor(rows, false);
     return rows.map((product) => mapProduct(product, context, locks, ratings));
   },
 
@@ -332,7 +343,7 @@ export const productsDAL = {
       loadDisplayPriceContext(),
       loadDisplayBiddingLockContext(),
     ]);
-    const ratings = await ratingsFor(rows);
+    const ratings = await ratingsFor(rows, false);
     return rows.map((row) => ({
       product: mapProduct(row, context, locks, ratings),
       productType: row.productType,

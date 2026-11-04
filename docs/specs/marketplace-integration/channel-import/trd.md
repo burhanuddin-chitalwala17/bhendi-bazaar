@@ -3,7 +3,7 @@
 - **Status:** Implemented
 - **Domain:** channels, with a read from catalog
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-10-21
+- **Verified:** 2026-11-04
 - **References:** [spec.md](spec.md), [ux.md](ux.md), [decisions.md](decisions.md), [channel-connectors trd](../channel-connectors/trd.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md#connecting-a-seller-what-the-two-apis-actually-do) (listing reads, checked 2026-10-21), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0043](../../../adr/0043-a-variant-is-a-product-in-a-family.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -69,7 +69,7 @@ marketplace, and no product is created (Q2).
 - **D10 — Routes.** `POST …/channels/[channel]/listings/read` (Read again),
   `POST …/listings/[id]/unlink` and `POST …/listings/[id]/link-back`, all through `withOrg`. The
   Listings page and the product's "On marketplaces" block read through a DAL; a client leaf
-  refreshes the page every few seconds while a read runs.
+  follows a running read's progress and refreshes the page when it ends or every half-minute (Q21).
 
 ## Packages
 None. Gzip is `node:zlib`; the report is tab-separated text.

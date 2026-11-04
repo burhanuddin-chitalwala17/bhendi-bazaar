@@ -16,7 +16,8 @@ export const reviewsDAL = {
   /** The first page, with `isMine` resolved against whoever is signed in (R9). */
   firstPage: cache(async (productId: string): Promise<ReviewPageDto> => {
     const session = await optionalActiveSession({ onBlocked: "allow" });
-    return reviewService.getPage(productId, 1, session?.user?.id ?? null);
+    // The product page has found the product, so its first page may be shared (ADR-0065).
+    return reviewService.getPage(productId, 1, session?.user?.id ?? null, { shared: true });
   }),
 
   /** Whether there is anyone to attribute a new review to (R7, R12). */

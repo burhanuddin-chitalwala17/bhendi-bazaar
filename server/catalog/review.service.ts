@@ -140,19 +140,24 @@ export class ReviewService {
    * number beside the stars on this page and the number on its listing tile are the
    * same computation, not two that agree by luck (R6).
    */
+  /** `shared` only from the product page, which has already found the product: an id from a URL could be anything. */
   async getPage(
     productId: string,
     page: number,
-    viewerId: string | null
+    viewerId: string | null,
+    { shared = false }: { shared?: boolean } = {},
   ): Promise<ReviewPageDto> {
     const take = REVIEWS_PAGE_SIZE;
     const skip = (Math.max(1, page) - 1) * take;
     const [{ rows, total }, ratings] = await Promise.all([
-      // The rows are the same for every viewer (isMine is resolved below), so they are shared (ADR-0065).
-      cachedRead("review-page", [productId, skip, take], { tables: REVIEW_PAGE_TABLES, seconds: CACHED_READ_EXPIRY.slow }, () =>
-        reviewRepository.listPublished(productId, skip, take),
-      ),
-      loadRatingContext([productId]),
+      // The first page's rows are the same for every viewer (isMine is resolved below), so they are
+      // shared (ADR-0065); a later page is read live, so paging cannot add entries without end.
+      shared && skip === 0
+        ? cachedRead("review-page", [productId, take], { tables: REVIEW_PAGE_TABLES, seconds: CACHED_READ_EXPIRY.slow }, () =>
+            reviewRepository.listPublished(productId, skip, take),
+          )
+        : reviewRepository.listPublished(productId, skip, take),
+      loadRatingContext([productId], { shared }),
     ]);
     return {
       reviews: rows.map((row) => toDto(row, viewerId)),

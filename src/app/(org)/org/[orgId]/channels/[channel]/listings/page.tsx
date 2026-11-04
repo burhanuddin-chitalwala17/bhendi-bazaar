@@ -19,9 +19,8 @@ import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { ListingDetailsPanel } from "@/components/channel/listing-details-panel";
 import { ReadAgainButton } from "@/components/channel/read-again-button";
 import { ReadProgressRefresher } from "@/components/channel/read-progress-refresher";
-import { LISTINGS, pageReadLine } from "@/components/channel/listing-copy";
+import { LISTINGS } from "@/components/channel/listing-copy";
 import { LISTINGS_SETTLE } from "@/components/channel/settle-copy";
-import { cn } from "@/lib/utils";
 import { READ_ERROR, READ_STATE } from "@server/channels/channel-connection.types";
 import { CHANNEL } from "@server/shared/channels";
 
@@ -74,7 +73,6 @@ export default async function ChannelListingsPage({
   };
 
   const rowsSoFar = page.counts.linked + page.counts.notLinked + page.counts.leftOff;
-  const line = pageReadLine(read, label, rowsSoFar > 0);
   const refused =
     read.state === READ_STATE.STOPPED &&
     (read.error === READ_ERROR.OTHER_SHOP || read.error === READ_ERROR.AUTH || read.error === READ_ERROR.DIFFERENT_ACCOUNT);
@@ -93,7 +91,6 @@ export default async function ChannelListingsPage({
 
   return (
     <div className="space-y-4">
-      <ReadProgressRefresher orgId={scope.orgId} channel={page.channel} running={running} />
       {waiting > 0 && (
         <div className="flex flex-col gap-2 rounded-card bg-info/10 p-3 text-sm md:flex-row md:items-center md:justify-between">
           <p className="font-semibold">{PUBLISH.bar(waiting)}</p>
@@ -112,26 +109,7 @@ export default async function ChannelListingsPage({
         )}
       </div>
 
-      {line && (
-        <div className="flex flex-col gap-2">
-          <p
-            role={line.tone === "error" ? "alert" : "status"}
-            className={cn(
-              "text-sm",
-              line.tone === "muted" && "text-muted-foreground",
-              line.tone === "warning" && "font-medium text-warning",
-              line.tone === "error" && "font-medium text-destructive",
-            )}
-          >
-            {line.text}
-          </p>
-          {running && read.total ? (
-            <div className="h-1 w-full overflow-hidden rounded-full bg-muted" aria-hidden>
-              <div className="h-full bg-primary" style={{ width: `${Math.min(100, Math.round(((read.done ?? 0) / read.total) * 100))}%` }} />
-            </div>
-          ) : null}
-        </div>
-      )}
+      <ReadProgressRefresher orgId={scope.orgId} channel={page.channel} label={label} read={read} hasRows={rowsSoFar > 0} running={running} />
 
       {empty && <p className="rounded-card border bg-card p-4 text-sm text-muted-foreground">{LISTINGS.empty(label)}</p>}
 

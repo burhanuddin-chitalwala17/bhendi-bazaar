@@ -17,7 +17,7 @@ import type {
   CreateBiddingEventInput,
   OrgBiddingSummary,
 } from "@server/bidding/bidding.types";
-import { biddingPhase } from "@server/bidding/bidding-window";
+import { biddingPhase, type BiddingWindow } from "@server/bidding/bidding-window";
 
 /**
  * Anything that can run these queries — the client, or a transaction handle. Named so
@@ -110,6 +110,17 @@ export interface BiddingLock {
 
 export class BiddingRepository {
   /**
+   * Every open event with what decides whether it still holds its product: the cacheable half of
+   * `lockedProducts`, whose clock the caller applies at its own instant (ADR-0065).
+   */
+  async openEvents(db: Db = prisma): Promise<Array<BiddingLock & BiddingWindow & { bidCount: number }>> {
+    return await db.biddingEvent.findMany({
+      where: { status: "OPEN" },
+      select: { productId: true, slug: true, status: true, startAt: true, endAt: true, bidCount: true },
+    });
+  }
+
+  /**
    * Every product currently suspended from sale, in one query.
    *
    * This sits on the storefront's read path, so it is deliberately one small indexed
@@ -120,17 +131,6 @@ export class BiddingRepository {
    * and therefore awaiting an outcome. An event that expired with no bids drops out
    * on its own, which is why spec R33 needs no cleanup step.
    */
-  /**
-   * Every open event with what decides whether it still holds its product: the cacheable half of
-   * `lockedProducts`, whose clock the caller applies at its own instant (ADR-0065).
-   */
-  async openEvents(db: Db = prisma): Promise<Array<BiddingLock & { endAt: Date; bidCount: number }>> {
-    return await db.biddingEvent.findMany({
-      where: { status: "OPEN" },
-      select: { productId: true, slug: true, endAt: true, bidCount: true },
-    });
-  }
-
   async lockedProducts(now: Date, db: Db = prisma): Promise<BiddingLock[]> {
     return await db.biddingEvent.findMany({
       where: {

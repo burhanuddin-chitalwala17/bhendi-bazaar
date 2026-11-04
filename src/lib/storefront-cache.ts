@@ -1,5 +1,6 @@
 import { revalidateTag, unstable_cache } from "next/cache";
-import { installReadCache, tableTag, type ReadCache } from "@server/shared/read-cache";
+import { after } from "next/server";
+import { installReadCache, isCachedTable, tableTag, type ReadCache } from "@server/shared/read-cache";
 import { onTableWrites } from "@server/shared/table-writes";
 
 /**
@@ -38,32 +39,60 @@ export function decode<T>(text: string): T {
 /** Outside a Next request (a script, the build's own module graph) there is no cache to use. */
 const NO_CACHE = "Invariant: incrementalCache missing";
 
+/**
+ * Next serves an entry past its `revalidate` at once and refreshes it behind the response, so on
+ * its own `seconds` bounds nothing: the first view after a quiet spell would get data of any age.
+ * Each entry carries when it was read, and one older than `seconds` is read live instead.
+ */
 const nextReadCache: ReadCache = async (key, args, { tables, seconds }, read) => {
   // The arguments are unused in the body but are the cache key: Next keys an entry by them.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const cached = unstable_cache(async (..._args: unknown[]) => encode(await read()), ["read", key], {
+  const cached = unstable_cache(async (..._args: unknown[]) => encode({ at: Date.now(), value: await read() }), ["read", key], {
     tags: tables.map(tableTag),
     revalidate: seconds,
   });
+  let entry: { at: number; value: Awaited<ReturnType<typeof read>> };
   try {
-    return decode(await cached(...args));
+    entry = decode(await cached(...args));
   } catch (error) {
     if (error instanceof Error && error.message.startsWith(NO_CACHE)) return read();
     throw error;
   }
+  return Date.now() - entry.at > seconds * 1000 ? read() : entry.value;
 };
 
+/** Tables with a clear already waiting for the end of a request, and since when. */
+const clearAfterResponse = new Map<string, number>();
+/** A waiting clear older than this is assumed lost (its request died) and is scheduled again. */
+const AFTER_LOST_MS = 60_000;
+
 /**
- * Clear what a write made stale. `expire: 0` so the next visitor waits for fresh data rather than
- * being served the old price. Outside a route handler or action (a page render, a script) Next
- * refuses; the read's own expiry then covers it, as it does for the worker's writes.
+ * Clear what a write made stale, twice. Once now, and once after the response, because the write's
+ * statement runs before its transaction commits: a page rendered in between would cache the old row
+ * with a newer stamp than the first clear. A route handler answers only after awaiting its
+ * transaction, so the second clear lands after the commit. `expire: 0`, so the next visitor waits for
+ * fresh data rather than being served the old price. Outside a route handler or action (a page
+ * render, a script) Next refuses both; the read's own age limit covers it, as for the worker's writes.
  */
 function clearTables(tables: ReadonlySet<string>): void {
   for (const table of tables) {
+    if (!isCachedTable(table)) continue;
+    const tag = tableTag(table);
     try {
-      revalidateTag(tableTag(table), { expire: 0 });
+      revalidateTag(tag, { expire: 0 });
     } catch {
-      // No request to attach the clear to: the expiry stands in.
+      continue; // No request to attach the clear to: the age limit stands in.
+    }
+    const waiting = clearAfterResponse.get(table);
+    if (waiting !== undefined && Date.now() - waiting < AFTER_LOST_MS) continue;
+    try {
+      clearAfterResponse.set(table, Date.now());
+      after(() => {
+        clearAfterResponse.delete(table);
+        revalidateTag(tag, { expire: 0 });
+      });
+    } catch {
+      clearAfterResponse.delete(table);
     }
   }
 }
@@ -71,8 +100,8 @@ function clearTables(tables: ReadonlySet<string>): void {
 let installed = false;
 
 export function installStorefrontCache(): void {
+  installReadCache(nextReadCache);
   if (installed) return;
   installed = true;
-  installReadCache(nextReadCache);
   onTableWrites(clearTables);
 }

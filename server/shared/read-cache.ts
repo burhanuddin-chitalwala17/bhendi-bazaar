@@ -41,13 +41,28 @@ export const tableTag = (table: string): string => `table:${table}`;
  * varies, so `("product-by-slug", [slug])` is one entry per slug.
  */
 export function cachedRead<T>(key: string, args: readonly unknown[], options: CachedReadOptions, read: () => Promise<T>): Promise<T> {
+  const unlisted = options.tables.filter((table) => !isCachedTable(table));
+  if (unlisted.length > 0) {
+    return Promise.reject(new Error(`cachedRead "${key}" declares ${unlisted.join(", ")}, missing from CACHED_TABLES: no write would clear it`));
+  }
   return (registry[KEY] ?? direct)(key, args, options, read);
 }
 
-/** Every cached read, by key, with what it declared: what the table test walks. */
+/** How long a cached result may be served when no write clears it (a write made by the worker). */
 export const CACHED_READ_EXPIRY = {
-  /** Promotions, categories, org caps, open auctions: only the web writes these. */
+  /** Offers, categories, org caps, auctions, ratings, reviews, banners: rarely written. */
   slow: 3600,
   /** Product rows carry stock, which a marketplace sale moves from the worker. */
   catalogue: 300,
 } as const;
+
+/**
+ * Every table some cached read declares. A write clears only these, so a cart, session or job write
+ * costs no cache traffic; `tests/integration/read-cache-tables.test.ts` holds each read's tables to it.
+ */
+export const CACHED_TABLES: ReadonlySet<string> = new Set([
+  "Address", "Banner", "BannerAction", "BiddingEvent", "Category", "MediaAsset", "Org", "OrgAddress",
+  "Product", "ProductMedia", "ProductStock", "Promotion", "PromotionTarget", "Review", "ReviewMedia",
+]);
+
+export const isCachedTable = (table: string): boolean => CACHED_TABLES.has(table);
