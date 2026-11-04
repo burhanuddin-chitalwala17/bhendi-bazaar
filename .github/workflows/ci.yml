@@ -17,7 +17,92 @@ permissions:
   contents: read
 
 jobs:
+  # Every gate below starts at once and `deploy` waits for all of them. They used to run as one
+  # chain (test → e2e → deploy → worker build), which made a push take 30–38 minutes.
   test:
+    runs-on: ubuntu-latest
+
+    # No database here: prisma.config.ts refuses to load without a URL, and nothing connects.
+    env:
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/bhendi_bazaar_ci"
+
+    # Kept so the check is still reported as `test (22.x)`, the name branch protection knows.
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Blocking: a high or critical advisory in what ships stops the deploy (docs/GTM-READINESS.md B1),
+      # unless audit-allowlist.json names it with a reason and an expiry. Dev-only tooling is excluded.
+      - name: Audit production dependencies
+        run: node scripts/audit-prod.mjs
+
+      # Advisory: 55 `no-explicit-any` remain in admin pages, hooks and the shipping provider
+      # layer. The flag comes off when they do (docs/TESTING.md).
+      - name: Run linter
+        run: npm run lint
+        continue-on-error: true
+
+      # Blocking, and scoped to the trees that are already clean. `any` is a defect at a trust
+      # boundary (CLAUDE.md), route handlers reached zero in PR-128, and a rule that only holds
+      # until someone adds one line is not a rule. The scope grows as trees are cleared; it
+      # never shrinks.
+      - name: Lint the trust boundary
+        run: npm run lint:boundary
+
+      # Blocking gates — never add `continue-on-error` here (docs/TESTING.md).
+      - name: Run type check
+        run: npx tsc --noEmit
+
+  # Everything outside tests/integration/ touches no database, so its files run in parallel:
+  # about 2 minutes instead of the 8 the whole suite took serially.
+  unit:
+    runs-on: ubuntu-latest
+
+    env:
+      # Not connected to: test-integrity checks in CI that this names a disposable database.
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/bhendi_bazaar_ci"
+
+    steps:
+      # Full history: tests/unit/docs-integrity.test.ts decides whether a doc's
+      # `Verified:` date predates the last structural change to the code it covers,
+      # which a depth-1 checkout cannot answer.
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The worker image carries ffmpeg (ADR-0039); the transcode test runs against the real
+      # binary and refuses to skip here, so the job installs it rather than the test guessing.
+      - name: Install ffmpeg for the transcode test
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+  # tests/integration/ shares one database, so its files stay serial (vitest.config.ts).
+  integration:
     runs-on: ubuntu-latest
 
     # A throwaway Postgres so the query-budget suite can run. Every SQL statement is a
@@ -42,62 +127,97 @@ jobs:
     env:
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/bhendi_bazaar_ci"
 
-    strategy:
-      matrix:
-        node-version: [22.x]
-
     steps:
-      # Full history: tests/unit/docs-integrity.test.ts decides whether a doc's
-      # `Verified:` date predates the last structural change to the code it covers,
-      # which a depth-1 checkout cannot answer.
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
-
-      # Blocking: a high or critical advisory in what ships stops the deploy (docs/GTM-READINESS.md B1),
-      # unless audit-allowlist.json names it with a reason and an expiry. Dev-only tooling is excluded.
-      - name: Audit production dependencies
-        run: node scripts/audit-prod.mjs
-
-      # The worker image carries ffmpeg (ADR-0039); the transcode test runs against the real
-      # binary and refuses to skip here, so the job installs it rather than the test guessing.
-      - name: Install ffmpeg for the transcode test
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
-
-      # Advisory: 55 `no-explicit-any` remain in admin pages, hooks and the shipping provider
-      # layer. The flag comes off when they do (docs/TESTING.md).
-      - name: Run linter
-        run: npm run lint
-        continue-on-error: true
-
-      # Blocking, and scoped to the trees that are already clean. `any` is a defect at a trust
-      # boundary (CLAUDE.md), route handlers reached zero in PR-128, and a rule that only holds
-      # until someone adds one line is not a rule. The scope grows as trees are cleared; it
-      # never shrinks.
-      - name: Lint the trust boundary
-        run: npm run lint:boundary
 
       # The budget suite needs the schema; the seed deliberately cannot run here
       # (Invariant 7), and does not need to — every budget is structural.
       - name: Apply migrations to the CI database
         run: npx prisma migrate deploy
 
-      # Blocking gates — never add `continue-on-error` here (docs/TESTING.md).
-      - name: Run type check
-        run: npx tsc --noEmit
+      - name: Run integration tests
+        run: npm run test:integration
 
-      - name: Run tests
-        run: npm test -- --run
+  # Builds and pushes the worker's image as `:<sha>` alongside the gates, so it is ready when
+  # `deploy-worker` needs it. Nothing runs it from here; the branch tag (`:main`, `:develop`)
+  # moves only in `deploy-worker`, after the gates pass. The image is built for arm64 and amd64
+  # so either free shape can run it (worker-foundation trd D7).
+  worker-image:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/bhendi-bazaar-worker
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Only the runtime stage's apt layer runs emulated, and it is cached; the npm install
+      # runs natively (infra/worker/Dockerfile).
+      - name: Set up QEMU for the arm64 build
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to the container registry
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Cache in the registry, not the Actions cache: that one is capped at 10 GB a repository,
+      # so the 1 GB-per-architecture dependency layer was evicted and rebuilt, and its export
+      # alone took 6 minutes. Registry blobs are shared with the image and uploaded once.
+      - name: Build and push the worker image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: infra/worker/Dockerfile
+          platforms: linux/arm64,linux/amd64
+          push: true
+          build-args: WORKER_VERSION=${{ github.sha }}
+          tags: ${{ env.IMAGE }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true
+
+      # Downloads the image onto the production machine while the gates run, so the restart
+      # after `deploy` does not wait on a 1 GB pull. Only a pull: the running worker is untouched,
+      # and a commit that then fails its gates leaves an unused image the weekly prune removes.
+      - name: Pre-pull the image on the production machine
+        if: github.ref_name == 'main'
+        continue-on-error: true
+        env:
+          WORKER_HOST: ${{ secrets.WORKER_HOST }}
+          WORKER_SSH_USER: ${{ secrets.WORKER_SSH_USER }}
+          WORKER_SSH_KEY: ${{ secrets.WORKER_SSH_KEY }}
+          GHCR_PULL_USER: ${{ secrets.GHCR_PULL_USER }}
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$WORKER_HOST" || exit 0
+          mkdir -p ~/.ssh
+          trap 'rm -f ~/.ssh/worker' EXIT
+          printf '%s\n' "$WORKER_SSH_KEY" > ~/.ssh/worker
+          chmod 600 ~/.ssh/worker
+          ssh -i ~/.ssh/worker -o StrictHostKeyChecking=accept-new "$WORKER_SSH_USER@$WORKER_HOST" \
+            "echo '$GHCR_PULL_TOKEN' | docker login ghcr.io -u '$GHCR_PULL_USER' --password-stdin && \
+             docker pull -q '${IMAGE}:${{ github.sha }}'"
 
   # Builds the app, starts it, and walks the journeys a broken deploy breaks first (e2e/,
   # docs/GTM-READINESS.md B8). On every event: `deploy` needs it, so nothing ships to customers
@@ -107,7 +227,6 @@ jobs:
   # URL is the follow-up, once a protection-bypass secret exists.
   e2e:
     runs-on: ubuntu-latest
-    needs: test
     timeout-minutes: 20
 
     # `next build` prerenders robots.txt and the sitemap, which reach appUrl()
@@ -156,6 +275,14 @@ jobs:
       - name: Apply migrations to the CI database
         run: npx prisma migrate deploy
 
+      # Next's incremental compile cache; a miss only costs a full build.
+      - name: Cache the Next.js build
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'server/**') }}
+          restore-keys: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
       - name: Build application
         run: npm run build
 
@@ -196,7 +323,7 @@ jobs:
   deploy:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: [test, e2e]
+    needs: [test, unit, integration, e2e]
 
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -263,18 +390,16 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # The worker's image and its machine (worker-foundation trd D7). The image is built for both
-  # arm64 and amd64 so either free shape can run it, pushed to this repository's container
-  # registry on every push, and started on the machine only from main. The machine is reached
-  # over SSH with a key that lives in this repository's secrets; the env file the worker reads
-  # is written from secrets on each deploy and never lives in git or in the image: one secret per
-  # variable, `WORKER_ENV_<NAME>`, over the optional base `WORKER_ENV_FILE` (infra/worker/compose-env.sh).
-  # After `deploy`, whose build runs `prisma migrate deploy`: a worker started first would run
-  # new code against the old schema (docs/GTM-READINESS.md B8).
+  # Starts the worker on its machine from the image `worker-image` already pushed (worker-foundation
+  # trd D7). The machine is reached over SSH with a key that lives in this repository's secrets; the
+  # env file the worker reads is written from secrets on each deploy and never lives in git or in
+  # the image: one secret per variable, `WORKER_ENV_<NAME>`, over the optional base `WORKER_ENV_FILE`
+  # (infra/worker/compose-env.sh). After `deploy`, whose build runs `prisma migrate deploy`: a
+  # worker started first would run new code against the old schema (docs/GTM-READINESS.md B8).
   deploy-worker:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: [test, deploy]
+    needs: [worker-image, deploy]
     permissions:
       contents: read
       packages: write
@@ -286,12 +411,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Set up QEMU for the arm64 build
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-
       - name: Log in to the container registry
         uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
@@ -299,19 +418,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push the worker image
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          context: .
-          file: infra/worker/Dockerfile
-          platforms: linux/arm64,linux/amd64
-          push: true
-          build-args: WORKER_VERSION=${{ github.sha }}
-          tags: |
-            ${{ env.IMAGE }}:${{ github.sha }}
-            ${{ env.IMAGE }}:${{ github.ref_name }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      # The branch tag is what a staging worker is started from, so it moves only once this commit
+      # has passed every gate. A manifest copy: no layer is downloaded or rebuilt.
+      - name: Point the branch tag at this commit's image
+        run: docker buildx imagetools create --tag "$IMAGE:${{ github.ref_name }}" "$IMAGE:${{ github.sha }}"
 
       # Production only. The staging worker is started by hand while someone is testing
       # (spec R6), from the `develop` tag this job has just pushed.

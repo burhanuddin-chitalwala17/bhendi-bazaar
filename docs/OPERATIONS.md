@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-11-01
+- **Verified:** 2026-11-05
 - **Covers:** `src/lib/rate-limit/**`, `src/instrumentation.ts`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -406,8 +406,12 @@ that fails five times and parks, and the old address is never told. All are in
 
 `infra/worker/Dockerfile` builds it: dependencies from the lockfile, the Prisma client generated,
 then only `server/`, `worker/` and `prisma/` on a Node 22 base, run with `node --import tsx`. The
-`deploy-worker` job in `.github/workflows/ci.yml` builds it for arm64 and amd64 on every push and
-pushes `ghcr.io/<owner>/bhendi-bazaar-worker:<sha>` and `:<branch>`. Build it yourself with
+`worker-image` job in `.github/workflows/ci.yml` builds it for arm64 and amd64 on every push, alongside
+the test gates, and pushes `ghcr.io/<owner>/bhendi-bazaar-worker:<sha>`; on `main` it also pre-pulls that
+image on the machine. `deploy-worker` moves `:<branch>` to it once every gate has passed and the web
+deploy has migrated. The npm install runs on the build machine's own CPU with the target's native
+packages selected by flag, so the arm64 image does not install under emulation; layer cache lives at
+`:buildcache` in the same registry. Build it yourself with
 `docker build -f infra/worker/Dockerfile .`; run it anywhere with the env file below. It is about
 1.1 GB because it carries the whole lockfile's dependencies; trimming to the worker's own set was
 left until a second job type existed, and four now do — ping, the media sweep, video transcoding

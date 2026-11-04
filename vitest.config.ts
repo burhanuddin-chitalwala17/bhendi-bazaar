@@ -10,8 +10,8 @@ export default defineConfig({
     globals: true,
     // Test files run in parallel by default, but tests/integration/ share one
     // local database: a file that creates products races a file that counts
-    // them. Serial file execution is the only honest fix — the suite is seconds
-    // long, so the cost is nil.
+    // them. Serial is the safe default; `npm run test:unit` turns parallelism back
+    // on for everything outside tests/integration/, which is 8 minutes serial in CI.
     fileParallelism: false,
     coverage: {
       provider: 'v8',

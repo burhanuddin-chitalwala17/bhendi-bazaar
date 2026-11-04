@@ -1,13 +1,13 @@
 # TESTING.md — test strategy
 
-- **Verified:** 2026-11-01
+- **Verified:** 2026-11-05
 - **Covers:** `tests/*/`, `e2e/`, `.github/workflows/ci.yml`, `vitest.config.ts`, `playwright.config.ts`
 
 ## Stack
 
 Vitest 4 · happy-dom · `@testing-library/react` · `@vitest/coverage-v8` — all in `devDependencies`.
 
-Harness configuration lives in `vitest.config.ts`. It aliases both `@` → `./src` and `@server` → `./server`, mirroring `tsconfig.json` — they must stay in step or an import typechecks and fails at runtime. `fileParallelism` is off, because the database-backed files below share one local database and would race each other.
+Harness configuration lives in `vitest.config.ts`. It aliases both `@` → `./src` and `@server` → `./server`, mirroring `tsconfig.json` — they must stay in step or an import typechecks and fails at runtime. `fileParallelism` is off by default, because the database-backed files below share one local database and would race each other. `npm run test:unit` runs everything outside `tests/integration/` with it on; `npm run test:integration` runs that directory serially. CI runs them as two parallel jobs.
 
 ## Coverage philosophy
 
@@ -184,7 +184,7 @@ A journey asserts what a person sees, never a timing: wait for the confirmation 
 **Adopted in stages**, because a gate that is noisy with no path to quiet gets suppressed, and suppression is the original failure. Where `.github/workflows/ci.yml` stands today:
 
 1. **Typecheck blocks.** ✅ `npx tsc --noEmit`, no `continue-on-error`.
-2. **Tests block.** ✅ `npm test -- --run`. That now includes `tests/unit/docs-integrity.test.ts`, which is why the job checks out with `fetch-depth: 0` — it compares a doc's `Verified:` date against the last commit that changed the shape of the code it covers, and a depth-1 clone cannot answer that.
+2. **Tests block.** ✅ `npm run test:unit` and `npm run test:integration`, as the `unit` and `integration` jobs; `deploy` needs both. The unit run includes `tests/unit/docs-integrity.test.ts`, which is why that job checks out with `fetch-depth: 0` — it compares a doc's `Verified:` date against the last commit that changed the shape of the code it covers, and a depth-1 clone cannot answer that.
 3. **Lint blocks where the tree is already clean, and advises elsewhere.** `npm run lint:boundary`
    runs ESLint over `src/app/api`, `server/checkout`, `server/payments` and `src/lib` with
    `--quiet`, and **is a blocking CI step**. Those trees are at zero errors, and `any` is a defect

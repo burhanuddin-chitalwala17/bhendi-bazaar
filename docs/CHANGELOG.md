@@ -12,6 +12,32 @@
 
 ## Entries
 
+## 2026-11-05 — CI: the gates run side by side, and the worker image no longer builds under emulation
+
+A push to `main` took 30–38 minutes (run 363: 37m50s). Measured from the job timings:
+
+- **The jobs ran as one chain**: test (11m36s) → e2e (3m12s) → deploy (4m) → deploy-worker
+  (18m45s). Now `test`, `unit`, `integration`, `e2e` and `worker-image` start together; `deploy`
+  needs the four gates, and `deploy-worker` needs `deploy` and the image. Still nothing ships before
+  every gate passes, and the worker still starts only after the web deploy migrated.
+- **Tests ran one file at a time**: 497s, of which 31% was tests and the rest per-file setup. Only
+  `tests/integration/` shares a database. `npm run test:unit` (270 files) runs in parallel, 97s on
+  4 cores locally; `npm run test:integration` (84 files) stays serial, 116s locally.
+- **The arm64 worker image ran `npm ci` under QEMU**: 505s. The deps stage now runs on the build
+  platform with `npm ci --os=linux --cpu=<target>` (23s); nothing in it runs an install script and
+  the Prisma client is WebAssembly. Checked by running the cross-installed tree in an arm64
+  container: sharp encodes, and the worker boots, connects and works jobs.
+- **The layer cache exported to the Actions cache for 6 minutes a run**, and missed on the next run
+  anyway (run 350, unchanged lockfile, still 12 minutes). That cache is capped at 10 GB a
+  repository and the dependency layer is ~1 GB per architecture. It now lives in the registry at
+  `:buildcache`.
+- **The restart pulled ~1 GB onto the machine** after the deploy (87s). On `main` the image is
+  pre-pulled while the gates run; the pull alone, never a restart.
+- `e2e` caches `.next/cache`. The check name `test (22.x)` is unchanged.
+
+Expected critical path: about 4 minutes of gates, then the Vercel build (2–4 minutes), then the
+worker restart. `tests/unit/deploy-safety.test.ts` passes against the new workflow; actionlint is clean.
+
 ## 2026-11-05 — Tests: marketplace-facts no longer leaves categories on the dev Home
 
 - **Found by the owner:** the local Home's category row showed twelve "Mats Q35 …" arches. Each was
