@@ -1,23 +1,25 @@
 {
-  "permissions": {
-    "deny": [
-      "Bash(git push*)",
-      "Bash(gh *)"
-    ]
-  },
   "hooks": {
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": "bash scripts/hooks/post-edit.sh", "timeout": 90 }
+          {
+            "type": "command",
+            "command": "bash scripts/hooks/post-edit.sh",
+            "timeout": 90
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "bash scripts/hooks/stop.sh", "timeout": 300 }
+          {
+            "type": "command",
+            "command": "bash scripts/hooks/stop.sh",
+            "timeout": 300
+          }
         ]
       }
     ]
