@@ -1,0 +1,49 @@
+tests/integration/stock-sync.test.ts
+  s_70578559cabf14::t_db888e78d4a2d0 84-92,112,146,148,150,157-203
+docs/CHANGELOG.md
+  s_70578559cabf14::t_8a8d67c8ae92eb 44
+  s_70578559cabf14::t_db888e78d4a2d0 15-43
+tests/unit/payment-failed-restock.test.ts
+  s_70578559cabf14::t_db888e78d4a2d0 17
+server/channels/channels.jobs.ts
+  s_70578559cabf14::t_db888e78d4a2d0 14,99-104
+server/channels/CLAUDE.md
+  s_70578559cabf14::t_db888e78d4a2d0 52
+docs/specs/marketplace-integration/inventory-sync/decisions.md
+  ai_agent 16,39-40
+server/catalog/stock.repository.ts
+  s_70578559cabf14::t_db888e78d4a2d0 18,31-37
+docs/specs/marketplace-integration/inventory-sync/spec.md
+  s_70578559cabf14::t_98ccc2655749e9 42,59
+docs/specs/marketplace-integration/inventory-sync/ux.md
+  s_70578559cabf14::t_98ccc2655749e9 12,26,28-29,34,48,102
+server/shared/jobs/jobs.types.ts
+  s_70578559cabf14::t_db888e78d4a2d0 18-22,32
+server/channels/channel-stock.service.ts
+  s_70578559cabf14::t_db888e78d4a2d0 141-155
+docs/specs/marketplace-integration/inventory-sync/trd.md
+  s_70578559cabf14::t_db888e78d4a2d0 38-41
+  s_70578559cabf14::t_98ccc2655749e9 67,85
+server/channels/channel-listing.repository.ts
+  s_70578559cabf14::t_db888e78d4a2d0 6,8,382-398
+server/shared/jobs/stock-changed.job.ts
+  s_70578559cabf14::t_db888e78d4a2d0 1-28
+server/shared/jobs/jobs.enqueue.ts
+  s_70578559cabf14::t_db888e78d4a2d0 30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "107c162b3fc0092c9651aa946a65215a8a6ce101",
+  "prompts": {},
+  "sessions": {
+    "s_70578559cabf14": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3d8c5e99-123d-451a-b57d-7876f27849f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
