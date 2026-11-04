@@ -1,0 +1,29 @@
+src/app/api/CLAUDE.md
+  s_70578559cabf14::t_f0ad2ba7d3f716 3,20
+src/components/CLAUDE.md
+  s_70578559cabf14::t_f0ad2ba7d3f716 3,40
+docs/CONTRACTS.md
+  s_70578559cabf14::t_f0ad2ba7d3f716 3,262-263
+server/checkout/CLAUDE.md
+  s_70578559cabf14::t_f0ad2ba7d3f716 3,31
+docs/CHANGELOG.md
+  s_70578559cabf14::t_66e02d0eefab65 15-26
+server/channels/CLAUDE.md
+  s_70578559cabf14::t_f0ad2ba7d3f716 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "c0d60a8819c9bd526a703f6600723ef36aa6910a",
+  "prompts": {},
+  "sessions": {
+    "s_70578559cabf14": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3d8c5e99-123d-451a-b57d-7876f27849f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
