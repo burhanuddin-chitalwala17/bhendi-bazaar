@@ -12,6 +12,16 @@
 
 ## Entries
 
+## 2026-11-05 — CI green again: three docs re-verified against ADR-0067, "seller" out of the business page
+
+- `main`'s `unit` job failed four tests after the /business commit, so nothing deployed.
+- **Docs gate:** ADR-0067 postdated `CLAUDE.md`, `docs/CONVENTIONS.md` and `docs/README.md`. Read
+  against it: `CONVENTIONS.md` still called the copy scan "a ratchet"; it has no baseline and fails
+  on any inline copy, so the line says that. `CLAUDE.md` adds ADR-0067 to the conventions that touch
+  almost every change. `README.md` maps directories and had nothing to correct. All three re-dated.
+- **Vocabulary gate:** `business-copy.ts` said "seller account(s)" in two places. Now "Amazon and
+  Flipkart accounts" and "marketplace account"; the exemption list is unchanged.
+
 ## 2026-11-05 — CI: the gates run side by side, and the worker image no longer builds under emulation
 
 A push to `main` took 30–38 minutes (run 363: 37m50s). Measured from the job timings:
