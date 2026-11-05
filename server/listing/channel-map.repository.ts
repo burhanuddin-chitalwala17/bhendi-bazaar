@@ -1,4 +1,4 @@
-import type { ChannelMapFit } from "@prisma/client";
+import type { ChannelMapFit, Prisma } from "@prisma/client";
 
 import { prisma } from "@server/shared/prisma";
 import type { Channel } from "@server/shared/channels";
@@ -101,6 +101,21 @@ export interface ValueInUse {
   value: string;
   products: number;
 }
+
+/** A write that may join a caller's transaction (setup-requests D8). */
+type Db = Prisma.TransactionClient | typeof prisma;
+
+import { ATTRIBUTE_SOURCE, type AttributeSource } from "./channel-map.types";
+export { ATTRIBUTE_SOURCE, type AttributeSource };
+
+export interface AttributeFillRow {
+  channel: string;
+  theirCategory: string;
+  theirAttribute: string;
+  source: string | null;
+  constant: string | null;
+}
+const FILL_SELECT = { channel: true, theirCategory: true, theirAttribute: true, source: true, constant: true } as const;
 
 export const channelMapRepository = {
   /**
@@ -229,10 +244,10 @@ export const channelMapRepository = {
     theirValue: string;
     checkedOn: Date;
     checkedSource?: string | null;
-  }): Promise<ValueMapRow> {
+  }, db: Db = prisma): Promise<ValueMapRow> {
     const { channel, list, valueKey, theirValue, checkedOn } = input;
     const rest = { theirValue, checkedOn, checkedSource: input.checkedSource ?? null };
-    return await prisma.channelValueMap.upsert({
+    return await db.channelValueMap.upsert({
       where: { channel_list_valueKey: { channel, list, valueKey } },
       create: { channel, list, valueKey, ...rest },
       update: rest,
@@ -298,16 +313,27 @@ export const channelMapRepository = {
     theirLabel: string | null;
     checkedOn: Date;
     checkedSource: string;
-  }): Promise<CategoryMapRow> {
-    return await prisma.channelCategoryMap.create({
-      data: { ...input, fit: "EXACT", notSold: false, publishes: false },
+  }, db: Db = prisma): Promise<CategoryMapRow> {
+    return await db.channelCategoryMap.create({
+      data: {
+        channel: input.channel,
+        productType: input.productType,
+        kind: input.kind,
+        theirCategory: input.theirCategory,
+        theirLabel: input.theirLabel,
+        checkedOn: input.checkedOn,
+        checkedSource: input.checkedSource,
+        fit: "EXACT",
+        notSold: false,
+        publishes: false,
+      },
       select: CATEGORY_SELECT,
     });
   },
 
   /** Make one row the publishing one for its type and kind, in one transaction (Q26). */
-  async setPublishing(id: string, checkedOn: Date): Promise<CategoryMapRow | null> {
-    return await prisma.$transaction(async (tx) => {
+  async setPublishing(id: string, checkedOn: Date, db?: Prisma.TransactionClient): Promise<CategoryMapRow | null> {
+    const run = async (tx: Prisma.TransactionClient) => {
       const row = await tx.channelCategoryMap.findUnique({ where: { id }, select: CATEGORY_SELECT });
       if (!row || row.theirCategory === null) return null;
       await tx.channelCategoryMap.updateMany({
@@ -319,7 +345,8 @@ export const channelMapRepository = {
         data: { publishes: true, checkedOn },
         select: CATEGORY_SELECT,
       });
-    });
+    };
+    return db ? await run(db) : await prisma.$transaction(run);
   },
 
   /** Remove a read-only type row (Q26). The publishing row is refused here: mark another first. */
@@ -354,7 +381,7 @@ export const channelMapRepository = {
     freeText?: boolean;
     checkedOn: Date;
     checkedSource?: string | null;
-  }): Promise<AttributeMapRow> {
+  }, db: Db = prisma): Promise<AttributeMapRow> {
     const { channel, theirCategory, fact } = input;
     const rest = {
       theirAttribute: input.theirAttribute,
@@ -363,11 +390,61 @@ export const channelMapRepository = {
       checkedOn: input.checkedOn,
       checkedSource: input.checkedSource ?? null,
     };
-    return await prisma.channelAttributeMap.upsert({
+    return await db.channelAttributeMap.upsert({
       where: { channel_theirCategory_fact: { channel, theirCategory, fact } },
       create: { channel, theirCategory, fact, ...rest },
       update: rest,
       select: ATTRIBUTE_SELECT,
+    });
+  },
+  /** A fill for an attribute no fact answers: from the product, or one fixed value (setup-requests D6). */
+  async setFill(input: { channel: Channel; theirCategory: string; theirAttribute: string; source: AttributeSource | null; constant: string | null; checkedOn: Date; checkedSource: string }, db: Db = prisma): Promise<void> {
+    const { channel, theirCategory, theirAttribute } = input;
+    const rest = { source: input.source, constant: input.constant, checkedOn: input.checkedOn, checkedSource: input.checkedSource };
+    await db.channelAttributeFill.upsert({
+      where: { channel_theirCategory_theirAttribute: { channel, theirCategory, theirAttribute } },
+      create: { channel, theirCategory, theirAttribute, ...rest },
+      update: rest,
+    });
+  },
+
+  /** The fills for some of a channel's types, in one read. */
+  async fillsFor(channel: Channel, theirCategories: readonly string[]): Promise<AttributeFillRow[]> {
+    if (theirCategories.length === 0) return [];
+    return await prisma.channelAttributeFill.findMany({ where: { channel, theirCategory: { in: [...theirCategories] } }, select: FILL_SELECT });
+  },
+
+  /** Every attribute a channel's type already answers, by a fact or a fill: what is set up (setup-requests D9). */
+  async answeredAttributes(channel: Channel, theirCategories: readonly string[]): Promise<Array<{ theirCategory: string; theirAttribute: string; fact: string | null }>> {
+    if (theirCategories.length === 0) return [];
+    const where = { channel, theirCategory: { in: [...theirCategories] } };
+    const [facts, fills] = await Promise.all([
+      prisma.channelAttributeMap.findMany({ where, select: { theirCategory: true, theirAttribute: true, fact: true } }),
+      prisma.channelAttributeFill.findMany({ where, select: { theirCategory: true, theirAttribute: true } }),
+    ]);
+    return [
+      ...facts.map((r) => ({ theirCategory: r.theirCategory, theirAttribute: r.theirAttribute.split(".")[0], fact: r.fact as string | null })),
+      ...fills.map((r) => ({ theirCategory: r.theirCategory, theirAttribute: r.theirAttribute, fact: null })),
+    ];
+  },
+
+  /** One read row of a type, kind and marketplace type, if added already (setup-requests D8). */
+  async typeRow(channel: Channel, productType: string, kind: string | null, theirCategory: string, db: Db = prisma): Promise<CategoryMapRow | null> {
+    return await db.channelCategoryMap.findFirst({ where: { channel, productType, kind, theirCategory }, select: CATEGORY_SELECT });
+  },
+
+  /** Our types that publish to one of a channel's types: who Apply adds a fact to (setup-requests D6). */
+  async typesPublishingTo(channel: Channel, theirCategory: string): Promise<string[]> {
+    const rows = await prisma.channelCategoryMap.findMany({ where: { channel, theirCategory, publishes: true }, select: { productType: true }, distinct: ["productType"] });
+    return rows.map((r) => r.productType);
+  },
+
+  /** The publishing type of each of some types and kinds, for the category check (setup-requests D9). */
+  async publishingFor(channel: Channel, productTypes: readonly string[]): Promise<Array<{ productType: string; kind: string | null; theirCategory: string | null }>> {
+    if (productTypes.length === 0) return [];
+    return await prisma.channelCategoryMap.findMany({
+      where: { channel, productType: { in: [...productTypes] }, publishes: true, notSold: false },
+      select: { productType: true, kind: true, theirCategory: true },
     });
   },
 };

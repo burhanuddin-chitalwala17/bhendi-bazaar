@@ -43,6 +43,7 @@ export const ADMIN_NAV_COPY = {
   shops: "Shops",
   payouts: "Payouts",
   channels: "Channels",
+  requests: "Requests",
   reviews: "Reviews",
   platform: "Platform",
   users: "Users",

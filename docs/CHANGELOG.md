@@ -12,6 +12,71 @@
 
 ## Entries
 
+## 2026-11-05 — Four env files: local, dev, prod, example
+
+- **Asked by the owner.** `.env.example` now holds every variable in sections — Vercel, local only,
+  worker, ops — replacing `.env.production.example` and `.env.worker.example`. The worker list is
+  commented (a copy into `.env` must not blank the app's values); `deploy-safety.test.ts` reads it there.
+- `npm run dev:dev` / `dev:prod` run the local app against the live dev or production database, from
+  the gitignored `.env.dev` / `.env.prod` (`node --env-file`, so they win over `.env`). Both pin
+  `APP_ENV=local`, localhost auth URLs, and the seed gates off. Ran: deploy-safety, docs-integrity.
+
+## 2026-11-05 — Setup requests: what a shop can't fix becomes a ticket we fix once [CONTRACT] [MIGRATION]
+
+- **setup-requests, units 1–5** (spec, decisions Q1–Q32, ux, TRD in `docs/specs/setup-requests/`).
+  A new `requests` domain: a **requirement** is raised by itself from a marketplace's refusal or from
+  readiness and the admin enables it in one tap (Amazon fields for a type) or one pick (an Amazon
+  category for our type); an **issue** is a shop's report under a category, for a developer. One
+  ticket per fix, keyed by what fixes it (`Ticket`), each shop's need beside it (`TicketNeed`).
+- Apply reads Amazon's type definition through the home brand (`HOME_BRAND_ORG_ID`), proposes per field
+  reuse, add a declared fact, fill from the product (`ChannelAttributeFill`) or a fixed value, and
+  writes it in one transaction with the ticket, only while open; a create then sends fills beside
+  facts. Done is checked daily (enqueued by `channels.maintain`, no new schedule).
+- Shop: How to fix it shows the ticket's state (With us · Ready · Not supported yet) in place of "Ask
+  the admin"; an unrecognised complaint offers Report this; Channels lists "Your requests". Admin:
+  `/admin/requests` with Requirements and Issues.
+- Cost: raising is two statements however many shops; the daily problems look grows from 2 to 3
+  statements (one job hands every shop's complaints over).
+- Review in a fresh context, every finding fixed: needs deduplicated per (ticket, shop, product) so two
+  same-code errors cannot fail a batch; the daily look's standing complaints never reopen a resolved
+  ticket (only a fresh send or report does); `notifiedAt` cleared only when the ticket is open again;
+  tickets locked in key order; a type's facts appended atomically; a report's product checked against
+  the shop; a from-product field with no source refused as a field error; the daily pass drops needs
+  whose product left sale and closes tickets nobody needs (Q13); constants and copy out of the server.
+- Mutations, each failed `setup-requests` integration: resolving without the open guard (double Apply
+  wrote twice); never reopening a done ticket; skipping the stale-plan hash; raising needs without
+  de-duplication. Ran: unit (3080), integration (655), `tsc`, `lint:boundary`, `docs:check`, `next build`.
+
+## 2026-11-05 — A listing waiting on its marketplace reads "Pending"
+
+- **Asked by the owner** (marketplace-publish Q25, superseding Q4). "Sent {ago} · Amazon usually
+  answers within an hour" and "Checking with Amazon · next look in {n} min" become one state:
+  "Pending · waiting for Amazon's answer". The send toast says it is pending. Copy only
+  (`statusText`); the stored states and the polling schedule are unchanged.
+- Docs: setup-requests spec drafted (spec, decisions Q1–Q31, ux, local prototype); not built.
+
+## 2026-11-05 — A refused listing says how to fix each problem [CONTRACT]
+
+- **Asked by the owner** (marketplace-publish Q24). Amazon's "'Strap Type' is required but missing" ×20
+  had nothing to tap. The listing banner now has **How to fix it**: the brand's details go to Brands and
+  defaults (or Choose a brand when the product has none); the offer, when the product has no MRP, to
+  Add the MRP; an attribute the mapping fills from a blank fact to Fill on product; anything else to Ask
+  the admin. Only what none of these place keeps Amazon's sentence.
+- `amazonIssues` keeps the attribute Amazon names and says which are the brand's or the MRP
+  (`NEED_OF`); `fixesOf` (`listing-plan.ts`, pure) groups them; the screen reads the attribute mapping
+  only when a complaint needs it.
+- Mutations: treating an answered fact as fillable, and asking for an MRP the product has; each failed
+  `listing-plan`. Ran: unit (3065), `tsc`.
+
+## 2026-11-05 — Channel register: adding a marketplace type no longer fails
+
+- **Fix.** Adding an Amazon type on `/admin/channels/{marketplace}` answered 500 every time: the route
+  spread the parsed body, its `action: "add"` included, into `channelCategoryMap.create`, which Prisma
+  refused as an unknown argument. The route now passes the four fields, and `addReadType` names every
+  column it writes, so an extra key can never reach the insert (Invariant 4). A new test in
+  `channel-register` sends the screen's own request through the route. Mutation: restoring the spread
+  made it fail. Ran: `channel-register` integration, `tsc`.
+
 ## 2026-11-05 — Store: six products to a desktop row
 
 - **Asked by the owner.** `PRODUCT_GRID_CLASSES` goes `lg:grid-cols-4` → `lg:grid-cols-6` (phone 2,

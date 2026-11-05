@@ -50,6 +50,23 @@ export interface ListingIssue {
   message: string;
   severity: "error" | "warning";
   field: ListingField | null;
+  /** The marketplace's own name for what it complains of; absent on issues stored before Q24. */
+  attribute?: string | null;
+  /** What that is in our terms, when the marketplace's provider can tell (marketplace-publish Q24). */
+  need?: IssueNeed | null;
+}
+
+/** What a complaint is about in our terms, said by the marketplace's provider (marketplace-publish Q24). */
+export const ISSUE_NEED = { BRAND: "brand", MRP: "mrp" } as const;
+export type IssueNeed = (typeof ISSUE_NEED)[keyof typeof ISSUE_NEED];
+
+/** Where a complaint is fixed (marketplace-publish Q24): the brand, the MRP, a fact on the product, or the admin. */
+export const LISTING_FIX = { BRAND: "brand", MRP: "mrp", FACTS: "facts", ADMIN: "admin" } as const;
+export type ListingFix = (typeof LISTING_FIX)[keyof typeof LISTING_FIX];
+export interface ListingFixDTO {
+  kind: ListingFix;
+  /** What to fill, as the shop reads it. */
+  names: string[];
 }
 
 /** Home's line for listings a marketplace says need a fix (marketplace-publish Q23). */
@@ -136,6 +153,10 @@ export interface ListingScreenDTO {
   issues: ListingIssue[];
   /** The issues came from the daily look, not a send (marketplace-publish Q23): whether it is hidden from shoppers. */
   marketplaceProblems: { suppressed: boolean } | null;
+  /** Each complaint grouped by where it is fixed (Q24). */
+  fixes: ListingFixDTO[];
+  /** Complaints with no field on this page and no fix we can name: shown in the marketplace's words. */
+  otherIssues: ListingIssue[];
   /** What Amazon shows when it differs from what was sent (marketplace-publish Q14). */
   showing: { title: string | null; mainImageUrl: string | null } | null;
   /** For a listing not yet on the marketplace: how it will be made, and what the marketplace still needs. */

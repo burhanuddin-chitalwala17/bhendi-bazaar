@@ -92,6 +92,7 @@ Two of this phase's strands are now specified; the rest stays deliberately undet
 |---|---|---|
 | [error-tracking](specs/error-tracking/) | When something fails, somebody finds out — in minutes, with enough detail to act | 📝 Draft |
 | [read-caching](specs/read-caching/) | A page that renders the same for everyone is built once, and no price on it is ever stale | 📝 Draft |
+| in-app notifications: requests on the bell | "Ready" and "new request" as in-app notifications once the in-app notifications branch (PR #57) is rebased and merged (setup-requests Q19) | ⏸ Later |
 
 Both were pulled forward out of "not started" for the same reason: Phase 9 shipped a URL designed to be *shared*, so the storefront now attracts the one traffic shape that uncached reads handle worst, and the store's growing set of deliberately fail-open controls — the limiter, the reconciliation sweep, the ledger backfill — each record a failure and notify nobody.
 
@@ -250,6 +251,10 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | inventory-sync Q5 *(later)* | Stock held in Amazon's warehouse (FBA) | parked, if a shop uses FBA |
 | inventory-sync Q21 *(due before 2027-03-27)* | Move Amazon's order check from the Orders API v0 to `searchOrders` (2026-01-01), after confirming its response shape on a live order | planned |
 | [marketplace-integration/marketplace-publish](specs/marketplace-integration/marketplace-publish/) | Review and publish listing changes and new listings (families too) to Amazon, price and pause to Flipkart; each answer back on its field | 🔨 Built 2026-11-02, uncommitted; waiting for the owner's check on a phone |
+| [setup-requests](specs/setup-requests/) | Two tickets for what a shop can't fix itself: a requirement the app raises and the admin enables with one tap or one decision (Amazon fields, Amazon category); an issue the shop writes under a category, fixed by a developer | 🔨 Built 2026-11-05, uncommitted; waiting for the owner's check (set `HOME_BRAND_ORG_ID`) |
+| setup-requests: value match | Amazon rejects our answer for a field: a third kind on the same engine (setup-requests Q16) | ⏸ Later |
+| setup-requests: product type | A listing being settled matches none of our types: a kind on the same engine (Q17) | ⏸ Later |
+| setup-requests: Flipkart and other audiences | Each a new kind once the engine exists (Q20) | ⏸ Later |
 | channel-listings Q17, Q18 *(later)* | Amazon search keywords; editing many listings at once | parked |
 | marketplace-publish Q20, Q21 *(later)* | Instant answers by Amazon notification (AWS queue); a business price | parked |
 | channel-reporting | What sold where, per channel and consolidated, each figure naming the channels it covers and when each last reported | planned |

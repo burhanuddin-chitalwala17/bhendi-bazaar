@@ -8,6 +8,8 @@ import { listingPublishService } from "@server/channels/listing-publish.service"
 import { listingCreateService } from "@server/channels/listing-create.service";
 import type { ListingScreenDTO, ProductListingSummaryDTO, ReviewDTO } from "@server/channels/platform-listing.types";
 import { NotFoundError } from "@server/shared/domain-error";
+import { requestService } from "@server/requests/request.service";
+import type { ShopTicketDTO } from "@server/requests/request.types";
 
 export const platformListingDAL = {
   /** The listing screen; null when the product has no listing on that marketplace. */
@@ -17,6 +19,16 @@ export const platformListingDAL = {
     } catch (error) {
       if (error instanceof NotFoundError) return null;
       throw error;
+    }
+  },
+
+  /** The shop's tickets for one product (setup-requests R4); none when the read fails, so the screen still opens. */
+  async tickets(orgId: string, productId: string): Promise<ShopTicketDTO[]> {
+    try {
+      return await requestService.forShop(orgId, { productIds: [productId], take: 10 });
+    } catch (error) {
+      console.error("[Listing] tickets read failed:", error instanceof Error ? error.name : error);
+      return [];
     }
   },
 

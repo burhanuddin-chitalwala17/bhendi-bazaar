@@ -19,6 +19,7 @@ import { channelConnectionRepository, type OrdersCheckRow } from "./channel-conn
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
 import { complainedFields, computeListing, masterValues, parseOverrides, parseSent, snapshot, toWholeRupees } from "./listing-plan";
+import { complaintIssues, handOverComplaints } from "./listing-complaints";
 import { checkListingsSpec, enqueueListingCheck, LISTING_CHECK_AFTER_SECONDS, LISTING_CHECK_EVERY_SECONDS, publishListingSpec } from "./listing-publish.job";
 import { listingCreateService } from "./listing-create.service";
 import { platformListingRepository, type PlatformListingRow } from "./platform-listing.repository";
@@ -165,6 +166,9 @@ async function lookAt(row: PlatformListingRow, connection: OrdersCheckRow | null
   const refused = new Set(errors.map((i) => i.field));
   const confirmed = !done ? null : refused.has(null) ? (Object.keys(sent).length ? sent : null) : { ...sent, ...pick(pending, (Object.keys(pending) as ListingField[]).filter((f) => !refused.has(f))) };
   await platformListingRepository.recordAnswer(row.id, { sent: confirmed, publishState: state, issues: answer.issues, nextCheckAt: next, checkCount: count, live: answer.live, showing, keepPending: !done }, now, prisma, [PUBLISH_STATE.CHECKING]);
+  if (errors.length > 0 && row.productId) {
+    await handOverComplaints([{ orgId: row.orgId, productId: row.productId, channel: connection.channel, productType: null, kind: null, theirCategory: row.marketplaceType, issues: complaintIssues(errors) }]);
+  }
   // A fix published and found clean ends the daily look's complaint at once, not tomorrow (Q23).
   if (done && answer.found && errors.length === 0) await channelListingRepository.clearProblems(connection.id, sku);
   if (done && answer.found && errors.length === 0 && row.channelListingId === null) await listingCreateService.linkCreated({ ...row, sent: confirmed });

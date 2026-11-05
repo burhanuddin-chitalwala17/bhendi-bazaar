@@ -45,11 +45,11 @@ time saved against 5–10 minutes per Amazon listing is measured here.
 - **A partial family:** the family page made and some members refused. *Answered by D7.*
 - **Rate limits:** fifty listings published at once must stay within five requests a second. *Answered by D4.*
 - **Prices in the wrong unit:** paise to Amazon's decimals and Flipkart's whole rupees. *Answered by D2.*
-- **Waiting forever:** a listing stuck in "Checking" when Amazon never answers. *Answered by D5.*
+- **Waiting forever:** a listing stuck in "Pending" (Q25) when Amazon never answers. *Answered by D5.*
 
 ## Product acceptance
 - A1 — From a listing with two changes, Review shows both old → new; undoing one and publishing sends
-  one; the listing reads "Sent", then "Live" within the hour.
+  one; the listing reads "Pending" (Q25), then "Live" within the hour.
 - A2 — A change Amazon refuses shows "Needs attention" and "Amazon says: …" on that field; fixing it
   and publishing again clears it.
 - A3 — Publishing all on the Amazon Listings page ends in "10 sent · 2 need attention", each tappable.

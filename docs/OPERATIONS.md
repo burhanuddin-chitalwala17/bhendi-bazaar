@@ -45,6 +45,7 @@ npm run dev                 # http://localhost:3000
 | `RATE_LIMIT_CLIENT_IP_HEADER` | ✅ preview, production | The header the edge sets with the caller's address: `x-vercel-forwarded-for` on Vercel. **Required when deployed**; never `x-forwarded-for` unless the edge overwrites it, because a caller can send that one. Unset locally |
 | `ENCRYPTION_KEY` | ○ | Decrypts shipping credentials stored before 2026-10-20 only (`server/shared/crypto.ts`). Keep it set while any such row exists; new values use `CREDENTIAL_KEYS` |
 | `CHANNELS_CONNECT` | ○ | Marketplaces open to connect, comma-separated (`amazon,flipkart`); empty or unset means none (`server/channels/channel-availability.ts`). The only switch for marketplace connections |
+| `HOME_BRAND_ORG_ID` | ○ | The platform's own shop (Niqab Boutique) whose marketplace connections read the published type definitions for setup requests (`server/requests/home-brand.ts`, setup-requests Q14). Unset: the admin's previews say so, and a category can still be applied by name |
 | `AMAZON_APP_ID` / `AMAZON_APP_SECRET` | ○ | Amazon SP-API Login with Amazon client id and secret (Developer Central → app → LWA credentials). Unset means Amazon shows as unavailable |
 | `AMAZON_SOLUTION_ID` | ○ | The Amazon app's own id, `amzn1.sp.solution…`, used in the consent link |
 | `FLIPKART_APP_ID` / `FLIPKART_APP_SECRET` | ○ | Flipkart third-party app (Partner portal → Manage API Access). Unset means Flipkart shows as unavailable |
@@ -63,7 +64,7 @@ npm run dev                 # http://localhost:3000
 | `BLOCK_CRAWLERS` | ○ | Pre-launch only. `1` turns every compliant crawler away: robots.txt disallows all, the sitemap goes empty, and every response carries `X-Robots-Tag: noindex, nofollow` (`src/lib/crawl-block.ts`). **Delete at launch** — while set, the 410 purge of the old WordPress index is paused, and the site cannot be indexed |
 | `GOOGLE_VERIFICATION_TOKEN` | ○ | The content value of Google Search Console's HTML-meta verification tag. Rendered into the page `<head>` (`src/app/layout.tsx`) only when set; unset, no tag is emitted |
 
-Locally, `.env` holds only what the app reads; deploy and ops secrets (worker SSH, image registry, backups, the production admin seed) live in GitHub secrets and Vercel, and any local copy goes in `.env.ops`, which nothing loads. `.env.example` and `.env.production.example` are the committed shape of this table — copy one and fill it in. They carry sample values only, and `.gitignore` admits just those two out of `.env*`. `src/lib/env.ts` holds the required-variable list, and is kept in step with this table. `src/instrumentation.ts` runs it at boot: `APP_ENV` and the rate-limit variables are **refused** (the instance will not start); the rest of the list is **logged** as `[startup] Missing required environment variables: …`, not refused, until each is checked against every Vercel environment (rate-limiting Q11), and `/api/health?deep=1` answers 503 while any is missing. It still omits `ENCRYPTION_KEY`, which this table marks required.
+There are four env files. `.env` is local (local Postgres); `.env.dev` and `.env.prod` run the local app against the live dev or production database (`npm run dev:dev` / `npm run dev:prod`, passed with `node --env-file`, so they win over `.env`); `.env.example` is the committed shape of this table, in sections — Vercel, local only, worker, ops — with sample values only, and the one file `.gitignore` admits out of `.env*`. Deploy and ops secrets (worker SSH, image registry, backups) live only in GitHub secrets and Vercel. `src/lib/env.ts` holds the required-variable list, and is kept in step with this table. `src/instrumentation.ts` runs it at boot: `APP_ENV` and the rate-limit variables are **refused** (the instance will not start); the rest of the list is **logged** as `[startup] Missing required environment variables: …`, not refused, until each is checked against every Vercel environment (rate-limiting Q11), and `/api/health?deep=1` answers 503 while any is missing. It still omits `ENCRYPTION_KEY`, which this table marks required.
 
 ### Local development database
 Development runs against a local Postgres, never a metered cloud one — a hot-reload session against Prisma Postgres is what exhausted the workspace's operation quota in August 2026 (CHANGELOG PR-70). One-time setup:
@@ -377,7 +378,7 @@ only checks a tool is available and then queues it — set them in one place and
 every run fails on the half that is missing. The email notice wants `RESEND_API_KEY`, `EMAIL_FROM`
 and `NEXT_PUBLIC_APP_URL`, the site's own values: without them every email change queues a job
 that fails five times and parks, and the old address is never told. All are in
-`.env.worker.example`; each needs its `WORKER_ENV_<NAME>` secret (below) before the deploy.
+section 3 of `.env.example`; each needs its `WORKER_ENV_<NAME>` secret (below) before the deploy.
 
 - **Locally:** `npm run worker` beside `npm run dev`, same `DATABASE_URL`. It logs the job types it
   knows and writes a heartbeat row the admin dashboard reads. Send it a no-op with a `ping` job from
@@ -474,7 +475,7 @@ That is a deployment fact ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not
 | `WORKER_HOST` | The reserved public IP |
 | `WORKER_SSH_USER` | `ubuntu` on that image |
 | `WORKER_SSH_KEY` | A private key whose public half is in the machine's `authorized_keys`. Generate one for the pipeline alone; never reuse a personal key |
-| `WORKER_ENV_<NAME>` | **One secret per worker variable**, named for it: `WORKER_ENV_DATABASE_URL` (the **direct** string of the production database), `WORKER_ENV_CREDENTIAL_KEYS`, and so on for every name in `.env.worker.example`. The deploy writes `NAME=value` for each (`infra/worker/compose-env.sh`), so changing a value is editing one secret. **The workflow names each secret it passes**, never `toJSON(secrets)`, so a secret for a new variable is read only once its line is added to the step's `env:` in `ci.yml` (and `WORKER_STAGING_ENV_` in `staging-worker.yml`); `.env.worker.example` is the complete list and `tests/unit/deploy-safety.test.ts` holds both workflows to exactly it |
+| `WORKER_ENV_<NAME>` | **One secret per worker variable**, named for it: `WORKER_ENV_DATABASE_URL` (the **direct** string of the production database), `WORKER_ENV_CREDENTIAL_KEYS`, and so on for every name in section 3 of `.env.example`. The deploy writes `NAME=value` for each (`infra/worker/compose-env.sh`), so changing a value is editing one secret. **The workflow names each secret it passes**, never `toJSON(secrets)`, so a secret for a new variable is read only once its line is added to the step's `env:` in `ci.yml` (and `WORKER_STAGING_ENV_` in `staging-worker.yml`); section 3 of `.env.example` is the complete list and `tests/unit/deploy-safety.test.ts` holds both workflows to exactly it |
 | `WORKER_ENV_FILE` | Optional, the old whole-file form. Still read as the base; an individual `WORKER_ENV_<NAME>` replaces its line. Move values out of it one at a time, then delete it |
 | `GHCR_PULL_USER` / `GHCR_PULL_TOKEN` | A GitHub user and a personal access token with `read:packages`, so the machine can pull the private image |
 
@@ -493,7 +494,7 @@ goes green within five minutes. A rollback is re-running the job on an older com
 
 ```bash
 mkdir -p ~/worker-staging && cp infra/worker/compose.yml ~/worker-staging/ && cd ~/worker-staging
-# .env from .env.worker.example with the dev database and APP_ENV=preview
+# .env from section 3 of .env.example with the dev database and APP_ENV=preview
 WORKER_IMAGE=ghcr.io/<owner>/bhendi-bazaar-worker:develop docker compose -p worker-staging up -d
 docker compose -p worker-staging down   # when done: an idle worker still bills polls
 ```
@@ -536,7 +537,7 @@ Run it once per database after the deploy that carries the migration, with that 
 
 **Pointing it at a database is the whole risk.** The script loads `.env` by itself, so run bare it
 targets local development and says nothing about which database it reached. Pass the target's own
-file instead — `npx tsx --env-file=.env.production.reference scripts/backfill-media-assets.ts` — and
+file instead — `npx tsx --env-file=.env.prod scripts/backfill-media-assets.ts` — and
 note that a name the passed file omits still falls back to `.env`, silently. That is how a
 production database comes to be paired with a development bucket: every reference is then
 unrecognised, every asset is written with no object key, and because the run is idempotent on the

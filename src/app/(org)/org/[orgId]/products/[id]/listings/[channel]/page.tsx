@@ -22,7 +22,7 @@ export const metadata = {
 export default async function ListingPage({ params }: { params: Promise<{ orgId: string; id: string; channel: string }> }) {
   const { orgId, id, channel } = await params;
   const scope = await requireOrgMember(orgId);
-  const screen = await platformListingDAL.screen(scope.orgId, id, channel);
+  const [screen, tickets] = await Promise.all([platformListingDAL.screen(scope.orgId, id, channel), platformListingDAL.tickets(scope.orgId, id)]);
   if (!screen) notFound();
   return (
     <PageShell width="narrow">
@@ -33,7 +33,7 @@ export default async function ListingPage({ params }: { params: Promise<{ orgId:
       <div>
         <ListingStatusLine status={screen.status} label={screen.label} />
       </div>
-      <ListingIssuesBanner screen={screen} />
+      <ListingIssuesBanner orgId={scope.orgId} screen={screen} tickets={tickets} />
       <ListingDraftBanner orgId={scope.orgId} screen={screen} />
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-3 lg:items-start">
         <div className="lg:col-span-2">

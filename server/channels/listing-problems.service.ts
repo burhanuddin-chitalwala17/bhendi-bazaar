@@ -4,7 +4,8 @@ import { channelConnectionRepository } from "./channel-connection.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { isMarketplaceChannel, type MarketplaceChannel } from "./channel-connection.types";
 import { channelListingRepository } from "./channel-listing.repository";
-import type { ListingProblemsAttentionDTO } from "./platform-listing.types";
+import type { ListingIssue, ListingProblemsAttentionDTO } from "./platform-listing.types";
+import { complaintIssues, handOverComplaints } from "./listing-complaints";
 import { providerFor } from "./providers";
 
 /** Accounts read at once: each has its own rate limit, so a few in parallel cost no one's (as inventory-sync Q26). */
@@ -38,7 +39,12 @@ export const listingProblemsService = {
         }),
       );
     }
-    await channelListingRepository.recordProblems(read, found, now);
+    const marked = await channelListingRepository.recordProblems(read, found, now);
+    // The write names each listing's product; one job hands every shop's over (setup-requests D5, cost hazard).
+    const linked = marked.flatMap((m) => (m.productId ? [{ ...m, productId: m.productId }] : []));
+    const channelOf = new Map(connections.map((c) => [c.id, c.channel]));
+    const issuesOf = new Map(found.map((f) => [`${f.connectionId}:${f.sku}`, f.problems as ListingIssue[]]));
+    await handOverComplaints(linked.map((l) => ({ orgId: l.orgId, productId: l.productId, channel: channelOf.get(l.connectionId) ?? "", productType: null, kind: null, theirCategory: null, issues: complaintIssues(issuesOf.get(`${l.connectionId}:${l.sku}`) ?? []) })), { standing: true });
     return { accounts: read.length, problems: found.length };
   },
 

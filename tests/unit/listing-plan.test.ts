@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { computeListing, listingStatus, masterValues, seedOverrides, snapshot, toWholeRupees, waitingFields } from "@server/channels/listing-plan";
+import { computeListing, fixesOf, listingStatus, masterValues, seedOverrides, snapshot, toWholeRupees, waitingFields } from "@server/channels/listing-plan";
 import { LISTING_FIELD, LISTING_FIELDS } from "@server/channels/platform-listing.types";
 import { listingSaveSchema } from "@/lib/validation/schemas/platform-listing.schema";
 
@@ -74,5 +74,41 @@ describe("prices and the body", () => {
   it("refuses a strict field in a listing save rather than ignoring it (parent Q28)", () => {
     expect(listingSaveSchema.safeParse({ seenVersion: 0, overrides: { mrp: 2499 } }).success).toBe(false);
     expect(listingSaveSchema.safeParse({ seenVersion: 0, overrides: { title: "Ok", price: 1349 } }).success).toBe(true);
+  });
+});
+
+describe("how to fix what a marketplace refused (marketplace-publish Q24)", () => {
+  const issue = (attribute: string | null, message: string, extra: object = {}) => ({ code: "90220", message, severity: "error" as const, field: null, attribute, need: null, ...extra });
+  const facts = (attribute: string) =>
+    attribute === "outer_material" ? { label: "Material", answered: false } : attribute === "color" ? { label: "Colour", answered: true } : null;
+
+  it("sends each complaint to where it is fixed, and keeps only the unplaceable in the marketplace's words", () => {
+    const vague = issue(null, "Catalog conflict");
+    const { fixes, otherIssues } = fixesOf(
+      [
+        issue("brand", "'Brand Name' is required but missing.", { need: "brand" }),
+        issue("purchasable_offer", "Attribute 'purchasable_offer' does not have the expected value(s).", { field: "price", need: "mrp" }),
+        issue("outer_material", "'Outer Material' is required but missing."),
+        issue("strap_type", "'Strap Type' is required but missing."),
+        // Answered on the product but still refused: its value has no word there, which the admin maps.
+        issue("color", "'Colour' is not a valid value."),
+        issue("item_name", "Title too long", { field: "title" }),
+        vague,
+      ],
+      false,
+      facts,
+    );
+    expect(fixes).toEqual([
+      { kind: "brand", names: ["Brand Name"] },
+      { kind: "mrp", names: ["Purchasable offer"] },
+      { kind: "facts", names: ["Material"] },
+      { kind: "admin", names: ["Strap Type", "Colour"] },
+    ]);
+    expect(otherIssues).toEqual([vague]);
+  });
+
+  it("leaves an offer complaint on the price when the product already has an MRP", () => {
+    const offer = issue("purchasable_offer", "Price too low", { field: "price", need: "mrp" });
+    expect(fixesOf([offer], true, facts)).toEqual({ fixes: [], otherIssues: [] });
   });
 });

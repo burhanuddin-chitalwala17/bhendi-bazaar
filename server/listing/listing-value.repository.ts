@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+
 import { prisma } from "@server/shared/prisma";
 
 /**
@@ -92,5 +94,18 @@ export const listingValueRepository = {
       _count: { _all: true },
     });
     return Object.fromEntries(rows.map((row) => [row.list, row._count._all]));
+  },
+  /**
+   * A platform answer for a list, made once (setup-requests D6, Q15): an answer a marketplace allows that
+   * the list lacks. Existing keys are left as they are; returns the keys written.
+   */
+  async addPlatformValues(list: string, values: ReadonlyArray<{ key: string; label: string }>, db: Prisma.TransactionClient | typeof prisma = prisma): Promise<number> {
+    if (values.length === 0) return 0;
+    const existing = await db.listingValue.findMany({ where: { list, orgId: null, key: { in: values.map((v) => v.key) } }, select: { key: true } });
+    const have = new Set(existing.map((e) => e.key));
+    const fresh = values.filter((v) => !have.has(v.key));
+    if (fresh.length === 0) return 0;
+    const { count } = await db.listingValue.createMany({ data: fresh.map((v) => ({ list, key: v.key, label: v.label, order: 9000 })) });
+    return count;
   },
 };

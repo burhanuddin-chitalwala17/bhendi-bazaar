@@ -77,3 +77,26 @@ export interface CreateListingInput {
   attributes: Record<string, string>;
   compliance: { countryOfOrigin: string | null; manufacturer: string | null; packer: string | null; importer: string | null; hsn: string | null };
 }
+
+/** One attribute a marketplace type asks, from its published definition (setup-requests D7). */
+export interface TypeAttribute {
+  /** The marketplace's own name, e.g. `strap_type`. */
+  name: string;
+  /** How the marketplace labels it, e.g. "Strap Type". */
+  label: string;
+  required: boolean;
+  /** The answers it allows, as it words them; empty when free text. */
+  allowed: string[];
+}
+
+/** A marketplace type's definition: what it requires and allows (setup-requests D7). */
+export interface TypeDefinition {
+  theirCategory: string;
+  attributes: TypeAttribute[];
+}
+
+/** A marketplace type found by a search (setup-requests Q29). */
+export interface TypeMatch {
+  theirCategory: string;
+  label: string;
+}

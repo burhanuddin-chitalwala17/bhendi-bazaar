@@ -3,7 +3,7 @@
 #
 #   WORKER_IMAGE  the image reference to run, set by the deploy (defaults to a local build)
 #   .env          DATABASE_URL, APP_ENV, the R2 variables and the IMAGE_* ones photo
-#                 enhancement needs; see .env.worker.example. Never committed
+#                 enhancement needs; see section 3 of .env.example. Never committed
 services:
   worker:
     image: ${WORKER_IMAGE:-bhendi-bazaar-worker:local}

@@ -543,6 +543,12 @@ or null: the daily look's complaint), `ChannelListingsPageDTO.counts` gains `pro
 `issues` came from the daily look); Home reads **`ListingProblemsAttentionDTO`** (`channel`, `label`,
 `problems`, `suppressed`). No route changed.
 
+Since marketplace-publish Q24 a `ListingIssue` may carry `attribute` (the marketplace's own name) and
+`need` (`ISSUE_NEED`: brand or mrp, when its provider can tell); both are absent on issues stored
+before. `ListingScreenDTO` gains `fixes` (`ListingFixDTO[]`: `kind` from `LISTING_FIX` (brand, mrp,
+facts, admin) and the `names` to fill) and `otherIssues` (complaints neither a field nor a fix places).
+No route changed.
+
 Routes, both `withOrg`:
 - `PUT /api/org/[orgId]/channels/[channel]/stock-sync` — body `stock-sync.schema.ts`
   (`stockSyncChangeSchema`): `{ action: "on" | "pause" }`, from the Channels card (Q27); "on" turns a
@@ -702,3 +708,20 @@ still crossing for those screens are the writes.
 
 ## Adding a DTO to this file
 Record a shape when it crosses the boundary and either more than one route uses it, or getting it wrong would fail silently. A one-off response shape used by a single route does not need an entry — its Zod schema is its documentation.
+
+## setup-requests
+
+Tickets for what a shop cannot fix itself (`server/requests/request.types.ts`, setup-requests D2, D11).
+**`ShopTicketDTO`** (`id`, `type`, `kind`, `state`: with_us · ready · not_supported, `title`, `names`,
+`productId`, `raisedAt`) is all a shop sees: never a plan or a step. **`AdminRequirementDTO`** (`id`,
+`kind`, `status`, `title`, `shopsWaiting` (null for one, Q4), `reopened`, `openedAt`) never carries a
+shop, product or words; **`AdminIssueDTO`** carries each report's shop, product and words (Q22).
+**`RequirementPlanDTO`** is a fields plan (each attribute's solution: reuse, add, from_product, fixed,
+not_possible) or a category plan (Amazon's options), with a `hash` Apply must echo (D7).
+
+Channels hands complaints to requests through the shared job `requests.listing-complaints`
+(`server/shared/jobs/listing-complaints.job.ts`): per product, its marketplace type when known and its
+errors with `attribute`, `field` and `need`. `MarketplaceProvider` gains `typeDefinition` and
+`searchTypes`. Routes: `POST /api/org/{orgId}/requests` (a report), `GET|POST /api/admin/requests/{id}`
+(preview; apply, not now, mark fixed).
+

@@ -1,6 +1,8 @@
 import { CHANNEL_LABELS } from "@server/shared/channels";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { productService } from "@server/catalog/product.service";
+import { channelMapRepository } from "@server/listing/channel-map.repository";
+import { FACT_DECLARATIONS, type FactKey } from "@server/listing/listing-facts";
 
 import { CONNECTION_STATE, isMarketplaceChannel, type MarketplaceChannel } from "./channel-connection.types";
 import { channelConnectionRepository } from "./channel-connection.repository";
@@ -9,6 +11,8 @@ import { storedRead } from "./channel-facts.service";
 import {
   complainedFields,
   computeListing,
+  fixesOf,
+  type FactFor,
   listingStatus,
   masterValues,
   ownFields,
@@ -154,6 +158,23 @@ async function productOf(orgId: string, productId: string): Promise<Product> {
   return product;
 }
 
+/**
+ * Which fact a complained-of attribute is, read from the mapping only when a complaint needs it (Q24).
+ * A live listing has no draft type, so every publishing type of the product's type is searched.
+ */
+async function factsFor(channel: MarketplaceChannel, product: Product, theirCategory: string | null, issues: readonly ListingIssue[]): Promise<FactFor> {
+  const none: FactFor = () => null;
+  if (!product.productType || !issues.some((i) => i.attribute && i.field === null && !i.need)) return none;
+  const { attributes } = await channelMapRepository.registersFor({ channels: [channel], productTypes: [product.productType], lists: [] });
+  return (attribute) => {
+    const row = attributes.find((a) => (!theirCategory || a.theirCategory === theirCategory) && a.theirAttribute.split(".")[0] === attribute);
+    if (!row) return null;
+    const entry = (product.facts as Record<string, { value?: unknown } | undefined> | null)?.[row.fact];
+    const answered = entry?.value !== undefined && entry.value !== null && entry.value !== "";
+    return { label: FACT_DECLARATIONS[row.fact as FactKey]?.label ?? row.fact, answered };
+  };
+}
+
 export const platformListingService = {
   /** The listing screen (ux.md), made with what is live the first time it opens (D3). */
   async screen(orgId: string, productId: string, channelName: string): Promise<ListingScreenDTO> {
@@ -169,6 +190,8 @@ export const platformListingService = {
     const overrides = parseOverrides(row.overrides, product.media);
     const daily = mirror?.problemsSince != null && issuesOf(mirror.problems).length > 0;
     const { status, values, waiting } = statusOf(row, product, rules, daily ? complainedFields(mirror!.problems) : []);
+    // A send's own answer is the newer word; with none, the daily look's complaint shows on the same fields (Q23).
+    const issues = issuesOf(row.issues).length > 0 || !daily ? issuesOf(row.issues) : issuesOf(mirror!.problems);
     return {
       id: row.id,
       version: row.version,
@@ -191,8 +214,8 @@ export const platformListingService = {
       },
       status,
       waitingFields: waiting,
-      // A send's own answer is the newer word; with none, the daily look's complaint shows on the same fields (Q23).
-      issues: issuesOf(row.issues).length > 0 || !daily ? issuesOf(row.issues) : issuesOf(mirror!.problems),
+      issues,
+      ...fixesOf(issues, product.mrpPaise !== null, await factsFor(channel, product, row.marketplaceType, issues)),
       marketplaceProblems: issuesOf(row.issues).length === 0 && daily ? { suppressed: mirror!.suppressed } : null,
       showing: (row.showing as ListingScreenDTO["showing"]) ?? null,
       draft: row.channelListingId === null && row.createMode ? await listingCreateService.draftInfo(orgId, row, product, channel) : null,

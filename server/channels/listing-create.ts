@@ -73,3 +73,24 @@ export function pickTheme(axis: readonly string[], themes: readonly string[]): s
 
 /** A SKU for a product with none (Q7): its own id's tail, which no other product shares. */
 export const skuFor = (product: { id: string; sku: string | null }) => product.sku ?? `BB-${product.id.slice(-10).toUpperCase()}`;
+
+interface FillRow {
+  theirCategory: string;
+  theirAttribute: string;
+  source: string | null;
+  constant: string | null;
+}
+
+/**
+ * Attributes no fact answers, filled from the product or with a fixed value (setup-requests D6, Q32).
+ * A source the product lacks is left out for the marketplace's check to name.
+ */
+export function fillAttributes(theirCategory: string, fills: readonly FillRow[], product: { sku: string; name: string; brand: string | null }): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const fill of fills) {
+    if (fill.theirCategory !== theirCategory) continue;
+    const value = fill.constant ?? (fill.source === "sku" ? product.sku : fill.source === "name" ? product.name : fill.source === "brand" ? product.brand : null);
+    if (value) out[fill.theirAttribute] = value;
+  }
+  return out;
+}

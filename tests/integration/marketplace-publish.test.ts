@@ -168,8 +168,9 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
       counting = true;
       await listingProblemsService.checkAll();
       counting = false;
-      // One read of every connection with its token, one write of every answer, however many shops.
-      expect(statements).toBe(2);
+      // One read of every connection with its token, one write of every answer, and one job handing
+      // every shop's complaints to setup-requests (D5): three, however many shops.
+      expect(statements).toBe(3);
       const first = await problemsOf(a);
       expect(first).toMatchObject({ suppressed: true, problems: [titleProblem] });
       const since = (await problemsOf(f)).problemsSince;

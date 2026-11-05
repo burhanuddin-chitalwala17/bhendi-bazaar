@@ -41,6 +41,7 @@ Each is a directory under `server/`, owning its own service, repository, and typ
 | wishlist | `server/wishlist/` | Saved products, and the demand signal an org reads off them |
 | channels | `server/channels/` | A shop's authorised connections to marketplaces: consent, encrypted tokens, renewal, health. Tokens never leave it |
 | content | `server/content/` | What is made from an image: enhancement proposals and their ledger, renditions, what each channel asks of a photograph. Reads catalog's assets through catalog's public surface, never its repositories |
+| requests | `server/requests/` | Tickets for what a shop can't fix itself: requirements the admin enables, issues a developer fixes. Keyed by the fix, never by the shop |
 | *(shared)* | `server/shared/` | Prisma client, audit log, pagination, retry, the job-queue seam, the closed set of channels, and the one writer of `Address`. Only what genuinely spans domains — not a dumping ground |
 
 **There is no `admin` domain.** An admin listing is a query on its domain, kept as `admin.*` files there — and those files are read models: every write is a named command on the aggregate's one repository ([ADR-0055](docs/adr/0055-an-admin-surface-reads-through-projections-and-writes-through-the-aggregates-one-repository.md)). Admin *pages* are grouped by audience in `src/app/(admin)/`, which is a UI concern.

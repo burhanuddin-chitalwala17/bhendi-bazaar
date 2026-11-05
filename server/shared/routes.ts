@@ -84,6 +84,8 @@ export const ROUTES = {
     editCategory: (id: Id) => `/admin/categories/${id}/edit`,
     channels: "/admin/channels",
     channel: (channel: string) => `/admin/channels/${channel}`,
+    requests: "/admin/requests",
+    request: (id: Id) => `/admin/requests/${id}`,
     enhancements: "/admin/enhancements",
     media: "/admin/media",
     orders: "/admin/orders",

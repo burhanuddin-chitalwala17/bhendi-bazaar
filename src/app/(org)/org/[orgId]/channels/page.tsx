@@ -8,6 +8,8 @@ import { isConnectResult, isMarketplaceChannel } from "@server/channels/channel-
 import { CHANNEL_LABELS } from "@server/shared/channels";
 import { ORG_CHANNELS_PAGE_COPY } from "@/components/org/pages-copy";
 import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
+import { YourRequests } from "@/components/requests/your-requests";
+import { requestsDAL } from "@/data-access-layer/requests.dal";
 
 export const metadata = {
   title: ORG_PAGE_TITLES.channels,
@@ -25,7 +27,7 @@ export default async function OrgChannelsPage({
   const { orgId } = await params;
   const { result, channel } = await searchParams;
   const scope = await requireOrgMember(orgId);
-  const { overview, storePath, storeLabel } = await channelsDAL.page(scope.orgId);
+  const [{ overview, storePath, storeLabel }, tickets] = await Promise.all([channelsDAL.page(scope.orgId), requestsDAL.forShop(scope.orgId)]);
   const outcome =
     result && channel && isConnectResult(result) && isMarketplaceChannel(channel) ? { result, channel } : null;
 
@@ -41,6 +43,7 @@ export default async function OrgChannelsPage({
         />
       )}
       <ChannelCardList orgId={scope.orgId} cards={overview.cards} storePath={storePath} storeLabel={storeLabel} />
+      <YourRequests orgId={scope.orgId} tickets={tickets} />
     </div>
   );
 }

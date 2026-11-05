@@ -1,8 +1,13 @@
 import {
+  ISSUE_NEED,
   LISTING_FIELDS,
+  LISTING_FIX,
   LISTING_STATUS,
   PUBLISH_STATE,
   type ListingField,
+  type ListingFix,
+  type ListingFixDTO,
+  type ListingIssue,
   type ListingOverrides,
   type ListingStatusDTO,
   type ListingValues,
@@ -155,4 +160,39 @@ export function listingStatus(input: {
   if (!input.onMarketplace) return { ...base, status: LISTING_STATUS.DRAFT, at: null };
   if (input.waiting > 0) return { ...base, status: LISTING_STATUS.WAITING, at: at(input.checkedAt) };
   return { ...base, status: input.listed ? LISTING_STATUS.LIVE : LISTING_STATUS.PAUSED, at: at(input.checkedAt) };
+}
+
+/** A fact this marketplace's mapping fills an attribute from, and whether the product has answered it. */
+export type FactFor = (attribute: string) => { label: string; answered: boolean } | null;
+
+/** The name a shop reads for a complaint: the marketplace's own quoted name, else its attribute in words. */
+function nameOf(issue: ListingIssue): string {
+  const quoted = /'([^']+)'/.exec(issue.message)?.[1];
+  if (quoted && !quoted.includes("_")) return quoted;
+  const words = (issue.attribute ?? issue.code).replace(/_/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/**
+ * Where each complaint is fixed (marketplace-publish Q24). The brand's details and the MRP go to where
+ * they are kept; an attribute mapped to a fact the product leaves blank is that fact; anything else
+ * on no field here is the admin's to add. A complaint pinned to a field stays on that field.
+ */
+export function fixesOf(issues: readonly ListingIssue[], hasMrp: boolean, factFor: FactFor): { fixes: ListingFixDTO[]; otherIssues: ListingIssue[] } {
+  const names = new Map<ListingFix, Set<string>>();
+  const add = (kind: ListingFix, name: string) => names.set(kind, (names.get(kind) ?? new Set()).add(name));
+  const otherIssues: ListingIssue[] = [];
+  for (const issue of issues) {
+    if (issue.need === ISSUE_NEED.MRP && !hasMrp) add(LISTING_FIX.MRP, nameOf(issue));
+    else if (issue.need === ISSUE_NEED.BRAND) add(LISTING_FIX.BRAND, nameOf(issue));
+    else if (issue.field !== null) continue;
+    else if (!issue.attribute) otherIssues.push(issue);
+    else {
+      const fact = factFor(issue.attribute);
+      if (fact && !fact.answered) add(LISTING_FIX.FACTS, fact.label);
+      else add(LISTING_FIX.ADMIN, nameOf(issue));
+    }
+  }
+  const order = [LISTING_FIX.BRAND, LISTING_FIX.MRP, LISTING_FIX.FACTS, LISTING_FIX.ADMIN];
+  return { fixes: order.flatMap((kind) => (names.has(kind) ? [{ kind, names: [...names.get(kind)!] }] : [])), otherIssues };
 }

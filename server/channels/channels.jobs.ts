@@ -18,6 +18,7 @@ import { platformListingService } from "./platform-listing.service";
 import { listingPublishService } from "./listing-publish.service";
 import { checkListingsSpec, enqueueListingCheck, publishListingSpec } from "./listing-publish.job";
 import { checkListingProblemsSpec } from "./listing-problems.job";
+import { requestsDailySpec } from "@server/shared/jobs/listing-complaints.job";
 import { listingProblemsService } from "./listing-problems.service";
 import { checkOrdersSpec, checkStockSpec, ORDERS_CHECK_EVERY_SECONDS } from "./stock-checks.job";
 import { enqueue, enqueueLater } from "@server/shared/jobs/jobs.enqueue";
@@ -71,6 +72,8 @@ export const channelsMaintainJob = registerJob({
     await listingPublishService.daily();
     // What each marketplace says stops a listing now, for every shop in one run (marketplace-publish Q23).
     await enqueue(prisma, checkListingProblemsSpec, {});
+    // Setup requests: close what is now set up, raise missing categories (setup-requests D9).
+    await enqueue(prisma, requestsDailySpec, {});
     await channelFactsService.fillUnreadAll().catch((error: unknown) => console.error(`[channels] facts fill pass failed: ${error instanceof Error ? error.name : "error"}`));
     console.log(
       `[jobs] channels.maintain ${jobId}: checked ${summary.checked}, renewed ${summary.renewed}, ` +

@@ -8,11 +8,17 @@
  * never shortens is one nobody finishes.
  */
 import "dotenv/config";
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import { NextRequest } from "next/server";
 
 import { CHANNEL } from "@server/shared/channels";
 import { FACT, LIST, ORIGIN } from "@server/listing/listing-facts";
 import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
+
+const session = vi.hoisted(() => ({ userId: "" }));
+vi.mock("next-auth", () => ({ getServerSession: async () => null }));
+vi.mock("@/lib/auth-config", () => ({ authOptions: {} }));
+vi.mock("@/lib/admin-auth", () => ({ requirePlatformAdminId: async () => session.userId }));
 
 describe.skipIf(!isDisposableDb)("the channel register (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
@@ -55,7 +61,9 @@ describe.skipIf(!isDisposableDb)("the channel register (local db)", () => {
       "@server/listing/channel-register.service"
     ));
     ({ channelMapRepository: maps } = await import("@server/listing/channel-map.repository"));
-    ({ orgId, categoryId, orgAddressId } = await ensureFixtures());
+    const fixtures = await ensureFixtures();
+    ({ orgId, categoryId, orgAddressId } = fixtures);
+    session.userId = fixtures.userId;
 
     // `Product.productType` is a foreign key, so the type exists before the products do.
     await prisma.productType.create({
@@ -216,6 +224,18 @@ describe.skipIf(!isDisposableDb)("the channel register (local db)", () => {
         // some other reason would pass a bare assertion while proving nothing.
       ).rejects.toThrow(/ChannelCategoryMap_sold_xor_not|constraint/i);
     });
+  });
+
+  // Through the route, as the admin screen sends it: the body's `action` once reached the insert (Q26).
+  it("adds a marketplace type from the screen's own request (marketplace-facts Q26)", async () => {
+    const { PUT } = await import("@/app/api/admin/channels/types/route");
+    const response = await PUT(new NextRequest("http://localhost/api/admin/channels/types", {
+      method: "PUT",
+      body: JSON.stringify({ action: "add", channel: CHANNEL.AMAZON, productType: `${stamp}-type`, kind: null, theirCategory: "tote bag" }),
+    }));
+    expect(response.status).toBe(200);
+    const row = await prisma.channelCategoryMap.findFirstOrThrow({ where: { channel: CHANNEL.AMAZON, productType: `${stamp}-type` } });
+    expect(row).toMatchObject({ theirCategory: "TOTE_BAG", theirLabel: "Tote Bag", publishes: false });
   });
 
   it("leaves an archived product's answer off the list — it has left sale", async () => {

@@ -2,7 +2,7 @@ import type { MarketplaceChannel } from "../channel-connection.types";
 import type { ListingAttributes, ListingDetail, ListingSink, TokenSource } from "./listing-read";
 import type { ListingStock, LocationCount, MarketplaceLocation, OrdersPage, StockListingRef } from "./stock";
 import type { ListingRules } from "../platform-listing.types";
-import type { CreateListingInput, ListingProblem, PageMatch, PublishAnswer, PublishChanges, PublishRef, StatusAnswer } from "./publish";
+import type { CreateListingInput, ListingProblem, PageMatch, PublishAnswer, PublishChanges, PublishRef, StatusAnswer, TypeDefinition, TypeMatch } from "./publish";
 
 /**
  * One marketplace, behind the verbs channel-connectors needs (TRD D1). Later subfeatures add their
@@ -90,6 +90,12 @@ export interface MarketplaceProvider {
 
   /** The variation themes a type allows, for a family's own page (marketplace-publish D7). */
   variationThemes(token: TokenSource, externalAccountId: string | null, marketplaceType: string): Promise<string[]>;
+
+  /** A type's published definition: what it requires and allows; null where the marketplace publishes none (setup-requests D7). */
+  typeDefinition(token: TokenSource, marketplaceType: string): Promise<TypeDefinition | null>;
+
+  /** The marketplace's types matching some words, closest first; empty where it offers no search (setup-requests Q29). */
+  searchTypes(token: TokenSource, words: string): Promise<TypeMatch[]>;
 
   /** One listing's title, description and photos, read now (product-merge D1). */
   listingDetail(

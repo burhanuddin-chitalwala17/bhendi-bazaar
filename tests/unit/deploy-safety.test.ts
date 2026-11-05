@@ -64,10 +64,12 @@ describe("workflows", () => {
     expect(job).toMatch(/^\s+needs: \[[^\]]*(?:^|[\s,[])deploy(?=[\s,\]])[^\]]*\]/m);
   });
 
-  it("names every variable in .env.worker.example for both workers", () => {
-    const names = readFileSync(join(ROOT, ".env.worker.example"), "utf8")
+  it("names every variable in .env.example's worker section for both workers", () => {
+    const example = readFileSync(join(ROOT, ".env.example"), "utf8");
+    const names = example
+      .slice(example.indexOf("# 3. WORKER"), example.indexOf("# 4. OPS"))
       .split("\n")
-      .map((l) => l.match(/^\s*([A-Z][A-Z0-9_]*)=/)?.[1])
+      .map((l) => l.match(/^#\s*([A-Z][A-Z0-9_]*)=/)?.[1])
       .filter((n): n is string => Boolean(n));
     expect(names.length).toBeGreaterThan(20);
     for (const n of names) {

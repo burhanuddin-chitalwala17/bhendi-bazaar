@@ -1,7 +1,7 @@
 -- A read-only survey of the live catalogue, to plan the listing-vocabulary migration.
 --
 -- SELECT only: nothing here writes, locks or creates. Run it against production with
---   psql "$(grep -oE '^DATABASE_URL="[^"]+"' .env.production.reference | sed 's/^DATABASE_URL="//; s/"$//')" \
+--   psql "$(grep -oE '^DATABASE_URL="[^"]+"' .env.prod | sed 's/^DATABASE_URL="//; s/"$//')" \
 --     -f scripts/survey-catalogue.sql > /tmp/catalogue-survey.txt
 -- then hand the output back. It names no customer and prints no credential.
 

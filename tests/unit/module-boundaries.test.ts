@@ -94,6 +94,8 @@ const PUBLIC_SURFACE: Record<string, string[]> = {
   content: [],
   // channel-connectors D1: the connection service and its types only. Tokens never leave.
   channels: [],
+  // setup-requests D1: its service and types only; the repository and kinds stay inside.
+  requests: [],
 };
 
 /** Always public, in every domain. */

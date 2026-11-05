@@ -328,6 +328,11 @@ export const channelConnectionRepository = {
   },
 
   /** Every connected marketplace account with its sealed token, in one statement: the daily problems look (marketplace-publish Q23). */
+  /** Every connected (org, channel), no secrets (setup-requests D5: the daily category raise). */
+  async connectedOrgs(): Promise<Array<{ orgId: string; channel: string }>> {
+    return await prisma.channelConnection.findMany({ where: { state: CONNECTION_STATE.CONNECTED }, select: { orgId: true, channel: true } });
+  },
+
   async connectedWithTokens(): Promise<OrdersCheckRow[]> {
     return await prisma.channelConnection.findMany({
       where: { state: CONNECTION_STATE.CONNECTED },

@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
+    "dev:dev": "node --env-file=.env.dev node_modules/next/dist/bin/next dev -p 3000",
+    "dev:prod": "node --env-file=.env.prod node_modules/next/dist/bin/next dev -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

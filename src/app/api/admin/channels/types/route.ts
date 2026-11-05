@@ -18,7 +18,7 @@ export async function PUT(request: NextRequest) {
 
     if (change.action === "add") {
       const theirCategory = change.theirCategory.trim().toUpperCase().replace(/[ -]+/g, "_");
-      const row = await channelRegisterService.addType({ ...change, theirCategory });
+      const row = await channelRegisterService.addType({ channel: change.channel, productType: change.productType, kind: change.kind, theirCategory });
       await recordAdminAction({
         adminId,
         action: "channel.type.added",

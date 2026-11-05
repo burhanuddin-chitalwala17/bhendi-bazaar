@@ -14,9 +14,10 @@ import { isMarketplaceChannel, type MarketplaceChannel } from "./channel-connect
 import { channelConnectionRepository } from "./channel-connection.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
-import { forwardAttributes, listsOf, pickTheme, skuFor } from "./listing-create";
+import { forwardAttributes, listsOf, pickTheme, skuFor, fillAttributes } from "./listing-create";
 import { marketplacePhotoUrls } from "./listing-photos-out";
 import { enqueueListingCheck, LISTING_CHECK_AFTER_SECONDS, LISTING_CHECK_EVERY_SECONDS } from "./listing-publish.job";
+import { complaintIssues, handOverComplaints } from "./listing-complaints";
 import { computeListing, listingStatus, masterValues, parseOverrides, parseSent } from "./listing-plan";
 import { platformListingRepository, type PlatformListingRow } from "./platform-listing.repository";
 import { CREATE_MODE, PUBLISH_STATE, type CreateMode, type ListingIssue, type ReviewListingDTO } from "./platform-listing.types";
@@ -60,7 +61,11 @@ async function inputFor(orgId: string, row: PlatformListingRow, product: Product
   let attributes: Record<string, string> = {};
   if (row.createMode === CREATE_MODE.NEW && row.marketplaceType && product.productType) {
     const register = await channelMapRepository.registersFor({ channels: [channel], productTypes: [product.productType], lists: listsOf(product.facts) });
-    attributes = forwardAttributes(row.marketplaceType, register.attributes, register.values, product.facts);
+    const fills = await channelMapRepository.fillsFor(channel, [row.marketplaceType]);
+    attributes = {
+      ...fillAttributes(row.marketplaceType, fills, { sku: row.sku ?? skuFor(product), name: values.title, brand: product.brand?.name ?? null }),
+      ...forwardAttributes(row.marketplaceType, register.attributes, register.values, product.facts),
+    };
   }
   const defaults = await orgListingDefaultsService.get(orgId);
   const hsn = defaults.taxCodes.find((t) => t.categoryId === product.categoryId)?.taxCode ?? null;
@@ -236,6 +241,8 @@ export const listingCreateService = {
 
   async refuse(row: PlatformListingRow, issues: ListingIssue[]): Promise<string> {
     await platformListingRepository.recordAnswer(row.id, { sent: null, publishState: PUBLISH_STATE.ATTENTION, issues, nextCheckAt: null }, new Date(), prisma, [PUBLISH_STATE.SENT]);
+    // What only we can fix becomes a ticket without the shop asking (setup-requests Q5).
+    if (row.productId) await handOverComplaints([{ orgId: row.orgId, productId: row.productId, channel: row.channel, productType: null, kind: null, theirCategory: row.marketplaceType, issues: complaintIssues(issues) }]);
     return PUBLISH_STATE.ATTENTION;
   },
 

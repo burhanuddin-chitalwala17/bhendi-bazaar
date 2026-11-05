@@ -1,7 +1,7 @@
 import { retryBusy, rupeesFromPaise, type ListingAttributes, type TokenSource } from "../listing-read";
 import { MarketplaceAuthError, MarketplaceRequestError, MarketplaceUnavailableError, marketplaceFetch } from "../marketplace-provider";
-import type { CreateListingInput, ListingProblem, PageMatch, PublishAnswer, PublishChanges, PublishRef, StatusAnswer } from "../publish";
-import { LISTING_FIELD, LISTING_FIELDS, type ListingField, type ListingIssue, type ListingRules } from "../../platform-listing.types";
+import type { CreateListingInput, ListingProblem, PageMatch, PublishAnswer, PublishChanges, PublishRef, StatusAnswer, TypeDefinition, TypeMatch } from "../publish";
+import { ISSUE_NEED, LISTING_FIELD, LISTING_FIELDS, type IssueNeed, type ListingField, type ListingIssue, type ListingRules } from "../../platform-listing.types";
 import { AMAZON_IN, spApi } from "./amazon.listings";
 
 /**
@@ -49,6 +49,18 @@ const FIELD_OF: Record<string, ListingField> = {
   purchasable_offer: LISTING_FIELD.PRICE,
   list_price: LISTING_FIELD.PRICE,
 };
+/** Attributes this provider fills from the brand or the product's MRP, so a complaint says where to fix it (Q24). */
+const NEED_OF: Record<string, IssueNeed> = {
+  brand: ISSUE_NEED.BRAND,
+  manufacturer: ISSUE_NEED.BRAND,
+  rtip_manufacturer_contact_information: ISSUE_NEED.BRAND,
+  packer_contact_information: ISSUE_NEED.BRAND,
+  importer_contact_information: ISSUE_NEED.BRAND,
+  country_of_origin: ISSUE_NEED.BRAND,
+  // The offer is sent with `maximum_retail_price` only when the product has one.
+  purchasable_offer: ISSUE_NEED.MRP,
+  maximum_retail_price: ISSUE_NEED.MRP,
+};
 const fieldOf = (attribute: string): ListingField | null =>
   FIELD_OF[attribute] ?? (attribute.startsWith("other_product_image_locator") ? LISTING_FIELD.PHOTOS : null);
 
@@ -60,7 +72,14 @@ export function amazonIssues(raw: unknown): ListingIssue[] {
     if (severity !== "ERROR" && severity !== "WARNING") return [];
     const names = list(issue.attributeNames).map(String);
     const message = (str(issue.message) ?? "Amazon found a problem with this listing.").replace(/<[^>]*>/g, "").slice(0, 300);
-    return [{ code: str(issue.code) ?? "unknown", message, severity: severity === "ERROR" ? "error" : "warning", field: names.map(fieldOf).find((f) => f !== null) ?? null }];
+    return [{
+      code: str(issue.code) ?? "unknown",
+      message,
+      severity: severity === "ERROR" ? "error" : "warning",
+      field: names.map(fieldOf).find((f) => f !== null) ?? null,
+      attribute: names[0] ?? null,
+      need: names.map((n) => NEED_OF[n]).find((n) => n !== undefined) ?? null,
+    }];
   });
 }
 
@@ -221,14 +240,68 @@ export async function amazonFindPages(token: TokenSource, _account: string | nul
 }
 
 /** The variation themes Amazon allows for a type, read from its schema (D7: themes are read, never assumed). */
-export async function amazonVariationThemes(token: TokenSource, _account: string | null, productType: string): Promise<string[]> {
+/** A type's JSON schema, by way of the definition's link (D7; setup-requests D7). Null when Amazon has no such type. */
+async function amazonTypeSchema(token: TokenSource, productType: string): Promise<Record<string, unknown> | null> {
   const qs = new URLSearchParams({ marketplaceIds: AMAZON_IN, requirements: "LISTING", locale: "en_IN" });
-  const definition = obj(await retryBusy(() => spApi(token, "type definition", `/definitions/2020-09-01/productTypes/${encodeURIComponent(productType)}?${qs.toString()}`)));
+  let definition: Record<string, unknown>;
+  try {
+    definition = obj(await retryBusy(() => spApi(token, "type definition", `/definitions/2020-09-01/productTypes/${encodeURIComponent(productType)}?${qs.toString()}`)));
+  } catch (error) {
+    if (error instanceof MarketplaceRequestError && error.status === 404) return null;
+    throw error;
+  }
   const link = str(obj(obj(definition.schema).link).resource);
-  if (!link) return [];
+  if (!link) return null;
   const response = await marketplaceFetch(link, { method: "GET" });
   if (!response.ok) throw new MarketplaceUnavailableError(response.status);
-  const schema = obj(await response.json());
+  return obj(await response.json());
+}
+
+/** Attributes Amazon requires of every listing that a create already sends or a shop's details answer: never asked (setup-requests D6). */
+const SENT_BY_CREATE = new Set([
+  "item_name", "brand", "bullet_point", "product_description", "main_product_image_locator", "purchasable_offer",
+  "fulfillment_availability", "condition_type", "externally_assigned_product_identifier", "supplier_declared_has_product_identifier_exemption",
+  "country_of_origin", "manufacturer", "rtip_manufacturer_contact_information", "packer_contact_information", "importer_contact_information",
+  "external_product_information", "supplier_declared_dg_hz_regulation", "parentage_level", "variation_theme", "child_parent_sku_relationship",
+  "merchant_suggested_asin", "list_price", "maximum_retail_price", "skip_offer",
+]);
+
+/** The answers an attribute's schema allows, wherever Amazon nests the `value` enum. */
+function allowedOf(property: Record<string, unknown>): string[] {
+  const value = obj(obj(obj(property.items).properties).value);
+  const names = list(value.enumNames).map(String);
+  const values = list(value.enum).map(String);
+  return names.length === values.length && names.length > 0 ? names : values;
+}
+
+/** A type's definition: its required attributes and what each allows (setup-requests D7). */
+export async function amazonTypeDefinition(token: TokenSource, productType: string): Promise<TypeDefinition | null> {
+  const schema = await amazonTypeSchema(token, productType);
+  if (!schema) return null;
+  const required = new Set(list(schema.required).map(String));
+  const properties = obj(schema.properties);
+  const attributes = Object.entries(properties).flatMap(([name, raw]) => {
+    if (!required.has(name) || SENT_BY_CREATE.has(name) || name.startsWith("other_product_image_locator")) return [];
+    const property = obj(raw);
+    return [{ name, label: str(property.title) ?? name, required: true, allowed: allowedOf(property) }];
+  });
+  return { theirCategory: productType, attributes };
+}
+
+/** Amazon's types matching some words, as Amazon ranks them (setup-requests Q29). */
+export async function amazonSearchTypes(token: TokenSource, words: string): Promise<TypeMatch[]> {
+  const qs = new URLSearchParams({ marketplaceIds: AMAZON_IN, keywords: words, locale: "en_IN" });
+  const body = obj(await retryBusy(() => spApi(token, "type search", `/definitions/2020-09-01/productTypes?${qs.toString()}`)));
+  return list(body.productTypes).flatMap((raw) => {
+    const t = obj(raw);
+    const name = str(t.name);
+    return name ? [{ theirCategory: name, label: str(t.displayName) ?? name }] : [];
+  });
+}
+
+export async function amazonVariationThemes(token: TokenSource, _account: string | null, productType: string): Promise<string[]> {
+  const schema = await amazonTypeSchema(token, productType);
+  if (!schema) return [];
   const theme = obj(obj(schema.properties).variation_theme);
   const name = obj(obj(obj(obj(theme.items).properties).name));
   return list(name.enum).map(String);

@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
 
 import type { CreateProductTypeInput, UpdateProductTypeInput } from "./admin.product-type.types";
@@ -166,5 +167,15 @@ export const productTypeRepository = {
       prisma.product.count({ where: { productType: key } }),
     ]);
     return { categories, products };
+  },
+  /**
+   * Add facts a type does not ask yet, at the end of its form, inside a caller's transaction
+   * (setup-requests D6). One statement per fact, appended only while absent, so two Applies at once
+   * each keep the other's facts.
+   */
+  async addFacts(key: string, facts: readonly string[], db: Prisma.TransactionClient | typeof prisma = prisma): Promise<void> {
+    for (const fact of facts) {
+      await db.$executeRaw`UPDATE "ProductType" SET "facts" = array_append("facts", ${fact}) WHERE "key" = ${key} AND NOT (${fact} = ANY("facts"))`;
+    }
   },
 };

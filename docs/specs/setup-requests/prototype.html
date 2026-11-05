@@ -1,0 +1,273 @@
+<title>Setup requests prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap">
+<style>
+/* Layout: a canvas of phone-width screens, one row per journey, flow arrows between, a state strip under each */
+:root {
+  --bg: oklch(0.98 0.01 95);
+  --card: oklch(0.99 0.015 95);
+  --fg: oklch(0.22 0.03 40);
+  --muted: oklch(0.94 0.02 95);
+  --muted-fg: oklch(0.52 0.04 40);
+  --border: oklch(0.9 0.01 95);
+  --primary: oklch(0.55 0.17 150);
+  --primary-fg: oklch(0.99 0.015 95);
+  --destructive: oklch(0.6 0.25 27);
+  --warning: oklch(0.55 0.13 70);
+  --success: oklch(0.55 0.15 145);
+  --info: oklch(0.55 0.12 250);
+  --admin: oklch(0.2 0.03 260);
+  --admin-fg: oklch(0.96 0.02 98);
+  --canvas: oklch(0.95 0.015 95);
+  --font-head: "Playfair Display", Georgia, serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: oklch(0.16 0.03 260); --card: oklch(0.18 0.03 260); --fg: oklch(0.96 0.02 98);
+  --muted: oklch(0.24 0.04 260); --muted-fg: oklch(0.72 0.05 98); --border: oklch(0.32 0.03 260);
+  --primary: oklch(0.7 0.19 150); --primary-fg: oklch(0.16 0.03 260); --destructive: oklch(0.65 0.21 22);
+  --warning: oklch(0.78 0.13 75); --success: oklch(0.72 0.15 145); --info: oklch(0.72 0.12 250);
+  --admin: oklch(0.12 0.03 260); --admin-fg: oklch(0.96 0.02 98); --canvas: oklch(0.13 0.02 260); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: oklch(0.16 0.03 260); --card: oklch(0.18 0.03 260); --fg: oklch(0.96 0.02 98);
+  --muted: oklch(0.24 0.04 260); --muted-fg: oklch(0.72 0.05 98); --border: oklch(0.32 0.03 260);
+  --primary: oklch(0.7 0.19 150); --primary-fg: oklch(0.16 0.03 260); --destructive: oklch(0.65 0.21 22);
+  --warning: oklch(0.78 0.13 75); --success: oklch(0.72 0.15 145); --info: oklch(0.72 0.12 250);
+  --admin: oklch(0.12 0.03 260); --admin-fg: oklch(0.96 0.02 98); --canvas: oklch(0.13 0.02 260); color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--canvas); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 64px }
+header.top { max-width: 72rem; margin: 0 auto 28px; display: grid; gap: 8px }
+h1 { font-family: var(--font-head); font-size: 2rem; margin: 0; text-wrap: balance }
+.lede { color: var(--muted-fg); max-width: 65ch; margin: 0 }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px }
+section.journey { max-width: 72rem; margin: 0 auto 40px; display: grid; gap: 12px }
+.jhead { display: grid; gap: 2px }
+.jhead h2 { font-family: var(--font-head); font-size: 1.35rem; margin: 0 }
+.jhead p { margin: 0; color: var(--muted-fg); max-width: 70ch }
+.who { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; color: var(--muted-fg) }
+.flow { display: flex; align-items: flex-start; gap: 10px; overflow-x: auto; padding-bottom: 8px }
+.arrow { flex: none; align-self: center; display: grid; justify-items: center; gap: 4px; width: 72px; color: var(--muted-fg); font-size: 11px; text-align: center }
+.arrow svg { width: 40px; height: 16px }
+.before { flex: none; width: 150px; align-self: center; border: 1px dashed var(--border); border-radius: 14px; padding: 12px; font-size: 12px; color: var(--muted-fg); background: var(--bg) }
+.before b { color: var(--fg); display: block; margin-bottom: 4px }
+
+.phone { flex: none; width: 300px; background: var(--bg); border: 1px solid var(--border); border-radius: 26px; overflow: hidden; box-shadow: 0 1px 2px oklch(0 0 0 / .06), 0 8px 24px oklch(0 0 0 / .06) }
+.cap { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-fg); padding: 10px 14px 0 }
+.bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--muted-fg) }
+.bar.admin { background: var(--admin); color: var(--admin-fg); border-color: transparent }
+.screen { padding: 14px; display: grid; gap: 10px }
+.ttl { font-family: var(--font-head); font-size: 1.2rem; margin: 0; line-height: 1.2 }
+.sub { color: var(--muted-fg); font-size: 12px; margin: 0 }
+.box { border-radius: 16px; padding: 12px; display: grid; gap: 8px; font-size: 13px }
+.box.red { background: color-mix(in oklch, var(--destructive) 10%, var(--bg)) }
+.box.amber { background: color-mix(in oklch, var(--warning) 12%, var(--bg)) }
+.box.green { background: color-mix(in oklch, var(--success) 12%, var(--bg)) }
+.box.blue { background: color-mix(in oklch, var(--info) 10%, var(--bg)) }
+.box.plain { background: var(--card); border: 1px solid var(--border) }
+.box p { margin: 0 }
+.strong { font-weight: 600 }
+.red-t { color: var(--destructive) } .green-t { color: var(--success) } .amber-t { color: var(--warning) } .muted-t { color: var(--muted-fg) }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border-radius: 999px; font: 600 13px var(--font-body); border: 1px solid var(--border); background: var(--card); color: var(--fg); justify-self: start; cursor: pointer }
+.btn.primary { background: var(--primary); color: var(--primary-fg); border-color: transparent }
+.btn.full { justify-self: stretch }
+.btn.link { border: 0; background: none; padding: 0; min-height: 0; color: var(--primary); text-decoration: underline; text-underline-offset: 3px }
+.btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; justify-self: start; white-space: nowrap }
+.chip::before { content: ""; width: 6px; height: 6px; border-radius: 50% ; background: currentColor }
+.chip.req { background: color-mix(in oklch, var(--info) 14%, var(--bg)); color: var(--info) }
+.chip.ready { background: color-mix(in oklch, var(--success) 14%, var(--bg)); color: var(--success) }
+.chip.no { background: var(--muted); color: var(--muted-fg) }
+.chip.rep { background: color-mix(in oklch, var(--warning) 16%, var(--bg)); color: var(--warning) }
+.chip.att { background: color-mix(in oklch, var(--destructive) 12%, var(--bg)); color: var(--destructive) }
+.row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border) }
+.row:last-child { border-bottom: 0 }
+.row .t { font-weight: 600; font-size: 13px }
+.row .s { font-size: 12px; color: var(--muted-fg) }
+.tabs { display: flex; gap: 6px }
+.tab { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); font-size: 12px; font-weight: 600 }
+.tab.on { background: var(--primary); color: var(--primary-fg); border-color: transparent }
+.field { display: grid; gap: 4px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--card) }
+.field .k { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted-fg); font-weight: 600 }
+.input { border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; font: 400 14px var(--font-body); background: var(--bg); color: var(--fg); width: 100% }
+.opts { display: flex; flex-wrap: wrap; gap: 4px }
+.opt { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--muted); color: var(--muted-fg) }
+.radio { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--card) }
+.radio.on { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary) }
+.dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border); margin-top: 2px }
+.radio.on .dot { border-color: var(--primary); background: radial-gradient(circle, var(--primary) 45%, transparent 50%) }
+details { border-top: 1px solid var(--border); padding-top: 8px; font-size: 12px; color: var(--muted-fg) }
+summary { cursor: pointer; font-weight: 600; color: var(--fg) }
+ol.steps { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 2px }
+.toast { background: var(--fg); color: var(--bg); border-radius: 12px; padding: 10px 12px; font-size: 13px }
+.quote { border-left: 3px solid var(--border); padding-left: 10px; color: var(--muted-fg); font-size: 12px }
+textarea.input { min-height: 72px; resize: none }
+
+.model { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px }
+.flowline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px }
+.to { color: var(--muted-fg); font-size: 12px }
+table { border-collapse: collapse; width: 100%; min-width: 720px; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; font-size: 13px }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted-fg); background: var(--card) }
+tr:last-child td { border-bottom: 0 }
+td:first-child { font-weight: 600; white-space: nowrap }
+@media (prefers-reduced-motion: no-preference) { .btn { transition: filter .15s } .btn:hover { filter: brightness(1.05) } }
+</style>
+
+<header class="top">
+  <span class="who">setup-requests · UX prototype · draft for sign-off</span>
+  <h1>Requirements and issues</h1>
+  <p class="lede">Phone width (about 360px), the app's own colours and type. Each row is one journey, starting from the step just before it. The shop reads two lines together: where the listing stands on Amazon, and where our ticket stands while something is on us.</p>
+</header>
+<section class="journey">
+  <div class="model">
+    <div class="box plain"><p class="who">Listing · on Amazon</p>
+      <div class="flowline"><span class="chip no">Draft</span><span class="to">→</span><span class="chip rep">Pending</span><span class="to">→</span><span class="chip ready">Live</span></div>
+      <div class="flowline"><span class="chip rep">Pending</span><span class="to">→</span><span class="chip att">Needs attention</span><span class="to">→ fix, send again →</span><span class="chip rep">Pending</span></div>
+      <p class="sub">Pending: sent, waiting for Amazon's answer. We ask Amazon at 2 min, 10 min, 30 min, 2 h, then daily; it doesn't call back.</p></div>
+    <div class="box plain"><p class="who">Ticket · shop sees</p>
+      <div class="flowline"><span class="chip req">With us</span><span class="to">→</span><span class="chip ready">Ready</span></div>
+      <div class="flowline"><span class="chip req">With us</span><span class="to">→</span><span class="chip no">Not supported yet</span></div>
+      <p class="sub">With us: a requirement raised by itself, or an issue the shop reported. Ready: done on our side, fix the product and send again.</p></div>
+    <div class="box plain"><p class="who">Ticket · admin sees</p>
+      <div class="flowline"><span class="chip req">Open</span><span class="to">→ Apply / Mark fixed →</span><span class="chip ready">Done</span></div>
+      <div class="flowline"><span class="chip req">Open</span><span class="to">→ Not now →</span><span class="chip no">Closed</span></div>
+      <p class="sub">The same error after Done reopens it ("Reopened").</p></div>
+  </div>
+</section>
+
+<!-- J1 -->
+<section class="journey">
+  <div class="jhead"><span class="who">Shop · requirement</span><h2>1. Amazon wants fields we don't ask for</h2>
+  <p>The shop never writes anything. Amazon's refusal raises the requirement, the shop sees it's requested, and later that it's ready.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>Review and publish → Create on Amazon. Amazon checks the draft.</div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Amazon answers</div>
+    <div class="phone"><div class="cap">Listing · Amazon</div><div class="bar"><span>‹ Cloth bag (Boat)</span><span>Amazon</span></div>
+      <div class="screen"><span class="chip att">Needs attention · 20 problems</span>
+        <div class="box red"><p class="strong">How to fix it</p>
+          <p>Amazon needs Niqab Boutique's details: Brand Name, Manufacturer.</p><span class="btn">Fill in Brands and defaults</span>
+          <p>Amazon needs the MRP, the price printed on the tag.</p><span class="btn">Add the MRP</span>
+          <p>Amazon also needs 15 details we don't ask for yet: Strap Type, Style, Number of Pockets…</p>
+          <span class="chip req">With us</span>
+          <p class="muted-t">Once they're done, open Review and publish and send it to Amazon again.</p></div></div></div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>admin applies (journey 2)</div>
+    <div class="phone"><div class="cap">Listing · Amazon</div><div class="bar"><span>‹ Cloth bag (Boat)</span><span>Amazon</span></div>
+      <div class="screen"><span class="chip att">Needs attention · 15 problems</span>
+        <div class="box red"><p class="strong">How to fix it</p>
+          <span class="chip ready">Ready</span>
+          <p>Fill these on the product: Strap type, Style, Number of pockets, Closure…</p>
+          <span class="btn primary">Fill on product</span>
+          <p class="muted-t">Once they're done, open Review and publish and send it to Amazon again.</p></div></div></div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>fills, sends again → Pending</div>
+    <div class="phone"><div class="cap">Products list</div><div class="bar"><span>Products</span><span>Amazon ✕</span></div>
+      <div class="screen">
+        <div class="row"><div><div class="t">365D Tote bag (0912)</div><div class="s">Needs attention</div></div><span class="chip req">With us</span></div>
+        <div class="row"><div><div class="t">Mint green rida</div><div class="s">Needs attention</div></div><span class="chip ready">Ready</span></div>
+        <div class="row"><div><div class="t">Cloth bag (Boat)</div><div class="s">Pending</div></div><span class="chip req">With us</span></div>
+        <p class="sub">Listing state under the name; the ticket chip only while something is with us.</p></div></div>
+  </div>
+</section>
+
+<!-- J2 -->
+<section class="journey">
+  <div class="jhead"><span class="who">Admin · requirement, one tap</span><h2>2. Apply Amazon's fields for TOTE_BAG</h2>
+  <p>The admin sees the setup and how many shops wait (only when more than one), never which shops. The fix is worked out; the steps are there to read, not to do.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>Admin sidebar → Requests, with its count: "Requests 3".</div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>opens</div>
+    <div class="phone"><div class="cap">/admin/requests</div><div class="bar admin"><span>Admin</span><span>Requests</span></div>
+      <div class="screen"><p class="ttl">Requests</p>
+        <div class="tabs"><span class="tab on">Requirements 2</span><span class="tab">Issues 1</span></div>
+        <div class="row"><div><div class="t">Amazon fields for TOTE_BAG</div><div class="s">One tap · 15 fields · 2 shops waiting · 2 h</div></div><span class="chip req">Open</span></div>
+        <div class="row"><div><div class="t">Amazon category for Bag</div><div class="s">Choose a type · 1 day</div></div><span class="chip req">Open</span></div>
+        <p class="sub">Oldest first within the most shops waiting.</p></div></div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>taps</div>
+    <div class="phone"><div class="cap">Requirement</div><div class="bar admin"><span>‹ Requests</span><span>2 shops waiting</span></div>
+      <div class="screen"><p class="ttl">Amazon fields for TOTE_BAG</p>
+        <p class="sub">Read from Amazon through Niqab Boutique · 5 min ago</p>
+        <p>Applying adds these to Bag's questions and maps them for Amazon. Shops then fill them on their products.</p>
+        <div class="field"><span class="k">Amazon: strap_type</span><input class="input" id="q1" value="Strap type" aria-label="Our name for strap_type"><div class="opts"><span class="opt">Adjustable</span><span class="opt">Detachable</span><span class="opt">Fixed</span><span class="opt">+4</span></div><span class="sub">New question, with Amazon's answers</span></div>
+        <div class="field"><span class="k">Amazon: outer_material</span><span class="strong">Material</span><span class="sub">Already asked · mapped only</span></div>
+        <p class="sub">+ 13 more</p>
+        <details><summary>What Apply does, step by step</summary><ol class="steps"><li>Add "Strap type" to Bag, with 7 answers</li><li>Map Material → outer_material for TOTE_BAG</li><li>Map each answer to Amazon's value</li><li>… 13 more</li></ol></details>
+        <span class="btn primary full">Apply 15 fields</span><span class="btn link">Not now</span></div></div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>applied</div>
+    <div class="phone"><div class="cap">Requirement</div><div class="bar admin"><span>‹ Requests</span><span></span></div>
+      <div class="screen"><span class="chip ready">Done</span><p class="ttl">Amazon fields for TOTE_BAG</p>
+        <div class="box green"><p class="strong">Applied 15 fields.</p><p>2 shops now see them on their product forms.</p></div>
+        <div class="toast">Applied. 2 shops can now fill them.</div></div></div>
+  </div>
+</section>
+
+<!-- J3 -->
+<section class="journey">
+  <div class="jhead"><span class="who">Admin · requirement, a decision</span><h2>3. Choose Amazon's type for Bag</h2>
+  <p>Still a requirement: the app offers the choices, ready to pick. The admin decides, Apply writes it and makes it the type Bag publishes to.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>Products list says "81 have no Amazon category". The requirement was raised from that, no tap needed.</div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>admin opens</div>
+    <div class="phone"><div class="cap">Requirement</div><div class="bar admin"><span>‹ Requests</span><span></span></div>
+      <div class="screen"><p class="ttl">Amazon category for Bag</p><p class="sub">Amazon's types that match "bag", through Niqab Boutique</p>
+        <div class="radio on"><span class="dot"></span><div><div class="strong">TOTE_BAG</div><div class="sub">Tote bag</div></div></div>
+        <div class="radio"><span class="dot"></span><div><div class="strong">HANDBAG</div><div class="sub">Handbag · already Bag · handbag's</div></div></div>
+        <div class="radio"><span class="dot"></span><div><div class="strong">SHOULDER_BAG</div><div class="sub">Shoulder bag</div></div></div>
+        <span class="btn link">Search Amazon's types</span>
+        <details><summary>What Apply does</summary><ol class="steps"><li>Add TOTE_BAG to Bag in the Amazon register</li><li>Mark it the one Bag publishes to</li></ol></details>
+        <span class="btn primary full">Apply TOTE_BAG</span><span class="btn link">Not now</span></div></div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>applied</div>
+    <div class="phone"><div class="cap">Products list · shop</div><div class="bar"><span>Products</span><span>Amazon ✕</span></div>
+      <div class="screen"><div class="box plain"><p class="strong">2 products Amazon would turn down as they stand</p><p class="muted-t">"No Amazon category" is gone from 79 bags.</p></div>
+        <div class="row"><div><div class="t">365D Tote bag (0912)</div><div class="s">Draft</div></div><span class="chip ready">Ready</span></div></div></div>
+  </div>
+</section>
+
+<!-- J4 -->
+<section class="journey">
+  <div class="jhead"><span class="who">Shop → developer · issue</span><h2>4. An error nobody can set up: report it</h2>
+  <p>No requirement kind explains it, so no admin action can fix it. The shop says what happened in its own words; a developer sees the shop, the product, the words and Amazon's error.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>Amazon refused the price on a product that already has an MRP.</div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>listing shows</div>
+    <div class="phone"><div class="cap">Listing · Amazon</div><div class="bar"><span>‹ Cloth bag (Boat)</span><span>Amazon</span></div>
+      <div class="screen"><div class="box red"><p class="strong">Amazon found a problem we don't recognise</p>
+        <p class="quote">Attribute 'purchasable_offer' does not have the expected value(s).</p>
+        <p>Tell us what happened and we'll fix it.</p><span class="btn">Report this</span></div></div></div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>taps</div>
+    <div class="phone"><div class="cap">Sheet · Report a problem</div><div class="bar"><span>Report a problem</span><span>✕</span></div>
+      <div class="screen">
+        <div class="field"><span class="k">About</span><select class="input" id="cat" aria-label="Category"><option>Listing on a marketplace</option><option>Stock on a marketplace</option><option>Marketplace orders</option><option>Something else</option></select></div>
+        <div class="field"><span class="k">What happened</span><textarea class="input" id="words" aria-label="What happened">I added the MRP and sent it again, Amazon still refuses the price.</textarea></div>
+        <div class="box plain"><p class="sub">Sent with it: Cloth bag (Boat) on Amazon, and Amazon's message.</p></div>
+        <span class="btn primary full">Send report</span></div></div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>sent</div>
+    <div class="phone"><div class="cap">Listing · Amazon</div><div class="bar"><span>‹ Cloth bag (Boat)</span><span>Amazon</span></div>
+      <div class="screen"><div class="box red"><p class="strong">Amazon found a problem we don't recognise</p><span class="chip req">With us</span></div>
+        <div class="toast">Sent. It's with us; we'll tell you here when it's ready.</div></div></div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>developer</div>
+    <div class="phone"><div class="cap">/admin/requests · Issues</div><div class="bar admin"><span>‹ Issues</span><span>2 shops</span></div>
+      <div class="screen"><p class="ttl">Amazon refuses the offer</p><p class="sub">Listing on a marketplace · 2 shops · first 1 h ago</p>
+        <div class="box plain"><p class="strong">Niqab Boutique · Cloth bag (Boat)</p><p>"I added the MRP and sent it again, Amazon still refuses the price."</p></div>
+        <div class="box plain"><p class="strong">Amazon's error</p><p class="sub">TOTE_BAG · purchasable_offer · code 90220</p><p class="quote">Attribute 'purchasable_offer' does not have the expected value(s).</p></div>
+        <span class="btn primary full">Mark fixed</span></div></div>
+  </div>
+</section>
+
+<!-- J5 -->
+<section class="journey">
+  <div class="jhead"><span class="who">Admin → shop · refused</span><h2>5. Not now</h2>
+  <p>The admin can't or won't set it up yet. The shop is told plainly instead of waiting forever.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>Admin opens a requirement it can't support yet.</div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Not now</div>
+    <div class="phone"><div class="cap">Requirement</div><div class="bar admin"><span>‹ Requests</span><span></span></div>
+      <div class="screen"><p class="ttl">Amazon fields for SARI</p>
+        <div class="box amber"><p class="strong">Shops waiting will see it isn't supported yet.</p><p>If it comes up again after 30 days, it returns here.</p><div class="opts"><span class="btn primary">Not now</span><span class="btn">Keep it</span></div></div></div></div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>shop sees</div>
+    <div class="phone"><div class="cap">Listing · Amazon</div><div class="bar"><span>‹ Banarasi sari</span><span>Amazon</span></div>
+      <div class="screen"><div class="box red"><p class="strong">How to fix it</p><span class="chip no">Not supported yet</span>
+        <p>We can't set up Fabric weave, Border type for Amazon yet. Amazon may keep refusing this listing until we do.</p></div></div></div>
+  </div>
+</section>

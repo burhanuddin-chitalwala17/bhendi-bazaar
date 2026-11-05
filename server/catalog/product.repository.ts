@@ -927,6 +927,12 @@ export class AdminProductsRepository {
    * Every product of a shop that has a SKU, archived included (ADR-0029): what a marketplace listing
    * can link to by SKU (channel-import D7). A shop's catalogue, not the platform's.
    */
+  /** Names of some products, across shops (setup-requests Q22: an issue's reports). */
+  async namesByIds(ids: readonly string[]) {
+    if (ids.length === 0) return [];
+    return await prisma.product.findMany({ where: { id: { in: [...ids] } }, select: { id: true, name: true } });
+  }
+
   async listWithSku(orgId: string) {
     return await prisma.product.findMany({
       where: { orgId, sku: { not: null } },

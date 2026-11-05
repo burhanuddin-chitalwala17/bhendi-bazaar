@@ -120,6 +120,11 @@ export class ProductService {
    * A shop's products that have a SKU, archived included: what a marketplace listing can link to
    * (channel-import D7, decision Q4).
    */
+  /** Names of some products, across shops (setup-requests Q22). */
+  async namesByIds(ids: readonly string[]): Promise<Map<string, string>> {
+    return new Map((await adminProductsRepository.namesByIds(ids)).map((r) => [r.id, r.name]));
+  }
+
   async listWithSku(orgId: string): Promise<Array<{ id: string; sku: string | null; name: string; archived: boolean }>> {
     const rows = await adminProductsRepository.listWithSku(orgId);
     return rows.map((row) => ({ id: row.id, sku: row.sku, name: row.name, archived: row.archivedAt !== null }));

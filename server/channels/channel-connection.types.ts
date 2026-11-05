@@ -345,3 +345,7 @@ export interface SettlePickerProductDTO {
   /** Already linked to another listing on this marketplace (Q22). */
   linkedHere: boolean;
 }
+
+/** Why a marketplace's published types could not be read for the platform (setup-requests Q14). */
+export const TYPES_UNAVAILABLE = { NOT_CONNECTED: "not_connected", UNREACHABLE: "unreachable" } as const;
+export type TypesUnavailable = (typeof TYPES_UNAVAILABLE)[keyof typeof TYPES_UNAVAILABLE];

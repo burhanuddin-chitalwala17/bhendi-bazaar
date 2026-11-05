@@ -71,6 +71,9 @@ export const flipkartProvider: MarketplaceProvider = {
   findPages: async () => [],
   createListing: async () => ({ accepted: [], issues: [{ code: "not_supported", message: "New products are made in Flipkart Seller Hub.", severity: "error", field: null }], decidesLater: false }),
   variationThemes: async () => [],
+  // Flipkart publishes no type definitions through its API (setup-requests Q20).
+  typeDefinition: async () => null,
+  searchTypes: async () => [],
   connectionCap: null,
   readListings: readFlipkartListings,
   listingDetail: flipkartListingDetail,

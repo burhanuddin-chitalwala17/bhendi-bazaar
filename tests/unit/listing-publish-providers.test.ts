@@ -83,10 +83,19 @@ describe("a marketplace's complaints (D9, Q6)", () => {
         { code: "8541", message: "Catalog conflict", severity: "ERROR" },
       ]),
     ).toEqual([
-      { code: "90220", message: "Title too long", severity: "error", field: "title" },
-      { code: "100708", message: "Price uncompetitive", severity: "warning", field: "price" },
-      { code: "8541", message: "Catalog conflict", severity: "error", field: null },
+      { code: "90220", message: "Title too long", severity: "error", field: "title", attribute: "item_name", need: null },
+      { code: "100708", message: "Price uncompetitive", severity: "warning", field: "price", attribute: "purchasable_offer", need: "mrp" },
+      { code: "8541", message: "Catalog conflict", severity: "error", field: null, attribute: null, need: null },
     ]);
+  });
+
+  it("says which complaints are the brand's details, and keeps the attribute it names (Q24)", () => {
+    const [packer, strap] = amazonIssues([
+      { code: "90220", message: "'Packer Contact Information' is required but missing.", severity: "ERROR", attributeNames: ["packer_contact_information"] },
+      { code: "90220", message: "'Strap Type' is required but missing.", severity: "ERROR", attributeNames: ["strap_type"] },
+    ]);
+    expect(packer).toMatchObject({ field: null, attribute: "packer_contact_information", need: "brand" });
+    expect(strap).toMatchObject({ field: null, attribute: "strap_type", need: null });
   });
 
   it("reads Flipkart's per-SKU answer: a failure is a refusal even with an HTTP 200", () => {
@@ -144,8 +153,8 @@ describe("Amazon's daily problems look (marketplace-publish Q23)", () => {
     expect(asked[0].searchParams.get("includedData")).toBe("summaries,issues");
     expect(asked[1].searchParams.get("pageToken")).toBe("t2");
     expect(problems).toEqual([
-      { sku: "A", suppressed: true, issues: [{ code: "18027", message: "Main image missing", severity: "error", field: "photos" }] },
-      { sku: "C", suppressed: false, issues: [{ code: "8541", message: "Brand not approved", severity: "error", field: null }] },
+      { sku: "A", suppressed: true, issues: [{ code: "18027", message: "Main image missing", severity: "error", field: "photos", attribute: "main_product_image_locator", need: null }] },
+      { sku: "C", suppressed: false, issues: [{ code: "8541", message: "Brand not approved", severity: "error", field: null, attribute: null, need: null }] },
     ]);
   });
 });

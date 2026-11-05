@@ -724,6 +724,7 @@ model Org {
   productFamilies    ProductFamily[]
   channels           OrgChannel[]
   channelConnections ChannelConnection[]
+  ticketNeeds        TicketNeed[]
 
   @@index([email])
   @@index([isActive])
@@ -2600,6 +2601,80 @@ model ChannelAttributeMap {
 
   @@unique([channel, theirCategory, fact])
   @@index([channel, theirCategory])
+}
+
+/// An attribute a channel's type requires that no fact answers: filled from the product itself or
+/// with one fixed value for that type (setup-requests D6, Q32). Written only by `channel-map.repository`.
+model ChannelAttributeFill {
+  id             String  @id @default(cuid())
+  channel        String
+  /// Their category, as on `ChannelAttributeMap`.
+  theirCategory  String
+  theirAttribute String
+  /// One of ATTRIBUTE_SOURCE (`server/listing/channel-map.types.ts`): sku, name or brand; null when `constant` is set.
+  source         String?
+  /// The fixed value sent for every product of this type; null when `source` is set.
+  constant       String?
+
+  checkedOn     DateTime
+  checkedSource String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([channel, theirCategory, theirAttribute])
+}
+
+/// One ticket per fix, however many shops need it (setup-requests D2, D3, Q9). Keyed by what fixes
+/// it, never by who hit it. Written only by `server/requests/ticket.repository.ts`.
+model Ticket {
+  id      String @id @default(cuid())
+  /// One of TICKET_TYPE: requirement (the admin enables it) or issue (a developer fixes it) (Q21).
+  type    String
+  /// One of TICKET_KIND: which plug-in plans, applies and checks it (D4).
+  kind    String
+  /// The fingerprint: `{kind}:{channel}:{subject}`. Two shops at once raise one ticket (D3).
+  key     String @unique
+  /// One of TICKET_STATUS: open, done, closed.
+  status  String
+  /// The kind's own small description of what fixes it (channel, their type, fields). Never a shop's.
+  subject Json
+  /// Why it closed: not_now or not_needed; null otherwise (Q11, Q13).
+  closedReason String?
+
+  openedAt   DateTime  @default(now())
+  resolvedAt DateTime?
+  /// Set when the same error came back after it was done (Q12).
+  reopenedAt DateTime?
+  updatedAt  DateTime  @updatedAt
+
+  needs TicketNeed[]
+
+  @@index([status, type])
+}
+
+/// One shop's need for a ticket: the incident to its problem (Q9). The admin's view counts these and
+/// never reads them for a requirement (Q3); an issue's view reads them (Q22).
+model TicketNeed {
+  id        String  @id @default(cuid())
+  ticketId  String
+  ticket    Ticket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  orgId     String
+  org       Org     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  /// The product that hit it; "" when none (a report from scratch), so the unique rule holds.
+  productId String  @default("")
+  /// The marketplace's complaint as received: code, attribute, message. Never shown to the admin on a requirement.
+  detail    Json?
+  /// An issue's category (ISSUE_CATEGORY) and the shop's own words (Q23, Q27).
+  category  String?
+  words     String? @db.Text
+
+  raisedAt   DateTime  @default(now())
+  /// When the shop was told it is resolved; the bell reads it later (D12).
+  notifiedAt DateTime?
+
+  @@unique([ticketId, orgId, productId])
+  @@index([orgId])
 }
 
 /// What a channel calls one of our answers.

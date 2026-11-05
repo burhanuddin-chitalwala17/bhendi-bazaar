@@ -66,7 +66,7 @@ export const PUBLISH = {
   create: (label: string) => `Create on ${label}`,
   nothingLeft: "Every change is undone; nothing is left to send.",
   bigChange: (from: string, to: string) => `Big change: ${from} → ${to}. Check before publishing.`,
-  sentToast: (label: string) => `Sent to ${label}. We'll check back and tell you here.`,
+  sentToast: (label: string) => `Sent to ${label}. Pending until it answers; we'll tell you here.`,
   failed: "Couldn't reach Bhendi Bazaar. Nothing was sent.",
   refused: "This listing changed while you were reviewing. Review it again.",
   reviewAgain: "Review again",
@@ -105,6 +105,24 @@ export const PROBLEMS = {
   centralUrl: "https://sellercentral.amazon.in/myinventory/inventory",
 } as const;
 
+/** "How to fix it" on a listing (marketplace-publish Q24, ux.md "Needs attention"): one line and one button per place. */
+export const FIX = {
+  title: "How to fix it",
+  list: (names: string[]) => names.join(", "),
+  brandMissing: (label: string, names: string) => `${label} needs the brand's details (${names}). This product has no brand yet.`,
+  brandMissingAction: "Choose a brand",
+  brand: (label: string, brand: string, names: string) => `${label} needs ${brand}'s details: ${names}.`,
+  brandAction: "Fill in Brands and defaults",
+  mrp: (label: string) => `${label} needs the MRP, the price printed on the tag.`,
+  mrpAction: "Add the MRP",
+  facts: (names: string) => `Fill these on the product: ${names}.`,
+  factsAction: "Fill on product",
+  admin: (label: string, names: string) => `We don't ask for ${names} yet. The admin adds them for ${label}, then you fill them on the product.`,
+  adminMessage: (label: string, type: string, product: string, names: string) =>
+    `Hello Bhendi Bazaar, ${label} needs these for ${type}: ${names}. Product: ${product}. Please add them so I can fill them in.`,
+  after: (label: string) => `Once they're done, open Review and publish and send it to ${label} again.`,
+} as const;
+
 export const CREATE = {
   putOn: (label: string) => `Put on ${label}`,
   putFamilyOn: (label: string) => `Put the family on ${label}`,
@@ -136,12 +154,10 @@ export function statusText(status: ListingStatusDTO, label: string, ago: (iso: s
       return `Draft · not on ${label} yet`;
     case LISTING_STATUS.WAITING:
       return `Live · ${LISTING.waiting(status.waiting)}`;
+    // Sent and Checking are one word to the shop: waiting on the marketplace (marketplace-publish Q25).
     case LISTING_STATUS.SENT:
-      return `Sent${when ? ` ${when}` : ""} · ${label} usually answers within an hour`;
-    case LISTING_STATUS.CHECKING: {
-      const next = status.nextCheckAt ? Math.max(1, Math.round((Date.parse(status.nextCheckAt) - Date.now()) / 60_000)) : null;
-      return `Checking with ${label}${next ? ` · next look in ${next} min` : ""}`;
-    }
+    case LISTING_STATUS.CHECKING:
+      return `Pending · waiting for ${label}'s answer`;
     case LISTING_STATUS.LIVE:
       return `Live on ${label}${when ? ` · checked ${when}` : ""}`;
     case LISTING_STATUS.PAUSED:

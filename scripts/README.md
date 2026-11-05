@@ -20,7 +20,7 @@ from the old product form, so it shows what the seed invented rather than what t
 typed.
 
 ```bash
-psql "$(grep -oE '^DATABASE_URL="[^"]+"' .env.production.reference | sed 's/^DATABASE_URL="//; s/"$//')" \
+psql "$(grep -oE '^DATABASE_URL="[^"]+"' .env.prod | sed 's/^DATABASE_URL="//; s/"$//')" \
   -f scripts/survey-catalogue.sql > /tmp/catalogue-survey.txt
 ```
 

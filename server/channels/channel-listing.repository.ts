@@ -452,9 +452,10 @@ export const channelListingRepository = {
     connectionIds: readonly string[],
     found: ReadonlyArray<{ connectionId: string; sku: string; problems: unknown; suppressed: boolean }>,
     now: Date,
-  ): Promise<number> {
-    if (connectionIds.length === 0) return 0;
-    return await prisma.$executeRaw`
+  ): Promise<Array<{ connectionId: string; sku: string; orgId: string; productId: string | null }>> {
+    if (connectionIds.length === 0) return [];
+    // Returns the rows it marked as having problems, so the caller names their products without a second read (setup-requests D5).
+    return await prisma.$queryRaw<Array<{ connectionId: string; sku: string; orgId: string; productId: string | null }>>`
       WITH found AS (
         SELECT * FROM jsonb_to_recordset(${JSON.stringify(found)}::jsonb) AS f("connectionId" text, sku text, problems jsonb, suppressed boolean)
       )
@@ -466,7 +467,8 @@ export const channelListingRepository = {
       LEFT JOIN found f ON f."connectionId" = t."connectionId" AND f.sku = t.sku
       WHERE c.id = t.id
         AND t."connectionId" = ANY(${[...connectionIds]}::text[])
-        AND (f.sku IS NOT NULL OR t."problemsSince" IS NOT NULL)`;
+        AND (f.sku IS NOT NULL OR t."problemsSince" IS NOT NULL)
+      RETURNING c."connectionId", c.sku, c."orgId", CASE WHEN f.sku IS NULL THEN NULL ELSE c."productId" END AS "productId"`;
   },
 
   /** Clean again: a look after a publish found no error on this listing (marketplace-publish Q23). */
