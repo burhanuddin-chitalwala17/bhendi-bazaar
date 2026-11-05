@@ -1,6 +1,6 @@
 # CLAUDE.md — channels domain
 
-- **Verified:** 2026-11-05
+- **Verified:** 2026-11-06
 - **Covers:** `server/channels/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md). This file covers **channels** only. Requirements are in [docs/specs/marketplace-integration/](../../docs/specs/marketplace-integration/); every decision, with who made it, is in each spec's `decisions.md`.
@@ -12,11 +12,11 @@ Channels owns a shop's authorised connection to a marketplace: the consent round
 
 **Owns:** `server/channels/**`, the `ChannelConnection` and `ChannelListing` tables (a read-only mirror of each marketplace listing, plus its link to a product), `PlatformListing` (each product's listing per marketplace as the shop means it: only its own values, what was last sent, and its publish), and stock sync's `ChannelLocation`, `MarketplaceOrder` and `StockCorrection`.
 
-**Does not own:** where a shop says it sells (`listing`'s `OrgChannel`, written through `orgChannelService.setIn` in the same transaction as a connect or disconnect), the channel vocabulary (`server/shared/channels.ts`), or the encryption itself (`server/shared/crypto.ts`).
+**Does not own:** where a shop says it sells (`listing`'s `OrgChannel`, written through `orgChannelService.setIn` in the same transaction as a connect or disconnect), the channel vocabulary (`server/shared/channels.ts`), or the encryption itself (`server/shared/crypto.ts`), or what becomes of a marketplace's refusal: errors are handed to `requests` as the shared `requests.listing-complaints` job, never by importing it (setup-requests D5).
 
 ## Rules
 
-- **A token never leaves this domain.** The public surface is `channel-connection.service`, `channel-import.service`, `channel-settle.service`, `channel-facts.service`, `channel-family.service`, `channel-location.service`, `channel-stock.service`, `channel-orders.service`, `platform-listing.service`, `listing-publish.service`, `listing-create.service`, `listing-problems.service` and their `.types`; they answer cards, listings, settling and outcomes. A later subfeature adds a verb to `MarketplaceProvider` and calls it here, through `accessToken()`, rather than asking for a token.
+- **A token never leaves this domain.** The public surface is `channel-connection.service`, `channel-import.service`, `channel-settle.service`, `channel-facts.service`, `channel-family.service`, `channel-location.service`, `channel-stock.service`, `channel-orders.service`, `platform-listing.service`, `listing-publish.service`, `listing-create.service`, `listing-problems.service`, `channel-types.service` and their `.types`; they answer cards, listings, settling and outcomes. A later subfeature adds a verb to `MarketplaceProvider` and calls it here, through `accessToken()`, rather than asking for a token.
 - **Every marketplace goes behind `MarketplaceProvider`.** No marketplace-specific branching outside `providers/<name>/`. A fact about one marketplace's app (Amazon's unlisted cap and `version=beta`) lives in its provider, not in a flag.
 - **Renewal is serialised by a row lock.** Anything that renews or re-seals tokens takes `lockSecrets` inside a transaction and writes both tokens and expiries in one update. Flipkart replaces its refresh token near expiry; a second, unlocked renewal would keep the old one and disconnect the shop silently.
 - **Marketplace text never reaches a person or a log**, save the one exception below. Failures become `MarketplaceAuthError` (the seller must reconnect) or `MarketplaceUnavailableError` (try later), and outcomes are `CONNECT_RESULT` / `CONNECTION_ERROR` codes the UI maps to ux.md's copy. Response bodies are never logged: a token can appear in them.
@@ -62,4 +62,6 @@ Channels owns a shop's authorised connection to a marketplace: the consent round
 | `listing-problems.service.ts`, `listing-problems.job.ts` | The daily problems look for every shop in one run: one read of every account with its token, one marketplace call per account, one write of every answer; Home's line (marketplace-publish Q23) |
 | `listing-photos-out.ts` | The photo addresses a marketplace fetches: as stored where it takes the format, else a JPEG rendition (marketplace-publish D2) |
 | `listing-create.service.ts`, `listing-create.ts` | Putting a product or a family on a marketplace: looking for its page, the draft, the check-only answer, the create; `listing-create.ts` (mapping forwards, theme, SKU) is pure (marketplace-publish D6–D8) |
+| `channel-types.service.ts` | A marketplace's type definitions and type search, read through one org's connection (the home brand's) for requests; the token stays here (setup-requests D7, D10) |
+| `listing-complaints.ts` | Hands a send's, create's or look's errors to requests as one job per batch, in the caller's transaction; a failed hand-over is logged, never thrown (setup-requests D5, ADR-0053) |
 | `providers/` | `MarketplaceProvider`, one folder per marketplace (`*.listings.ts` reads its listings, `*.stock.ts` its locations, counts and orders, `*.publish.ts` its listing rules, publish, status and create; `stock.ts` and `publish.ts` the shared shapes), and `listing-read.ts`'s shared sink, retry and paise helpers |

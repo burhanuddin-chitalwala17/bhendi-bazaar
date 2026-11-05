@@ -1,6 +1,6 @@
 # CLAUDE.md — requests domain
 
-- **Verified:** 2026-11-05
+- **Verified:** 2026-11-06
 - **Covers:** `server/requests/**`
 
 > Read the project-wide rules first: [`/CLAUDE.md`](../../CLAUDE.md). Requirements are in [docs/specs/setup-requests/](../../docs/specs/setup-requests/); every decision is in its `decisions.md`.

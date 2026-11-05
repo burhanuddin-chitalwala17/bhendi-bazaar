@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-11-05
+- **Verified:** 2026-11-06
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -712,8 +712,8 @@ Record a shape when it crosses the boundary and either more than one route uses 
 ## setup-requests
 
 Tickets for what a shop cannot fix itself (`server/requests/request.types.ts`, setup-requests D2, D11).
-**`ShopTicketDTO`** (`id`, `type`, `kind`, `state`: with_us · ready · not_supported, `title`, `names`,
-`productId`, `raisedAt`) is all a shop sees: never a plan or a step. **`AdminRequirementDTO`** (`id`,
+**`ShopTicketDTO`** (`id`, `type`, `kind`, `state`: with_us · ready · not_supported, `title`,
+`category` (an issue's; null for a requirement, Q23), `names`, `productId`, `raisedAt`) is all a shop sees: never a plan or a step. **`AdminRequirementDTO`** (`id`,
 `kind`, `status`, `title`, `shopsWaiting` (null for one, Q4), `reopened`, `openedAt`) never carries a
 shop, product or words; **`AdminIssueDTO`** carries each report's shop, product and words (Q22).
 **`RequirementPlanDTO`** is a fields plan (each attribute's solution: reuse, add, from_product, fixed,
@@ -723,5 +723,8 @@ Channels hands complaints to requests through the shared job `requests.listing-c
 (`server/shared/jobs/listing-complaints.job.ts`): per product, its marketplace type when known and its
 errors with `attribute`, `field` and `need`. `MarketplaceProvider` gains `typeDefinition` and
 `searchTypes`. Routes: `POST /api/org/{orgId}/requests` (a report), `GET|POST /api/admin/requests/{id}`
-(preview; apply, not now, mark fixed).
+(preview; apply, not now, mark fixed). Bodies are `src/lib/validation/schemas/requests.schema.ts`:
+`reportIssueSchema` (`category`, `words` ≤1,000, `productId`, the marketplace `error` or null) and
+`requestActionSchema`, a union on `action` where only `apply` carries the plan's `hash` and the admin's
+choices; a stale hash writes nothing and answers `{ stale: plan }`.
 

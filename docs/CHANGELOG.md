@@ -12,6 +12,14 @@
 
 ## Entries
 
+## 2026-11-06 — CI green: five docs re-verified against setup-requests
+
+- `docs-integrity` failed: setup-requests added files under five docs' Covers. Re-read each against them.
+  Drift fixed: CONTRACTS' `ShopTicketDTO` gains `category`, and the two request bodies are named;
+  channels lists `channel-types.service` and `listing-complaints.ts`, and the complaints hand-over as a
+  boundary; the route doc names `requirePlatformAdminId` and `schema.parse` beside `validateRequest`.
+  `server/requests/` and `src/components/` matched as written. Ran: docs-integrity (84).
+
 ## 2026-11-05 — Four env files: local, dev, prod, example
 
 - **Asked by the owner.** `.env.example` now holds every variable in sections — Vercel, local only,
