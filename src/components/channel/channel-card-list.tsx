@@ -7,17 +7,24 @@ import { isFeedChannel } from "@/lib/validation/schemas/org-channels.schema";
 import { CARD_STATE, type ChannelCardDTO } from "@server/channels/channel-connection.types";
 
 import { ChannelCardShell } from "./channel-card-shell";
-import { ACTION, CARD, CHIP, FEED, PURPOSE, SECTION } from "./channel-copy";
+import { ACTION, CARD, CHIP, FEED, PLANNED_CHANNEL_COPY, PURPOSE, SECTION } from "./channel-copy";
 import { ExpandableLine } from "./expandable-line";
 import { FeedToggle } from "./feed-toggle";
 import { MarketplaceCard } from "./marketplace-card";
 import { channelMark } from "./channel-mark";
+import { PlatformMark } from "@/components/ui/icons/platform-marks";
 
 /**
  * Channels with no connector yet: shown so a shop knows they are coming, never offered. A marketplace
  * the server reports as unavailable (`CHANNELS_CONNECT`, TRD D10) joins them.
  */
 export const UNBUILT_CHANNELS = [CHANNEL.MEESHO] as const;
+
+/**
+ * Wanted and not started (owner, 2026-11-05): shown as coming, never offered. They stay out of
+ * `CHANNEL` on purpose — a channel there gets feeds, readiness and image rules it has no use for yet.
+ */
+export const PLANNED_CHANNELS = ["whatsapp", "instagram"] as const satisfies readonly (keyof typeof PLANNED_CHANNEL_COPY)[];
 
 interface ChannelCardListProps {
   orgId: string;
@@ -94,6 +101,16 @@ export function ChannelCardList({ orgId, cards, storePath, storeLabel }: Channel
               label={CHANNEL_LABELS[channel]}
               purpose={PURPOSE[channel]}
               mark={channelMark(channel)}
+              chip={{ tone: "muted", text: CHIP.comingSoon }}
+            />
+          ))}
+          {PLANNED_CHANNELS.map((planned) => (
+            <ChannelCardShell
+              key={planned}
+              tone="soon"
+              label={PLANNED_CHANNEL_COPY[planned].label}
+              purpose={PLANNED_CHANNEL_COPY[planned].purpose}
+              mark={<PlatformMark name={planned} size="md" />}
               chip={{ tone: "muted", text: CHIP.comingSoon }}
             />
           ))}

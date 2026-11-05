@@ -12,6 +12,17 @@
 
 ## Entries
 
+## 2026-11-05 — Channels: WhatsApp and Instagram shown as coming soon
+
+- **Asked by the owner.** The Channels page's Coming soon section gains WhatsApp ("Share your
+  catalogue and take orders in chats") and Instagram ("Tag your products in posts, reels and
+  stories"), beside Flipkart and Meesho: muted cards, a Coming soon chip, nothing to press.
+- They are `PLANNED_CHANNELS` in `channel-card-list.tsx`, **not** in the server's `CHANNEL` set: a
+  channel there gets feeds, readiness checks and image rules it cannot use yet. Their marks are
+  Simple Icons' (CC0) in each brand's own colour, in `ui/icons/platform-marks.tsx`; their words in
+  `channel-copy.ts` (`PLANNED_CHANNEL_COPY`).
+- `channel-cards.test.tsx` asserts both appear under Coming soon with no link or button.
+
 ## 2026-11-05 — CI: the gates run side by side, and the worker image no longer builds under emulation
 
 A push to `main` took 30–38 minutes (run 363: 37m50s). Measured from the job timings:

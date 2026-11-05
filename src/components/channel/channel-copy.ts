@@ -30,6 +30,11 @@ export const PURPOSE: Record<Channel, string> = {
   [CHANNEL.FLIPKART]: "Listings, stock and orders with Seller Hub",
   [CHANNEL.MEESHO]: "Sell to Meesho's buyers across India",
 };
+/** Planned channels shown under Coming soon only: not in the server's channel set until they are built. */
+export const PLANNED_CHANNEL_COPY = {
+  whatsapp: { label: "WhatsApp", purpose: "Share your catalogue and take orders in chats" },
+  instagram: { label: "Instagram", purpose: "Tag your products in posts, reels and stories" },
+} as const;
 export const PAGE_LOAD_FAILED = "Couldn't load your channels. Check your connection and try again.";
 
 export const MARKETPLACE_PITCH = (label: string) =>

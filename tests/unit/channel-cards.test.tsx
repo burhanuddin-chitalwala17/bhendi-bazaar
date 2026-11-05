@@ -95,7 +95,7 @@ describe("the marketplace card (spec A4)", () => {
 });
 
 describe("the page's two sections", () => {
-  it("puts an unavailable marketplace and Meesho under Coming soon, with nothing to press", () => {
+  it("puts an unavailable marketplace, Meesho, WhatsApp and Instagram under Coming soon, with nothing to press", () => {
     render(
       <ChannelCardList
         orgId="org_1"
@@ -107,6 +107,8 @@ describe("the page's two sections", () => {
     const soon = within(screen.getByRole("region", { name: "Coming soon" }));
     expect(soon.getByText("Flipkart")).toBeInTheDocument();
     expect(soon.getByText("Meesho")).toBeInTheDocument();
+    expect(soon.getByText("WhatsApp")).toBeInTheDocument();
+    expect(soon.getByText("Instagram")).toBeInTheDocument();
     expect(soon.queryAllByRole("link")).toHaveLength(0);
     expect(soon.queryAllByRole("button")).toHaveLength(0);
     const live = within(screen.getByRole("region", { name: "Where you sell" }));
