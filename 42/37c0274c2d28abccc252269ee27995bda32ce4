@@ -1,0 +1,27 @@
+src/components/ui/icons/platform-marks.tsx
+  s_70578559cabf14::t_f81e667ca80509 20-21
+src/components/channel/channel-copy.ts
+  s_70578559cabf14::t_f81e667ca80509 33-37
+src/components/channel/channel-card-list.tsx
+  s_70578559cabf14::t_f81e667ca80509 10,15,23-28,107-113
+tests/unit/channel-cards.test.tsx
+  s_70578559cabf14::t_f459c18d6cbdf1 98,110-111
+docs/CHANGELOG.md
+  s_70578559cabf14::t_f459c18d6cbdf1 15-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "4237c0274c2d28abccc252269ee27995bda32ce4",
+  "prompts": {},
+  "sessions": {
+    "s_70578559cabf14": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3d8c5e99-123d-451a-b57d-7876f27849f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
