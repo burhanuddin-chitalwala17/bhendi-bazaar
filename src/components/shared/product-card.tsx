@@ -9,11 +9,11 @@ import { PRODUCT_CARD_COPY } from "./shared-copy";
 import { ROUTES } from "@server/shared/routes";
 
 /**
- * The slot a tile occupies, per PRODUCT_GRID_CLASSES: half a phone, a third of a tablet, a quarter
- * of the 90rem page from `lg`. Moves with the grid (design-system Q19), or a tile downloads more
+ * The slot a tile occupies, per PRODUCT_GRID_CLASSES: half a phone, a third of a tablet, a sixth
+ * of the 90rem page from `lg` (owner, 2026-11-05: six to a desktop row). Moves with the grid (design-system Q19), or a tile downloads more
  * than it shows (ADR-0026). `tests/unit/product-grid-sizes.test.ts` holds the two together.
  */
-export const PRODUCT_TILE_SIZES = "(min-width: 1024px) 360px, (min-width: 768px) 33vw, 50vw";
+export const PRODUCT_TILE_SIZES = "(min-width: 1024px) 240px, (min-width: 768px) 33vw, 50vw";
 
 /** One product in a grid: the photograph first, then who sells it, what it is and what it costs. */
 export function ProductCard(product: Product) {

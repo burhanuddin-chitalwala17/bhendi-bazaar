@@ -19,8 +19,8 @@ import { appUrl } from "@server/shared/app-url";
 import { HOME_PAGE_COPY } from "./home-page-copy";
 import { ROUTES } from "@server/shared/routes";
 
-/** One row of the desktop's 4-up grid, two of the phone's. */
-const NEW_IN = 4;
+/** One row of the desktop's 6-up grid, two of the tablet's, three of the phone's. */
+const NEW_IN = 6;
 
 function isTopLevel(category: { parentId: string | null }) {
   return category.parentId === null;

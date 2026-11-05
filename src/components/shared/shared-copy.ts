@@ -98,3 +98,8 @@ export const ERROR_STATE_COPY = {
   title: "Something went wrong",
   retry: "Try again",
 } as const;
+
+export const SCROLL_RAIL_COPY = {
+  previous: "Scroll back",
+  next: "Scroll for more",
+} as const;

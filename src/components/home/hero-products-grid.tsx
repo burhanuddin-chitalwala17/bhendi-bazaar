@@ -3,8 +3,8 @@ import { PaginatedProductGrid } from "@/components/shared/paginated-product-grid
 import { Product } from "@/domain/product";
 import { STORE_HOME_COPY } from "./store-home-copy";
 
-/** Two rows of the desktop's 4-up grid, four of the phone's; the rest load as the shopper scrolls. */
-export const HEROES_FIRST_PAGE = 8;
+/** Two rows of the desktop's 6-up grid, six of the phone's; the rest load as the shopper scrolls. */
+export const HEROES_FIRST_PAGE = 12;
 
 export function HeroProductsGrid({
   heroes,

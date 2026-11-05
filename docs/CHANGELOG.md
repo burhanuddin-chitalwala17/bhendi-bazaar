@@ -12,6 +12,29 @@
 
 ## Entries
 
+## 2026-11-05 — Store: six products to a desktop row
+
+- **Asked by the owner.** `PRODUCT_GRID_CLASSES` goes `lg:grid-cols-4` → `lg:grid-cols-6` (phone 2,
+  tablet 3 unchanged), so every product grid — Home, category, shop all, offers, search, saved — shows
+  six across from 1024px. A tile's image slot follows (360px → 240px, a sixth of the 1440px page), so a
+  tile downloads no more than it shows. Home's "New this week" is one full row (4 → 6) and the hero
+  grid's first page two (8 → 12); listing pages stay at 12, already a multiple of 2, 3 and 6.
+  `storefront-journey` holds the columns and the slot. A theme's own shelf keeps its density.
+
+## 2026-11-05 — Store Home: the category row has no scrollbar; arrows from tablet
+
+- **Asked by the owner:** the scrollbar under the arches looked ugly (and crowded their names). It is
+  gone at every size. `ScrollRail` (new, `shared/scroll-rail.tsx`, a small client leaf) holds the
+  line: a phone swipes; from a tablet a back and a forward arrow step about a screenful, each shown
+  only while there is more that way, so a mouse without a trackpad still reaches the end (hover is
+  never the only way). Smooth unless the visitor prefers reduced motion. The arches themselves stay
+  server-rendered.
+
+## 2026-11-05 — Store Home: category arches a size smaller
+
+- **Asked by the owner.** Each arch is about a fifth narrower: 64–72px on a phone (was 72–80),
+  112px on a tablet (was 128) and 128px on a desktop (was 160); image `sizes` follow.
+
 ## 2026-11-05 — Channels: WhatsApp and Instagram shown as coming soon
 
 - **Asked by the owner.** The Channels page's Coming soon section gains WhatsApp ("Share your

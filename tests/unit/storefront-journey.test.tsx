@@ -51,14 +51,14 @@ describe("the product grid and its image sizes move together (Q19)", () => {
     return query ? entries.find((e) => e.startsWith(query))!.split(") ")[1] : entries[entries.length - 1];
   };
 
-  it("phone 2-up, tablet 3-up, desktop 4-up", () => {
-    expect([columns(""), columns("md:"), columns("lg:")]).toEqual([2, 3, 4]);
+  it("phone 2-up, tablet 3-up, desktop 6-up", () => {
+    expect([columns(""), columns("md:"), columns("lg:")]).toEqual([2, 3, 6]);
   });
 
   it("asks for no more than a column's width at each form factor", () => {
     expect(slot(null)).toBe(`${100 / columns("")}vw`);
     expect(slot("(min-width: 768px)")).toBe(`${Math.round(100 / columns("md:"))}vw`);
-    // The 90rem page split four ways is 360px before gaps; asking more is the 1600px tile.
+    // The 90rem page split six ways is 240px before gaps; asking more downloads a larger tile.
     expect(parseInt(slot("(min-width: 1024px)"), 10)).toBeLessThanOrEqual(1440 / columns("lg:"));
   });
 });

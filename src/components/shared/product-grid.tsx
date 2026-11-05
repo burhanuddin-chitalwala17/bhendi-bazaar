@@ -8,7 +8,7 @@ import { PRODUCT_GRID_COPY } from "./shared-copy";
  * The one product grid, so a lane, a category and a search result can't drift apart: 2-up on a
  * phone, 3-up on a tablet, 4-up on a desktop (design-system Q12, Q19). PRODUCT_TILE_SIZES moves with it.
  */
-export const PRODUCT_GRID_CLASSES = "grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-3 md:gap-x-4 lg:grid-cols-4 lg:gap-x-5 lg:gap-y-8";
+export const PRODUCT_GRID_CLASSES = "grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-3 md:gap-x-4 lg:grid-cols-6 lg:gap-x-5 lg:gap-y-8";
 
 /** A long grid skips painting tiles off screen (ADR-0066 D7); the reserved height stops the scrollbar jumping. */
 const OFFSCREEN = "[content-visibility:auto] [contain-intrinsic-size:auto_22rem]";
