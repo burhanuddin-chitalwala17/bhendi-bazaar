@@ -288,6 +288,23 @@ Meta's own pages before a plan depends on one.
   with checkout enabled may tag products, by API or by hand, and existing tags were removed. Meta
   has no onsite checkout in India, so a post can carry a caption and not a buyable tag;
   `shopping_product_tag_eligibility` on the account answers it definitively.
+- **Coexistence keeps a shop on its WhatsApp Business app.** Embedded Signup can onboard a number
+  already in the app (app 2.24.17+); messages mirror both ways after that, at a fixed 20 per
+  second. Meta's page lists `smb_app_state_sync` (the app's contacts, and later changes) and
+  `smb_message_echoes` (messages sent from the app) as webhooks; partners report up to six months of
+  chat history shared if the shop approves it. Broadcast lists, Status, groups and Channels stay
+  app-only, and partners report the app's broadcast lists turning read-only.
+- **Opt-in, not possession, licenses a message.** A number in a contact list may be sent a template
+  only with opt-in per category, and an inbound message opens a 24-hour reply window, not consent.
+  Poorly rated templates are paused and the number's quality rating drops.
+- **The Groups API caps a group at 8 participants**, invite-link joins only (a partner's reading of
+  Meta's docs, August 2026). It is not a broadcast substitute.
+- **Instagram publishing covers feed images, carousels (no reels inside), reels and stories.**
+  Captions may @mention; `user_tags` works on images and, since July 2025, stories; up to three
+  `collaborators` on feed posts. Stickers (link, poll, location) cannot be published by API.
+  Containers expire after 24 hours, 400 per account per day. No scheduling: we hold the time.
+- **WhatsApp in-chat payment (India):** an `order_details` message paid through Razorpay or PayU
+  inside WhatsApp, or by UPI intent; confirmation arrives as the gateway's webhook.
 
 - **Myntra, Ajio and Nykaa** are invite-only partner programmes. Relevant to what this store
   sells, worth a name in the vocabulary, not worth chasing.
