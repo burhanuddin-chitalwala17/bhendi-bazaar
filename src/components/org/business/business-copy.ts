@@ -106,7 +106,7 @@ export const BUSINESS_COPY = {
       id: "everywhere",
       label: "Sell everywhere",
       title: "Your Amazon and Flipkart, finally in one place.",
-      body: "Connect your seller accounts and every listing you already have arrives in one inbox, matched to your products. From then on you manage them here.",
+      body: "Connect your Amazon and Flipkart accounts and every listing you already have arrives in one inbox, matched to your products. From then on you manage them here.",
       points: [
         "One stock count across your store, Amazon and Flipkart",
         "Publish to Amazon, update price and stock on Flipkart",
@@ -194,7 +194,7 @@ export const BUSINESS_COPY = {
       },
       {
         q: "I already sell on Amazon or Flipkart. Do I start again?",
-        a: "No. Connect your seller account and your existing listings arrive in one inbox, matched to your products by SKU.",
+        a: "No. Connect your marketplace account and your existing listings arrive in one inbox, matched to your products by SKU.",
       },
       {
         q: "I don’t sell on any marketplace yet.",

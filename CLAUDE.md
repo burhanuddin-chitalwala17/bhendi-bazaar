@@ -1,6 +1,6 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
-- **Verified:** 2026-11-04
+- **Verified:** 2026-11-05
 - **Covers:** `server/*/`, `src/components/*/`, `src/app/api/`, `docs/adr/*.md`, `.claude/`
 
 ## Purpose
@@ -124,6 +124,7 @@ that touch your change. A new convention adds a line there and an ADR to point a
 - **The UI is mobile-first** — base = phone, breakpoints add. [ADR-0015](docs/adr/0015-mobile-first-design.md)
 - **Every design axis goes through tokens** — colour, type, tracking, elevation, shape, width; colour values live only in the primitive palette, which semantic tokens point at. [ADR-0022](docs/adr/0022-design-decisions-go-through-tokens.md), [ADR-0049](docs/adr/0049-colour-is-a-primitive-palette-read-through-semantic-tokens.md)
 - **Closed sets are declared once and compared by constant** — `ORDER_STATUS.PAID`, never `"paid"`. [ADR-0003](docs/adr/0003-one-repository-per-aggregate.md) D5
+- **Words live in copy modules, our own paths in `ROUTES`** — `<area>-copy.ts` beside the components; `server/shared/routes.ts` for links; the suite fails on any inline. [ADR-0067](docs/adr/0067-words-live-in-copy-modules-and-our-own-paths-in-one-routes-table.md)
 - **Render on the server by default** — a `page.tsx` is never `"use client"`; push it to the smallest leaf. [ADR-0034](docs/adr/0034-render-on-the-server-by-default.md)
 - **Every public route is classified for rate limiting** — one registry: a named policy or an exemption with its reason; an unclassified route fails the suite. [ADR-0063](docs/adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md)
 
