@@ -18,6 +18,15 @@ export const REQUESTS_COPY = {
   // Shop: the listing's How to fix it line.
   needsDetails: (label: string, n: number, names: string) => `${label} also needs ${n} ${n === 1 ? "detail" : "details"} we don't ask for yet: ${names}.`,
   fillThese: (names: string) => `Fill these on the product: ${names}.`,
+  // Shop: one-tap raise (Q36).
+  raiseRequest: "Raise a request",
+  raiseHint: "One tap. We fix it on our side and tell you here when it's ready.",
+  nothingToRaise: "Nothing here is ours to fix. Use the steps above, or report it below.",
+  raiseFailed: "Couldn't raise the request. Try again.",
+  raisedOn: (date: string) => `Request raised ${date}`,
+  withUsHint: "We're setting this up. Nothing for you to do until it says Ready.",
+  covers: (names: string) => `Covers: ${names}`,
+  viewRequests: "See your requests",
   notSupported: (label: string, names: string) => `We can't set up ${names} for ${label} yet. ${label} may keep refusing this listing until we do.`,
   unrecognised: (label: string) => `${label} found a problem we don't recognise`,
   tellUs: "Tell us what happened and we'll fix it.",

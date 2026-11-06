@@ -6,7 +6,8 @@ import { listingComplaintsSpec, type ListingComplaintsPayload } from "@server/sh
 
 import type { ListingIssue } from "./platform-listing.types";
 
-type Complaint = ListingComplaintsPayload["complaints"][number];
+export type ListingComplaint = ListingComplaintsPayload["complaints"][number];
+type Complaint = ListingComplaint;
 
 /** Errors only, in the shape the requests job reads (setup-requests D5). */
 export function complaintIssues(issues: readonly ListingIssue[]): Complaint["issues"] {

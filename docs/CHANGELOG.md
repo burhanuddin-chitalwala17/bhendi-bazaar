@@ -12,6 +12,21 @@
 
 ## Entries
 
+## 2026-11-06 — A shop raises a request in one tap; "With us" says what it covers
+
+- **Asked by the owner:** "With us" was a status the shop could not act on, and where no ticket existed
+  yet the only way out was a WhatsApp message (setup-requests Q36). The listing's How to fix it now
+  shows **Raise a request** in place of "Ask the admin": `POST /api/org/{org}/channels/{channel}/listings/{product}/request`
+  reads the listing's current errors on the server (`platformListingService.complaint`) and raises them
+  through `requestService.raiseFromEvents`: a requirement where a kind applies, an issue with the error
+  attached otherwise. No body is read; one ticket per fix still (D3).
+- A raised ticket shows its chip with when it was raised, what it covers, and **See your requests**.
+  An unrecognised error shows its issue's line once one exists; "Report this" stays for the shop's words.
+- "Ask the admin" remains only on the parked kinds (Q17, the no-category filter on the products list).
+- New `tests/unit/raise-request.test.tsx`. Mutation: the route raising from the request body; the test
+  failed. Ran: unit (the only failure is the shallow-clone check of this sandbox), `tsc`, eslint on the
+  changed files.
+
 ## 2026-11-06 — The ticket engine knows no module; marketplace tickets are a plug-in [CONTRACT]
 
 - **Asked by the owner:** requests must not be coupled to channels (setup-requests D4, Q33). The engine

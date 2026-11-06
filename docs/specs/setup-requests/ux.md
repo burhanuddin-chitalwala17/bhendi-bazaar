@@ -35,7 +35,8 @@ on us, where our ticket stands.
 ## Journeys
 1. **Amazon wants fields we don't ask (shop).** Create on Amazon → Pending → Needs attention, and How
    to fix it says "Amazon also needs 15 details we don't ask for yet: …" with **With us** (raised by
-   itself, Q5) → after journey 2, **Ready** + Fill on product → the shop fills them, sends again →
+   itself, Q5; if not yet raised, **Raise a request**, one tap, Q36), "Request raised {date}", what it
+   covers and **See your requests** → after journey 2, **Ready** + Fill on product → the shop fills them, sends again →
    Pending → Live.
 2. **Apply fields, one tap (admin).** Sidebar "Requests 3" → "Amazon fields for TOTE_BAG · 2 shops
    waiting" → each field with our proposed name (renamable, Q15) and Amazon's answers, read through
@@ -70,10 +71,13 @@ on us, where our ticket stands.
 ## Copy deck
 - Listing states: "Draft · not on Amazon yet" · "Pending · waiting for Amazon's answer" · "Live on Amazon" · "Needs attention · {n} problem(s)".
 - Ticket chips (shop): "With us" · "Ready" · "Not supported yet".
+- Raise (shop, Q36): "Raise a request" · "One tap. We fix it on our side and tell you here when it's ready." · "Nothing here is ours to fix. Use the steps above, or report it below." · "Couldn't raise the request. Try again." · "Request raised {date}" · "Covers: {names}" · "We're setting this up. Nothing for you to do until it says Ready." · "See your requests".
 - Shop lines: "Amazon also needs {n} details we don't ask for yet: {names}." · "Fill these on the product: {names}." · "We can't set up {names} for Amazon yet. Amazon may keep refusing this listing until we do." · "Amazon found a problem we don't recognise" · "Tell us what happened and we'll fix it." · "Report this" · "Report a problem" · "About" · "What happened" · "Sent with it: {product} on {Marketplace}, and {Marketplace}'s message." · "Send report" · "Sent. It's with us; we'll tell you here when it's ready." · "Couldn't send the request." · "Couldn't send your report. Your words are kept."
 - Categories (Q23): "Listing on a marketplace" · "Stock on a marketplace" · "Marketplace orders" · "Something else".
 - Channels: "Your requests" · "Nothing with us. If something only we can fix holds up a listing, it shows here."
 - Admin: "Requests" · "Requirements" · "Issues" · "{n} shops waiting" · "Open" · "Reopened" · "Done" · "Closed" · "Read from Amazon through Niqab Boutique · {ago}" · "What Apply does" · "Apply {n} fields" · "Apply {type}" · "Pick one of Amazon's types first." · "Not now" · "Keep it" · "Shops waiting will see it isn't supported yet." · "Applied. {n} shops can now fill them." · "Already set up. Nothing to do." · "Amazon's fields changed since you opened this. Here's the new list." · "Connect Niqab Boutique to Amazon to see Amazon's fields, or set it up in the channel register." · "Couldn't reach Amazon. Try again." · "Mark fixed" · "Nothing waiting."
 
 ## Sign-off
+Q36 (2026-11-06) changes the listing's ticket line on the owner's own ask; awaiting the owner's look on a phone.
+
 Signed off by the owner, 2026-11-05 ("signed off"), on the prototype with the minimal states (Q31) and Pending (marketplace-publish Q25).
