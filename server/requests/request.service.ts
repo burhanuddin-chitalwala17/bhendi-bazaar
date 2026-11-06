@@ -2,20 +2,14 @@ import { prisma } from "@server/shared/prisma";
 import { enqueue } from "@server/shared/jobs/jobs.enqueue";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 import { productService } from "@server/catalog/product.service";
-import { TypesUnavailableError, channelTypesService } from "@server/channels/channel-types.service";
-import { channelSetupService } from "@server/listing/channel-setup.service";
-import { CHANNEL, type Channel } from "@server/shared/channels";
 
-import { needsFrom, type Complaint } from "./complaint-sort";
-import { homeBrandOrgId } from "./home-brand";
-import { KINDS, kindOf } from "./kinds";
+import { KINDS, NEED_SOURCES, PlanUnavailableError, issueKind, kindOf } from "./kinds";
+import { issueDetail, issueSubject } from "./kinds/issue.kind";
 import { ticketResolvedSpec } from "./requests.job";
 import { ticketRepository, type RaiseRow, type TicketRow } from "./ticket.repository";
 import {
   CLOSED_REASON,
-  PLAN_UNAVAILABLE,
   SHOP_STATE,
-  TICKET_KIND,
   TICKET_STATUS,
   TICKET_TYPE,
   type AdminIssueDTO,
@@ -23,9 +17,9 @@ import {
   type ApplyChoice,
   type IssueCategory,
   type NeedInput,
-  type PlanUnavailable,
+  type PlanBase,
+  type PlanUnavailableDTO,
   type ReportInput,
-  type RequirementPlanDTO,
   type ShopState,
   type ShopTicketDTO,
   type TicketSubject,
@@ -74,43 +68,12 @@ export const requestService = {
   },
 
   /**
-   * Complaints channels saw, sorted into needs and raised (D5): one read of the products named, one
-   * read per channel of what is set up, two writes. The shop's own fixes raise nothing (Q24).
+   * Events a module saw, turned into needs by whichever sources understand them, and raised (D5).
+   * The engine never reads an event: each source parses its own and answers the needs it finds.
    */
-  async raiseFromComplaints(complaints: readonly Complaint[], now = new Date(), options: { reopen: boolean } = { reopen: true }): Promise<number> {
-    if (complaints.length === 0) return 0;
-    const products = new Map((await channelSetupService.products([...new Set(complaints.map((c) => c.productId))])).map((p) => [p.id, p]));
-    const known = complaints.filter((c) => products.get(c.productId)?.archivedAt === null);
-    // A live listing's marketplace type is its product type's publishing one: one read per channel (D5).
-    const publishing = new Map<string, Awaited<ReturnType<typeof channelSetupService.publishing>>>();
-    for (const channel of new Set(known.filter((c) => !c.theirCategory).map((c) => c.channel))) {
-      const types = [...new Set(known.filter((c) => c.channel === channel).map((c) => products.get(c.productId)?.productType).filter((t): t is string => !!t))];
-      publishing.set(channel, await channelSetupService.publishing(channel as Channel, types));
-    }
-    const live = known.map((c) => {
-      if (c.theirCategory) return c;
-      const p = products.get(c.productId)!;
-      return { ...c, theirCategory: channelSetupService.publishingOf(publishing.get(c.channel) ?? [], p.productType, p.kind) };
-    });
-    const byChannel = new Map<string, string[]>();
-    for (const c of live) if (c.theirCategory) byChannel.set(c.channel, [...(byChannel.get(c.channel) ?? []), c.theirCategory]);
-    const answered = new Map<string, Set<string>>();
-    for (const [channel, categories] of byChannel) {
-      for (const [category, set] of await channelSetupService.answeredMany(channel as Channel, [...new Set(categories)])) answered.set(`${channel}:${category}`, set);
-    }
-    const needs = needsFrom(live, (channel, category) => answered.get(`${channel}:${category}`) ?? new Set());
+  async raiseFromEvents(events: unknown, now = new Date(), options: { reopen: boolean } = { reopen: true }): Promise<number> {
+    const needs = (await Promise.all(NEED_SOURCES.map((source) => source.fromEvents?.(events) ?? Promise.resolve([])))).flat();
     return await this.raise(needs, now, options);
-  },
-
-  /** Types with products and no marketplace type to publish to, for some shops (Q10): one read each side. */
-  async raiseMissingCategories(channel: Channel, orgIds: readonly string[], now = new Date()): Promise<number> {
-    const inUse = await channelSetupService.typesInUse(orgIds);
-    const publishing = new Set((await channelSetupService.publishing(channel, [...new Set(inUse.map((r) => r.productType))])).filter((r) => r.theirCategory).map((r) => r.productType));
-    const needs: NeedInput[] = inUse
-      .filter((r) => !publishing.has(r.productType))
-      .map((r) => ({ orgId: r.orgId, productId: null, subject: { kind: TICKET_KIND.AMAZON_CATEGORY, channel, productType: r.productType, productKind: null } }));
-    // A daily standing check: it never reopens what an admin resolved.
-    return await this.raise(needs, now, { reopen: false });
   },
 
   /** A shop's own report (Q7, Q24): an issue, grouped with the same error elsewhere when one is attached. */
@@ -120,12 +83,9 @@ export const requestService = {
     const words = input.words.trim();
     if (!words) throw new DomainError("Say what happened in a line or two.", { field: "words" });
     if (words.length > WORDS_MAX) throw new DomainError("Keep it under 1,000 characters.", { field: "words" });
-    const e = input.error;
     // From scratch, a report is its own issue: keyed by the shop and the moment, never merged with another's words.
-    const subject: TicketSubject = e
-      ? { kind: TICKET_KIND.ISSUE, channel: e.channel, theirCategory: e.theirCategory, attribute: e.attribute, code: e.code, message: e.message }
-      : { kind: TICKET_KIND.ISSUE, channel: null, theirCategory: null, attribute: null, code: `${input.orgId}:${now.getTime()}`, message: null };
-    const row = toRow({ orgId: input.orgId, productId: input.productId, subject, detail: e ? { code: e.code, attribute: e.attribute, message: e.message } : null }, { category: input.category, words });
+    const subject = issueSubject(input.error, `${input.orgId}:${now.getTime()}`);
+    const row = toRow({ orgId: input.orgId, productId: input.productId, subject, detail: input.error }, { category: input.category, words });
     if (row) await ticketRepository.raise([row], now);
   },
 
@@ -169,6 +129,7 @@ export const requestService = {
         return [{
           id: r.id,
           kind: plugin.kind,
+          mode: plugin.mode ?? null,
           status: r.status as AdminRequirementDTO["status"],
           title: plugin.adminTitle(subjectOf(r)),
           shopsWaiting: r._count.needs > 1 ? r._count.needs : null,
@@ -184,19 +145,18 @@ export const requestService = {
     const plugin = row ? kindOf(row.kind) : null;
     if (!row || !plugin || plugin.type !== TICKET_TYPE.REQUIREMENT) throw new NotFoundError("Request");
     const waiting = await ticketRepository.needCount(id);
-    return { id, kind: plugin.kind, status: row.status as AdminRequirementDTO["status"], title: plugin.adminTitle(subjectOf(row)), shopsWaiting: waiting > 1 ? waiting : null, reopened: row.reopenedAt !== null && row.status === TICKET_STATUS.OPEN, openedAt: row.openedAt.toISOString() };
+    return { id, kind: plugin.kind, mode: plugin.mode ?? null, status: row.status as AdminRequirementDTO["status"], title: plugin.adminTitle(subjectOf(row)), shopsWaiting: waiting > 1 ? waiting : null, reopened: row.reopenedAt !== null && row.status === TICKET_STATUS.OPEN, openedAt: row.openedAt.toISOString() };
   },
 
-  /** The preview, read live through the home brand (D7, Q14); a reason instead when it cannot be read. */
-  async plan(id: string): Promise<RequirementPlanDTO | { unavailable: PlanUnavailable }> {
+  /** The preview, computed live by its kind (D7); the kind's own reason instead when it cannot be. */
+  async plan(id: string): Promise<PlanBase | PlanUnavailableDTO> {
     const row = await ticketRepository.byId(id);
     const plugin = row ? kindOf(row.kind) : null;
     if (!row || !plugin?.plan) throw new NotFoundError("Request");
     try {
-      return await plugin.plan(subjectOf(row), homeBrandOrgId());
+      return await plugin.plan(subjectOf(row));
     } catch (error) {
-      if (error instanceof TypesUnavailableError) return { unavailable: error.reason };
-      if (error instanceof DomainError && error.status === 409) return { unavailable: PLAN_UNAVAILABLE.NOT_CONNECTED };
+      if (error instanceof PlanUnavailableError) return { unavailable: error.reason };
       throw error;
     }
   },
@@ -205,25 +165,19 @@ export const requestService = {
    * Apply (D7, D8): the plan recomputed and compared with what the admin saw, then the setup and the
    * ticket written in one transaction, only while the ticket is open. A second Apply finds it done.
    */
-  async apply(id: string, choice: ApplyChoice, now = new Date()): Promise<{ applied: true } | { stale: RequirementPlanDTO }> {
+  async apply(id: string, choice: ApplyChoice, now = new Date()): Promise<{ applied: true } | { stale: PlanBase }> {
     const row = await ticketRepository.byId(id);
     const plugin = row ? kindOf(row.kind) : null;
     if (!row || !plugin?.plan || !plugin.apply) throw new NotFoundError("Request");
     if (row.status !== TICKET_STATUS.OPEN) throw new ConflictError("Already set up. Nothing to do.");
     const plan = await this.plan(id);
-    if ("unavailable" in plan) {
-      // A decision the admin typed needs no preview: the category kind applies a named type by hand (ux "not connected").
-      if (row.kind !== TICKET_KIND.AMAZON_CATEGORY || !choice.theirCategory) throw new DomainError("Couldn't reach Amazon. Try again.", { status: 503 });
-    } else if (plan.hash !== choice.hash) {
-      return { stale: plan };
-    }
-    const effective: RequirementPlanDTO = "unavailable" in plan
-      ? { kind: TICKET_KIND.AMAZON_CATEGORY, productType: "", productTypeLabel: "", options: [], readAt: now.toISOString(), hash: "" }
-      : plan;
+    // A preview that could not be read reaches the kind as null: it applies a choice by hand, or refuses.
+    const seen = "unavailable" in plan ? null : plan;
+    if (seen && seen.hash !== choice.hash) return { stale: seen };
     await prisma.$transaction(async (tx) => {
       const claimed = await ticketRepository.resolve(id, now, tx);
       if (!claimed) throw new ConflictError("Already set up. Nothing to do.");
-      await plugin.apply!(tx, subjectOf(row), effective, choice, now);
+      await plugin.apply!(tx, subjectOf(row), seen, choice, now);
       await enqueue(tx, ticketResolvedSpec, { ticketId: id });
     });
     return { applied: true };
@@ -239,14 +193,14 @@ export const requestService = {
   async issue(id: string): Promise<AdminIssueDTO> {
     const row = await ticketRepository.byId(id);
     if (!row || row.type !== TICKET_TYPE.ISSUE) throw new NotFoundError("Request");
-    const s = subjectOf(row) as Extract<TicketSubject, { kind: typeof TICKET_KIND.ISSUE }>;
+    const s = subjectOf(row);
     const reports = await ticketRepository.reports(id);
     const names = await productService.namesByIds(reports.map((r) => r.productId).filter(Boolean));
     return {
       id,
       status: row.status as AdminIssueDTO["status"],
-      title: KINDS[TICKET_KIND.ISSUE].adminTitle(s),
-      error: { channel: s.channel, theirCategory: s.theirCategory, attribute: s.attribute, code: s.channel ? s.code : null, message: s.message },
+      title: issueKind.adminTitle(s),
+      error: issueDetail(s),
       reports: reports.map((r) => ({ shop: r.org.name, productName: names.get(r.productId) ?? null, category: (r.category as IssueCategory | null) ?? null, words: r.words, at: r.raisedAt.toISOString() })),
       reopened: row.reopenedAt !== null && row.status === TICKET_STATUS.OPEN,
       openedAt: row.openedAt.toISOString(),
@@ -263,26 +217,20 @@ export const requestService = {
   },
 
   /**
-   * Done is checked, not claimed (D9): every open requirement, one read of tickets and one read per
-   * kind of what is set up, one write. A setup made by hand in the channel register closes here.
+   * The daily pass (D9, Q13): drop needs whose product left sale, close what is now set up, then raise
+   * what each source's standing check finds. A standing check never reopens what an admin resolved.
    */
-  /** The daily pass (D9, Q10): close what is set up, then raise a category request for each type in use with none. */
   async daily(now = new Date()): Promise<{ resolved: number; raised: number; dropped: number }> {
-    // A product taken off sale no longer waits on anything (Q13).
     const dropped = await ticketRepository.dropLeftSale(now);
     const resolved = await this.resolveSetUp(now);
-    const connected = await channelTypesService.connectedOrgs();
-    let raised = 0;
-    for (const channel of new Set(connected.map((c) => c.channel))) {
-      // Only marketplaces that create listings from here have a category to publish to (Q10: Amazon).
-      if (channel !== CHANNEL.AMAZON) continue;
-      raised += await this.raiseMissingCategories(channel, connected.filter((c) => c.channel === channel).map((c) => c.orgId), now);
-    }
+    const needs = (await Promise.all(NEED_SOURCES.map((source) => source.daily?.(now) ?? Promise.resolve([])))).flat();
+    const raised = await this.raise(needs, now, { reopen: false });
     return { resolved, raised, dropped };
   },
 
+  /** Done is checked, not claimed (D9): one read of open tickets, one read per kind of what is set up, one write. */
   async resolveSetUp(now = new Date()): Promise<number> {
-    const kinds = Object.values(KINDS).filter((k) => k.resolvedCheck);
+    const kinds = KINDS.filter((k) => k.resolvedCheck);
     const open = await ticketRepository.openOfKinds(kinds.map((k) => k.kind));
     const done: string[] = [];
     for (const plugin of kinds) {

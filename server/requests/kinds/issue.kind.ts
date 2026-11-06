@@ -1,27 +1,44 @@
-import { CHANNEL_LABELS } from "@server/shared/channels";
-
-import { TICKET_KIND, TICKET_TYPE, type TicketSubject } from "../request.types";
+import { TICKET_TYPE, type NeedDetail, type TicketSubject } from "../request.types";
 import type { TicketKindPlugin } from "./kind";
 
-type IssueSubject = Extract<TicketSubject, { kind: typeof TICKET_KIND.ISSUE }>;
+/** Something no admin action can fix (setup-requests Q21): any module's, keyed by its signature. */
+export const ISSUE_KIND = "issue";
+
+/** An issue's subject: the error's signature, as its source said it. */
+export interface IssueSubject extends TicketSubject {
+  kind: typeof ISSUE_KIND;
+  source: string | null;
+  context: string | null;
+  subjectName: string | null;
+  code: string | null;
+  message: string | null;
+}
+
 const asIssue = (s: TicketSubject) => s as IssueSubject;
 
-/**
- * Something no admin action can fix (setup-requests Q21). From an error, keyed by its signature so the
- * same refusal in many shops is one issue (Sentry's grouping); from scratch, keyed per report.
- */
+/** The subject an error, or a report from scratch, raises (Sentry's grouping: same signature, one issue). */
+export function issueSubject(detail: NeedDetail | null, fallbackCode: string): IssueSubject {
+  return detail
+    ? { kind: ISSUE_KIND, source: detail.source, context: detail.context, subjectName: detail.subject, code: detail.code, message: detail.message }
+    : { kind: ISSUE_KIND, source: null, context: null, subjectName: null, code: fallbackCode, message: null };
+}
+
+export function issueDetail(s: TicketSubject): NeedDetail | null {
+  const i = asIssue(s);
+  return i.message === null ? null : { source: i.source, context: i.context, code: i.code, subject: i.subjectName, message: i.message };
+}
+
 export const issueKind: TicketKindPlugin = {
-  kind: TICKET_KIND.ISSUE,
+  kind: ISSUE_KIND,
   type: TICKET_TYPE.ISSUE,
   keyOf: (s) => {
     const i = asIssue(s);
-    return `${TICKET_KIND.ISSUE}:${[i.channel, i.theirCategory, i.attribute, i.code].map((p) => p ?? "-").join(":")}`;
+    return `${ISSUE_KIND}:${[i.source, i.context, i.subjectName, i.code].map((p) => p ?? "-").join(":")}`;
   },
-  shopTitle: (s) => (asIssue(s).channel ? `A problem with ${CHANNEL_LABELS[asIssue(s).channel!]}` : "A problem you reported"),
+  shopTitle: (s) => (asIssue(s).source ? `A problem with ${asIssue(s).source}` : "A problem you reported"),
   adminTitle: (s) => {
     const i = asIssue(s);
-    const where = i.channel ? CHANNEL_LABELS[i.channel] : "Reported";
-    return [where, i.theirCategory, i.attribute].filter(Boolean).join(" · ");
+    return [i.source ?? "Reported", i.context, i.subjectName].filter(Boolean).join(" · ");
   },
   names: () => [],
 };

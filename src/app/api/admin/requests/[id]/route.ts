@@ -29,7 +29,7 @@ export async function POST(request: NextRequest, { params }: Ctx) {
     const { id } = await params;
     const body = requestActionSchema.parse(await request.json());
     if (body.action === "apply") {
-      const outcome = await requestService.apply(id, { hash: body.hash, theirCategory: body.theirCategory, fields: body.fields });
+      const outcome = await requestService.apply(id, { ...body.choice, hash: body.hash });
       if ("stale" in outcome) return NextResponse.json(outcome);
     } else if (body.action === "not_now") {
       await requestService.notNow(id);

@@ -1,16 +1,15 @@
-import type { Channel } from "@server/shared/channels";
+/**
+ * The ticket engine's own words (setup-requests D4): nothing here names a marketplace, a module or a
+ * kind. A kind brings its own subject, plan and choice shapes; the engine carries them unread.
+ * `tests/unit/requests-decoupled.test.ts` holds that line.
+ */
 
 /** Requirement: the admin enables it. Issue: a developer fixes it (setup-requests Q21). */
 export const TICKET_TYPE = { REQUIREMENT: "requirement", ISSUE: "issue" } as const;
 export type TicketType = (typeof TICKET_TYPE)[keyof typeof TICKET_TYPE];
 
-/** Each kind is one plug-in in `kinds/` (D4); a new kind is a file and a line here. */
-export const TICKET_KIND = {
-  AMAZON_FIELDS: "amazon-fields",
-  AMAZON_CATEGORY: "amazon-category",
-  ISSUE: "issue",
-} as const;
-export type TicketKind = (typeof TICKET_KIND)[keyof typeof TICKET_KIND];
+/** A kind's name, declared by the kind itself (`kinds/`, or a plug-in folder such as `marketplace/`). */
+export type TicketKind = string;
 
 export const TICKET_STATUS = { OPEN: "open", DONE: "done", CLOSED: "closed" } as const;
 export type TicketStatus = (typeof TICKET_STATUS)[keyof typeof TICKET_STATUS];
@@ -18,7 +17,7 @@ export type TicketStatus = (typeof TICKET_STATUS)[keyof typeof TICKET_STATUS];
 export const CLOSED_REASON = { NOT_NOW: "not_now", NOT_NEEDED: "not_needed" } as const;
 export type ClosedReason = (typeof CLOSED_REASON)[keyof typeof CLOSED_REASON];
 
-/** An issue's category (Q23). */
+/** An issue's category: the shop's areas, never one module's (Q23, Q34). */
 export const ISSUE_CATEGORY = {
   LISTING: "listing",
   STOCK: "stock",
@@ -35,19 +34,30 @@ export const ISSUE_CATEGORIES = Object.values(ISSUE_CATEGORY) as readonly IssueC
 export const SHOP_STATE = { WITH_US: "with_us", READY: "ready", NOT_SUPPORTED: "not_supported" } as const;
 export type ShopState = (typeof SHOP_STATE)[keyof typeof SHOP_STATE];
 
-/** A ticket's subject per kind: what fixes it, never who needs it (Q3). */
-export type TicketSubject =
-  | { kind: typeof TICKET_KIND.AMAZON_FIELDS; channel: Channel; theirCategory: string; attributes: string[] }
-  | { kind: typeof TICKET_KIND.AMAZON_CATEGORY; channel: Channel; productType: string; productKind: string | null }
-  | { kind: typeof TICKET_KIND.ISSUE; channel: Channel | null; theirCategory: string | null; attribute: string | null; code: string | null; message: string | null };
+/** What fixes a ticket, in its kind's own shape; never who needs it (Q3). Every subject names its kind. */
+export interface TicketSubject {
+  kind: TicketKind;
+  [field: string]: unknown;
+}
 
-/** One shop's need, as a caller hands it to `raise` (D5). */
+/** What went wrong, as its source said it. Any module's: a marketplace's refusal, a gateway's, a shop's report. */
+export interface NeedDetail {
+  /** Where it came from (a marketplace's name, a module); null for a report from scratch. */
+  source: string | null;
+  /** The setting it was raised under, e.g. a marketplace type; null when none. */
+  context: string | null;
+  code: string | null;
+  /** The thing it names (a field, a setting), if any. */
+  subject: string | null;
+  message: string;
+}
+
+/** One shop's need, as a kind or the engine hands it to `raise` (D5). */
 export interface NeedInput {
   orgId: string;
   productId: string | null;
   subject: TicketSubject;
-  /** The marketplace's complaint as received; kept for the issue view and the shop's own line. */
-  detail?: { code: string | null; attribute: string | null; message: string } | null;
+  detail?: NeedDetail | null;
 }
 
 /** A report the shop writes (Q7, Q24): an issue, with or without an error attached. */
@@ -56,7 +66,7 @@ export interface ReportInput {
   productId: string | null;
   category: IssueCategory;
   words: string;
-  error: { channel: Channel; theirCategory: string | null; attribute: string | null; code: string | null; message: string } | null;
+  error: NeedDetail | null;
 }
 
 /** The shop's view of one ticket: what it needs and where it stands, never the steps (Q3, D11). */
@@ -65,20 +75,24 @@ export interface ShopTicketDTO {
   type: TicketType;
   kind: TicketKind;
   state: ShopState;
-  /** "Amazon details for Tote bag", or the marketplace an issue concerns. */
   title: string;
   /** An issue's category, which the shop's screen words (Q23); null for a requirement. */
   category: IssueCategory | null;
-  /** For a fields ticket, the names the shop will fill once ready. */
+  /** What the shop fills once it is ready, if the kind has any. */
   names: string[];
   productId: string | null;
   raisedAt: string;
 }
 
+/** How a requirement is enabled (Q6): one tap, or a decision among options. Said by its kind. */
+export const REQUIREMENT_MODE = { ONE_TAP: "one_tap", DECISION: "decision" } as const;
+export type RequirementMode = (typeof REQUIREMENT_MODE)[keyof typeof REQUIREMENT_MODE];
+
 /** A requirement in the admin's inbox: the setup and how many wait, never which shops (Q3, Q4, D11). */
 export interface AdminRequirementDTO {
   id: string;
   kind: TicketKind;
+  mode: RequirementMode | null;
   status: TicketStatus;
   title: string;
   /** null when one shop waits (Q4). */
@@ -87,65 +101,31 @@ export interface AdminRequirementDTO {
   openedAt: string;
 }
 
-/** An issue: the developer sees each shop's report (Q22, Q26). */
+/** An issue: the developer sees each shop's report and the error that raised it (Q22, Q26). */
 export interface AdminIssueDTO {
   id: string;
   status: TicketStatus;
   title: string;
-  error: { channel: Channel | null; theirCategory: string | null; attribute: string | null; code: string | null; message: string | null };
+  error: NeedDetail | null;
   reports: Array<{ shop: string; productName: string | null; category: IssueCategory | null; words: string | null; at: string }>;
   reopened: boolean;
   openedAt: string;
 }
 
-/** How one field is solved (D6, Q32). */
-export const FIELD_SOLUTION = {
-  REUSE: "reuse",
-  ADD: "add",
-  FROM_PRODUCT: "from_product",
-  FIXED: "fixed",
-  NOT_POSSIBLE: "not_possible",
-} as const;
-export type FieldSolution = (typeof FIELD_SOLUTION)[keyof typeof FIELD_SOLUTION];
+/** A preview a kind computes; the engine reads only its hash, to refuse a stale Apply (D7). */
+export interface PlanBase {
+  kind: TicketKind;
+  readAt: string;
+  hash: string;
+}
 
-/** The plan the admin previews and Apply writes (D7). `hash` refuses a stale Apply. */
-export type RequirementPlanDTO =
-  | {
-      kind: typeof TICKET_KIND.AMAZON_FIELDS;
-      theirCategory: string;
-      productTypes: Array<{ key: string; label: string }>;
-      fields: Array<{
-        attribute: string;
-        label: string;
-        solution: FieldSolution;
-        /** The fact reused or added, for reuse and add. */
-        fact: string | null;
-        factLabel: string | null;
-        /** For from_product: sku, name or brand. For fixed: the value. */
-        source: string | null;
-        constant: string | null;
-        /** Amazon's allowed answers, for showing; values our list lacks are added under Amazon's wording. */
-        allowed: string[];
-        required: boolean;
-      }>;
-      readAt: string;
-      hash: string;
-    }
-  | {
-      kind: typeof TICKET_KIND.AMAZON_CATEGORY;
-      productType: string;
-      productTypeLabel: string;
-      options: Array<{ theirCategory: string; label: string; exact: boolean }>;
-      readAt: string;
-      hash: string;
-    };
+/** Why a kind could not compute its preview: its own reason, for its own screen to word. */
+export interface PlanUnavailableDTO {
+  unavailable: string;
+}
 
-/** Why a plan could not be read (ux "not connected", "Amazon busy"): channels' own closed set. */
-export { TYPES_UNAVAILABLE as PLAN_UNAVAILABLE, type TypesUnavailable as PlanUnavailable } from "@server/channels/channel-connection.types";
-
-/** What the admin picks before Apply, for a decision kind or a renamed field (Q6, Q15). */
+/** What the admin picked before Apply; the engine checks `hash` and hands the rest to the kind. */
 export interface ApplyChoice {
   hash: string;
-  theirCategory?: string;
-  fields?: Array<{ attribute: string; solution: FieldSolution; fact?: string | null; source?: string | null; constant?: string | null }>;
+  [field: string]: unknown;
 }

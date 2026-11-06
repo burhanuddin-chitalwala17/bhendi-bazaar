@@ -8,10 +8,12 @@ import "dotenv/config";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
+import { MARKETPLACE_KIND, type FieldsPlanDTO } from "@server/requests/marketplace/marketplace.types";
 
 const fake = vi.hoisted(() => ({
   definition: null as null | { theirCategory: string; attributes: Array<{ name: string; label: string; required: boolean; allowed: string[] }> },
   search: [] as Array<{ theirCategory: string; label: string }>,
+  connected: [] as Array<{ orgId: string; channel: "amazon" }>,
 }));
 
 vi.mock("@server/channels/channel-types.service", () => ({
@@ -20,7 +22,7 @@ vi.mock("@server/channels/channel-types.service", () => ({
   channelTypesService: {
     definition: async () => fake.definition,
     search: async () => fake.search,
-    connectedOrgs: async () => [],
+    connectedOrgs: async () => fake.connected,
   },
 }));
 
@@ -102,8 +104,9 @@ describe.skipIf(!isDisposableDb)("setup requests (local db)", () => {
   it("applies once however many taps, and a create then sends what it set up (D6, D8)", async () => {
     const ticket = await ticketOf();
     const plan = await service.plan(ticket.id);
-    if ("unavailable" in plan || plan.kind !== "amazon-fields") throw new Error("expected a fields plan");
-    expect(plan.fields.map((f) => [f.attribute, f.solution, f.fact ?? f.source])).toEqual([
+    if ("unavailable" in plan || plan.kind !== MARKETPLACE_KIND.FIELDS) throw new Error("expected a fields plan");
+    const fields = (plan as FieldsPlanDTO).fields;
+    expect(fields.map((f) => [f.attribute, f.solution, f.fact ?? f.source])).toEqual([
       ["part_number", "from_product", "sku"],
       ["strap_type", "add", "strap"],
     ]);
@@ -145,21 +148,21 @@ describe.skipIf(!isDisposableDb)("setup requests (local db)", () => {
   });
 
   it("raises nothing for the shop's own fixes, and an issue for what nobody can place (D5)", async () => {
-    const raised = await service.raiseFromComplaints([
-      { orgId, productId: productIds[0], channel: "amazon", theirCategory, issues: [
+    const raised = await service.raiseFromEvents([
+      { orgId, productId: productIds[0], channel: "amazon", productType: null, kind: null, theirCategory, issues: [
         { code: "1", attribute: "brand", message: "Brand", field: null, need: "brand" },
         { code: "8541", attribute: null, message: "Brand not approved", field: null, need: null },
       ] },
     ]);
     expect(raised).toBe(1);
-    const issue = await prisma.ticket.findUniqueOrThrow({ where: { key: `issue:amazon:${theirCategory}:-:8541` }, include: { needs: true } });
+    const issue = await prisma.ticket.findUniqueOrThrow({ where: { key: `issue:Amazon:${theirCategory}:-:8541` }, include: { needs: true } });
     expect(issue.type).toBe("issue");
     expect(issue.needs[0].productId).toBe(productIds[0]);
   });
 
   it("takes two errors with one code on one product as one need, in one batch (review)", async () => {
-    const raised = await service.raiseFromComplaints([
-      { orgId, productId: productIds[0], channel: "amazon", theirCategory, issues: [
+    const raised = await service.raiseFromEvents([
+      { orgId, productId: productIds[0], channel: "amazon", productType: null, kind: null, theirCategory, issues: [
         { code: "5000", attribute: null, message: "First", field: null, need: null },
         { code: "5000", attribute: null, message: "Second", field: null, need: null },
       ] },
@@ -168,13 +171,13 @@ describe.skipIf(!isDisposableDb)("setup requests (local db)", () => {
   });
 
   it("never reopens a fixed issue from a standing complaint, only from a fresh one (Q12)", async () => {
-    const key = `issue:amazon:${theirCategory}:-:5000`;
+    const key = `issue:Amazon:${theirCategory}:-:5000`;
     const { id } = await prisma.ticket.findUniqueOrThrow({ where: { key } });
     await service.markFixed(id);
-    const again = [{ orgId, productId: productIds[0], channel: "amazon", theirCategory, issues: [{ code: "5000", attribute: null, message: "First", field: null, need: null }] }];
-    await service.raiseFromComplaints(again, new Date(), { reopen: false });
+    const again = [{ orgId, productId: productIds[0], channel: "amazon", productType: null, kind: null, theirCategory, issues: [{ code: "5000", attribute: null, message: "First", field: null, need: null }] }];
+    await service.raiseFromEvents(again, new Date(), { reopen: false });
     expect((await prisma.ticket.findUniqueOrThrow({ where: { key } })).status).toBe("done");
-    await service.raiseFromComplaints(again);
+    await service.raiseFromEvents(again);
     expect((await prisma.ticket.findUniqueOrThrow({ where: { key } })).status).toBe("open");
   });
 
@@ -183,11 +186,11 @@ describe.skipIf(!isDisposableDb)("setup requests (local db)", () => {
       data: { name: `${stamp} gone`, slug: `${stamp}-gone`, description: "x", thumbnail: "https://example.invalid/x.webp", price: 10_000, orgId, categoryId, productType: type, facts: {} },
       select: { id: true },
     });
-    const subject = { kind: "issue" as const, channel: "amazon" as const, theirCategory, attribute: null, code: "7777", message: "x" };
+    const subject = { kind: "issue", source: "Amazon", context: theirCategory, subjectName: null, code: "7777", message: "x" };
     await service.raise([{ orgId, productId: archived.id, subject }]);
     await prisma.product.update({ where: { id: archived.id }, data: { archivedAt: new Date() } });
     await service.daily();
-    const ticket = await prisma.ticket.findUniqueOrThrow({ where: { key: `issue:amazon:${theirCategory}:-:7777` }, include: { needs: true } });
+    const ticket = await prisma.ticket.findUniqueOrThrow({ where: { key: `issue:Amazon:${theirCategory}:-:7777` }, include: { needs: true } });
     expect(ticket.needs).toHaveLength(0);
     expect(ticket).toMatchObject({ status: "closed", closedReason: "not_needed" });
   });
@@ -201,12 +204,19 @@ describe.skipIf(!isDisposableDb)("setup requests (local db)", () => {
 
   it("raises a category request for a type with no Amazon type, then applies the admin's pick (Q10, Q29)", async () => {
     await prisma.channelCategoryMap.deleteMany({ where: { productType: type } });
-    await service.raiseMissingCategories("amazon", [orgId]);
+    fake.connected = [{ orgId, channel: "amazon" }];
+    await service.daily();
+    fake.connected = [];
     const ticket = await prisma.ticket.findUniqueOrThrow({ where: { key: `amazon-category:amazon:${type}` } });
     fake.search = [{ theirCategory, label: "Tote" }];
     const plan = await service.plan(ticket.id);
     if ("unavailable" in plan) throw new Error("expected a plan");
     await service.apply(ticket.id, { hash: plan.hash, theirCategory });
+    // The standing check never reopens what the admin just applied.
+    fake.connected = [{ orgId, channel: "amazon" }];
+    await service.daily();
+    fake.connected = [];
+    expect((await prisma.ticket.findUniqueOrThrow({ where: { id: ticket.id } })).status).toBe("done");
     const row = await prisma.channelCategoryMap.findFirstOrThrow({ where: { productType: type, theirCategory } });
     expect(row.publishes).toBe(true);
   });

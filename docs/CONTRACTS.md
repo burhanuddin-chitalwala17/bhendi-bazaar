@@ -735,3 +735,9 @@ gains products, shop and payments. `OrgListingDefaultsDto` gains `amazonGeneric`
 `brand_name`. A product's detail (`ProductDetails`) gains `brandId`, and each stock location its
 `city`, `pincode` and `isActive`.
 
+Since setup-requests D4 (decoupled): `TicketSubject`, a plan (`PlanBase`) and `ApplyChoice` are a kind's
+own shape; `NeedDetail` (`source`, `context`, `code`, `subject`, `message`) replaces the marketplace-shaped
+error on `ReportInput` and `AdminIssueDTO`; `AdminRequirementDTO` gains `mode`. Marketplace plan shapes
+(`FieldsPlanDTO`, `CategoryPlanDTO`) live in `server/requests/marketplace/marketplace.types.ts`. The admin
+apply body is `{ action: "apply", hash, choice }`, the choice parsed by its kind.
+

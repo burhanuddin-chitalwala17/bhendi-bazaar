@@ -11,7 +11,7 @@ import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { PageTabs } from "@/components/shared/page-tabs";
 import { REQUESTS_COPY as C } from "@/components/requests/requests-copy";
 import { adminRequestsDAL } from "@/data-access-layer/admin/requests.dal";
-import { TICKET_KIND, TICKET_STATUS, TICKET_TYPE, type TicketType } from "@server/requests/request.types";
+import { REQUIREMENT_MODE, TICKET_STATUS, TICKET_TYPE, type TicketType } from "@server/requests/request.types";
 import { ROUTES } from "@server/shared/routes";
 
 export const metadata = { title: C.title, robots: { index: false, follow: false } };
@@ -53,7 +53,7 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
                 <div className="min-w-0 flex-1">
                   <p className="break-words font-medium">{row.title}</p>
                   <p className="text-small text-muted-foreground">
-                    {[row.kind === TICKET_KIND.AMAZON_CATEGORY ? C.choose : row.kind === TICKET_KIND.AMAZON_FIELDS ? C.oneTap : null, row.shopsWaiting ? C.shopsWaiting(row.shopsWaiting) : null].filter(Boolean).join(" · ")}
+                    {[row.mode === REQUIREMENT_MODE.DECISION ? C.choose : row.mode === REQUIREMENT_MODE.ONE_TAP ? C.oneTap : null, row.shopsWaiting ? C.shopsWaiting(row.shopsWaiting) : null].filter(Boolean).join(" · ")}
                   </p>
                 </div>
                 <StatusBadge tone={row.status === TICKET_STATUS.OPEN ? (row.reopened ? "warning" : "info") : row.status === TICKET_STATUS.DONE ? "success" : "neutral"}>

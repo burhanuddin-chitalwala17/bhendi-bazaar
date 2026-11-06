@@ -1,4 +1,4 @@
-import { FIELD_SOLUTION, type FieldSolution } from "../request.types";
+import { FIELD_SOLUTION, type FieldSolution } from "./marketplace.types";
 
 /**
  * Matching a marketplace attribute to one of our facts or to the product itself (setup-requests D6, D7).

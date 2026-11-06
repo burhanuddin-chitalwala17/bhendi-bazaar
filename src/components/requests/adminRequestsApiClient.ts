@@ -1,13 +1,13 @@
 import { apiRequest } from "@/lib/api-client";
 import type { RequestActionInput } from "@/lib/validation/schemas/requests.schema";
-import type { PlanUnavailable, RequirementPlanDTO } from "@server/requests/request.types";
+import type { PlanBase, PlanUnavailableDTO } from "@server/requests/request.types";
 
-/** The admin's calls on a request (setup-requests D7, D8). */
+/** The admin's calls on a request (setup-requests D7, D8). A plan's shape is its kind's; this carries it. */
 export const adminRequestsApiClient = {
-  plan(id: string) {
-    return apiRequest<RequirementPlanDTO | { unavailable: PlanUnavailable }>(`/api/admin/requests/${id}`);
+  plan<P extends PlanBase>(id: string) {
+    return apiRequest<P | PlanUnavailableDTO>(`/api/admin/requests/${id}`);
   },
-  act(id: string, body: RequestActionInput) {
-    return apiRequest<{ ok: true } | { stale: RequirementPlanDTO }>(`/api/admin/requests/${id}`, { method: "POST", body });
+  act<P extends PlanBase>(id: string, body: RequestActionInput) {
+    return apiRequest<{ ok: true } | { stale: P }>(`/api/admin/requests/${id}`, { method: "POST", body });
   },
 };

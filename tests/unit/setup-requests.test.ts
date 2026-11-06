@@ -5,10 +5,12 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { needsFrom } from "@server/requests/complaint-sort";
-import { planHash, propose, valueKey } from "@server/requests/kinds/field-match";
-import { KINDS } from "@server/requests/kinds";
-import { FIELD_SOLUTION, TICKET_KIND, type AdminRequirementDTO, type ShopTicketDTO } from "@server/requests/request.types";
+import { needsFrom } from "@server/requests/marketplace/complaint-sort";
+import { planHash, propose, valueKey } from "@server/requests/marketplace/field-match";
+import { kindOf } from "@server/requests/kinds";
+import { ISSUE_KIND } from "@server/requests/kinds/issue.kind";
+import { FIELD_SOLUTION, MARKETPLACE_KIND } from "@server/requests/marketplace/marketplace.types";
+import type { AdminRequirementDTO, ShopTicketDTO } from "@server/requests/request.types";
 import { channelSetupService } from "@server/listing/channel-setup.service";
 
 const issue = (attribute: string | null, extra: { field?: string; need?: string; code?: string } = {}) => ({
@@ -29,18 +31,18 @@ describe("which complaints become tickets (setup-requests D5)", () => {
       answered,
     );
     expect(needs).toEqual([
-      { orgId: "o1", productId: "p1", subject: { kind: TICKET_KIND.AMAZON_FIELDS, channel: "amazon", theirCategory: "TOTE_BAG", attributes: ["strap_type", "style"] }, detail: null },
+      { orgId: "o1", productId: "p1", subject: { kind: MARKETPLACE_KIND.FIELDS, channel: "amazon", theirCategory: "TOTE_BAG", attributes: ["strap_type", "style"] }, detail: null },
     ]);
   });
 
   it("makes a complaint naming no attribute an issue for a developer (Q18, Q21)", () => {
     const [need] = needsFrom([complaint([issue(null, { code: "8541" })])], answered);
-    expect(need.subject).toMatchObject({ kind: TICKET_KIND.ISSUE, channel: "amazon", theirCategory: "TOTE_BAG", attribute: null, code: "8541" });
+    expect(need.subject).toMatchObject({ kind: ISSUE_KIND, source: "Amazon", context: "TOTE_BAG", subjectName: null, code: "8541" });
   });
 
   it("makes an attribute with no marketplace type to set it against an issue, never a fields ticket", () => {
     const [need] = needsFrom([complaint([issue("strap_type")], null)], answered);
-    expect(need.subject.kind).toBe(TICKET_KIND.ISSUE);
+    expect(need.subject.kind).toBe(ISSUE_KIND);
   });
 });
 
@@ -76,15 +78,15 @@ describe("matching a marketplace field to our vocabulary (D6, Q32)", () => {
 
 describe("a ticket is keyed by what fixes it, never by who hit it (D3)", () => {
   it("gives every shop's Tote bag the same fields ticket, whatever attributes each named", () => {
-    const a = KINDS[TICKET_KIND.AMAZON_FIELDS].keyOf({ kind: TICKET_KIND.AMAZON_FIELDS, channel: "amazon", theirCategory: "TOTE_BAG", attributes: ["strap_type"] });
-    const b = KINDS[TICKET_KIND.AMAZON_FIELDS].keyOf({ kind: TICKET_KIND.AMAZON_FIELDS, channel: "amazon", theirCategory: "TOTE_BAG", attributes: ["style"] });
+    const a = kindOf(MARKETPLACE_KIND.FIELDS)!.keyOf({ kind: MARKETPLACE_KIND.FIELDS, channel: "amazon", theirCategory: "TOTE_BAG", attributes: ["strap_type"] });
+    const b = kindOf(MARKETPLACE_KIND.FIELDS)!.keyOf({ kind: MARKETPLACE_KIND.FIELDS, channel: "amazon", theirCategory: "TOTE_BAG", attributes: ["style"] });
     expect(a).toBe(b);
     expect(a).toBe("amazon-fields:amazon:TOTE_BAG");
   });
 
   it("groups the same refusal across shops into one issue (Sentry's fingerprint)", () => {
-    const subject = { kind: TICKET_KIND.ISSUE, channel: "amazon", theirCategory: "TOTE_BAG", attribute: "purchasable_offer", code: "90220", message: "x" } as const;
-    expect(KINDS[TICKET_KIND.ISSUE].keyOf(subject)).toBe("issue:amazon:TOTE_BAG:purchasable_offer:90220");
+    const subject = { kind: ISSUE_KIND, source: "Amazon", context: "TOTE_BAG", subjectName: "purchasable_offer", code: "90220", message: "x" };
+    expect(kindOf(ISSUE_KIND)!.keyOf(subject)).toBe("issue:Amazon:TOTE_BAG:purchasable_offer:90220");
   });
 });
 
@@ -102,7 +104,7 @@ describe("a product's marketplace type, picked as readiness picks it", () => {
 
 describe("neither side sees the other's (D11, Q3)", () => {
   // Compile-time lists: adding a shop field to the admin's DTO, or a step to the shop's, fails here.
-  const adminKeys: Array<keyof AdminRequirementDTO> = ["id", "kind", "status", "title", "shopsWaiting", "reopened", "openedAt"];
+  const adminKeys: Array<keyof AdminRequirementDTO> = ["id", "kind", "mode", "status", "title", "shopsWaiting", "reopened", "openedAt"];
   const shopKeys: Array<keyof ShopTicketDTO> = ["id", "type", "kind", "state", "title", "category", "names", "productId", "raisedAt"];
   it("gives the admin's requirement no shop, product or words, and the shop's ticket no plan or steps", () => {
     expect(adminKeys.some((k) => /org|shop(?!sWaiting)|product|words/i.test(k))).toBe(false);

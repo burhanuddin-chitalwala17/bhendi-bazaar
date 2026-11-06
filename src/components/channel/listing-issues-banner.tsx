@@ -52,7 +52,7 @@ export function ListingIssuesBanner({ orgId, screen, tickets = [] }: { orgId: st
             productId={screen.productId}
             productName={screen.productName}
             label={REQUESTS_COPY.reportThis}
-            error={{ channel: screen.channel, theirCategory: screen.draft?.marketplaceType ?? null, attribute: general[0].attribute ?? null, code: general[0].code, message: general[0].message }}
+            error={{ source: screen.label, context: screen.draft?.marketplaceType ?? null, code: general[0].code, subject: general[0].attribute ?? null, message: general[0].message }}
           />
         </div>
       )}

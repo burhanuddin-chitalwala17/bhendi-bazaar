@@ -3,11 +3,14 @@ import { channelTypesService } from "@server/channels/channel-types.service";
 import { ATTRIBUTE_SOURCE, channelSetupService, isFactKey, type SetupField } from "@server/listing/channel-setup.service";
 import { DomainError } from "@server/shared/domain-error";
 
-import { FIELD_SOLUTION, TICKET_KIND, TICKET_TYPE, type RequirementPlanDTO, type TicketSubject } from "../request.types";
-import { planHash, propose, valueKey } from "./field-match";
-import type { TicketKindPlugin } from "./kind";
+import { TypesUnavailableError } from "@server/channels/channel-types.service";
 
-type FieldsSubject = Extract<TicketSubject, { kind: typeof TICKET_KIND.AMAZON_FIELDS }>;
+import { REQUIREMENT_MODE, TICKET_TYPE, type TicketSubject } from "../request.types";
+import { PlanUnavailableError, type TicketKindPlugin } from "../kinds/kind";
+import { planHash, propose, valueKey } from "./field-match";
+import { homeBrandOrgId } from "./home-brand";
+import { FIELD_SOLUTION, MARKETPLACE_KIND, MARKETPLACE_UNAVAILABLE, fieldsChoiceSchema, type FieldsPlanDTO, type FieldsSubject } from "./marketplace.types";
+
 const asFields = (s: TicketSubject) => s as FieldsSubject;
 
 /** "Strap Type" from `strap_type`, for the shop before the definition is read. */
@@ -19,18 +22,23 @@ const typeWords = (theirCategory: string) => titleCase(theirCategory.toLowerCase
  * the type alone, so every shop selling it joins one ticket; its attributes grow as shops hit more.
  */
 export const amazonFieldsKind: TicketKindPlugin = {
-  kind: TICKET_KIND.AMAZON_FIELDS,
+  kind: MARKETPLACE_KIND.FIELDS,
   type: TICKET_TYPE.REQUIREMENT,
-  keyOf: (s) => `${TICKET_KIND.AMAZON_FIELDS}:${asFields(s).channel}:${asFields(s).theirCategory}`,
+  mode: REQUIREMENT_MODE.ONE_TAP,
+  keyOf: (s) => `${MARKETPLACE_KIND.FIELDS}:${asFields(s).channel}:${asFields(s).theirCategory}`,
   shopTitle: (s) => `${CHANNEL_LABELS[asFields(s).channel]} details for ${typeWords(asFields(s).theirCategory)}`,
   adminTitle: (s) => `${CHANNEL_LABELS[asFields(s).channel]} fields for ${asFields(s).theirCategory}`,
   names: (s) => asFields(s).attributes.map(titleCase),
 
-  async plan(s, homeOrgId) {
+  async plan(s) {
     const { channel, theirCategory, attributes } = asFields(s);
-    if (!homeOrgId) throw new DomainError("No home brand is set to read marketplace types with.", { status: 409 });
+    const homeOrgId = homeBrandOrgId();
+    if (!homeOrgId) throw new PlanUnavailableError(MARKETPLACE_UNAVAILABLE.NOT_CONNECTED);
     const [definition, vocabulary, answered] = await Promise.all([
-      channelTypesService.definition(homeOrgId, channel, theirCategory),
+      channelTypesService.definition(homeOrgId, channel, theirCategory).catch((error: unknown) => {
+        if (error instanceof TypesUnavailableError) throw new PlanUnavailableError(error.reason);
+        throw error;
+      }),
       channelSetupService.vocabularyFor(channel, theirCategory),
       channelSetupService.answered(channel, theirCategory),
     ]);
@@ -53,17 +61,20 @@ export const amazonFieldsKind: TicketKindPlugin = {
     });
     const readAt = new Date().toISOString();
     return {
-      kind: TICKET_KIND.AMAZON_FIELDS,
+      kind: MARKETPLACE_KIND.FIELDS,
       theirCategory,
       productTypes: vocabulary.types.map((t) => ({ key: t.key, label: t.label })),
       fields,
       readAt,
       hash: planHash({ fields: fields.map((f) => [f.attribute, f.solution, f.fact, f.source, f.constant, f.allowed]), types: vocabulary.types.map((t) => t.key) }),
-    } satisfies RequirementPlanDTO;
+    } satisfies FieldsPlanDTO;
   },
 
-  async apply(tx, s, plan, choice, now) {
-    if (plan.kind !== TICKET_KIND.AMAZON_FIELDS) return;
+  async apply(tx, s, rawPlan, rawChoice, now) {
+    // Fields need the marketplace's definition: without a preview there is nothing to apply (ux "not connected").
+    if (!rawPlan) throw new DomainError("Couldn't reach Amazon. Try again.", { status: 503 });
+    const plan = rawPlan as FieldsPlanDTO;
+    const choice = fieldsChoiceSchema.parse(rawChoice);
     const { channel, theirCategory } = asFields(s);
     const chosen = new Map((choice.fields ?? []).map((f) => [f.attribute, f]));
     const vocabulary = await channelSetupService.vocabularyFor(channel, theirCategory);

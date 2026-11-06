@@ -10,19 +10,21 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useMutation } from "@/hooks/core/useMutation";
 import { formatTime } from "@/lib/format";
-import { FIELD_SOLUTION, PLAN_UNAVAILABLE, TICKET_KIND, type PlanUnavailable, type RequirementPlanDTO } from "@server/requests/request.types";
+import type { PlanUnavailableDTO } from "@server/requests/request.types";
+import { FIELD_SOLUTION, MARKETPLACE_KIND, MARKETPLACE_UNAVAILABLE, type MarketplacePlanDTO } from "@server/requests/marketplace/marketplace.types";
 import { ROUTES } from "@server/shared/routes";
 
-import { adminRequestsApiClient } from "./adminRequestsApiClient";
-import { REQUESTS_COPY as C } from "./requests-copy";
+import { adminRequestsApiClient } from "../adminRequestsApiClient";
+import { REQUESTS_COPY as C } from "../requests-copy";
+import type { RequirementPlanProps } from "../requirement-plans";
 
-type Plan = RequirementPlanDTO | { unavailable: PlanUnavailable };
+type Plan = MarketplacePlanDTO | PlanUnavailableDTO;
 
 /**
  * A requirement's preview and its one action (setup-requests Q6, D7): the fix worked out, the steps
  * there to read, Apply. A decision kind offers Amazon's types to pick. Nothing is disabled (ADR-0053).
  */
-export function RequirementPlan({ id, kind, shopsWaiting, open }: { id: string; kind: string; shopsWaiting: number | null; open: boolean }) {
+export function MarketplacePlan({ id, kind, shopsWaiting }: RequirementPlanProps) {
   const router = useRouter();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [failed, setFailed] = useState(false);
@@ -34,16 +36,16 @@ export function RequirementPlan({ id, kind, shopsWaiting, open }: { id: string; 
   const load = () => {
     setFailed(false);
     adminRequestsApiClient
-      .plan(id)
+      .plan<MarketplacePlanDTO>(id)
       .then((p) => {
         setPlan(p);
-        if ("kind" in p && p.kind === TICKET_KIND.AMAZON_CATEGORY) setPicked(p.options.find((o) => o.exact)?.theirCategory ?? "");
+        if ("kind" in p && p.kind === MARKETPLACE_KIND.CATEGORY) setPicked(p.options.find((o) => o.exact)?.theirCategory ?? "");
       })
       .catch(() => setFailed(true));
   };
   useEffect(load, [id]);
 
-  const act = useMutation((body: Parameters<typeof adminRequestsApiClient.act>[1]) => adminRequestsApiClient.act(id, body), {
+  const act = useMutation((body: Parameters<typeof adminRequestsApiClient.act>[1]) => adminRequestsApiClient.act<MarketplacePlanDTO>(id, body), {
     showToast: false,
     onError: (error) => toast.error(error.message),
   });
@@ -51,9 +53,9 @@ export function RequirementPlan({ id, kind, shopsWaiting, open }: { id: string; 
   const apply = async () => {
     if (!plan) return;
     const category = typed.trim() || picked;
-    if ("kind" in plan && plan.kind === TICKET_KIND.AMAZON_CATEGORY && !category) return setNotice(C.pickFirst);
-    if ("unavailable" in plan && (kind !== TICKET_KIND.AMAZON_CATEGORY || !typed.trim())) return setNotice(kind === TICKET_KIND.AMAZON_CATEGORY ? C.pickFirst : C.fieldsNeedAmazon);
-    const outcome = await act.mutate({ action: "apply", hash: "hash" in plan ? plan.hash : "", theirCategory: category || undefined }).catch(() => null);
+    if ("kind" in plan && plan.kind === MARKETPLACE_KIND.CATEGORY && !category) return setNotice(C.pickFirst);
+    if ("unavailable" in plan && (kind !== MARKETPLACE_KIND.CATEGORY || !typed.trim())) return setNotice(kind === MARKETPLACE_KIND.CATEGORY ? C.pickFirst : C.fieldsNeedAmazon);
+    const outcome = await act.mutate({ action: "apply", hash: "hash" in plan ? plan.hash : "", choice: category ? { theirCategory: category } : {} }).catch(() => null);
     if (!outcome) return;
     if ("stale" in outcome) {
       setPlan(outcome.stale);
@@ -69,7 +71,6 @@ export function RequirementPlan({ id, kind, shopsWaiting, open }: { id: string; 
     router.refresh();
   };
 
-  if (!open) return null;
   if (failed) {
     return (
       <div className="flex flex-col items-start gap-2 rounded-card bg-destructive/10 p-4 text-small">
@@ -91,8 +92,8 @@ export function RequirementPlan({ id, kind, shopsWaiting, open }: { id: string; 
     <section className="flex flex-col gap-4">
       {unavailable && (
         <div className="flex flex-col items-start gap-2 rounded-card bg-warning/10 p-4 text-small">
-          <p>{unavailable === PLAN_UNAVAILABLE.NOT_CONNECTED ? C.notConnected : C.unreachable}</p>
-          {unavailable === PLAN_UNAVAILABLE.NOT_CONNECTED ? (
+          <p>{unavailable === MARKETPLACE_UNAVAILABLE.NOT_CONNECTED ? C.notConnected : C.unreachable}</p>
+          {unavailable === MARKETPLACE_UNAVAILABLE.NOT_CONNECTED ? (
             <Button asChild variant="outline" size="sm" className="min-h-10"><Link href={ROUTES.admin.channels}>{C.openRegister}</Link></Button>
           ) : (
             <Button variant="outline" size="sm" className="min-h-10" onClick={load}>{C.tryAgain}</Button>
@@ -102,7 +103,7 @@ export function RequirementPlan({ id, kind, shopsWaiting, open }: { id: string; 
       {"readAt" in plan && <p className="text-caption text-muted-foreground">{C.readThrough("Amazon", formatTime(plan.readAt))}</p>}
       {notice && <p className="rounded-card bg-warning/10 p-3 text-small">{notice}</p>}
 
-      {"kind" in plan && plan.kind === TICKET_KIND.AMAZON_FIELDS && (
+      {"kind" in plan && plan.kind === MARKETPLACE_KIND.FIELDS && (
         <>
           <p className="text-small">{C.fieldsIntro(plan.productTypes.map((t) => t.label).join(", "))}</p>
           <ul className="flex flex-col gap-2">
@@ -136,9 +137,9 @@ export function RequirementPlan({ id, kind, shopsWaiting, open }: { id: string; 
         </>
       )}
 
-      {("kind" in plan ? plan.kind === TICKET_KIND.AMAZON_CATEGORY : kind === TICKET_KIND.AMAZON_CATEGORY) && (
+      {("kind" in plan ? plan.kind === MARKETPLACE_KIND.CATEGORY : kind === MARKETPLACE_KIND.CATEGORY) && (
         <>
-          {"kind" in plan && plan.kind === TICKET_KIND.AMAZON_CATEGORY && (
+          {"kind" in plan && plan.kind === MARKETPLACE_KIND.CATEGORY && (
             <div role="radiogroup" className="flex flex-col gap-2">
               {plan.options.map((o) => (
                 <Button

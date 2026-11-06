@@ -8,7 +8,7 @@ import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { MarkFixedButton } from "@/components/requests/mark-fixed-button";
-import { RequirementPlan } from "@/components/requests/requirement-plan";
+import { RequirementPlan } from "@/components/requests/requirement-plans";
 import { REQUESTS_COPY as C } from "@/components/requests/requests-copy";
 import { adminRequestsDAL } from "@/data-access-layer/admin/requests.dal";
 import { TICKET_STATUS, type TicketStatus } from "@server/requests/request.types";
@@ -33,7 +33,7 @@ export default async function AdminRequestPage({ params }: { params: Promise<{ i
         <Link href={ROUTES.admin.requests} className="text-small text-muted-foreground underline-offset-4 hover:underline">{C.backMark} {C.back}</Link>
         <PageHeader title={r.title} description={r.shopsWaiting ? C.shopsWaiting(r.shopsWaiting) : undefined} />
         <StatusBadge tone={s.tone}>{s.text}</StatusBadge>
-        {r.status === TICKET_STATUS.OPEN ? <RequirementPlan id={r.id} kind={r.kind} shopsWaiting={r.shopsWaiting} open /> : r.status === TICKET_STATUS.DONE ? <p className="text-small">{C.alreadyDone}</p> : null}
+        {r.status === TICKET_STATUS.OPEN ? <RequirementPlan id={r.id} kind={r.kind} shopsWaiting={r.shopsWaiting} /> : r.status === TICKET_STATUS.DONE ? <p className="text-small">{C.alreadyDone}</p> : null}
       </PageShell>
     );
   }
@@ -54,10 +54,10 @@ export default async function AdminRequestPage({ params }: { params: Promise<{ i
           </li>
         ))}
       </ul>
-      {i.error.message && (
+      {i.error && (
         <section className="flex flex-col gap-1 rounded-card border bg-card p-3 text-small">
-          <p className="font-semibold">{C.amazonError}</p>
-          <p className="text-caption text-muted-foreground">{[i.error.theirCategory, i.error.attribute, i.error.code && C.code(i.error.code)].filter(Boolean).join(" · ")}</p>
+          <p className="font-semibold">{C.errorFrom(i.error.source)}</p>
+          <p className="text-caption text-muted-foreground">{[i.error.context, i.error.subject, i.error.code && C.code(i.error.code)].filter(Boolean).join(" · ")}</p>
           <p className="break-words border-l-2 pl-2 text-muted-foreground">{i.error.message}</p>
         </section>
       )}

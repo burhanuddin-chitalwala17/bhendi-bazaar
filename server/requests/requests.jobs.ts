@@ -9,7 +9,8 @@ import { ticketRepository } from "./ticket.repository";
 export const listingComplaintsJob = registerJob({
   ...listingComplaintsSpec,
   handler: async ({ jobId, payload }) => {
-    const raised = await requestService.raiseFromComplaints(payload.complaints, new Date(), { reopen: !payload.standing });
+    // The engine reads no event: each source parses what it understands (setup-requests D4, D5).
+    const raised = await requestService.raiseFromEvents(payload.complaints, new Date(), { reopen: !payload.standing });
     console.log(`[jobs] requests.listing-complaints ${jobId}: ${payload.complaints.length} complaints, ${raised} needs`);
   },
 });

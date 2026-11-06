@@ -1,6 +1,8 @@
-import { isChannel } from "@server/shared/channels";
+import { CHANNEL_LABELS, isChannel } from "@server/shared/channels";
 
-import { TICKET_KIND, type NeedInput } from "./request.types";
+import type { NeedInput } from "../request.types";
+import { issueSubject } from "../kinds/issue.kind";
+import { MARKETPLACE_KIND } from "./marketplace.types";
 
 /** One marketplace complaint against one product, as channels hands it over (D5). */
 export interface Complaint {
@@ -30,18 +32,14 @@ export function needsFrom(complaints: readonly Complaint[], answered: (channel: 
         continue;
       }
       // No attribute, or no marketplace type to set it up against: only a developer can place it (Q18, Q21).
-      out.push({
-        orgId: c.orgId,
-        productId: c.productId,
-        subject: { kind: TICKET_KIND.ISSUE, channel, theirCategory: c.theirCategory, attribute: issue.attribute, code: issue.code, message: issue.message },
-        detail: { code: issue.code, attribute: issue.attribute, message: issue.message },
-      });
+      const detail = { source: CHANNEL_LABELS[channel], context: c.theirCategory, code: issue.code, subject: issue.attribute, message: issue.message };
+      out.push({ orgId: c.orgId, productId: c.productId, subject: issueSubject(detail, ""), detail });
     }
     if (unanswered.size > 0 && c.theirCategory) {
       out.push({
         orgId: c.orgId,
         productId: c.productId,
-        subject: { kind: TICKET_KIND.AMAZON_FIELDS, channel, theirCategory: c.theirCategory, attributes: [...unanswered].sort() },
+        subject: { kind: MARKETPLACE_KIND.FIELDS, channel, theirCategory: c.theirCategory, attributes: [...unanswered].sort() },
         detail: null,
       });
     }

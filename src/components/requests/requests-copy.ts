@@ -1,4 +1,5 @@
-import { FIELD_SOLUTION, ISSUE_CATEGORY, SHOP_STATE, type FieldSolution, type IssueCategory, type ShopState } from "@server/requests/request.types";
+import { ISSUE_CATEGORY, SHOP_STATE, type IssueCategory, type ShopState } from "@server/requests/request.types";
+import { FIELD_SOLUTION, type FieldSolution } from "@server/requests/marketplace/marketplace.types";
 
 /** Every word setup requests show (setup-requests ux.md copy deck). */
 export const REQUESTS_COPY = {
@@ -90,7 +91,7 @@ export const REQUESTS_COPY = {
   reading: (type: string) => `Reading Amazon's fields for ${type}…`,
   markFixed: "Mark fixed",
   markedFixed: "Marked fixed. Shops that reported it see it's fixed.",
-  amazonError: "Amazon's error",
+  errorFrom: (source: string | null) => (source ? `${source}'s error` : "The error"),
   reports: (n: number) => `${n} ${n === 1 ? "report" : "reports"}`,
   noWords: "No words given.",
   solution: {

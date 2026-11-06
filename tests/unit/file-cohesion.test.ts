@@ -41,14 +41,6 @@ const FREE_REACH = 2;
  * own header, which is the better home for that.
  */
 const RECORDED: Record<string, { domains: string[]; why: string }> = {
-  "server/requests/request.service.ts": {
-    domains: ["catalog", "channels", "listing"],
-    why:
-      "Where a ticket meets what it fixes (setup-requests D1, D5): listing holds the setup a requirement " +
-      "applies and is asked through channel-setup.service; channels reads a marketplace's published types " +
-      "through the home brand without handing out a token; catalog only names the products in an issue's " +
-      "reports. Each is reached through its public surface, and the kinds carry the per-kind knowledge.",
-  },
   "src/data-access-layer/org/readiness-fix.dal.ts": {
     domains: ["catalog", "channels", "listing"],
     why:

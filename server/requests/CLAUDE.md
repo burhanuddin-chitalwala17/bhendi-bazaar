@@ -9,12 +9,13 @@
 Tickets for what a shop cannot fix itself. A **requirement** is a known kind with a known solution the admin enables (one tap, or one decision); an **issue** is something only a developer can fix, written by the shop under a category (Q21).
 
 ## Boundaries
-**Owns:** `Ticket` and `TicketNeed`. **Does not own:** the setup a requirement writes (listing's register and vocabulary, through `channel-setup.service`), the errors it hears (channels hands them over as the `requests.listing-complaints` job), or marketplace reads (`channel-types.service`, through the home brand's connection).
+**Owns:** `Ticket` and `TicketNeed`, and an engine that knows no module. **Does not own:** what any kind is about. Marketplace tickets live in the `marketplace/` plug-in, the only part that reads channels or the channel register; channels hands refusals over as the `requests.listing-complaints` job and never imports this domain.
 
 ## Rules
 - **A ticket is keyed by what fixes it, never by who hit it** (D3). A shop's need is a `TicketNeed`; a hundred shops are one ticket.
 - **The line between the two sides is in the DTOs** (D11): an `AdminRequirementDTO` has no shop, product or words; a `ShopTicketDTO` has no plan or steps. Only an issue's view reads a need's shop and words (Q22). `tests/unit/setup-requests.test.ts`
-- **Kinds are plug-ins** (`kinds/`, D4). The engine never branches on a kind; a new kind is a file and a line in `kinds/index.ts`.
+- **The engine knows no module** (D4, Q33). `request.service`, `request.types`, `ticket.repository`, the jobs and `kinds/kind.ts` import no channel or listing code and name no marketplace or kind; a kind brings its own subject, plan and choice shapes and parses its own choice. `tests/unit/requests-decoupled.test.ts`
+- **A module plugs in with a folder and a registry line**: its `TicketKindPlugin`s (fingerprint, words, plan, apply, done check) and a `NeedSource` (needs from its events, and from a daily standing check) in `kinds/index.ts`; its preview component in `src/components/requests/requirement-plans.tsx`. The marketplace plug-in is the worked example.
 - **Raising is two statements however many shops** (D3, D5): `ticketRepository.raise` upserts every ticket, then every need. A done ticket that is raised again reopens (Q12).
 - **Apply recomputes the plan and compares its hash** (D7), then writes the setup and resolves the ticket in one transaction, only while open (D8).
 - **Done is checked, not claimed** (D9): the daily job closes any requirement whose setup now exists, however it was made.
@@ -23,9 +24,8 @@ Tickets for what a shop cannot fix itself. A **requirement** is a known kind wit
 ## Structure
 | Path | Holds |
 |---|---|
-| `request.service.ts`, `request.types.ts` | The public surface: raise, report, the shop's view, the inbox, plan, apply, not now, mark fixed, the daily check |
+| `request.service.ts`, `request.types.ts` | The engine and its neutral words: raise, raise from events, report, the shop's view, the inbox, plan, apply, not now, mark fixed, the daily pass |
 | `ticket.repository.ts` | The one writer of `Ticket` and `TicketNeed` |
-| `complaint-sort.ts` | Which complaints are ours to fix, as needs; pure |
-| `kinds/` | One plug-in per kind; `field-match.ts` matches a marketplace field to our vocabulary, pure |
-| `home-brand.ts` | `HOME_BRAND_ORG_ID`, read here only |
-| `requests.job.ts`, `requests.jobs.ts` | Job specs and their handlers (complaints in, resolved out, the daily check) |
+| `kinds/` | The plug-in contract (`kind.ts`), the registry (`index.ts`) and the one built-in kind, `issue.kind.ts` |
+| `marketplace/` | The marketplace plug-in: its two kinds, its types, `complaint-sort.ts` and `field-match.ts` (pure), `home-brand.ts` (`HOME_BRAND_ORG_ID`, read here only) |
+| `requests.job.ts`, `requests.jobs.ts` | Job specs and their handlers (events in, resolved out, the daily pass) |

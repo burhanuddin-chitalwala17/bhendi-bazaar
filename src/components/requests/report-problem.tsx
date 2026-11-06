@@ -7,7 +7,6 @@ import { FormField } from "@/components/shared/forms/FormField";
 import { HANDOFF_WIDE, HandoffSheet } from "@/components/shared/overlays/handoff-sheet";
 import type { ReportIssueInput } from "@/lib/validation/schemas/requests.schema";
 import { ISSUE_CATEGORIES } from "@server/requests/request.types";
-import { CHANNEL_LABELS } from "@server/shared/channels";
 
 import { REQUESTS_COPY as C } from "./requests-copy";
 import { useReportForm } from "./useReportForm";
@@ -31,7 +30,7 @@ export function ReportProblem({
 }) {
   const { form, open, setOpen } = useReportForm(orgId, { productId, error });
   const words = form.watch("words") ?? "";
-  const marketplace = error ? CHANNEL_LABELS[error.channel] : null;
+  const marketplace = error?.source ?? null;
   return (
     <HandoffSheet
       open={open}

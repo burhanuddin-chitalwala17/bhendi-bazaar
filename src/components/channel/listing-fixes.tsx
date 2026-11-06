@@ -2,7 +2,8 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { LISTING_FIX, type ListingFixDTO, type ListingScreenDTO } from "@server/channels/platform-listing.types";
-import { SHOP_STATE, TICKET_KIND, type ShopTicketDTO } from "@server/requests/request.types";
+import { SHOP_STATE, type ShopTicketDTO } from "@server/requests/request.types";
+import { MARKETPLACE_KIND } from "@server/requests/marketplace/marketplace.types";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { REQUESTS_COPY } from "@/components/requests/requests-copy";
 import { ROUTES } from "@server/shared/routes";
@@ -32,7 +33,7 @@ export function ListingFixes({ orgId, screen, tickets = [] }: { orgId: string; s
   };
   const type = screen.draft?.marketplaceType ?? screen.productName;
   // The fields ticket this listing waits on, raised by itself (setup-requests Q5); "Ask the admin" only before it exists.
-  const ticket = tickets.find((t) => t.kind === TICKET_KIND.AMAZON_FIELDS) ?? null;
+  const ticket = tickets.find((t) => t.kind === MARKETPLACE_KIND.FIELDS) ?? null;
   return (
     <div className="flex flex-col gap-3">
       <p className="font-semibold">{FIX.title}</p>

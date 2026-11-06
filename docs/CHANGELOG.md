@@ -12,6 +12,23 @@
 
 ## Entries
 
+## 2026-11-06 — The ticket engine knows no module; marketplace tickets are a plug-in [CONTRACT]
+
+- **Asked by the owner:** requests must not be coupled to channels (setup-requests D4, Q33). The engine
+  (`request.service`, `request.types`, `ticket.repository`, the jobs, `kinds/kind.ts`) no longer imports
+  channel or listing code or names a marketplace or kind. A module plugs in with `TicketKindPlugin`s and
+  a `NeedSource` (needs from its events, needs from a daily check) in `kinds/index.ts`, and a preview
+  component in `requirement-plans.tsx`.
+- Everything about marketplaces moved into `server/requests/marketplace/`: the two kinds, their types
+  and choice schemas, complaint sorting, field matching, the home brand, the daily category check.
+  The engine's `raiseFromComplaints`/`raiseMissingCategories` are `raiseFromEvents` and the sources'
+  `daily`; an issue's subject and detail are neutral (`source`, `context`, `subject`, `code`,
+  `message`); the admin inbox reads a kind's `mode` (one tap, decision) instead of its name.
+- No behaviour change: the same tickets, keys (an issue's now keyed by its source's label) and screens.
+- New guard `tests/unit/requests-decoupled.test.ts`. Mutation: a listing import and the word "amazon"
+  added to `request.service.ts`; both checks failed. Ran: unit, integration, `tsc`, `docs:check`,
+  `next build`.
+
 ## 2026-11-06 — Requests in the shop sidebar; list as Generic on Amazon; stock shown on a product's view [CONTRACT] [MIGRATION]
 
 - **Requests is a shop sidebar item** (setup-requests Q33, superseding Q25): `/org/{org}/requests` lists

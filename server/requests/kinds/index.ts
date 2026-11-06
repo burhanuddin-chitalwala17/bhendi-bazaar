@@ -1,16 +1,16 @@
-import { TICKET_KIND, type TicketKind } from "../request.types";
-import { amazonCategoryKind } from "./amazon-category.kind";
-import { amazonFieldsKind } from "./amazon-fields.kind";
+import { MARKETPLACE_KINDS, marketplaceNeeds } from "../marketplace";
 import { issueKind } from "./issue.kind";
-import type { TicketKindPlugin } from "./kind";
+import type { NeedSource, TicketKindPlugin } from "./kind";
 
-/** Every kind, once (D4). A new kind is a file and a line here. */
-export const KINDS: Readonly<Record<TicketKind, TicketKindPlugin>> = {
-  [TICKET_KIND.AMAZON_FIELDS]: amazonFieldsKind,
-  [TICKET_KIND.AMAZON_CATEGORY]: amazonCategoryKind,
-  [TICKET_KIND.ISSUE]: issueKind,
-};
+/**
+ * Every kind and every source of needs, once (D4). The engine reads these lists and nothing else;
+ * a module plugs in by adding its folder's exports here.
+ */
+export const KINDS: readonly TicketKindPlugin[] = [issueKind, ...MARKETPLACE_KINDS];
+export const NEED_SOURCES: readonly NeedSource[] = [marketplaceNeeds];
 
-export const kindOf = (kind: string): TicketKindPlugin | null => (KINDS as Record<string, TicketKindPlugin>)[kind] ?? null;
+const byKind = new Map(KINDS.map((k) => [k.kind, k]));
+export const kindOf = (kind: string): TicketKindPlugin | null => byKind.get(kind) ?? null;
 
-export type { TicketKindPlugin } from "./kind";
+export { issueKind };
+export { PlanUnavailableError, type NeedSource, type TicketKindPlugin } from "./kind";
