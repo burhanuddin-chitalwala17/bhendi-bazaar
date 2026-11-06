@@ -11,6 +11,7 @@ import { requestService } from "@server/requests/request.service";
 
 export const POST = withOrg<{ orgId: string; channel: string; id: string }>(async (_request, scope, params) => {
   const complaint = await platformListingService.complaint(scope.orgId, params.id, params.channel);
-  const raised = complaint ? await requestService.raiseFromEvents([complaint]) : 0;
+  // Never reopens: a done ticket stays Ready for the shop to fill (Q12); a send's own answer reopens.
+  const raised = complaint ? await requestService.raiseFromEvents([complaint], new Date(), { reopen: false }) : 0;
   return NextResponse.json({ ok: true, raised });
 });

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { RaiseRequestButton } from "@/components/requests/raise-request-button";
 import { LISTING_FIX } from "@server/channels/platform-listing.types";
 
-import { fieldsTicket, issueTicket, ListingFixes, TicketLine } from "./listing-fixes";
+import { fieldsTicket, ListingFixes } from "./listing-fixes";
 import { FIELD_NAME, PROBLEMS, PUBLISH } from "./platform-listing-copy";
 
 /**
@@ -19,7 +19,6 @@ export function ListingIssuesBanner({ orgId, screen, tickets = [] }: { orgId: st
   if (screen.issues.length === 0 && !screen.showing) return null;
   const pinned = screen.issues.filter((i) => i.field !== null);
   const general = screen.otherIssues;
-  const reported = issueTicket(tickets);
   const raiseShown = screen.fixes.some((f) => f.kind === LISTING_FIX.ADMIN) && !fieldsTicket(tickets);
   return (
     <section className="flex flex-col gap-2 rounded-card bg-destructive/10 p-3 text-sm">
@@ -51,12 +50,8 @@ export function ListingIssuesBanner({ orgId, screen, tickets = [] }: { orgId: st
       ))}
       {general.length > 0 && (
         <div className="flex flex-col items-start gap-2">
-          {reported ? (
-            <TicketLine orgId={orgId} ticket={reported} label={screen.label} editHref={null} />
-          ) : (
-            // One raise button per screen: the fixes' own one already raises these too (Q36).
-            !raiseShown && <RaiseRequestButton orgId={orgId} channel={screen.channel} productId={screen.productId} />
-          )}
+          {/* One raise button per screen: the fixes' own one raises these too. Raising again only adds this shop's need (Q36). */}
+          {!raiseShown && <RaiseRequestButton orgId={orgId} channel={screen.channel} productId={screen.productId} />}
           <p className="text-muted-foreground">{REQUESTS_COPY.tellUs}</p>
           <ReportProblem
             orgId={orgId}

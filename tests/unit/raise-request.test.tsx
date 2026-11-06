@@ -5,7 +5,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const complaint = vi.hoisted(() => vi.fn());
 const raiseFromEvents = vi.hoisted(() => vi.fn(async () => 1));
@@ -21,9 +21,12 @@ vi.mock("@/lib/org-auth", () => ({
 vi.mock("@server/channels/platform-listing.service", () => ({ platformListingService: { complaint } }));
 vi.mock("@server/requests/request.service", () => ({ requestService: { raiseFromEvents } }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+const raiseForListing = vi.hoisted(() => vi.fn(async () => ({ ok: true, raised: 1 })));
+vi.mock("@/components/requests/requestsApiClient", () => ({ requestsApiClient: { raiseForListing } }));
 
 import { POST } from "@/app/api/org/[orgId]/channels/[channel]/listings/[id]/request/route";
 import { ListingFixes } from "@/components/channel/listing-fixes";
+import { ListingIssuesBanner } from "@/components/channel/listing-issues-banner";
 import { LISTING_FIX, type ListingScreenDTO } from "@server/channels/platform-listing.types";
 import { SHOP_STATE, TICKET_TYPE, type ShopTicketDTO } from "@server/requests/request.types";
 import { MARKETPLACE_KIND } from "@server/requests/marketplace/marketplace.types";
@@ -44,7 +47,8 @@ describe("the raise route (Q36)", () => {
     complaint.mockResolvedValue(seen);
     const response = await call({ attributes: ["anything_at_all"], orgId: "someone_else" });
     expect(complaint).toHaveBeenCalledWith("org_1", "p1", "amazon");
-    expect(raiseFromEvents).toHaveBeenCalledWith([seen]);
+    // Never reopens a done ticket: the shop keeps its Ready step (Q12).
+    expect(raiseFromEvents).toHaveBeenCalledWith([seen], expect.any(Date), { reopen: false });
     expect(await response.json()).toEqual({ ok: true, raised: 1 });
   });
 
@@ -95,5 +99,31 @@ describe("the listing's How to fix it line (Q36)", () => {
     expect(screen.getByText(/Covers: Strap Type, Style/)).toBeTruthy();
     expect(screen.getByRole("link", { name: REQUESTS_COPY.viewRequests }).getAttribute("href")).toBe("/org/org_1/requests");
     expect(screen.queryByRole("button", { name: REQUESTS_COPY.raiseRequest })).toBeNull();
+  });
+});
+
+describe("one tap, then where to follow it (Q36)", () => {
+  it("raises for this listing and says it's with us, with a link to the shop's requests", async () => {
+    render(<ListingFixes orgId="org_1" screen={listing()} tickets={[]} />);
+    fireEvent.click(screen.getByRole("button", { name: REQUESTS_COPY.raiseRequest }));
+    await waitFor(() => expect(screen.getByText(REQUESTS_COPY.raised)).toBeTruthy());
+    expect(raiseForListing).toHaveBeenCalledWith("org_1", "amazon", "p1");
+    expect(screen.getByRole("link", { name: REQUESTS_COPY.viewRequests })).toBeTruthy();
+  });
+});
+
+describe("the banner shows exactly one Raise a request (Q36)", () => {
+  const unrecognised = { code: "8541", attribute: null, message: "Something Amazon dislikes", field: null, severity: "error" };
+  const banner = (fixes: ListingScreenDTO["fixes"], tickets: ShopTicketDTO[]) =>
+    render(<ListingIssuesBanner orgId="org_1" screen={listing({ issues: [unrecognised], otherIssues: [unrecognised], fixes, marketplaceProblems: null, showing: null } as Partial<ListingScreenDTO>)} tickets={tickets} />);
+
+  it("once, in the fixes, when both a field fix and an unrecognised error need raising", () => {
+    banner([{ kind: LISTING_FIX.ADMIN, names: ["Style"] }], []);
+    expect(screen.getAllByRole("button", { name: REQUESTS_COPY.raiseRequest })).toHaveLength(1);
+  });
+
+  it("for the unrecognised error, when the fields are already with us", () => {
+    banner([{ kind: LISTING_FIX.ADMIN, names: ["Style"] }], [ticket()]);
+    expect(screen.getAllByRole("button", { name: REQUESTS_COPY.raiseRequest })).toHaveLength(1);
   });
 });

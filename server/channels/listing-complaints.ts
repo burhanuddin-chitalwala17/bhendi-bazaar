@@ -7,10 +7,9 @@ import { listingComplaintsSpec, type ListingComplaintsPayload } from "@server/sh
 import type { ListingIssue } from "./platform-listing.types";
 
 export type ListingComplaint = ListingComplaintsPayload["complaints"][number];
-type Complaint = ListingComplaint;
 
 /** Errors only, in the shape the requests job reads (setup-requests D5). */
-export function complaintIssues(issues: readonly ListingIssue[]): Complaint["issues"] {
+export function complaintIssues(issues: readonly ListingIssue[]): ListingComplaint["issues"] {
   return issues
     .filter((i) => i.severity === "error")
     .map((i) => ({ code: i.code, attribute: i.attribute ?? null, message: i.message, field: i.field, need: i.need ?? null }));
@@ -21,7 +20,7 @@ export function complaintIssues(issues: readonly ListingIssue[]): Complaint["iss
  * has one (setup-requests D5). Channels never imports requests; the job is the seam. Nothing raised
  * for a batch with no error.
  */
-export async function handOverComplaints(complaints: readonly Complaint[], options: { standing?: boolean } = {}, db: Prisma.TransactionClient | typeof prisma = prisma): Promise<void> {
+export async function handOverComplaints(complaints: readonly ListingComplaint[], options: { standing?: boolean } = {}, db: Prisma.TransactionClient | typeof prisma = prisma): Promise<void> {
   const withErrors = complaints.filter((c) => c.issues.length > 0);
   if (withErrors.length === 0) return;
   try {
