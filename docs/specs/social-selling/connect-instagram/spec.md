@@ -16,7 +16,7 @@ Instagram, signs in on Instagram, allows Bhendi Bazaar, and comes back connected
 card says, in plain words, which account it is, whether it is healthy, and what to do if not.
 
 ## Why
-A shop posts, answers comments and replies to DMs through Bhendi Bazaar only once it has let us act
+A shop publishes posts, answers comments and replies to DMs through Bhendi Bazaar only once it has let us act
 for its Instagram account. Instagram's own login needs only a professional account, no Facebook Page
 (parent Q11), so this is the lightest way in. Publishing, the inbox and comment-to-DM all need a
 connection we can trust and credentials nobody can read; this builds it once.

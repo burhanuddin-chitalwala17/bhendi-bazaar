@@ -30,14 +30,16 @@
 | Q19 | WhatsApp Status and Channels? | No API exists; a Status is a one-tap handoff of the image and caption to the phone (whatsapp-status-kit) | Claude · reversible | 2026-11-05 | The only route Meta permits | decided |
 | Q20 | WhatsApp groups for broadcasting? | Not used: the API caps a group at 8 | Claude · reversible | 2026-11-06 | A list of opted-in contacts does the job | decided |
 | Q21 | Ads: boosting, Click-to-WhatsApp, catalogue ads | Later, behind its own review and a linked Facebook business account | Owner | 2026-11-06 | Needs Facebook's login and ads permissions | parked |
-| Q22 | Facebook Page posting | Later, as an optional connection and a plug in post-composer | Claude · reversible | 2026-11-06 | Not needed for Instagram under Q11 | parked |
-| Q23 | Threads posting | Later, as a plug in post-composer | Claude · reversible | 2026-11-06 | Its own login and review | parked |
+| Q22 | Facebook Page posting | Later, as an optional connection and a plug in post-scheduling | Claude · reversible | 2026-11-06 | Not needed for Instagram under Q11 | parked |
+| Q23 | Threads posting | Later, as a plug in post-scheduling | Claude · reversible | 2026-11-06 | Its own login and review | parked |
 | Q24 | Checkout inside WhatsApp (UPI or Razorpay in chat) | Later, with an ADR showing Invariant 2 holds | Owner | 2026-11-05 | Touches payment state | parked |
 | Q25 | Forms in chat (WhatsApp Flows) | Later | Claude · reversible | 2026-11-05 | Not needed for any acceptance here | parked |
+| Q26 | Is making a post (graphics, captions, AI generation) part of social-selling? | No. Post generation is its own vertical (BACKLOG `instagram-post`). Social-selling builds the posting system only: it takes finished media and a caption from any source and schedules, publishes and reports them. Neither side imports the other; generation's output reaches posting as media in the library and plain text. The `post-graphics` subfeature is removed and `post-composer` is renamed `post-scheduling` | Owner | 2026-11-06 | Keeps posting and generation decoupled, so either can change or ship without the other | decided |
 
 ## Parked (Later)
 - Q10 — chat history on connect; would need a reconnect.
 - Q21 — ads; a feature of its own after social-selling, with its own review.
-- Q22, Q23 — Facebook Page and Threads posting; each a plug in post-composer.
+- Q22, Q23 — Facebook Page and Threads posting; each a plug in post-scheduling.
+- Q26 — not parked but outside: post generation is a separate vertical, `instagram-post` in BACKLOG.
 - Q24 — checkout inside WhatsApp; its own feature and ADR.
 - Q25 — WhatsApp Flows.
