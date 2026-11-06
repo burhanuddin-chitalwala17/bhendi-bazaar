@@ -6,6 +6,7 @@ import { SHOP_STATE, TICKET_KIND, type ShopTicketDTO } from "@server/requests/re
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { REQUESTS_COPY } from "@/components/requests/requests-copy";
 import { ROUTES } from "@server/shared/routes";
+import { BRAND_FIELD_ID } from "@/components/shared/forms/product/ProductBrandField";
 
 import { AskAdminPicker } from "./ask-admin-picker";
 import { FIX } from "./platform-listing-copy";
@@ -20,7 +21,7 @@ export function ListingFixes({ orgId, screen, tickets = [] }: { orgId: string; s
       case LISTING_FIX.BRAND:
         return screen.locked.brand
           ? { text: FIX.brand(screen.label, screen.locked.brand, names), action: FIX.brandAction, href: ROUTES.org.listing(orgId) }
-          : { text: FIX.brandMissing(screen.label, names), action: FIX.brandMissingAction, href: editProduct };
+          : { text: FIX.brandMissing(screen.label, names), action: FIX.brandMissingAction, href: ROUTES.org.editProductField(orgId, screen.productId, "details", BRAND_FIELD_ID) };
       case LISTING_FIX.MRP:
         return { text: FIX.mrp(screen.label), action: FIX.mrpAction, href: editProduct };
       case LISTING_FIX.FACTS:

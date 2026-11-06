@@ -38,7 +38,7 @@ export type PortalNavTarget =
 /** Every navigation key, closed so a page's "?" (help=…) cannot name one that does not exist. */
 export type PortalNavKey =
   | "home" | "orders" | "products" | "shop" | "listing" | "library" | "storefront" | "locations"
-  | "reviews" | "promotions" | "channels" | "bidding" | "earnings" | "details" | "help";
+  | "reviews" | "promotions" | "channels" | "bidding" | "earnings" | "details" | "requests" | "help";
 
 export interface PortalNavEntry {
   key: PortalNavKey;
@@ -72,6 +72,8 @@ export const PORTAL_NAV: readonly PortalNavEntry[] = [
   { key: "bidding", label: PORTAL_NAV_COPY.bidding.label, purpose: PORTAL_NAV_COPY.bidding.purpose, icon: "auction", target: { page: "bidding" }, group: PORTAL_GROUP.GROW },
   { key: "earnings", label: PORTAL_NAV_COPY.earnings.label, purpose: PORTAL_NAV_COPY.earnings.purpose, icon: "payout", target: { page: "earnings" }, group: PORTAL_GROUP.MONEY, tab: true, tabLabel: PORTAL_NAV_COPY.earnings.tabLabel },
   { key: "details", label: PORTAL_NAV_COPY.details.label, purpose: PORTAL_NAV_COPY.details.purpose, icon: "id-card", target: { page: "shop/details" }, group: PORTAL_GROUP.SETTINGS },
+  // Global, never a marketplace's: a request can be for any part of the shop (setup-requests Q33).
+  { key: "requests", label: PORTAL_NAV_COPY.requests.label, purpose: PORTAL_NAV_COPY.requests.purpose, icon: "checklist", target: { page: "requests" }, group: PORTAL_GROUP.SETTINGS },
   { key: "help", label: PORTAL_NAV_COPY.help.label, purpose: PORTAL_NAV_COPY.help.purpose, icon: "support", target: { action: PORTAL_ACTION.CONTACT }, group: PORTAL_GROUP.SETTINGS },
 ];
 

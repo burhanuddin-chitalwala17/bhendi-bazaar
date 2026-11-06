@@ -100,6 +100,14 @@ export const PRODUCT_FACT_FIELDS_COPY = {
 } as const;
 
 /** ProductFamilyField.tsx */
+export const PRODUCT_BRAND_FIELD_COPY = {
+  label: "Brand",
+  hint: "Who makes it, who packs it and where it's from come from the brand. Marketplaces ask for them.",
+  none: "Your default brand",
+  noBrands: "No brands yet.",
+  addBrand: "Add one in Brands and defaults",
+} as const;
+
 export const PRODUCT_FAMILY_FIELD_COPY = {
   partOfAFamily: "Part of a family",
   forTheSameThingIn: "For the same thing in several colours or sizes. Most products need none.",

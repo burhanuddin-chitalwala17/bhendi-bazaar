@@ -44,6 +44,8 @@ interface ProductStepsFormProps {
   listingValues: Record<string, Array<{ key: string; label: string; orgId: string | null }>>;
   origins: Partial<Record<string, string>>;
   families: Array<{ id: string; name: string }>;
+  /** The shop's brands, for the Brand picker; what Amazon's brand complaints point at (marketplace-publish Q24). */
+  brands?: Array<{ id: string; name: string }>;
   orgs?: OrgSummary[];
   locations: LocationOption[];
   /** Absent for the team: adding a shop's address is the shop's own screen. */
@@ -110,6 +112,7 @@ export function ProductStepsForm({
   listingValues,
   origins,
   families,
+  brands,
   orgs,
   locations,
   onLocationAdded,
@@ -248,6 +251,7 @@ export function ProductStepsForm({
             listingValues={listingValues}
             origins={origins}
             families={families}
+            brands={brands}
             orgs={orgs}
             locations={locations}
             onLocationAdded={onLocationAdded}

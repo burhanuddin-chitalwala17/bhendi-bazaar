@@ -11,10 +11,10 @@ const TONE = { [SHOP_STATE.WITH_US]: "info", [SHOP_STATE.READY]: "success", [SHO
 
 /** The shop's own tickets, newest first, and Report a problem (setup-requests Q25, ux "Your requests"). */
 export function YourRequests({ orgId, tickets }: { orgId: string; tickets: ShopTicketDTO[] }) {
+  // The page's own h1 names it; here only the action and the list.
   return (
     <section className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-title font-semibold">{C.yourRequests}</h2>
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <ReportProblem orgId={orgId} label={C.reportProblem} />
       </div>
       {tickets.length === 0 ? (

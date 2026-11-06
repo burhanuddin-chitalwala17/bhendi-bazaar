@@ -18,6 +18,7 @@ import { CategoryChangeSheet } from "./CategoryChangeSheet";
 import type { useCategoryChange } from "./useCategoryChange";
 import { ProductFactFields } from "./ProductFactFields";
 import { ProductFamilyField } from "./ProductFamilyField";
+import { ProductBrandField } from "./ProductBrandField";
 import { ProductFlagsFields } from "./ProductFlagsFields";
 import { ProductOrgShippingFields, type LocationOption } from "./ProductOrgShippingFields";
 import { alsoAsks, willAlsoAsk, type ChannelHint } from "./readiness-hints";
@@ -37,6 +38,8 @@ export interface ProductSectionsProps {
   listingValues: Record<string, Array<{ key: string; label: string; orgId: string | null }>>;
   origins: Partial<Record<string, string>>;
   families: Array<{ id: string; name: string }>;
+  /** The shop's brands, for the Brand picker; what Amazon's brand complaints point at (marketplace-publish Q24). */
+  brands?: Array<{ id: string; name: string }>;
   orgs?: OrgSummary[];
   locations: LocationOption[];
   onLocationAdded?: (location: LocationOption) => void;
@@ -61,6 +64,7 @@ export function ProductSections({
   listingValues,
   origins,
   families,
+  brands = [],
   orgs,
   locations,
   onLocationAdded,
@@ -244,6 +248,7 @@ export function ProductSections({
 
           <section hidden={current !== "details"} className="space-y-4">
             <AlsoAsks hints={hints} />
+            <ProductBrandField register={register} errors={errors} brands={brands} orgId={orgId} />
             <ProductFactFields
               control={control}
               register={register}

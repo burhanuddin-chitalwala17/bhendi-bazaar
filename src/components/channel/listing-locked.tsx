@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { HandoffSheet, HANDOFF_WIDE } from "@/components/shared/overlays/handoff-sheet";
 import type { ListingScreenDTO } from "@server/channels/platform-listing.types";
 
-import { LISTING, rupees } from "./platform-listing-copy";
+import { GENERIC, LISTING, rupees } from "./platform-listing-copy";
 import { ROUTES } from "@server/shared/routes";
 
 /**
@@ -19,7 +19,7 @@ export function ListingLocked({ orgId, screen }: { orgId: string; screen: Listin
   const rows = [
     { key: "mrp", name: "MRP", value: screen.locked.mrpPaise !== null ? rupees(screen.locked.mrpPaise) : LISTING.none },
     { key: "barcode", name: "Barcode", value: screen.locked.barcode ?? LISTING.none },
-    { key: "brand", name: "Brand", value: screen.locked.brand ?? LISTING.none },
+    { key: "brand", name: "Brand", value: screen.generic ? GENERIC.value : (screen.locked.brand ?? LISTING.none) },
     { key: "stock", name: "Stock", value: LISTING.stock(screen.locked.stock) },
   ];
   return (
@@ -32,6 +32,12 @@ export function ListingLocked({ orgId, screen }: { orgId: string; screen: Listin
           </li>
         ))}
       </ul>
+      {screen.generic && (
+        <p className="rounded-card bg-warning/10 p-3 text-small">
+          {GENERIC.note(screen.label)}{" "}
+          <Link href={ROUTES.org.listing(orgId)} className="underline underline-offset-4">{GENERIC.change}</Link>
+        </p>
+      )}
     </section>
   );
 }

@@ -728,3 +728,10 @@ errors with `attribute`, `field` and `need`. `MarketplaceProvider` gains `typeDe
 `requestActionSchema`, a union on `action` where only `apply` carries the plan's `hash` and the admin's
 choices; a stale hash writes nothing and answers `{ stale: plan }`.
 
+Since setup-requests Q33–Q35: `ShopTicketDTO` is read on the shop's own Requests page; `ISSUE_CATEGORY`
+gains products, shop and payments. `OrgListingDefaultsDto` gains `amazonGeneric`, set by
+`PUT /api/org/{orgId}/listing-defaults/amazon-generic`. `CreateListingInput` gains `generic`;
+`ListingRules` gains `genericBrand`; `ListingScreenDTO` gains `generic`; `ISSUE_NEED` gains
+`brand_name`. A product's detail (`ProductDetails`) gains `brandId`, and each stock location its
+`city`, `pincode` and `isActive`.
+

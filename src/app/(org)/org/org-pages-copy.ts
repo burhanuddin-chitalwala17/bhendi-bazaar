@@ -14,6 +14,7 @@ export const ORG_PAGE_TITLES = {
   brands: "Brands and defaults",
   reviews: "Reviews",
   channels: "Channels",
+  requests: "Requests",
   family: "Make one family",
   settle: "Settle listing",
   listings: "Listings",

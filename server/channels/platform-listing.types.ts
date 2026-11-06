@@ -57,7 +57,7 @@ export interface ListingIssue {
 }
 
 /** What a complaint is about in our terms, said by the marketplace's provider (marketplace-publish Q24). */
-export const ISSUE_NEED = { BRAND: "brand", MRP: "mrp" } as const;
+export const ISSUE_NEED = { BRAND: "brand", BRAND_NAME: "brand_name", MRP: "mrp" } as const;
 export type IssueNeed = (typeof ISSUE_NEED)[keyof typeof ISSUE_NEED];
 
 /** Where a complaint is fixed (marketplace-publish Q24): the brand, the MRP, a fact on the product, or the admin. */
@@ -89,6 +89,8 @@ export interface ListingRules {
   canCreate: boolean;
   /** Where the shop changes what we cannot write, named in copy. */
   editIn: string;
+  /** It takes an unbranded listing a shop with no registered brand can use (setup-requests Q35). */
+  genericBrand: boolean;
 }
 
 /** Where a listing stands, as one word for the screens (marketplace-publish ux.md status matrix). */
@@ -148,6 +150,8 @@ export interface ListingScreenDTO {
   rules: ListingRules;
   photos: ListingPhotoDTO[];
   locked: { mrpPaise: number | null; barcode: string | null; brand: string | null; stock: number };
+  /** The shop lists here as Generic: its brand isn't registered on this marketplace (setup-requests Q35). */
+  generic: boolean;
   status: ListingStatusDTO;
   waitingFields: ListingField[];
   issues: ListingIssue[];

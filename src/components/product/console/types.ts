@@ -90,12 +90,17 @@ export interface ProductDetails {
   productType?: string | null;
   kind?: string | null;
   familyId?: string | null;
+  brandId?: string | null;
   facts?: Record<string, { value: string | number | boolean; origin: string; unlisted?: boolean; source?: { channel: string; value: string; readAt: string; chosen?: boolean } }>;
   measurements?: Record<string, { value: number; origin: string; source?: { channel: string; value: string; readAt: string; chosen?: boolean } }>;
   /** Per-location breakdown (stock-locations R9/A7); `stock` stays the total. */
   stockLocations: Array<{
     orgAddressId: string;
     locationName: string;
+    /** Where it is, for a read-only view's location row; empty where a caller does not read it. */
+    city?: string;
+    pincode?: string;
+    isActive?: boolean;
     quantity: number;
   }>;
   createdAt: Date;

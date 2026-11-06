@@ -17,6 +17,7 @@ export const AMAZON_LISTING_RULES: ListingRules = {
   photo: { minPx: 1000, formats: ["image/jpeg", "image/png", "image/gif", "image/tiff"] },
   canCreate: true,
   editIn: "Amazon Seller Central",
+  genericBrand: true,
 };
 
 /** Features and description from a stored read: Amazon's `bullet_point` and `product_description`. */
@@ -39,6 +40,8 @@ const text = (value: string) => [{ value, language_tag: "en_IN", marketplace_id:
 const plain = (value: string | boolean) => [{ value, marketplace_id: AMAZON_IN }];
 const money = (paise: number) => [{ schedule: [{ value_with_tax: rupeesFromPaise(paise) }] }];
 const MAX_OTHER_PHOTOS = 8;
+/** What Amazon.in calls an unbranded product's brand. */
+const AMAZON_GENERIC_BRAND = "Generic";
 
 /** Which of our fields an Amazon attribute is, for pinning a complaint (D9). */
 const FIELD_OF: Record<string, ListingField> = {
@@ -51,7 +54,8 @@ const FIELD_OF: Record<string, ListingField> = {
 };
 /** Attributes this provider fills from the brand or the product's MRP, so a complaint says where to fix it (Q24). */
 const NEED_OF: Record<string, IssueNeed> = {
-  brand: ISSUE_NEED.BRAND,
+  // The brand's own name: what listing as Generic answers (setup-requests Q35); the rest are its details.
+  brand: ISSUE_NEED.BRAND_NAME,
   manufacturer: ISSUE_NEED.BRAND,
   rtip_manufacturer_contact_information: ISSUE_NEED.BRAND,
   packer_contact_information: ISSUE_NEED.BRAND,
@@ -353,7 +357,8 @@ export function amazonCreateBody(input: CreateListingInput): { productType: stri
     attributes: {
       ...mapped(input.attributes),
       item_name: text(input.title),
-      ...(input.brand ? { brand: text(input.brand) } : {}),
+      // Amazon's own word for an unbranded listing; never another shop's registered brand (setup-requests Q35).
+      ...(input.generic ? { brand: text(AMAZON_GENERIC_BRAND) } : input.brand ? { brand: text(input.brand) } : {}),
       ...(input.features.length > 0 ? { bullet_point: input.features.map((f) => text(f)[0]) } : {}),
       ...(input.description ? { product_description: text(input.description) } : {}),
       ...(main ? { main_product_image_locator: [{ media_location: main, marketplace_id: AMAZON_IN }] } : {}),

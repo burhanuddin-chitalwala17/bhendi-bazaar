@@ -81,8 +81,10 @@ async function inputFor(orgId: string, row: PlatformListingRow, product: Product
     photoUrls: await marketplacePhotoUrls(orgId, product.media, values.photos, rules.photo.formats),
     features: values.features,
     description: values.description,
-    barcode: product.barcode,
+    // Generic goes out with no barcode: Amazon's unbranded route takes the exemption, never a code (Q35).
+    barcode: defaults.amazonGeneric ? null : product.barcode,
     brand: product.brand?.name ?? null,
+    generic: defaults.amazonGeneric,
     quantity: product.archivedAt ? 0 : product.stockLocations.reduce((n, s) => n + s.quantity, 0),
     attributes,
     compliance: {

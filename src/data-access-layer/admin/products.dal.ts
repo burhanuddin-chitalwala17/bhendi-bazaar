@@ -159,6 +159,7 @@ class ProductsDAL {
       productType: product.productType ?? null,
       kind: product.kind ?? null,
       familyId: product.familyId ?? null,
+      brandId: product.brandId ?? null,
       facts: parseStoredFacts(product.facts) as ProductDetails["facts"],
       measurements: parseStoredMeasurements(product.measurements) as ProductDetails["measurements"],
       // Dead photos are dropped rather than shown: they cannot render, and saving the
@@ -177,9 +178,12 @@ class ProductsDAL {
         handle: "a-shop",
       },
       stockLocations: (product.stockLocations ?? []).map(
-        (row: { orgAddressId: string; quantity: number; orgAddress: { name: string } }) => ({
+        (row: { orgAddressId: string; quantity: number; orgAddress: { name: string; isActive?: boolean; address?: { city: string; pincode: string } } }) => ({
           orgAddressId: row.orgAddressId,
           locationName: row.orgAddress.name,
+          city: row.orgAddress.address?.city ?? "",
+          pincode: row.orgAddress.address?.pincode ?? "",
+          isActive: row.orgAddress.isActive ?? true,
           quantity: row.quantity,
         })
       ),

@@ -27,6 +27,11 @@ export class OrgListingDefaultsRepository {
     });
   }
 
+  /** Whether the shop lists on Amazon as Generic (setup-requests Q35): its own write, so the defaults form's PUT never resets it. */
+  async setAmazonGeneric(orgId: string, amazonGeneric: boolean) {
+    return await prisma.orgListingDefaults.upsert({ where: { orgId }, create: { orgId, amazonGeneric }, update: { amazonGeneric } });
+  }
+
   /** One category's tax code, only when it has none, under the row's lock (marketplace-facts Q21, D7). */
   async fillTaxCode(orgId: string, categoryId: string, taxCode: string): Promise<boolean> {
     return await prisma.$transaction(async (tx) => {

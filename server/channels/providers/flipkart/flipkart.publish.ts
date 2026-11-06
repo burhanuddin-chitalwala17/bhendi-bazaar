@@ -17,6 +17,7 @@ export const FLIPKART_LISTING_RULES: ListingRules = {
   photo: { minPx: null, formats: [] },
   canCreate: false,
   editIn: "Flipkart Seller Hub",
+  genericBrand: false,
 };
 
 /** Flipkart's read carries no features or description we could show. */

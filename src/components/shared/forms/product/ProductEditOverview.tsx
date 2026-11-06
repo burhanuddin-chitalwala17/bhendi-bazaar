@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon } from "@/components/ui/icon";
 import { ActionBar } from "@/components/shared/action-bar";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,8 @@ interface ProductEditOverviewProps {
   listingValues: ProductSectionsProps["listingValues"];
   origins: Partial<Record<string, string>>;
   families: Array<{ id: string; name: string }>;
+  /** The shop's brands, for the Brand picker; what Amazon's brand complaints point at (marketplace-publish Q24). */
+  brands?: Array<{ id: string; name: string }>;
   orgs?: OrgSummary[];
   locations: LocationOption[];
   onLocationAdded?: (location: LocationOption) => void;
@@ -57,6 +59,7 @@ export function ProductEditOverview({
   listingValues,
   origins,
   families,
+  brands,
   orgs,
   locations,
   onLocationAdded,
@@ -67,7 +70,16 @@ export function ProductEditOverview({
   kept,
   saveLabel = PRODUCT_EDIT_OVERVIEW_SAVE_COPY.save,
 }: ProductEditOverviewProps) {
+  // A link may open one section and its field, e.g. "Choose a brand" → Details (marketplace-publish Q24).
   const [open, setOpen] = useState<ProductStepKey | null>(null);
+  useEffect(() => {
+    // After mount, so the server's render and the first client render agree.
+    const section = initialSection();
+    if (!section) return;
+    setOpen(section);
+    const field = window.location.hash.slice(1);
+    if (field) requestAnimationFrame(() => document.getElementById(field)?.scrollIntoView({ block: "center" }));
+  }, []);
   const {
     watch,
     formError,
@@ -194,6 +206,7 @@ export function ProductEditOverview({
             listingValues={listingValues}
             origins={origins}
             families={families}
+            brands={brands}
             orgs={orgs}
             locations={locations}
             onLocationAdded={onLocationAdded}
@@ -245,4 +258,11 @@ export function ProductEditOverview({
       </ActionBar>
     </form>
   );
+}
+
+/** The section a link asks for (`?section=details`), when it names one this form has. */
+function initialSection(): ProductStepKey | null {
+  if (typeof window === "undefined") return null;
+  const asked = new URLSearchParams(window.location.search).get("section");
+  return PRODUCT_STEPS.some((step) => step.key === asked && step.key !== "review") ? (asked as ProductStepKey) : null;
 }

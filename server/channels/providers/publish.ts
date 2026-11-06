@@ -72,6 +72,8 @@ export interface CreateListingInput {
   description: string;
   barcode: string | null;
   brand: string | null;
+  /** The shop's brand is not registered on the marketplace: list unbranded, as it words that (setup-requests Q35). */
+  generic: boolean;
   quantity: number;
   /** Our facts in the marketplace's attribute names and values, from the mapping (D8). */
   attributes: Record<string, string>;

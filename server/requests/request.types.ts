@@ -23,6 +23,9 @@ export const ISSUE_CATEGORY = {
   LISTING: "listing",
   STOCK: "stock",
   ORDERS: "orders",
+  PRODUCTS: "products",
+  SHOP: "shop",
+  PAYMENTS: "payments",
   OTHER: "other",
 } as const;
 export type IssueCategory = (typeof ISSUE_CATEGORY)[keyof typeof ISSUE_CATEGORY];

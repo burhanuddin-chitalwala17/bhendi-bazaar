@@ -14,6 +14,8 @@ export interface OrgListingDefaultsDto {
   countryOfOrigin: string | null;
   taxRatePercent: number | null;
   taxCodes: TaxCodeEntry[];
+  /** The shop's brand is not on Amazon, so it lists there as Generic (setup-requests Q35). */
+  amazonGeneric: boolean;
 }
 
 export interface ListingDefaultsInput {
@@ -26,6 +28,7 @@ export const EMPTY_LISTING_DEFAULTS: OrgListingDefaultsDto = {
   countryOfOrigin: null,
   taxRatePercent: null,
   taxCodes: [],
+  amazonGeneric: false,
 };
 
 /** Basis points keep two decimals of a percent without a float in the column (Invariant 3's habit). */
@@ -58,5 +61,6 @@ export function toListingDefaultsDto(row: OrgListingDefaults | null): OrgListing
     countryOfOrigin: row.countryOfOrigin,
     taxRatePercent: row.taxRateBps === null ? null : bpsToPercent(row.taxRateBps),
     taxCodes: taxCodesFromColumn(row.taxCodeByCategory),
+    amazonGeneric: row.amazonGeneric,
   };
 }

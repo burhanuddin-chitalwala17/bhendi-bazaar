@@ -23,6 +23,7 @@ export const PORTAL_NAV_COPY = {
   bidding: { label: "Bidding", purpose: "Auctions for one-off pieces" },
   earnings: { label: "Money you'll receive", purpose: "What you earned and when it's paid", tabLabel: "Earnings" },
   details: { label: "Shop details", purpose: "Name, contact, tax" },
+  requests: { label: "Requests", purpose: "What you asked us for, and where it stands" },
   help: { label: "Help", purpose: "Ask us anything" },
 } as const;
 

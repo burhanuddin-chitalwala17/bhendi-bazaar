@@ -12,6 +12,24 @@
 
 ## Entries
 
+## 2026-11-06 — Requests in the shop sidebar; list as Generic on Amazon; stock shown on a product's view [CONTRACT] [MIGRATION]
+
+- **Requests is a shop sidebar item** (setup-requests Q33, superseding Q25): `/org/{org}/requests` lists
+  the shop's requests with Report a problem, under Settings; it is off the Channels page, because a
+  request can be for any part of the shop. Report categories widened to the shop's areas (Q34).
+- **List as Generic on Amazon** (Q35). Brands and defaults gains "My brand isn't registered on Amazon:
+  list as Generic" (`OrgListingDefaults.amazonGeneric`, its own PUT so the defaults form never resets
+  it). On, a create sends Amazon's "Generic" and no barcode; the listing's Brand reads Generic with a
+  note and a link to change it, and Amazon's brand-name complaint is no longer a fix to make.
+  `ListingRules.genericBrand` says which marketplaces have it (Amazon); the brand-name complaint is
+  tagged `brand_name` by the provider.
+- **Brand on the product form.** A Brand picker in Details (the product already stored one; the form
+  never showed it). "Choose a brand" on a listing opens the edit page at Details, on that field.
+- **Fix: a product's view page showed "Where is this kept? Add your shop address once." and Total 0**
+  on every product with stock: the read-only form was given no locations. It now lists the locations
+  holding the product's stock, with city and pincode.
+- Ran: unit, integration, `tsc`, `lint:boundary`, `docs:check`, `next build`.
+
 ## 2026-11-06 — CI green: five docs re-verified against setup-requests
 
 - `docs-integrity` failed: setup-requests added files under five docs' Covers. Re-read each against them.

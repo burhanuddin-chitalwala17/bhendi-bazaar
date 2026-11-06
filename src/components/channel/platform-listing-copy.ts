@@ -123,6 +123,13 @@ export const FIX = {
   after: (label: string) => `Once they're done, open Review and publish and send it to ${label} again.`,
 } as const;
 
+/** Listing as Generic, for a brand not registered on the marketplace (setup-requests Q35). */
+export const GENERIC = {
+  value: "Generic",
+  note: (label: string) => `Your brand isn't registered on ${label}, so this lists as Generic, with no barcode. Shoppers won't see your brand name on ${label}.`,
+  change: "Change in Brands and defaults",
+} as const;
+
 export const CREATE = {
   putOn: (label: string) => `Put on ${label}`,
   putFamilyOn: (label: string) => `Put the family on ${label}`,

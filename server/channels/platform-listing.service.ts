@@ -2,6 +2,7 @@ import { CHANNEL_LABELS } from "@server/shared/channels";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { productService } from "@server/catalog/product.service";
 import { channelMapRepository } from "@server/listing/channel-map.repository";
+import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.service";
 import { FACT_DECLARATIONS, type FactKey } from "@server/listing/listing-facts";
 
 import { CONNECTION_STATE, isMarketplaceChannel, type MarketplaceChannel } from "./channel-connection.types";
@@ -25,6 +26,7 @@ import {
 } from "./listing-plan";
 import { platformListingRepository, type PlatformListingRow } from "./platform-listing.repository";
 import {
+  ISSUE_NEED,
   type ListingIssue,
   type ListingField,
   type ListingOverrides,
@@ -187,6 +189,7 @@ export const platformListingService = {
     ]);
     if (!row) throw new NotFoundError("Listing");
     const rules = providerFor(channel).listingRules;
+    const generic = rules.genericBrand && (await orgListingDefaultsService.get(orgId)).amazonGeneric;
     const overrides = parseOverrides(row.overrides, product.media);
     const daily = mirror?.problemsSince != null && issuesOf(mirror.problems).length > 0;
     const { status, values, waiting } = statusOf(row, product, rules, daily ? complainedFields(mirror!.problems) : []);
@@ -212,10 +215,12 @@ export const platformListingService = {
         brand: product.brand?.name ?? null,
         stock: product.stockLocations.reduce((sum, s) => sum + s.quantity, 0),
       },
+      generic,
       status,
       waitingFields: waiting,
       issues,
-      ...fixesOf(issues, product.mrpPaise !== null, await factsFor(channel, product, row.marketplaceType, issues)),
+      // Listing as Generic, the brand's own name is not asked: its maker and packer still are (Q35).
+      ...fixesOf(generic ? issues.filter((i) => i.need !== ISSUE_NEED.BRAND_NAME) : issues, product.mrpPaise !== null, await factsFor(channel, product, row.marketplaceType, issues)),
       marketplaceProblems: issuesOf(row.issues).length === 0 && daily ? { suppressed: mirror!.suppressed } : null,
       showing: (row.showing as ListingScreenDTO["showing"]) ?? null,
       draft: row.channelListingId === null && row.createMode ? await listingCreateService.draftInfo(orgId, row, product, channel) : null,

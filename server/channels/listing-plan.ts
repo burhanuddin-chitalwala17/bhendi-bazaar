@@ -184,7 +184,7 @@ export function fixesOf(issues: readonly ListingIssue[], hasMrp: boolean, factFo
   const otherIssues: ListingIssue[] = [];
   for (const issue of issues) {
     if (issue.need === ISSUE_NEED.MRP && !hasMrp) add(LISTING_FIX.MRP, nameOf(issue));
-    else if (issue.need === ISSUE_NEED.BRAND) add(LISTING_FIX.BRAND, nameOf(issue));
+    else if (issue.need === ISSUE_NEED.BRAND || issue.need === ISSUE_NEED.BRAND_NAME) add(LISTING_FIX.BRAND, nameOf(issue));
     else if (issue.field !== null) continue;
     else if (!issue.attribute) otherIssues.push(issue);
     else {

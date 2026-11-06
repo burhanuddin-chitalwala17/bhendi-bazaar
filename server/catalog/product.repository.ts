@@ -163,7 +163,8 @@ const PRODUCT_DETAILS_SELECT = {
         select: {
             orgAddressId: true,
             quantity: true,
-            orgAddress: { select: { name: true } },
+            // City and pincode too, so a read-only view lists the location as the edit form does (stock-locations R9).
+            orgAddress: { select: { name: true, isActive: true, address: { select: { city: true, pincode: true } } } },
         },
     },
 } satisfies Prisma.ProductSelect;

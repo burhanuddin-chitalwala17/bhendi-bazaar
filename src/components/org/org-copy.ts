@@ -17,6 +17,16 @@ export const BRAND_STANDING_COPY = {
   waiting: "Waiting",
 } as const;
 
+/** The Amazon brand choice on Brands and defaults (setup-requests Q35). */
+export const AMAZON_GENERIC_COPY = {
+  title: "Your brand on Amazon",
+  label: "My brand isn't registered on Amazon: list as Generic",
+  body: "Amazon only shows a brand that's in its Brand Registry or that you're approved to sell. Until yours is, new listings go up as Generic, with no barcode. Shoppers won't see your brand name on Amazon.",
+  on: "New Amazon listings will go up as Generic.",
+  off: "New Amazon listings will use your brand.",
+  failed: "Couldn't save that. Nothing was changed.",
+} as const;
+
 export const LISTING_DEFAULTS_COPY = {
   saved: "Defaults saved",
   country: "Country of origin",

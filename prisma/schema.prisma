@@ -873,6 +873,10 @@ model OrgListingDefaults {
   taxRateBps        Int?
   /// Tax code per category id the org sells in.
   taxCodeByCategory Json?
+  /// The shop's brand is not registered on Amazon, so a listing it creates there goes out as
+  /// Amazon's "Generic", unbranded and with no barcode (setup-requests Q35). Never another
+  /// shop's brand: listing under a brand one does not own is what gets an Amazon account suppressed.
+  amazonGeneric     Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

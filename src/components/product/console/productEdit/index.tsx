@@ -31,6 +31,7 @@ interface ProductEditContainerProps {
   productTypes?: ProductTypeRecord[];
   listingValues?: Record<string, Array<{ key: string; label: string; orgId: string | null }>>;
   families?: Array<{ id: string; name: string }>;
+  brands?: Array<{ id: string; name: string }>;
   orgs: OrgSummary[];
   locations: LocationOption[];
   /** The presign route for image uploads; the org portal passes its member-guarded one. */
@@ -49,6 +50,7 @@ export function ProductEditContainer({
   productTypes,
   listingValues,
   families,
+  brands,
   orgs,
   locations,
   uploadEndpoints,
@@ -94,6 +96,7 @@ export function ProductEditContainer({
         productTypes={productTypes}
         listingValues={listingValues}
         families={families}
+        brands={brands}
         orgs={orgs}
         locations={locations}
         onSubmit={updateProduct}

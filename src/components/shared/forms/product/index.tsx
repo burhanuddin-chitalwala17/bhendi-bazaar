@@ -73,6 +73,8 @@ interface ProductFormProps {
   factOrigins?: Partial<Record<string, string>>;
   /** The org's families, for the picker; a new one is made from the form itself (variants R2). */
   families?: Array<{ id: string; name: string }>;
+  /** The shop's brands, for the Brand picker. */
+  brands?: Array<{ id: string; name: string }>;
   orgs?: OrgSummary[];
   /** The org's pickup locations; the form shows a stock input per active one. */
   locations?: LocationOption[];
@@ -109,6 +111,7 @@ export function ProductForm({
   listingValues = {},
   factOrigins,
   families = [],
+  brands = [],
   copyFrom,
   sellsElsewhere = false,
   team,
@@ -329,6 +332,7 @@ export function ProductForm({
           listingValues={listingValues}
           origins={origins}
           families={families}
+          brands={brands}
           orgs={orgs}
           locations={locations}
           onLocationAdded={team ? undefined : addLocation}
@@ -355,6 +359,7 @@ export function ProductForm({
         listingValues={listingValues}
         origins={origins}
         families={families}
+        brands={brands}
         orgs={orgs}
         locations={locations}
         onLocationAdded={team ? undefined : addLocation}

@@ -177,6 +177,7 @@ describe("orgListingDefaultsService", () => {
       countryOfOrigin: "India",
       taxRateBps: 1800,
       taxCodeByCategory: { cat: "1234" },
+      amazonGeneric: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -190,12 +191,12 @@ describe("orgListingDefaultsService", () => {
       taxRateBps: 1800,
       taxCodeByCategory: { cat: "1234" },
     });
-    expect(dto).toEqual({ countryOfOrigin: "India", taxRatePercent: 18, taxCodes: [{ categoryId: "cat", taxCode: "1234" }] });
+    expect(dto).toEqual({ countryOfOrigin: "India", taxRatePercent: 18, taxCodes: [{ categoryId: "cat", taxCode: "1234" }], amazonGeneric: false });
   });
 
   it("an absent percent is stored as no rate, never as zero", async () => {
     vi.mocked(orgListingDefaultsRepository.upsert).mockResolvedValue({
-      orgId: "org-1", countryOfOrigin: null, taxRateBps: null, taxCodeByCategory: {}, createdAt: new Date(), updatedAt: new Date(),
+      orgId: "org-1", countryOfOrigin: null, taxRateBps: null, taxCodeByCategory: {}, amazonGeneric: false, createdAt: new Date(), updatedAt: new Date(),
     });
     await orgListingDefaultsService.save("org-1", { countryOfOrigin: null, taxRatePercent: undefined, taxCodes: [] });
     expect(orgListingDefaultsRepository.upsert).toHaveBeenCalledWith("org-1", { countryOfOrigin: null, taxRateBps: null, taxCodeByCategory: {} });

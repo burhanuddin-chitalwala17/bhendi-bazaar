@@ -5,9 +5,12 @@ export const REQUESTS_COPY = {
   // The shop's three states (Q31).
   shopState: { [SHOP_STATE.WITH_US]: "With us", [SHOP_STATE.READY]: "Ready", [SHOP_STATE.NOT_SUPPORTED]: "Not supported yet" } satisfies Record<ShopState, string>,
   categories: {
+    [ISSUE_CATEGORY.PRODUCTS]: "Products and the product form",
+    [ISSUE_CATEGORY.SHOP]: "My shop and shop page",
+    [ISSUE_CATEGORY.PAYMENTS]: "Payments and earnings",
     [ISSUE_CATEGORY.LISTING]: "Listing on a marketplace",
     [ISSUE_CATEGORY.STOCK]: "Stock on a marketplace",
-    [ISSUE_CATEGORY.ORDERS]: "Marketplace orders",
+    [ISSUE_CATEGORY.ORDERS]: "Orders",
     [ISSUE_CATEGORY.OTHER]: "Something else",
   } satisfies Record<IssueCategory, string>,
 
@@ -31,6 +34,9 @@ export const REQUESTS_COPY = {
   moreNames: (n: number) => `and ${n} more`,
 
   issueTitle: {
+    [ISSUE_CATEGORY.PRODUCTS]: "A products problem you reported",
+    [ISSUE_CATEGORY.SHOP]: "A shop problem you reported",
+    [ISSUE_CATEGORY.PAYMENTS]: "A payments problem you reported",
     [ISSUE_CATEGORY.LISTING]: "A listing problem you reported",
     [ISSUE_CATEGORY.STOCK]: "A stock problem you reported",
     [ISSUE_CATEGORY.ORDERS]: "An orders problem you reported",
@@ -42,7 +48,8 @@ export const REQUESTS_COPY = {
 
   // Shop: Channels "Your requests" (Q25).
   yourRequests: "Your requests",
-  noRequests: "Nothing with us. If something only we can fix holds up a listing, it shows here.",
+  pageIntro: "What you've asked us for, and where each stands. Some are raised for you when a marketplace refuses something only we can set up.",
+  noRequests: "Nothing with us. Anything you report, or that a marketplace needs us to set up, shows here.",
 
   // Admin (Q3, Q4, Q28).
   title: "Requests",

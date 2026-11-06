@@ -40,6 +40,7 @@ export function productDefaults(
     flags: product?.flags || copy?.flags || [],
     kind: product?.kind ?? null,
     familyId: product?.familyId ?? null,
+    brandId: product?.brandId ?? null,
     // A stored answer carries the level that supplied it; the form edits the value and shows
     // the origin beside it (inherited-facts R3, R4).
     facts: Object.fromEntries(Object.entries(product?.facts ?? {}).map(([fact, stored]) => [fact, stored.value])),

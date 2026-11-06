@@ -47,7 +47,7 @@ describe("a new Amazon page (D6, D7, Q8)", () => {
   const base = {
     sku: "NBH0221", mode: "new" as const, targetExternalId: null, marketplaceType: "SCARF", family: null,
     title: "Crepe Hijab, Olive", price: 44_900, mrpPaise: 59_900, photoUrls: ["https://cdn/a.jpg"], features: ["Soft crepe"], description: "A crepe hijab.",
-    barcode: null, brand: "Niqab Boutique", quantity: 4, attributes: { color: "Green", "sleeve.type": "Long" },
+    barcode: null, brand: "Niqab Boutique", generic: false, quantity: 4, attributes: { color: "Green", "sleeve.type": "Long" },
     compliance: { countryOfOrigin: "IN", manufacturer: "Niqab Boutique, Bengaluru", packer: null, importer: null, hsn: "6214" },
   };
 
@@ -156,5 +156,20 @@ describe("Amazon's daily problems look (marketplace-publish Q23)", () => {
       { sku: "A", suppressed: true, issues: [{ code: "18027", message: "Main image missing", severity: "error", field: "photos", attribute: "main_product_image_locator", need: null }] },
       { sku: "C", suppressed: false, issues: [{ code: "8541", message: "Brand not approved", severity: "error", field: null, attribute: null, need: null }] },
     ]);
+  });
+});
+
+describe("an unregistered brand on Amazon (setup-requests Q35)", () => {
+  const input = {
+    sku: "NBH0221", mode: "new" as const, targetExternalId: null, marketplaceType: "SCARF", family: null,
+    title: "Crepe Hijab", price: 44_900, mrpPaise: 59_900, photoUrls: ["https://cdn/a.jpg"], features: [], description: "x",
+    barcode: null, brand: "Niqab Boutique", generic: true, quantity: 1, attributes: {},
+    compliance: { countryOfOrigin: "IN", manufacturer: null, packer: null, importer: null, hsn: null },
+  };
+  it("lists as Generic, never under the shop's unregistered brand, and takes the barcode exemption", () => {
+    const attrs = amazonCreateBody(input).attributes;
+    expect(attrs.brand).toEqual([{ value: "Generic", language_tag: "en_IN", marketplace_id: "A21TJRUUN4KGV" }]);
+    expect(attrs.supplier_declared_has_product_identifier_exemption).toBeDefined();
+    expect(amazonCreateBody({ ...input, generic: false }).attributes.brand).toEqual([{ value: "Niqab Boutique", language_tag: "en_IN", marketplace_id: "A21TJRUUN4KGV" }]);
   });
 });
