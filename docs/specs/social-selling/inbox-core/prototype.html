@@ -1,0 +1,355 @@
+<title>Shop Inbox Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap">
+<style>
+/* Layout: a board of 360px phone frames per journey, left to right with flow arrows; state strips below each frame. Tokens mirror src/app/globals.css (portal surfaces, emerald primary, gold accent). */
+:root{
+  --bg: oklch(0.97 0.01 98);
+  --board: oklch(0.985 0 0);
+  --card: oklch(1 0 0);
+  --muted: oklch(0.955 0 0);
+  --border: oklch(0.915 0 0);
+  --fg: oklch(0.22 0.03 40);
+  --fg-muted: oklch(0.52 0.04 40);
+  --primary: oklch(0.55 0.17 150);
+  --primary-fg: oklch(0.99 0 0);
+  --primary-soft: oklch(0.94 0.05 150);
+  --accent: oklch(0.85 0.12 85);
+  --warn: oklch(0.55 0.13 70);
+  --warn-soft: oklch(0.95 0.05 85);
+  --danger: oklch(0.6 0.25 27);
+  --danger-soft: oklch(0.95 0.04 27);
+  --read: oklch(0.6 0.14 240);
+  --out: oklch(0.93 0.05 150);
+  --in: oklch(1 0 0);
+  --arrow: oklch(0.7 0.05 98);
+  --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-head: "Playfair Display", Georgia, serif;
+  --radius: 0.75rem;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg: oklch(0.16 0.02 40); --board: oklch(0.18 0.02 40); --card: oklch(0.21 0.02 40); --muted: oklch(0.25 0.02 40);
+  --border: oklch(0.32 0.02 40); --fg: oklch(0.96 0.02 98); --fg-muted: oklch(0.72 0.05 98);
+  --primary: oklch(0.7 0.19 150); --primary-fg: oklch(0.14 0.02 40); --primary-soft: oklch(0.3 0.06 150);
+  --accent: oklch(0.82 0.14 85); --warn: oklch(0.8 0.13 80); --warn-soft: oklch(0.3 0.05 80);
+  --danger: oklch(0.72 0.18 27); --danger-soft: oklch(0.3 0.06 27); --read: oklch(0.75 0.12 240);
+  --out: oklch(0.32 0.06 150); --in: oklch(0.25 0.02 40); --arrow: oklch(0.5 0.04 98); color-scheme: dark}}
+:root[data-theme="dark"]{
+  --bg: oklch(0.16 0.02 40); --board: oklch(0.18 0.02 40); --card: oklch(0.21 0.02 40); --muted: oklch(0.25 0.02 40);
+  --border: oklch(0.32 0.02 40); --fg: oklch(0.96 0.02 98); --fg-muted: oklch(0.72 0.05 98);
+  --primary: oklch(0.7 0.19 150); --primary-fg: oklch(0.14 0.02 40); --primary-soft: oklch(0.3 0.06 150);
+  --accent: oklch(0.82 0.14 85); --warn: oklch(0.8 0.13 80); --warn-soft: oklch(0.3 0.05 80);
+  --danger: oklch(0.72 0.18 27); --danger-soft: oklch(0.3 0.06 27); --read: oklch(0.75 0.12 240);
+  --out: oklch(0.32 0.06 150); --in: oklch(0.25 0.02 40); --arrow: oklch(0.5 0.04 98); color-scheme: dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:14px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+header.page{max-width:1100px;margin:0 auto 20px;display:grid;gap:8px}
+h1{font-family:var(--font-head);font-size:1.9rem;margin:0;text-wrap:balance}
+.lede{color:var(--fg-muted);max-width:68ch;margin:0}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+nav.toc a{font-size:12.5px;text-decoration:none;color:var(--fg);border:1px solid var(--border);background:var(--card);padding:5px 10px;border-radius:999px}
+nav.toc a:focus-visible,button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+section.journey{max-width:1100px;margin:28px auto 0;display:grid;gap:10px}
+.jhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.jhead h2{font-family:var(--font-head);font-size:1.25rem;margin:0}
+.tag{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);border:1px solid var(--border);padding:2px 8px;border-radius:999px}
+.before{font-size:13px;color:var(--fg-muted);margin:0}
+.before b{color:var(--fg)}
+.flow{display:flex;gap:6px;align-items:flex-start;overflow-x:auto;padding:6px 2px 12px}
+.arrow{flex:0 0 34px;align-self:center;display:grid;place-items:center;color:var(--arrow);font-size:22px;padding-top:120px}
+.step{flex:0 0 280px;display:grid;gap:8px}
+.cap{font-size:12px;color:var(--fg-muted);min-height:2.6em}
+.cap b{color:var(--fg)}
+.phone{width:280px;height:540px;border:1px solid var(--border);border-radius:28px;background:var(--board);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 2px oklch(0 0 0/.06)}
+.bar{display:flex;align-items:center;gap:8px;padding:12px 14px 8px;background:var(--card);border-bottom:1px solid var(--border)}
+.bar .t{font-weight:600;font-size:15px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .back{color:var(--fg-muted);font-size:18px}
+.badge{background:var(--primary);color:var(--primary-fg);font-size:11px;font-weight:700;border-radius:999px;padding:1px 7px}
+.tabs{display:flex;gap:6px;padding:8px 12px;background:var(--card);border-bottom:1px solid var(--border)}
+.tabs span{font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);color:var(--fg-muted)}
+.tabs span.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.tabs span.dot::after{content:"";display:inline-block;width:6px;height:6px;background:var(--primary);border-radius:50%;margin-left:5px;vertical-align:middle}
+.search{margin:8px 12px;border:1px solid var(--border);border-radius:10px;padding:7px 10px;color:var(--fg-muted);font-size:12.5px;background:var(--card)}
+.list{flex:1;overflow:hidden}
+.row{display:grid;grid-template-columns:30px 1fr auto;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--card);align-items:start}
+.row .av{width:30px;height:30px;border-radius:50%;background:var(--muted);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--fg-muted)}
+.row .n{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .l{font-size:12px;color:var(--fg-muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.row .tm{font-size:11px;color:var(--fg-muted);text-align:right;display:grid;gap:4px;justify-items:end}
+.row.unread .n,.row.unread .l{font-weight:700;color:var(--fg)}
+.row.unread .tm::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--primary)}
+.pre{font-size:11px;color:var(--fg-muted);font-weight:500}
+.skel{height:44px;margin:8px 12px;border-radius:8px;background:linear-gradient(90deg,var(--muted),var(--border),var(--muted))}
+.empty{flex:1;display:grid;place-content:center;gap:10px;padding:24px;text-align:center;color:var(--fg-muted);font-size:13px}
+.btn{display:inline-block;font:600 13px var(--font-body);border-radius:10px;padding:8px 14px;border:1px solid transparent;background:var(--primary);color:var(--primary-fg);cursor:pointer}
+.btn.sec{background:var(--card);color:var(--fg);border-color:var(--border)}
+.btn.link{background:none;color:var(--primary);padding:0;border:0}
+.note{margin:8px 12px;padding:8px 10px;border-radius:10px;font-size:12px}
+.note.warn{background:var(--warn-soft);color:var(--fg);border:1px solid var(--warn)}
+.note.err{background:var(--danger-soft);color:var(--fg);border:1px solid var(--danger)}
+.note.info{background:var(--primary-soft);color:var(--fg)}
+.thread{flex:1;overflow:hidden;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.post{display:grid;grid-template-columns:44px 1fr;gap:8px;padding:8px 12px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;color:var(--fg-muted)}
+.post .img{width:44px;height:44px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--primary))}
+.b{max-width:82%;padding:7px 10px;border-radius:12px;font-size:13px}
+.b.in{background:var(--in);border:1px solid var(--border);align-self:flex-start}
+.b.out{background:var(--out);align-self:flex-end}
+.b .meta{display:block;font-size:10.5px;color:var(--fg-muted);margin-top:3px}
+.b.fail{border:1px solid var(--danger);background:var(--danger-soft)}
+.b .ticks{font-size:11px;letter-spacing:-2px;margin-left:4px}
+.ticks.read{color:var(--read)}
+.sys{align-self:center;font-size:11px;color:var(--fg-muted);background:var(--muted);padding:3px 8px;border-radius:999px}
+.reply{border-top:1px solid var(--border);background:var(--card);padding:8px 10px;display:grid;gap:6px}
+.reply .lbl{font-size:11px;color:var(--fg-muted)}
+.reply .box{display:flex;gap:6px;align-items:center}
+.reply .in{flex:1;border:1px solid var(--border);border-radius:999px;padding:7px 12px;font-size:12.5px;color:var(--fg-muted)}
+.reply .shut{font-size:12px;color:var(--fg)}
+.sheet{position:relative;flex:1;display:flex;flex-direction:column;justify-content:flex-end;background:oklch(0 0 0/.35)}
+.sheet .pane{background:var(--card);border-radius:18px 18px 0 0;padding:12px;display:grid;gap:8px}
+.sheet .grab{width:36px;height:4px;border-radius:2px;background:var(--border);justify-self:center}
+.sheet h3{margin:0;font-size:14px}
+.opt{border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12.5px;display:flex;justify-content:space-between;gap:8px}
+.opt.on{border-color:var(--primary);background:var(--primary-soft)}
+.opt span:last-child{color:var(--fg-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.states{border:1px solid var(--border);border-radius:var(--radius);background:var(--card);overflow:hidden}
+.states summary{cursor:pointer;padding:10px 12px;font-weight:600;font-size:13px}
+.states table{width:100%;border-collapse:collapse;font-size:12.5px}
+.states td,.states th{border-top:1px solid var(--border);padding:7px 12px;text-align:left;vertical-align:top}
+.states th{font-weight:600;color:var(--fg-muted);font-size:11.5px;letter-spacing:.04em;text-transform:uppercase}
+.tw{overflow-x:auto}
+.legend{max-width:1100px;margin:32px auto 0;font-size:12.5px;color:var(--fg-muted)}
+@media (prefers-reduced-motion:no-preference){.skel{background-size:200% 100%;animation:sh 1.4s infinite linear}@keyframes sh{to{background-position:-200% 0}}}
+</style>
+
+<header class="page">
+  <h1>Shop Inbox</h1>
+  <p class="lede">Prototype for three subfeatures of social-selling: <b>inbox-core</b> (the shared inbox, built on a fake source), <b>inbox-instagram</b> (DMs and comments) and <b>inbox-whatsapp</b> (chats). Phone width first. Each row is one journey, left to right; the first card is the step before it. Every string is the one that ships (ux.md).</p>
+  <nav class="toc" aria-label="Journeys">
+    <a href="#j1">1 · Answer a message</a><a href="#j2">2 · Colleague's reply</a><a href="#j3">3 · Comment, public or DM</a><a href="#j4">4 · Late replies</a><a href="#j5">5 · When it fails</a><a href="#j6">6 · Hide, search, first use</a><a href="#states">State matrix</a>
+  </nav>
+</header>
+
+<!-- J1 -->
+<section class="journey" id="j1">
+  <div class="jhead"><h2>Answer a new message</h2><span class="tag">inbox-core · inbox-whatsapp</span></div>
+  <p class="before"><b>Step before:</b> the shop connected WhatsApp on Channels. A buyer writes to the shop's number.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Shop menu.</b> Inbox sits under Channels with the unread count.</div>
+      <div class="phone"><div class="bar"><span class="t">Rehana's Silks</span></div>
+        <div class="list">
+          <div class="row"><div class="av">▤</div><div class="n">Products</div><div class="tm"></div></div>
+          <div class="row"><div class="av">⇄</div><div class="n">Channels</div><div class="tm"></div></div>
+          <div class="row"><div class="av">✉</div><div class="n"><b>Inbox</b></div><div class="tm"><span class="badge">3</span></div></div>
+          <div class="row"><div class="av">₹</div><div class="n">Orders</div><div class="tm"></div></div>
+        </div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Inbox, WhatsApp tab.</b> Unread rows bold with a dot. Tabs only for connected platforms.</div>
+      <div class="phone"><div class="bar"><span class="t">Inbox</span><span class="badge">3</span></div>
+        <div class="tabs"><span class="dot">Instagram</span><span class="on dot">WhatsApp</span><span>Unread</span></div>
+        <div class="search">Search by name or handle</div>
+        <div class="list">
+          <div class="row unread"><div class="av">AS</div><div><div class="n">Ayesha Shaikh · +91 98200 12345</div><div class="l">Is the green banarasi still available in 5.5m? Need it by Friday</div></div><div class="tm">2m</div></div>
+          <div class="row unread"><div class="av">MK</div><div><div class="n">Mehul Kapadia · +91 99301 44821</div><div class="l">Price for 3 pieces?</div></div><div class="tm">18m</div></div>
+          <div class="row"><div class="av">FZ</div><div><div class="n">Fatema Zariwala · +91 98190 77002</div><div class="l">You: Shipped today, tracking sent ✓✓</div></div><div class="tm">1h</div></div>
+        </div>
+        <div class="cap" style="padding:6px 12px;min-height:0">Updated just now</div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Thread.</b> Window open: free reply. Reply box docks above the keyboard.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">Ayesha Shaikh</span></div>
+        <div class="thread">
+          <div class="sys">Today</div>
+          <div class="b in">Is the green banarasi still available in 5.5m? Need it by Friday<span class="meta">4:12 pm</span></div>
+        </div>
+        <div class="reply"><div class="box"><span class="in">Write a reply</span><span class="btn sec">Add photo</span><span class="btn">Send</span></div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Sent.</b> Ticks move ✓ → ✓✓ → blue ✓✓. The reply also shows in the shop's WhatsApp Business app.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">Ayesha Shaikh</span></div>
+        <div class="thread">
+          <div class="sys">Today</div>
+          <div class="b in">Is the green banarasi still available in 5.5m? Need it by Friday<span class="meta">4:12 pm</span></div>
+          <div class="b out">Yes, 2 in stock. Ships tomorrow, reaches Pune Thursday.<span class="meta">You · just now <span class="ticks read">✓✓</span></span></div>
+        </div>
+        <div class="reply"><div class="box"><span class="in">Write a reply</span><span class="btn">Send</span></div></div></div></div>
+  </div>
+</section>
+
+<!-- J2 -->
+<section class="journey" id="j2">
+  <div class="jhead"><h2>See a colleague's answer</h2><span class="tag">inbox-core · shared view</span></div>
+  <p class="before"><b>Step before:</b> Farida answered from her login; the owner also replied from the phone app.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Another member's view.</b> Same conversation, already read. Each reply names who sent it, to members only.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">Mehul Kapadia</span></div>
+        <div class="thread">
+          <div class="b in">Price for 3 pieces?<span class="meta">3:56 pm</span></div>
+          <div class="b out">₹2,450 each, ₹7,350 for three. Free shipping.<span class="meta">Farida · 4:01 pm <span class="ticks read">✓✓</span></span></div>
+          <div class="b out">Sending photos of all colours now<span class="meta">From the WhatsApp app · 4:03 pm</span></div>
+        </div>
+        <div class="reply"><div class="box"><span class="in">Write a reply</span><span class="btn">Send</span></div></div></div></div>
+  </div>
+</section>
+
+<!-- J3 -->
+<section class="journey" id="j3">
+  <div class="jhead"><h2>Answer a comment, in public or by DM</h2><span class="tag">inbox-instagram</span></div>
+  <p class="before"><b>Step before:</b> Instagram connected; a buyer comments "price?" under the shop's reel.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Instagram tab.</b> Comments say which post; DMs have no prefix.</div>
+      <div class="phone"><div class="bar"><span class="t">Inbox</span><span class="badge">2</span></div>
+        <div class="tabs"><span class="on dot">Instagram</span><span>WhatsApp</span><span>Unread</span></div>
+        <div class="list">
+          <div class="row unread"><div class="av">ZK</div><div><div class="pre">Comment on: Silk dupatta, hand block print…</div><div class="n">zainab.k</div><div class="l">price?</div></div><div class="tm">1m</div></div>
+          <div class="row unread"><div class="av">AK</div><div><div class="n">ayesha.k</div><div class="l">Do you ship to Dubai?</div></div><div class="tm">9m</div></div>
+          <div class="row"><div class="av">RB</div><div><div class="pre">Comment on: New arrivals for Eid ✨</div><div class="n">rukhsana_b</div><div class="l">You: Sent you a DM 💚</div></div><div class="tm">2h</div></div>
+        </div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Comment thread.</b> Post on top. The box says the reply is public; Reply by DM beside it.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">zainab.k</span></div>
+        <div class="post"><div class="img"></div><div>Silk dupatta, hand block print in Bagru. Comment SHOP for the link…</div></div>
+        <div class="thread"><div class="b in">price?<span class="meta">zainab.k · 1 min</span></div></div>
+        <div class="reply"><span class="lbl">Reply publicly</span><div class="box"><span class="in">Write a reply</span><span class="btn">Send</span></div><button class="btn sec" type="button">Reply by DM</button><button class="btn link" type="button">Hide</button></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Replied by DM.</b> One DM per comment (Meta's rule). The DM continues as its own conversation.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">zainab.k</span></div>
+        <div class="post"><div class="img"></div><div>Silk dupatta, hand block print in Bagru…</div></div>
+        <div class="thread"><div class="b in">price?<span class="meta">zainab.k · 3 min</span></div>
+          <div class="sys">Replied by DM · <span style="color:var(--primary)">Open chat</span></div></div>
+        <div class="reply"><span class="lbl">Reply publicly</span><div class="box"><span class="in">Write a reply</span><span class="btn">Send</span></div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Second DM attempt.</b> Explains on tap; the button is never disabled.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">zainab.k</span></div>
+        <div class="post"><div class="img"></div><div>Silk dupatta, hand block print in Bagru…</div></div>
+        <div class="thread"><div class="b in">price?<span class="meta">zainab.k · 5 min</span></div></div>
+        <div class="note warn">You've already replied to this comment by DM. Instagram allows one. <span style="color:var(--primary)">Open chat</span></div>
+        <div class="reply"><span class="lbl">Reply publicly</span><div class="box"><span class="in">Write a reply</span><span class="btn">Send</span></div></div></div></div>
+  </div>
+</section>
+
+<!-- J4 -->
+<section class="journey" id="j4">
+  <div class="jhead"><h2>Reply after the window</h2><span class="tag">inbox-core · instagram · whatsapp</span></div>
+  <p class="before"><b>Step before:</b> a buyer wrote yesterday and nobody answered.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Instagram, 1–7 days.</b> Human-agent window: reply allowed, with the end time.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">ayesha.k</span></div>
+        <div class="thread"><div class="sys">Yesterday</div><div class="b in">Do you ship to Dubai?<span class="meta">4:30 pm</span></div></div>
+        <div class="reply"><span class="lbl">You can reply until Thu 4:30 pm.</span><div class="box"><span class="in">Write a reply</span><span class="btn">Send</span></div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Instagram, over 7 days.</b> No reply allowed; the box says why.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">noor.textiles</span></div>
+        <div class="thread"><div class="sys">12 Oct</div><div class="b in">Bulk price for 50m?<span class="meta">11:02 am</span></div></div>
+        <div class="reply"><span class="shut">Instagram allows a reply only after they write again.</span></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>WhatsApp, over 24 hours.</b> Templates only; the box offers them.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">Mehul Kapadia</span></div>
+        <div class="thread"><div class="sys">Yesterday</div><div class="b in">Will it be back in stock?<span class="meta">6:40 pm</span></div></div>
+        <div class="reply"><span class="shut">This chat is older than 24 hours. WhatsApp only allows an approved template now.</span><button class="btn" type="button">Send a template</button></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Template picker.</b> A sheet; each row shows its cost, paid from the shop's WhatsApp account.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">Mehul Kapadia</span></div>
+        <div class="sheet"><div class="pane"><div class="grab"></div><h3>Send a template</h3>
+          <div class="opt on"><span>Back in stock · English</span><span>about ₹0.86</span></div>
+          <div class="opt"><span>Order update · English</span><span>about ₹0.12</span></div>
+          <div class="opt"><span>नया स्टॉक · हिन्दी</span><span>about ₹0.86</span></div>
+          <div class="note info" style="margin:0">Costs about ₹0.86, paid from your WhatsApp account.</div>
+          <div style="display:flex;gap:8px;justify-content:flex-end"><span class="btn sec">Back</span><span class="btn">Send</span></div></div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Sent.</b> The bubble carries the template's cost; the send records who sent it.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">Mehul Kapadia</span></div>
+        <div class="thread"><div class="sys">Yesterday</div><div class="b in">Will it be back in stock?<span class="meta">6:40 pm</span></div>
+          <div class="b out">Good news, Mehul! Green banarasi is back at Rehana's Silks. Reply STOP to stop these.<span class="meta">You · Template · ₹0.86 <span class="ticks">✓✓</span></span></div></div>
+        <div class="reply"><span class="shut">This chat is older than 24 hours. WhatsApp only allows an approved template now.</span><button class="btn" type="button">Send a template</button></div></div></div>
+  </div>
+</section>
+
+<!-- J5 -->
+<section class="journey" id="j5">
+  <div class="jhead"><h2>When a send fails</h2><span class="tag">inbox-core · whatsapp · instagram</span></div>
+  <p class="before"><b>Step before:</b> the member tapped Send.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Temporary.</b> Retried once automatically, then shown with Try again.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">Ayesha Shaikh</span></div>
+        <div class="thread"><div class="b in">Can you hold it till Monday?<span class="meta">5:02 pm</span></div>
+          <div class="b out fail">Sure, holding it for you.<span class="meta">Not sent · No connection · <span style="color:var(--primary)">Try again</span></span></div></div>
+        <div class="reply"><div class="box"><span class="in">Write a reply</span><span class="btn">Send</span></div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>No payment method.</b> Free replies still work; templates need one.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">Mehul Kapadia</span></div>
+        <div class="thread"><div class="b out fail">Good news, Mehul! Green banarasi is back…<span class="meta">Not sent · Add a payment method in WhatsApp Manager</span></div></div>
+        <div class="reply"><button class="btn sec" type="button">Open WhatsApp Manager</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Connection dead.</b> The tab and the bubble both say Reconnect.</div>
+      <div class="phone"><div class="bar"><span class="t">Inbox</span></div>
+        <div class="tabs"><span class="on">Instagram</span><span>WhatsApp</span><span>Unread</span></div>
+        <div class="note err">Instagram needs reconnecting. New messages won't arrive until you do. <span style="color:var(--primary)">Reconnect</span></div>
+        <div class="list"><div class="row"><div class="av">AK</div><div><div class="n">ayesha.k</div><div class="l">Not sent · Instagram needs reconnecting</div></div><div class="tm">now</div></div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Can't be shown.</b> A voice note or sticker still appears, named.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">Fatema Zariwala</span></div>
+        <div class="thread"><div class="b in"><i>Voice note — open it in WhatsApp to listen</i><span class="meta">5:20 pm</span></div>
+          <div class="b in"><i>Photo no longer available</i><span class="meta">12 Oct</span></div></div>
+        <div class="reply"><div class="box"><span class="in">Write a reply</span><span class="btn">Send</span></div></div></div></div>
+  </div>
+</section>
+
+<!-- J6 -->
+<section class="journey" id="j6">
+  <div class="jhead"><h2>Hide, search, first use, loading</h2><span class="tag">inbox-core · inbox-instagram</span></div>
+  <p class="before"><b>Step before:</b> varies per card.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Hidden comment.</b> Hidden on Instagram itself, never only here.</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span><span class="t">spam_deals_99</span></div>
+        <div class="post"><div class="img"></div><div>New arrivals for Eid ✨</div></div>
+        <div class="thread"><div class="b in" style="opacity:.6">Earn ₹50,000 a week from home, DM me<span class="meta">spam_deals_99</span></div><div class="sys">Hidden on Instagram · <span style="color:var(--primary)">Unhide</span></div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Search.</b> By name or handle; no message search.</div>
+      <div class="phone"><div class="bar"><span class="t">Inbox</span></div>
+        <div class="tabs"><span class="on">Instagram</span><span>WhatsApp</span><span>Unread</span></div>
+        <div class="search" style="color:var(--fg)">ayesha</div>
+        <div class="list"><div class="row"><div class="av">AK</div><div><div class="n">ayesha.k</div><div class="l">Do you ship to Dubai?</div></div><div class="tm">9m</div></div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>First use.</b> No platform connected yet.</div>
+      <div class="phone"><div class="bar"><span class="t">Inbox</span></div>
+        <div class="empty"><div>Messages from Instagram and WhatsApp arrive here once you connect them.</div><div><span class="btn">Go to Channels</span></div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Empty tab, private account, loading.</b></div>
+      <div class="phone"><div class="bar"><span class="t">Inbox</span></div>
+        <div class="tabs"><span class="on">Instagram</span><span>WhatsApp</span></div>
+        <div class="note warn">Comments reach your inbox only while your Instagram account is public.</div>
+        <div class="empty" style="flex:0;padding:12px">No messages yet. When someone DMs or comments on your posts, it shows here.</div>
+        <div class="skel"></div><div class="skel"></div><div class="cap" style="padding:0 12px">Still loading…</div></div></div>
+  </div>
+</section>
+
+<section class="journey" id="states">
+  <div class="jhead"><h2>State matrix, at a glance</h2><span class="tag">full tables in each ux.md</span></div>
+  <details class="states" open><summary>Inbox list (inbox-core)</summary><div class="tw"><table>
+    <tr><th>State</th><th>Sees</th><th>Action</th></tr>
+    <tr><td>First use</td><td>"Messages from Instagram and WhatsApp arrive here once you connect them."</td><td>Go to Channels</td></tr>
+    <tr><td>Empty</td><td>"No messages yet. When someone writes to you on {platform}, it shows here."</td><td>—</td></tr>
+    <tr><td>Loading / Slow</td><td>Six skeletons; after 3 s "Still loading…"</td><td>—</td></tr>
+    <tr><td>Retryable error</td><td>"Couldn't load your messages. Check your connection and try again."</td><td>Try again</td></tr>
+    <tr><td>Stale</td><td>Re-read every 20 s; "Updated just now"</td><td>Refresh</td></tr>
+    <tr><td>Many items</td><td>30 per page, Show more; search by name or handle</td><td>Show more</td></tr>
+    <tr><td>Phone / tablet / desktop</td><td>List full width / list beside thread / plus person panel</td><td>—</td></tr>
+  </table></div></details>
+  <details class="states"><summary>Reply box modes (window reported by each platform)</summary><div class="tw"><table>
+    <tr><th>Window</th><th>Instagram</th><th>WhatsApp</th></tr>
+    <tr><td>Open</td><td>Free reply, within 24 h</td><td>Free reply, within 24 h, no charge</td></tr>
+    <tr><td>Extended</td><td>"You can reply until {day time}." up to 7 days, sent as human agent</td><td>n/a</td></tr>
+    <tr><td>Shut</td><td>"Instagram allows a reply only after they write again."</td><td>"…only allows an approved template now." → picker with cost</td></tr>
+  </table></div></details>
+  <details class="states"><summary>Failures</summary><div class="tw"><table>
+    <tr><th>Cause</th><th>Bubble</th><th>Action</th></tr>
+    <tr><td>Network</td><td>"Not sent · No connection"</td><td>Try again</td></tr>
+    <tr><td>Connection dead</td><td>"Not sent · {Platform} needs reconnecting"</td><td>Reconnect</td></tr>
+    <tr><td>No payment method</td><td>"Not sent · Add a payment method in WhatsApp Manager"</td><td>Open WhatsApp Manager</td></tr>
+    <tr><td>Not on WhatsApp</td><td>"Not sent · This number isn't on WhatsApp"</td><td>—</td></tr>
+    <tr><td>Second private reply</td><td>"You've already replied to this comment by DM. Instagram allows one."</td><td>Open chat</td></tr>
+    <tr><td>Other refusal</td><td>"Not sent · {Platform} refused this message"</td><td>—</td></tr>
+  </table></div></details>
+</section>
+
+<p class="legend">→ moves to the next screen. · separates alternative states of the same step. Tablet (md) puts the list and thread side by side; desktop (lg) adds a person panel. Example names and messages are illustrative.</p>

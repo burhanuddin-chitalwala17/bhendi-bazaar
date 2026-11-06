@@ -15,8 +15,8 @@
 Development continues in another Claude account (Q17). Work on branch `meta-whatsapp-connector`;
 a track may run on its own branch off it and merge back; the whole feature merges to `main` once
 (Q16). The research is in INTEGRATIONS.md under "Acting for a shop on Meta"; do not redo it.
-**Next step:** `/bb-sdlc ux-start social-selling/connect-instagram` (spec drafted 2026-11-06); in parallel,
-`inbox-core`, `post-scheduling` and `audience` may be specified, since they need no Meta access.
+**Next step:** the owner reviews every subfeature's spec, UX prototype and TRD, and notification-hub's,
+then gives the go-ahead to build; `/bb-build` runs them in the order above.
 **Owner's outside step, started separately:** Meta Business Verification and the Meta app (Q14).
 
 ## What this is
@@ -52,8 +52,10 @@ Making a post (graphics, captions, AI) is a separate vertical, not part of this 
 - **Instagram before paid WhatsApp messaging (Q6).** Comment-to-DM is free; messages cost.
 
 ## Subfeatures, in order
-Created one at a time with `spec-start`. "Needs" is the only ordering; anything with its needs met
-may be built alongside the others. Every subfeature marked ⏳ is behind the single review (Q2).
+Each has its own spec, decisions, UX and TRD in a subfolder. "Needs" is the only ordering; anything
+with its needs met may be built alongside the others. ⏳ marks what the single review gates (Q2).
+Notifications and alerts are not here: they are the sibling feature
+[notification-hub](../notification-hub/spec.md), whose first user this is (Q66).
 
 | # | Subfeature | Outcome | Needs | Domain |
 |---|---|---|---|---|
@@ -61,28 +63,27 @@ may be built alongside the others. Every subfeature marked ⏳ is behind the sin
 | 2 | connect-whatsapp | A shop connects its WhatsApp number, keeping its Business app (Q12) ⏳ | — | channels |
 | 3 | inbox-core | One inbox: conversations, replies, unread, from a fake source | — | inbox |
 | 4 | post-scheduling | Schedule a post or story from finished media and a caption, through a fake publisher | — | social |
-| 5 | audience | Contacts, consent and lists; from orders and attested uploads | — | audience |
+| 5 | audience | Contacts, consent and lists; from orders, the store page and attested uploads | — | audience |
 | 6 | instagram-publishing | Posts, carousels, reels and stories published to Instagram ⏳ | 1, 4 | channels |
 | 7 | inbox-instagram | Instagram DMs and comments in the inbox ⏳ | 1, 3 | channels |
-| 8 | comment-automations | Comment-to-DM and keyword replies ⏳ | 7 | automations |
-| 9 | whatsapp-catalogue | The shop's catalogue made and kept in sync, shown in WhatsApp ⏳ | 2 | channels |
+| 8 | comment-automations | A keyword comment gets the shop's DM, the product link suggested ⏳ | 7 | automations |
+| 9 | whatsapp-catalogue | The shop's live products in its WhatsApp catalogue, kept in sync ⏳ | 2 | channels |
 | 10 | inbox-whatsapp | WhatsApp chats in the inbox ⏳ | 2, 3 | channels |
-| 11 | whatsapp-contacts | Contacts synced from the Business app as "Not yet"; opt-in in chat | 2, 5 | audience |
-| 12 | whatsapp-messaging | Templates sent to opted-in lists, cost shown and recorded ⏳ | 2, 5 | campaigns |
-| — | **Meta review** | One submission once 1, 2, 6–10 and 12 work on our own accounts (Q2) | all ⏳ | — |
-| 13 | whatsapp-product-messages | Product and catalogue messages | 9, 12 | campaigns |
+| 11 | whatsapp-contacts | Contacts synced from the Business app as "Not yet"; opt-in and STOP in chat | 2, 5 | audience |
+| 12 | whatsapp-templates | Starter templates in English and Hindi, and the shop's own, with Meta's status ⏳ | 2 | campaigns |
+| 13 | whatsapp-campaigns | A campaign, products included, sent to an opted-in list, cost and caps shown ⏳ | 5, 12 | campaigns |
 | 14 | whatsapp-status-kit | A Status image and caption handed to the phone in one tap | 4 | social |
-| 15 | whatsapp-updates | Order and shipping updates on WhatsApp | 12 | notifications |
-| 16 | demand-messages | Price drop, back in stock, abandoned cart and auction alerts to opted-in buyers | 12 | campaigns |
+| — | **Going live** | One review once 1, 2, 6–10, 12 and 13 work on our own accounts ([going-live.md](going-live.md)) | ⏳ | — |
 
-Later, each with its Q: ads and boosting (Q21), Facebook Page posting (Q22), Threads (Q23),
-checkout inside WhatsApp (Q24), forms in chat (Q25), chat history (Q10). Post generation is not
-Later here but outside this feature altogether (Q26).
+Later, each with its Q: ads (Q21), Facebook Page (Q22), Threads (Q23), checkout in WhatsApp (Q24),
+forms in chat (Q25), chat history (Q10), platform sending (Q28), AI replies (Q31), audit screen
+(Q44), insights (Q48). Outside this feature altogether: post generation (Q26) and "Notify me" (Q60).
 
 ## Product acceptance
 - A1 — On a phone, a shop with only an Instagram professional account connects it and publishes
   a story from a photo it chose, without leaving Bhendi Bazaar.
-- A2 — A comment with a chosen keyword on that shop's post receives the product link by DM.
+- A2 — A comment with a chosen keyword on that shop's post receives the shop's DM (the product
+  link unless the shop changed it).
 - A3 — A shop with no Meta business account connects its WhatsApp number from the pop-up and,
   minutes later, its products are in its WhatsApp catalogue at the price its product page shows.
 - A4 — A message to a list reaches only its opted-in members, after the shop saw what it costs.

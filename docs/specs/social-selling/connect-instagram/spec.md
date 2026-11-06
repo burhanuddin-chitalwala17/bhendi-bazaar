@@ -5,7 +5,7 @@
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-06
-- **References:** [decisions.md](decisions.md), parent [social-selling](../spec.md) and its [decisions](../decisions.md), [channel-connectors](../../marketplace-integration/channel-connectors/spec.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md#acting-for-a-shop-on-meta-catalogue-whatsapp-instagram), [ADR-0041](../../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
+- **References:** [decisions.md](decisions.md), [ux.md](ux.md), [trd.md](trd.md), parent [social-selling](../spec.md) and its [decisions](../decisions.md), [channel-connectors](../../marketplace-integration/channel-connectors/spec.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md#acting-for-a-shop-on-meta-catalogue-whatsapp-instagram), [ADR-0041](../../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md. Subfeature 1 of
 > social-selling; every later Instagram subfeature acts through this connection.
@@ -57,7 +57,7 @@ connection we can trust and credentials nobody can read; this builds it once.
 - **The account removes our app inside Instagram** while the card still reads Connected.
 - **A deletion request names a person, not a shop.** It must find every connection they made.
 - **Meta stops being feed-only.** ADR-0041 gives a shopfront no credentials; parent Q15 replaces
-  that for Meta with a new ADR, written with the TRD.
+  that for Meta with ADR-0068, written with the TRD.
 
 ## Product acceptance
 Judged on a phone (~360px) first ([ADR-0015](../../../adr/0015-mobile-first-design.md)).
@@ -84,4 +84,4 @@ Judged on a phone (~360px) first ([ADR-0015](../../../adr/0015-mobile-first-desi
   (comment-automations), all parent subfeatures needing this one (Q1); ads (parent Q21).
 
 ## Open questions
-Q13 (for ux-start), Q14 (for the TRD).
+None. Q13 and Q14 decided 2026-11-06.

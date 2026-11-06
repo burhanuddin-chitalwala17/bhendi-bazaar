@@ -245,23 +245,41 @@ seller that asks for a security test certificate for the receiving URL. Everythi
 
 ### Acting for a shop on Meta: catalogue, WhatsApp, Instagram
 
-Checked 2026-11-05 while spiking `meta-whatsapp-connector`. Third-party figures are marked; re-check
-Meta's own pages before a plan depends on one.
+Checked 2026-11-05 while spiking `meta-whatsapp-connector`, re-checked and extended 2026-11-06.
+Third-party figures are marked; re-check Meta's own pages before a plan depends on one. The owner's
+steps and the review kit built on this are in
+[social-selling/going-live.md](specs/social-selling/going-live.md).
 
 - **One catalogue serves Facebook, Instagram and WhatsApp.** A WhatsApp Business account (WABA)
   takes exactly one catalogue; several numbers on the WABA can share it. A catalogue fed by our
   hosted feed is a normal catalogue for this purpose. WhatsApp's commerce settings start with the
   catalogue hidden and are switched on by API.
-- **Acting on a shop's own Meta assets needs the Tech Provider path**, in order: Business
-  Verification (a few business days), App Review for *Advanced Access* to each permission (with a
-  screencast per permission, rejection-prone), then Access Verification (about 5 business days,
-  per Twilio's guide). Approved apps stay under Ongoing Review. Acting on **our own** business's
-  assets needs none of it.
+- **Acting on a shop's own Meta assets needs two steps:** Business Verification (up to 14
+  business days; a business registered with local authorities, documents in the exact legal name,
+  [Meta](https://www.facebook.com/business/help/2058515294227817)), then App Review for *Advanced
+  Access* to each permission (a screencast per permission, at least one successful call per
+  permission in the last 30 days; "within a week" per Meta, 3–4 weeks for both per Twilio).
+  **Access Verification was retired on 9 October 2026**
+  ([Meta blog](https://developers.facebook.com/blog/post/2026/10/09/retiring-access-verification-for-tech-provider-apps/));
+  the Embedded Signup overview still lists it and is stale. Approved apps stay under Ongoing
+  Review. An unregistered individual cannot get Advanced Access. For India, partners advise Udyam
+  over a GST in a personal name, and refuse businesses under six months old (third party: wapitech,
+  Heltar, 2025).
+- **App roles bypass review on our own accounts.** Admins, developers and testers (up to 50) can
+  grant any permission without review ([app roles](https://developers.facebook.com/docs/development/build-and-test/app-roles)),
+  so everything is buildable on our own Instagram and WhatsApp first. Business-type apps have no
+  Development/Live switch; access levels alone decide who outside the app's roles may connect.
+- **Becoming a Tech Provider directly** is still offered ("Onboard without a partner" in the
+  WhatsApp console). A Tech Provider has no credit line: each shop adds its own payment method and
+  Meta bills it ([solution providers](https://developers.facebook.com/docs/whatsapp/solution-providers/)).
+  A Tech Partner is a Tech Provider that joined Meta's partner programme; nothing we need.
 - **The permissions:** `business_management`, `catalog_management` (create and update a
   business-owned catalogue), `whatsapp_business_management` and `whatsapp_business_messaging`,
   and for posting `instagram_content_publish` (Facebook Login) or
   `instagram_business_content_publish` (Instagram Login). Ask only for what the app uses; extra
-  permissions are a common rejection.
+  permissions are a common rejection, as are an app reviewers cannot get into and a non-standard
+  login button. WhatsApp's review wants two videos: a message sent from our app arriving in
+  WhatsApp, and a template being created.
 - **The token is a business integration system user token, not an OAuth pair.** Embedded Signup or
   Facebook Login for Business returns a code our server exchanges, server to server, for a
   token that does not expire on a clock. It has no refresh token; it dies when the shop removes
@@ -269,8 +287,15 @@ Meta's own pages before a plan depends on one.
 - **Embedded Signup (WhatsApp)** returns the shop's WABA id and phone number id. After the
   exchange our server must register the number for Cloud API and subscribe our app to the WABA's
   webhooks, and the shop must add a payment method to its WABA before it can send. A new Tech
-  Provider can onboard **10 businesses per rolling 7 days** by default. Embedded Signup v2 was
+  Provider can onboard **10 businesses per rolling 7 days** by default, rising to 200 once
+  verified and reviewed, and beyond only as a Meta Business Partner. Embedded Signup v2 was
   retired on 15 October 2026; build against the current version (v4 at the time of checking).
+  It can be tested before approval with our own business (which creates real extra portfolios and
+  numbers) or a **sandbox account**: 30 days, a real WABA id, phone number id and code, but no
+  sending.
+- **Meta is splitting the WABA** into a "WhatsApp account" (numbers and identity) and a
+  "Messaging account" (templates, billing, webhooks); an existing `waba_id` now means the
+  Messaging account's id ([Embedded Signup overview](https://developers.facebook.com/docs/whatsapp/embedded-signup/overview)).
 - **WhatsApp has no official API for Status or for Channels.** "Posting" on WhatsApp through the
   Cloud API means *messages*: a product, multi-product (up to 30 items in up to 10 sections) or
   catalogue message, free-form only within 24 hours of the customer's last message, otherwise a
@@ -291,9 +316,21 @@ Meta's own pages before a plan depends on one.
 - **Coexistence keeps a shop on its WhatsApp Business app.** Embedded Signup can onboard a number
   already in the app (app 2.24.17+); messages mirror both ways after that, at a fixed 20 per
   second. Meta's page lists `smb_app_state_sync` (the app's contacts, and later changes) and
-  `smb_message_echoes` (messages sent from the app) as webhooks; partners report up to six months of
-  chat history shared if the shop approves it. Broadcast lists, Status, groups and Channels stay
-  app-only, and partners report the app's broadcast lists turning read-only.
+  `smb_message_echoes` (messages sent from the app) as webhooks, and onboarding must subscribe to
+  `account_update`, `history`, `smb_app_state_sync` and `smb_message_echoes`
+  ([coexistence](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-business-app-users));
+  partners report up to six months of chat history shared if the shop approves it. Broadcast
+  lists, Status, groups and Channels stay app-only, and partners report the app's broadcast lists
+  turning read-only. **The app's own catalogue, orders and status tools stop working under
+  coexistence**, so the catalogue must be driven by API. India's eligibility for coexistence was
+  not confirmed on Meta's page (no country exclusion listed; an Indian provider reports India live,
+  2026-11-06); verified on day one with our own number (social-selling Q84).
+- **What a coexistence shop gives up** (Meta's page and partners, 2026-11-06): broadcast lists turn
+  read-only; view-once and disappearing messages are switched off; the app must be opened at least
+  every ~13 days or the link lapses; a blue-tick (Official Business Account) number cannot use it.
+  Messages typed in the app stay free; chat history is offered only for the 24 hours of onboarding
+  (we import none, Q10). A number that cannot coexist may move fully to the Cloud API and work from
+  the portal inbox (Q84); unofficial linked-session tools are never used.
 - **Opt-in, not possession, licenses a message.** A number in a contact list may be sent a template
   only with opt-in per category, and an inbound message opens a 24-hour reply window, not consent.
   Poorly rated templates are paused and the number's quality rating drops.
@@ -313,7 +350,29 @@ Meta's own pages before a plan depends on one.
   (`grant_type=ig_refresh_token`) renews it once it is 24 hours old and still valid. One left
   unused for 60 days cannot be renewed. The exchange returns the Instagram-scoped user id and the
   granted permissions, not the username; `/me` gives `username` and `account_type`. Scopes:
-  `instagram_business_basic`, `_content_publish`, `_manage_comments`, `_manage_messages`.
+  `instagram_business_basic`, `_content_publish`, `_manage_comments`, `_manage_messages`. The
+  Instagram login settings take a Deauthorize callback URL and a Data deletion request URL; the
+  deletion callback receives a signed request and answers `{url, confirmation_code}`
+  ([callback](https://developers.facebook.com/docs/development/create-an-app/app-dashboard/data-deletion-callback)).
+  The deauthorize payload's format for Instagram login was not confirmed; likely the same signed
+  request.
+- **Instagram webhooks** ([fields](https://developers.facebook.com/documentation/instagram-platform/webhooks/fields)):
+  `comments` (mentions arrive inside it), `live_comments`, `messages`, `message_reactions`,
+  `messaging_postbacks`, `messaging_seen`, `messaging_referral`, `messaging_optins`,
+  `messaging_handover`, `standby`; no `story_insights` under Instagram login. Comment and mention
+  webhooks fire only for a public account. **Meta's tables list Advanced Access as needed for
+  Instagram-login webhooks**, so whether they reach our own account before review is unconfirmed;
+  test it first. WhatsApp also withholds some webhooks while an app is in development.
+- **Instagram's reply rules.** A private reply: one message per comment, within 7 days, follow-ups
+  only after the person replies and then within 24 hours
+  ([private replies](https://developers.facebook.com/docs/instagram-platform/private-replies)).
+  A DM: the customer writes first, opening 24 hours (7 days after a Click-to-Direct ad); the
+  `HUMAN_AGENT` tag extends a person's reply to 7 days and **is a feature needing its own review**
+  ([human agent](https://developers.facebook.com/docs/features-reference/human-agent)).
+- **Instagram rate limits** ([overview](https://developers.facebook.com/docs/instagram-platform/overview)):
+  4800 × impressions per 24 hours; Conversations 2 a second; Send API 100 a second for text and 10
+  for media; private replies 750 an hour per post; publishing 100 posts per 24 hours
+  ([publishing](https://developers.facebook.com/docs/instagram-platform/content-publishing)).
 - **Embedded Signup can create the business portfolio and the WABA inside the pop-up**, so a shop
   needs only a personal Facebook login; partners report a new portfolio taking longer to be
   cleared for messaging. The flow can be pre-filled with the shop's name, email and website.

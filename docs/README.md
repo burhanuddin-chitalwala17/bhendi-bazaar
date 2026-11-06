@@ -25,7 +25,7 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 | [DEPENDENCIES.md](DEPENDENCIES.md) | Why each package is here | A package is added, bumped, or removed |
 | [TESTING.md](TESTING.md) | Test strategy and coverage targets | The strategy changes |
 | [OPERATIONS.md](OPERATIONS.md) | Env vars, deploy, runbook | The deployment or an external service changes |
-| [INTEGRATIONS.md](INTEGRATIONS.md) | How Razorpay, Shiprocket, Resend, Cloudflare R2, Vercel and Prisma actually behave | A spike or an incident teaches something durable |
+| [INTEGRATIONS.md](INTEGRATIONS.md) | How Razorpay, Shiprocket, Resend, Cloudflare R2, Vercel, Prisma, the marketplaces and Meta actually behave | A spike or an incident teaches something durable |
 | [TRACKER.md](TRACKER.md) | Bugs and features from the platform audit | A bug is fixed or a feature is built |
 | [GTM-READINESS.md](GTM-READINESS.md) | The 2026-10-31 production/GTM review: scores, blockers, roadmap, progress checks | Never edited; a later review supersedes it |
 

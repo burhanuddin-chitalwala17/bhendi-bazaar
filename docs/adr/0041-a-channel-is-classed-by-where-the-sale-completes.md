@@ -1,7 +1,7 @@
 # ADR-0041: A channel is classed by where the sale completes
 
 - **Date:** 2026-09-29
-- **Status:** Accepted
+- **Status:** Accepted (D2 amended by [ADR-0068](0068-meta-is-a-connected-shopfront.md))
 
 ## Context
 

@@ -1,0 +1,359 @@
+<title>Posts and Status Kit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap">
+<style>
+/* Layout: a board of phone-width screens, grouped by journey, with flow arrows between steps and a state strip under each screen. Tokens mirror the portal's (globals.css .portal + emerald primary). */
+:root{
+  --bg: oklch(0.955 0 0);
+  --screen: oklch(0.985 0 0);
+  --card: oklch(1 0 0);
+  --fg: oklch(0.22 0.03 40);
+  --muted: oklch(0.52 0.04 40);
+  --border: oklch(0.915 0 0);
+  --primary: oklch(0.55 0.17 150);
+  --primary-fg: oklch(0.98 0.01 95);
+  --accent: oklch(0.85 0.12 85);
+  --success: oklch(0.55 0.15 145);
+  --warning: oklch(0.55 0.13 70);
+  --danger: oklch(0.6 0.25 27);
+  --chip-bg: oklch(0.94 0.02 95);
+  --note: oklch(0.96 0.03 85);
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "DM Sans", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg: oklch(0.13 0 0); --screen: oklch(0.15 0 0); --card: oklch(0.18 0 0);
+  --fg: oklch(0.96 0.02 98); --muted: oklch(0.72 0.02 80); --border: oklch(0.3 0 0);
+  --primary: oklch(0.7 0.19 150); --primary-fg: oklch(0.14 0.04 260);
+  --chip-bg: oklch(0.23 0 0); --note: oklch(0.25 0.03 85); --warning: oklch(0.75 0.13 70); --danger: oklch(0.7 0.2 27); --success: oklch(0.72 0.15 145);
+  color-scheme: dark}}
+:root[data-theme="dark"]{
+  --bg: oklch(0.13 0 0); --screen: oklch(0.15 0 0); --card: oklch(0.18 0 0);
+  --fg: oklch(0.96 0.02 98); --muted: oklch(0.72 0.02 80); --border: oklch(0.3 0 0);
+  --primary: oklch(0.7 0.19 150); --primary-fg: oklch(0.14 0.04 260);
+  --chip-bg: oklch(0.23 0 0); --note: oklch(0.25 0.03 85); --warning: oklch(0.75 0.13 70); --danger: oklch(0.7 0.2 27); --success: oklch(0.72 0.15 145);
+  color-scheme: dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:14px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+h1{font-family:var(--font-display);font-size:1.9rem;margin:0 0 4px;text-wrap:balance}
+h2{font-family:var(--font-display);font-size:1.3rem;margin:0;text-wrap:balance}
+.lede{color:var(--muted);max-width:68ch;margin:0 0 8px}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 28px;font-size:12px;color:var(--muted)}
+.journey{margin-block:36px}
+.jhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;margin-bottom:6px}
+.jtag{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.serves{font-size:12px;color:var(--muted)}
+.before{font-size:13px;color:var(--muted);margin:0 0 14px;max-width:70ch}
+.flow{display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;align-items:flex-start}
+.step{flex:0 0 auto;display:flex;flex-direction:column;gap:8px;width:292px}
+.arrow{flex:0 0 auto;align-self:center;color:var(--muted);font-size:12px;display:flex;flex-direction:column;align-items:center;gap:2px;width:64px;text-align:center;margin-top:-60px}
+.arrow svg{width:40px;height:16px}
+.label{font-size:12px;font-weight:600}
+.phone{width:292px;min-height:560px;background:var(--screen);border:1px solid var(--border);border-radius:28px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 0 var(--border)}
+.bar{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--card);font-weight:600}
+.bar .back{color:var(--muted);font-weight:400}
+.body{padding:12px;display:flex;flex-direction:column;gap:10px;flex:1}
+.tabs{display:flex;gap:4px;background:var(--chip-bg);border-radius:10px;padding:3px;font-size:12px}
+.tabs span{flex:1;text-align:center;padding:6px 4px;border-radius:8px;color:var(--muted)}
+.tabs .on{background:var(--card);color:var(--fg);font-weight:600}
+.row{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px;display:flex;gap:10px}
+.thumb{width:48px;height:48px;border-radius:8px;flex:0 0 auto;background:linear-gradient(135deg,oklch(0.75 0.08 30),oklch(0.6 0.1 350))}
+.thumb.b{background:linear-gradient(135deg,oklch(0.78 0.07 150),oklch(0.6 0.09 200))}
+.thumb.c{background:linear-gradient(135deg,oklch(0.82 0.09 85),oklch(0.62 0.1 50))}
+.rmain{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}
+.cap{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.meta{font-size:12px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--chip-bg);color:var(--fg);white-space:nowrap}
+.chip.ok{color:var(--success)} .chip.warn{color:var(--warning)} .chip.bad{color:var(--danger)} .chip.go{color:var(--primary)}
+.btn{display:block;text-align:center;border-radius:10px;padding:10px 12px;font-weight:600;font-size:13px;border:1px solid var(--border);background:var(--card);color:var(--fg)}
+.btn.primary{background:var(--primary);color:var(--primary-fg);border-color:transparent}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted);font-weight:500}
+.btn.danger{color:var(--danger)}
+.dock{margin-top:auto;padding:10px 12px;border-top:1px solid var(--border);background:var(--card);display:flex;flex-direction:column;gap:6px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field .l{font-size:12px;font-weight:600}
+.input{border:1px solid var(--border);border-radius:8px;padding:8px;background:var(--card);font-size:13px;min-height:34px}
+.input.area{min-height:74px}
+.hint{font-size:11px;color:var(--muted)}
+.err{font-size:11px;color:var(--danger)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tile{aspect-ratio:1;border-radius:8px;background:var(--chip-bg);position:relative}
+.tile.sel{outline:2px solid var(--primary);outline-offset:-2px}
+.tile .n{position:absolute;top:4px;right:4px;background:var(--primary);color:var(--primary-fg);border-radius:999px;font-size:10px;width:16px;height:16px;display:grid;place-items:center}
+.check{display:flex;gap:8px;align-items:center;font-size:13px}
+.box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--muted);flex:0 0 auto}
+.box.on{background:var(--primary);border-color:var(--primary)}
+.note{background:var(--note);border-radius:10px;padding:8px 10px;font-size:12px}
+.note.bad{border-left:3px solid var(--danger)}
+.dest{border:1px solid var(--border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--card)}
+.dest .h{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600}
+.status-img{aspect-ratio:9/16;width:96px;border-radius:10px;background:linear-gradient(180deg,oklch(0.92 0 0),oklch(0.92 0 0)),var(--card);display:grid;place-items:center;align-self:center;border:1px solid var(--border)}
+.status-img i{width:76px;height:76px;border-radius:6px;background:linear-gradient(135deg,oklch(0.75 0.08 30),oklch(0.6 0.1 350))}
+.sheet{margin-top:auto;background:var(--card);border-top:1px solid var(--border);border-radius:16px 16px 0 0;padding:12px;display:flex;flex-direction:column;gap:10px}
+.apps{display:flex;gap:12px;justify-content:space-around;font-size:11px;text-align:center}
+.apps div{display:flex;flex-direction:column;align-items:center;gap:4px}
+.apps i{width:40px;height:40px;border-radius:12px;background:var(--chip-bg);display:block}
+.apps .wa i{background:oklch(0.65 0.15 150)}
+.states{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;display:flex;flex-direction:column;gap:4px}
+.states b{font-weight:600}
+.matrix{overflow-x:auto;margin-top:12px}
+table{border-collapse:collapse;font-size:12.5px;min-width:640px;background:var(--card)}
+th,td{border:1px solid var(--border);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--chip-bg);font-weight:600}
+@media (prefers-reduced-motion:no-preference){.btn.primary{transition:filter .15s}.btn.primary:hover{filter:brightness(1.05)}}
+</style>
+
+<h1>Posts and Status Kit</h1>
+<p class="lede">Prototype for three social-selling subfeatures: <b>post-scheduling</b>, <b>instagram-publishing</b> and <b>whatsapp-status-kit</b>. Phone width (~360px) first. Every string is the one that ships. Buttons are never disabled: an action that can't happen says why when tapped. Draft, for the owner's sign-off.</p>
+<div class="legend"><span class="chip go">Scheduled</span><span class="chip warn">Publishing / Ready for Status</span><span class="chip ok">Published</span><span class="chip bad">Failed</span><span class="chip">Cancelled</span></div>
+
+<!-- Journey 1 -->
+<section class="journey">
+  <div class="jhead"><span class="jtag">Journey 1</span><h2>Schedule a post to Instagram and Status</h2><span class="serves">post-scheduling R1–R5 · A1</span></div>
+  <p class="before">Before: the shop has photos in its Library (an upload, an enhanced photo, or anything a future generator made) and Instagram connected on Channels. It opens Posts from the shop menu, under Channels.</p>
+  <div class="flow">
+    <div class="step"><div class="label">1 · Posts, first use</div>
+      <div class="phone"><div class="bar">Posts</div>
+        <div class="body">
+          <div class="tabs"><span class="on">Scheduled</span><span>Published</span><span>Failed</span></div>
+          <div class="note">Plan posts for Instagram and WhatsApp Status from photos in your library. Pick photos, write a caption, choose when.</div>
+          <div class="meta" style="text-align:center;margin-top:30px">No posts scheduled yet.</div>
+        </div>
+        <div class="dock"><span class="btn primary">New post</span></div>
+      </div>
+      <div class="states"><b>First use</b> Intro note + New post. <b>Empty</b> (Published/Failed tab) "Nothing published yet." / "No failed posts."</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34M28 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>New post</div>
+    <div class="step"><div class="label">2 · Pick from library</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> Choose photos or a video</div>
+        <div class="body">
+          <div class="grid3">
+            <div class="tile sel"><span class="n">1</span></div><div class="tile sel"><span class="n">2</span></div><div class="tile"></div>
+            <div class="tile"></div><div class="tile"></div><div class="tile"></div>
+            <div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          </div>
+          <div class="hint">Up to 10 photos for a carousel, or one video for a reel.</div>
+        </div>
+        <div class="dock"><span class="btn primary">Use 2 photos</span><span class="btn ghost">Upload to library</span></div>
+      </div>
+      <div class="states"><b>Empty library</b> "Your library is empty. Upload photos to post them." + Upload to library. <b>11th photo</b> "A carousel takes up to 10 photos."</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34M28 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Use 2</div>
+    <div class="step"><div class="label">3 · Compose</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> New post</div>
+        <div class="body">
+          <div style="display:flex;gap:6px"><div class="thumb"></div><div class="thumb b"></div><span class="meta" style="align-self:center">Carousel · 2 photos · Change</span></div>
+          <div class="field"><span class="l">Caption</span><div class="input area">New Ajrakh dupattas, hand-block printed in Kutch 🌿 Comment SHOP for the link.</div><span class="hint">83 / 2,200 · 0 / 30 hashtags</span></div>
+          <div class="field"><span class="l">Post to</span>
+            <span class="check"><span class="box on"></span>Instagram feed</span>
+            <span class="check"><span class="box"></span>Instagram story</span>
+            <span class="check"><span class="box on"></span>WhatsApp Status <span class="hint">· you share it from your phone</span></span>
+          </div>
+        </div>
+        <div class="dock"><span class="btn primary">Next</span></div>
+      </div>
+      <div class="states"><b>Instagram not connected</b> feed/story rows read "Connect Instagram to post here" → Channels. <b>Too long</b> "Instagram allows 2,200 characters. Shorten by 40."</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34M28 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Next</div>
+    <div class="step"><div class="label">4 · Products and comment DM</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> What's this post selling?</div>
+        <div class="body">
+          <div class="row"><div class="thumb c"></div><div class="rmain"><span class="cap">Ajrakh dupatta — indigo</span><span class="meta">₹1,450</span></div></div>
+          <div class="row"><div class="thumb"></div><div class="rmain"><span class="cap">Ajrakh dupatta — madder red</span><span class="meta">₹1,450</span></div></div>
+          <span class="btn ghost">+ Add product</span>
+          <div class="field"><span class="l">Comment keyword</span><div class="input">SHOP</div></div>
+          <div class="field"><span class="l">DM we'll send</span><div class="input area">Here you go! Indigo: bhendi-bazaar.com/p/ajrakh-indigo · Red: bhendi-bazaar.com/p/ajrakh-red</div><span class="hint">Suggested from your products. Change it to anything.</span></div>
+        </div>
+        <div class="dock"><span class="btn primary">Next</span><span class="btn ghost">Skip — no products</span></div>
+      </div>
+      <div class="states"><b>Optional</b> Skip keeps the post with no keyword. Comment replies start working once Instagram comments are connected (comment-automations).</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34M28 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Next</div>
+    <div class="step"><div class="label">5 · When</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> When should it go?</div>
+        <div class="body">
+          <span class="check"><span class="box"></span>Now</span>
+          <span class="check"><span class="box on"></span>Later</span>
+          <div style="display:flex;gap:6px"><div class="input" style="flex:1">Sat, 7 Nov</div><div class="input" style="width:90px">7:00 pm</div></div>
+          <span class="hint">India time. Up to 60 days ahead.</span>
+        </div>
+        <div class="dock"><span class="btn primary">Schedule post</span></div>
+      </div>
+      <div class="states"><b>Past time</b> "That time has passed. Pick a later time or choose Now." <b>Beyond 60 days</b> "You can schedule up to 60 days ahead."</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34M28 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Schedule</div>
+    <div class="step"><div class="label">6 · Scheduled</div>
+      <div class="phone"><div class="bar">Posts</div>
+        <div class="body">
+          <div class="note">Post scheduled for Sat, 7 Nov, 7:00 pm.</div>
+          <div class="tabs"><span class="on">Scheduled</span><span>Published</span><span>Failed</span></div>
+          <div class="row"><div class="thumb"></div><div class="rmain"><span class="cap">New Ajrakh dupattas, hand-block printed in Kutch…</span><span class="meta">Sat, 7 Nov · 7:00 pm</span><div class="chips"><span class="chip go">Instagram feed</span><span class="chip go">WhatsApp Status</span></div></div></div>
+        </div>
+        <div class="dock"><span class="btn primary">New post</span></div>
+      </div>
+      <div class="states"><b>Success</b> toast + row at top of Scheduled. <b>Many</b> 20 per page, "Show more". <b>Slow</b> skeleton rows, "Still loading…" after 3s.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Journey 2 -->
+<section class="journey">
+  <div class="jhead"><span class="jtag">Journey 2</span><h2>It publishes to Instagram, or says why not</h2><span class="serves">instagram-publishing R1–R8 · post-scheduling R6–R7</span></div>
+  <p class="before">Before: the post from Journey 1 reaches its time. Nobody needs to be online; the shop opens the post later from the list or from the "post failed" notice.</p>
+  <div class="flow">
+    <div class="step"><div class="label">a · Publishing</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> Post</div>
+        <div class="body">
+          <div style="display:flex;gap:6px"><div class="thumb"></div><div class="thumb b"></div></div>
+          <div class="dest"><div class="h">Instagram feed <span class="chip warn">Publishing…</span></div><span class="meta">Started 7:00 pm</span></div>
+          <div class="dest"><div class="h">WhatsApp Status <span class="chip warn">Ready for Status</span></div></div>
+        </div>
+        <div class="dock"><span class="btn">Duplicate</span></div>
+      </div>
+      <div class="states"><b>Locked</b> Edit while publishing: "This post is being published and can't be changed now."</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34M28 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Instagram accepts</div>
+    <div class="step"><div class="label">b · Published</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> Post</div>
+        <div class="body">
+          <div class="dest"><div class="h">Instagram feed <span class="chip ok">Published</span></div><span class="meta">Sat, 7 Nov · 7:01 pm</span><span class="btn">View on Instagram</span></div>
+          <div class="dest"><div class="h">WhatsApp Status <span class="chip warn">Ready for Status</span></div><span class="btn primary">Share to Status</span></div>
+        </div>
+        <div class="dock"><span class="btn">Duplicate</span></div>
+      </div>
+      <div class="states"><b>Success</b> read-only. A story without a link reads "Published · on your story for 24 hours".</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34M28 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>or: 3 tries fail</div>
+    <div class="step"><div class="label">c · Failed, retryable cause</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> Post</div>
+        <div class="body">
+          <div class="dest"><div class="h">Instagram feed <span class="chip bad">Failed</span></div>
+            <div class="note bad">Instagram didn't answer after 3 tries. Try again now.</div>
+            <span class="btn primary">Publish now</span></div>
+          <div class="dest"><div class="h">WhatsApp Status <span class="chip ok">Published</span></div></div>
+        </div>
+        <div class="dock"><span class="btn">Duplicate</span></div>
+      </div>
+      <div class="states"><b>Partial</b> list row: "1 of 2 failed". Dashboard line: "A post didn't publish to Instagram." → the post.</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34M28 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>or: refused</div>
+    <div class="step"><div class="label">d · Failed, needs a change</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> Post</div>
+        <div class="body">
+          <div class="dest"><div class="h">Instagram feed <span class="chip bad">Failed</span></div><div class="note bad">Instagram's daily limit is reached for this account. Try after 6:40 pm tomorrow.</div><span class="btn primary">Publish now</span></div>
+          <div class="dest"><div class="h">Instagram story <span class="chip bad">Failed</span></div><div class="note bad">Instagram couldn't use this video. Stories take videos up to 60 seconds, upright.</div><span class="btn">Duplicate and change</span></div>
+          <div class="dest"><div class="h">Instagram feed <span class="chip bad">Failed</span></div><div class="note bad">Instagram isn't connected any more. Reconnect it, then publish again.</div><span class="btn primary">Reconnect Instagram</span></div>
+        </div>
+      </div>
+      <div class="states"><b>Terminal / Refused</b> one reason each, never Instagram's own text. <b>Photo gone</b> "A photo in this post was removed from your library."</div>
+    </div>
+  </div>
+</section>
+
+<!-- Journey 3 -->
+<section class="journey">
+  <div class="jhead"><span class="jtag">Journey 3</span><h2>Share a Status from the phone</h2><span class="serves">whatsapp-status-kit R2–R6 · A1–A5</span></div>
+  <p class="before">Before: at 7:00 pm the shop gets one notice (badge on Posts and the day's email): "Your post is ready to share to WhatsApp Status." It opens Posts on its phone.</p>
+  <div class="flow">
+    <div class="step"><div class="label">1 · Ready for Status</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> Post</div>
+        <div class="body">
+          <div class="dest"><div class="h">WhatsApp Status <span class="chip warn">Ready for Status</span></div>
+            <div class="status-img"><i></i></div>
+            <span class="btn primary">Share to Status</span>
+            <span class="btn">Copy caption</span>
+            <span class="hint">WhatsApp doesn't let apps post a Status. Share opens WhatsApp with the picture; your caption is copied to paste.</span>
+          </div>
+        </div>
+        <div class="dock"><span class="btn">I've posted it</span><span class="btn ghost">Mark as skipped</span></div>
+      </div>
+      <div class="states"><b>Loading</b> picture placeholder 9:16. <b>Video</b> same, with a play mark.</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34M28 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Share</div>
+    <div class="step"><div class="label">2 · Phone's share sheet</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> Post</div>
+        <div class="body"><div class="note">Caption copied — paste it on your Status.</div></div>
+        <div class="sheet"><span class="meta">Share 1 image</span>
+          <div class="apps"><div class="wa"><i></i>WhatsApp Business</div><div class="wa"><i></i>WhatsApp</div><div><i></i>Instagram</div><div><i></i>More</div></div>
+        </div>
+      </div>
+      <div class="states"><b>Cancelled</b> nothing changes; still Ready. <b>The phone's own sheet</b>, drawn here for the flow only.</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34M28 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>WhatsApp → My Status → back</div>
+    <div class="step"><div class="label">3 · Confirm</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> Post</div>
+        <div class="body">
+          <div class="dest"><div class="h">WhatsApp Status <span class="chip warn">Ready for Status</span></div><span class="meta">Posted it on WhatsApp?</span></div>
+        </div>
+        <div class="dock"><span class="btn primary">I've posted it</span><span class="btn ghost">Mark as skipped</span></div>
+      </div>
+      <div class="states"><b>Why ask</b> We can't see WhatsApp; only the shop knows.</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34M28 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>I've posted it</div>
+    <div class="step"><div class="label">4 · Done</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> Post</div>
+        <div class="body">
+          <div class="dest"><div class="h">WhatsApp Status <span class="chip ok">Posted</span></div><span class="meta">You posted it at 7:04 pm</span></div>
+        </div>
+      </div>
+      <div class="states"><b>Skipped</b> chip "Skipped". <b>After 24h unposted</b> "Not posted · was due Sat 7:00 pm", still shareable.</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34M28 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>or: on a computer</div>
+    <div class="step"><div class="label">5 · Desktop fallback</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> Post</div>
+        <div class="body">
+          <div class="dest"><div class="h">WhatsApp Status <span class="chip warn">Ready for Status</span></div>
+            <div class="status-img"><i></i></div>
+            <span class="btn">Download image</span><span class="btn">Copy caption</span>
+            <span class="hint">Open this on your phone to share it to Status.</span></div>
+        </div>
+      </div>
+      <div class="states"><b>No file sharing</b> any device that can't share files gets this.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Journey 4 -->
+<section class="journey">
+  <div class="jhead"><span class="jtag">Journey 4</span><h2>Change or cancel a scheduled post</h2><span class="serves">post-scheduling R8 · A4</span></div>
+  <p class="before">Before: a post is in Scheduled. The shop taps it.</p>
+  <div class="flow">
+    <div class="step"><div class="label">1 · Scheduled post</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> Post</div>
+        <div class="body">
+          <div class="dest"><div class="h">Instagram feed <span class="chip go">Scheduled</span></div><span class="meta">Sat, 7 Nov · 7:00 pm</span></div>
+          <div class="dest"><div class="h">WhatsApp Status <span class="chip go">Scheduled</span></div></div>
+        </div>
+        <div class="dock"><span class="btn primary">Edit</span><span class="btn">Duplicate</span><span class="btn ghost danger">Cancel post</span></div>
+      </div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34M28 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Cancel post</div>
+    <div class="step"><div class="label">2 · Confirm (bottom sheet)</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> Post</div>
+        <div class="body"></div>
+        <div class="sheet"><b>Cancel this post?</b><span class="meta">It won't be published anywhere. You can duplicate it later.</span><span class="btn danger">Cancel post</span><span class="btn ghost">Keep it</span></div>
+      </div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34M28 2l8 6-8 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>or: edit too late</div>
+    <div class="step"><div class="label">3 · Edit refused</div>
+      <div class="phone"><div class="bar"><span class="back">‹</span> Edit post</div>
+        <div class="body"><div class="note bad">This post started publishing at 7:00 pm, so it can't be changed. Duplicate it to post a new version.</div></div>
+        <div class="dock"><span class="btn primary">Duplicate</span></div>
+      </div>
+      <div class="states"><b>Conflict</b> also when another member saved first: "Someone else changed this post. Reload to see their version."</div>
+    </div>
+  </div>
+</section>
+
+<section class="journey">
+  <div class="jhead"><span class="jtag">Form factors</span><h2>Tablet and desktop</h2></div>
+  <div class="matrix"><table>
+    <tr><th>Screen</th><th>Phone (base)</th><th>Tablet (md:)</th><th>Desktop (lg:)</th></tr>
+    <tr><td>Posts list</td><td>One column, docked New post</td><td>List left, selected post right</td><td>Same, wider; New post in the header</td></tr>
+    <tr><td>Composer</td><td>Steps: media → caption & destinations → products → when</td><td>One page, two columns: media + caption / destinations, products, when</td><td>Adds a preview column (square feed, 9:16 story)</td></tr>
+    <tr><td>Status share</td><td>Share to Status primary</td><td>Share if the device can, else Download</td><td>Download image + Copy caption + phone hint</td></tr>
+  </table></div>
+</section>

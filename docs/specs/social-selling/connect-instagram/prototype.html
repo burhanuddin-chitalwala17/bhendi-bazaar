@@ -1,0 +1,258 @@
+<title>Connect Instagram and WhatsApp</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap">
+<style>
+/* Layout: a storyboard — each journey is a row of phone-width screens joined by flow arrows; state strips beneath. Tokens mirror the app's portal theme. */
+:root{
+  --bg:oklch(0.985 0 0); --card:oklch(1 0 0); --muted:oklch(0.955 0 0); --border:oklch(0.915 0 0);
+  --fg:oklch(0.22 0.03 40); --fg-muted:oklch(0.52 0.04 40);
+  --primary:oklch(0.55 0.17 150); --on-primary:oklch(0.98 0.01 98);
+  --success:oklch(0.55 0.15 145); --warning:oklch(0.55 0.13 70); --danger:oklch(0.6 0.25 27); --info:oklch(0.52 0.13 245);
+  --meta:oklch(0.52 0.13 245);
+  --font-body:"DM Sans",system-ui,sans-serif; --font-head:"Playfair Display",Georgia,serif;
+  --radius:0.75rem;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:oklch(0.15 0 0); --card:oklch(0.18 0 0); --muted:oklch(0.23 0 0); --border:oklch(0.3 0 0);
+  --fg:oklch(0.96 0.02 98); --fg-muted:oklch(0.72 0.05 98);
+  --primary:oklch(0.7 0.19 150); --on-primary:oklch(0.14 0.04 260);
+  --success:oklch(0.72 0.16 145); --warning:oklch(0.78 0.14 75); --danger:oklch(0.6 0.23 22); --info:oklch(0.72 0.13 245); --meta:oklch(0.72 0.13 245);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:oklch(0.15 0 0); --card:oklch(0.18 0 0); --muted:oklch(0.23 0 0); --border:oklch(0.3 0 0);
+  --fg:oklch(0.96 0.02 98); --fg-muted:oklch(0.72 0.05 98);
+  --primary:oklch(0.7 0.19 150); --on-primary:oklch(0.14 0.04 260);
+  --success:oklch(0.72 0.16 145); --warning:oklch(0.78 0.14 75); --danger:oklch(0.6 0.23 22); --info:oklch(0.72 0.13 245); --meta:oklch(0.72 0.13 245);
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:14px;line-height:1.45;margin:0}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px;max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+header h1{font-family:var(--font-head);font-size:28px;margin:0 0 6px;text-wrap:balance}
+header p{margin:0;color:var(--fg-muted);max-width:68ch}
+nav.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+nav.tabs a{font-size:13px;padding:6px 12px;border:1px solid var(--border);border-radius:999px;color:var(--fg);text-decoration:none;background:var(--card)}
+nav.tabs a:focus-visible,button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+section h2{font-family:var(--font-head);font-size:21px;margin:0 0 4px}
+section>.lede{color:var(--fg-muted);margin:0 0 16px;max-width:72ch}
+.flow{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;padding-bottom:10px}
+.step{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;width:260px}
+.step .cap{font-size:12px;color:var(--fg-muted);min-height:32px}
+.step .cap b{color:var(--fg);font-weight:600}
+.arrow{flex:0 0 auto;align-self:center;color:var(--fg-muted);font-size:22px;padding-top:30px}
+.phone{border:1px solid var(--border);border-radius:22px;background:var(--bg);padding:10px;min-height:420px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 3px rgb(0 0 0 / .06)}
+.bar{display:flex;justify-content:space-between;font-size:11px;color:var(--fg-muted);padding:0 4px}
+.pagehead{font-weight:700;font-size:16px;padding:2px 4px}
+.ccard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;flex-direction:column;gap:6px}
+.ccard .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ccard .name{font-weight:600;display:flex;align-items:center;gap:8px}
+.mark{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff}
+.mark.ig{background:linear-gradient(135deg,#f58529,#dd2a7b 50%,#8134af)}
+.mark.wa{background:#25d366}
+.mark.meta{background:var(--meta)}
+.chip{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);white-space:nowrap;color:var(--fg-muted)}
+.chip.ok{color:var(--success);border-color:color-mix(in oklch,var(--success) 40%,transparent)}
+.chip.warn{color:var(--warning);border-color:color-mix(in oklch,var(--warning) 40%,transparent)}
+.chip.bad{color:var(--danger);border-color:color-mix(in oklch,var(--danger) 40%,transparent)}
+.body{font-size:13px;color:var(--fg-muted)}
+.body strong{color:var(--fg);font-weight:600}
+.small{font-size:11.5px;color:var(--fg-muted)}
+.btn{font:inherit;font-size:13px;font-weight:600;border-radius:10px;padding:9px 12px;border:1px solid transparent;background:var(--primary);color:var(--on-primary);text-align:center;cursor:pointer;width:100%}
+.btn.sec{background:transparent;border-color:var(--border);color:var(--fg)}
+.btn.danger{background:transparent;color:var(--danger);border-color:transparent;padding-block:4px}
+.note{border-radius:10px;padding:10px;font-size:12.5px;border:1px solid var(--border);background:var(--card);display:flex;flex-direction:column;gap:6px}
+.note.success{border-color:color-mix(in oklch,var(--success) 45%,transparent)}
+.note.warning{border-color:color-mix(in oklch,var(--warning) 45%,transparent)}
+.note.error{border-color:color-mix(in oklch,var(--danger) 45%,transparent)}
+.note .t{font-weight:600}
+.ext{border:1px dashed var(--meta);border-radius:14px;padding:12px;background:var(--card);display:flex;flex-direction:column;gap:8px}
+.ext .who{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--meta);font-weight:600}
+.ext .row{border:1px solid var(--border);border-radius:8px;padding:8px;font-size:12.5px}
+.sheet{margin-top:auto;background:var(--card);border:1px solid var(--border);border-radius:16px 16px 10px 10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.sheet .t{font-weight:700}
+.dim{opacity:.45}
+.toast{align-self:center;background:var(--fg);color:var(--bg);font-size:12px;border-radius:999px;padding:6px 12px}
+.banner{border-radius:10px;padding:10px;font-size:12.5px;background:color-mix(in oklch,var(--warning) 12%,var(--card));border:1px solid color-mix(in oklch,var(--warning) 40%,transparent);display:flex;flex-direction:column;gap:6px}
+.matrix{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:12.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);font-weight:600;background:var(--muted)}
+tr:last-child td{border-bottom:0}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.strip .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);font-weight:600;margin-bottom:4px}
+.legend{font-size:12px;color:var(--fg-muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+<header>
+  <h1>Connect Instagram and WhatsApp</h1>
+  <p>Draft prototype for <b>social-selling/connect-instagram</b> and <b>connect-whatsapp</b>. Phone width first. Each row is one journey, starting from the screen before it; dashed boxes are Meta's own pages. Every string is the one that ships (ux.md).</p>
+  <nav class="tabs" aria-label="Sections">
+    <a href="#ig-connect">Instagram: connect</a><a href="#ig-wrong">Instagram: goes wrong</a><a href="#ig-states">Instagram: card states</a>
+    <a href="#wa-connect">WhatsApp: connect</a><a href="#wa-wrong">WhatsApp: goes wrong</a><a href="#wa-states">WhatsApp: card states</a><a href="#disconnect">Disconnect &amp; dashboard</a>
+  </nav>
+</header>
+
+<section id="ig-connect">
+  <h2>Instagram · Journey 1, connect</h2>
+  <p class="lede">From the shop menu to a connected card. Instagram's own login: no Facebook Page needed.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Before:</b> shop menu → Channels</div>
+      <div class="phone"><div class="bar"><span>9:41</span><span>Channels</span></div>
+        <div class="pagehead">Where you sell</div>
+        <div class="ccard"><div class="top"><span class="name"><span class="mark meta">M</span>Meta catalogue</span><span class="chip ok">On</span></div><div class="body">Your products in Facebook and Instagram shops, from your catalogue feed.</div></div>
+        <div class="ccard"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="chip">Not connected</span></div>
+          <div class="body">Post, reply to comments and answer DMs from here. Needs an Instagram business or creator account.</div>
+          <button class="btn" type="button">Connect Instagram</button></div>
+        <div class="ccard dim"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="chip">Not connected</span></div></div>
+      </div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Tap</b> Connect Instagram</div>
+      <div class="phone"><div class="bar"><span>9:41</span><span>Channels</span></div>
+        <div class="ccard"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="chip">Not connected</span></div>
+          <button class="btn" type="button">Opening Instagram…</button><div class="small">Past 3 s: Still working…</div></div>
+      </div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Instagram's page</b> (theirs)</div>
+      <div class="phone"><div class="ext"><span class="who">instagram.com</span>
+        <div class="row">Log in as <b>@bhendibazaar.official</b></div>
+        <div class="row"><b>Bhendi Bazaar</b> would like to: access profile, publish content, manage comments, manage messages</div>
+        <div class="row" style="text-align:center"><b>Allow</b> · Cancel</div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Back</b> on Channels</div>
+      <div class="phone"><div class="bar"><span>9:42</span><span>Channels</span></div>
+        <div class="toast">Instagram connected.</div>
+        <div class="ccard"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="chip ok">● Connected</span></div>
+          <div class="body"><strong>@bhendibazaar.official</strong> · Business</div>
+          <div class="small">Connected by Farida · 6 Nov 2026</div><div class="small">Last checked 2 min ago</div>
+          <button class="btn danger" type="button">Disconnect</button></div>
+      </div></div>
+  </div>
+</section>
+
+<section id="ig-wrong">
+  <h2>Instagram · Journeys 2–4, when it goes wrong</h2>
+  <p class="lede">Each starts at the Allow step above. Nothing is connected in any of these; the note sits at the top of Channels.</p>
+  <div class="strip">
+    <div><div class="lbl">Personal account (R3)</div><div class="note warning"><span class="t">That's a personal Instagram account.</span>Bhendi Bazaar works with business and creator accounts, which are free. In Instagram: Profile → ☰ → Account type and tools → Switch to professional account.<button class="btn sec" type="button">Try again</button></div></div>
+    <div><div class="lbl">Cancelled on Instagram</div><div class="note">Nothing was connected. You can connect Instagram any time.<button class="btn sec" type="button">Connect Instagram</button></div></div>
+    <div><div class="lbl">Link expired or altered</div><div class="note warning">That link has expired. Start again from here.<button class="btn sec" type="button">Connect Instagram</button></div></div>
+    <div><div class="lbl">Started by another sign-in</div><div class="note warning">This connection was started from another sign-in. Start again from here.<button class="btn sec" type="button">Connect Instagram</button></div></div>
+    <div><div class="lbl">Account in another shop (Q4)</div><div class="note error">This Instagram account is already connected to another shop. An account can belong to one shop only; disconnect it there first.</div></div>
+    <div><div class="lbl">Different account on reconnect (Q5)</div><div class="note warning">That's a different Instagram account from the one connected here. To switch accounts, disconnect this one first, then connect the new one.<button class="btn sec" type="button">Disconnect</button></div></div>
+    <div><div class="lbl">Instagram didn't answer</div><div class="note error">Instagram didn't respond. Nothing was connected. Try again in a minute.<button class="btn sec" type="button">Try again</button></div></div>
+  </div>
+</section>
+
+<section id="ig-states">
+  <h2>Instagram · Card states</h2>
+  <div class="strip">
+    <div><div class="lbl">Needs reconnecting (journey 5)</div><div class="ccard"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="chip warn">Needs reconnecting</span></div><div class="body">Bhendi Bazaar was removed in Instagram's settings.</div><button class="btn" type="button">Reconnect</button><button class="btn danger" type="button">Disconnect</button></div></div>
+    <div><div class="lbl">Stale</div><div class="ccard"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="chip ok">● Connected</span></div><div class="body"><strong>@bhendibazaar.official</strong> · Creator</div><div class="small" style="color:var(--warning)">Last checked 3 days ago</div><button class="btn sec" type="button">Check now</button></div></div>
+    <div><div class="lbl">Coming soon (switch off)</div><div class="ccard"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="chip">Coming soon</span></div><div class="body">Connecting Instagram isn't open yet. We'll show it here when it is.</div><button class="btn sec" type="button">Why?</button></div></div>
+    <div><div class="lbl">Disconnected before</div><div class="ccard"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="chip">Not connected</span></div><div class="body">Disconnected by Farida · 6 Nov 2026.</div><button class="btn" type="button">Connect Instagram</button></div></div>
+  </div>
+</section>
+
+<section id="wa-connect">
+  <h2>WhatsApp · Journey 1, connect and keep the Business app</h2>
+  <p class="lede">Meta's pop-up. A shop with no business account creates one inside it (journey 2). The number keeps working in the Business app.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Before:</b> Channels, WhatsApp card</div>
+      <div class="phone"><div class="bar"><span>9:41</span><span>Channels</span></div>
+        <div class="ccard"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="chip">Not connected</span></div>
+          <div class="body">Show your catalogue in chats and message customers who asked for it. Keep using the WhatsApp Business app on the same number.</div>
+          <button class="btn" type="button">Connect WhatsApp</button>
+          <div class="small">Your WhatsApp catalogue will then be managed from Bhendi Bazaar. Chats, broadcasts and Status stay in your app.</div></div>
+      </div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Meta's pop-up</b> (theirs), pre-filled</div>
+      <div class="phone"><div class="ext"><span class="who">facebook.com · Meta</span>
+        <div class="row">Continue as <b>Farida</b></div>
+        <div class="row">Business: <b>Bhendi Bazaar</b> · or Create a business portfolio</div>
+        <div class="row"><b>Connect your existing WhatsApp Business app</b><br><span class="small">or add a new number</span></div></div>
+        <div class="small">Card meanwhile: "Finish in the Meta window…"</div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>In the Business app</b>, scan Meta's QR code</div>
+      <div class="phone"><div class="ext"><span class="who">WhatsApp Business app</span>
+        <div class="row">Connect to Bhendi Bazaar? Your chats will appear in both places.</div>
+        <div class="row" style="text-align:center"><b>Connect</b></div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Pop-up closes</b>, we finish setup</div>
+      <div class="phone"><div class="ccard"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span></div><div class="body">Setting up your number…</div><div class="small">Past 3 s: This can take up to a minute.</div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Connected</b></div>
+      <div class="phone"><div class="toast">WhatsApp connected.</div>
+        <div class="ccard"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="chip ok">● Connected</span></div>
+          <div class="body"><strong>+91 98•••• 4321</strong> · Bhendi Bazaar</div>
+          <div class="small">Quality: High · Payments set up</div>
+          <div class="small">Connected by Farida · 6 Nov 2026 · Last checked 2 min ago</div>
+          <button class="btn danger" type="button">Disconnect</button></div>
+      </div></div>
+  </div>
+</section>
+
+<section id="wa-wrong">
+  <h2>WhatsApp · Journeys 3–5</h2>
+  <div class="strip">
+    <div><div class="lbl">No payment method (journey 3)</div><div class="ccard"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="chip ok">● Connected</span></div><div class="body"><strong>+91 98•••• 4321</strong> · Bhendi Bazaar</div><div class="body">Add a payment method in Meta to send messages. Replies within 24 hours are free.</div><button class="btn" type="button">Add payment method</button></div></div>
+    <div><div class="lbl">Closed the pop-up</div><div class="note">Nothing was connected. You can connect WhatsApp any time.<button class="btn sec" type="button">Connect WhatsApp</button></div></div>
+    <div><div class="lbl">Setup failed after Meta</div><div class="note error">Meta connected your number but we couldn't finish setting it up. Nothing is half-done; try again.<button class="btn sec" type="button">Try again</button></div></div>
+    <div><div class="lbl">Number in another shop</div><div class="note error">This WhatsApp number is already connected to another shop. A number can belong to one shop only; disconnect it there first.</div></div>
+    <div><div class="lbl">Different number on reconnect</div><div class="note warning">That's a different number from the one connected here. To switch numbers, disconnect this one first, then connect the new one.<button class="btn sec" type="button">Disconnect</button></div></div>
+    <div><div class="lbl">Meta's weekly limit (Q12)</div><div class="ccard"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="chip">Full for now</span></div><div class="body">WhatsApp lets us add a limited number of new shops each week. Try again in a few days.</div><button class="btn sec" type="button">Why?</button></div></div>
+  </div>
+</section>
+
+<section id="wa-states">
+  <h2>WhatsApp · Card states</h2>
+  <div class="strip">
+    <div><div class="lbl">Quality Low (Q14)</div><div class="ccard"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="chip bad">Quality: Low</span></div><div class="body">WhatsApp rates your number Low. Sending marketing may be limited.</div><button class="btn sec" type="button">Why?</button></div></div>
+    <div><div class="lbl">Needs reconnecting</div><div class="ccard"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="chip warn">Needs reconnecting</span></div><div class="body">Bhendi Bazaar was removed in Meta Business Suite.</div><button class="btn" type="button">Reconnect</button><button class="btn danger" type="button">Disconnect</button></div></div>
+    <div><div class="lbl">Coming soon</div><div class="ccard"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="chip">Coming soon</span></div><div class="body">Connecting WhatsApp isn't open yet. We'll show it here when it is.</div><button class="btn sec" type="button">Why?</button></div></div>
+    <div><div class="lbl">Long display name</div><div class="ccard"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="chip ok">● Connected</span></div><div class="body" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>+91 98•••• 4321</strong> · Bhendi Bazaar Ladies Tailoring and Bridal Collection</div><div class="small">Tap to see in full</div></div></div>
+  </div>
+</section>
+
+<section id="disconnect">
+  <h2>Disconnect and the dashboard</h2>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Before:</b> connected card → Disconnect</div>
+      <div class="phone"><div class="ccard dim"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="chip ok">● Connected</span></div></div>
+        <div class="sheet"><span class="t">Disconnect WhatsApp?</span>
+          <div class="body"><strong>Stops:</strong> Your catalogue stops updating, chats stop arriving here, and campaigns can't be sent.</div>
+          <div class="body"><strong>Stays:</strong> Your number keeps working in the WhatsApp Business app. Your chats stay here for 90 days, then are deleted.</div>
+          <div class="small">To remove us completely, also remove Bhendi Bazaar in Meta Business Suite → Settings → Integrations.</div>
+          <button class="btn" type="button" style="background:var(--danger)">Disconnect</button><button class="btn sec" type="button">Keep connected</button></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Done</b></div>
+      <div class="phone"><div class="toast">WhatsApp disconnected.</div><div class="ccard"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="chip">Not connected</span></div><div class="body">Disconnected by Farida · 6 Nov 2026.</div><button class="btn" type="button">Connect WhatsApp</button></div></div></div>
+    <div class="arrow" aria-hidden="true" style="visibility:hidden">→</div>
+    <div class="step"><div class="cap"><b>Instagram dialog</b></div>
+      <div class="phone"><div class="sheet"><span class="t">Disconnect Instagram?</span>
+        <div class="body"><strong>Stops:</strong> Scheduled posts won't publish, and new comments and DMs stop arriving here.</div>
+        <div class="body"><strong>Stays:</strong> Your posts on Instagram stay as they are. Your conversations stay here for 90 days, then are deleted.</div>
+        <div class="small">To remove us completely, also remove Bhendi Bazaar in Instagram: Settings → Website permissions → Apps and websites.</div>
+        <button class="btn" type="button" style="background:var(--danger)">Disconnect</button><button class="btn sec" type="button">Keep connected</button></div></div></div>
+    <div class="arrow" aria-hidden="true" style="visibility:hidden">→</div>
+    <div class="step"><div class="cap"><b>Dashboard</b>, once per problem</div>
+      <div class="phone"><div class="pagehead">Home</div>
+        <div class="banner">Instagram needs reconnecting. Posts won't publish until it is.<button class="btn" type="button">Reconnect</button></div>
+        <div class="banner">WhatsApp rates your number Low. Marketing messages may be limited.<button class="btn sec" type="button">Open Channels</button></div>
+        <div class="small">Two or more at once: "2 channels need attention." · Open Channels</div></div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Form factors</h2>
+  <div class="matrix"><table>
+    <thead><tr><th>Width</th><th>Channels page</th><th>Meta's window</th><th>Dialogs</th></tr></thead>
+    <tbody>
+      <tr><td>Phone (~360px)</td><td>One card per row; actions full width</td><td>Opens as a full tab</td><td>Bottom sheet</td></tr>
+      <tr><td>Tablet (<code>md:</code>)</td><td>Two cards across; actions inline</td><td>Pop-up window</td><td>Centred dialog</td></tr>
+      <tr><td>Desktop (<code>lg:</code>)</td><td>Three cards across</td><td>Pop-up window</td><td>Centred dialog</td></tr>
+    </tbody></table></div>
+  <p class="legend">Order on Channels: Your store, Amazon, Flipkart, Google Shopping, Meta catalogue, Instagram, WhatsApp, then Coming soon.</p>
+</section>
+</div>

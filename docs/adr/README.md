@@ -78,7 +78,7 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0038](0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md) | Background work runs on an owned worker against a Postgres job queue | Accepted | 2026-09-25 |
 | [0039](0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md) | Video is stored in our own object store and transcoded by the worker | Accepted | 2026-09-27 |
 | [0040](0040-an-overlays-surface-is-chosen-by-what-it-holds.md) | An overlay's surface is chosen by what it holds, not by what was easiest to reach for | Accepted | 2026-09-27 |
-| [0041](0041-a-channel-is-classed-by-where-the-sale-completes.md) | A channel is classed by where the sale completes | Accepted | 2026-09-29 |
+| [0041](0041-a-channel-is-classed-by-where-the-sale-completes.md) | A channel is classed by where the sale completes | Accepted (D2 amended by [ADR-0068](0068-meta-is-a-connected-shopfront.md)) | 2026-09-29 |
 | [0042](0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md) | The shared vocabulary is the intersection, and a channel declares its own extras | Accepted (D1 refined by [ADR-0047](0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md); D2 required-set amended by [ADR-0054](0054-a-channel-mapping-carries-a-checked-date-and-source-and-required-ness-is-data.md)) | 2026-09-29 |
 | [0043](0043-a-variant-is-a-product-in-a-family.md) | A variant is a product in a family | Accepted (D2, D3 refined by [ADR-0051](0051-a-products-facts-are-one-json-column-each-entry-carrying-its-origin.md)) | 2026-09-29 |
 | [0044](0044-a-marketplace-orders-money-is-reported-not-computed.md) | A marketplace order's money is reported, not computed | Accepted | 2026-09-29 |
@@ -105,6 +105,8 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0065](0065-storefront-reads-are-shared-across-requests-and-cleared-by-the-tables-a-write-touches.md) | Storefront reads are shared across requests, and cleared by the tables a write touches | Accepted | 2026-11-04 |
 | [0066](0066-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md) | The UI is built in tiers, and every icon goes through one seam | Proposed | 2026-11-04 |
 | [0067](0067-words-live-in-copy-modules-and-our-own-paths-in-one-routes-table.md) | Words live in copy modules, and our own paths in one routes table | Proposed | 2026-11-05 |
+| [0068](0068-meta-is-a-connected-shopfront.md) | A shop's social accounts are connected channels of their own kind | Accepted | 2026-11-06 |
+| [0069](0069-notifications-are-one-hub-every-module-plugs-into.md) | Notifications are one hub every module plugs into | Proposed | 2026-11-06 |
 | [0070](0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md) | A product's attributes are rows, mapped at runtime to each channel's own catalogue | Accepted (2026-11-08, listing-model release). Supersedes ADR-0051; ADR-0052 still governs the code fact list until it moves to rows | 2026-11-07 |
 | [0071](0071-only-the-spec-is-line-capped.md) | A TRD and a UX document are as long as they need; only the spec is capped | Accepted | 2026-11-12 |
 | [0072](0072-the-changelog-holds-the-running-month-and-a-closed-month-becomes-a-summary.md) | The changelog holds the running month, and a closed month becomes a summary | Superseded by [ADR-0078](0078-the-changelog-is-retired-and-the-commit-subject-is-the-record.md) | 2026-11-12 |
