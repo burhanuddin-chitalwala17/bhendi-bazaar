@@ -1,0 +1,288 @@
+docs/specs/social-selling/inbox-whatsapp/trd.md
+  s_f09530b78e40c4::t_a625bb47f50ee6 50,54-58,75-76
+  s_f09530b78e40c4::t_1b47be3e618287 17-18
+  s_f09530b78e40c4::t_9ef27f93421d6a 62-63
+  s_f09530b78e40c4::t_52c7d7892b4702 53,100
+  s_f09530b78e40c4::t_4f6bc5cb66f824 1-16,19-49,51-52,59-61,64-74,77-99,101-103
+docs/specs/social-selling/spec.md
+  s_f09530b78e40c4::t_085a730fb8f245 18-19,55-58,66,69-70,72-74,76,78-80,85-86
+docs/specs/social-selling/connect-whatsapp/trd.md
+  s_f09530b78e40c4::t_db02855d9a9712 70
+  s_f09530b78e40c4::t_af20d0876fbd44 46,60,66-67,75-80,127
+  s_f09530b78e40c4::t_cfb79247753aba 123,125
+  s_f09530b78e40c4::t_9ef27f93421d6a 126
+  s_f09530b78e40c4::t_30b9896b8cd674 1-45,51-59,68-69,71-74,81-122,124,128-130
+  s_f09530b78e40c4::t_1b47be3e618287 47-50,61-65
+docs/specs/notification-hub/hub-core/trd.md
+  s_f09530b78e40c4::t_db02855d9a9712 32-36,104,106
+  s_f09530b78e40c4::t_63a6d6827e38e0 42-44,49-54
+  s_f09530b78e40c4::t_e5affc104a9237 1-31,37-41,45-48,55-56,59-61,66-85,87-103,105,107-110
+  s_f09530b78e40c4::t_ff0eced16a1298 62-65
+  s_f09530b78e40c4::t_bc5a099c43aaba 86
+  s_f09530b78e40c4::t_54281f339ae786 57-58
+docs/specs/social-selling/whatsapp-campaigns/decisions.md
+  s_f09530b78e40c4::t_fc187beb8e9ed8 1-18,20-36
+  s_f09530b78e40c4::t_a3e4bdf5dfb440 19
+docs/specs/social-selling/connect-instagram/prototype.html
+  s_f09530b78e40c4::t_f41ae3ffaf03ae 1-258
+docs/specs/social-selling/inbox-instagram/trd.md
+  s_f09530b78e40c4::t_0d120eaf175999 1-14,17-28,31-32,40-42,45-53,59-81,83-84,86,88,90-92,95-103,106-109,112,114-116
+  s_f09530b78e40c4::t_8b11bafdd04d39 111
+  s_f09530b78e40c4::t_cfb79247753aba 93-94
+  s_f09530b78e40c4::t_46352e75c0cef5 15-16,29-30,33-39,43-44,54-58,85,87,89,104-105,110,113
+docs/specs/social-selling/connect-whatsapp/ux.md
+  s_f09530b78e40c4::t_48dba7b6ac5d82 14-15,17-19,34,42-43,59-65,67
+  s_f09530b78e40c4::t_f41ae3ffaf03ae 5
+  s_f09530b78e40c4::t_3aea7232d9701d 66
+  s_f09530b78e40c4::t_d9dc491d7bd43f 1-4,6-13,16,20-33,35-41,44-58,68-101
+docs/specs/social-selling/whatsapp-campaigns/prototype.html
+  s_f09530b78e40c4::t_8b884287e8680e 1-276
+docs/specs/social-selling/comment-automations/decisions.md
+  s_f09530b78e40c4::t_e5c1eef53d743c 1-30
+docs/adr/README.md
+  s_f09530b78e40c4::t_cc85fcc233d3ba 81,108-109
+docs/adr/0041-a-channel-is-classed-by-where-the-sale-completes.md
+  s_f09530b78e40c4::t_d1efa719e4b27a 4
+docs/specs/notification-hub/hub-core/ux.md
+  s_f09530b78e40c4::t_ae4a32cacb327a 1-80
+docs/specs/social-selling/comment-automations/trd.md
+  s_f09530b78e40c4::t_014280d7ea6d6e 1-60,65-73,76-112
+  s_f09530b78e40c4::t_9d2e60f3f64690 74-75
+  s_f09530b78e40c4::t_0e9b5ccb9f706c 61-64
+docs/specs/notification-hub/order-updates/trd.md
+  s_f09530b78e40c4::t_63a6d6827e38e0 41-42
+  s_f09530b78e40c4::t_97aa332b093006 1-40,43-84
+docs/specs/social-selling/audience/decisions.md
+  s_f09530b78e40c4::t_a3e4bdf5dfb440 20,28,33
+  s_f09530b78e40c4::t_260a6356e0ce36 1-19,21-27,29-32,34-39
+docs/BACKLOG.md
+  s_f09530b78e40c4::t_2242957957c30e 241-263
+  s_f09530b78e40c4::t_a28b1b78db1ff6 240
+docs/specs/social-selling/connect-whatsapp/decisions.md
+  s_f09530b78e40c4::t_d2dca1c3c79bba 1-26,28-30
+  s_f09530b78e40c4::t_a3e4bdf5dfb440 27
+docs/specs/social-selling/whatsapp-contacts/spec.md
+  s_f09530b78e40c4::t_f3673ef6b662fb 1-62
+docs/specs/social-selling/instagram-publishing/trd.md
+  s_f09530b78e40c4::t_3f905ca59b5b5a 1-91
+docs/specs/social-selling/connect-instagram/spec.md
+  s_f09530b78e40c4::t_cf98315899d29a 87
+  s_f09530b78e40c4::t_396b80dd6d3ebe 8,60
+docs/specs/social-selling/audience/spec.md
+  s_f09530b78e40c4::t_9ab0799d047cca 50,86
+  s_f09530b78e40c4::t_04a838253f2e86 1-49,51-85
+docs/specs/notification-hub/order-updates/ux.md
+  s_f09530b78e40c4::t_7a3df1818a472f 1-61
+docs/specs/social-selling/whatsapp-contacts/ux.md
+  s_f09530b78e40c4::t_f5d0e3d30e3d48 1-70
+docs/specs/notification-hub/spec.md
+  s_f09530b78e40c4::t_e174ce884691de 1-61
+docs/specs/social-selling/inbox-whatsapp/spec.md
+  s_f09530b78e40c4::t_52c7d7892b4702 32-34
+  s_f09530b78e40c4::t_4660cdba1427aa 1-31,35-69
+docs/specs/notification-hub/decisions.md
+  s_f09530b78e40c4::t_7821b693bc9e28 1-23
+docs/specs/social-selling/inbox-instagram/decisions.md
+  s_f09530b78e40c4::t_db2c209daa4189 1-25
+docs/specs/social-selling/inbox-whatsapp/ux.md
+  s_f09530b78e40c4::t_7d93d1ab19401f 1-4,6-61,63-78,80-84
+  s_f09530b78e40c4::t_a625bb47f50ee6 62,79
+  s_f09530b78e40c4::t_7d589c47c3300a 5
+docs/specs/social-selling/inbox-core/decisions.md
+  s_f09530b78e40c4::t_7a57d38061f607 1-31
+docs/specs/social-selling/post-scheduling/decisions.md
+  s_f09530b78e40c4::t_06401cd5c0bc37 1-18,20-27
+  s_f09530b78e40c4::t_b4c1245770ab7c 19
+docs/specs/social-selling/whatsapp-templates/decisions.md
+  s_f09530b78e40c4::t_bb7c0c2f92182f 14
+  s_f09530b78e40c4::t_d3d461c128de06 22
+  s_f09530b78e40c4::t_978eb57690f9a7 1-13,15-21,23-27
+docs/specs/social-selling/whatsapp-status-kit/ux.md
+  s_f09530b78e40c4::t_fbb86c381f7180 1-52
+docs/CONVENTIONS.md
+  s_f09530b78e40c4::t_604b9e0454414b 3,55-56
+docs/INTEGRATIONS.md
+  s_f09530b78e40c4::t_94674950c37514 248-251,257-275,280-282,290-291,293-298,319-333,353-375
+docs/specs/social-selling/decisions.md
+  s_f09530b78e40c4::t_3824bd1f782df3 58-61
+  s_f09530b78e40c4::t_7c541888d102ad 66-69
+  s_f09530b78e40c4::t_8beb895b2f9f84 70-73,105-109
+  s_f09530b78e40c4::t_37e363221a50b5 50
+  s_f09530b78e40c4::t_19ae10efe3bcc5 89-92
+  s_f09530b78e40c4::t_6b10b27089a83f 53-57
+  s_f09530b78e40c4::t_3aea7232d9701d 96
+  s_f09530b78e40c4::t_44da2c4174b430 51,80-83
+  s_f09530b78e40c4::t_ea0604f2b0384c 77-79
+  s_f09530b78e40c4::t_504e2477adfefe 86-88
+  s_f09530b78e40c4::t_6bfd5cc7ffbddf 38,84-85
+  s_f09530b78e40c4::t_a3e4bdf5dfb440 43,76,95
+  s_f09530b78e40c4::t_45b4748e5a9c15 39-42,44-45
+  s_f09530b78e40c4::t_2ce928781a347f 52,64,74-75
+  s_f09530b78e40c4::t_570f4ea336a016 46-49
+  s_f09530b78e40c4::t_771197c94c1c32 62-63,65
+  s_f09530b78e40c4::t_d7ed8751a87867 93-94
+docs/specs/social-selling/connect-instagram/trd.md
+  s_f09530b78e40c4::t_db02855d9a9712 54-56
+  s_f09530b78e40c4::t_fc99d117fc6963 1-53,57-63,66-116,119-121
+  s_f09530b78e40c4::t_9ef27f93421d6a 64-65,117-118
+docs/specs/notification-hub/order-updates/decisions.md
+  s_f09530b78e40c4::t_c071e45edb9110 1-22
+docs/specs/notification-hub/demand-alerts/ux.md
+  s_f09530b78e40c4::t_b3143253622ebf 1-31,33-71
+  s_f09530b78e40c4::t_63a6d6827e38e0 32
+docs/specs/social-selling/instagram-publishing/ux.md
+  s_f09530b78e40c4::t_c17b164671d177 1-50
+docs/specs/social-selling/whatsapp-catalogue/decisions.md
+  s_f09530b78e40c4::t_4caa0c0a7cc77f 1-27
+docs/specs/social-selling/whatsapp-templates/trd.md
+  s_f09530b78e40c4::t_1b47be3e618287 17-18,42-43
+  s_f09530b78e40c4::t_b1686a4a90caa9 1-6,8-16,19-27,29-41,44-54,56-80,82-102,104-107
+  s_f09530b78e40c4::t_d3d461c128de06 7,28
+  s_f09530b78e40c4::t_5c1a6c3ec8284c 55,81,103,108
+docs/README.md
+  s_f09530b78e40c4::t_ac1c520b463be9 3,28
+docs/specs/social-selling/audience/trd.md
+  s_f09530b78e40c4::t_9ab0799d047cca 73-74,130
+  s_f09530b78e40c4::t_b44c0059674ff0 1-54,58-60,62-67,72,75-92,94-125,127-129
+  s_f09530b78e40c4::t_479e665aa40a64 61,126
+  s_f09530b78e40c4::t_ff0eced16a1298 55-57,68-71
+docs/specs/social-selling/whatsapp-catalogue/trd.md
+  s_f09530b78e40c4::t_1b47be3e618287 33-34
+  s_f09530b78e40c4::t_7386a33ed907e4 1-32,35-107
+docs/specs/notification-hub/demand-alerts/decisions.md
+  s_f09530b78e40c4::t_dc933cd81cf25b 1-15,17-25
+  s_f09530b78e40c4::t_bb7c0c2f92182f 16
+docs/specs/social-selling/going-live.md
+  s_f09530b78e40c4::t_b817049a628b69 17-19,86
+  s_f09530b78e40c4::t_df124bef7682d3 1-16,20-85,87-100
+docs/specs/social-selling/policy-drafts.md
+  s_f09530b78e40c4::t_b817049a628b69 5,12,68-69,80
+  s_f09530b78e40c4::t_d79535bef844d5 1-4,6-11,13-67,70-79,81
+docs/specs/social-selling/inbox-core/ux.md
+  s_f09530b78e40c4::t_0f27d332fc12aa 1-4,6-91
+  s_f09530b78e40c4::t_7d589c47c3300a 5
+docs/specs/social-selling/inbox-whatsapp/decisions.md
+  s_f09530b78e40c4::t_30327a7bec4e3f 1-15,17-25
+  s_f09530b78e40c4::t_a3e4bdf5dfb440 16
+docs/specs/social-selling/whatsapp-status-kit/spec.md
+  s_f09530b78e40c4::t_9f57386323bc04 1-59
+docs/adr/0068-meta-is-a-connected-shopfront.md
+  s_f09530b78e40c4::t_54995a4dae1d9a 1-3,5-47
+  s_f09530b78e40c4::t_d1efa719e4b27a 4
+docs/specs/social-selling/whatsapp-status-kit/decisions.md
+  s_f09530b78e40c4::t_a335598d0e9f11 1-11,13-22
+  s_f09530b78e40c4::t_b4c1245770ab7c 12
+docs/specs/social-selling/post-scheduling/trd.md
+  s_f09530b78e40c4::t_0e9b5ccb9f706c 14,31-35,71,75,79
+  s_f09530b78e40c4::t_54281f339ae786 15,55-57,95
+  s_f09530b78e40c4::t_56c074b3c52cf6 1-13,16-30,36-54,58-70,72-74,76-78,80-94,96-112
+docs/specs/notification-hub/demand-alerts/spec.md
+  s_f09530b78e40c4::t_4581dbd0e245ff 1-72
+docs/specs/social-selling/inbox-instagram/spec.md
+  s_f09530b78e40c4::t_183a19cb08e0bd 1-70
+docs/specs/social-selling/whatsapp-campaigns/spec.md
+  s_f09530b78e40c4::t_62f3c22e38a921 36-38,79
+  s_f09530b78e40c4::t_3807fc7c7254cc 1-35,39-78
+docs/specs/social-selling/whatsapp-catalogue/ux.md
+  s_f09530b78e40c4::t_9df538c7bdd391 1-79
+docs/specs/social-selling/connect-instagram/decisions.md
+  s_f09530b78e40c4::t_226dadeef036be 8,13,15,17-26,29
+docs/specs/notification-hub/prototype.html
+  s_f09530b78e40c4::t_4724464fe77232 1-223
+docs/specs/social-selling/connect-instagram/ux.md
+  s_f09530b78e40c4::t_9c72f6b54d786e 1-4,6-95
+  s_f09530b78e40c4::t_f41ae3ffaf03ae 5
+docs/specs/social-selling/inbox-core/trd.md
+  s_f09530b78e40c4::t_479e665aa40a64 125
+  s_f09530b78e40c4::t_0e9b5ccb9f706c 73-75
+  s_f09530b78e40c4::t_1139ab3b24b437 1-64,66-70,76-94,96-124,126-128
+docs/specs/social-selling/inbox-instagram/ux.md
+  s_f09530b78e40c4::t_7d589c47c3300a 5
+  s_f09530b78e40c4::t_6cfc60f08f40a3 1-4,6-82
+docs/specs/social-selling/whatsapp-contacts/decisions.md
+  s_f09530b78e40c4::t_ab3dead91ff9ee 1-26
+docs/specs/social-selling/whatsapp-templates/ux.md
+  s_f09530b78e40c4::t_5c1a6c3ec8284c 79
+  s_f09530b78e40c4::t_d3f464685ce9b1 1-78,80-88
+docs/specs/social-selling/comment-automations/ux.md
+  s_f09530b78e40c4::t_1ca0214c2917ac 1-80
+docs/specs/notification-hub/hub-core/decisions.md
+  s_f09530b78e40c4::t_a38e27b4d07420 1-22
+docs/specs/notification-hub/demand-alerts/trd.md
+  s_f09530b78e40c4::t_11722a0d5ca708 1-34,36-48,52,54-66,70-82,85-99
+  s_f09530b78e40c4::t_479e665aa40a64 35
+  s_f09530b78e40c4::t_63a6d6827e38e0 49-51,53,67-68,83-84
+  s_f09530b78e40c4::t_f53dff94361846 69
+docs/specs/notification-hub/hub-core/spec.md
+  s_f09530b78e40c4::t_bf6bf8ef749e85 1-71
+docs/specs/social-selling/instagram-publishing/decisions.md
+  s_f09530b78e40c4::t_77393a52440f1b 1-24
+docs/specs/social-selling/inbox-core/spec.md
+  s_f09530b78e40c4::t_f43a0eaea7507e 1-74
+docs/specs/README.md
+  s_f09530b78e40c4::t_cc85fcc233d3ba 59,112-114,116-117,120-129
+  s_f09530b78e40c4::t_a6e6e494f89ed3 119
+CLAUDE.md
+  s_f09530b78e40c4::t_ac1c520b463be9 3
+docs/specs/social-selling/whatsapp-campaigns/ux.md
+  s_f09530b78e40c4::t_62f3c22e38a921 60,99
+  s_f09530b78e40c4::t_63a6d6827e38e0 22-23,87
+  s_f09530b78e40c4::t_a111fcf1ec371d 1-21,24-59,61-86,88-98,100-102
+docs/specs/social-selling/post-scheduling/spec.md
+  s_f09530b78e40c4::t_1090fc02426f3e 1-76
+docs/adr/0069-notifications-are-one-hub-every-module-plugs-into.md
+  s_f09530b78e40c4::t_dd80bce119cdff 1-53
+docs/specs/social-selling/whatsapp-campaigns/trd.md
+  s_f09530b78e40c4::t_9110a8e0bf6076 22-28,65-67
+  s_f09530b78e40c4::t_62f3c22e38a921 14,37-38,44-45,55-57,61-64,69-71,108-110,123-125,130
+  s_f09530b78e40c4::t_30a631533aa415 72
+  s_f09530b78e40c4::t_6f3c0947a88557 1-13,15-21,29-36,39-43,46-54,58-60,68,73-107,111-122,126-129
+docs/specs/social-selling/whatsapp-templates/spec.md
+  s_f09530b78e40c4::t_f52a8b555773c2 1-25,28-66
+  s_f09530b78e40c4::t_5c1a6c3ec8284c 26-27,67
+docs/specs/social-selling/whatsapp-catalogue/spec.md
+  s_f09530b78e40c4::t_0d0fe46aec0334 1-70
+docs/specs/social-selling/instagram-publishing/spec.md
+  s_f09530b78e40c4::t_2a2cb0a8977f7f 1-64
+docs/specs/social-selling/connect-whatsapp/spec.md
+  s_f09530b78e40c4::t_3aea7232d9701d 91
+  s_f09530b78e40c4::t_1ca7b99fd51f14 1-2,4-27,35-39,44-63,68-81,83-85,87-90
+  s_f09530b78e40c4::t_99ed8012d08772 41-43,66-67,82
+  s_f09530b78e40c4::t_90089e519808c4 3,28-34,40,64-65,86
+docs/specs/social-selling/post-scheduling/ux.md
+  s_f09530b78e40c4::t_a7ca3b1109e6ac 1-90
+docs/specs/notification-hub/order-updates/spec.md
+  s_f09530b78e40c4::t_9bb75ecb959b75 1-60
+docs/specs/social-selling/whatsapp-contacts/trd.md
+  s_f09530b78e40c4::t_af8094b3bd5173 1-27,30,33,35-36,38-85
+  s_f09530b78e40c4::t_1b47be3e618287 28-29,31-32,34,37
+docs/specs/social-selling/comment-automations/spec.md
+  s_f09530b78e40c4::t_3b207063b2175a 1-76
+docs/specs/social-selling/comment-automations/prototype.html
+  s_f09530b78e40c4::t_cc7a272778fbe3 1-222
+docs/specs/social-selling/inbox-core/prototype.html
+  s_f09530b78e40c4::t_7d589c47c3300a 1-355
+docs/specs/social-selling/audience/prototype.html
+  s_f09530b78e40c4::t_249a1568da9e87 1-395
+docs/specs/social-selling/whatsapp-status-kit/trd.md
+  s_f09530b78e40c4::t_4162aa17ec2b9b 1-76
+docs/specs/social-selling/audience/ux.md
+  s_f09530b78e40c4::t_d67fe474089f8a 1-8,11-114
+  s_f09530b78e40c4::t_9ab0799d047cca 9-10,115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "4b5b0b3f677a68ea6a7df45f1e709fbda2c3df3e",
+  "prompts": {},
+  "sessions": {
+    "s_f09530b78e40c4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2e507ea9-e87b-4dab-8f62-336dcb364b87",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
