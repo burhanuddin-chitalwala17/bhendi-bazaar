@@ -1,0 +1,29 @@
+docs/BACKLOG.md
+  s_f09530b78e40c4::t_41dc9ba4773a1b 241
+docs/specs/README.md
+  s_f09530b78e40c4::t_0818d4a651344a 112
+docs/specs/social-selling/spec.md
+  s_f09530b78e40c4::t_41dc9ba4773a1b 18
+docs/specs/social-selling/connect-instagram/spec.md
+  s_f09530b78e40c4::t_4a6c29c6ac51b7 1-87
+docs/specs/social-selling/connect-instagram/decisions.md
+  s_f09530b78e40c4::t_7133180c3a12b5 1-28
+docs/INTEGRATIONS.md
+  s_f09530b78e40c4::t_41dc9ba4773a1b 3,268,311-316
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "5404f564c92b71c4640e0031818d9fd21e58f7f1",
+  "prompts": {},
+  "sessions": {
+    "s_f09530b78e40c4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2e507ea9-e87b-4dab-8f62-336dcb364b87",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
