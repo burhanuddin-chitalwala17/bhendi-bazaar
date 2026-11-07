@@ -2,7 +2,7 @@ import type { MarketplaceChannel } from "../channel-connection.types";
 import type { ListingAttributes, ListingDetail, ListingSink, TokenSource } from "./listing-read";
 import type { ListingStock, LocationCount, MarketplaceLocation, OrdersPage, StockListingRef } from "./stock";
 import type { ListingRules } from "../platform-listing.types";
-import type { CreateListingInput, ListingProblem, PageMatch, PublishAnswer, PublishChanges, PublishRef, StatusAnswer, TypeDefinition, TypeMatch } from "./publish";
+import type { CatalogueType, CreateListingInput, ListingProblem, PageMatch, PublishAnswer, PublishChanges, PublishRef, StatusAnswer, TypeDefinition, TypeMatch } from "./publish";
 
 /**
  * One marketplace, behind the verbs channel-connectors needs (TRD D1). Later subfeatures add their
@@ -93,6 +93,9 @@ export interface MarketplaceProvider {
 
   /** A type's published definition: what it requires and allows; null where the marketplace publishes none (setup-requests D7). */
   typeDefinition(token: TokenSource, marketplaceType: string): Promise<TypeDefinition | null>;
+
+  /** A type's every field, for the stored catalogue; null where the marketplace publishes no definitions (listing-model/channel-catalogue D2). */
+  catalogueType(token: TokenSource, marketplaceType: string): Promise<CatalogueType | null>;
 
   /** The marketplace's types matching some words, closest first; empty where it offers no search (setup-requests Q29). */
   searchTypes(token: TokenSource, words: string): Promise<TypeMatch[]>;

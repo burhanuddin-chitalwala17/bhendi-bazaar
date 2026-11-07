@@ -13,6 +13,8 @@ import {
   type ListingSubject,
 } from "./channel-readiness";
 import { channelMapRepository } from "./channel-map.repository";
+import { channelCatalogueRepository } from "./channel-catalogue.repository";
+import { FIELD_REQUIREMENT } from "./channel-catalogue.types";
 import { orgChannelRepository } from "./org-channel.repository";
 import { productReadinessRepository } from "./product-readiness.repository";
 import { productTypeRepository } from "./product-type.repository";
@@ -53,7 +55,8 @@ export interface ChannelSummaryRow {
 /** Why a channel would refuse one product: no category there, a compulsory fact unanswered, or an answer it has no word for. */
 export type NotReadyReason =
   | { kind: typeof LISTING_PROBLEM.NO_CATEGORY }
-  | { kind: typeof LISTING_PROBLEM.MISSING_FACT | typeof LISTING_PROBLEM.UNMAPPED_VALUE; fact: FactKey; label: string };
+  | { kind: typeof LISTING_PROBLEM.MISSING_FACT | typeof LISTING_PROBLEM.UNMAPPED_VALUE; fact: FactKey; label: string }
+  | { kind: typeof LISTING_PROBLEM.MISSING_FIELD; label: string };
 
 export interface ChannelVerdict {
   channel: Channel;
@@ -236,6 +239,7 @@ function reasonsOf(problems: ListingReadinessReport["problems"]): NotReadyReason
     if (p.problem === LISTING_PROBLEM.MISSING_FACT || p.problem === LISTING_PROBLEM.UNMAPPED_VALUE) {
       return [{ kind: p.problem, fact: p.fact, label: FACT_DECLARATIONS[p.fact]?.label ?? p.fact }];
     }
+    if (p.problem === LISTING_PROBLEM.MISSING_FIELD) return [{ kind: LISTING_PROBLEM.MISSING_FIELD, label: p.label }];
     return [];
   });
 }
@@ -280,6 +284,19 @@ async function registersForTypes(
     lists: types.flatMap(listsOf),
   });
 
+  // What each of their categories requires, from the channel's own definition, and what our fill rows
+  // already cover: two reads for every type at once (listing-model/channel-catalogue D5).
+  const pairs = [...new Map(categories.filter((c) => c.theirCategory).map((c) => [`${c.channel}:${c.theirCategory}`, { channel: c.channel, key: c.theirCategory! }])).values()];
+  const [catalogue, fills] = await Promise.all([
+    channelCatalogueRepository.fieldsFor(pairs),
+    channelMapRepository.fillsForMany(pairs),
+  ]);
+  const required = new Map<string, { key: string; label: string }[]>();
+  for (const [k, fields] of catalogue) required.set(k, fields.filter((f) => f.requirement === FIELD_REQUIREMENT.REQUIRED && !f.adapterFills).map((f) => ({ key: f.key, label: f.label })));
+  const filled = new Map<string, Set<string>>();
+  for (const f of fills) filled.set(`${f.channel}:${f.theirCategory}`, (filled.get(`${f.channel}:${f.theirCategory}`) ?? new Set()).add(f.theirAttribute));
+  const byChannel = <T,>(source: Map<string, T>, channel: string) => new Map([...source].filter(([k]) => k.startsWith(`${channel}:`)).map(([k, v]) => [k.slice(channel.length + 1), v]));
+
   for (const type of types) {
     const mine = categories.filter((row) => row.productType === type.key);
     const registers = new Map<Channel, ChannelRegister>();
@@ -301,6 +318,8 @@ async function registersForTypes(
           attributes.filter((row) => row.channel === channel && isFact(row.fact)),
         ),
         mappedValues,
+        requiredByCategory: byChannel(required, channel),
+        filledByCategory: byChannel(filled, channel),
       });
     }
     out.set(type.key, registers);

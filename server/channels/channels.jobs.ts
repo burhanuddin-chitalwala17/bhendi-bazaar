@@ -18,6 +18,8 @@ import { platformListingService } from "./platform-listing.service";
 import { listingPublishService } from "./listing-publish.service";
 import { checkListingsSpec, enqueueListingCheck, publishListingSpec } from "./listing-publish.job";
 import { checkListingProblemsSpec } from "./listing-problems.job";
+import { channelCatalogueReader } from "./channel-catalogue.service";
+import { MARKETPLACE_CHANNELS } from "./channel-connection.types";
 import { requestsDailySpec } from "@server/shared/jobs/listing-complaints.job";
 import { listingProblemsService } from "./listing-problems.service";
 import { checkOrdersSpec, checkStockSpec, ORDERS_CHECK_EVERY_SECONDS } from "./stock-checks.job";
@@ -70,6 +72,11 @@ export const channelsMaintainJob = registerJob({
     // Platform listings for anything linked since, and one more look at listings still waiting (marketplace-publish D5).
     await platformListingService.ensureForAll().catch((error: unknown) => console.error(`[channels] platform listings pass failed: ${error instanceof Error ? error.name : "error"}`));
     await listingPublishService.daily();
+    // Each marketplace's own types and fields, read through the home brand (listing-model/channel-catalogue D2).
+    // Every marketplace; one that publishes no definitions (Flipkart) reads nothing (D3).
+    for (const channel of MARKETPLACE_CHANNELS) {
+      await channelCatalogueReader.refresh(channel).catch((error: unknown) => console.error(`[channels] catalogue refresh failed: ${error instanceof Error ? error.name : "error"}`));
+    }
     // What each marketplace says stops a listing now, for every shop in one run (marketplace-publish Q23).
     await enqueue(prisma, checkListingProblemsSpec, {});
     // Setup requests: close what is now set up, raise missing categories (setup-requests D9).

@@ -8,7 +8,7 @@ import { TypesUnavailableError } from "@server/channels/channel-types.service";
 import { REQUIREMENT_MODE, TICKET_TYPE, type TicketSubject } from "../request.types";
 import { PlanUnavailableError, type TicketKindPlugin } from "../kinds/kind";
 import { planHash, propose, valueKey } from "./field-match";
-import { homeBrandOrgId } from "./home-brand";
+import { homeBrandOrgId } from "@server/shared/home-brand";
 import { FIELD_SOLUTION, MARKETPLACE_KIND, MARKETPLACE_UNAVAILABLE, fieldsChoiceSchema, type FieldsPlanDTO, type FieldsSubject } from "./marketplace.types";
 
 const asFields = (s: TicketSubject) => s as FieldsSubject;

@@ -110,7 +110,7 @@ describe("Home's line (Q23)", () => {
     lowStock: { ok: true, value: { count: 0, soldOut: 0, soonestDays: null } },
     channel: { ok: true, value: null },
     stock: { ok: true, value: null },
-    listingProblems: { ok: true, value: null },
+    listingProblems: { ok: true, value: null }, channelAsks: { ok: true, value: null },
     photos: { ok: true, value: 0 },
     teamEdits,
   });

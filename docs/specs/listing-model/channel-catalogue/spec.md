@@ -1,7 +1,7 @@
 # Spec — listing-model / channel-catalogue
 
 - **Summary:** Each channel's types and fields are stored with what they require, allow and measure in, so readiness names every required field a product is missing for a channel before it is sent
-- **Status:** Accepted
+- **Status:** Implemented
 - **Domain:** channels, with listing (readiness)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-07

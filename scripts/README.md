@@ -2,6 +2,7 @@
 
 - **`backfill-media-assets.ts`** — brings every image already stored under the media library's record (`server/catalog/media-backfill.ts` does the work; the script is the CLI). Dry run by default, `--write` to apply; idempotent. [OPERATIONS.md](../docs/OPERATIONS.md) has when to run it.
 - **`flipkart-listing-probe.ts`** — which of Flipkart's listing calls a shop's connection may use: status and field names per call, never the token. Read-only on Flipkart; it may renew the stored token. Written for the 404 the first live Flipkart read hit (channel-import, 2026-10-21).
+- **`channel-catalogue-migration.mjs`** — writes the data migration that loads Flipkart's, Meesho's, Google's and Meta's catalogues (listing-model/channel-catalogue D3) from `listing-node-templates/extracted/` and the two published specs. Kept so a re-export of a template regenerates the same shape; its output, not the script, deploys.
 - **`docs-index.mjs`** — renders the index tables in `docs/adr/README.md` and `docs/specs/README.md` from the files they index; `npm run docs:index` rewrites, `--check` reports. `tests/unit/docs-integrity.test.ts` runs the check as a gate, so a hand-edited row cannot survive CI.
 
 ## Exporting pg-boss's schema

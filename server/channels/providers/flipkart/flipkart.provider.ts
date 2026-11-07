@@ -73,6 +73,8 @@ export const flipkartProvider: MarketplaceProvider = {
   variationThemes: async () => [],
   // Flipkart publishes no type definitions through its API (setup-requests Q20).
   typeDefinition: async () => null,
+  // Flipkart's catalogue comes from its templates by migration (channel-catalogue D3).
+  catalogueType: async () => null,
   searchTypes: async () => [],
   connectionCap: null,
   readListings: readFlipkartListings,

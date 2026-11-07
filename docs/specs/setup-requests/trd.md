@@ -68,7 +68,7 @@ projections. Apply goes through listing's own repositories in one transaction.
   every Apply, on every inbox open for the tickets it shows, and in the daily pass for all open
   requirements in one read. A ticket resolved by hand in the channel register closes there.
 - **D10 — The home brand is configuration**: `HOME_BRAND_ORG_ID`, read once in
-  `server/requests/marketplace/home-brand.ts`. Channels gains `connectionToken(orgId, channel)` returning a
+  `server/shared/home-brand.ts`. Channels gains `connectionToken(orgId, channel)` returning a
   token source, never the token. Missing or not connected: plan says so; Apply of a manual choice
   still works (ux "not connected").
 - **D11 — The line between sides is enforced in types and tests** (hazard *leaking*): the admin

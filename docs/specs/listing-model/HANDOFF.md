@@ -46,3 +46,4 @@
 | Date | Subfeature | Unit | Commit | Note |
 |---|---|---|---|---|
 | 2026-11-07 | all | Plan, specs, decisions, UX docs, TRDs, ADR-0070 | (this commit) | Ready to build |
+| 2026-11-07 | channel-catalogue | 1, 2: tables, Amazon read, readiness, Home line; Flipkart/Meesho/Google/Meta data migration | (this commit) | Gates green. **/bb-review not yet run** (paused by owner to hand off): run it on this commit first, then field-maps unit 1 |

@@ -1,5 +1,5 @@
--- listing-model/channel-catalogue (D1): each channel's own types and fields, read from the channel.
--- Two new tables; nothing existing changes.
+-- listing-model/channel-catalogue (D1, D6): each channel's own types and fields, read from the channel,
+-- and the required fields a channel adds later. Three new tables; nothing existing changes.
 
 -- CreateTable
 CREATE TABLE "ChannelType" (
@@ -16,6 +16,16 @@ CREATE TABLE "ChannelType" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "ChannelType_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ChannelTypeChange" (
+    "id" TEXT NOT NULL,
+    "channelTypeId" TEXT NOT NULL,
+    "added" JSONB NOT NULL,
+    "detectedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ChannelTypeChange_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -41,7 +51,13 @@ CREATE TABLE "ChannelField" (
 CREATE UNIQUE INDEX "ChannelType_channel_key_key" ON "ChannelType"("channel", "key");
 
 -- CreateIndex
+CREATE INDEX "ChannelTypeChange_detectedAt_idx" ON "ChannelTypeChange"("detectedAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "ChannelField_channelTypeId_key_key" ON "ChannelField"("channelTypeId", "key");
+
+-- AddForeignKey
+ALTER TABLE "ChannelTypeChange" ADD CONSTRAINT "ChannelTypeChange_channelTypeId_fkey" FOREIGN KEY ("channelTypeId") REFERENCES "ChannelType"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ChannelField" ADD CONSTRAINT "ChannelField_channelTypeId_fkey" FOREIGN KEY ("channelTypeId") REFERENCES "ChannelType"("id") ON DELETE CASCADE ON UPDATE CASCADE;

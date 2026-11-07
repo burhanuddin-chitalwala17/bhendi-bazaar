@@ -33,6 +33,8 @@ export const LISTING_PROBLEM = {
   MISSING_OPTIONAL_FACT: "missingOptionalFact",
   /** The product answers it, and nothing records their word for that answer (R5). */
   UNMAPPED_VALUE: "unmappedValue",
+  /** The channel's own definition requires it, and nothing on our side fills it (listing-model/channel-catalogue R4). */
+  MISSING_FIELD: "missingField",
 } as const;
 
 export type ListingProblemKind = (typeof LISTING_PROBLEM)[keyof typeof LISTING_PROBLEM];
@@ -50,6 +52,12 @@ export type ListingProblem =
       fact: FactKey;
       /** Their word for it, so the shop reads the name it will see on their side. */
       theirAttribute: string;
+    }
+  | {
+      problem: typeof LISTING_PROBLEM.MISSING_FIELD;
+      /** The channel's own name and label, as the shop will read it there. */
+      field: string;
+      label: string;
     }
   | {
       problem: typeof LISTING_PROBLEM.UNMAPPED_VALUE;

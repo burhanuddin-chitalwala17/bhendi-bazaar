@@ -27,5 +27,5 @@ Tickets for what a shop cannot fix itself. A **requirement** is a known kind wit
 | `request.service.ts`, `request.types.ts` | The engine and its neutral words: raise, raise from events, report, the shop's view, the inbox, plan, apply, not now, mark fixed, the daily pass |
 | `ticket.repository.ts` | The one writer of `Ticket` and `TicketNeed` |
 | `kinds/` | The plug-in contract (`kind.ts`), the registry (`index.ts`) and the one built-in kind, `issue.kind.ts` |
-| `marketplace/` | The marketplace plug-in: its two kinds, its types, `complaint-sort.ts` and `field-match.ts` (pure), `home-brand.ts` (`HOME_BRAND_ORG_ID`, read here only) |
+| `marketplace/` | The marketplace plug-in: its two kinds, its types, `complaint-sort.ts` and `field-match.ts` (pure); `HOME_BRAND_ORG_ID` is read by `server/shared/home-brand.ts` |
 | `requests.job.ts`, `requests.jobs.ts` | Job specs and their handlers (events in, resolved out, the daily pass) |

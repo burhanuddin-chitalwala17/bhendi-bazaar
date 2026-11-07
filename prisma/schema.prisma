@@ -2625,12 +2625,26 @@ model ChannelType {
   /// The channel stopped offering it; kept so history and maps survive.
   goneAt  DateTime?
 
-  fields ChannelField[]
+  fields  ChannelField[]
+  changes ChannelTypeChange[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([channel, key])
+}
+
+/// A required field a channel added to a type we already held: what Home tells the shops selling it
+/// (listing-model Q22, channel-catalogue D6). Written only by `channel-catalogue.repository`.
+model ChannelTypeChange {
+  id            String      @id @default(cuid())
+  channelTypeId String
+  channelType   ChannelType @relation(fields: [channelTypeId], references: [id], onDelete: Cascade)
+  /// The fields' keys and labels as the channel words them.
+  added         Json
+  detectedAt    DateTime    @default(now())
+
+  @@index([detectedAt])
 }
 
 /// One field a channel type asks, as the channel defines it (channel-catalogue D1, Q4).

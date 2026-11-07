@@ -273,10 +273,11 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
         ),
       );
 
-      // The shop's channels (1), the types (1), and the three maps (3). Asserted exactly rather
+      // The shop's channels (1), the types (1), the three maps (3), and the channel's own fields
+      // with what fills them (2, listing-model/channel-catalogue D6). Asserted exactly rather
       // than as a bound: an upper bound over an instrument that counts nothing cannot fail, and
       // that is how this project's billed-operations budgets read zero for two months.
-      expect(one).toBe(5);
+      expect(one).toBe(7);
       expect(forty).toBe(one);
     });
 

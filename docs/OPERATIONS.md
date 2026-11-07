@@ -45,7 +45,7 @@ npm run dev                 # http://localhost:3000
 | `RATE_LIMIT_CLIENT_IP_HEADER` | ✅ preview, production | The header the edge sets with the caller's address: `x-vercel-forwarded-for` on Vercel. **Required when deployed**; never `x-forwarded-for` unless the edge overwrites it, because a caller can send that one. Unset locally |
 | `ENCRYPTION_KEY` | ○ | Decrypts shipping credentials stored before 2026-10-20 only (`server/shared/crypto.ts`). Keep it set while any such row exists; new values use `CREDENTIAL_KEYS` |
 | `CHANNELS_CONNECT` | ○ | Marketplaces open to connect, comma-separated (`amazon,flipkart`); empty or unset means none (`server/channels/channel-availability.ts`). The only switch for marketplace connections |
-| `HOME_BRAND_ORG_ID` | ○ | The platform's own shop (Niqab Boutique) whose marketplace connections read the published type definitions for setup requests (`server/requests/marketplace/home-brand.ts`, setup-requests Q14). Unset: the admin's previews say so, and a category can still be applied by name |
+| `HOME_BRAND_ORG_ID` | ○ | The platform's own shop (Niqab Boutique) whose marketplace connections read the published type definitions for setup requests (`server/shared/home-brand.ts`, setup-requests Q14). Unset: the admin's previews say so, and a category can still be applied by name |
 | `AMAZON_APP_ID` / `AMAZON_APP_SECRET` | ○ | Amazon SP-API Login with Amazon client id and secret (Developer Central → app → LWA credentials). Unset means Amazon shows as unavailable |
 | `AMAZON_SOLUTION_ID` | ○ | The Amazon app's own id, `amzn1.sp.solution…`, used in the consent link |
 | `FLIPKART_APP_ID` / `FLIPKART_APP_SECRET` | ○ | Flipkart third-party app (Partner portal → Manage API Access). Unset means Flipkart shows as unavailable |

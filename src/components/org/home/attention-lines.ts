@@ -50,6 +50,13 @@ export function attentionLines(orgId: string, a: HomeAttentionDto, now: Date): A
     lines.push({ key: "listingProblems", ok: true, text: PROBLEMS.home(label, problems, suppressed), href: `${ROUTES.org.channelListings(orgId, channel)}?fix=1` });
   }
 
+  // A channel now requires more of a type this shop sells (listing-model Q22).
+  if (!a.channelAsks.ok) lines.push(failed("channelAsks"));
+  else if (a.channelAsks.value) {
+    const { channel, label, typeLabel, added } = a.channelAsks.value;
+    lines.push({ key: "channelAsks", ok: true, text: LINE_COPY.channelAsks(label, added, typeLabel), href: `${ROUTES.org.products(orgId)}?channel=${channel}` });
+  }
+
   // Sales about to stop: only what sold in the last 30 days (Q31).
   if (!a.lowStock.ok) lines.push(failed("lowStock"));
   else if (a.lowStock.value.count > 0) {

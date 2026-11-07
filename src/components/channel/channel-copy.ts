@@ -192,6 +192,7 @@ export const READINESS_PANEL = {
   nearest: "This is the nearest category they have, not their own word for it.",
   missingFact: (attribute: string) => `They ask for ${attribute} and it is not answered.`,
   missingOptionalFact: (attribute: string) => `They would show ${attribute} if it were answered.`,
+  missingField: (label: string) => `They require ${label}, and nothing here fills it yet.`,
   unmappedValue: (list: string, value: string) =>
     `They have no word for this ${list} yet — "${value}" needs one choosing, once, for every product that uses it.`,
 } as const;

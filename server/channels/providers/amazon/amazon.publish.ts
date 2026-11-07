@@ -1,6 +1,6 @@
 import { retryBusy, rupeesFromPaise, type ListingAttributes, type TokenSource } from "../listing-read";
 import { MarketplaceAuthError, MarketplaceRequestError, MarketplaceUnavailableError, marketplaceFetch } from "../marketplace-provider";
-import type { CreateListingInput, ListingProblem, PageMatch, PublishAnswer, PublishChanges, PublishRef, StatusAnswer, TypeDefinition, TypeMatch } from "../publish";
+import { FIELD_KIND, FIELD_REQUIREMENT, type CatalogueField, type CatalogueType, type CreateListingInput, type FieldKind, type ListingProblem, type PageMatch, type PublishAnswer, type PublishChanges, type PublishRef, type StatusAnswer, type TypeDefinition, type TypeMatch } from "../publish";
 import { ISSUE_NEED, LISTING_FIELD, LISTING_FIELDS, type IssueNeed, type ListingField, type ListingIssue, type ListingRules } from "../../platform-listing.types";
 import { AMAZON_IN, spApi } from "./amazon.listings";
 
@@ -290,6 +290,54 @@ export async function amazonTypeDefinition(token: TokenSource, productType: stri
     return [{ name, label: str(property.title) ?? name, required: true, allowed: allowedOf(property) }];
   });
   return { theirCategory: productType, attributes };
+}
+
+/** The units a measure attribute accepts, from its `unit` enum. */
+function unitsOf(property: Record<string, unknown>): string[] {
+  const unit = obj(obj(obj(property.items).properties).unit);
+  return list(unit.enum).map(String);
+}
+
+/** A property's kind: a measure has a unit, a choice an enum, then number, boolean, else text. */
+function kindOf(property: Record<string, unknown>): FieldKind {
+  const props = obj(obj(property.items).properties);
+  if (props.unit) return FIELD_KIND.MEASURE;
+  if (allowedOf(property).length > 0) return FIELD_KIND.CHOICE;
+  const type = str(obj(props.value).type);
+  if (type === "number" || type === "integer") return FIELD_KIND.NUMBER;
+  if (type === "boolean") return FIELD_KIND.BOOLEAN;
+  return FIELD_KIND.TEXT;
+}
+
+/**
+ * A type's every field as the catalogue stores it (listing-model/channel-catalogue D2): required from
+ * the schema's `required`, conditional where an `allOf` rule requires it, optional otherwise; the
+ * attributes a create always sends marked as the adapter's (Q5). Pure, so it is tested on a fixture.
+ */
+export function amazonCatalogueFields(schema: Record<string, unknown>): CatalogueField[] {
+  const required = new Set(list(schema.required).map(String));
+  const conditional = new Set(list(schema.allOf).flatMap((rule) => list(obj(obj(rule).then).required).map(String)));
+  return Object.entries(obj(schema.properties)).map(([key, raw]) => {
+    const property = obj(raw);
+    const allowed = allowedOf(property);
+    const units = unitsOf(property);
+    return {
+      key,
+      label: str(property.title) ?? key,
+      requirement: required.has(key) ? FIELD_REQUIREMENT.REQUIRED : conditional.has(key) ? FIELD_REQUIREMENT.CONDITIONAL : FIELD_REQUIREMENT.OPTIONAL,
+      kind: kindOf(property),
+      allowedValues: allowed.length > 0 ? allowed : null,
+      allowedUnits: units.length > 0 ? units : null,
+      adapterFills: SENT_BY_CREATE.has(key) || key.startsWith("other_product_image_locator"),
+    };
+  });
+}
+
+/** A type's catalogue entry, read live (channel-catalogue D2). Null when Amazon has no such type. */
+export async function amazonCatalogueType(token: TokenSource, productType: string): Promise<CatalogueType | null> {
+  const schema = await amazonTypeSchema(token, productType);
+  if (!schema) return null;
+  return { key: productType, label: str(schema.title) ?? productType, schema, schemaVersion: str(schema.$id), fields: amazonCatalogueFields(schema) };
 }
 
 /** Amazon's types matching some words, as Amazon ranks them (setup-requests Q29). */

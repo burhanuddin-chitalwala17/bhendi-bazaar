@@ -102,3 +102,6 @@ export interface TypeMatch {
   theirCategory: string;
   label: string;
 }
+
+
+export { FIELD_KIND, FIELD_REQUIREMENT, type CatalogueField, type CatalogueType, type FieldKind, type FieldRequirement } from "@server/listing/channel-catalogue.types";

@@ -1,7 +1,7 @@
 # TRD — listing-model / channel-catalogue
 
-- **Status:** Accepted
-- **Domain:** channels, with listing (readiness)
+- **Status:** Implemented
+- **Domain:** listing (the catalogue and readiness), with channels (the Amazon read)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-07
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), parent [trd.md](../trd.md) D5, D8, [ADR-0070](../../../adr/0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md)
@@ -23,11 +23,12 @@ Amazon's Product Type Definitions API is the documented source for its side.
   unique channel+key) and **`ChannelField`** (id, channelTypeId, key, label, requirement: required /
   conditional / optional, kind: choice / text / number / measure / boolean, allowedValues Json?,
   allowedUnits Json?, adapterFills boolean, source, readAt, goneAt; unique type+key). One writer:
-  a new `channel-catalogue.repository` in channels.
+  `channel-catalogue.repository` in listing, which readiness reads; listing never imports channels.
 - **D2 — Amazon read.** `amazonTypeDefinition` grows into `amazonCatalogueType(token, type)`: required
   set from the schema's `required` plus the per-type conditional rules; each property's kind, enum
-  (allowed values), unit enum. `channelCatalogueService.refreshAmazon()` runs from the daily
-  `channels.maintain`, one call per Amazon type any ChannelCategoryMap row publishes to, through the
+  (allowed values), unit enum. Channels' `channelCatalogueReader.refresh(channel)` runs from the daily
+  `channels.maintain` for every marketplace (one with no definitions reads nothing) and stores through
+  listing's `channelCatalogueService.store`, one call per type any ChannelCategoryMap row publishes to, through the
   home brand (`HOME_BRAND_ORG_ID`); upsert by key, missing keys get `goneAt`; unreachable leaves rows.
 - **D3 — Feed and template channels.** A one-off script under `scripts/` reads
   `listing-node-templates/extracted/{flipkart,meesho}.json` and Google's and Meta's specifications
@@ -39,7 +40,8 @@ Amazon's Product Type Definitions API is the documented source for its side.
   required, non-adapter, non-gone field with no ChannelAttributeMap/Fill row for that type, or whose
   mapped fact is unanswered, is a `missingField` problem with the channel's label. Batched: catalogue
   read once per channel type per request.
-- **D6 — Channel change alert.** A refresh that adds a required field records it; Home's attention
+- **D6 — Channel change alert.** A re-read (never a first read) that adds a required, non-adapter
+  field records it in `ChannelTypeChange` (type, added fields, detectedAt); Home's attention
   reads "{channel} now asks {n} more details for {type}" for shops with products of that type (parent Q22).
 - **D7 — JSON Schema stored** on `ChannelType.schema` for Amazon; validation itself is field-maps D-work.
 
@@ -55,7 +57,7 @@ the Home line follows existing attention lines.
 catalogue service on channels' surface).
 
 ## Data model
-[MIGRATION] `ChannelType`, `ChannelField`; a data migration loading Flipkart, Meesho, Google and Meta.
+[MIGRATION] `ChannelType`, `ChannelField`, `ChannelTypeChange`; a data migration loading Flipkart, Meesho, Google and Meta.
 
 ## Test plan
 Unit: Amazon schema to fields (required, conditional, enums, units) on a stubbed schema; template
