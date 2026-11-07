@@ -1,0 +1,48 @@
+# Handoff — listing-model
+
+- **Verified:** 2026-11-07
+- **Branch:** `feat/listing-model` (from `main` at `cdf20515`); one release at the end (decisions Q31)
+
+> For whoever continues this programme, human or agent. Read this, then the documents it lists, in
+> order. Everything decided is in `decisions.md` files; nothing here overrides them.
+
+## Read first, in this order
+1. [spec.md](spec.md) and [decisions.md](decisions.md) Q1–Q34: the model and every owner decision.
+2. [trd.md](trd.md): the architecture (storage, builder, completeness, migration); and
+   [ADR-0070](../../adr/0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md).
+3. Each subfeature's spec, decisions and trd, in delivery order:
+   [channel-catalogue](channel-catalogue/) → [field-maps](field-maps/) → [attributes](attributes/) →
+   [dynamic-form](dynamic-form/) → [retire-old-paths](retire-old-paths/).
+4. [plan.html](plan.html): the audit of 2026-11-06 and flow diagrams (open in a browser).
+
+## State on 2026-11-07
+- Specs accepted, UX docs signed off (no prototypes, Q34), TRDs accepted. Nothing implemented yet.
+- No open questions. A new question goes in the right `decisions.md` first: owner decides product,
+  policy and money; reversible technical calls are yours, marked `Claude · reversible`.
+
+## How to build (the repo's own rules)
+- `/bb-build` per subfeature, unit by unit, on `feat/listing-model`; a failing test per acceptance id first;
+  mutation-test every new guard and record it in the CHANGELOG; `/bb-review` in a fresh context per unit.
+- Gates: `npx tsc --noEmit -p .`, `npx vitest run tests/unit`, integration against the local
+  `bhendi_bazaar_ci` database, `npm run lint:boundary`, `npm run docs:check`, `npx next build`.
+  Run them with Node 22+ first on PATH (`/opt/homebrew/bin`): Node 20 breaks Vitest's error reporter.
+- Never migrate a non-local database; reference data ships as data migrations (CLAUDE.md invariant 7).
+- Commit each unit on the branch; push only when the owner asks. One release merges the whole branch.
+
+## Facts worth knowing before you start
+- Amazon's per-type required fields are hidden in its template's conditional formatting, not in
+  `listing-node-templates/extracted/amazon.json` (whose `req` is null). They were decoded on 2026-11-06:
+  HANDBAG reproduces the 13 fields of the real refusal. Recreate from the workbook (named formulas
+  `reqPTListN…`, `req_tog…`, product-type lists `PTListN`) or read the Product Type Definitions API.
+- Today a create never sends `Product.weight` or `measurements`; brand and shop defaults fill no fact;
+  all 125 Amazon attribute maps are `required=false`. These are what the programme fixes.
+- `HOME_BRAND_ORG_ID` (Niqab Boutique) is the connection that reads Amazon's definitions.
+- Default field maps are researched from each channel's own documentation and recorded with source,
+  date and reason (Q23); prove them with Amazon check-only and the Google and Meta validators.
+- The requests engine is decoupled (`tests/unit/requests-decoupled.test.ts`); a marketplace ticket kind
+  lives in `server/requests/marketplace/`.
+
+## Progress log (append below as units land)
+| Date | Subfeature | Unit | Commit | Note |
+|---|---|---|---|---|
+| 2026-11-07 | all | Plan, specs, decisions, UX docs, TRDs, ADR-0070 | (this commit) | Ready to build |

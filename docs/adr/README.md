@@ -105,4 +105,5 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0065](0065-storefront-reads-are-shared-across-requests-and-cleared-by-the-tables-a-write-touches.md) | Storefront reads are shared across requests, and cleared by the tables a write touches | Accepted | 2026-11-04 |
 | [0066](0066-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md) | The UI is built in tiers, and every icon goes through one seam | Proposed | 2026-11-04 |
 | [0067](0067-words-live-in-copy-modules-and-our-own-paths-in-one-routes-table.md) | Words live in copy modules, and our own paths in one routes table | Proposed | 2026-11-05 |
+| [0070](0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md) | A product's attributes are rows, mapped at runtime to each channel's own catalogue | Proposed | 2026-11-07 |
 <!-- generated:adr-index:end -->

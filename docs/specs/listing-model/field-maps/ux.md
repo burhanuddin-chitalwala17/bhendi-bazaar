@@ -1,0 +1,47 @@
+# UX — listing-model / field-maps
+
+- **Status:** Signed off
+- **Verified:** 2026-11-07
+- **Prototype:** none (parent Q34); this document is the reference
+- **References:** [spec.md](spec.md), [decisions.md](decisions.md)
+
+> The admin's view of how each channel field is filled. Read and edit only: Claude makes the
+> defaults (parent Q23). Buttons are never disabled (ADR-0053).
+
+## Journeys
+1. **See why a field is filled the way it is.** Admin → Channels → Amazon → TOTE_BAG → the field list
+   → a row shows its source and the reason, with the documentation it was checked against.
+2. **Change a map.** Tap a row → choose another source (a product question, a rule, a core field, a
+   shop setting, a fixed value) → for a choice, pair any unpaired answers → Save → "Saved. Every Tote
+   bag uses it from now on."
+3. **A channel added a field.** Home or the type page shows "Amazon added 2 fields to TOTE_BAG" → each
+   is unmapped until mapped; a field nothing can fill shows "Needs a developer · requested".
+
+## Screens
+| Screen | Route | Reached from | Serves |
+|---|---|---|---|
+| Channel types | `/admin/channels/{channel}` (changed) | Admin → Channels | R6 |
+| Field maps for a type | `/admin/channels/{channel}/{type}` (new) | a type row | R1, R3, R4, R6 |
+
+## State matrix — Field maps for a type
+| State | What the admin sees | Action |
+|---|---|---|
+| Normal | One row per field: label, Required / Conditional / Optional, source ("From product: Colour", "Rule: from Audience", "Fixed: Adult", "Name", "Filled by the system"), and a reason line | Tap a row to change |
+| Unmapped | "Not mapped" in amber on that row | Map it |
+| Needs a developer | "Needs a developer · requested" | — |
+| Unpaired answers | "3 answers have no Amazon match" under the row | Pair them |
+| Changed by the channel | A row marked "New · added 7 Nov" | Map it |
+| Saved | Toast "Saved. Every {type} uses it from now on." | — |
+| Loading / slow | Skeleton rows | — |
+| Retryable error | "Couldn't save that. Nothing was changed." | Try again |
+| Long content | Labels and reasons wrap | — |
+| Many items | Required first, then conditional, then optional; search by field name | — |
+| Phone / tablet / desktop | Rows on a phone; a table from `md:` | — |
+
+## Copy deck
+"From product: {attribute}" · "Rule: {rule}" · "Fixed: {value}" · "{core field}" · "Filled by the system" ·
+"Not mapped" · "Needs a developer · requested" · "{n} answers have no {channel} match" · "Pair them" ·
+"Checked against {source}, {date}" · "Saved. Every {type} uses it from now on." · "Couldn't save that. Nothing was changed."
+
+## Sign-off
+Signed off by the owner, 2026-11-07 ("signed off"), as documents in place of prototypes (parent Q34).
