@@ -1,0 +1,97 @@
+docs/specs/listing-model/field-maps/decisions.md
+  s_0972fb7ac9c18b::t_e0f9d78d8eb772 1-18
+docs/specs/listing-model/channel-catalogue/trd.md
+  s_0972fb7ac9c18b::t_f3251f7b88e5f0 26
+  s_0972fb7ac9c18b::t_5da2d964261769 1-25,27-69
+docs/specs/listing-model/plan.html
+  s_0972fb7ac9c18b::t_343b579f2010ae 1-321
+CLAUDE.md
+  s_0972fb7ac9c18b::t_7cb038d46da5a4 3
+docs/specs/listing-model/retire-old-paths/spec.md
+  s_0972fb7ac9c18b::t_6e34a084efba60 1-3,5-40
+  s_0972fb7ac9c18b::t_480efc5e8cd23d 4
+docs/specs/listing-model/channel-catalogue/spec.md
+  s_0972fb7ac9c18b::t_480efc5e8cd23d 4
+  s_0972fb7ac9c18b::t_c287d50eebb7fe 25-26,44-47
+  s_0972fb7ac9c18b::t_5d258cf15ee070 1-3,5-24,27-43,48-59
+docs/specs/listing-model/retire-old-paths/decisions.md
+  s_0972fb7ac9c18b::t_18ac5829b042e7 1-15
+docs/specs/listing-model/attributes/spec.md
+  s_0972fb7ac9c18b::t_c075d86a4509bb 1-3,5-61
+  s_0972fb7ac9c18b::t_480efc5e8cd23d 4
+docs/specs/listing-model/attributes/decisions.md
+  s_0972fb7ac9c18b::t_5dc6eb359a3083 1-18
+docs/specs/listing-model/dynamic-form/decisions.md
+  s_0972fb7ac9c18b::t_b8b948194546f5 1-16
+docs/specs/README.md
+  s_0972fb7ac9c18b::t_81cc13cef54209 56,97-101
+docs/specs/listing-model/dynamic-form/spec.md
+  s_0972fb7ac9c18b::t_480efc5e8cd23d 4
+  s_0972fb7ac9c18b::t_35b3fa2952ae37 1-3,5-49
+docs/CONVENTIONS.md
+  s_0972fb7ac9c18b::t_7cb038d46da5a4 3,59
+docs/specs/listing-model/field-maps/trd.md
+  s_0972fb7ac9c18b::t_f3251f7b88e5f0 24-25,29
+  s_0972fb7ac9c18b::t_e1298f6b937bc3 1-23,26-28,30-64
+docs/specs/listing-model/dynamic-form/trd.md
+  s_0972fb7ac9c18b::t_33f71007061a8b 1-59
+docs/specs/listing-model/field-maps/ux.md
+  s_0972fb7ac9c18b::t_480efc5e8cd23d 3,47
+  s_0972fb7ac9c18b::t_4727f708399264 1-2,4-46
+docs/specs/listing-model/retire-old-paths/trd.md
+  s_0972fb7ac9c18b::t_f3251f7b88e5f0 19
+  s_0972fb7ac9c18b::t_ef354989dfa63b 1-18,20-48
+docs/specs/listing-model/trd.md
+  s_0972fb7ac9c18b::t_f3251f7b88e5f0 3
+  s_0972fb7ac9c18b::t_202647475b06ca 1-2,4-84
+docs/specs/listing-model/channel-catalogue/decisions.md
+  s_0972fb7ac9c18b::t_e9778567f79a8a 1-10,12-19
+  s_0972fb7ac9c18b::t_c287d50eebb7fe 11
+docs/specs/listing-model/spec.md
+  s_0972fb7ac9c18b::t_480efc5e8cd23d 4
+  s_0972fb7ac9c18b::t_eb7347bfe352fe 1-3,5-25,28-40,42-57
+  s_0972fb7ac9c18b::t_c287d50eebb7fe 26-27,41
+docs/README.md
+  s_0972fb7ac9c18b::t_7cb038d46da5a4 3
+docs/specs/listing-model/decisions.md
+  s_0972fb7ac9c18b::t_168bbb3097b00b 45
+  s_0972fb7ac9c18b::t_63c77422231763 1-26,46-48
+  s_0972fb7ac9c18b::t_c287d50eebb7fe 33,35-44
+  s_0972fb7ac9c18b::t_87ddb2d4138a47 27-32
+  s_0972fb7ac9c18b::t_dbc31002d12ac6 34
+docs/adr/0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md
+  s_0972fb7ac9c18b::t_8cc438e10c990b 1-65
+docs/BACKLOG.md
+  s_0972fb7ac9c18b::t_d800e686c61d97 254,256-259
+  s_0972fb7ac9c18b::t_060cadbc19a4b3 255
+docs/adr/README.md
+  s_0972fb7ac9c18b::t_87ddb2d4138a47 108
+docs/specs/listing-model/attributes/trd.md
+  s_0972fb7ac9c18b::t_0ead360e99c067 1-26,28-67
+  s_0972fb7ac9c18b::t_f3251f7b88e5f0 27
+docs/specs/listing-model/dynamic-form/ux.md
+  s_0972fb7ac9c18b::t_d800e686c61d97 6
+  s_0972fb7ac9c18b::t_46fbf52ee88c8d 1-2,4-5,7-63
+  s_0972fb7ac9c18b::t_480efc5e8cd23d 3,64
+docs/specs/listing-model/field-maps/spec.md
+  s_0972fb7ac9c18b::t_480efc5e8cd23d 4
+  s_0972fb7ac9c18b::t_2797efa4f555f0 1-3,5-56
+docs/specs/listing-model/HANDOFF.md
+  s_0972fb7ac9c18b::t_26e8787e022016 1-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "93b0d2f2b06834ba191d72bd6c7ab2c6a4686e23",
+  "prompts": {},
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
