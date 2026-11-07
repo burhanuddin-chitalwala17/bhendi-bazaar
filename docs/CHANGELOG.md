@@ -12,6 +12,19 @@
 
 ## Entries
 
+## 2026-11-07 — Fix: a picker inside a dialog took no clicks (brand country of origin)
+
+- **Reported by the owner:** country of origin could not be chosen on a brand. The brand form is a
+  dialog and the country list a popover inside it. Radix's dismissable layer was installed twice
+  (`@radix-ui/react-dialog` and `react-popover` each bundled 1.2.1, the rest of the tree had 1.1.20), so
+  the popover registered in a different layer stack, the modal dialog kept `pointer-events: none` on
+  it, and every click fell through. Any popover, menu or select inside a dialog was exposed.
+- `package.json` `overrides` pin `@radix-ui/react-dismissable-layer` 1.2.1 and `react-focus-scope`
+  1.3.1 (both over three weeks old): one copy each. Lockfile changed; no code change.
+- New `tests/unit/overlay-in-dialog.test.tsx`: one installed copy of each, and a click on a popover
+  option inside a dialog lands. Mutation: the previous lockfile made both fail (the click test
+  reproduces the bug). Ran: unit, `tsc`, `next build`.
+
 ## 2026-11-06 — The ticket engine knows no module; marketplace tickets are a plug-in [CONTRACT]
 
 - **Asked by the owner:** requests must not be coupled to channels (setup-requests D4, Q33). The engine
