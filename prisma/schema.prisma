@@ -2607,6 +2607,59 @@ model ChannelAttributeMap {
   @@index([channel, theirCategory])
 }
 
+/// A channel's own product type: what it accepts, read from the channel itself, never typed by hand
+/// (listing-model/channel-catalogue D1, Q11). Written only by `channel-catalogue.repository`.
+model ChannelType {
+  id      String  @id @default(cuid())
+  /// A `CHANNEL` key.
+  channel String
+  /// The channel's own name for it: Amazon `TOTE_BAG`, Flipkart `bag`, a Google category id.
+  key     String
+  label   String
+  /// The channel's JSON Schema for the type, where it publishes one (Amazon); validated against before a send.
+  schema        Json?
+  schemaVersion String?
+  /// Where it was read from: `amazon-definitions-api`, `flipkart-template`, `google-spec`…
+  source  String
+  readAt  DateTime
+  /// The channel stopped offering it; kept so history and maps survive.
+  goneAt  DateTime?
+
+  fields ChannelField[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([channel, key])
+}
+
+/// One field a channel type asks, as the channel defines it (channel-catalogue D1, Q4).
+model ChannelField {
+  id            String      @id @default(cuid())
+  channelTypeId String
+  channelType   ChannelType @relation(fields: [channelTypeId], references: [id], onDelete: Cascade)
+  /// The channel's own name: `strap_type`, `outer.material`, `Bag Capacity`, `g:color`.
+  key           String
+  label         String
+  /// One of FIELD_REQUIREMENT: required, conditional, optional.
+  requirement   String
+  /// One of FIELD_KIND: choice, text, number, measure, boolean.
+  kind          String
+  /// The values it accepts, as it words them; null when free.
+  allowedValues Json?
+  /// The units it accepts for a measure; null otherwise.
+  allowedUnits  Json?
+  /// Filled by the channel's adapter (identity, offer, compliance plumbing): never asked of the shop (Q5).
+  adapterFills  Boolean   @default(false)
+  readAt        DateTime
+  goneAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([channelTypeId, key])
+}
+
 /// An attribute a channel's type requires that no fact answers: filled from the product itself or
 /// with one fixed value for that type (setup-requests D6, Q32). Written only by `channel-map.repository`.
 model ChannelAttributeFill {
