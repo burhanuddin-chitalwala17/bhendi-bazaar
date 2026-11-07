@@ -1,0 +1,48 @@
+server/channels/listing-create.service.ts
+  s_0972fb7ac9c18b::t_0a5b8fbd2e402e 8,77-79,86-90
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_f3ff0b2820ecb4 15-35
+tests/unit/listing-builder.test.ts
+  s_0972fb7ac9c18b::t_effb5631f930ab 217
+  s_0972fb7ac9c18b::t_9fea959c1b2ddb 135-140
+  s_0972fb7ac9c18b::t_4c1f0b96eb9a5e 208
+  s_0972fb7ac9c18b::t_61de885822d9e0 216,218-223
+prisma/migrations/20261108140000_amazon_yes_no_pairs/migration.sql
+  s_0972fb7ac9c18b::t_e9d8c965e0dc7c 1-10
+docs/specs/listing-model/field-maps/decisions.md
+  s_0972fb7ac9c18b::t_f3ff0b2820ecb4 14,29-31
+server/channels/channel-catalogue.service.ts
+  s_0972fb7ac9c18b::t_0a5b8fbd2e402e 56-76
+docs/ARCHITECTURE.md
+  s_0972fb7ac9c18b::t_f3ff0b2820ecb4 61
+server/listing/listing-builder.ts
+  s_0972fb7ac9c18b::t_9fea959c1b2ddb 81-82
+server/channels/providers/amazon/amazon.publish.ts
+  s_0972fb7ac9c18b::t_4c1f0b96eb9a5e 434-435,437
+docs/specs/listing-model/HANDOFF.md
+  s_0972fb7ac9c18b::t_f3ff0b2820ecb4 104
+server/channels/providers/amazon/amazon.shape.ts
+  s_0972fb7ac9c18b::t_61de885822d9e0 17-32,41,59-60,62,66
+  s_0972fb7ac9c18b::t_4c1f0b96eb9a5e 120-121,157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "dd5ac1134d9c0df54e6a407342be9b6c02e6852a",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
