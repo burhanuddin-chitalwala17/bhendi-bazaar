@@ -1,6 +1,6 @@
 # TRD — listing-model / channel-catalogue
 
-- **Status:** Implemented
+- **Status:** Implemented; A1 pending the HANDBAG schema (`scripts/amazon-type-probe.ts --save`, then a fixture test)
 - **Domain:** listing (the catalogue and readiness), with channels (the Amazon read)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-08

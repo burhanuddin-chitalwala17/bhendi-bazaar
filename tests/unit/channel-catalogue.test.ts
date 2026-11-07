@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { amazonCatalogueFields } from "@server/channels/providers/amazon/amazon.publish";
+import { amazonCatalogueFields, amazonRequiredAttributes } from "@server/channels/providers/amazon/amazon.publish";
 import { amazonRequirements, holds } from "@server/channels/providers/amazon/amazon.requirements";
 import { listingReadiness, type ChannelRegister } from "@server/listing/channel-readiness";
 
@@ -81,11 +81,36 @@ describe("Amazon's rules judged for one standalone new page on amazon.in (channe
     expect(req.get("age_range_description")).toBe("conditional");
   });
 
+  it("judges an `if` nested in a branch, and keywords beside an `if`, rather than dropping them", () => {
+    const nested = amazonRequirements({ allOf: [
+      { if: { not: { required: ["merchant_suggested_asin"] } }, then: { if: { required: ["parentage_level"] }, then: { required: ["deep_parent"] }, else: { required: ["deep_standalone"] } } },
+      { if: { required: ["parentage_level"] }, then: { required: ["swatch"] }, required: ["beside"] },
+    ] });
+    expect(nested.get("deep_standalone")).toBe("required");
+    expect(nested.get("deep_parent")).toBe("conditional");
+    expect(nested.get("beside")).toBe("required");
+    expect(nested.get("swatch")).toBe("conditional");
+  });
+
+  it("treats an attribute a create sends only when answered as unknown, never as present", () => {
+    expect(holds({ required: ["brand"] })).toBeNull();
+    expect(amazonRequirements({ allOf: [{ if: { not: { required: ["bullet_point"] } }, then: { required: ["x"] } }] }).get("x")).toBe("conditional");
+  });
+
   it("reads an unknown keyword as unknown, and a vacuous constraint on an absent attribute as true", () => {
     expect(holds({ minProperties: 3 })).toBeNull();
     expect(holds({ properties: { parentage_level: { contains: {} } } })).toBe(true);
-    expect(holds({ required: ["brand"] })).toBe(true);
+    expect(holds({ required: ["item_name"] })).toBe(true);
     expect(holds({ required: ["merchant_suggested_asin"] })).toBe(false);
+    // `false` under properties means "must be absent".
+    expect(holds({ properties: { item_name: false } })).toBe(false);
+    expect(holds({ properties: { merchant_suggested_asin: false } })).toBe(true);
+    expect(holds({ properties: { brand: false } })).toBeNull();
+  });
+
+  it("asks a request only what is required of the Q3 listing and not sent by a create (setup-requests D7)", () => {
+    const names = amazonRequiredAttributes({ ...RULES, properties: Object.fromEntries(["item_name", "style", "outer", "item_weight", "variation_theme", "gtin"].map((k) => [k, { title: k }])) }).map((a) => a.name);
+    expect(names.sort()).toEqual(["item_weight", "outer", "style"]);
   });
 });
 

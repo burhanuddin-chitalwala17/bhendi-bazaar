@@ -12,6 +12,19 @@
 
 ## Entries
 
+## 2026-11-08 — listing-model: channel-catalogue, fresh-context review of the fix unit
+
+`/bb-review` of `c11ad764` found no invariant breach and three ways "required" could still be decided wrong:
+- `properties: { x: false }` (x must be absent) was read as always true; it now holds only if x is absent.
+- An `if` nested inside a `then`/`else`, and `required` beside an `if`, were dropped; one `apply` now walks
+  every keyword of every rule.
+- Attributes a create sends only when answered (brand, bullets, description, main image, country of
+  origin) were counted as always present; `PRESENT` is now only what `amazonCreateBody` always sends.
+- `amazonTypeDefinition`'s filter is now the pure `amazonRequiredAttributes`, tested, since setup-request
+  tickets read it. The TRD's status says A1 waits for the probe; the generator's README says never to
+  overwrite an applied migration with its output.
+- Tests: three new unit cases; mutation: undoing each fix turned the suite red (1, 7 and 2 failures).
+
 ## 2026-11-08 — listing-model: channel-catalogue review fixes, and Google and Meta sent for visibility [CONTRACT] [MIGRATION]
 
 Fixes from `/bb-review` of channel-catalogue units 1–2 (`a3f17ee`), which corrects that entry's claims:

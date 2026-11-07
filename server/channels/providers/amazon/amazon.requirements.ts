@@ -8,11 +8,8 @@ import { FIELD_REQUIREMENT, type FieldRequirement } from "../publish";
 
 /** Attributes that listing never carries: it is no variation family and claims no existing page. */
 const ABSENT = new Set(["merchant_suggested_asin", "parentage_level", "child_parent_sku_relationship", "variation_theme"]);
-/** Attributes every create sends whatever the product (amazonCreateBody). */
-const PRESENT = new Set([
-  "item_name", "brand", "bullet_point", "product_description", "main_product_image_locator", "purchasable_offer",
-  "fulfillment_availability", "condition_type", "country_of_origin",
-]);
+/** Attributes amazonCreateBody sends that listing unconditionally; the rest go only when answered, so unknown. */
+const PRESENT = new Set(["item_name", "condition_type", "purchasable_offer", "fulfillment_availability", "supplier_declared_dg_hz_regulation"]);
 /** Keywords that annotate and constrain nothing. */
 const INERT = new Set(["$comment", "description", "title", "$id", "examples"]);
 
@@ -44,8 +41,11 @@ export function holds(schema: unknown): Tri {
       case "required":
         return [and(list(value).map((k) => presence(String(k))))];
       case "properties":
-        // A constraint on an attribute the listing lacks holds vacuously, as JSON Schema says.
-        return [and(Object.entries(obj(value)).map(([k, sub]) => (ABSENT.has(k) || Object.keys(obj(sub)).length === 0 ? true : null)))];
+        // A constraint on an attribute the listing lacks holds vacuously; `false` means "must be absent".
+        return [and(Object.entries(obj(value)).map(([k, sub]): Tri => {
+          if (sub === false) return not(presence(k));
+          return ABSENT.has(k) || sub === true || Object.keys(obj(sub)).length === 0 ? true : null;
+        }))];
       case "not":
         return [not(holds(value))];
       case "allOf":
@@ -74,19 +74,17 @@ export function amazonRequirements(schema: Record<string, unknown>): Map<string,
   const asks = (when: Tri) => (when === true ? FIELD_REQUIREMENT.REQUIRED : FIELD_REQUIREMENT.CONDITIONAL);
 
   // A rule that never applies to the Q3 listing still applies to some listing (a parent, a theme): conditional.
-  const apply = (branch: unknown, when: Tri) => {
-    const b = obj(branch);
-    for (const key of list(b.required)) raise(String(key), asks(when));
-    // One of several alternatives: none of them is required on its own.
-    for (const alt of [...list(b.anyOf), ...list(b.oneOf)]) apply(alt, when === false ? false : null);
-    for (const rule of list(b.allOf)) walk(rule, when);
-  };
-  const walk = (rule: unknown, when: Tri) => {
+  const apply = (rule: unknown, when: Tri) => {
     const r = obj(rule);
-    if (!("if" in r)) return apply(r, when);
-    const cond = holds(r.if);
-    apply(r.then, and([when, cond]));
-    apply(r.else, and([when, not(cond)]));
+    for (const key of list(r.required)) raise(String(key), asks(when));
+    // One of several alternatives: none of them is required on its own.
+    for (const alt of [...list(r.anyOf), ...list(r.oneOf)]) apply(alt, when === false ? false : null);
+    for (const sub of list(r.allOf)) apply(sub, when);
+    if ("if" in r) {
+      const cond = holds(r.if);
+      apply(r.then, and([when, cond]));
+      apply(r.else, and([when, not(cond)]));
+    }
   };
 
   apply({ required: schema.required, allOf: schema.allOf }, true);

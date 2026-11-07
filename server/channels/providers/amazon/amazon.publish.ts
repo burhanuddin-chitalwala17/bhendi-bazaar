@@ -282,15 +282,17 @@ function allowedOf(property: Record<string, unknown>): string[] {
 /** A type's definition: its required attributes and what each allows (setup-requests D7). */
 export async function amazonTypeDefinition(token: TokenSource, productType: string): Promise<TypeDefinition | null> {
   const schema = await amazonTypeSchema(token, productType);
-  if (!schema) return null;
+  return schema ? { theirCategory: productType, attributes: amazonRequiredAttributes(schema) } : null;
+}
+
+/** What a request asks for: the attributes required of the Q3 listing that a create does not send itself. Pure. */
+export function amazonRequiredAttributes(schema: Record<string, unknown>): TypeDefinition["attributes"] {
   const requirements = amazonRequirements(schema);
-  const properties = obj(schema.properties);
-  const attributes = Object.entries(properties).flatMap(([name, raw]) => {
+  return Object.entries(obj(schema.properties)).flatMap(([name, raw]) => {
     if (requirements.get(name) !== FIELD_REQUIREMENT.REQUIRED || SENT_BY_CREATE.has(name) || name.startsWith("other_product_image_locator")) return [];
     const property = obj(raw);
     return [{ name, label: str(property.title) ?? name, required: true, allowed: allowedOf(property) }];
   });
-  return { theirCategory: productType, attributes };
 }
 
 /** The units a measure attribute accepts, from its `unit` enum. */
