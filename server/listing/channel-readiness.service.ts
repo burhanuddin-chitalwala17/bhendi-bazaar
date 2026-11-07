@@ -14,6 +14,8 @@ import {
   type ChannelRequirements,
 } from "./channel-readiness";
 import { channelMapRepository } from "./channel-map.repository";
+import { fieldMapRepository } from "./field-map.repository";
+import { ANY_BB_TYPE, FIELD_SOURCE, fieldOf, type FieldMapRow } from "./field-map.types";
 import { channelCatalogueRepository } from "./channel-catalogue.repository";
 import { FIELD_REQUIREMENT } from "./channel-catalogue.types";
 import { orgChannelRepository } from "./org-channel.repository";
@@ -288,9 +290,10 @@ async function registersForTypes(
   // What each of their categories requires, from the channel's own definition, and what our fill rows
   // already cover: two reads for every type at once (listing-model/channel-catalogue D5).
   const pairs = [...new Map(categories.filter((c) => c.theirCategory).map((c) => [`${c.channel}:${c.theirCategory}`, { channel: c.channel, key: c.theirCategory! }])).values()];
-  const [catalogue, fills] = await Promise.all([
+  const [catalogue, fills, fieldMaps] = await Promise.all([
     channelCatalogueRepository.fieldsFor(pairs),
     channelMapRepository.fillsForMany(pairs),
+    fieldMapRepository.forTypes(pairs.map((p) => ({ channel: p.channel, channelType: p.key }))),
   ]);
   const required = new Map<string, ChannelRequirements>();
   for (const [k, t] of catalogue) {
@@ -323,10 +326,21 @@ async function registersForTypes(
         ),
         mappedValues,
         requiredByCategory: byChannel(required, channel),
-        filledByCategory: byChannel(filled, channel),
+        filledByCategory: byChannel(withMaps(filled, fieldMaps, type.key), channel),
       });
     }
     out.set(type.key, registers);
+  }
+  return out;
+}
+
+/** A field a map fills for this type counts as filled; one waiting on a developer does not (field-maps R1). */
+function withMaps(filled: ReadonlyMap<string, ReadonlySet<string>>, maps: readonly FieldMapRow[], bbType: string): Map<string, Set<string>> {
+  const out = new Map([...filled].map(([k, v]) => [k, new Set(v)]));
+  for (const m of maps) {
+    if (m.source === FIELD_SOURCE.DEVELOPER || (m.bbType !== ANY_BB_TYPE && m.bbType !== bbType)) continue;
+    const k = `${m.channel}:${m.channelType}`;
+    out.set(k, (out.get(k) ?? new Set()).add(fieldOf(m.fieldPath)));
   }
   return out;
 }

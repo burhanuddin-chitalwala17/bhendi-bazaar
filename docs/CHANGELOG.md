@@ -12,6 +12,41 @@
 
 ## Entries
 
+## 2026-11-08 — listing-model / field-maps unit 1: listings built from field maps [MIGRATION]
+
+- **New tables** `FieldMap` and `FieldValueMap` (migration `20261108100000_field_maps`; two new tables,
+  nothing dropped). One writer, `server/listing/field-map.repository.ts`. A map is keyed by the
+  channel's own names and a field path, with our type's own row over the one for every type (Q7, Q8).
+- **Builder** (`server/listing/listing-builder.ts`, pure): sources attribute, rule, core, shop, constant
+  (a default the product's answer overrides, R4) and developer; units converted (`units.ts`); answers
+  paired by the map's pair, then the channel's word of the same letters, else a `noMatch` gap (Q6, Q10);
+  required fields with no map, no answer or waiting on a developer are named. Rules in `field-rules.ts`
+  (department, age range, gender, age group from audience; size label; size display from measures).
+  `listing-build.service.ts` reads every input once per batch.
+- **Amazon create** now builds from the maps and shapes each leaf from the type's stored JSON Schema
+  (`amazon.shape.ts`, Q9); a new listing is checked against that schema with `ajv` first and refused with
+  the attribute's name, no call made (D6). `forwardAttributes`/`fillAttributes`/`mapped()` removed.
+- **Google and Meta feed** writes the built attributes as `g:` tags (channel-catalogue Q8).
+- **Setup requests:** Apply writes field maps beside the old register, so what it sets up still reaches a
+  create. **Readiness:** a field a map fills is no longer "missing" (one more statement, budget 7→8).
+- **Behaviour note:** until unit 2's default maps land, a create sends only Amazon's own core fields;
+  the branch ships as one release (parent Q31).
+- **Fresh-context review fixes:** the create body's own attributes are trimmed to the keys each item's
+  schema declares (Amazon's manufacturer contact takes `value` alone; without this every create with a
+  manufacturer was refused locally); a measure with no unit named goes in the first unit the channel lists
+  that ours converts to, else a gap; an uncompilable schema skips the local check; pairs are read only
+  as own keys; a setup request's Apply merges pairs instead of replacing them; what the maps could not fill
+  is kept on the listing as warnings (Q6); the rules' header says whose words they return. Mutations:
+  sending the body untrimmed failed the whole-body schema test; reading pairs as plain properties failed
+  the `constructor` test.
+- Not a contract change: the new `field-map.types.ts` shapes never cross the browser boundary (noted in CONTRACTS.md); the admin route comes in unit 2.
+- New package `ajv` 8.17.1 (DEPENDENCIES.md). `Product.measurements` added to catalog's listing read.
+- Tests: `tests/unit/listing-builder.test.ts` (A2, A3, pairing, gaps, overrides, Amazon shape checked
+  against the real HANDBAG schema, feed tags), `tests/integration/listing-build.test.ts` (Q7, A3, forty
+  products cost one), `setup-requests` now proves Apply through the builder. Mutations: returning the
+  answer unpaired made the no-match test fail; converting across unit families made the unit test fail.
+  Ran: unit, integration (local ci), `tsc`, `lint:boundary`, `docs:check`.
+
 ## 2026-11-08 — listing-model: channel-catalogue A1 proven on Amazon's real HANDBAG schema
 
 - The owner ran `scripts/amazon-type-probe.ts HANDBAG --save` through the home brand; the schema is

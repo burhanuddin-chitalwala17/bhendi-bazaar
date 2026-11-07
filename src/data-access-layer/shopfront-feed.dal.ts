@@ -29,6 +29,7 @@ function toCandidate(
   { product, brandName }: ChannelFeedProduct,
   category: string | null,
   origin: string,
+  attributes: FeedCandidate["attributes"],
 ): FeedCandidate {
   const photos = product.media.filter((m) => m.kind === "IMAGE");
   const ordered = [...photos.filter((m) => m.isThumbnail), ...photos.filter((m) => !m.isThumbnail)];
@@ -45,6 +46,7 @@ function toCandidate(
     // The shop is the maker of what it sells unbranded (D9).
     brand: brandName ?? product.org.name,
     category,
+    attributes,
   };
 }
 
@@ -62,9 +64,18 @@ export async function shopfrontFeedXml(channel: ShopfrontChannel): Promise<strin
     shopfrontFeedService.categoryRules(channel),
   ]);
 
-  const candidates = products.flatMap((row) => {
+  const sold = products.flatMap((row) => {
     const verdict = categoryFor(rules, row.productType, row.kind);
-    return verdict.sold ? [toCandidate(row, verdict.category, origin)] : [];
+    return verdict.sold ? [{ row, category: verdict.category }] : [];
   });
+  const attributes = await shopfrontFeedService.attributes(channel, sold.flatMap(({ row, category }) => category ? [{
+    channelType: category,
+    product: {
+      id: row.product.id, name: row.product.name, description: row.product.description, brand: row.brandName,
+      sku: row.listing.sku ?? row.product.id, weightKg: row.listing.weightKg, barcode: row.listing.barcode,
+      productType: row.productType, facts: row.listing.facts, measurements: row.listing.measurements, hsn: null,
+    },
+  }] : []));
+  const candidates = sold.map(({ row, category }) => toCandidate(row, category, origin, attributes.get(row.product.id) ?? []));
   return buildFeed(channel, header, candidates);
 }

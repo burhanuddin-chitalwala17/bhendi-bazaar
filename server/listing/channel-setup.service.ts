@@ -3,6 +3,8 @@ import type { Prisma } from "@prisma/client";
 import type { Channel } from "@server/shared/channels";
 
 import { ATTRIBUTE_SOURCE, channelMapRepository, type AttributeSource } from "./channel-map.repository";
+import { PAIR_MODE, fieldMapRepository, type FieldMapInput } from "./field-map.repository";
+import { ANY_BB_TYPE, FIELD_SOURCE } from "./field-map.types";
 import { ANSWER, FACTS, FACT_DECLARATIONS, type FactKey } from "./listing-facts";
 import { listingValueRepository } from "./listing-value.repository";
 import { productReadinessRepository } from "./product-readiness.repository";
@@ -23,6 +25,17 @@ export type SetupField =
   | { attribute: string; mode: "fill"; source: AttributeSource | null; constant: string | null };
 
 const SOURCE = "Applied from a setup request";
+
+/**
+ * The same answer as a field map, written beside the old register until retire-old-paths drops it: the
+ * create reads field maps (listing-model/field-maps R5), so an Apply must reach them.
+ */
+function fieldMapOf(channel: Channel, channelType: string, fieldPath: string, now: Date, from: Partial<FieldMapInput> & { source: FieldMapInput["source"] }): FieldMapInput {
+  return {
+    channel, channelType, fieldPath, bbType: ANY_BB_TYPE, attributeKey: null, ruleKey: null, coreKey: null, shopKey: null,
+    constant: null, unitTarget: null, checkedSource: SOURCE, checkedOn: now, reason: "Chosen by the team on a setup request", ...from,
+  };
+}
 
 /**
  * What a channel's setup is made of, as setup-requests reads and writes it: the vocabulary a plan
@@ -98,6 +111,9 @@ export const channelSetupService = {
     for (const field of fields) {
       if (field.mode === "fill") {
         await channelMapRepository.setFill({ channel, theirCategory, theirAttribute: field.attribute, source: field.source, constant: field.constant, checkedOn: now, checkedSource: SOURCE }, tx);
+        await fieldMapRepository.save(fieldMapOf(channel, theirCategory, field.attribute, now, field.constant !== null
+          ? { source: FIELD_SOURCE.CONSTANT, constant: field.constant }
+          : { source: FIELD_SOURCE.CORE, coreKey: field.source }), {}, tx);
         continue;
       }
       const list = FACT_DECLARATIONS[field.fact].list;
@@ -107,6 +123,8 @@ export const channelSetupService = {
       }
       const freeText = FACT_DECLARATIONS[field.fact].answer !== ANSWER.CHOICE;
       await channelMapRepository.setAttribute({ channel, theirCategory, fact: field.fact, theirAttribute: field.attribute, required: field.required, freeText, checkedOn: now, checkedSource: SOURCE }, tx);
+      await fieldMapRepository.save(fieldMapOf(channel, theirCategory, field.attribute, now, { source: FIELD_SOURCE.ATTRIBUTE, attributeKey: field.fact }),
+        Object.fromEntries(field.newAnswers.map((a) => [a.key, a.label])), tx, PAIR_MODE.MERGE);
     }
   },
 

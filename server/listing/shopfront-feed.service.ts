@@ -1,4 +1,6 @@
 import { channelMapRepository } from "./channel-map.repository";
+import type { BuiltField } from "./field-map.types";
+import { listingBuildService, type ListingSource } from "./listing-build.service";
 import { orgChannelRepository } from "./org-channel.repository";
 import type { CategoryRule, ShopfrontChannel } from "./shopfront-feed";
 
@@ -16,5 +18,11 @@ export const shopfrontFeedService = {
   async categoryRules(channel: ShopfrontChannel): Promise<CategoryRule[]> {
     const { categories } = await channelMapRepository.byChannel(channel);
     return categories;
+  },
+
+  /** Each product's built attributes for its channel category, the whole feed's inputs read once (field-maps R5). */
+  async attributes(channel: ShopfrontChannel, items: ReadonlyArray<{ product: ListingSource; channelType: string }>): Promise<Map<string, BuiltField[]>> {
+    const { built } = await listingBuildService.build(channel, items);
+    return new Map([...built].map(([id, listing]) => [id, listing.fields]));
   },
 };

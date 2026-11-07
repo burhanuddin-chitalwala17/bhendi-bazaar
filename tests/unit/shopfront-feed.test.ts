@@ -27,6 +27,7 @@ const candidate = (over: Partial<FeedCandidate> = {}): FeedCandidate => ({
   inStock: true,
   brand: "Al Noor",
   category: "1604",
+  attributes: [],
   ...over,
 });
 

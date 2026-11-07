@@ -4,7 +4,8 @@ import { CHANNEL_LABELS } from "@server/shared/channels";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { prisma } from "@server/shared/prisma";
 import { productService } from "@server/catalog/product.service";
-import { channelMapRepository } from "@server/listing/channel-map.repository";
+import { listingBuildService } from "@server/listing/listing-build.service";
+import { GAP_REASON, type BuildGap } from "@server/listing/field-map.types";
 import { channelReadinessService } from "@server/listing/channel-readiness.service";
 import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.service";
 import { productFamilyService } from "@server/listing/product-family.service";
@@ -14,7 +15,7 @@ import { isMarketplaceChannel, type MarketplaceChannel } from "./channel-connect
 import { channelConnectionRepository } from "./channel-connection.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
-import { forwardAttributes, listsOf, pickTheme, skuFor, fillAttributes } from "./listing-create";
+import { pickTheme, skuFor } from "./listing-create";
 import { marketplacePhotoUrls } from "./listing-photos-out";
 import { enqueueListingCheck, LISTING_CHECK_AFTER_SECONDS, LISTING_CHECK_EVERY_SECONDS } from "./listing-publish.job";
 import { complaintIssues, handOverComplaints } from "./listing-complaints";
@@ -55,22 +56,33 @@ async function readinessOf(orgId: string, product: Product, channel: Marketplace
 }
 
 /** Everything a create sends for one product (D8): its listing, its mapped facts, the brand and shop's compliance. */
-async function inputFor(orgId: string, row: PlatformListingRow, product: Product, channel: MarketplaceChannel, family: CreateListingInput["family"]): Promise<CreateListingInput> {
+type BuiltInput = CreateListingInput & { gaps: BuildGap[] };
+
+async function inputFor(orgId: string, row: PlatformListingRow, product: Product, channel: MarketplaceChannel, family: CreateListingInput["family"]): Promise<BuiltInput> {
   const rules = providerFor(channel).listingRules;
   const values = computeListing(masterValues(product), parseOverrides(row.overrides, product.media));
-  let attributes: Record<string, string> = {};
-  if (row.createMode === CREATE_MODE.NEW && row.marketplaceType && product.productType) {
-    const register = await channelMapRepository.registersFor({ channels: [channel], productTypes: [product.productType], lists: listsOf(product.facts) });
-    const fills = await channelMapRepository.fillsFor(channel, [row.marketplaceType]);
-    attributes = {
-      ...fillAttributes(row.marketplaceType, fills, { sku: row.sku ?? skuFor(product), name: values.title, brand: product.brand?.name ?? null }),
-      ...forwardAttributes(row.marketplaceType, register.attributes, register.values, product.facts),
-    };
-  }
   const defaults = await orgListingDefaultsService.get(orgId);
   const hsn = defaults.taxCodes.find((t) => t.categoryId === product.categoryId)?.taxCode ?? null;
+  const sku = row.sku ?? skuFor(product);
+  let fields: CreateListingInput["fields"] = [];
+  let gaps: BuildGap[] = [];
+  let typeSchema: unknown = null;
+  if (row.createMode === CREATE_MODE.NEW && row.marketplaceType) {
+    // Built from the product and the field maps every time it is sent (listing-model/field-maps R5).
+    const { built, schemas } = await listingBuildService.build(channel, [{
+      channelType: row.marketplaceType,
+      product: {
+        id: product.id, name: values.title, sku, description: values.description, brand: product.brand?.name ?? null,
+        weightKg: product.weight, barcode: product.barcode, productType: product.productType,
+        facts: product.facts, measurements: product.measurements, hsn,
+      },
+    }]);
+    fields = built.get(product.id)?.fields ?? [];
+    gaps = built.get(product.id)?.gaps ?? [];
+    typeSchema = schemas.get(`${channel}:${row.marketplaceType}`) ?? null;
+  }
   return {
-    sku: row.sku ?? skuFor(product),
+    sku,
     mode: (row.createMode as CreateMode | null) ?? CREATE_MODE.NEW,
     targetExternalId: row.targetExternalId,
     marketplaceType: row.marketplaceType,
@@ -86,7 +98,9 @@ async function inputFor(orgId: string, row: PlatformListingRow, product: Product
     brand: product.brand?.name ?? null,
     generic: defaults.amazonGeneric,
     quantity: product.archivedAt ? 0 : product.stockLocations.reduce((n, s) => n + s.quantity, 0),
-    attributes,
+    fields,
+    gaps,
+    typeSchema,
     compliance: {
       countryOfOrigin: product.brand?.countryOfOrigin ?? defaults.countryOfOrigin,
       manufacturer: product.brand?.manufacturer ?? null,
@@ -95,6 +109,24 @@ async function inputFor(orgId: string, row: PlatformListingRow, product: Product
       hsn,
     },
   };
+}
+
+/**
+ * What the maps could not fill, kept on the listing as warnings so nothing is left out unseen
+ * (listing-model/field-maps Q6); a required one Amazon names itself as an error.
+ */
+function gapWarnings(gaps: readonly BuildGap[], channel: MarketplaceChannel): ListingIssue[] {
+  const label = CHANNEL_LABELS[channel];
+  return gaps.map((g) => ({
+    code: `gap_${g.reason}`,
+    severity: "warning" as const,
+    field: null,
+    attribute: g.field,
+    message: g.reason === GAP_REASON.NO_MATCH
+      ? `${label} has no match for "${g.answer}" in ${g.label}, so it was left out.`
+      : g.reason === GAP_REASON.DEVELOPER ? `${g.label} needs a question we don't ask yet; it's with our team.`
+      : `${g.label} wasn't sent: ${g.reason === GAP_REASON.UNMAPPED ? "we don't fill it yet" : "this product doesn't say"}.`,
+  }));
 }
 
 const checkAt = (from: Date) => new Date(from.getTime() + LISTING_CHECK_AFTER_SECONDS[0] * 1000);
@@ -195,7 +227,7 @@ export const listingCreateService = {
     const provider = providerFor(channel);
     const token = () => channelConnectionService.accessToken(connection.id);
     const now = new Date();
-    let input: CreateListingInput;
+    let input: BuiltInput;
     try {
       if (row.familyId) {
         const family = await productFamilyService.byId(row.orgId, row.familyId);
@@ -228,7 +260,7 @@ export const listingCreateService = {
       if (answer.issues.some((i) => i.severity === "error")) return await this.refuse(row, answer.issues);
       // A family's page exists once accepted, so its members may follow; a product's fields stay pending until a look confirms them (D3).
       const sent = row.familyId ? { title: input.title } : null;
-      await platformListingRepository.recordAnswer(row.id, { sent, publishState: PUBLISH_STATE.CHECKING, issues: answer.issues, nextCheckAt: checkAt(now), checkCount: 0, keepPending: true }, now, prisma, [PUBLISH_STATE.SENT]);
+      await platformListingRepository.recordAnswer(row.id, { sent, publishState: PUBLISH_STATE.CHECKING, issues: [...answer.issues, ...gapWarnings(input.gaps, channel)], nextCheckAt: checkAt(now), checkCount: 0, keepPending: true }, now, prisma, [PUBLISH_STATE.SENT]);
       await enqueueListingCheck(prisma, LISTING_CHECK_EVERY_SECONDS);
       return PUBLISH_STATE.CHECKING;
     } catch (error) {

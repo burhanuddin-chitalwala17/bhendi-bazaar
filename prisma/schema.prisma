@@ -2859,3 +2859,44 @@ model StockCorrection {
 
   @@index([connectionId, correctedAt])
 }
+
+/// Where one channel field's value comes from (listing-model/field-maps D1, Q7). Keyed by the channel's
+/// own names so a default ships before the channel is read; `bbType` blank means every type of ours
+/// that publishes there, and a type's own row wins.
+model FieldMap {
+  id            String          @id @default(cuid())
+  channel       String
+  channelType   String
+  /// The channel field, or a path into it (`outer.material`); the first segment is the field (Q8).
+  fieldPath     String
+  bbType        String          @default("")
+  /// attribute / rule / core / shop / constant / developer (FIELD_SOURCE).
+  source        String
+  attributeKey  String?
+  ruleKey       String?
+  coreKey       String?
+  shopKey       String?
+  constant      String?
+  /// The channel's unit word the value is converted to (`kilograms`).
+  unitTarget    String?
+  checkedSource String
+  checkedOn     DateTime
+  reason        String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  values        FieldValueMap[]
+
+  @@unique([channel, channelType, fieldPath, bbType])
+}
+
+/// One of our answers in a channel's word, for one map (field-maps D1, Q10).
+model FieldValueMap {
+  id           String   @id @default(cuid())
+  fieldMapId   String
+  fieldMap     FieldMap @relation(fields: [fieldMapId], references: [id], onDelete: Cascade)
+  optionKey    String
+  channelValue String
+  createdAt    DateTime @default(now())
+
+  @@unique([fieldMapId, optionKey])
+}

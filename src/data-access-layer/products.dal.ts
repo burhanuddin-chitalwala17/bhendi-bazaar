@@ -358,6 +358,7 @@ export const productsDAL = {
       productType: row.productType,
       kind: row.kind,
       brandName: row.brand?.name ?? null,
+      listing: { sku: row.sku, weightKg: row.weight, barcode: row.barcode, facts: row.facts, measurements: row.measurements },
     }));
   },
 };
@@ -367,4 +368,6 @@ export interface ChannelFeedProduct {
   productType: string | null;
   kind: string | null;
   brandName: string | null;
+  /** What the field maps build the channel's attributes from (listing-model/field-maps R5). */
+  listing: { sku: string | null; weightKg: number | null; barcode: string | null; facts: unknown; measurements: unknown };
 }

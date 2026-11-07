@@ -85,4 +85,11 @@ export const channelCatalogueRepository = {
     });
     return rows.map((r) => ({ channel: r.channelType.channel, typeKey: r.channelType.key, typeLabel: r.channelType.label, added: r.added, detectedAt: r.detectedAt }));
   },
+
+  /** The stored JSON Schema of some types, keyed "channel:type": a provider shapes and checks a listing by it (field-maps D5, D6). */
+  async schemas(pairs: ReadonlyArray<{ channel: string; key: string }>): Promise<Map<string, unknown>> {
+    if (pairs.length === 0) return new Map();
+    const rows = await prisma.channelType.findMany({ where: { OR: pairs.map((p) => ({ channel: p.channel, key: p.key })), schema: { not: Prisma.DbNull } }, select: { channel: true, key: true, schema: true } });
+    return new Map(rows.map((r) => [`${r.channel}:${r.key}`, r.schema]));
+  },
 };

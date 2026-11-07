@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-11-07
+- **Verified:** 2026-11-08
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -306,6 +306,7 @@ and the re-exported channel set are gone (Q4); channel readiness lives in `serve
 the server only (Home), never sent by a route. Two routes, `withOrg`, no body, each answering
 `{ ok: true }` and idempotent: `POST`/`DELETE /api/org/[orgId]/setup/hidden` (hide, unhide) and
 `POST /api/org/[orgId]/setup/shared` (the first share). Caller: `src/components/org/home/setupApiClient.ts`.
+**`FieldMapRow`, `BuiltField`, `BuildGap`** (`server/listing/field-map.types.ts`, listing-model/field-maps unit 1) are server-only: a listing built from the field maps, handed by listing to channels' providers and to the Google/Meta feed. No route sends them yet; the admin's field-map screen (field-maps unit 2) will add its own parsed schema and DTO here.
 **`HomeAttentionDto`** (`src/data-access-layer/org/home.dal.ts`) is a server read for Home's lines,
 each `{ ok: true, value } | { ok: false }`; no wire shape. Since design-system Q31 (2026-11-04) it carries
 `toPack` (paid parcels still packing, with the oldest wait) and `lowStock` (products at or under their

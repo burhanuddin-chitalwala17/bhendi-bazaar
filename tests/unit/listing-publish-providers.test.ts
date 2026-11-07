@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { amazonCreateBody, amazonIssues, amazonListingProblems, amazonPatches } from "@server/channels/providers/amazon/amazon.publish";
 import { flipkartAnswer } from "@server/channels/providers/flipkart/flipkart.publish";
-import { forwardAttributes, pickTheme, skuFor } from "@server/channels/listing-create";
+import { pickTheme, skuFor } from "@server/channels/listing-create";
 
 const NOW = new Date("2026-11-02T10:00:00.000Z");
 
@@ -47,7 +47,7 @@ describe("a new Amazon page (D6, D7, Q8)", () => {
   const base = {
     sku: "NBH0221", mode: "new" as const, targetExternalId: null, marketplaceType: "SCARF", family: null,
     title: "Crepe Hijab, Olive", price: 44_900, mrpPaise: 59_900, photoUrls: ["https://cdn/a.jpg"], features: ["Soft crepe"], description: "A crepe hijab.",
-    barcode: null, brand: "Niqab Boutique", generic: false, quantity: 4, attributes: { color: "Green", "sleeve.type": "Long" },
+    barcode: null, brand: "Niqab Boutique", generic: false, quantity: 4, fields: [{ path: "color", value: "Green" }, { path: "sleeve.type", value: "Long" }], typeSchema: null,
     compliance: { countryOfOrigin: "IN", manufacturer: "Niqab Boutique, Bengaluru", packer: null, importer: null, hsn: "6214" },
   };
 
@@ -106,17 +106,6 @@ describe("a marketplace's complaints (D9, Q6)", () => {
 });
 
 describe("turning a product into a new listing (D7, D8)", () => {
-  it("sends a listed answer as the marketplace's word, free text as typed, and leaves out an answer with no word", () => {
-    const facts = { colour: { value: "olive", origin: "shop" }, pattern: { value: "plaid", origin: "shop" } };
-    const attributes = [
-      { theirCategory: "SCARF", fact: "colour", theirAttribute: "color" },
-      { theirCategory: "SCARF", fact: "pattern", theirAttribute: "pattern" },
-      { theirCategory: "ABAYA", fact: "colour", theirAttribute: "colour_name" },
-    ];
-    const values = [{ list: "colour", valueKey: "olive", theirValue: "Green" }];
-    expect(forwardAttributes("SCARF", attributes, values, facts)).toEqual({ color: "Green" });
-  });
-
   it("picks the single-axis theme that holds the family's axis, and none when nothing fits", () => {
     expect(pickTheme(["colour"], ["SIZE_NAME/COLOR_NAME", "COLOR_NAME", "SIZE_NAME"])).toBe("COLOR_NAME");
     expect(pickTheme(["size"], ["COLOR_NAME"])).toBeNull();
@@ -163,7 +152,7 @@ describe("an unregistered brand on Amazon (setup-requests Q35)", () => {
   const input = {
     sku: "NBH0221", mode: "new" as const, targetExternalId: null, marketplaceType: "SCARF", family: null,
     title: "Crepe Hijab", price: 44_900, mrpPaise: 59_900, photoUrls: ["https://cdn/a.jpg"], features: [], description: "x",
-    barcode: null, brand: "Niqab Boutique", generic: true, quantity: 1, attributes: {},
+    barcode: null, brand: "Niqab Boutique", generic: true, quantity: 1, fields: [], typeSchema: null,
     compliance: { countryOfOrigin: "IN", manufacturer: null, packer: null, importer: null, hsn: null },
   };
   it("lists as Generic, never under the shop's unregistered brand, and takes the barcode exemption", () => {

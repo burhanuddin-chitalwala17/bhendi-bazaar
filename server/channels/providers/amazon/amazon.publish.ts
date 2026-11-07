@@ -2,8 +2,9 @@ import { retryBusy, rupeesFromPaise, type ListingAttributes, type TokenSource } 
 import { MarketplaceAuthError, MarketplaceRequestError, MarketplaceUnavailableError, marketplaceFetch } from "../marketplace-provider";
 import { amazonRequirements } from "./amazon.requirements";
 import { FIELD_KIND, FIELD_REQUIREMENT, type CatalogueField, type CatalogueType, type CreateListingInput, type FieldKind, type ListingProblem, type PageMatch, type PublishAnswer, type PublishChanges, type PublishRef, type StatusAnswer, type TypeDefinition, type TypeMatch } from "../publish";
-import { ISSUE_NEED, LISTING_FIELD, LISTING_FIELDS, type IssueNeed, type ListingField, type ListingIssue, type ListingRules } from "../../platform-listing.types";
+import { CREATE_MODE, ISSUE_NEED, LISTING_FIELD, LISTING_FIELDS, type IssueNeed, type ListingField, type ListingIssue, type ListingRules } from "../../platform-listing.types";
 import { AMAZON_IN, spApi } from "./amazon.listings";
+import { amazonAttributes, checkAgainstSchema, conformToSchema } from "./amazon.shape";
 
 /**
  * What Amazon lets us write on a listing and its limits (channel-listings Q5, Q12): every field,
@@ -87,6 +88,10 @@ export function amazonIssues(raw: unknown): ListingIssue[] {
     }];
   });
 }
+
+/** A problem the type's schema found before any call, worded and pinned like Amazon's own (field-maps D6). */
+const schemaIssue = (attribute: string | null, message: string): ListingIssue =>
+  amazonIssues([{ severity: "ERROR", code: "schema", message, attributeNames: attribute ? [attribute] : [] }])[0];
 
 /** One operation per changed field (D2); price and on sale share one merge of the offer, with its selectors. */
 export function amazonPatches(changes: PublishChanges, now: Date): unknown[] {
@@ -362,16 +367,6 @@ export async function amazonVariationThemes(token: TokenSource, _account: string
 
 const barcodeType = (code: string) => (code.length === 12 ? "upc" : code.length === 14 ? "gtin" : "ean");
 
-/** A mapped attribute as Amazon's shape: `name` or `name.part` paths from the mapping (D8). */
-function mapped(attributes: Record<string, string>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [path, value] of Object.entries(attributes)) {
-    const [name, part] = path.split(".");
-    out[name] = part ? [{ [part]: text(value), marketplace_id: AMAZON_IN }] : text(value);
-  }
-  return out;
-}
-
 /** The whole listing a create sends: the one place a full listing goes to Amazon (D2, D6, D7, D8). */
 export function amazonCreateBody(input: CreateListingInput): { productType: string; requirements: string; attributes: Record<string, unknown> } {
   const isParent = input.family?.role === "parent";
@@ -403,8 +398,9 @@ export function amazonCreateBody(input: CreateListingInput): { productType: stri
   return {
     productType: input.marketplaceType ?? "PRODUCT",
     requirements: "LISTING",
-    attributes: {
-      ...mapped(input.attributes),
+    // Our own plumbing keys trimmed to what each attribute's item declares, where the type's schema is held (field-maps Q9).
+    attributes: conformToSchema(input.typeSchema, {
+      ...amazonAttributes(input.typeSchema, input.fields),
       item_name: text(input.title),
       // Amazon's own word for an unbranded listing; never another shop's registered brand (setup-requests Q35).
       ...(input.generic ? { brand: text(AMAZON_GENERIC_BRAND) } : input.brand ? { brand: text(input.brand) } : {}),
@@ -427,7 +423,7 @@ export function amazonCreateBody(input: CreateListingInput): { productType: stri
           }
         : {}),
       ...offer,
-    },
+    }),
   };
 }
 
@@ -435,6 +431,11 @@ export function amazonCreateBody(input: CreateListingInput): { productType: stri
 export async function amazonCreate(token: TokenSource, account: string | null, input: CreateListingInput, options: { preview: boolean }): Promise<PublishAnswer> {
   if (!account) throw new MarketplaceAuthError("rejected");
   const body = amazonCreateBody(input);
+  // What the type's own schema refuses is the shop's to fix, named before Amazon is asked (field-maps D6).
+  if (input.mode === CREATE_MODE.NEW) {
+    const problems = checkAgainstSchema(input.typeSchema, body.attributes);
+    if (problems.length > 0) return { accepted: [], issues: problems.map((p) => schemaIssue(p.attribute, p.message)), decidesLater: false };
+  }
   const query: Record<string, string> = { requirements: body.requirements, includedData: "issues", ...(options.preview ? { mode: "VALIDATION_PREVIEW" } : {}) };
   try {
     const answer = await retryBusy(() =>
