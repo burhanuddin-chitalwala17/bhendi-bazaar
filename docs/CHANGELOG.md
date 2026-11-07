@@ -12,6 +12,39 @@
 
 ## Entries
 
+## 2026-11-08 — listing-model: channel-catalogue review fixes, and Google and Meta sent for visibility [CONTRACT] [MIGRATION]
+
+Fixes from `/bb-review` of channel-catalogue units 1–2 (`a3f17ee`), which corrects that entry's claims:
+its integration test proved A1 on five stub fields, not HANDBAG's 13, and its suite was not green when run whole.
+- **Amazon's rules are judged, not lumped (Q3).** The reader stored every `allOf[].then.required` as
+  conditional, so a rule that applies to every new page (Amazon's "no `merchant_suggested_asin`") never
+  reached readiness. New `server/channels/providers/amazon/amazon.requirements.ts` evaluates each rule's
+  `if` in three values for one standalone, shop-shipped new listing on amazon.in: holds → required;
+  applies only to another listing (a parent, a theme), an either/or, or anything it cannot judge →
+  conditional. `amazonTypeDefinition` (requests) uses the same rule, so the file has one meaning of required.
+- **Writes fit the transaction:** a type's fields are written in one `INSERT … ON CONFLICT` statement
+  instead of one upsert each; ids follow the template migration's (`chf_` + md5), so a field keeps one id.
+- **A4:** each `missingField` carries `asOf`, the date its type was read; the panel says "(their list of
+  {date})". The unused `channelCatalogueRepository.readAt` and the duplicate `CatalogueChange` are gone.
+- **Daily read logged:** `maintain` logs each marketplace's catalogue read (read, failed, changed) or why
+  it read nothing (home brand unset or not connected).
+- **Test isolation:** the catalogue suite enabled Amazon on the shared test shop and never restored it,
+  failing seven readiness tests whenever it ran first; it now restores what it found.
+- **Google and Meta (Q8, owner):** gender, age group and size are sent for visibility though India does
+  not enforce them, and asked only through answers the shop already gives. Migration
+  `20261108090000_channel_visibility_attributes`: audience → `gender` maps and value pairs on both
+  channels' six apparel nodes; age group and clothing size marked adapter-derived; Meta colour required
+  on apparel. The generator now emits the same state (88 rows compared). Before this, the 2026-11-07
+  catalogue asked gender and age group as new questions on every apparel product (18 false gaps measured).
+- **`scripts/amazon-type-probe.ts`:** prints what an Amazon type requires of the Q3 listing, through the
+  home brand; `--save` keeps the schema as a test fixture. To be run where the production connection is.
+- [CONTRACT] `ListingProblem` `missingField` gains `asOf`.
+- Tests: `tests/unit/channel-catalogue.test.ts` (rule evaluation: new page, parent, else branch,
+  either/or, value test, unknown keyword); `tests/integration/channel-catalogue.test.ts` (A3 lists per
+  channel, A4 date, isolation). Mutation: inverting `not`, and treating "cannot tell" as required, each
+  turned the unit suite red. Ran: `tsc`, unit, both integration suites in sequence (17 passed).
+- Still open: A1 against Amazon's real HANDBAG schema needs the probe run once with production access.
+
 ## 2026-11-07 — listing-model: each channel's own catalogue, and readiness reads it [CONTRACT] [MIGRATION]
 
 - **channel-catalogue (units 1, 2; listing-model Q22, channel-catalogue Q1–Q7).** New `ChannelType`,

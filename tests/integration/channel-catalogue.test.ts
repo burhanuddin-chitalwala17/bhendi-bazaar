@@ -18,6 +18,7 @@ describe.skipIf(!isDisposableDb)("channel catalogue (local db)", () => {
   const type = `${stamp}-bag`;
   const theirType = `${stamp.toUpperCase()}_TOTE`;
   let orgId: string;
+  let amazonWas: { enabled: boolean } | null;
 
   const field = (key: string, label: string, requirement: "required" | "optional", adapterFills = false) =>
     ({ key, label, requirement, kind: "text" as const, allowedValues: null, allowedUnits: null, adapterFills });
@@ -31,15 +32,21 @@ describe.skipIf(!isDisposableDb)("channel catalogue (local db)", () => {
     await prisma.productType.create({ data: { key: type, label: "Test bag", facts: ["colour"], measures: [], variantAxis: [], kinds: [], factLabels: {}, labelFrom: [] } });
     await maps.setCategory({ channel: "amazon", productType: type, kind: null, theirCategory: theirType, fit: "EXACT", checkedOn: new Date() });
     await maps.setAttribute({ channel: "amazon", theirCategory: theirType, fact: "colour", theirAttribute: "color", required: true, checkedOn: new Date() });
+    amazonWas = await prisma.orgChannel.findUnique({ where: { orgId_channel: { orgId, channel: "amazon" } }, select: { enabled: true } });
     await prisma.orgChannel.upsert({ where: { orgId_channel: { orgId, channel: "amazon" } }, create: { orgId, channel: "amazon", enabled: true }, update: { enabled: true } });
   });
 
   afterAll(async () => {
+    // The shop is shared with every other suite: leave Amazon as it was found.
+    if (amazonWas) await prisma.orgChannel.update({ where: { orgId_channel: { orgId, channel: "amazon" } }, data: amazonWas });
+    else await prisma.orgChannel.deleteMany({ where: { orgId, channel: "amazon" } });
     await prisma.channelType.deleteMany({ where: { key: theirType } });
     await prisma.channelAttributeMap.deleteMany({ where: { theirCategory: theirType } });
     await prisma.channelCategoryMap.deleteMany({ where: { productType: type } });
     await prisma.productType.deleteMany({ where: { key: type } });
   });
+
+  const READ_ON = new Date("2026-11-01T06:00:00.000Z");
 
   const amazonVerdict = async () => {
     const verdicts = await readiness.forProduct(orgId, { productType: type, kind: null, facts: { colour: { value: "black", origin: "product" } } as never });
@@ -50,11 +57,13 @@ describe.skipIf(!isDisposableDb)("channel catalogue (local db)", () => {
     await catalogue.store("amazon", {
       key: theirType, label: "Tote bag", schema: null, schemaVersion: null,
       fields: [field("color", "Colour", "required"), field("strap_type", "Strap Type", "required"), field("style", "Style", "required"), field("brand", "Brand Name", "required", true), field("lining", "Lining", "optional")],
-    }, "test");
+    }, "test", READ_ON);
     const verdict = await amazonVerdict();
-    const missing = verdict.report.problems.filter((p) => p.problem === "missingField").map((p) => (p as { label: string }).label);
-    expect(missing.sort()).toEqual(["Strap Type", "Style"]);
+    const missing = verdict.report.problems.filter((p) => p.problem === "missingField");
+    expect(missing.map((p) => (p as { label: string }).label).sort()).toEqual(["Strap Type", "Style"]);
     expect(verdict.report.state).toBe("incomplete");
+    // Nothing re-reads it here, as when the home brand is disconnected: the last read advises, dated (A4).
+    expect(missing.every((p) => (p as { asOf: string }).asOf === READ_ON.toISOString())).toBe(true);
   });
 
   it("never asks a field the channel's adapter fills, nor an optional one (A2)", async () => {
@@ -76,5 +85,16 @@ describe.skipIf(!isDisposableDb)("channel catalogue (local db)", () => {
     expect(changes.some((c) => c.typeKey === theirType)).toBe(true);
     const missing = (await amazonVerdict()).report.problems.filter((p) => p.problem === "missingField").map((p) => (p as { label: string }).label);
     expect(missing.sort()).toEqual(["Number of Pockets", "Strap Type"]);
+  });
+
+  it("loads every template and spec channel with its own required fields (A3)", async () => {
+    const required = async (channel: string, key: string) =>
+      (await catalogue.fieldsFor([{ channel, key }])).get(`${channel}:${key}`)?.fields
+        .filter((f) => f.requirement === "required" && !f.adapterFills).map((f) => f.key) ?? [];
+    expect(await required("flipkart", "bag")).toEqual(expect.arrayContaining(["Color", "Ideal For", "Type"]));
+    expect((await required("meesho", "Handbags")).length).toBeGreaterThan(0);
+    expect((await required("google", "3032")).sort()).toEqual(["color", "gender"]);
+    expect(await required("google", "100")).toEqual([]);
+    expect((await required("meta", "3032")).sort()).toEqual(["color", "gender"]);
   });
 });

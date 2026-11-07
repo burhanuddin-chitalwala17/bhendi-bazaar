@@ -58,6 +58,8 @@ export type ListingProblem =
       /** The channel's own name and label, as the shop will read it there. */
       field: string;
       label: string;
+      /** When the channel's list was read, ISO: a stale list still advises, and says its date (A4). */
+      asOf: string;
     }
   | {
       problem: typeof LISTING_PROBLEM.UNMAPPED_VALUE;

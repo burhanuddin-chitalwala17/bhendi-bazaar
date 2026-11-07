@@ -93,9 +93,9 @@ function meesho() {
 }
 
 // Google Merchant Center product data specification (support.google.com/merchants/answer/7052112),
-// read 2026-11-07. Colour, gender and age group are required for free listings on all of Apparel &
-// Accessories (166); size on Clothing (1604) and Shoes (187). India is not among the ads countries,
-// but free listings apply here, so the stricter rule is stored; readiness advises, never gates.
+// read 2026-11-07. India enforces only colour on Apparel & Accessories (166). Gender, age group and size
+// are sent anyway because filters and matching read them (channel-catalogue Q8, migration
+// 20261108090000): gender is mapped from audience, age group and size are derived by the adapter.
 const GOOGLE_TYPES = {
   "100": { label: "Luggage & Bags > Backpacks" },
   "108": { label: "Luggage & Bags > Cosmetic & Toiletry Bags" },
@@ -128,8 +128,8 @@ function google() {
       field("google_product_category", OPTIONAL, adapter), field("product_type", OPTIONAL, adapter),
       field("color", t.apparel ? REQUIRED : CONDITIONAL),
       field("gender", t.apparel ? REQUIRED : OPTIONAL, { kind: KIND.CHOICE, values: ["male", "female", "unisex"] }),
-      field("age_group", t.apparel ? REQUIRED : OPTIONAL, { kind: KIND.CHOICE, values: ["newborn", "infant", "toddler", "kids", "adult"] }),
-      field("size", t.clothing ? REQUIRED : CONDITIONAL),
+      field("age_group", t.apparel ? REQUIRED : OPTIONAL, { kind: KIND.CHOICE, values: ["newborn", "infant", "toddler", "kids", "adult"], adapter: t.apparel }),
+      field("size", t.clothing ? REQUIRED : CONDITIONAL, { adapter: t.clothing }),
       field("material", CONDITIONAL), field("pattern", CONDITIONAL),
       field("is_bundle", OPTIONAL, { kind: KIND.CHOICE, values: ["yes", "no"] }), field("multipack", OPTIONAL, { kind: KIND.NUMBER }),
       field("product_weight", OPTIONAL, { kind: KIND.MEASURE, units: ["g", "kg", "oz", "lb"] }),
@@ -160,9 +160,9 @@ function meta() {
       field("item_group_id", CONDITIONAL, adapter), field("sale_price", OPTIONAL, adapter),
       field("gtin", OPTIONAL, adapter), field("mpn", OPTIONAL, adapter), field("additional_image_link", OPTIONAL, adapter),
       field("product_type", OPTIONAL, adapter), field("quantity_to_sell_on_facebook", OPTIONAL, { kind: KIND.NUMBER, adapter: true }),
-      field("color", CONDITIONAL), field("size", t.clothing ? REQUIRED : CONDITIONAL),
-      field("gender", CONDITIONAL, { kind: KIND.CHOICE, values: ["female", "male", "unisex"] }),
-      field("age_group", CONDITIONAL, { kind: KIND.CHOICE, values: ["adult", "all ages", "teen", "kids", "toddler", "infant", "newborn"] }),
+      field("color", t.apparel ? REQUIRED : CONDITIONAL), field("size", t.clothing ? REQUIRED : CONDITIONAL, { adapter: t.clothing }),
+      field("gender", t.apparel ? REQUIRED : CONDITIONAL, { kind: KIND.CHOICE, values: ["female", "male", "unisex"] }),
+      field("age_group", t.apparel ? REQUIRED : CONDITIONAL, { kind: KIND.CHOICE, values: ["adult", "all ages", "teen", "kids", "toddler", "infant", "newborn"], adapter: t.apparel }),
       field("material", CONDITIONAL), field("pattern", CONDITIONAL),
       field("shipping_weight", OPTIONAL, { kind: KIND.MEASURE, units: ["g", "kg", "oz", "lb"] }),
     ],

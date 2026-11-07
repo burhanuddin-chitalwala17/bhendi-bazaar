@@ -11,6 +11,7 @@ import {
   type ChannelRegister,
   type ListingReadinessReport,
   type ListingSubject,
+  type ChannelRequirements,
 } from "./channel-readiness";
 import { channelMapRepository } from "./channel-map.repository";
 import { channelCatalogueRepository } from "./channel-catalogue.repository";
@@ -291,8 +292,11 @@ async function registersForTypes(
     channelCatalogueRepository.fieldsFor(pairs),
     channelMapRepository.fillsForMany(pairs),
   ]);
-  const required = new Map<string, { key: string; label: string }[]>();
-  for (const [k, fields] of catalogue) required.set(k, fields.filter((f) => f.requirement === FIELD_REQUIREMENT.REQUIRED && !f.adapterFills).map((f) => ({ key: f.key, label: f.label })));
+  const required = new Map<string, ChannelRequirements>();
+  for (const [k, t] of catalogue) {
+    const fields = t.fields.filter((f) => f.requirement === FIELD_REQUIREMENT.REQUIRED && !f.adapterFills).map((f) => ({ key: f.key, label: f.label }));
+    required.set(k, { asOf: t.readAt.toISOString(), fields });
+  }
   const filled = new Map<string, Set<string>>();
   for (const f of fills) filled.set(`${f.channel}:${f.theirCategory}`, (filled.get(`${f.channel}:${f.theirCategory}`) ?? new Set()).add(f.theirAttribute));
   const byChannel = <T,>(source: Map<string, T>, channel: string) => new Map([...source].filter(([k]) => k.startsWith(`${channel}:`)).map(([k, v]) => [k.slice(channel.length + 1), v]));

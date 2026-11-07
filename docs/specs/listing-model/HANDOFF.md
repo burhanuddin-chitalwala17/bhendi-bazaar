@@ -1,6 +1,6 @@
 # Handoff — listing-model
 
-- **Verified:** 2026-11-07
+- **Verified:** 2026-11-08
 - **Branch:** `feat/listing-model` (from `main` at `cdf20515`); one release at the end (decisions Q31)
 
 > For whoever continues this programme, human or agent. Read this, then the documents it lists, in
@@ -47,3 +47,4 @@
 |---|---|---|---|---|
 | 2026-11-07 | all | Plan, specs, decisions, UX docs, TRDs, ADR-0070 | (this commit) | Ready to build |
 | 2026-11-07 | channel-catalogue | 1, 2: tables, Amazon read, readiness, Home line; Flipkart/Meesho/Google/Meta data migration | (this commit) | Gates green. **/bb-review not yet run** (paused by owner to hand off): run it on this commit first, then field-maps unit 1 |
+| 2026-11-08 | channel-catalogue | Review of units 1–2, and its fixes; Google/Meta Q8 | (this commit) | Review found: Amazon `allOf` rules lumped as conditional (A1 unproven), suite pollution, Google/Meta asking duplicate questions, A4 missing. All fixed. **Next:** run `scripts/amazon-type-probe.ts HANDBAG --save` with production access to prove A1, then field-maps unit 1 (which must make the feed send the Q8 attributes) |

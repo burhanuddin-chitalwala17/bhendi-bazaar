@@ -86,6 +86,12 @@ export interface AttributeMapping {
   freeText?: boolean;
 }
 
+/** What one channel type requires that nothing of ours fills, and when the channel said so (channel-catalogue D5, A4). */
+export interface ChannelRequirements {
+  asOf: string;
+  fields: readonly { key: string; label: string }[];
+}
+
 /**
  * One channel's half of the dictionary, for one product type.
  *
@@ -106,7 +112,7 @@ export interface ChannelRegister {
    * What each of their categories requires, from the channel's own definition (channel-catalogue D5):
    * their category → required fields nothing on the channel's side fills. Empty until a catalogue is read.
    */
-  requiredByCategory?: ReadonlyMap<string, readonly { key: string; label: string }[]>;
+  requiredByCategory?: ReadonlyMap<string, ChannelRequirements>;
   /** Their attributes something on our side fills by a fill row (a constant, the SKU…), per their category. */
   filledByCategory?: ReadonlyMap<string, ReadonlySet<string>>;
 }
@@ -209,9 +215,10 @@ export function listingReadiness(
   if (theirCategory !== null) {
     const mapped = new Set(attributes.map((a) => a.theirAttribute.split(".")[0]).concat(attributes.map((a) => a.theirAttribute)));
     const filled = register.filledByCategory?.get(theirCategory) ?? new Set<string>();
-    for (const field of register.requiredByCategory?.get(theirCategory) ?? []) {
+    const asked = register.requiredByCategory?.get(theirCategory);
+    for (const field of asked?.fields ?? []) {
       if (mapped.has(field.key) || filled.has(field.key)) continue;
-      problems.push({ problem: LISTING_PROBLEM.MISSING_FIELD, field: field.key, label: field.label });
+      problems.push({ problem: LISTING_PROBLEM.MISSING_FIELD, field: field.key, label: field.label, asOf: asked!.asOf });
     }
   }
 

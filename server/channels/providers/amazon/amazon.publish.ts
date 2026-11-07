@@ -1,5 +1,6 @@
 import { retryBusy, rupeesFromPaise, type ListingAttributes, type TokenSource } from "../listing-read";
 import { MarketplaceAuthError, MarketplaceRequestError, MarketplaceUnavailableError, marketplaceFetch } from "../marketplace-provider";
+import { amazonRequirements } from "./amazon.requirements";
 import { FIELD_KIND, FIELD_REQUIREMENT, type CatalogueField, type CatalogueType, type CreateListingInput, type FieldKind, type ListingProblem, type PageMatch, type PublishAnswer, type PublishChanges, type PublishRef, type StatusAnswer, type TypeDefinition, type TypeMatch } from "../publish";
 import { ISSUE_NEED, LISTING_FIELD, LISTING_FIELDS, type IssueNeed, type ListingField, type ListingIssue, type ListingRules } from "../../platform-listing.types";
 import { AMAZON_IN, spApi } from "./amazon.listings";
@@ -282,10 +283,10 @@ function allowedOf(property: Record<string, unknown>): string[] {
 export async function amazonTypeDefinition(token: TokenSource, productType: string): Promise<TypeDefinition | null> {
   const schema = await amazonTypeSchema(token, productType);
   if (!schema) return null;
-  const required = new Set(list(schema.required).map(String));
+  const requirements = amazonRequirements(schema);
   const properties = obj(schema.properties);
   const attributes = Object.entries(properties).flatMap(([name, raw]) => {
-    if (!required.has(name) || SENT_BY_CREATE.has(name) || name.startsWith("other_product_image_locator")) return [];
+    if (requirements.get(name) !== FIELD_REQUIREMENT.REQUIRED || SENT_BY_CREATE.has(name) || name.startsWith("other_product_image_locator")) return [];
     const property = obj(raw);
     return [{ name, label: str(property.title) ?? name, required: true, allowed: allowedOf(property) }];
   });
@@ -310,13 +311,11 @@ function kindOf(property: Record<string, unknown>): FieldKind {
 }
 
 /**
- * A type's every field as the catalogue stores it (listing-model/channel-catalogue D2): required from
- * the schema's `required`, conditional where an `allOf` rule requires it, optional otherwise; the
- * attributes a create always sends marked as the adapter's (Q5). Pure, so it is tested on a fixture.
+ * A type's every field as the catalogue stores it (listing-model/channel-catalogue D2), each rule judged
+ * for the listing Q3 names (`amazonRequirements`); what a create always sends is the adapter's (Q5).
  */
 export function amazonCatalogueFields(schema: Record<string, unknown>): CatalogueField[] {
-  const required = new Set(list(schema.required).map(String));
-  const conditional = new Set(list(schema.allOf).flatMap((rule) => list(obj(obj(rule).then).required).map(String)));
+  const requirements = amazonRequirements(schema);
   return Object.entries(obj(schema.properties)).map(([key, raw]) => {
     const property = obj(raw);
     const allowed = allowedOf(property);
@@ -324,7 +323,7 @@ export function amazonCatalogueFields(schema: Record<string, unknown>): Catalogu
     return {
       key,
       label: str(property.title) ?? key,
-      requirement: required.has(key) ? FIELD_REQUIREMENT.REQUIRED : conditional.has(key) ? FIELD_REQUIREMENT.CONDITIONAL : FIELD_REQUIREMENT.OPTIONAL,
+      requirement: requirements.get(key) ?? FIELD_REQUIREMENT.OPTIONAL,
       kind: kindOf(property),
       allowedValues: allowed.length > 0 ? allowed : null,
       allowedUnits: units.length > 0 ? units : null,

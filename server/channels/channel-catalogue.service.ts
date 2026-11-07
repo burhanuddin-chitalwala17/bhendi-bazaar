@@ -14,17 +14,26 @@ export interface CatalogueChange {
   added: string[];
 }
 
+/** One marketplace's daily read: what it read, what failed, what changed, or why it read nothing. */
+export interface CatalogueRefresh {
+  read: number;
+  failed: number;
+  changes: CatalogueChange[];
+  skipped?: string;
+}
+
 /**
  * Reading each marketplace's own types into listing's catalogue (listing-model/channel-catalogue D2):
  * through one connected org, the home brand, once a day, for every type a BB type publishes to. A
  * marketplace that publishes no definitions reads nothing (D3). A failed read leaves the last one (A4).
  */
 export const channelCatalogueReader = {
-  async refresh(channel: Channel, now = new Date()): Promise<{ read: number; failed: number; changes: CatalogueChange[] }> {
+  async refresh(channel: Channel, now = new Date()): Promise<CatalogueRefresh> {
     const homeOrgId = homeBrandOrgId();
-    if (!homeOrgId || !isMarketplaceChannel(channel)) return { read: 0, failed: 0, changes: [] };
+    if (!isMarketplaceChannel(channel)) return { read: 0, failed: 0, changes: [], skipped: "not a marketplace" };
+    if (!homeOrgId) return { read: 0, failed: 0, changes: [], skipped: "HOME_BRAND_ORG_ID unset" };
     const connection = await channelConnectionRepository.find(homeOrgId, channel as MarketplaceChannel);
-    if (!connection || connection.state !== CONNECTION_STATE.CONNECTED) return { read: 0, failed: 0, changes: [] };
+    if (!connection || connection.state !== CONNECTION_STATE.CONNECTED) return { read: 0, failed: 0, changes: [], skipped: "home brand not connected" };
     const token = () => channelConnectionService.accessToken(connection.id);
     const provider = providerFor(channel as MarketplaceChannel);
     let read = 0;
@@ -44,5 +53,4 @@ export const channelCatalogueReader = {
     }
     return { read, failed, changes };
   },
-
 };

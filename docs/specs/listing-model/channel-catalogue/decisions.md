@@ -1,6 +1,6 @@
 # Decisions — listing-model / channel-catalogue
 
-- **Verified:** 2026-11-07
+- **Verified:** 2026-11-08
 
 > Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented ones ([ADR-0062](../../../adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)).
 > Binding here: parent [decisions](../decisions.md) Q1, Q2, Q3, Q11; [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md).
@@ -14,6 +14,7 @@
 | Q5 | Fields a create always sends (identity, offer, compliance plumbing)? | Stored like any other field, marked as filled by the channel's adapter, so readiness never asks the shop for them | Claude · reversible | 2026-11-07 | One list per channel instead of a hidden `SENT_BY_CREATE` in code | implemented (units 1, 2) |
 | Q6 | What does the shop see in this subfeature? | Readiness on the product and listing names each required field of the channel type that has no value and no map: "Amazon needs 13 more: Style, Inner material…". No new screen | Claude · reversible | 2026-11-07 | The outcome is visible where readiness already shows; the form changes in dynamic-form | implemented (units 1, 2) |
 | Q7 | How often is Amazon re-read? | Daily, through the home brand, for every Amazon type a BB type maps to; a change is recorded with its date | Owner | 2026-11-07 | Parent Q11 | implemented (units 1, 2) |
+| Q8 | Do Google and Meta get the apparel attributes India does not enforce (gender, age group, size)? | Yes, always sent, because their filters and query matching read them; asked only where the shop already answers them. Gender is the audience answer mapped (male / female / unisex, Amazon's words); age group and size are derived by the adapter (size: the variant's, else Free Size); colour is required on Meta apparel as on Google. Nothing new is asked of the shop | Owner | 2026-11-08 | Owner: "if the new rules help us be more visible then let's do it". A required field the shop cannot answer only warns; one that is sent puts the product in filtered and gendered results. Replaces the 2026-11-07 generator's stricter rule, which asked gender and age group as new questions (never released) | implemented (fix unit) |
 
 ## Parked (Later)
 - None.

@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 
 import { prisma } from "@server/shared/prisma";
 
-import type { CatalogueType } from "./channel-catalogue.types";
+import { FIELD_REQUIREMENT, type CatalogueType } from "./channel-catalogue.types";
 
 /** A stored channel field, as readiness reads it (listing-model/channel-catalogue D1). */
 export interface CatalogueFieldRow {
@@ -13,6 +13,12 @@ export interface CatalogueFieldRow {
   allowedValues: unknown;
   allowedUnits: unknown;
   adapterFills: boolean;
+}
+
+/** A stored channel type's live fields, and when the channel last described it (A4). */
+export interface CatalogueTypeRow {
+  readAt: Date;
+  fields: CatalogueFieldRow[];
 }
 
 const FIELD_SELECT = { key: true, label: true, requirement: true, kind: true, allowedValues: true, allowedUnits: true, adapterFills: true } as const;
@@ -33,30 +39,40 @@ export const channelCatalogueRepository = {
         select: { id: true },
       });
       const before = await tx.channelField.findMany({ where: { channelTypeId: row.id, goneAt: null }, select: { key: true, requirement: true } });
-      const wasRequired = new Set(before.filter((f) => f.requirement === "required").map((f) => f.key));
-      for (const f of type.fields) {
-        const data = { label: f.label, requirement: f.requirement, kind: f.kind, allowedValues: json(f.allowedValues), allowedUnits: json(f.allowedUnits), adapterFills: f.adapterFills, readAt: now, goneAt: null };
-        await tx.channelField.upsert({ where: { channelTypeId_key: { channelTypeId: row.id, key: f.key } }, create: { channelTypeId: row.id, key: f.key, ...data }, update: data });
+      const wasRequired = new Set(before.filter((f) => f.requirement === FIELD_REQUIREMENT.REQUIRED).map((f) => f.key));
+      // One statement for every field: an Amazon type has hundreds, and a write each outlasts the transaction.
+      // Ids are the template migration's, so a field keeps one id whichever path wrote it.
+      if (type.fields.length > 0) {
+        await tx.$executeRaw`
+          INSERT INTO "ChannelField" ("id", "channelTypeId", "key", "label", "requirement", "kind", "allowedValues", "allowedUnits", "adapterFills", "readAt", "goneAt", "updatedAt")
+          SELECT 'chf_' || md5(${`${channel}:${type.key}:`} || f.key), ${row.id}, f.key, f.label, f.requirement, f.kind,
+                 NULLIF(f."allowedValues", 'null'::jsonb), NULLIF(f."allowedUnits", 'null'::jsonb), f."adapterFills", ${now}, NULL, now()
+          FROM jsonb_to_recordset(${JSON.stringify(type.fields)}::jsonb)
+            AS f("key" text, "label" text, "requirement" text, "kind" text, "allowedValues" jsonb, "allowedUnits" jsonb, "adapterFills" boolean)
+          ON CONFLICT ("channelTypeId", "key") DO UPDATE SET
+            "label" = EXCLUDED."label", "requirement" = EXCLUDED."requirement", "kind" = EXCLUDED."kind",
+            "allowedValues" = EXCLUDED."allowedValues", "allowedUnits" = EXCLUDED."allowedUnits",
+            "adapterFills" = EXCLUDED."adapterFills", "readAt" = EXCLUDED."readAt", "goneAt" = NULL, "updatedAt" = now()`;
       }
       const keys = type.fields.map((f) => f.key);
       await tx.channelField.updateMany({ where: { channelTypeId: row.id, goneAt: null, key: { notIn: keys } }, data: { goneAt: now } });
       // A first read is not "new": only a required field added to a type we already held is (Q22).
       if (before.length === 0) return [];
-      const added = type.fields.filter((f) => f.requirement === "required" && !f.adapterFills && !wasRequired.has(f.key));
+      const added = type.fields.filter((f) => f.requirement === FIELD_REQUIREMENT.REQUIRED && !f.adapterFills && !wasRequired.has(f.key));
       if (added.length > 0) await tx.channelTypeChange.create({ data: { channelTypeId: row.id, added: added.map((f) => ({ key: f.key, label: f.label })) } });
       return added.map((f) => f.key);
     });
   },
 
-  /** The live fields of some channel types, keyed "channel:type", in one read. */
-  async fieldsFor(pairs: ReadonlyArray<{ channel: string; key: string }>): Promise<Map<string, CatalogueFieldRow[]>> {
-    const out = new Map<string, CatalogueFieldRow[]>();
+  /** The live fields of some channel types and when each was read, keyed "channel:type", in one read. */
+  async fieldsFor(pairs: ReadonlyArray<{ channel: string; key: string }>): Promise<Map<string, CatalogueTypeRow>> {
+    const out = new Map<string, CatalogueTypeRow>();
     if (pairs.length === 0) return out;
     const types = await prisma.channelType.findMany({
       where: { OR: pairs.map((p) => ({ channel: p.channel, key: p.key })), goneAt: null },
-      select: { channel: true, key: true, fields: { where: { goneAt: null }, select: FIELD_SELECT, orderBy: { key: "asc" } } },
+      select: { channel: true, key: true, readAt: true, fields: { where: { goneAt: null }, select: FIELD_SELECT, orderBy: { key: "asc" } } },
     });
-    for (const t of types) out.set(`${t.channel}:${t.key}`, t.fields);
+    for (const t of types) out.set(`${t.channel}:${t.key}`, { readAt: t.readAt, fields: t.fields });
     return out;
   },
 
@@ -68,12 +84,5 @@ export const channelCatalogueRepository = {
       orderBy: { detectedAt: "desc" },
     });
     return rows.map((r) => ({ channel: r.channelType.channel, typeKey: r.channelType.key, typeLabel: r.channelType.label, added: r.added, detectedAt: r.detectedAt }));
-  },
-
-  /** When each of some types was last read, for the readiness note "as of {date}" (A4). */
-  async readAt(channel: string, keys: readonly string[]): Promise<Map<string, Date>> {
-    if (keys.length === 0) return new Map();
-    const rows = await prisma.channelType.findMany({ where: { channel, key: { in: [...keys] } }, select: { key: true, readAt: true } });
-    return new Map(rows.map((r) => [r.key, r.readAt]));
   },
 };

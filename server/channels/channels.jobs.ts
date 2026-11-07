@@ -74,8 +74,13 @@ export const channelsMaintainJob = registerJob({
     await listingPublishService.daily();
     // Each marketplace's own types and fields, read through the home brand (listing-model/channel-catalogue D2).
     // Every marketplace; one that publishes no definitions (Flipkart) reads nothing (D3).
+    // Its counts are logged: a pass that read nothing looks healthy otherwise.
     for (const channel of MARKETPLACE_CHANNELS) {
-      await channelCatalogueReader.refresh(channel).catch((error: unknown) => console.error(`[channels] catalogue refresh failed: ${error instanceof Error ? error.name : "error"}`));
+      const r = await channelCatalogueReader.refresh(channel).catch((error: unknown) => {
+        console.error(`[channels] catalogue refresh failed: ${error instanceof Error ? error.name : "error"}`);
+        return null;
+      });
+      if (r) console.log(`[jobs] channels.maintain ${jobId}: catalogue ${channel} ${r.skipped ? `skipped (${r.skipped})` : `read ${r.read}, failed ${r.failed}, changed ${r.changes.length}`}`);
     }
     // What each marketplace says stops a listing now, for every shop in one run (marketplace-publish Q23).
     await enqueue(prisma, checkListingProblemsSpec, {});

@@ -1,4 +1,4 @@
-import { channelCatalogueRepository, type CatalogueFieldRow } from "./channel-catalogue.repository";
+import { channelCatalogueRepository, type CatalogueTypeRow } from "./channel-catalogue.repository";
 import type { CatalogueType } from "./channel-catalogue.types";
 import { channelMapRepository } from "./channel-map.repository";
 import { CHANNEL_LABELS, isChannel, type Channel } from "@server/shared/channels";
@@ -14,14 +14,7 @@ export interface CatalogueAttentionDTO {
   added: number;
 }
 
-export type { CatalogueFieldRow } from "./channel-catalogue.repository";
-
-/** A required field a channel added to a type we already held (parent Q22): Home tells the shops selling it. */
-export interface CatalogueChange {
-  channel: string;
-  type: string;
-  added: string[];
-}
+export type { CatalogueFieldRow, CatalogueTypeRow } from "./channel-catalogue.repository";
 
 /**
  * Each channel's own types and fields (listing-model/channel-catalogue). Listing owns them beside the
@@ -40,7 +33,7 @@ export const channelCatalogueService = {
   },
 
   /** The live fields of some channel types, in one read (D5). */
-  async fieldsFor(pairs: ReadonlyArray<{ channel: string; key: string }>): Promise<Map<string, CatalogueFieldRow[]>> {
+  async fieldsFor(pairs: ReadonlyArray<{ channel: string; key: string }>): Promise<Map<string, CatalogueTypeRow>> {
     return await channelCatalogueRepository.fieldsFor(pairs);
   },
 

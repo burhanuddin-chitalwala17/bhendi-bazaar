@@ -3,7 +3,7 @@
 - **Status:** Implemented
 - **Domain:** listing (the catalogue and readiness), with channels (the Amazon read)
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-07
+- **Verified:** 2026-11-08
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), parent [trd.md](../trd.md) D5, D8, [ADR-0070](../../../adr/0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md)
 
 > Technical approach. Refines parent D5, D8; never contradicts them.
@@ -22,10 +22,11 @@ Amazon's Product Type Definitions API is the documented source for its side.
 - **D1 — `ChannelType`** (id, channel, key, label, schema Json?, schemaVersion?, source, readAt, goneAt;
   unique channel+key) and **`ChannelField`** (id, channelTypeId, key, label, requirement: required /
   conditional / optional, kind: choice / text / number / measure / boolean, allowedValues Json?,
-  allowedUnits Json?, adapterFills boolean, source, readAt, goneAt; unique type+key). One writer:
+  allowedUnits Json?, adapterFills boolean, readAt, goneAt; unique type+key; the source is the type's). One writer:
   `channel-catalogue.repository` in listing, which readiness reads; listing never imports channels.
-- **D2 — Amazon read.** `amazonTypeDefinition` grows into `amazonCatalogueType(token, type)`: required
-  set from the schema's `required` plus the per-type conditional rules; each property's kind, enum
+- **D2 — Amazon read.** `amazonTypeDefinition` grows into `amazonCatalogueType(token, type)`: each
+  `allOf` rule's `if` is judged in three values for the Q3 listing (`amazon.requirements.ts`): holds →
+  required, cannot hold or cannot tell → conditional; field rows are written in one statement; each property's kind, enum
   (allowed values), unit enum. Channels' `channelCatalogueReader.refresh(channel)` runs from the daily
   `channels.maintain` for every marketplace (one with no definitions reads nothing) and stores through
   listing's `channelCatalogueService.store`, one call per type any ChannelCategoryMap row publishes to, through the
@@ -40,6 +41,7 @@ Amazon's Product Type Definitions API is the documented source for its side.
   required, non-adapter, non-gone field with no ChannelAttributeMap/Fill row for that type, or whose
   mapped fact is unanswered, is a `missingField` problem with the channel's label. Batched: catalogue
   read once per channel type per request.
+- **D5a — Dated.** Each `missingField` carries the date its type was read (A4).
 - **D6 — Channel change alert.** A re-read (never a first read) that adds a required, non-adapter
   field records it in `ChannelTypeChange` (type, added fields, detectedAt); Home's attention
   reads "{channel} now asks {n} more details for {type}" for shops with products of that type (parent Q22).
@@ -66,6 +68,7 @@ fields of 2026-11-06 (spec A1); adapter fields absent (A2); refresh marks a vani
 
 ## Delivery
 1. Tables, repository, Amazon read, readiness, Home line. 2. Template/spec data migration.
+3. Review fixes (2026-11-08): Q3 rules judged, one-statement write, A4 date, Google/Meta Q8 migration.
 
 ## Open questions
 None.
