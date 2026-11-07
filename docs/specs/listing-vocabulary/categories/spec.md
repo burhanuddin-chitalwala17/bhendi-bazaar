@@ -46,7 +46,9 @@ is: the per-category questions two platforms agree on number between one and six
   them and is never the only thing stored.
 - **R6** — Adding an answer to a list is something the shop does, not something that waits for a
   release. Adding a *fact*, or a product type, is a release.
-- **R7** — A product keeps its own product type once saved. Re-pointing a category at a different
+- **R7** — *Superseded 2026-11-08 by listing-model Q9 (owner) and attributes Q14: a product's type always
+  follows its category; a category moving type moves its products, answers kept, and the audit records
+  how many.* Was: a product keeps its own product type once saved. Re-pointing a category at a different
   type offers to move its products and says how many, rather than silently re-asking them.
 
 ## Hazards this feature must answer

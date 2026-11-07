@@ -153,7 +153,7 @@ export class ProductsRepository {
         id: true, orgId: true, name: true, price: true, description: true, keyFeatures: true,
         mrpPaise: true, barcode: true, sku: true, archivedAt: true, familyId: true, categoryId: true,
         productType: true, kind: true, facts: true, measurements: true, weight: true,
-        brand: { select: { name: true, manufacturer: true, packerOrImporter: true, countryOfOrigin: true } },
+        brand: { select: { name: true, manufacturer: true, packerOrImporter: true, countryOfOrigin: true, amazonRegistered: true } },
         stockLocations: { select: { quantity: true } },
         media: {
           where: { kind: "IMAGE" },

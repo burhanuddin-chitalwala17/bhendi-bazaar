@@ -67,6 +67,8 @@ async function inputFor(orgId: string, row: CreateRow, product: Product, channel
   const defaults = await orgListingDefaultsService.get(orgId);
   const hsn = defaults.taxCodes.find((t) => t.categoryId === product.categoryId)?.taxCode ?? null;
   const sku = row.sku ?? skuFor(product);
+  // Registered on Amazon or listed as Generic is the brand's own (listing-model Q10); a brandless product keeps the shop's.
+  const generic = product.brand ? !product.brand.amazonRegistered : defaults.amazonGeneric;
   let fields: CreateListingInput["fields"] = [];
   let gaps: BuildGap[] = [];
   let typeSchema: unknown = null;
@@ -97,9 +99,9 @@ async function inputFor(orgId: string, row: CreateRow, product: Product, channel
     features: values.features,
     description: values.description,
     // Generic goes out with no barcode: Amazon's unbranded route takes the exemption, never a code (Q35).
-    barcode: defaults.amazonGeneric ? null : product.barcode,
+    barcode: generic ? null : product.barcode,
     brand: product.brand?.name ?? null,
-    generic: defaults.amazonGeneric,
+    generic,
     quantity: product.archivedAt ? 0 : product.stockLocations.reduce((n, s) => n + s.quantity, 0),
     fields,
     gaps,

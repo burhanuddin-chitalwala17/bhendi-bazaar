@@ -43,6 +43,7 @@ const row = (overrides: Partial<Brand> = {}): Brand => ({
   packerOrImporter: null,
   countryOfOrigin: null,
   isDefault: false,
+  amazonRegistered: true,
   retiredAt: null,
   createdAt: new Date("2026-09-27T00:00:00Z"),
   updatedAt: new Date("2026-09-27T00:00:00Z"),

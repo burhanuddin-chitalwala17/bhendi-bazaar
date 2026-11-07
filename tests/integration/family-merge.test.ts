@@ -74,6 +74,7 @@ describe.skipIf(!isDisposableDb)("making one family of marketplace listings (loc
     await prisma.product.deleteMany({ where: { id: { in: products.map((p) => p.id) } } });
     await prisma.productFamily.deleteMany({ where: { orgId, name: { startsWith: "Floral trousers" } } });
     await prisma.productFamily.deleteMany({ where: { orgId, name: { startsWith: "Other family" } } });
+    await prisma.category.deleteMany({ where: { slug: `fm-mats-${stamp}` } });
   };
 
   beforeAll(async () => {
@@ -288,7 +289,9 @@ describe.skipIf(!isDisposableDb)("making one family of marketplace listings (loc
   });
 
   it("refuses a product of another type, and asks a member whose listing says nothing (ADR-0043 D2, Q18)", async () => {
-    const odd = await prisma.product.create({ data: { name: "A prayer mat", slug: `fm-${stamp}-odd`, description: "", price: 1000, categoryId, thumbnail: "/brand/bhendi-bazaar.png", orgId, sku: sku("ODD"), productType: "prayer-mat" }, select: { id: true } });
+    // A product's type is its category's (listing-model Q9), so the odd one sits in a prayer-mat category.
+    const matCategory = await prisma.category.create({ data: { name: `Mats ${stamp}`, slug: `fm-mats-${stamp}`, description: "x", heroImage: "/x.jpg", productType: "prayer-mat" }, select: { id: true } });
+    const odd = await prisma.product.create({ data: { name: "A prayer mat", slug: `fm-${stamp}-odd`, description: "", price: 1000, categoryId: matCategory.id, thumbnail: "/brand/bhendi-bazaar.png", orgId, sku: sku("ODD"), productType: "prayer-mat" }, select: { id: true } });
     const ids = [(await listing("M1", "Black")).id, (await listing("M2", "Red", { productId: odd.id, linkSource: "OWNER", linkedAt: new Date() })).id];
     await read(ids);
     await expect(family.settle(orgId, userId, input(ids))).rejects.toThrow(/A prayer mat is a different kind of product from this family\. Change its category first, or leave it out/);

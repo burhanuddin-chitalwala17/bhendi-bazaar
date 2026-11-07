@@ -514,17 +514,6 @@ export class AdminProductsRepository {
         return result.count === 1;
     }
 
-    /**
-     * Products in these categories with no type take the one their category now points at
-     * (categories D1b, R7, for the one safe case): a product with no type has no type's answers to
-     * move, so nothing stored changes meaning. A product that already has a type is left alone.
-     */
-    async adoptTypeWhereNone(categoryIds: readonly string[], productType: string): Promise<number> {
-        if (categoryIds.length === 0) return 0;
-        const result = await prisma.product.updateMany({ where: { categoryId: { in: [...categoryIds] }, productType: null }, data: { productType } });
-        return result.count;
-    }
-
     /** Undo one answer only while it is still the one given (readiness-fix R3): a later edit is never undone. */
     async clearFactIf(orgId: string, id: string, key: string, value: string): Promise<boolean> {
         return await prisma.$transaction(async (tx) => {

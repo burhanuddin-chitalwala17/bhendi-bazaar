@@ -99,3 +99,5 @@ The container starts with no `node_modules`, Postgres stopped and a shallow clon
 | 2026-11-08 | field-maps | 2: default maps for all five channels (700 researched + carried over), Meesho categories, admin screen and route | (this commit) | Reviewed; fixes in. Next: unit 3 |
 | 2026-11-08 | field-maps | 3: proof tooling (`scripts/field-maps-proof.ts`, feed checker), Meta leaves out uncategorised items | (this commit) | **Owner:** run `npx tsx --env-file=.env.prod scripts/field-maps-proof.ts` and record the result. Next: attributes unit 1 |
 | 2026-11-08 | attributes | 1: dictionary, options, type questions, typed values + read copy kept in step by trigger (Q7–Q10) | (this commit) | Next: attributes unit 2 (brand parties, type follows category, new attributes) |
+| 2026-11-08 | attributes | 2: brand parties + per-brand Generic, type follows category (trigger, tree-aware), new questions less duplicates (Q14–Q16) | (this commit) | Reviewed; fixes in |
+| 2026-11-08 | attributes | 3: compare gate (`scripts/attributes-compare.ts`), local run 0 mismatches | (this commit) | **Owner:** run the compare against a production copy before release. Next: dynamic-form unit 1 |

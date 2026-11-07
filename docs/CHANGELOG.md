@@ -12,6 +12,45 @@
 
 ## Entries
 
+## 2026-11-08 — listing-model / attributes unit 3: the move's compare gate
+
+- `scripts/attributes-compare.ts` (D9, A3, parent Q33): every product's answers before the move against its
+  value rows after it, by count and value, per type, in batches of 1,000; read-only; exits non-zero on any
+  mismatch, which stops the release. The comparison is `server/listing/attribute-compare.ts` (pure).
+- First run, local dev: 44 products, 84 answers, 0 mismatches. **Production run:** the owner runs
+  `npx tsx --env-file=.env.prod scripts/attributes-compare.ts` after deploying to a copy, before release.
+- Tests: `tests/unit/attribute-compare.test.ts` (a clean move passes; a missing, changed or wrongly
+  converted answer is named; an answer kept as text passes).
+
+## 2026-11-08 — listing-model / attributes unit 2: brand parties, type follows category, new questions [MIGRATION]
+
+- **Brand parties** (migration `20261108130000_attributes_brand_parties`): `BrandParty` (maker, packer,
+  importer: name, address, pincode, D6); the value sync writes manufacturer, packer and importer from the
+  parties as one line each, else the brand's two lines (Q11), and a party edit re-derives the brand's
+  products. Parties are not copied from those lines, so today's brand page keeps reaching products. `Brand.amazonRegistered` set from the shop's Generic switch; a new
+  brand takes the shop's setting, the switch still sets every brand, and a create lists as Generic by the
+  brand (parent Q10, Q16).
+- **Type follows category** (D7, parent Q9, Q14): every save takes the category's type (its own or its
+  nearest ancestor's), a category's type or place moving re-types the products beneath it, answers kept.
+  **Behaviour change:** products whose type differed from their category's take the category's; this
+  supersedes categories' "never retype a typed product" (updated `category-type-adoption` and
+  `family-merge` tests accordingly).
+- **New questions** (parent Q26, D8, Q15): style, lining material, pockets, strap type, fabric type, size
+  system and type, form, units, stone clarity and cut, metal weight, generic name and model name, with
+  options from Amazon's own lists where they are closed; duplicates of today's facts not added, and those
+  facts attached where Q26 asks them (capacity on bags, pack quantity on every type, care on clothing).
+  `BbTypeAttribute.fromType` keeps migration-added questions when a type's facts change.
+- **Fresh-context review fixes:** brand edits reach products again (parties not copied); Q26's capacity,
+  pack quantity and care attached; a kind the new type lacks is cleared on a re-type; a family whose
+  members now share one type takes it (Q17); the admin's category audit counts the products moved before
+  the move (the old untyped-only adoption is removed); categories R7/D1b marked superseded.
+- Tests: `tests/integration/brand-parties.test.ts` (parties fill as one line, importer only from its party,
+  an edit on today's brand page still reaches products, a new brand and the shop switch for Generic, A4
+  new and reused questions with the old strap answer kept, A5 a category moving type with its family and
+  kind, a subcategory and a moved category reading their parent's type). Mutations: dropping the category
+  trigger failed A5; dropping the kind rule failed its test. Ran: unit,
+  integration (local ci), `tsc`, `lint:boundary`, `docs:check`.
+
 ## 2026-11-08 — listing-model / attributes unit 1: the attribute dictionary and typed product values [MIGRATION]
 
 - **New tables** (migration `20261108120000_attributes`, nothing existing changed or dropped): `Attribute`

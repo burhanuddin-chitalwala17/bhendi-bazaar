@@ -1,6 +1,7 @@
 /**
- * A category given a type passes it to its products that have none (categories D1b, R7, the safe
- * case), and never to one that already has a type: nothing stored changes meaning.
+ * A category given a type passes it to its products (categories D1b, R7). Since listing-model Q9 (owner,
+ * 2026-11-07) a product's type always follows its category, so a typed one moves too, its answers kept
+ * (attributes A5); a product in a child category with a type of its own keeps that one.
  */
 import "dotenv/config";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -32,7 +33,7 @@ describe.skipIf(!isDisposableDb)("a category's new type reaches its untyped prod
       select: { id: true },
     })).id;
 
-  it("types the untyped products under it, and leaves a typed one and a child with its own type alone", async () => {
+  it("types every product under it, a typed one included, and leaves a child category's own type alone (listing-model Q9)", async () => {
     const untyped = await product("none", categoryId, null);
     const typed = await product("typed", categoryId, "fragrance");
     const inChild = await product("child", childId, null);
@@ -40,7 +41,8 @@ describe.skipIf(!isDisposableDb)("a category's new type reaches its untyped prod
     await adminCategoryService.updateCategory(categoryId, userId, { productType: "bag" });
     const types = Object.fromEntries((await prisma.product.findMany({ where: { id: { in: [untyped, typed, inChild] } }, select: { id: true, productType: true } })).map((p) => [p.id, p.productType]));
     expect(types[untyped]).toBe("bag");
-    expect(types[typed]).toBe("fragrance");
-    expect(types[inChild]).toBeNull();
+    expect(types[typed]).toBe("bag");
+    // The child category has its own type, which its product reads from the moment it is saved (Q9).
+    expect(types[inChild]).toBe("travel-pouch");
   });
 });

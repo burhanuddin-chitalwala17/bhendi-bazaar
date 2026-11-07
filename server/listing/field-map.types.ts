@@ -40,9 +40,8 @@ export const SHOP_KEYS = Object.values(SHOP_KEY) as readonly ShopKey[];
  * one before it exists (Q17): it fills nothing yet, so readiness and the admin's count treat it as unmapped.
  */
 export const PLANNED_ATTRIBUTES = [
-  "style", "innerMaterial", "outerMaterial", "pocketCount", "strapType", "fabricType", "careInstructions", "sizeSystem",
-  "sizeClass", "itemForm", "unitCount", "stoneType", "stoneClarity", "stoneCut", "metalType", "metalWeight",
-  "genericName", "modelName", "numberOfItems",
+  "style", "innerMaterial", "pocketCount", "strapType", "fabricType", "sizeSystem", "sizeClass", "itemForm",
+  "unitCount", "stoneClarity", "stoneCut", "metalWeight", "genericName", "modelName",
 ] as const;
 
 /** Whether a map can fill its field with what the product holds today (field-maps R1, Q17). */

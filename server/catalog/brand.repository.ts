@@ -25,8 +25,8 @@ export class BrandRepository {
     return await prisma.brand.findFirst({ where: { id, orgId } });
   }
 
-  async create(orgId: string, data: BrandData) {
-    return await prisma.brand.create({ data: { orgId, ...data } });
+  async create(orgId: string, data: BrandData, amazonRegistered = true) {
+    return await prisma.brand.create({ data: { orgId, ...data, amazonRegistered } });
   }
 
   /** Scoped by org in the `where`, so a member of one org cannot edit another's brand by id. */

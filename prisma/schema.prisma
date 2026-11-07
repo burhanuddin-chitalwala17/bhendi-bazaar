@@ -215,6 +215,8 @@ enum EnhancementState {
   FAILED
 }
 
+/// Carries an attributes trigger (attributes Q14): a type or parent change re-types the products beneath it
+/// and the families whose members now share one type.
 model Category {
   id             String         @id @default(cuid())
   slug           String         @unique
@@ -268,7 +270,8 @@ model ProductPriceHistory {
 }
 
 /// Carries the attributes sync trigger (listing-model/attributes Q7): a write to facts, measurements,
-/// weight, brand, type or org re-derives this product's ProductValue rows until dynamic-form.
+/// weight, brand, type or org re-derives this product's ProductValue rows until dynamic-form. A BEFORE
+/// trigger sets `productType` from its category on every save, clearing a kind the type lacks (Q14).
 model Product {
   id          String @id @default(cuid())
   slug        String @unique
@@ -299,9 +302,9 @@ model Product {
   sku               String? // Stock Keeping Unit — unique within the org, not the platform
   lowStockThreshold Int     @default(10) // Alert when stock falls below this
 
-  /// The product type resolved from the category tree at save time and kept here
-  /// (listing-vocabulary/categories D1b). A column rather than a fact because it says how to
-  /// read `facts` and `measurements`, so a row is interpretable without the tree.
+  /// The product type resolved from the category tree and kept here (listing-vocabulary/categories D1b),
+  /// always its category's: set by a trigger on every save and moved when a category's type or place
+  /// changes (listing-model Q9, attributes Q14). A column because it says how to read the answers.
   productType    String?
   /// Which kind within that type — abaya, burqa, attar, bakhoor (categories D1). A column
   /// because the channel mapping resolves a platform node from the type and the kind together,
@@ -869,7 +872,8 @@ enum ReturnsPreset {
 /// The private listing context that does not belong to a brand (org-profile spec R4): what a
 /// product inherits when neither it nor its family nor its brand says otherwise. Pre-fills,
 /// never validates. The tax rate is basis points, never a float.
-/// Carries an attributes sync trigger (attributes Q6, Q9): a country change re-derives the shop's products.
+/// Carries attributes sync triggers (attributes Q6, Q9, Q16): a country change re-derives the shop's products,
+/// and its Generic switch sets every brand's `amazonRegistered` until the brand page asks it.
 model OrgListingDefaults {
   orgId String @id
   org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -901,6 +905,9 @@ model Brand {
   packerOrImporter String?
   countryOfOrigin  String?
   isDefault        Boolean @default(false)
+  /// Registered on Amazon; false lists its products as Generic (listing-model Q10, attributes D6).
+  amazonRegistered Boolean @default(true)
+  parties          BrandParty[]
 
   retiredAt DateTime?
   createdAt DateTime  @default(now())
@@ -2952,6 +2959,8 @@ model BbTypeAttribute {
   order          Int     @default(0)
   labelOverride  String?
   requiredForBb  Boolean @default(false)
+  /// Derived from the type's own facts and measures by its trigger (Q12); false: added by migration (D8).
+  fromType       Boolean @default(true)
 
   @@unique([productTypeKey, attributeKey])
 }
@@ -2985,4 +2994,21 @@ model ProductValueSet {
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   values    Json
   updatedAt DateTime @updatedAt
+}
+
+/// Who makes, packs or imports a brand's goods (listing-model/attributes D6, R4): what the brand fills into
+/// its products' manufacturer, packer and importer. Every part optional but the role (parent Q29).
+model BrandParty {
+  id        String   @id @default(cuid())
+  brandId   String
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  /// maker / packer / importer (BRAND_PARTY_ROLE).
+  role      String
+  name      String?
+  address   String?
+  pincode   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([brandId, role])
 }

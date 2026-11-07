@@ -2,6 +2,7 @@ import { brandRepository, type BrandData } from "@server/catalog/brand.repositor
 import { toBrandDto, type BrandDto } from "@server/catalog/brand.types";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { isUniqueViolation } from "@server/shared/constraint";
+import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.service";
 
 /** Marketplaces' word for an unbranded item: it belongs to the shop's default brand (marketplace-facts Q29). */
 const GENERIC = /^(generic|unbranded|no brand)$/i;
@@ -18,7 +19,9 @@ export class BrandService {
   }
 
   async create(orgId: string, data: BrandData): Promise<BrandDto> {
-    const brand = await this.settled(data.name, () => brandRepository.create(orgId, data));
+    // Until the brand page asks it (dynamic-form), a new brand lists as the shop does today (listing-model Q10).
+    const registered = !(await orgListingDefaultsService.get(orgId)).amazonGeneric;
+    const brand = await this.settled(data.name, () => brandRepository.create(orgId, data, registered));
     if (data.isDefault) await brandRepository.markDefault(orgId, brand.id);
     return toBrandDto({ ...brand, isDefault: data.isDefault });
   }

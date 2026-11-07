@@ -36,9 +36,10 @@ Parent: Akeneo values + projection; Magento typed value tables.
 - **D6 — Brand parties.** `BrandParty` (brandId, role: maker / packer / importer, name, address,
   pincode; unique brand+role) and `Brand.amazonRegistered`; the brand-scoped attributes read them.
   `OrgListingDefaults.amazonGeneric` moves to each brand by migration (all brands of that shop).
-- **D7 — Type follows category.** `Product.productType` is set from the category on every save and by a
-  job when a category's type changes; products keep answers and the form asks only new attributes.
-- **D8 — New attributes (parent Q26)** by migration: style, innerMaterial, outerMaterial, pocketCount,
+- **D7 — Type follows category.** `Product.productType` is set from the category (its own type, else its
+  nearest ancestor's) on every save, and moved when a category's type or place changes, by triggers (Q14);
+  products keep answers and the form asks only new attributes.
+- **D8 — New attributes (parent Q26)** by migration, less those today's facts already ask (Q15): style, innerMaterial, outerMaterial, pocketCount,
   capacity (measure, ml), strapType (new) beside strap (kept, parent Q25), fabricType, careInstructions,
   sizeSystem, sizeClass, itemForm, unitCount, stoneType, stoneClarity, stoneCut, metalType, metalWeight,
   genericName, modelName, numberOfItems, with options from the channels' allowed values.
