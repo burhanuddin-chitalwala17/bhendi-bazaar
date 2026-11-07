@@ -20,9 +20,10 @@
   HANDBAG schema). **Next: field-maps unit 1** via `/bb-build listing-model/field-maps`.
 - **Searchability research: findings ready** in [searchability-spike.md](searchability-spike.md) (owner
   asked 2026-11-08: "listed optimally so my product appears on top", plus AI search). It is a spike, not a
-  spec; it waits for the owner's answers to its open questions (is `BLOCK_CRAWLERS` set in production,
-  Merchant Center live, training crawlers allowed, Brand Registry). Then: O3+O4 as one spec, O1+O2 as
-  another, each by `/bb-sdlc spec-start`; delete the spike once they exist.
+  spec. Owner answered (2026-11-08): `BLOCK_CRAWLERS` unset, Merchant Center live, allow every crawler
+  including training, no Amazon Brand Registry. After field-maps: O3 (site product markup) as one spec,
+  O1+O2 (listing quality, attribute-built titles and Amazon search terms) as another, by
+  `/bb-sdlc spec-start`; delete the spike once they exist.
 - No open questions in any `decisions.md`. A new question goes in the right `decisions.md` first: owner decides product,
   policy and money; reversible technical calls are yours, marked `Claude · reversible`.
 

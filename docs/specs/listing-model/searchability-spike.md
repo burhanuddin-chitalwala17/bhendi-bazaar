@@ -122,18 +122,27 @@ copy work more than code; fits the copy-module rule (ADR-0067).
   from those answers.
 
 ## Recommendation (Claude's, for the owner to decide)
-1. **First, confirm `BLOCK_CRAWLERS` is unset in production** and Merchant Center free listings are on.
-   Without both, nothing below is seen.
+1. ~~Confirm `BLOCK_CRAWLERS` is unset and Merchant Center live~~: both confirmed by the owner.
 2. **Field-maps first** (already next): sending the attributes we hold is the largest relevance gain on
    Google, Meta and Amazon at once, and O1–O3 read what it builds.
-3. **Then O3 + O4** together as one small spec ("the site describes every product fully"): days, not weeks.
+3. **Then O3** as one small spec ("the site describes every product fully"): days, not weeks. O4 is
+   only the firewall check above.
 4. **Then O1 + O2** as one spec ("each listing is described to rank"), O2b parked as Later.
 5. **O5 and O6 parked**: O5 until India availability is known; O6 as copy work alongside dynamic-form.
 
+## Owner's answers (2026-11-08)
+- **`BLOCK_CRAWLERS` is unset in production**: crawlers are allowed today.
+- **Merchant Center free listings are live**: the feed is already ranked; what it omits is the gap.
+- **Allow all crawlers, training ones included** (`GPTBot`, `ClaudeBot`, `Google-Extended`). `robots.ts`
+  already allows `*`, so O4 needs no change to robots; what remains is checking nothing upstream blocks
+  them (Vercel's Firewall has bot and AI-bot rules that act before `robots.txt` is read).
+- **Niqab Boutique's brand is not in Amazon Brand Registry**: A+ content and brand analytics are out of
+  reach; listings rely on title, bullets, attributes, search terms and images alone, which raises the value
+  of O1 and O2 on Amazon. Registration (with a trademark application) is the owner's call, outside this programme.
+
 ## Open questions
-- Is `BLOCK_CRAWLERS` still set in production, and is the store live in Merchant Center?
-- Training crawlers (`GPTBot`, `ClaudeBot`, `Google-Extended`): allow or block? (Owner: business choice.)
-- Is Niqab Boutique's brand in Amazon Brand Registry? A+ content and brand analytics depend on it.
+- Is any Vercel Firewall rule (bot protection, AI bots) blocking the agents the owner wants allowed?
+  Checked in the Vercel dashboard, Firewall; closes O4.
 - Which Amazon search-term length is indexed: the schema allows 500 characters a value; seller guides
   cite a 250-byte index limit. Only Seller Central's help (login) settles it.
 - Flipkart's and Meesho's own ranking documentation (seller-login only): what their quality scores read.
