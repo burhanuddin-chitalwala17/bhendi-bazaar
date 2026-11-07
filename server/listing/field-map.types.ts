@@ -36,13 +36,10 @@ export type ShopKey = (typeof SHOP_KEY)[keyof typeof SHOP_KEY];
 export const SHOP_KEYS = Object.values(SHOP_KEY) as readonly ShopKey[];
 
 /**
- * The questions the attributes subfeature adds by migration (listing-model/attributes D8). A map may name
- * one before it exists (Q17): it fills nothing yet, so readiness and the admin's count treat it as unmapped.
+ * Questions a map may name before any product can answer them (Q17): they fill nothing yet, so readiness
+ * and the admin's count treat them as unmapped. Empty since dynamic-form asks every attribute (its Q5).
  */
-export const PLANNED_ATTRIBUTES = [
-  "style", "innerMaterial", "pocketCount", "strapType", "fabricType", "sizeSystem", "sizeClass", "itemForm",
-  "unitCount", "stoneClarity", "stoneCut", "metalWeight", "genericName", "modelName",
-] as const;
+export const PLANNED_ATTRIBUTES = [] as readonly string[];
 
 /** Whether a map can fill its field with what the product holds today (field-maps R1, Q17). */
 export function fillsToday(map: { source: string; attributeKey: string | null }, questions: ReadonlySet<string>): boolean {

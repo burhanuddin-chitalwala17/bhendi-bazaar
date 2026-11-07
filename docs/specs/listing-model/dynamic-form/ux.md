@@ -54,7 +54,7 @@
 | Generic | "Not registered on Amazon: lists as Generic" | Change |
 
 ## Copy deck
-"Required now" · "Also helps on {channels}" · "{channel} {n} of {m}" · "Ready for {channels}" ·
+"Required now" · "What the places you sell on need before they take this product. It saves either way." · "Also helps on {channels}" (or "More details" when none) · "{channel} {n} of {m}" · "Ready for {channels}" ·
 "From your {level} {name}: {value}" · "Set on this product" · "Use {level}'s" · "Choose a category to see its questions." ·
 "{n} products need {m} details for {channel}" · "{channel} now asks {n} more details for {type}" · "Fill them" ·
 "Who makes, packs and imports it (marketplaces ask)" · "Maker" · "Packer" · "Importer" · "Address" · "Pincode" ·

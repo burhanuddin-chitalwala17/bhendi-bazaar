@@ -9,6 +9,7 @@
 - **`attributes-migration.ts`** — writes listing-model/attributes unit 1's reference data and trigger (the dictionary from today's facts, options from today's lists, each type's questions, the value sync). `npx tsx` it after the table DDL.
 - **`attributes-migration-2.ts`**, **`attributes-sql.ts`** — attributes unit 2's data and triggers (brand parties, new questions, type follows category), and the value-sync function both units share.
 - **`attributes-compare.ts`** — the release gate of listing-model/attributes (parent Q33): every answer before the move against its value rows, per type. Read-only; non-zero exit stops the release.
+- **`dynamic-form-migration.ts`** — dynamic-form unit 1's questions migration (new facts' lists, each type's questions, capacity on bags).
 - **`docs-index.mjs`** — renders the index tables in `docs/adr/README.md` and `docs/specs/README.md` from the files they index; `npm run docs:index` rewrites, `--check` reports. `tests/unit/docs-integrity.test.ts` runs the check as a gate, so a hand-edited row cannot survive CI.
 
 ## Exporting pg-boss's schema

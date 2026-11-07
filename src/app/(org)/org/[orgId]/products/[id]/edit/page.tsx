@@ -36,12 +36,13 @@ export default async function OrgEditProductPage({
   // The question sets, and the answers for the category this product is already in — so the
   // form opens with filled dropdowns rather than empty ones. Changing the category fetches the
   // rest ([ADR-0034]).
-  const [productTypes, listingValues, familyRows, channels, brandRows] = await Promise.all([
+  const [productTypes, listingValues, familyRows, channels, brandRows, formTypes] = await Promise.all([
     adminProductTypesDAL.getProductTypes(),
     adminProductTypesDAL.getValuesForCategory(product.category?.id ?? null, categories, orgId),
     productFamilyService.list(orgId),
     orgChannelService.list(orgId),
     brandService.list(orgId),
+    adminProductTypesDAL.getFormTypes(orgId),
   ]);
   const brands = brandRows.map((brand) => ({ id: brand.id, name: brand.name }));
   const families = familyRows.map((family) => ({ id: family.id, name: family.name }));
@@ -69,7 +70,7 @@ export default async function OrgEditProductPage({
           help="products"
           product={product}
           categories={categories}
-          productTypes={productTypes}
+          productTypes={formTypes}
           listingValues={listingValues}
           families={families}
           brands={brands}

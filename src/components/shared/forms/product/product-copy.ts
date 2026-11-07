@@ -91,6 +91,11 @@ export const PRODUCT_EDIT_OVERVIEW_COPY = {
 
 /** ProductFactFields.tsx */
 export const PRODUCT_FACT_FIELDS_COPY = {
+  // listing-model/dynamic-form ux copy deck: grouped by what the shop's channels need (R2).
+  requiredNow: "Required now",
+  requiredNowBody: "What the places you sell on need before they take this product. It saves either way.",
+  alsoHelpsOn: (channels: string[]) => (channels.length > 0 ? `Also helps on ${channels.join(", ")}` : "More details"),
+  channelShort: { store: "This store", amazon: "Amazon", flipkart: "Flipkart", meesho: "Meesho", google: "Google", meta: "Meta" } as Record<string, string>,
   kind: "Kind",
   productDetails: "Product details",
   whatAMarketplaceAsksAbout: "What a marketplace asks about this kind of thing. Leave anything you do not know — it saves either way.",

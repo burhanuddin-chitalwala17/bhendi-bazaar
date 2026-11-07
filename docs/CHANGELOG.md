@@ -12,6 +12,30 @@
 
 ## Entries
 
+## 2026-11-08 — listing-model / dynamic-form unit 1: the form asks every question, grouped by what channels need [MIGRATION]
+
+- **New questions answerable** (Q5, migration `20261108150000_dynamic_form_questions`): style, lining
+  material, pockets, strap type, fabric type, size system and type, form, units, stone clarity and cut,
+  metal weight, generic name and model name declared as facts with their attribute keys; their lists
+  (style and strap type from Amazon's own, sizes); each type's questions extended, capacity on bags and
+  pouches, pack quantity and care where parent Q26 asks; metal weight asked in grams; the list-sync trigger
+  knows the new facts. **Behaviour change:** every product form asks these.
+- **Grouped by channel** (R2, A1, Q6–Q8): "Required now" holds the store's required measurements and what
+  a channel the shop sells on requires, badged with it, measurements included (capacity on a bag); the rest
+  sits under "Also helps on {channels}", collapsed, opened when it holds an error; badges follow the kind
+  shown (a tote's channel types, not a backpack's). Computed on the server for every
+  type (`server/listing/form-channels.ts`, pure; `form-channels.service.ts`), handed to the form through
+  the types DAL; nothing blocks a save.
+- Not a contract change: `PLANNED_ATTRIBUTES` (`field-map.types.ts`) is emptied because its keys are now
+  facts; the admin field-map route accepts the same keys as before (CONTRACTS.md notes it).
+- **Fresh-context review fixes:** measures grouped and badged; the no-channel state as signed off; the new
+  questions' type rows follow each type's own order; badges per kind; channel use loaded in parallel with
+  the page; rule keys typed; the collapsed group's tap target 40px.
+- Tests: `tests/unit/form-channels.test.ts` (A1 required and badged, not-sold-on and optional fields help,
+  connecting makes them required, the two groups with and without channels, another type's map ignored);
+  type counts updated in `product-type-table`. Ran: unit, integration
+  (local ci), `tsc`, `lint:boundary`, `docs:check`.
+
 ## 2026-11-08 — listing-model: the proof run on a production copy, and its fixes [MIGRATION]
 
 - **Run once, with the owner's permission** (2026-11-08): production copied into a local database,

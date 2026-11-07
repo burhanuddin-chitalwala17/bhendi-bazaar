@@ -49,16 +49,17 @@ describe.skipIf(!isDisposableDb)("product types (local db)", () => {
    * silent break: no code fails, the form just stops asking.
    */
   describe("the nine shipped and are intact", () => {
+    // Parent Q26's questions, capacity on bags and pouches added by dynamic-form unit 1 (its Q5).
     const EXPECTED: Record<string, { facts: number; measures: number; kinds: number; axis: string[] }> = {
-      "islamic-wear": { facts: 9, measures: 6, kinds: 6, axis: ["colour"] },
-      trousers: { facts: 10, measures: 2, kinds: 3, axis: ["colour"] },
-      "prayer-mat": { facts: 6, measures: 2, kinds: 2, axis: ["colour"] },
-      bag: { facts: 10, measures: 3, kinds: 5, axis: ["colour"] },
-      "travel-pouch": { facts: 6, measures: 3, kinds: 2, axis: ["colour"] },
-      fragrance: { facts: 3, measures: 1, kinds: 3, axis: ["capacity"] },
-      jewellery: { facts: 8, measures: 1, kinds: 3, axis: ["plating", "colour"] },
-      socks: { facts: 5, measures: 1, kinds: 4, axis: ["colour", "packQuantity"] },
-      combo: { facts: 4, measures: 0, kinds: 3, axis: ["colour"] },
+      "islamic-wear": { facts: 15, measures: 6, kinds: 6, axis: ["colour"] },
+      trousers: { facts: 16, measures: 2, kinds: 3, axis: ["colour"] },
+      "prayer-mat": { facts: 8, measures: 2, kinds: 2, axis: ["colour"] },
+      bag: { facts: 17, measures: 4, kinds: 5, axis: ["colour"] },
+      "travel-pouch": { facts: 11, measures: 4, kinds: 2, axis: ["colour"] },
+      fragrance: { facts: 7, measures: 1, kinds: 3, axis: ["capacity"] },
+      jewellery: { facts: 14, measures: 1, kinds: 3, axis: ["plating", "colour"] },
+      socks: { facts: 11, measures: 1, kinds: 4, axis: ["colour", "packQuantity"] },
+      combo: { facts: 6, measures: 0, kinds: 3, axis: ["colour"] },
     };
 
     it("has exactly the nine, and every one parses", async () => {

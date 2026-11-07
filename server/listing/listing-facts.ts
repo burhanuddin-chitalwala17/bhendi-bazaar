@@ -39,6 +39,21 @@ export const FACT = {
   CERTIFICATION: "certification",
   GEMSTONE: "gemstone",
   CONTENTS: "contents",
+  // Parent Q26's questions (listing-model/attributes Q15), asked through the same path (dynamic-form Q5).
+  STYLE: "style",
+  INNER_MATERIAL: "innerMaterial",
+  POCKET_COUNT: "pocketCount",
+  STRAP_TYPE: "strapType",
+  FABRIC_TYPE: "fabricType",
+  SIZE_SYSTEM: "sizeSystem",
+  SIZE_CLASS: "sizeClass",
+  ITEM_FORM: "itemForm",
+  UNIT_COUNT: "unitCount",
+  STONE_CLARITY: "stoneClarity",
+  STONE_CUT: "stoneCut",
+  METAL_WEIGHT: "metalWeight",
+  GENERIC_NAME: "genericName",
+  MODEL_NAME: "modelName",
 } as const;
 
 export const FACTS = Object.values(FACT);
@@ -118,6 +133,10 @@ export const LIST = {
   PURITY: "purity",
   CERTIFICATION: "certification",
   GEMSTONE: "gemstone",
+  STYLE: "style",
+  STRAP_TYPE: "strapType",
+  SIZE_SYSTEM: "sizeSystem",
+  SIZE_CLASS: "sizeClass",
 } as const;
 
 export const LISTS = Object.values(LIST);
@@ -320,6 +339,22 @@ export const FACT_DECLARATIONS: Readonly<Record<FactKey, FactDeclaration>> = {
     hint: "Named, not linked — a combo is its own product (variants D4)",
     requiredBy: [PLATFORM.FLIPKART, PLATFORM.MEESHO],
   },
+  [FACT.STYLE]: { key: FACT.STYLE, label: "Style", answer: ANSWER.CHOICE, list: LIST.STYLE, requiredBy: [PLATFORM.AMAZON] },
+  // The bag's lining, from the same materials as its outside (listing-model HANDOFF: Amazon `inner`).
+  [FACT.INNER_MATERIAL]: { key: FACT.INNER_MATERIAL, label: "Lining material", answer: ANSWER.CHOICE, list: LIST.MATERIAL, requiredBy: [PLATFORM.AMAZON] },
+  [FACT.POCKET_COUNT]: { key: FACT.POCKET_COUNT, label: "Pockets", answer: ANSWER.NUMBER, requiredBy: [PLATFORM.AMAZON] },
+  // How the bag is carried, not whether the strap comes off (parent Q25: Strap keeps that answer).
+  [FACT.STRAP_TYPE]: { key: FACT.STRAP_TYPE, label: "Strap type", answer: ANSWER.CHOICE, list: LIST.STRAP_TYPE, requiredBy: [PLATFORM.AMAZON] },
+  [FACT.FABRIC_TYPE]: { key: FACT.FABRIC_TYPE, label: "Fabric type", answer: ANSWER.TEXT, hint: "As the label says, e.g. 100% polyester", requiredBy: [] },
+  [FACT.SIZE_SYSTEM]: { key: FACT.SIZE_SYSTEM, label: "Size system", answer: ANSWER.CHOICE, list: LIST.SIZE_SYSTEM, requiredBy: [] },
+  [FACT.SIZE_CLASS]: { key: FACT.SIZE_CLASS, label: "Size type", answer: ANSWER.CHOICE, list: LIST.SIZE_CLASS, requiredBy: [] },
+  [FACT.ITEM_FORM]: { key: FACT.ITEM_FORM, label: "Form", answer: ANSWER.TEXT, hint: "Stick, cone, oil, spray…", requiredBy: [] },
+  [FACT.UNIT_COUNT]: { key: FACT.UNIT_COUNT, label: "Units in the pack", answer: ANSWER.NUMBER, requiredBy: [] },
+  [FACT.STONE_CLARITY]: { key: FACT.STONE_CLARITY, label: "Stone clarity", answer: ANSWER.TEXT, requiredBy: [] },
+  [FACT.STONE_CUT]: { key: FACT.STONE_CUT, label: "Stone cut", answer: ANSWER.TEXT, requiredBy: [] },
+  [FACT.METAL_WEIGHT]: { key: FACT.METAL_WEIGHT, label: "Metal weight (g)", answer: ANSWER.NUMBER, requiredBy: [PLATFORM.FLIPKART] },
+  [FACT.GENERIC_NAME]: { key: FACT.GENERIC_NAME, label: "Generic name", answer: ANSWER.TEXT, hint: "What it is in one or two words, e.g. Handbag", requiredBy: [PLATFORM.MEESHO] },
+  [FACT.MODEL_NAME]: { key: FACT.MODEL_NAME, label: "Model name", answer: ANSWER.TEXT, requiredBy: [] },
 };
 
 /**

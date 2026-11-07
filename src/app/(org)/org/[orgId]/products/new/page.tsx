@@ -27,7 +27,7 @@ export default async function OrgNewProductPage({
   // Independent reads, fetched together. One org, not a list: in this portal there
   // is nothing to choose between, and offering the choice would be offering a product
   // owned by somebody else — read that org by id rather than loading every platform org.
-  const [categoriesResult, org, allLocations, copyOptions, copySource, productTypes, channels] =
+  const [categoriesResult, org, allLocations, copyOptions, copySource, productTypes, channels, formTypes] =
     await Promise.all([
       adminCategoriesDAL.getCategories(),
       orgsDAL.getOrgSummary(orgId),
@@ -36,6 +36,7 @@ export default async function OrgNewProductPage({
       copyFromId ? adminProductsDAL.getCopySource(copyFromId, orgId) : null,
       adminProductTypesDAL.getProductTypes(),
       orgChannelService.list(orgId),
+      adminProductTypesDAL.getFormTypes(orgId),
     ]);
 
   // The org's families, for the picker. A product belongs to none by default, which is the
@@ -76,7 +77,7 @@ export default async function OrgNewProductPage({
     <ProductAddContainer
       help="products"
       categories={categories}
-      productTypes={productTypes}
+      productTypes={formTypes}
       families={families}
       orgs={orgs}
       locations={locations}

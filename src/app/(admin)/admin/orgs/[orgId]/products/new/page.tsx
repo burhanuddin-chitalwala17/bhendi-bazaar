@@ -17,13 +17,14 @@ import { ROUTES } from "@server/shared/routes";
 /** The Bhendi Bazaar team adding a product for a shop, in the shop's own five steps (product-form R10, D12). */
 export default async function AdminNewProductForShopPage({ params }: { params: Promise<{ orgId: string }> }) {
   const { orgId } = await params;
-  const [categoriesResult, org, allLocations, productTypes, familyRows, channels] = await Promise.all([
+  const [categoriesResult, org, allLocations, productTypes, familyRows, channels, formTypes] = await Promise.all([
     adminCategoriesDAL.getCategories(),
     orgsDAL.getOrgSummary(orgId),
     orgAddressService.listLocations(orgId),
     adminProductTypesDAL.getProductTypes(),
     productFamilyService.list(orgId),
     orgChannelService.list(orgId),
+    adminProductTypesDAL.getFormTypes(orgId),
   ]);
   if (!org) notFound();
 
@@ -66,7 +67,7 @@ export default async function AdminNewProductForShopPage({ params }: { params: P
     <PageShell>
       <ProductAddContainer
         categories={categories}
-        productTypes={productTypes}
+        productTypes={formTypes}
         families={familyRows.map((family) => ({ id: family.id, name: family.name }))}
         orgs={[{ id: org.id, name: org.name, code: org.code, handle: org.handle }]}
         locations={locations}

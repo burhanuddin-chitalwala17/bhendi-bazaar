@@ -17,9 +17,10 @@ connected channel and refreshed by a job.
 Akeneo completeness per channel, stored and recomputed on change. Followed.
 
 ## Technical decisions
-- **D1 — Form model.** `formModelFor(productType, connectedChannels)` returns groups of attributes, each
-  with kind, options, unit, inherited value and source, and `requiredFor: channel[]` /
-  `helpsOn: channel[]` from the field maps; server-built, passed to the client form as a DTO.
+- **D1 — Form model.** Server-built per type (and per kind, Q7) from the shop's channels and the field maps:
+  which channel requires or is helped by each question (`form-channels.service`, unit 1), handed to the form
+  with the types; the pure `groupQuestions` splits "Required now" from "Also helps on" (Q8). Inherited values
+  and their source join it with the reads switch (D4).
 - **D2 — Validation** from the same model: a Zod schema built per type at runtime on the server and the
   client (`useServerForm`), never disabling Save (ADR-0053).
 - **D3 — `ProductChannelState`** (productId, channel, missingCount, missingKeys Json, inputsHash,

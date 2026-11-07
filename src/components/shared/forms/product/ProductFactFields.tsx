@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Control, FieldErrors, UseFormRegister, UseFormSetValue } from "react-hook-form";
+import { useWatch, type Control, type FieldErrors, type UseFormRegister, type UseFormSetValue } from "react-hook-form";
 
 import { FormController, FormInput, FormSelect } from "../FormField";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,6 +9,9 @@ import { useListingValues, type ValueOption, type ValuesByList } from "@/compone
 import { ANSWER, FACT_DECLARATIONS, type FactKey } from "@server/listing/listing-facts";
 import { resolveProductType } from "@server/listing/product-type";
 import type { ProductTypeRecord } from "@server/listing/product-type.types";
+import type { FormProductType } from "@server/listing/form-channels.service";
+import { ANY_KIND, groupQuestions, type ChannelUse, type Question } from "@server/listing/form-channels";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import type { ProductFormInput } from "@/components/product/console/types";
 import { ProductFamilyField, type FamilyOption } from "./ProductFamilyField";
 import { PRODUCT_FACT_FIELDS_COPY } from "./product-copy";
@@ -26,7 +29,8 @@ interface ProductFactFieldsProps {
   /** The chosen category, watched: it decides the type, and the type decides the questions. */
   categoryId: string;
   categories: { id: string; name: string; parentId?: string | null; productType?: unknown }[];
-  productTypes: ProductTypeRecord[];
+  /** With which of the shop's channels need each question, where the page computed it (dynamic-form D1). */
+  productTypes: FormProductType[];
   /** The answers the page already loaded for the category it rendered with. */
   initialValues?: ValuesByList;
   /** Where a filled-in value came from, so the form can say so (inherited-facts R3). */
@@ -88,6 +92,7 @@ export function ProductFactFields({
   );
 
   const { values, loading } = useListingValues(orgId, lists, initialValues);
+  const kind = useWatch({ control, name: "kind" }) as string | null | undefined;
 
   if (!type) {
     return (
@@ -154,54 +159,88 @@ export function ProductFactFields({
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-        {type.facts.map((fact) => (
-          <FactField
-            key={fact}
-            fact={fact}
-            type={type}
-            control={control}
-            register={register}
-            options={values[FACT_DECLARATIONS[fact]?.list ?? ""] ?? []}
-            loading={loading}
-            error={
-              (errors.facts as Record<string, { message?: string }> | undefined)?.[fact]?.message
-            }
-            origin={origins[fact]}
-            readOnly={readOnly}
-          />
-        ))}
-      </div>
-
-      {type.measures.length > 0 && (
-        <>
-          <h3 className="mt-6 text-sm font-medium text-foreground">{PRODUCT_FACT_FIELDS_COPY.measurements}</h3>
-          <p className="mt-1 text-2xs text-muted-foreground">
-            In {type.measures[0]?.unit}. Measured once here rather than guessed at a size label —
-            a measurement says which size it is, and a size label does not say the measurement.
-          </p>
-          <div className="mt-3 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {type.measures.map((measure) => (
-              <FormInput
-                key={measure.key}
-                label={`${measure.label} (${measure.unit})`}
-                type="number"
-                step="0.1"
-                inputMode="decimal"
-                disabled={readOnly}
-                {...register(`measurements.${measure.key}` as never, { setValueAs: blankIsUnanswered })}
-                error={
-                  (errors.measurements as Record<string, { message?: string }> | undefined)?.[
-                    measure.key
-                  ]?.message
-                }
-                hint={origins[measure.key] ? `from your ${origins[measure.key]}` : undefined}
+      {(() => {
+        // Required now: the store's required measurements and what a channel the shop sells on needs;
+        // every other question under "Also helps on…" (R2, ux state matrix). The kind picks its channel types (Q7).
+        const use = type.channelUse?.[kind || ANY_KIND] ?? type.channelUse?.[ANY_KIND] ?? {};
+        const groups = groupQuestions(type.facts, type.measures, use);
+        const factErrors = (errors.facts as Record<string, { message?: string }> | undefined) ?? {};
+        const measureErrors = (errors.measurements as Record<string, { message?: string }> | undefined) ?? {};
+        // A collapsed group opens itself when it holds an error, so no refusal hides (review).
+        const restHasError = groups.rest.some((q) => (q.kind === "fact" ? factErrors : measureErrors)[q.key]?.message);
+        const render = (q: Question) => (
+          <div key={`${q.kind}:${q.key}`} className="space-y-1">
+            {q.kind === "fact" ? (
+              <FactField
+                fact={q.key as FactKey}
+                type={type}
+                control={control}
+                register={register}
+                options={values[FACT_DECLARATIONS[q.key as FactKey]?.list ?? ""] ?? []}
+                loading={loading}
+                error={factErrors[q.key]?.message}
+                origin={origins[q.key]}
+                readOnly={readOnly}
               />
-            ))}
+            ) : (
+              <MeasureField measure={type.measures.find((m) => m.key === q.key)!} register={register} error={measureErrors[q.key]?.message} origin={origins[q.key]} readOnly={readOnly} />
+            )}
+            <ChannelBadges use={groups.badges[q.key]} />
           </div>
-        </>
-      )}
+        );
+        const helps = groups.helps.map((c) => PRODUCT_FACT_FIELDS_COPY.channelShort[c] ?? c);
+        return (
+          <>
+            {groups.required.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-sm font-medium text-foreground">{PRODUCT_FACT_FIELDS_COPY.requiredNow}</h3>
+                <p className="mt-1 text-2xs text-muted-foreground">{PRODUCT_FACT_FIELDS_COPY.requiredNowBody}</p>
+                <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">{groups.required.map(render)}</div>
+              </div>
+            )}
+            {groups.rest.length > 0 && (
+              <details className="mt-4 rounded-card border border-border px-3" open={restHasError || undefined}>
+                <summary className="flex min-h-10 cursor-pointer items-center py-2 text-sm font-medium text-foreground">{PRODUCT_FACT_FIELDS_COPY.alsoHelpsOn(helps)}</summary>
+                <div className="grid grid-cols-1 gap-4 pb-3 md:grid-cols-2">{groups.rest.map(render)}</div>
+              </details>
+            )}
+          </>
+        );
+      })()}
     </section>
+  );
+}
+
+/** One measurement in the unit its type fixes (categories D6). */
+function MeasureField({ measure, register, error, origin, readOnly }: {
+  measure: { key: string; label: string; unit: string };
+  register: UseFormRegister<ProductFormInput>;
+  error?: string;
+  origin?: string;
+  readOnly: boolean;
+}) {
+  return (
+    <FormInput
+      label={`${measure.label} (${measure.unit})`}
+      type="number"
+      step="0.1"
+      inputMode="decimal"
+      disabled={readOnly}
+      {...register(`measurements.${measure.key}` as never, { setValueAs: blankIsUnanswered })}
+      error={error}
+      hint={origin ? `from your ${origin}` : undefined}
+    />
+  );
+}
+
+/** Which channels need a question, as small chips under it (dynamic-form R2, parent Q27). */
+function ChannelBadges({ use }: { use?: ChannelUse }) {
+  if (!use || use.required.length + use.helps.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {use.required.map((c) => <StatusBadge key={c} tone="info">{PRODUCT_FACT_FIELDS_COPY.channelShort[c] ?? c}</StatusBadge>)}
+      {use.helps.map((c) => <StatusBadge key={c} tone="neutral">{PRODUCT_FACT_FIELDS_COPY.channelShort[c] ?? c}</StatusBadge>)}
+    </div>
   );
 }
 
