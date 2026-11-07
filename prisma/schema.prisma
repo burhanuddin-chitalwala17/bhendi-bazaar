@@ -267,6 +267,8 @@ model ProductPriceHistory {
   @@index([productId, recordedAt])
 }
 
+/// Carries the attributes sync trigger (listing-model/attributes Q7): a write to facts, measurements,
+/// weight, brand, type or org re-derives this product's ProductValue rows until dynamic-form.
 model Product {
   id          String @id @default(cuid())
   slug        String @unique
@@ -401,6 +403,8 @@ model Product {
   @@index([familyId])
   // The brand-level correction asks for one org's products of one brand.
   @@index([brandId])
+  productValues   ProductValue[]
+  productValueSet ProductValueSet?
 }
 
 /// One item in a product's gallery — a photograph or an embedded video, in an order
@@ -865,6 +869,7 @@ enum ReturnsPreset {
 /// The private listing context that does not belong to a brand (org-profile spec R4): what a
 /// product inherits when neither it nor its family nor its brand says otherwise. Pre-fills,
 /// never validates. The tax rate is basis points, never a float.
+/// Carries an attributes sync trigger (attributes Q6, Q9): a country change re-derives the shop's products.
 model OrgListingDefaults {
   orgId String @id
   org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -885,6 +890,7 @@ model OrgListingDefaults {
 /// A brand an organisation sells, with the facts that belong to the brand rather than the
 /// shop: who makes it, who packs or imports it, where it comes from (org-profile spec R3). A
 /// manufacturer has one; a shop carrying others' brands has many. Retired, never deleted (R9, ADR-0032).
+/// Carries an attributes sync trigger (attributes Q9): a change to what it fills re-derives its products.
 model Brand {
   id    String @id @default(cuid())
   orgId String
@@ -2142,6 +2148,7 @@ model Bid {
 /// One list serves every product type that asks for it, rather than a list per type: Flipkart
 /// copies its colour list per node and they have drifted — thirty-five values of which only
 /// sixteen appear in every node (D5).
+/// Carries an attributes sync trigger (attributes Q12): a value added or changed reaches AttributeOption.
 model ListingValue {
   id String @id @default(cuid())
 
@@ -2233,6 +2240,7 @@ model ProductFamily {
 /// A seller inventing its own would fragment the mappings every channel adapter depends on. The
 /// permitted *answers* stay org-scopeable (`ListingValue.orgId`) because a shop knowing a colour
 /// the platform does not is harmless, where a shop knowing a different question set is not.
+/// Carries an attributes sync trigger (attributes Q12): its questions are rebuilt in BbTypeAttribute.
 model ProductType {
   id String @id @default(cuid())
 
@@ -2899,4 +2907,82 @@ model FieldValueMap {
   createdAt    DateTime @default(now())
 
   @@unique([fieldMapId, optionKey])
+}
+
+/// One question a product can answer (listing-model/attributes D1, R1). Rows come only from migrations.
+model Attribute {
+  key        String    @id
+  label      String
+  /// choice / text / number / boolean / measure / reference (ATTRIBUTE_KIND).
+  kind       String
+  /// weight / length / volume, for a measure: the family its canonical unit belongs to (D4).
+  unitFamily String?
+  multi      Boolean   @default(false)
+  /// product / brand / shop (ATTRIBUTE_SCOPE): who fills it by default (Q6).
+  scope      String    @default("product")
+  retiredAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  options AttributeOption[]
+}
+
+/// One answer an attribute's list allows (attributes D1, Q10): a platform answer, or a shop's own.
+model AttributeOption {
+  id           String    @id @default(cuid())
+  attributeKey String
+  attribute    Attribute @relation(fields: [attributeKey], references: [key], onDelete: Cascade)
+  key          String
+  label        String
+  order        Int       @default(0)
+  orgId        String?
+  productTypes String[]  @default([])
+  retiredAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@unique([attributeKey, key, orgId])
+  @@index([attributeKey])
+}
+
+/// Which attributes one of our types asks, in what order and under which label (attributes D2).
+model BbTypeAttribute {
+  id             String  @id @default(cuid())
+  productTypeKey String
+  attributeKey   String
+  group          String?
+  order          Int     @default(0)
+  labelOverride  String?
+  requiredForBb  Boolean @default(false)
+
+  @@unique([productTypeKey, attributeKey])
+}
+
+/// A product's answer to one attribute, typed, with where it came from (attributes D3, R2). Kept in step
+/// by a trigger until dynamic-form switches the writes (Q7); one value column set, enforced by a CHECK.
+model ProductValue {
+  id           String   @id @default(cuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attributeKey String
+  optionKey    String?
+  text         String?
+  number       Decimal?
+  /// For a measure: the unit the shop typed; `number` is canonical (grams, millimetres, millilitres, D4).
+  unit         String?
+  bool         Boolean?
+  refId        String?
+  /// product / family / brand / shop / marketplace (VALUE_SOURCE).
+  source       String
+  sourceId     String?
+  updatedAt    DateTime @updatedAt
+
+  @@unique([productId, attributeKey])
+  @@index([attributeKey, optionKey])
+}
+
+/// A product's values as one read (attributes Q8): `{ key: { v, unit?, src } }`, written with the rows.
+model ProductValueSet {
+  productId String   @id
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values    Json
+  updatedAt DateTime @updatedAt
 }

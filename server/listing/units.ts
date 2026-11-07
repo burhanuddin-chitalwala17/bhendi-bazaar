@@ -37,3 +37,10 @@ export function convert(value: number, from: string, to: string): number | null 
 }
 
 export const isKnownUnit = (word: string) => unitOf(word) !== undefined;
+
+const CANONICAL: Record<Family, string> = { weight: "g", length: "mm", volume: "ml" };
+/** The canonical unit of a unit's family (attributes D4): grams, millimetres, millilitres. */
+export const canonicalOf = (word: string): string | null => {
+  const u = unitOf(word);
+  return u ? CANONICAL[u.family] : null;
+};

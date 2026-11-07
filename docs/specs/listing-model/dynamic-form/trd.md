@@ -3,14 +3,14 @@
 - **Status:** Accepted
 - **Domain:** listing, with catalog and channels
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-07
+- **Verified:** 2026-11-08
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), parent [trd.md](../trd.md) D3, D9
 
 > Technical approach. Refines parent D3, D9. Switches reads to the new model.
 
 ## Approach
 The form renders from the product type's attributes and the shop's connected channels. Every read path
-(form, storefront, feeds, builder) reads `Product.values`. Completeness is stored per product per
+(form, storefront, feeds, builder) reads the product's values (`ProductValueSet`, attributes Q8). Completeness is stored per product per
 connected channel and refreshed by a job.
 
 ## Prior art
@@ -26,7 +26,9 @@ Akeneo completeness per channel, stored and recomputed on change. Followed.
   computedAt; unique product+channel); written by `listing.refresh-completeness` on product save, map or
   catalogue change, channel connect; batched 500; one writer.
 - **D4 — Reads switched.** Storefront facets, `shopfront-feed`, readiness, the builder and the product
-  page read `Product.values`; `Product.facts`/`measurements` no longer read (removed in retire-old-paths).
+  page read `ProductValueSet`; `Product.facts`/`measurements` no longer read (removed in retire-old-paths).
+  The migration that switches writes to `product-value.repository` drops the attributes sync triggers in
+  the same migration (attributes Q7), so ProductValue never has two writers.
 - **D5 — Connect prompt and channel-change alert** are Home attention lines reading `ProductChannelState`
   and the catalogue's change record.
 - **D6 — Bulk fill** extends readiness-fix to any attribute: one attribute, many products, empty only.

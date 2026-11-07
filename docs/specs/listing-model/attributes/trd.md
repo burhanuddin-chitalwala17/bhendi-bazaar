@@ -3,14 +3,15 @@
 - **Status:** Accepted
 - **Domain:** listing, with catalog
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-07
+- **Verified:** 2026-11-08
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), parent [trd.md](../trd.md) D1–D4, D10, D11
 
 > Technical approach. Refines parent D1–D4, D10, D11.
 
 ## Approach
-Expand only: new vocabulary and value tables beside today's, dual-written from every product save,
-backfilled in batches and compared. Reads stay on today's columns until dynamic-form switches them.
+Expand only: new vocabulary and value tables beside today's, kept in step with today's answers by the
+database on every write (Q7), moved in the migration and compared. Reads stay on today's columns until
+dynamic-form switches them, and drops the triggers in that same migration.
 
 ## Prior art
 Parent: Akeneo values + projection; Magento typed value tables.
@@ -24,13 +25,14 @@ Parent: Akeneo values + projection; Magento typed value tables.
   Built from `ProductType.facts`, `measures` and `factLabels`.
 - **D3 — `ProductValue`** (productId, attributeKey, optionKey?, text?, number Decimal?, unit?, bool?,
   refId?, source, sourceId?; unique product+attribute; CHECK one value column set; index
-  attributeKey+optionKey). One writer: a new `product-value.repository` in listing, which also writes
-  the projection `Product.values` in the same transaction.
+  attributeKey+optionKey) and its read copy **`ProductValueSet`** (one row per product, Q8). Until
+  dynamic-form, a trigger derives both from today's answers on every write (Q7); `product-value.repository`
+  reads, and becomes the one writer when dynamic-form switches the writes.
 - **D4 — Canonical units.** Weight in grams, lengths in millimetres, volume in millilitres; the typed
   unit kept in `unit`. `Product.weight` (kg) migrates to the `weight` attribute in grams.
-- **D5 — Inheritance at write.** `fillValues(productId)` resolves own → family → brand → shop per
-  attribute by scope; a brand or shop-defaults save enqueues `listing.refresh-inherited` for affected
-  products in batches of 500.
+- **D5 — Inheritance at write.** A product's brand-scoped values resolve own → brand → the shop's default
+  brand → shop settings; a brand or shop-defaults save re-derives the products it fills in the same
+  statement (Q9).
 - **D6 — Brand parties.** `BrandParty` (brandId, role: maker / packer / importer, name, address,
   pincode; unique brand+role) and `Brand.amazonRegistered`; the brand-scoped attributes read them.
   `OrgListingDefaults.amazonGeneric` moves to each brand by migration (all brands of that shop).
@@ -51,16 +53,16 @@ None.
 `one-repository`, `product-visibility` CENSUS (new product reads), docs counts.
 
 ## Data model
-[MIGRATION] `Attribute`, `AttributeOption`, `BbTypeAttribute`, `ProductValue`, `BrandParty`;
-`Product.values` Json; `Brand.amazonRegistered`. Nothing dropped.
+[MIGRATION] `Attribute`, `AttributeOption`, `BbTypeAttribute`, `ProductValue`, `ProductValueSet` (Q8),
+`BrandParty`; `Brand.amazonRegistered`; the sync triggers (Q7, Q12). Nothing dropped.
 
 ## Test plan
-Integration: dual write keeps rows and projection equal; inheritance (brand change updates inheritors,
+Integration: the triggers keep rows and the read copy equal on every write; inheritance (brand change updates inheritors,
 not overriders, spec A1); no brand uses the shop default (A2); backfill compare finds zero mismatch on
 fixtures (A3); category type change asks only new attributes (A5).
 
 ## Delivery
-1. Vocabulary, values, dual write, inheritance. 2. Brand parties, type follows category, new attributes.
+1. Vocabulary, values, the sync triggers, inheritance. 2. Brand parties, type follows category, new attributes.
 3. Backfill and compare script.
 
 ## Open questions

@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Domain:** listing, with channels, catalog and requests
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-07
+- **Verified:** 2026-11-08
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [plan.html](plan.html), [ADR-0070](../../adr/0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md), [ADR-0053](../../adr/0053-readiness-advises-and-never-gates.md), [ADR-0038](../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0003](../../adr/0003-one-repository-per-aggregate.md)
 
 > The storage and runtime design every subfeature builds on. Subfeature TRDs refine, never contradict.
@@ -34,7 +34,7 @@ produces a payload and its gaps. Completeness is stored and refreshed by jobs.
   `unit`, `bool`, `refId`; one populated per kind, enforced by a CHECK. `source` (product, family,
   brand, shop) and `sourceId`. Indexes: (attributeId, optionId), (productId). Measures stored in a
   canonical unit per family (grams, millimetres, millilitres) with the shop's unit kept for display.
-- **D3 — Projection.** `Product.values` JSON `{attributeKey: {v, unit?, src}}`, rebuilt from rows inside
+- **D3 — Projection.** `ProductValueSet.values` JSON (its own table, attributes Q8) `{attributeKey: {v, unit?, src}}`, rebuilt from rows inside
   the transaction that writes them (one repository owns both). A nightly job compares a sample.
 - **D4 — Inheritance at write.** On a product, family, brand or shop-default save, a job recomputes the
   inherited rows of affected products in batches of 500 (one read, one upsert per batch); the product's
@@ -56,8 +56,8 @@ produces a payload and its gaps. Completeness is stored and refreshed by jobs.
 - **D9 — Completeness.** `ProductChannelState` (product, channel, missing count, missing field keys,
   inputsHash, computedAt). Refreshed by a job on product save, map change or catalogue change, batched;
   the products list reads it. Only connected channels get rows (parent Q4); connecting enqueues a backfill.
-- **D10 — Migration order.** Expand (new tables, dual-write from the product save), backfill (batches of
-  1,000, counts compared per type), switch reads (projection becomes the source the form and builder
+- **D10 — Migration order.** Expand (new tables, kept in step by triggers from today's answers, attributes
+  Q7), backfill (in the expand migration, counts compared per type), switch reads (projection becomes the source the form and builder
   read), contract (drop `Product.facts`, ChannelAttributeMap/Fill/ValueMap, `FACT_DECLARATIONS`) in
   retire-old-paths. Each step its own migration and reversible until contract.
 - **D11 — Brand as a reference.** Brand carries parties (maker, packer, importer: name, address, pincode)

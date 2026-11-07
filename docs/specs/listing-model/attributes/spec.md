@@ -4,7 +4,7 @@
 - **Status:** Accepted
 - **Domain:** listing, with catalog
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-07
+- **Verified:** 2026-11-08
 - **References:** [decisions.md](decisions.md), parent [listing-model](../spec.md) Q5, Q6, Q8–Q10, Q16, Q19, Q20, Q25, Q26, [ADR-0070](../../../adr/0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md. Subfeature 3 of 5. No UI:
@@ -41,7 +41,7 @@ filled nothing; a product's type drifted from its category. Channel fields need 
 - **Losing an answer in the move:** counts per type compared before the switch; a mismatch stops the
   release (parent Q33).
 - **Two sources disagreeing** (the value rows and the product's read copy): rebuilt together, compared nightly.
-- **A brand edit touching thousands of products:** inherited values refreshed in batches, never overwriting the product's own.
+- **A brand edit touching thousands of products:** inherited values refreshed with the brand's save, never overwriting the product's own (decisions Q9).
 
 ## Product acceptance
 - A1 — A product whose brand is Noor shows country, maker and packer "from your brand Noor"; changing
