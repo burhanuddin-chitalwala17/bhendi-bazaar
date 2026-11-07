@@ -120,14 +120,16 @@ function item(channel: ShopfrontChannel, c: FeedCandidate): string {
 }
 
 /** What a channel would reject is left out rather than sent (D8). */
-const sendable = (c: FeedCandidate) => c.images.length > 0 && c.description.trim().length > 0;
+// Meta requires a category where Google infers one (field-maps proof run, 2026-11-08).
+const sendable = (channel: ShopfrontChannel, c: FeedCandidate) =>
+  c.images.length > 0 && c.description.trim().length > 0 && (channel !== CHANNEL.META || c.category !== null);
 
 export function buildFeed(
   channel: ShopfrontChannel,
   header: { title: string; link: string },
   candidates: readonly FeedCandidate[],
 ): string {
-  const items = candidates.filter(sendable).map((c) => item(channel, c));
+  const items = candidates.filter((c) => sendable(channel, c)).map((c) => item(channel, c));
   return [
     `<?xml version="1.0" encoding="UTF-8"?>`,
     `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`,

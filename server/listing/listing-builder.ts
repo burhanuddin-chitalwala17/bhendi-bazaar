@@ -22,6 +22,7 @@ export interface BuildProduct {
   /** `Product.weight`, kilograms. */
   weightKg: number | null;
   barcode: string | null;
+  kind: string | null;
   facts: StoredFacts;
   /** Measurements in the units the product type fixes. */
   measurements: Partial<Record<MeasureKey, { value: number; unit: string }>>;
@@ -88,6 +89,7 @@ function fromCore(product: BuildProduct, key: string | null): Raw | null {
     case CORE_KEY.BRAND: return product.brand ? { value: product.brand } : null;
     case CORE_KEY.BARCODE: return product.barcode ? { value: product.barcode } : null;
     case CORE_KEY.WEIGHT: return product.weightKg ? { value: String(product.weightKg), unit: "kg" } : null;
+    case CORE_KEY.KIND: return product.kind ? { value: product.kind, optionKey: product.kind } : null;
     default: return null;
   }
 }
@@ -109,15 +111,17 @@ function raw(map: FieldMapRow, input: BuildInput): Raw | null {
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 /** The channel's word for a value (Q10): the map's pair, its allowed value of the same words, else as is. */
-function paired(map: FieldMapRow, field: CatalogueFieldRow | undefined, r: Raw): string | null {
+function paired(map: FieldMapRow, field: CatalogueFieldRow | undefined, r: Raw, measured = false): string | null {
   const pair = (key: string | undefined) => (key !== undefined && Object.hasOwn(map.values, key) ? map.values[key] : undefined);
-  const explicit = pair(r.optionKey) ?? pair(r.value);
-  if (explicit) return explicit;
   const allowed = Array.isArray(field?.allowedValues) ? (field.allowedValues as unknown[]).map(String) : [];
-  const match = allowed.find((a) => same(a, r.value));
+  const closedList = field?.kind === FIELD_KIND.CHOICE && allowed.length > 0;
+  const explicit = pair(r.optionKey) ?? pair(r.value);
+  // A pair to a word the channel's closed list no longer holds is a gap, not a refusal waiting to happen.
+  if (explicit) return closedList && !allowed.includes(explicit) ? null : explicit;
+  const match = allowed.find((a) => same(a, r.value)) ?? (measured ? nearestSize(allowed, r.value) : undefined);
   if (match) return match;
   // A closed list with no word for this answer is a gap, never a guess (Q6); free text goes as our words.
-  return field?.kind === FIELD_KIND.CHOICE && allowed.length > 0 ? null : r.value;
+  return closedList ? null : r.value;
 }
 
 /**
@@ -132,6 +136,22 @@ function unitTargetOf(map: FieldMapRow, field: CatalogueFieldRow | undefined, un
   return allowed.find((a) => convert(1, unit, a) !== null) ?? null;
 }
 
+/**
+ * A measurement against a list of sizes (Meesho's "Length Size" 10, 11, 12…): the nearest, as a size scale
+ * reads (size-label.ts), but only inside the list and within half a step of a size. Outside it, or for a
+ * count, it is a gap, never a guess (Q6, Q15).
+ */
+function nearestSize(allowed: readonly string[], value: string): string | undefined {
+  const n = Number(value);
+  const sizes = allowed.map(Number);
+  if (!Number.isFinite(n) || sizes.length < 2 || sizes.some((x) => !Number.isFinite(x))) return undefined;
+  const sorted = [...sizes].sort((a, b) => a - b);
+  const step = Math.min(...sorted.slice(1).map((x, i) => x - sorted[i]).filter((d) => d > 0));
+  const nearest = sorted.reduce((best, x) => (Math.abs(x - n) < Math.abs(best - n) ? x : best));
+  if (!Number.isFinite(step) || Math.abs(nearest - n) > step / 2) return undefined;
+  return allowed[sizes.indexOf(nearest)];
+}
+
 export function buildChannelListing(input: BuildInput): BuiltListing {
   const fieldBy = new Map(input.fields.map((f) => [f.key, f]));
   const required = (key: string) => fieldBy.get(key)?.requirement === FIELD_REQUIREMENT.REQUIRED;
@@ -142,8 +162,11 @@ export function buildChannelListing(input: BuildInput): BuiltListing {
     if (!gaps.some((g) => g.field === key)) gaps.push({ field: key, label: label(key), reason, ...(answer ? { answer } : {}) });
   };
 
+  const keyOf = (path: string) => (fieldBy.has(path) ? path : fieldOf(path));
   for (const map of input.maps) {
-    const key = fieldOf(map.fieldPath);
+    const key = keyOf(map.fieldPath);
+    // A type that was read and has no such field takes nothing for it: Amazon refuses an attribute its schema lacks.
+    if (input.fields.length > 0 && !fieldBy.has(key)) continue;
     // A map on a field the adapter would fill is deliberate (Google's age group, channel-catalogue Q8): it builds.
     const field = fieldBy.get(key);
     if (map.source === FIELD_SOURCE.DEVELOPER) {
@@ -167,15 +190,17 @@ export function buildChannelListing(input: BuildInput): BuiltListing {
       value = String(n);
       unit = target!;
     }
-    const word = unit ? value : paired(map, field, { ...r, value });
+    // A measure onto a closed list (Meesho's sizes in inches) is a choice: paired, and sent without a unit.
+    const closed = field?.kind === FIELD_KIND.CHOICE;
+    const word = unit && !closed ? value : paired(map, field, { ...r, value }, unit !== undefined);
     if (word === null) {
-      gap(key, GAP_REASON.NO_MATCH, r.value);
+      gap(key, GAP_REASON.NO_MATCH, value);
       continue;
     }
-    fields.push({ path: map.fieldPath, value: word, ...(unit ? { unit } : {}) });
+    fields.push({ path: map.fieldPath, value: word, ...(unit && !closed ? { unit } : {}) });
   }
 
-  const covered = new Set(input.maps.map((m) => fieldOf(m.fieldPath)));
+  const covered = new Set(input.maps.map((m) => keyOf(m.fieldPath)));
   for (const f of input.fields) {
     if (f.requirement === FIELD_REQUIREMENT.REQUIRED && !f.adapterFills && !covered.has(f.key)) gap(f.key, GAP_REASON.UNMAPPED);
   }

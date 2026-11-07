@@ -25,7 +25,7 @@ const map = (fieldPath: string, over: Partial<FieldMapRow>): FieldMapRow => ({
 });
 
 const product = (over: Partial<BuildProduct> = {}): BuildProduct => ({
-  name: "Canvas Tote", sku: "NB-TOTE-1", description: "A tote.", brand: "Niqab Boutique", weightKg: 0.45, barcode: null, hsn: "4202",
+  name: "Canvas Tote", sku: "NB-TOTE-1", description: "A tote.", brand: "Niqab Boutique", weightKg: 0.45, barcode: null, kind: "tote", hsn: "4202",
   facts: { audience: { value: "women", origin: "product" }, colour: { value: "olive", origin: "product" }, material: { value: "canvas", origin: "product" } },
   measurements: { length: { value: 40, unit: "cm" }, width: { value: 12, unit: "cm" }, height: { value: 35, unit: "cm" } },
   sizeLabel: null, ...over,
@@ -99,6 +99,37 @@ describe("answers are paired, never dropped (Q6, Q10)", () => {
   it("an answer named like an object's own property is never read as a pair", () => {
     const r = build([field("style")], [map("style", { attributeKey: "occasion" })], product({ facts: { occasion: { value: "constructor", origin: "product" } } }));
     expect(sent(r)).toEqual({ style: "constructor" });
+  });
+
+  it("a label with a dot is a field of its own, not a part (Meesho's No. of Compartments)", () => {
+    const r = build([field("No. of Compartments", { kind: "choice", allowedValues: ["1", "2", "3"] })], [map("No. of Compartments", { attributeKey: "compartments" })],
+      product({ facts: { compartments: { value: 2, origin: "product" } } }));
+    expect(r).toEqual({ fields: [{ path: "No. of Compartments", value: "2" }], gaps: [] });
+  });
+
+  it("a measurement takes the nearest size only inside the list and within half a step; a count never does (Q6, Q15)", () => {
+    const sizes = field("Length Size", { kind: "choice", allowedValues: ["10", "15", "16", "17"] });
+    const at = (cm: number) => build([sizes], [map("Length Size", { attributeKey: "length", unitTarget: "in" })],
+      product({ measurements: { length: { value: cm, unit: "cm" } } }));
+    expect(sent(at(40))).toEqual({ "Length Size": "16" });
+    expect(at(12).gaps.map((g) => g.reason)).toEqual(["noMatch"]);
+    const count = build([field("No. of Compartments", { kind: "choice", allowedValues: ["1", "2", "3", "4", "5"] })], [map("No. of Compartments", { attributeKey: "compartments" })],
+      product({ facts: { compartments: { value: 7, origin: "product" } } }));
+    expect(count.fields).toEqual([]);
+    expect(count.gaps.map((g) => [g.reason, g.answer])).toEqual([["noMatch", "7"]]);
+  });
+
+  it("a pair to a word the channel's closed list does not hold is a gap, not a refusal", () => {
+    const r = build([field("Type", { kind: "choice", allowedValues: ["Finger Ring", "Thumb Ring"] })], [map("Type", { source: FIELD_SOURCE.CORE, coreKey: "kind", values: { "toe-ring": "Toe Ring", ring: "Finger Ring" } })],
+      product({ kind: "toe-ring" }));
+    expect(r.gaps.map((g) => g.reason)).toEqual(["noMatch"]);
+    expect(sent(build([field("Type", { kind: "choice", allowedValues: ["Finger Ring"] })], [map("Type", { source: FIELD_SOURCE.CORE, coreKey: "kind", values: { ring: "Finger Ring" } })], product({ kind: "ring" })))).toEqual({ Type: "Finger Ring" });
+  });
+
+  it("a map for a field the read type does not have builds nothing; an unread type builds every map", () => {
+    const m = map("department", { source: FIELD_SOURCE.RULE, ruleKey: "department_from_audience" });
+    expect(build([field("color")], [m]).fields).toEqual([]);
+    expect(build([], [m]).fields).toEqual([{ path: "department", value: "Womens" }]);
   });
 
   it("free text goes as our words", () => {

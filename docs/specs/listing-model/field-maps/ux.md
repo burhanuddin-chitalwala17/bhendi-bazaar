@@ -29,19 +29,20 @@
 | Normal | One row per field: label, Required / Conditional / Optional, source ("From product: Colour", "Rule: from Audience", "Fixed: Adult", "Name", "Filled by the system"), and a reason line | Tap a row to change |
 | Unmapped | "Not mapped" in amber on that row | Map it |
 | Needs a developer | "Needs a developer · requested" | — |
-| Unpaired answers | "3 answers have no Amazon match" under the row | Pair them |
+| Unpaired answers | "3 answers have no Amazon match" under the row; each pair chosen from the channel's list, or "No match" | Pair them |
+| Waiting on a question | "Waiting on a new question; fills nothing yet" under a map naming a question not built yet (decisions Q17, 2026-11-08) | Change |
 | Changed by the channel | A row marked "New · added 7 Nov" | Map it |
 | Saved | Toast "Saved. Every {type} uses it from now on." | — |
 | Loading / slow | Skeleton rows | — |
 | Retryable error | "Couldn't save that. Nothing was changed." | Try again |
 | Long content | Labels and reasons wrap | — |
 | Many items | Required first, then conditional, then optional; search by field name | — |
-| Phone / tablet / desktop | Rows on a phone; a table from `md:` | — |
+| Phone / tablet / desktop | Rows on every width, each opening its edit in place (decisions Q16, 2026-11-08; was: a table from `md:`) | — |
 
 ## Copy deck
 "From product: {attribute}" · "Rule: {rule}" · "Fixed: {value}" · "{core field}" · "Filled by the system" ·
 "Not mapped" · "Needs a developer · requested" · "{n} answers have no {channel} match" · "Pair them" ·
-"Checked against {source}, {date}" · "Saved. Every {type} uses it from now on." · "Couldn't save that. Nothing was changed."
+"Checked against {source}, {date}" · "Waiting on a new question; fills nothing yet" · "No match" · "Saved. Every {type} uses it from now on." · "Couldn't save that. Nothing was changed."
 
 ## Sign-off
 Signed off by the owner, 2026-11-07 ("signed off"), as documents in place of prototypes (parent Q34).

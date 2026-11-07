@@ -17,6 +17,9 @@ import { UnmappedValueRow } from "@/components/channel/unmapped-value-row";
 import { NotSoldButton } from "@/components/channel/not-sold-button";
 import { isChannel } from "@server/shared/channels";
 import { ADMIN_CHANNEL_COPY } from "../channels-copy";
+import { ChannelTypeList } from "@/components/channel/channel-type-list";
+import { FIELD_MAP_COPY } from "@/components/channel/field-map-copy";
+import { adminFieldMapsDAL } from "@/data-access-layer/admin/field-maps.dal";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -27,7 +30,7 @@ export default async function AdminChannelPage({
 }) {
   const { channel } = await params;
   if (!isChannel(channel)) notFound();
-  const view = await adminChannelRegisterDAL.getView(channel);
+  const [view, types] = await Promise.all([adminChannelRegisterDAL.getView(channel), adminFieldMapsDAL.getTypes(channel)]);
 
   return (
     <div className="space-y-6">
@@ -170,6 +173,14 @@ export default async function AdminChannelPage({
           </Card>
         </section>
       )}
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-title font-semibold">{FIELD_MAP_COPY.typesTitle}</h2>
+          <p className="text-small text-muted-foreground">{FIELD_MAP_COPY.typesBody}</p>
+        </div>
+        <ChannelTypeList channel={channel} types={types} />
+      </section>
+
       <ChannelTypesEditor
         channel={channel}
         label={view.label}

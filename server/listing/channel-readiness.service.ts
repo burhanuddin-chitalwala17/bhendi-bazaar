@@ -15,14 +15,14 @@ import {
 } from "./channel-readiness";
 import { channelMapRepository } from "./channel-map.repository";
 import { fieldMapRepository } from "./field-map.repository";
-import { ANY_BB_TYPE, FIELD_SOURCE, fieldOf, type FieldMapRow } from "./field-map.types";
+import { ANY_BB_TYPE, fieldsOf, fillsToday, type FieldMapRow } from "./field-map.types";
 import { channelCatalogueRepository } from "./channel-catalogue.repository";
 import { FIELD_REQUIREMENT } from "./channel-catalogue.types";
 import { orgChannelRepository } from "./org-channel.repository";
 import { productReadinessRepository } from "./product-readiness.repository";
 import { productTypeRepository } from "./product-type.repository";
 import { fillListing } from "./listing-fill.service";
-import { FACT_DECLARATIONS, ANSWER, parseStoredFacts, type FactKey } from "./listing-facts";
+import { FACTS, FACT_DECLARATIONS, ANSWER, MEASURES, parseStoredFacts, type FactKey } from "./listing-facts";
 import type { Answers } from "./fill-facts";
 import type { ProductTypeRecord } from "./product-type.types";
 
@@ -334,13 +334,18 @@ async function registersForTypes(
   return out;
 }
 
-/** A field a map fills for this type counts as filled; one waiting on a developer does not (field-maps R1). */
+/** The questions a product can answer today, which a map must read to count as filling (field-maps Q17). */
+const TODAY = new Set<string>([...FACTS, ...MEASURES]);
+
+/** A field a map fills for this type counts as filled; one waiting on a developer or a question not yet built does not (field-maps R1, Q17). */
 function withMaps(filled: ReadonlyMap<string, ReadonlySet<string>>, maps: readonly FieldMapRow[], bbType: string): Map<string, Set<string>> {
   const out = new Map([...filled].map(([k, v]) => [k, new Set(v)]));
   for (const m of maps) {
-    if (m.source === FIELD_SOURCE.DEVELOPER || (m.bbType !== ANY_BB_TYPE && m.bbType !== bbType)) continue;
+    if (!fillsToday(m, TODAY) || (m.bbType !== ANY_BB_TYPE && m.bbType !== bbType)) continue;
     const k = `${m.channel}:${m.channelType}`;
-    out.set(k, (out.get(k) ?? new Set()).add(fieldOf(m.fieldPath)));
+    const set = out.get(k) ?? new Set<string>();
+    for (const f of fieldsOf(m.fieldPath)) set.add(f);
+    out.set(k, set);
   }
   return out;
 }

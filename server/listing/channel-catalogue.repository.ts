@@ -17,6 +17,7 @@ export interface CatalogueFieldRow {
 
 /** A stored channel type's live fields, and when the channel last described it (A4). */
 export interface CatalogueTypeRow {
+  label: string;
   readAt: Date;
   fields: CatalogueFieldRow[];
 }
@@ -70,9 +71,9 @@ export const channelCatalogueRepository = {
     if (pairs.length === 0) return out;
     const types = await prisma.channelType.findMany({
       where: { OR: pairs.map((p) => ({ channel: p.channel, key: p.key })), goneAt: null },
-      select: { channel: true, key: true, readAt: true, fields: { where: { goneAt: null }, select: FIELD_SELECT, orderBy: { key: "asc" } } },
+      select: { channel: true, key: true, label: true, readAt: true, fields: { where: { goneAt: null }, select: FIELD_SELECT, orderBy: { key: "asc" } } },
     });
-    for (const t of types) out.set(`${t.channel}:${t.key}`, { readAt: t.readAt, fields: t.fields });
+    for (const t of types) out.set(`${t.channel}:${t.key}`, { label: t.label, readAt: t.readAt, fields: t.fields });
     return out;
   },
 
@@ -91,5 +92,15 @@ export const channelCatalogueRepository = {
     if (pairs.length === 0) return new Map();
     const rows = await prisma.channelType.findMany({ where: { OR: pairs.map((p) => ({ channel: p.channel, key: p.key })), schema: { not: Prisma.DbNull } }, select: { channel: true, key: true, schema: true } });
     return new Map(rows.map((r) => [`${r.channel}:${r.key}`, r.schema]));
+  },
+
+  /** A channel's live types with how many required fields each asks the shop, for the admin's list (field-maps R6). */
+  async typesOf(channel: string): Promise<Array<{ key: string; label: string; readAt: Date; required: string[] }>> {
+    const rows = await prisma.channelType.findMany({
+      where: { channel, goneAt: null },
+      select: { key: true, label: true, readAt: true, fields: { where: { goneAt: null, requirement: FIELD_REQUIREMENT.REQUIRED, adapterFills: false }, select: { key: true } } },
+      orderBy: { label: "asc" },
+    });
+    return rows.map((r) => ({ key: r.key, label: r.label, readAt: r.readAt, required: r.fields.map((f) => f.key) }));
   },
 };

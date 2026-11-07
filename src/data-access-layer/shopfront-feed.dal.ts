@@ -73,7 +73,7 @@ export async function shopfrontFeedXml(channel: ShopfrontChannel): Promise<strin
     product: {
       id: row.product.id, name: row.product.name, description: row.product.description, brand: row.brandName,
       sku: row.listing.sku ?? row.product.id, weightKg: row.listing.weightKg, barcode: row.listing.barcode,
-      productType: row.productType, facts: row.listing.facts, measurements: row.listing.measurements, hsn: null,
+      productType: row.productType, kind: row.kind, facts: row.listing.facts, measurements: row.listing.measurements, hsn: null,
     },
   }] : []));
   const candidates = sold.map(({ row, category }) => toCandidate(row, category, origin, attributes.get(row.product.id) ?? []));

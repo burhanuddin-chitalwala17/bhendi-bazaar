@@ -17,6 +17,7 @@ export interface ListingSource {
   weightKg: number | null;
   barcode: string | null;
   productType: string | null;
+  kind: string | null;
   facts: unknown;
   measurements: unknown;
   hsn: string | null;
@@ -67,7 +68,7 @@ export const listingBuildService = {
         labelOf,
         product: {
           name: product.name, sku: product.sku, description: product.description, brand: product.brand,
-          weightKg: product.weightKg, barcode: product.barcode, hsn: product.hsn,
+          weightKg: product.weightKg, barcode: product.barcode, kind: product.kind, hsn: product.hsn,
           facts: parseStoredFacts(product.facts), measurements, sizeLabel: sizeLabelFor(type, plain)?.label ?? null,
         },
       }));

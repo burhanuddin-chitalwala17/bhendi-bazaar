@@ -122,7 +122,7 @@ describe.skipIf(!isDisposableDb)("setup requests (local db)", () => {
     const written = await fieldMaps.forTypes([{ channel: "amazon", channelType: theirCategory }]);
     const built = build.buildChannelListing({
       fields: [], maps: build.mapsFor(written, type), labelOf: () => null,
-      product: { name: "Bag", sku: "SKU-1", description: "", brand: null, weightKg: null, barcode: null, hsn: null, measurements: {}, sizeLabel: null, facts: { strap: { value: "detachable-x", origin: "product" } } },
+      product: { name: "Bag", sku: "SKU-1", description: "", brand: null, weightKg: null, barcode: null, kind: null, hsn: null, measurements: {}, sizeLabel: null, facts: { strap: { value: "detachable-x", origin: "product" } } },
     });
     const sent = Object.fromEntries(built.fields.map((f) => [f.path, f.value]));
     expect(sent).toEqual({ part_number: "SKU-1", strap_type: "Detachable X" });

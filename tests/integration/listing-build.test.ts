@@ -30,7 +30,7 @@ describe.skipIf(!isDisposableDb)("building channel listings (local db)", () => {
   const NONE = { attributeKey: null, ruleKey: null, coreKey: null, shopKey: null, constant: null, unitTarget: null };
 
   const source = (id: string, audience: string) => ({
-    id, name: "Tote", sku: `SKU-${id}`, description: "A tote.", brand: null, weightKg: 0.45, barcode: null, productType: type, hsn: null,
+    id, name: "Tote", sku: `SKU-${id}`, description: "A tote.", brand: null, weightKg: 0.45, barcode: null, productType: type, kind: null, hsn: null,
     facts: { audience: { value: audience, origin: "product" } },
     measurements: { length: { value: 40, origin: "product" } },
   });
@@ -66,6 +66,21 @@ describe.skipIf(!isDisposableDb)("building channel listings (local db)", () => {
     const fields = Object.fromEntries(built.get("a")!.fields.map((x) => [x.path, x.unit ? `${x.value} ${x.unit}` : x.value]));
     expect(fields).toEqual({ department: "Womens", item_type_name: "Tote Bag", "item_dimensions.length": "400 millimeters", item_weight: "450 grams" });
     expect(built.get("a")!.gaps).toEqual([]);
+  });
+
+  it("an admin's change to a map is what the next build sends (spec A4)", async () => {
+    const { fieldMapService } = await import("@server/listing/field-map.service");
+    await fieldMapService.save({ channel: "amazon", channelType: theirType, fieldPath: "department", bbType: "", source: "constant", key: null, constant: "Unisex", unitTarget: null, reason: "test", values: {} });
+    const { built } = await service.build("amazon", [{ channelType: theirType, product: source("a", "women") }]);
+    expect(built.get("a")!.fields.find((f) => f.path === "department")?.value).toBe("Unisex");
+  });
+
+  it("the admin's view lists each field with its map, and one the channel added as new (R6, ux.md)", async () => {
+    const { adminFieldMapService } = await import("@server/listing/admin.field-map.service");
+    const view = await adminFieldMapService.view("amazon", theirType);
+    expect(view?.rows.map((r) => [r.field, r.maps.map((m) => m.fieldPath)])).toEqual(expect.arrayContaining([["item_dimensions", ["item_dimensions.length"]], ["item_type_name", ["item_type_name", "item_type_name"]]]));
+    const types = await adminFieldMapService.types("amazon");
+    expect(types.find((t) => t.key === theirType)).toEqual({ key: theirType, label: "Handbag", required: 4, unmapped: 0 });
   });
 
   it("costs the same for forty products as for one (hazard cost)", async () => {

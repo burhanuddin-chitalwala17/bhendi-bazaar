@@ -58,7 +58,10 @@ async function readinessOf(orgId: string, product: Product, channel: Marketplace
 /** Everything a create sends for one product (D8): its listing, its mapped facts, the brand and shop's compliance. */
 type BuiltInput = CreateListingInput & { gaps: BuildGap[] };
 
-async function inputFor(orgId: string, row: PlatformListingRow, product: Product, channel: MarketplaceChannel, family: CreateListingInput["family"]): Promise<BuiltInput> {
+/** What a create is built from on its listing row. */
+type CreateRow = Pick<PlatformListingRow, "overrides" | "sku" | "createMode" | "marketplaceType" | "targetExternalId">;
+
+async function inputFor(orgId: string, row: CreateRow, product: Product, channel: MarketplaceChannel, family: CreateListingInput["family"]): Promise<BuiltInput> {
   const rules = providerFor(channel).listingRules;
   const values = computeListing(masterValues(product), parseOverrides(row.overrides, product.media));
   const defaults = await orgListingDefaultsService.get(orgId);
@@ -73,7 +76,7 @@ async function inputFor(orgId: string, row: PlatformListingRow, product: Product
       channelType: row.marketplaceType,
       product: {
         id: product.id, name: values.title, sku, description: values.description, brand: product.brand?.name ?? null,
-        weightKg: product.weight, barcode: product.barcode, productType: product.productType,
+        weightKg: product.weight, barcode: product.barcode, productType: product.productType, kind: product.kind,
         facts: product.facts, measurements: product.measurements, hsn,
       },
     }]);
@@ -271,6 +274,18 @@ export const listingCreateService = {
       console.error(`[channels] create of listing ${row.id} failed: ${error instanceof Error ? error.name : "error"}`);
       return await this.refuse(row, [issue]);
     }
+  },
+
+  /**
+   * What Amazon's check-only mode says of a product as a new listing of a type, built from the field maps
+   * (listing-model/field-maps R7, Q5). Nothing is created or stored: the proof run's one call.
+   */
+  async checkOnly(orgId: string, productId: string, channelName: string, marketplaceType: string): Promise<{ issues: ListingIssue[]; gaps: BuildGap[] }> {
+    const { connection, channel } = await connectionOf(orgId, channelName);
+    const product = await productOf(orgId, productId);
+    const input = await inputFor(orgId, { overrides: null, sku: null, createMode: CREATE_MODE.NEW, marketplaceType, targetExternalId: null }, product, channel, null);
+    const answer = await providerFor(channel).createListing(() => channelConnectionService.accessToken(connection.id), connection.externalAccountId, input, { preview: true });
+    return { issues: answer.issues, gaps: input.gaps };
   },
 
   async refuse(row: PlatformListingRow, issues: ListingIssue[]): Promise<string> {
