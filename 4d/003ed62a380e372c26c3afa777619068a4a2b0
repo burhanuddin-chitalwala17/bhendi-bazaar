@@ -1,0 +1,115 @@
+server/listing/shopfront-feed.ts
+  s_0972fb7ac9c18b::t_d1a0c2cd1174cf 3,42-43,94-98,117
+package.json
+  s_0972fb7ac9c18b::t_643370879710bb 42
+server/listing/field-map.types.ts
+  s_0972fb7ac9c18b::t_fac289418f6aff 1-90
+server/channels/providers/amazon/amazon.publish.ts
+  s_0972fb7ac9c18b::t_98701ec870655f 5,7,401-402,426,435
+  s_0972fb7ac9c18b::t_3b484f95e07caf 403,434,436-438
+  s_0972fb7ac9c18b::t_3e0e8310cc1d0a 92-95
+server/channels/listing-create.ts
+  s_0972fb7ac9c18b::t_afae5c492a3ff6 2-3
+server/listing/shopfront-feed.service.ts
+  s_0972fb7ac9c18b::t_d1a0c2cd1174cf 2-3,22-26
+tests/unit/listing-builder.test.ts
+  s_0972fb7ac9c18b::t_65101043a61fbf 1-8,10-35,37-65,75-96,102-159,177-203
+  s_0972fb7ac9c18b::t_575bcb84843517 36
+  s_0972fb7ac9c18b::t_2e0e9778a20c52 9,66-74,97-101,160-176
+docs/CONTRACTS.md
+  s_0972fb7ac9c18b::t_475762846de9e4 3,309
+server/listing/field-map.repository.ts
+  s_0972fb7ac9c18b::t_2e0e9778a20c52 33-36,54,57
+  s_0972fb7ac9c18b::t_32d70e39bca5a4 50-53,58-62
+  s_0972fb7ac9c18b::t_fb0cd06661f0d9 1-32,37-49,55-56,63-68
+server/channels/providers/publish.ts
+  s_0972fb7ac9c18b::t_3b484f95e07caf 1-2,80-83
+tests/integration/channel-readiness-service.test.ts
+  s_0972fb7ac9c18b::t_2f99ba48566db0 276-277,280
+docs/specs/listing-model/field-maps/decisions.md
+  s_0972fb7ac9c18b::t_093033568e3e98 3
+  s_0972fb7ac9c18b::t_fee7ac55c3987c 15-20
+docs/ARCHITECTURE.md
+  s_0972fb7ac9c18b::t_013bb7363e4b56 61,77
+tests/unit/listing-publish-providers.test.ts
+  s_0972fb7ac9c18b::t_97e3d24bf93b03 9,50,155
+docs/DEPENDENCIES.md
+  s_0972fb7ac9c18b::t_fee7ac55c3987c 3,22
+prisma/schema.prisma
+  s_0972fb7ac9c18b::t_1eece2c5530b22 2862-2901
+tests/unit/shopfront-feed.test.ts
+  s_0972fb7ac9c18b::t_e26e8f9755094a 30
+server/listing/channel-setup.service.ts
+  s_0972fb7ac9c18b::t_2e0e9778a20c52 6,127
+  s_0972fb7ac9c18b::t_cd5d2a31033533 7,29-39,114-116,126
+server/channels/listing-create.service.ts
+  s_0972fb7ac9c18b::t_5f46358f1bc8a3 7,18,66-67,69-80,82-83,85,101,103
+  s_0972fb7ac9c18b::t_32d70e39bca5a4 8,59-61,68,81,102,114-131,230,263
+server/listing/listing-build.service.ts
+  s_0972fb7ac9c18b::t_fef4b617e168d1 1-64,66-77
+  s_0972fb7ac9c18b::t_ef19e45be629f7 65
+server/catalog/product.read.repository.ts
+  s_0972fb7ac9c18b::t_5f46358f1bc8a3 155
+tests/integration/listing-build.test.ts
+  s_0972fb7ac9c18b::t_fb971ed19bb49f 1-77
+server/listing/listing-builder.ts
+  s_0972fb7ac9c18b::t_98701ec870655f 113-114,123-126,128-129,133-134
+  s_0972fb7ac9c18b::t_f8661cdb540493 127,130-132,160-162,168
+  s_0972fb7ac9c18b::t_d1a0c2cd1174cf 147
+  s_0972fb7ac9c18b::t_64bbbc673d5651 1-112,115-122,135-146,148-159,163-167,169-183
+tests/integration/setup-requests.test.ts
+  s_0972fb7ac9c18b::t_4c93259bd3d72c 32-33,53-54,71,121-122,124-126
+  s_0972fb7ac9c18b::t_e0e8f529c840f4 123,127
+prisma/migrations/20261108100000_field_maps/migration.sql
+  s_0972fb7ac9c18b::t_28400b8b86fe3f 1-2,4-46
+  s_0972fb7ac9c18b::t_1eece2c5530b22 3
+server/listing/field-rules.ts
+  s_0972fb7ac9c18b::t_da5a8517284025 1-4,8-43,47-70,72,74-77,79-83
+  s_0972fb7ac9c18b::t_98701ec870655f 5-7
+  s_0972fb7ac9c18b::t_ef19e45be629f7 44-46,71,73,78,84
+server/listing/channel-catalogue.repository.ts
+  s_0972fb7ac9c18b::t_f39dd5632f8579 88-94
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_475762846de9e4 42
+  s_0972fb7ac9c18b::t_5e25750cd14f0c 15-33,43-49
+  s_0972fb7ac9c18b::t_d7564a0d09ad7b 34-41
+server/listing/units.ts
+  s_0972fb7ac9c18b::t_8649576b9405f1 1-39
+src/data-access-layer/shopfront-feed.dal.ts
+  s_0972fb7ac9c18b::t_d1a0c2cd1174cf 32,49,67,69,71-79
+docs/specs/listing-model/HANDOFF.md
+  s_0972fb7ac9c18b::t_5e25750cd14f0c 98
+server/channels/providers/amazon/amazon.shape.ts
+  s_0972fb7ac9c18b::t_3ff7eabd5d10d8 40,44-50
+  s_0972fb7ac9c18b::t_3e0e8310cc1d0a 137-138
+  s_0972fb7ac9c18b::t_832ae8b02a71e0 1-39,41-43,51-77,99-116,124-136,139-141
+  s_0972fb7ac9c18b::t_98701ec870655f 78-98,117-123
+docs/specs/listing-model/field-maps/trd.md
+  s_0972fb7ac9c18b::t_fee7ac55c3987c 6,21-26,31-32
+  s_0972fb7ac9c18b::t_385e0fb0b56c77 35-38,40
+src/data-access-layer/products.dal.ts
+  s_0972fb7ac9c18b::t_d1a0c2cd1174cf 361,371-372
+server/listing/channel-readiness.service.ts
+  s_0972fb7ac9c18b::t_2f99ba48566db0 17-18,293,296,329,337-343
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "4d003ed62a380e372c26c3afa777619068a4a2b0",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
