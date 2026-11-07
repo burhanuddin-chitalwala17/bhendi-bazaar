@@ -3,6 +3,9 @@
  * conditional and optional told apart, each field's kind, allowed values and units, and the
  * attributes a create always sends marked as the adapter's so the shop is never asked them (Q5).
  */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { amazonCatalogueFields, amazonRequiredAttributes } from "@server/channels/providers/amazon/amazon.publish";
@@ -111,6 +114,34 @@ describe("Amazon's rules judged for one standalone new page on amazon.in (channe
   it("asks a request only what is required of the Q3 listing and not sent by a create (setup-requests D7)", () => {
     const names = amazonRequiredAttributes({ ...RULES, properties: Object.fromEntries(["item_name", "style", "outer", "item_weight", "variation_theme", "gtin"].map((k) => [k, { title: k }])) }).map((a) => a.name);
     expect(names.sort()).toEqual(["item_weight", "outer", "style"]);
+  });
+});
+
+// Amazon's real HANDBAG definition (amazon.in, LISTING), saved by scripts/amazon-type-probe.ts on 2026-11-08.
+const HANDBAG = JSON.parse(readFileSync(join(__dirname, "../fixtures/amazon/HANDBAG.schema.json"), "utf8")) as Record<string, unknown>;
+
+describe("Amazon HANDBAG, the real schema behind the 2026-11-06 refusal (channel-catalogue A1, Q3)", () => {
+  const fields = amazonCatalogueFields(HANDBAG);
+  const shopRequired = fields.filter((f) => f.requirement === "required" && !f.adapterFills).map((f) => f.key);
+
+  it("asks the shop every field the refusal named", () => {
+    // The refusal's fields; strap_type is asked too, and is mapped today, to the wrong question (field-maps).
+    expect(shopRequired).toEqual(expect.arrayContaining([
+      "item_weight", "item_dimensions", "size_info", "outer", "inner", "strap_type", "department",
+      "age_range_description", "number_of_items", "style", "number_of_pockets", "capacity",
+    ]));
+  });
+
+  it("finds them only in the rules: the schema's own `required` alone asks the shop nothing", () => {
+    const topLevel = new Set((HANDBAG.required as string[]) ?? []);
+    expect(fields.filter((f) => topLevel.has(f.key) && !f.adapterFills)).toEqual([]);
+    expect(shopRequired.length).toBeGreaterThanOrEqual(13);
+  });
+
+  it("keeps what only a variation parent or child needs out of the shop's list", () => {
+    const byKey = new Map(fields.map((f) => [f.key, f.requirement]));
+    expect(byKey.get("variation_theme")).not.toBe("required");
+    expect(byKey.get("child_parent_sku_relationship")).not.toBe("required");
   });
 });
 

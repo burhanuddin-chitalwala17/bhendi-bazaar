@@ -12,6 +12,21 @@
 
 ## Entries
 
+## 2026-11-08 — listing-model: channel-catalogue A1 proven on Amazon's real HANDBAG schema
+
+- The owner ran `scripts/amazon-type-probe.ts HANDBAG --save` through the home brand; the schema is
+  `tests/fixtures/amazon/HANDBAG.schema.json` (157 attributes, 75 `allOf` rules).
+- **The schema's own `required` lists six attributes, all filled by the create.** Every field the shop
+  must answer sits in a rule whose `if` is "not a variation parent" (e.g. `allOf[7]`: department, item
+  weight, size info, part number, item type name, target gender). The reader before c11ad764 would have
+  named none of them; the evaluator names 19.
+- Against the 2026-11-06 refusal: every field it named is required of the shop. Readiness, with today's
+  maps, names all but `strap_type`, which is mapped, to the wrong question (detachable or not); a wrong
+  map is invisible to readiness and is field-maps' to fix. It also names `model_name`, `part_number` and
+  `item_type_name`, required by the schema for a standalone listing and sent by nothing today.
+- Tests: three cases in `tests/unit/channel-catalogue.test.ts` on the fixture. Mutation: treating rule
+  fields as conditional again (the old reader) turned five red.
+
 ## 2026-11-08 — listing-model: channel-catalogue, fresh-context review of the fix unit
 
 `/bb-review` of `c11ad764` found no invariant breach and three ways "required" could still be decided wrong:

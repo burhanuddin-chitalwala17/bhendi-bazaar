@@ -39,6 +39,9 @@
 - `HOME_BRAND_ORG_ID` (Niqab Boutique) is the connection that reads Amazon's definitions.
 - Default field maps are researched from each channel's own documentation and recorded with source,
   date and reason (Q23); prove them with Amazon check-only and the Google and Meta validators.
+- Amazon HANDBAG's real schema is `tests/fixtures/amazon/HANDBAG.schema.json` (2026-11-08). For field-maps:
+  `strap_type` is mapped to the wrong question; `model_name` and `part_number` want defaults (the SKU),
+  `item_type_name` a fixed value per type; `material` goes to Amazon's `material`, where bags want `outer`.
 - The requests engine is decoupled (`tests/unit/requests-decoupled.test.ts`); a marketplace ticket kind
   lives in `server/requests/marketplace/`.
 
@@ -48,4 +51,5 @@
 | 2026-11-07 | all | Plan, specs, decisions, UX docs, TRDs, ADR-0070 | (this commit) | Ready to build |
 | 2026-11-07 | channel-catalogue | 1, 2: tables, Amazon read, readiness, Home line; Flipkart/Meesho/Google/Meta data migration | (this commit) | Gates green. **/bb-review not yet run** (paused by owner to hand off): run it on this commit first, then field-maps unit 1 |
 | 2026-11-08 | channel-catalogue | Review of units 1–2, and its fixes; Google/Meta Q8 | c11ad764 | Review found: Amazon `allOf` rules lumped as conditional (A1 unproven), suite pollution, Google/Meta asking duplicate questions, A4 missing. All fixed. **Next:** run `scripts/amazon-type-probe.ts HANDBAG --save` with production access to prove A1, then field-maps unit 1 (which must make the feed send the Q8 attributes) |
-| 2026-11-08 | channel-catalogue | Fresh-context review of the fix unit, and its three fixes | (this commit) | No invariant breach; evaluator now honours `false` subschemas, nested `if`s and only truly always-sent attributes. Next unchanged: the HANDBAG probe, then field-maps unit 1 |
+| 2026-11-08 | channel-catalogue | Fresh-context review of the fix unit, and its three fixes | e0531b99 | No invariant breach; evaluator now honours `false` subschemas, nested `if`s and only truly always-sent attributes. Next unchanged: the HANDBAG probe, then field-maps unit 1 |
+| 2026-11-08 | channel-catalogue | A1 proven on Amazon's real HANDBAG schema (owner ran the probe) | (this commit) | 19 shop fields, every refusal field among them; field-maps notes added above. **Next:** field-maps unit 1 |
