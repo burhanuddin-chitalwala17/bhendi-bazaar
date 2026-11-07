@@ -53,4 +53,25 @@ export const channelCatalogueReader = {
     }
     return { read, failed, changes };
   },
+
+  /**
+   * One type read now, for a create that finds it unread (the daily read has not reached it yet): the
+   * listing is then shaped and checked by the channel's own rules from its first send. False when the
+   * home brand cannot read it; the create goes on without a schema and Amazon's check-only answer decides.
+   */
+  async readType(channel: Channel, key: string, now = new Date()): Promise<boolean> {
+    const homeOrgId = homeBrandOrgId();
+    if (!homeOrgId || !isMarketplaceChannel(channel)) return false;
+    const connection = await channelConnectionRepository.find(homeOrgId, channel as MarketplaceChannel);
+    if (!connection || connection.state !== CONNECTION_STATE.CONNECTED) return false;
+    try {
+      const type = await providerFor(channel as MarketplaceChannel).catalogueType(() => channelConnectionService.accessToken(connection.id), key);
+      if (!type) return false;
+      await catalogue.store(channel, type, `${channel}-definitions-api`, now);
+      return true;
+    } catch (error) {
+      console.error(`[channels] catalogue read failed for ${channel}:${key}: ${error instanceof Error ? error.name : "error"}`);
+      return false;
+    }
+  },
 };

@@ -12,6 +12,27 @@
 
 ## Entries
 
+## 2026-11-08 — listing-model: the proof run on a production copy, and its fixes [MIGRATION]
+
+- **Run once, with the owner's permission** (2026-11-08): production copied into a local database,
+  the branch's migrations applied to the copy, both gates run, the copy dropped. Production was only read.
+- **Migrations:** all seven new migrations applied cleanly to real data.
+- **attributes compare (A3, parent Q33): PASS** — 113 products, 413 answers, 0 mismatches.
+- **field-maps proof (R7, A5):**
+  - *Amazon* (one product per mapped type with a connected shop: HANDBAG). The first run found three map
+    faults, all fixed: production had no Amazon types read yet, so the listing went out unshaped (now
+    read on demand before the first create, Q21); "false" for water resistance (yes/no now paired, and
+    Amazon receives its code for a display name, Q22, migration `20261108140000_amazon_yes_no_pairs`); the
+    local schema check refused fields Amazon itself did not ask for (now it blocks only values Amazon's
+    schema refuses, Q20). Second run: Amazon's own check-only answer asks only for answers the product
+    has not given — style, lining, pockets, strap type, capacity (the questions dynamic-form will ask) and
+    key features. No map is wrong.
+  - *Meta:* 86 items, 0 problems (items with no category left out). *Google:* 111 items; 70 apparel and
+    bag items lack gender and age group because only 17 of 87 such products answer Audience. Product
+    data, not a map: dynamic-form's "Required now" asks it; nothing is guessed.
+- Tests: Amazon code for a display name, a measure part shaped without a schema, yes/no words; the
+  whole-body schema test now checks only value problems. Ran: unit, integration (local ci), `tsc`.
+
 ## 2026-11-08 — listing-model / attributes unit 3: the move's compare gate
 
 - `scripts/attributes-compare.ts` (D9, A3, parent Q33): every product's answers before the move against its

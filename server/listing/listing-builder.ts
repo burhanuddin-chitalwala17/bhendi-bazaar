@@ -78,6 +78,8 @@ function fromAttribute(product: BuildProduct, key: string, labelOf: BuildInput["
   }
   const answer = answerOf(product, key);
   if (answer === null) return null;
+  // A yes/no answer reads as Yes or No, the word Flipkart and Meesho take; a map pairs it by "true"/"false".
+  if (typeof product.facts[key as keyof StoredFacts]?.value === "boolean") return { value: answer === "true" ? "Yes" : "No", optionKey: answer };
   return { value: labelOf(key, answer) ?? answer, optionKey: answer };
 }
 

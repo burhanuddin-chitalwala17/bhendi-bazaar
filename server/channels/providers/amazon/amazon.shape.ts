@@ -14,6 +14,22 @@ const LANGUAGE = "en_IN";
 type Json = Record<string, unknown>;
 const obj = (v: unknown): Json => (v && typeof v === "object" && !Array.isArray(v) ? (v as Json) : {});
 
+/**
+ * Amazon's code for a display name, where its list names its values (`Not Water Resistant` →
+ * `not_water_resistant`): the catalogue and pairing speak names, the API takes the code (proof run).
+ */
+function codeFor(schema: Json, value: string): string {
+  const lists = [schema, ...(Array.isArray(schema.anyOf) ? (schema.anyOf as unknown[]).map(obj) : [])];
+  for (const l of lists) {
+    const codes = Array.isArray(l.enum) ? (l.enum as unknown[]).map(String) : [];
+    const names = Array.isArray(l.enumNames) ? (l.enumNames as unknown[]).map(String) : [];
+    if (codes.length === 0 || codes.length !== names.length) continue;
+    const at = names.findIndex((n) => n.trim().toLowerCase() === value.trim().toLowerCase());
+    if (at >= 0) return codes[at];
+  }
+  return value;
+}
+
 /** A value as the schema types it: Amazon refuses "2" where it asks a number. */
 function typed(schema: Json, value: string): unknown {
   const type = schema.type;
@@ -22,7 +38,7 @@ function typed(schema: Json, value: string): unknown {
     return Number.isFinite(n) ? n : value;
   }
   if (type === "boolean") return value === "true" || value.toLowerCase() === "yes";
-  return value;
+  return codeFor(schema, value);
 }
 
 /** One leaf object holding exactly the keys its item declares. */
@@ -40,13 +56,14 @@ function plainShape(fields: readonly BuiltField[]): Json {
   const out: Record<string, Json[]> = {};
   for (const f of fields) {
     const [name, part] = f.path.split(".");
-    const value = [{ value: f.value, ...(f.unit ? { unit: f.unit } : {}), language_tag: LANGUAGE, marketplace_id: AMAZON_IN }];
+    // A measure is a number with its unit and no language; a part of one is a bare object (item_dimensions.height).
+    const measure = f.unit !== undefined && Number.isFinite(Number(f.value));
     if (!part) {
-      out[name] = value;
+      out[name] = [measure ? { value: Number(f.value), unit: f.unit, marketplace_id: AMAZON_IN } : { value: f.value, language_tag: LANGUAGE, marketplace_id: AMAZON_IN }];
       continue;
     }
     const item = out[name]?.[0] ?? { marketplace_id: AMAZON_IN };
-    item[part] = value;
+    item[part] = measure ? { value: Number(f.value), unit: f.unit } : [{ value: f.value, language_tag: LANGUAGE }];
     out[name] = [item];
   }
   return out;
@@ -100,6 +117,8 @@ export function conformToSchema(schema: unknown, attributes: Json): Json {
 export interface SchemaProblem {
   attribute: string | null;
   message: string;
+  /** A field the schema's rules would require. JSON Schema reads Amazon's conditions more strictly than Amazon does, so this never blocks a send (proof run). */
+  missing: boolean;
 }
 
 const compiled = new WeakMap<object, ReturnType<Ajv2019["compile"]>>();
@@ -135,7 +154,7 @@ export function checkAgainstSchema(schema: unknown, attributes: Json): SchemaPro
     if (seen.has(key)) continue;
     seen.add(key);
     const title = attribute ? (obj(obj(obj(schema).properties)[attribute]).title as string | undefined) ?? attribute : "This listing";
-    out.push({ attribute, message: missing ? `Amazon needs ${title} for this type.` : `Amazon won't take ${title} as it is (${e.message ?? "not allowed"}).` });
+    out.push({ attribute, missing: !!missing, message: missing ? `Amazon needs ${title} for this type.` : `Amazon won't take ${title} as it is (${e.message ?? "not allowed"}).` });
   }
   return out;
 }

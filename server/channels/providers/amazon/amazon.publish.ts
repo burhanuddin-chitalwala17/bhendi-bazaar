@@ -431,9 +431,10 @@ export function amazonCreateBody(input: CreateListingInput): { productType: stri
 export async function amazonCreate(token: TokenSource, account: string | null, input: CreateListingInput, options: { preview: boolean }): Promise<PublishAnswer> {
   if (!account) throw new MarketplaceAuthError("rejected");
   const body = amazonCreateBody(input);
-  // What the type's own schema refuses is the shop's to fix, named before Amazon is asked (field-maps D6).
+  // A value the type's schema refuses (a unit, a word, an unknown attribute) is named before Amazon is asked
+  // (field-maps D6); what is required is Amazon's to judge, in its check-only answer (proof run, 2026-11-08).
   if (input.mode === CREATE_MODE.NEW) {
-    const problems = checkAgainstSchema(input.typeSchema, body.attributes);
+    const problems = checkAgainstSchema(input.typeSchema, body.attributes).filter((p) => !p.missing);
     if (problems.length > 0) return { accepted: [], issues: problems.map((p) => schemaIssue(p.attribute, p.message)), decidesLater: false };
   }
   const query: Record<string, string> = { requirements: body.requirements, includedData: "issues", ...(options.preview ? { mode: "VALIDATION_PREVIEW" } : {}) };

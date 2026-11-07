@@ -101,3 +101,4 @@ The container starts with no `node_modules`, Postgres stopped and a shallow clon
 | 2026-11-08 | attributes | 1: dictionary, options, type questions, typed values + read copy kept in step by trigger (Q7–Q10) | (this commit) | Next: attributes unit 2 (brand parties, type follows category, new attributes) |
 | 2026-11-08 | attributes | 2: brand parties + per-brand Generic, type follows category (trigger, tree-aware), new questions less duplicates (Q14–Q16) | (this commit) | Reviewed; fixes in |
 | 2026-11-08 | attributes | 3: compare gate (`scripts/attributes-compare.ts`), local run 0 mismatches | (this commit) | **Owner:** run the compare against a production copy before release. Next: dynamic-form unit 1 |
+| 2026-11-08 | field-maps, attributes | Proof run on a production copy (owner's one-time permission; copy dropped): compare PASS 0/413; Amazon map faults fixed (Q20–Q22); remaining refusals are unanswered questions | (this commit) | Next: dynamic-form unit 1 |

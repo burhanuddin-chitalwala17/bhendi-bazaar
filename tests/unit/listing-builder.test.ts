@@ -132,6 +132,12 @@ describe("answers are paired, never dropped (Q6, Q10)", () => {
     expect(build([], [m]).fields).toEqual([{ path: "department", value: "Womens" }]);
   });
 
+  it("a yes/no answer goes as Yes or No, or as the channel's own words where a map pairs it (proof run)", () => {
+    const wet = product({ facts: { waterResistant: { value: false, origin: "product" } } });
+    expect(sent(build([field("Water resistant", { kind: "choice", allowedValues: ["No", "Yes"] })], [map("Water resistant", { attributeKey: "waterResistant" })], wet))).toEqual({ "Water resistant": "No" });
+    expect(sent(build([field("water_resistance_level")], [map("water_resistance_level", { attributeKey: "waterResistant", values: { true: "Water Resistant", false: "Not Water Resistant" } })], wet))).toEqual({ water_resistance_level: "Not Water Resistant" });
+  });
+
   it("free text goes as our words", () => {
     expect(sent(build([field("outer")], [map("outer.material", { attributeKey: "material" })]))).toEqual({ "outer.material": "Canvas" });
   });
@@ -199,12 +205,20 @@ describe("Amazon's shape comes from the type's own schema (Q9, D6)", () => {
     };
     for (const variant of [input, { ...input, barcode: "8901234567890" }, { ...input, family: { role: "parent" as const, theme: "COLOR" } }, { ...input, family: { role: "child" as const, parentSku: "FAM-1", theme: "COLOR" } }]) {
       const problems = checkAgainstSchema(schema, amazonCreateBody(variant).attributes);
-      expect(problems.filter((p) => !p.message.startsWith("Amazon needs"))).toEqual([]);
+      expect(problems.filter((p) => !p.missing)).toEqual([]);
     }
   });
 
   it("a schema that cannot be compiled skips the local check rather than refusing every create", () => {
     expect(checkAgainstSchema({ type: "object", properties: { a: { type: "string", pattern: "(" } } }, { a: "x" })).toEqual([]);
+  });
+
+  it("sends Amazon's code for a display name, and shapes a measure part without a schema (proof run)", () => {
+    expect(amazonAttributes(schema, [{ path: "water_resistance_level", value: "Not Water Resistant" }])).toEqual({ water_resistance_level: [{ value: "not_water_resistant", marketplace_id: "A21TJRUUN4KGV" }] });
+    expect(amazonAttributes(null, [{ path: "item_dimensions.height", value: "35", unit: "centimeters" }, { path: "item_weight", value: "450", unit: "grams" }])).toEqual({
+      item_dimensions: [{ marketplace_id: "A21TJRUUN4KGV", height: { value: 35, unit: "centimeters" } }],
+      item_weight: [{ value: 450, unit: "grams", marketplace_id: "A21TJRUUN4KGV" }],
+    });
   });
 
   it("the schema finds no fault in what was shaped, and names what is still missing", () => {

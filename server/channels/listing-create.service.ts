@@ -5,6 +5,7 @@ import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { prisma } from "@server/shared/prisma";
 import { productService } from "@server/catalog/product.service";
 import { listingBuildService } from "@server/listing/listing-build.service";
+import { channelCatalogueReader } from "./channel-catalogue.service";
 import { GAP_REASON, type BuildGap } from "@server/listing/field-map.types";
 import { channelReadinessService } from "@server/listing/channel-readiness.service";
 import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.service";
@@ -73,15 +74,20 @@ async function inputFor(orgId: string, row: CreateRow, product: Product, channel
   let gaps: BuildGap[] = [];
   let typeSchema: unknown = null;
   if (row.createMode === CREATE_MODE.NEW && row.marketplaceType) {
-    // Built from the product and the field maps every time it is sent (listing-model/field-maps R5).
-    const { built, schemas } = await listingBuildService.build(channel, [{
+    // Built from the product and the field maps every time it is sent (listing-model/field-maps R5); a type
+    // never read yet is read first, so even the first send is shaped by the channel's own rules (proof run).
+    const source = {
       channelType: row.marketplaceType,
       product: {
         id: product.id, name: values.title, sku, description: values.description, brand: product.brand?.name ?? null,
         weightKg: product.weight, barcode: product.barcode, productType: product.productType, kind: product.kind,
         facts: product.facts, measurements: product.measurements, hsn,
       },
-    }]);
+    };
+    let { built, schemas } = await listingBuildService.build(channel, [source]);
+    if (!schemas.has(`${channel}:${row.marketplaceType}`) && (await channelCatalogueReader.readType(channel, row.marketplaceType))) {
+      ({ built, schemas } = await listingBuildService.build(channel, [source]));
+    }
     fields = built.get(product.id)?.fields ?? [];
     gaps = built.get(product.id)?.gaps ?? [];
     typeSchema = schemas.get(`${channel}:${row.marketplaceType}`) ?? null;
