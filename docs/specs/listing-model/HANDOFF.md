@@ -18,9 +18,11 @@
 ## State on 2026-11-08
 - **channel-catalogue: done and reviewed** (units 1–2, two review rounds, A1 proven on Amazon's real
   HANDBAG schema). **Next: field-maps unit 1** via `/bb-build listing-model/field-maps`.
-- **Searchability research: in progress** in [searchability-spike.md](searchability-spike.md) (owner
-  asked 2026-11-08: "listed optimally so my product appears on top", plus AI search). It is a spike, not
-  a spec: once the owner has read it, it becomes `/bb-sdlc spec-start` for each outcome it recommends.
+- **Searchability research: findings ready** in [searchability-spike.md](searchability-spike.md) (owner
+  asked 2026-11-08: "listed optimally so my product appears on top", plus AI search). It is a spike, not a
+  spec; it waits for the owner's answers to its open questions (is `BLOCK_CRAWLERS` set in production,
+  Merchant Center live, training crawlers allowed, Brand Registry). Then: O3+O4 as one spec, O1+O2 as
+  another, each by `/bb-sdlc spec-start`; delete the spike once they exist.
 - No open questions in any `decisions.md`. A new question goes in the right `decisions.md` first: owner decides product,
   policy and money; reversible technical calls are yours, marked `Claude · reversible`.
 
@@ -91,4 +93,5 @@ The container starts with no `node_modules`, Postgres stopped and a shallow clon
 | 2026-11-08 | channel-catalogue | Review of units 1–2, and its fixes; Google/Meta Q8 | c11ad764 | Review found: Amazon `allOf` rules lumped as conditional (A1 unproven), suite pollution, Google/Meta asking duplicate questions, A4 missing. All fixed. **Next:** run `scripts/amazon-type-probe.ts HANDBAG --save` with production access to prove A1, then field-maps unit 1 (which must make the feed send the Q8 attributes) |
 | 2026-11-08 | channel-catalogue | Fresh-context review of the fix unit, and its three fixes | e0531b99 | No invariant breach; evaluator now honours `false` subschemas, nested `if`s and only truly always-sent attributes. Next unchanged: the HANDBAG probe, then field-maps unit 1 |
 | 2026-11-08 | channel-catalogue | A1 proven on Amazon's real HANDBAG schema (owner ran the probe) | 1755a800, 94e2f50d | 19 shop fields, every refusal field among them; field-maps notes added above. **Next:** field-maps unit 1 |
-| 2026-11-08 | (programme) | Handoff for the next session; searchability spike started | (this commit) | Next: field-maps unit 1; the spike runs alongside, owner reads it before any spec |
+| 2026-11-08 | (programme) | Handoff for the next session; searchability spike started | b85fdc2a | Next: field-maps unit 1; the spike runs alongside, owner reads it before any spec |
+| 2026-11-08 | (programme) | Searchability spike: findings and recommendation | 6fa71422 | Recommends field-maps first, then site markup + crawler policy, then a per-channel listing-quality score with attribute-built titles and Amazon search terms |
