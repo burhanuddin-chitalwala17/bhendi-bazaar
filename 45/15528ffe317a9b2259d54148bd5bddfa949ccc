@@ -1,0 +1,145 @@
+tests/integration/default-field-maps.test.ts
+  s_0972fb7ac9c18b::t_20681f76731ee4 11,36
+  s_0972fb7ac9c18b::t_68cb4b5e3059a2 50
+  s_0972fb7ac9c18b::t_864d39b748538b 1-10,12-35,37-49,51-58
+docs/ARCHITECTURE.md
+  s_0972fb7ac9c18b::t_f9c4e62f135b01 15,18
+  s_0972fb7ac9c18b::t_4790306a79af05 61
+  s_0972fb7ac9c18b::t_4386cde00275fd 77
+server/listing/admin.field-map.types.ts
+  s_0972fb7ac9c18b::t_b44d1c268f5aec 22-25,33,40-41
+  s_0972fb7ac9c18b::t_6b55ba722c5a49 1-21,26-32,34-39,42-63
+tests/integration/setup-requests.test.ts
+  s_0972fb7ac9c18b::t_aa5ae4ecdbc147 125
+server/listing/field-map.types.ts
+  s_0972fb7ac9c18b::t_aa5ae4ecdbc147 27-28
+  s_0972fb7ac9c18b::t_e768b018827578 38-53
+  s_0972fb7ac9c18b::t_77d2166f6492a4 109-114
+scripts/field-maps-migration.ts
+  s_0972fb7ac9c18b::t_ca2485f9b0887b 179
+  s_0972fb7ac9c18b::t_13ccf71541dbef 1-139,141-147,149-151,157-158,180-191,201-206,220-224,226-253,258-261,263-264
+  s_0972fb7ac9c18b::t_145254db30f120 140,148,159-178,192-200,207-219,225,254-257,262
+  s_0972fb7ac9c18b::t_b258aaeeb99270 152-156
+src/components/channel/field-map-copy.ts
+  s_0972fb7ac9c18b::t_4790306a79af05 4-6
+  s_0972fb7ac9c18b::t_319b266bf1c140 1-3,7,19-25,28-37,39,41-49,53-81
+  s_0972fb7ac9c18b::t_a14ed9375ea74d 26-27
+  s_0972fb7ac9c18b::t_d0536386b36b0b 8-18,38,40,50-52
+server/listing/listing-build.service.ts
+  s_0972fb7ac9c18b::t_aa5ae4ecdbc147 20,71
+src/components/channel/field-map-form.tsx
+  s_0972fb7ac9c18b::t_d0536386b36b0b 16,34,54-58,86-93
+  s_0972fb7ac9c18b::t_a1ac6b12ccc470 1-15,17-33,35-53,59-85,94-110
+src/components/CLAUDE.md
+  s_0972fb7ac9c18b::t_f9c4e62f135b01 3
+server/listing/listing-builder.ts
+  s_0972fb7ac9c18b::t_d785e1b6fd9385 114,117-121,124,140-142,144,146-152,195
+  s_0972fb7ac9c18b::t_aa5ae4ecdbc147 25,92,139,143,145,153-154,168-169
+  s_0972fb7ac9c18b::t_77d2166f6492a4 165,167,203
+  s_0972fb7ac9c18b::t_f76c7892670826 193-194,197,200
+src/components/channel/field-map-list.tsx
+  s_0972fb7ac9c18b::t_d0536386b36b0b 36-37,56,84-85,88,98
+  s_0972fb7ac9c18b::t_56a32d575261e0 10,63
+  s_0972fb7ac9c18b::t_63ce0503acbaea 1-9,11-35,38-55,57-62,64-83,86-87,89-97,99-102
+src/data-access-layer/admin/field-maps.dal.ts
+  s_0972fb7ac9c18b::t_22732b13ce1072 1-16
+server/listing/shopfront-feed-check.ts
+  s_0972fb7ac9c18b::t_ef87e749364bd3 1-86
+server/listing/shopfront-feed.ts
+  s_0972fb7ac9c18b::t_8fee04d0bd453d 123-125,132
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_20681f76731ee4 27,39-46
+  s_0972fb7ac9c18b::t_2840ae3cca8ce7 28-38,47-59
+  ai_agent 15-26
+server/listing/channel-catalogue.repository.ts
+  ai_agent 101
+  s_0972fb7ac9c18b::t_af94174662a662 20,74,76,96-100,102-104
+docs/specs/listing-model/field-maps/ux.md
+  s_0972fb7ac9c18b::t_4386cde00275fd 32-33,45
+  s_0972fb7ac9c18b::t_20681f76731ee4 40
+src/data-access-layer/shopfront-feed.dal.ts
+  s_0972fb7ac9c18b::t_aa5ae4ecdbc147 76
+scripts/field-maps-proof.ts
+  s_0972fb7ac9c18b::t_a6684e8d786085 1-7,9-21,23-69
+  s_0972fb7ac9c18b::t_d698e1edd10ad7 8,22
+server/channels/listing-create.service.ts
+  s_0972fb7ac9c18b::t_aa5ae4ecdbc147 79
+  s_0972fb7ac9c18b::t_d20d3d3dfa75dc 61-64,279-288
+src/components/channel/channel-type-list.tsx
+  s_0972fb7ac9c18b::t_56a32d575261e0 1-23,25-27
+  s_0972fb7ac9c18b::t_a14ed9375ea74d 24
+docs/specs/listing-model/HANDOFF.md
+  ai_agent 99-100
+tests/unit/field-map-schema.test.ts
+  s_0972fb7ac9c18b::t_873f78d1fd8cad 1-31
+src/app/(admin)/admin/channels/[channel]/page.tsx
+  s_0972fb7ac9c18b::t_56a32d575261e0 20-22,33,176-183
+server/listing/admin.field-map.service.ts
+  s_0972fb7ac9c18b::t_6881a533cd49b6 7,56
+  s_0972fb7ac9c18b::t_b44d1c268f5aec 13,29,64,84-88
+  s_0972fb7ac9c18b::t_73351c31a59a4d 1-6,8-12,14-28,30-55,57-63,65-83,89-93
+tests/unit/shopfront-feed-check.test.ts
+  s_0972fb7ac9c18b::t_5c120f547beb6b 1-37
+server/listing/field-map.service.ts
+  s_0972fb7ac9c18b::t_552970add355d2 1-41
+docs/specs/listing-model/field-maps/decisions.md
+  s_0972fb7ac9c18b::t_2840ae3cca8ce7 11-13
+  s_0972fb7ac9c18b::t_20681f76731ee4 21-28
+docs/CONTRACTS.md
+  s_0972fb7ac9c18b::t_2840ae3cca8ce7 309
+scripts/README.md
+  s_0972fb7ac9c18b::t_2840ae3cca8ce7 7
+  ai_agent 8
+tests/unit/listing-builder.test.ts
+  s_0972fb7ac9c18b::t_77d2166f6492a4 104-109,125,133-134
+  s_0972fb7ac9c18b::t_873f78d1fd8cad 110-124,126-132
+  s_0972fb7ac9c18b::t_aa5ae4ecdbc147 28
+src/app/api/admin/field-maps/route.ts
+  s_0972fb7ac9c18b::t_f9d92904581dfd 1-30
+tests/integration/listing-build.test.ts
+  s_0972fb7ac9c18b::t_aa5ae4ecdbc147 33
+  s_0972fb7ac9c18b::t_c4cc604fb68ae7 71-85
+tests/unit/shopfront-feed.test.ts
+  s_0972fb7ac9c18b::t_5c120f547beb6b 92-97
+server/listing/channel-readiness.service.ts
+  s_0972fb7ac9c18b::t_77d2166f6492a4 346-348
+  s_0972fb7ac9c18b::t_e768b018827578 18,337-340,344
+  s_0972fb7ac9c18b::t_b44d1c268f5aec 25
+src/lib/validation/schemas/field-map.schema.ts
+  s_0972fb7ac9c18b::t_8ec326470f7e8d 1-3,5-8,10-32,38-42,45-47
+  s_0972fb7ac9c18b::t_f9d92904581dfd 43-44
+  s_0972fb7ac9c18b::t_6881a533cd49b6 4,9,33-37
+server/shared/routes.ts
+  s_0972fb7ac9c18b::t_f9d92904581dfd 90
+src/app/api/CLAUDE.md
+  s_0972fb7ac9c18b::t_f9c4e62f135b01 3
+prisma/migrations/20261108110000_default_field_maps/migration.sql
+  s_0972fb7ac9c18b::t_ee94005abed561 1-4,6-433,435-478,480-496,498-499,501-506,508-526,528-544,546-552,554-564,566-595,597-610,613-624,626-650,653-663,665-761,766-768,773-774
+  s_0972fb7ac9c18b::t_e25c7552497e3b 5,479,500,507,527,553,612,652,769-772,775-785
+  s_0972fb7ac9c18b::t_b258aaeeb99270 434,497,545,565,596,611,625,651,664,762-765
+src/app/(admin)/admin/channels/[channel]/[type]/page.tsx
+  s_0972fb7ac9c18b::t_56a32d575261e0 1-24
+src/components/channel/channelsApiClient.ts
+  s_0972fb7ac9c18b::t_f9d92904581dfd 3,16-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "4515528ffe317a9b2259d54148bd5bddfa949ccc",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
