@@ -1,0 +1,123 @@
+scripts/channel-catalogue-migration.mjs
+  s_0972fb7ac9c18b::t_f48f6001a5e007 1-205
+docs/ARCHITECTURE.md
+  s_0972fb7ac9c18b::t_88e8683ac49f05 61
+  s_0972fb7ac9c18b::t_2847c04c2d8fed 77
+server/listing/channel-catalogue.service.ts
+  s_0972fb7ac9c18b::t_b0c57498c6fa5b 4,6-16,49-62
+  s_0972fb7ac9c18b::t_5c135f8883439f 1-3,5,17-48,63-64
+docs/specs/listing-model/channel-catalogue/decisions.md
+  s_0972fb7ac9c18b::t_2b6aa2a0891696 10-16
+server/channels/CLAUDE.md
+  s_0972fb7ac9c18b::t_2847c04c2d8fed 3,65
+prisma/schema.prisma
+  s_0972fb7ac9c18b::t_6d5d6d08077166 2628-2629,2637-2647
+docs/specs/setup-requests/trd.md
+  s_0972fb7ac9c18b::t_b6d6ed1c363f94 71
+src/components/channel/channel-copy.ts
+  s_0972fb7ac9c18b::t_122d35eda66ea5 195
+server/requests/marketplace/amazon-category.kind.ts
+  s_0972fb7ac9c18b::t_b6d6ed1c363f94 11
+tests/unit/file-cohesion.test.ts
+  s_0972fb7ac9c18b::t_2847c04c2d8fed 88,92-93
+server/listing/channel-catalogue.types.ts
+  s_0972fb7ac9c18b::t_5c135f8883439f 1-33
+docs/specs/listing-model/HANDOFF.md
+  s_0972fb7ac9c18b::t_1c4f7f075348f5 49
+server/channels/providers/marketplace-provider.ts
+  s_0972fb7ac9c18b::t_ce29efed1be64d 5,97-98
+server/listing/channel-readiness.types.ts
+  s_0972fb7ac9c18b::t_0fa88da2466a12 36-37,56-60
+docs/specs/listing-model/channel-catalogue/trd.md
+  s_0972fb7ac9c18b::t_c7d385536f5825 3-4,26,29-31,43-44,60
+tests/integration/channel-catalogue.test.ts
+  s_0972fb7ac9c18b::t_a99836a563ae62 1-80
+src/components/product/console/productsList/channel-filter-copy.ts
+  s_0972fb7ac9c18b::t_122d35eda66ea5 25-26
+src/components/org/home/attention-lines.ts
+  s_0972fb7ac9c18b::t_b0c57498c6fa5b 53-59
+docs/specs/listing-model/decisions.md
+  s_0972fb7ac9c18b::t_2b6aa2a0891696 33
+server/listing/channel-catalogue.repository.ts
+  s_0972fb7ac9c18b::t_5c135f8883439f 1-79
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_a7bb09a370e1f6 15-36
+docs/specs/listing-model/channel-catalogue/spec.md
+  s_0972fb7ac9c18b::t_2b6aa2a0891696 4
+server/listing/channel-readiness.ts
+  s_0972fb7ac9c18b::t_0fa88da2466a12 55,105-111,208-214
+server/shared/home-brand.ts
+  s_0972fb7ac9c18b::t_4576250e228c8f 3-4
+server/listing/channel-readiness.service.ts
+  s_0972fb7ac9c18b::t_b347e04a8c7aa6 16-17,287-299,321-322
+  s_0972fb7ac9c18b::t_122d35eda66ea5 58-59,242
+tests/integration/channel-readiness-service.test.ts
+  s_0972fb7ac9c18b::t_97f4efab2af30c 276-277,280
+prisma/migrations/20261107130000_channel_catalogue_templates/migration.sql
+  s_0972fb7ac9c18b::t_e2d19a8151beb8 1-2045
+tests/unit/channel-catalogue.test.ts
+  s_0972fb7ac9c18b::t_1b68500dae727d 9,45-72
+  s_0972fb7ac9c18b::t_afddc1d886f1a5 1-8,10-44,73-74
+scripts/README.md
+  s_0972fb7ac9c18b::t_a7bb09a370e1f6 5
+docs/specs/README.md
+  s_0972fb7ac9c18b::t_24b2c0d688c226 98
+server/channels/providers/amazon/amazon.publish.ts
+  s_0972fb7ac9c18b::t_1cc63d9e5da514 3,295-339
+  s_0972fb7ac9c18b::t_afddc1d886f1a5 340
+server/channels/channel-catalogue.service.ts
+  s_0972fb7ac9c18b::t_5c135f8883439f 1,10,18-20,22,33,37
+  s_0972fb7ac9c18b::t_4576250e228c8f 3,23-24
+  s_0972fb7ac9c18b::t_62f13b0da9a917 2,4-9,11-17,21,25-32,34-36,38-48
+server/channels/channels.jobs.ts
+  s_0972fb7ac9c18b::t_8b5b980d0f4ecf 22,76-77
+  s_0972fb7ac9c18b::t_6d5d6d08077166 75,79
+  s_0972fb7ac9c18b::t_5c135f8883439f 21,78
+src/components/org/home/home-copy.ts
+  s_0972fb7ac9c18b::t_c447221b39046c 47-48
+src/components/channel/listing-readiness-panel.tsx
+  s_0972fb7ac9c18b::t_122d35eda66ea5 111-112
+src/data-access-layer/org/home.dal.ts
+  s_0972fb7ac9c18b::t_b0c57498c6fa5b 12,39-40,74,82,90
+docs/CONTRACTS.md
+  s_0972fb7ac9c18b::t_ed745b05f85b41 3,313,650
+server/channels/providers/flipkart/flipkart.provider.ts
+  s_0972fb7ac9c18b::t_ce29efed1be64d 76-77
+server/requests/marketplace/amazon-fields.kind.ts
+  s_0972fb7ac9c18b::t_b6d6ed1c363f94 11
+server/channels/providers/publish.ts
+  s_0972fb7ac9c18b::t_1cc63d9e5da514 105-106
+  s_0972fb7ac9c18b::t_5c135f8883439f 107
+server/channels/providers/amazon/amazon.provider.ts
+  s_0972fb7ac9c18b::t_ce29efed1be64d 11,80
+server/listing/channel-map.repository.ts
+  s_0972fb7ac9c18b::t_b0c57498c6fa5b 448-457
+  s_0972fb7ac9c18b::t_b347e04a8c7aa6 417-422
+  s_0972fb7ac9c18b::t_62f13b0da9a917 458-463
+tests/unit/product-form-team-history.test.tsx
+  s_0972fb7ac9c18b::t_e1f43bfa262b25 113
+server/requests/CLAUDE.md
+  s_0972fb7ac9c18b::t_4576250e228c8f 30
+tests/unit/home-attention.test.ts
+  s_0972fb7ac9c18b::t_c447221b39046c 20,61-65,75
+docs/OPERATIONS.md
+  s_0972fb7ac9c18b::t_b6d6ed1c363f94 48
+prisma/migrations/20261107120000_channel_catalogue/migration.sql
+  s_0972fb7ac9c18b::t_b390a98dd8633f 1-2,21-30,53-55,59-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "a3f17ee4e6c2ce6ffdd4a45d7fbe81f4e5892c0b",
+  "prompts": {},
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
