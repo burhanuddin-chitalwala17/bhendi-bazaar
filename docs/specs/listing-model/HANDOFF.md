@@ -41,7 +41,9 @@
   date and reason (Q23); prove them with Amazon check-only and the Google and Meta validators.
 - Amazon HANDBAG's real schema is `tests/fixtures/amazon/HANDBAG.schema.json` (2026-11-08). For field-maps:
   `strap_type` is mapped to the wrong question; `model_name` and `part_number` want defaults (the SKU),
-  `item_type_name` a fixed value per type; `material` goes to Amazon's `material`, where bags want `outer`.
+  `item_type_name` a fixed value per type. Our Material must reach `outer` (required on every non-parent
+  bag, `allOf[7]`) as well as `material` (required only for a material-theme variation child, `allOf[9]`);
+  `inner` (required) needs a lining question we do not ask; pair values per attribute, their lists differ.
 - The requests engine is decoupled (`tests/unit/requests-decoupled.test.ts`); a marketplace ticket kind
   lives in `server/requests/marketplace/`.
 
