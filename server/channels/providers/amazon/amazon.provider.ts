@@ -8,7 +8,7 @@ import {
 } from "../marketplace-provider";
 import { readAmazonListings, amazonListingDetail, amazonListingAttributes } from "./amazon.listings";
 import { amazonLocations, amazonReadOrders, amazonReadStock, amazonSetStock } from "./amazon.stock";
-import { AMAZON_LISTING_RULES, amazonCreate, amazonFindPages, amazonListingProblems, amazonListingStatus, amazonPublish, amazonTheirsFromRead, amazonVariationThemes, amazonTypeDefinition, amazonSearchTypes } from "./amazon.publish";
+import { AMAZON_LISTING_RULES, amazonCreate, amazonFindPages, amazonListingProblems, amazonListingStatus, amazonPublish, amazonTheirsFromRead, amazonVariationThemes, amazonTypeDefinition, amazonSearchTypes, amazonCatalogueType } from "./amazon.publish";
 
 /**
  * Amazon's Selling Partner API, as INTEGRATIONS.md records it: website authorization through
@@ -77,6 +77,7 @@ export const amazonProvider: MarketplaceProvider = {
   createListing: amazonCreate,
   variationThemes: amazonVariationThemes,
   typeDefinition: amazonTypeDefinition,
+  catalogueType: amazonCatalogueType,
   searchTypes: amazonSearchTypes,
   listingAttributes: amazonListingAttributes,
   readLocations: amazonLocations,

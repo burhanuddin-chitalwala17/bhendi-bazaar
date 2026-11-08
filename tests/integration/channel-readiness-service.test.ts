@@ -11,7 +11,7 @@ import { describe, it, expect, beforeAll, afterAll, vi, type MockInstance } from
 import { CHANNEL } from "@server/shared/channels";
 import { FACT, LIST, ORIGIN } from "@server/listing/listing-facts";
 import { LISTING_PROBLEM, LISTING_READINESS } from "@server/listing/channel-readiness";
-import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
+import { isDisposableDb, ensureFixtures, setAnswers } from "../helpers/test-db";
 
 // Counted the way `db-ops-budget.test.ts` counts: one `prisma:query` line per billed statement,
 // and the instrument has to be set before the client module loads.
@@ -187,8 +187,8 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
     // design-system Q35: the products page's channel pill lists exactly what this read returns.
     it("lists only this shop's on-sale products the channel would refuse, each with why", async () => {
       const fx = await ensureFixtures();
-      const make = (org: string, answers: Record<string, string>, archived = false) =>
-        prisma.product.create({
+      const make = async (org: string, answers: Record<string, string>, archived = false) => {
+        const row = await prisma.product.create({
           data: {
             slug: `${stamp}-p-${Math.random().toString(36).slice(2, 8)}`,
             name: `${stamp} product`,
@@ -199,11 +199,13 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
             thumbnail: "/brand/bhendi-bazaar.png",
             productType: typeKey,
             kind: "abaya",
-            facts: facts(answers),
             archivedAt: archived ? new Date() : null,
           },
           select: { id: true },
         });
+        await setAnswers(row.id, { facts: facts(answers) });
+        return row;
+      };
       const ready = await make(orgId, { [FACT.COLOUR]: mapped });
       const noColour = await make(orgId, {});
       const archivedNoColour = await make(orgId, {}, true);
@@ -273,10 +275,11 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
         ),
       );
 
-      // The shop's channels (1), the types (1), and the three maps (3). Asserted exactly rather
+      // The shop's channels (1), the types (1), the three maps (3), the channel's own fields
+      // with what fills them (2, listing-model/channel-catalogue D6), and the field maps (1, field-maps D1). Asserted exactly rather
       // than as a bound: an upper bound over an instrument that counts nothing cannot fail, and
       // that is how this project's billed-operations budgets read zero for two months.
-      expect(one).toBe(5);
+      expect(one).toBe(8);
       expect(forty).toBe(one);
     });
 

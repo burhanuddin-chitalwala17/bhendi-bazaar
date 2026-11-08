@@ -22,6 +22,8 @@ export const CHANNEL_FILTER = {
         return `Needs ${a(reason.label)} ${reason.label.toLowerCase()}`;
       case LISTING_PROBLEM.UNMAPPED_VALUE:
         return `${reason.label} not matched for ${channel}`;
+      case LISTING_PROBLEM.MISSING_FIELD:
+        return `${channel} needs ${reason.label}`;
     }
   },
   more: (n: number) => `+${n}`,

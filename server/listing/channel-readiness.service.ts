@@ -11,13 +11,18 @@ import {
   type ChannelRegister,
   type ListingReadinessReport,
   type ListingSubject,
+  type ChannelRequirements,
 } from "./channel-readiness";
 import { channelMapRepository } from "./channel-map.repository";
+import { fieldMapRepository } from "./field-map.repository";
+import { ANY_BB_TYPE, fieldsOf, fillsToday, type FieldMapRow } from "./field-map.types";
+import { channelCatalogueRepository } from "./channel-catalogue.repository";
+import { FIELD_REQUIREMENT } from "./channel-catalogue.types";
 import { orgChannelRepository } from "./org-channel.repository";
 import { productReadinessRepository } from "./product-readiness.repository";
 import { productTypeRepository } from "./product-type.repository";
 import { fillListing } from "./listing-fill.service";
-import { FACT_DECLARATIONS, ANSWER, parseStoredFacts, type FactKey } from "./listing-facts";
+import { FACTS, FACT_DECLARATIONS, ANSWER, MEASURES, parseStoredFacts, type FactKey } from "./listing-facts";
 import type { Answers } from "./fill-facts";
 import type { ProductTypeRecord } from "./product-type.types";
 
@@ -53,7 +58,8 @@ export interface ChannelSummaryRow {
 /** Why a channel would refuse one product: no category there, a compulsory fact unanswered, or an answer it has no word for. */
 export type NotReadyReason =
   | { kind: typeof LISTING_PROBLEM.NO_CATEGORY }
-  | { kind: typeof LISTING_PROBLEM.MISSING_FACT | typeof LISTING_PROBLEM.UNMAPPED_VALUE; fact: FactKey; label: string };
+  | { kind: typeof LISTING_PROBLEM.MISSING_FACT | typeof LISTING_PROBLEM.UNMAPPED_VALUE; fact: FactKey; label: string }
+  | { kind: typeof LISTING_PROBLEM.MISSING_FIELD; label: string };
 
 export interface ChannelVerdict {
   channel: Channel;
@@ -236,6 +242,7 @@ function reasonsOf(problems: ListingReadinessReport["problems"]): NotReadyReason
     if (p.problem === LISTING_PROBLEM.MISSING_FACT || p.problem === LISTING_PROBLEM.UNMAPPED_VALUE) {
       return [{ kind: p.problem, fact: p.fact, label: FACT_DECLARATIONS[p.fact]?.label ?? p.fact }];
     }
+    if (p.problem === LISTING_PROBLEM.MISSING_FIELD) return [{ kind: LISTING_PROBLEM.MISSING_FIELD, label: p.label }];
     return [];
   });
 }
@@ -280,6 +287,23 @@ async function registersForTypes(
     lists: types.flatMap(listsOf),
   });
 
+  // What each of their categories requires, from the channel's own definition, and what our fill rows
+  // already cover: two reads for every type at once (listing-model/channel-catalogue D5).
+  const pairs = [...new Map(categories.filter((c) => c.theirCategory).map((c) => [`${c.channel}:${c.theirCategory}`, { channel: c.channel, key: c.theirCategory! }])).values()];
+  const [catalogue, fills, fieldMaps] = await Promise.all([
+    channelCatalogueRepository.fieldsFor(pairs),
+    channelMapRepository.fillsForMany(pairs),
+    fieldMapRepository.forTypes(pairs.map((p) => ({ channel: p.channel, channelType: p.key }))),
+  ]);
+  const required = new Map<string, ChannelRequirements>();
+  for (const [k, t] of catalogue) {
+    const fields = t.fields.filter((f) => f.requirement === FIELD_REQUIREMENT.REQUIRED && !f.adapterFills).map((f) => ({ key: f.key, label: f.label }));
+    required.set(k, { asOf: t.readAt.toISOString(), fields });
+  }
+  const filled = new Map<string, Set<string>>();
+  for (const f of fills) filled.set(`${f.channel}:${f.theirCategory}`, (filled.get(`${f.channel}:${f.theirCategory}`) ?? new Set()).add(f.theirAttribute));
+  const byChannel = <T,>(source: Map<string, T>, channel: string) => new Map([...source].filter(([k]) => k.startsWith(`${channel}:`)).map(([k, v]) => [k.slice(channel.length + 1), v]));
+
   for (const type of types) {
     const mine = categories.filter((row) => row.productType === type.key);
     const registers = new Map<Channel, ChannelRegister>();
@@ -301,9 +325,27 @@ async function registersForTypes(
           attributes.filter((row) => row.channel === channel && isFact(row.fact)),
         ),
         mappedValues,
+        requiredByCategory: byChannel(required, channel),
+        filledByCategory: byChannel(withMaps(filled, fieldMaps, type.key), channel),
       });
     }
     out.set(type.key, registers);
+  }
+  return out;
+}
+
+/** The questions a product can answer today, which a map must read to count as filling (field-maps Q17). */
+const TODAY = new Set<string>([...FACTS, ...MEASURES]);
+
+/** A field a map fills for this type counts as filled; one waiting on a developer or a question not yet built does not (field-maps R1, Q17). */
+function withMaps(filled: ReadonlyMap<string, ReadonlySet<string>>, maps: readonly FieldMapRow[], bbType: string): Map<string, Set<string>> {
+  const out = new Map([...filled].map(([k, v]) => [k, new Set(v)]));
+  for (const m of maps) {
+    if (!fillsToday(m, TODAY) || (m.bbType !== ANY_BB_TYPE && m.bbType !== bbType)) continue;
+    const k = `${m.channel}:${m.channelType}`;
+    const set = out.get(k) ?? new Set<string>();
+    for (const f of fieldsOf(m.fieldPath)) set.add(f);
+    out.set(k, set);
   }
   return out;
 }

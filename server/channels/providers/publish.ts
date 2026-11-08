@@ -1,3 +1,5 @@
+import type { BuiltField } from "@server/listing/field-map.types";
+
 import type { ListingField, ListingIssue } from "../platform-listing.types";
 
 /**
@@ -75,8 +77,10 @@ export interface CreateListingInput {
   /** The shop's brand is not registered on the marketplace: list unbranded, as it words that (setup-requests Q35). */
   generic: boolean;
   quantity: number;
-  /** Our facts in the marketplace's attribute names and values, from the mapping (D8). */
-  attributes: Record<string, string>;
+  /** The listing built from the product and the field maps (listing-model/field-maps D3). */
+  fields: BuiltField[];
+  /** The marketplace type's stored JSON Schema, which shapes and checks the fields (field-maps D5, D6); null when unread. */
+  typeSchema: unknown;
   compliance: { countryOfOrigin: string | null; manufacturer: string | null; packer: string | null; importer: string | null; hsn: string | null };
 }
 
@@ -102,3 +106,6 @@ export interface TypeMatch {
   theirCategory: string;
   label: string;
 }
+
+
+export { FIELD_KIND, FIELD_REQUIREMENT, type CatalogueField, type CatalogueType, type FieldKind, type FieldRequirement } from "@server/listing/channel-catalogue.types";

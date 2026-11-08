@@ -1,10 +1,27 @@
-import { brandRepository, type BrandData } from "@server/catalog/brand.repository";
+import { brandRepository, type BrandData, type PartiesData } from "@server/catalog/brand.repository";
 import { toBrandDto, type BrandDto } from "@server/catalog/brand.types";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { isUniqueViolation } from "@server/shared/constraint";
 
 /** Marketplaces' word for an unbranded item: it belongs to the shop's default brand (marketplace-facts Q29). */
 const GENERIC = /^(generic|unbranded|no brand)$/i;
+
+/** What the brand form sends (dynamic-form R7): the old maker and packer lines now come from the parties. */
+export interface BrandFormData {
+  name: string;
+  countryOfOrigin: string | null;
+  isDefault: boolean;
+  amazonRegistered: boolean;
+  parties: PartiesData;
+}
+
+const brandDataOf = (input: BrandFormData): BrandData => ({
+  name: input.name,
+  countryOfOrigin: input.countryOfOrigin,
+  isDefault: input.isDefault,
+  manufacturer: input.parties.maker.name,
+  packerOrImporter: input.parties.packer.name,
+});
 
 /**
  * The write seam for an org's brands (org-profile trd D7). Every call is scoped by an orgId
@@ -17,14 +34,18 @@ export class BrandService {
     return brands.map(toBrandDto);
   }
 
-  async create(orgId: string, data: BrandData): Promise<BrandDto> {
-    const brand = await this.settled(data.name, () => brandRepository.create(orgId, data));
+  /** A brand with its parties and Amazon choice, in one write (listing-model/dynamic-form R7). */
+  async create(orgId: string, input: BrandFormData): Promise<BrandDto> {
+    const data = brandDataOf(input);
+    const brand = await this.settled(data.name, () => brandRepository.create(orgId, data, input.amazonRegistered, input.parties));
     if (data.isDefault) await brandRepository.markDefault(orgId, brand.id);
     return toBrandDto({ ...brand, isDefault: data.isDefault });
   }
 
-  async update(orgId: string, id: string, data: Partial<BrandData>): Promise<BrandDto> {
-    const updated = await this.settled(data.name, () => brandRepository.update(orgId, id, data));
+  async update(orgId: string, id: string, input: Partial<BrandFormData>): Promise<BrandDto> {
+    const { parties, amazonRegistered, ...rest } = input;
+    const data: Partial<BrandData> & { amazonRegistered?: boolean } = { ...rest, ...(amazonRegistered === undefined ? {} : { amazonRegistered }) };
+    const updated = await this.settled(data.name, () => brandRepository.update(orgId, id, data, parties));
     if (!updated) throw new NotFoundError("Brand not found");
     if (data.isDefault) await brandRepository.markDefault(orgId, id);
     return this.read(orgId, id);

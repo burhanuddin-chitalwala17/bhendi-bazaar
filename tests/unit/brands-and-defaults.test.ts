@@ -3,7 +3,7 @@
 // conversions, and the services' answers when the database says duplicate or not-found.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ZodError } from "zod";
-import type { Brand } from "@prisma/client";
+import type { Brand, BrandParty } from "@prisma/client";
 
 vi.mock("@server/catalog/brand.repository", () => ({
   brandRepository: {
@@ -35,7 +35,8 @@ import { orgListingDefaultsRepository } from "@server/listing/org-listing-defaul
 import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.service";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 
-const row = (overrides: Partial<Brand> = {}): Brand => ({
+type BrandRow = Brand & { parties: BrandParty[] };
+const row = (overrides: Partial<BrandRow> = {}): BrandRow => ({
   id: "b1",
   orgId: "org-1",
   name: "Zed",
@@ -43,6 +44,8 @@ const row = (overrides: Partial<Brand> = {}): Brand => ({
   packerOrImporter: null,
   countryOfOrigin: null,
   isDefault: false,
+  amazonRegistered: true,
+  parties: [],
   retiredAt: null,
   createdAt: new Date("2026-09-27T00:00:00Z"),
   updatedAt: new Date("2026-09-27T00:00:00Z"),
@@ -57,13 +60,21 @@ const duplicateName = {
 
 describe("brandSchema — create", () => {
   it("needs only a name; blanks become null and isDefault defaults off (R5)", () => {
-    expect(brandSchema.parse({ name: "  Zed  ", manufacturer: "", countryOfOrigin: "  " })).toEqual({
+    const blankParty = { name: "", address: " ", pincode: "" };
+    expect(brandSchema.parse({ name: "  Zed  ", countryOfOrigin: "  ", parties: { maker: blankParty, packer: blankParty, importer: blankParty } })).toEqual({
       name: "Zed",
-      manufacturer: null,
-      packerOrImporter: null,
       countryOfOrigin: null,
       isDefault: false,
+      amazonRegistered: true,
+      parties: { maker: { name: null, address: null, pincode: null }, packer: { name: null, address: null, pincode: null }, importer: { name: null, address: null, pincode: null } },
     });
+  });
+
+  it("asks a party's pincode as six digits, and a party nothing but a name (listing-model/dynamic-form R7)", () => {
+    const party = (pincode: string) => ({ name: "Noor Works", address: null, pincode });
+    const parties = (pincode: string) => ({ maker: party(pincode), packer: party(""), importer: party("") });
+    expect(brandSchema.safeParse({ name: "Zed", parties: parties("400003") }).success).toBe(true);
+    expect(brandSchema.safeParse({ name: "Zed", parties: parties("4000") }).success).toBe(false);
   });
 
   it("refuses a blank name", () => {
@@ -77,7 +88,7 @@ describe("updateBrandSchema — PATCH", () => {
   });
 
   it("still turns a sent blank into null — that is how a field is cleared", () => {
-    expect(updateBrandSchema.parse({ manufacturer: "" })).toEqual({ manufacturer: null });
+    expect(updateBrandSchema.parse({ countryOfOrigin: "" })).toEqual({ countryOfOrigin: null });
   });
 });
 
@@ -134,20 +145,20 @@ describe("brandService", () => {
   it("turns the database's duplicate (orgId, name) into a conflict the org can read", async () => {
     vi.mocked(brandRepository.create).mockRejectedValue(duplicateName);
     await expect(
-      brandService.create("org-1", { name: "Zed", manufacturer: null, packerOrImporter: null, countryOfOrigin: null, isDefault: false }),
+      brandService.create("org-1", { name: "Zed", countryOfOrigin: null, isDefault: false, amazonRegistered: true, parties: { maker: { name: null, address: null, pincode: null }, packer: { name: null, address: null, pincode: null }, importer: { name: null, address: null, pincode: null } } }),
     ).rejects.toMatchObject({ name: "ConflictError", message: expect.stringContaining('"Zed"') });
   });
 
   it("rethrows anything that is not a uniqueness failure", async () => {
     vi.mocked(brandRepository.create).mockRejectedValue(new Error("connection reset"));
     await expect(
-      brandService.create("org-1", { name: "Zed", manufacturer: null, packerOrImporter: null, countryOfOrigin: null, isDefault: false }),
+      brandService.create("org-1", { name: "Zed", countryOfOrigin: null, isDefault: false, amazonRegistered: true, parties: { maker: { name: null, address: null, pincode: null }, packer: { name: null, address: null, pincode: null }, importer: { name: null, address: null, pincode: null } } }),
     ).rejects.not.toBeInstanceOf(ConflictError);
   });
 
   it("a brand created as the default is marked so, clearing any other", async () => {
     vi.mocked(brandRepository.create).mockResolvedValue(row({ isDefault: true }));
-    const dto = await brandService.create("org-1", { name: "Zed", manufacturer: null, packerOrImporter: null, countryOfOrigin: null, isDefault: true });
+    const dto = await brandService.create("org-1", { name: "Zed", countryOfOrigin: null, isDefault: true, amazonRegistered: true, parties: { maker: { name: null, address: null, pincode: null }, packer: { name: null, address: null, pincode: null }, importer: { name: null, address: null, pincode: null } } });
     expect(brandRepository.markDefault).toHaveBeenCalledWith("org-1", "b1");
     expect(dto.isDefault).toBe(true);
   });

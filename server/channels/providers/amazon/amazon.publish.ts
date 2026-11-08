@@ -1,8 +1,10 @@
 import { retryBusy, rupeesFromPaise, type ListingAttributes, type TokenSource } from "../listing-read";
 import { MarketplaceAuthError, MarketplaceRequestError, MarketplaceUnavailableError, marketplaceFetch } from "../marketplace-provider";
-import type { CreateListingInput, ListingProblem, PageMatch, PublishAnswer, PublishChanges, PublishRef, StatusAnswer, TypeDefinition, TypeMatch } from "../publish";
-import { ISSUE_NEED, LISTING_FIELD, LISTING_FIELDS, type IssueNeed, type ListingField, type ListingIssue, type ListingRules } from "../../platform-listing.types";
+import { amazonRequirements } from "./amazon.requirements";
+import { FIELD_KIND, FIELD_REQUIREMENT, type CatalogueField, type CatalogueType, type CreateListingInput, type FieldKind, type ListingProblem, type PageMatch, type PublishAnswer, type PublishChanges, type PublishRef, type StatusAnswer, type TypeDefinition, type TypeMatch } from "../publish";
+import { CREATE_MODE, ISSUE_NEED, LISTING_FIELD, LISTING_FIELDS, type IssueNeed, type ListingField, type ListingIssue, type ListingRules } from "../../platform-listing.types";
 import { AMAZON_IN, spApi } from "./amazon.listings";
+import { amazonAttributes, checkAgainstSchema, conformToSchema } from "./amazon.shape";
 
 /**
  * What Amazon lets us write on a listing and its limits (channel-listings Q5, Q12): every field,
@@ -86,6 +88,10 @@ export function amazonIssues(raw: unknown): ListingIssue[] {
     }];
   });
 }
+
+/** A problem the type's schema found before any call, worded and pinned like Amazon's own (field-maps D6). */
+const schemaIssue = (attribute: string | null, message: string): ListingIssue =>
+  amazonIssues([{ severity: "ERROR", code: "schema", message, attributeNames: attribute ? [attribute] : [] }])[0];
 
 /** One operation per changed field (D2); price and on sale share one merge of the offer, with its selectors. */
 export function amazonPatches(changes: PublishChanges, now: Date): unknown[] {
@@ -281,15 +287,63 @@ function allowedOf(property: Record<string, unknown>): string[] {
 /** A type's definition: its required attributes and what each allows (setup-requests D7). */
 export async function amazonTypeDefinition(token: TokenSource, productType: string): Promise<TypeDefinition | null> {
   const schema = await amazonTypeSchema(token, productType);
-  if (!schema) return null;
-  const required = new Set(list(schema.required).map(String));
-  const properties = obj(schema.properties);
-  const attributes = Object.entries(properties).flatMap(([name, raw]) => {
-    if (!required.has(name) || SENT_BY_CREATE.has(name) || name.startsWith("other_product_image_locator")) return [];
+  return schema ? { theirCategory: productType, attributes: amazonRequiredAttributes(schema) } : null;
+}
+
+/** What a request asks for: the attributes required of the Q3 listing that a create does not send itself. Pure. */
+export function amazonRequiredAttributes(schema: Record<string, unknown>): TypeDefinition["attributes"] {
+  const requirements = amazonRequirements(schema);
+  return Object.entries(obj(schema.properties)).flatMap(([name, raw]) => {
+    if (requirements.get(name) !== FIELD_REQUIREMENT.REQUIRED || SENT_BY_CREATE.has(name) || name.startsWith("other_product_image_locator")) return [];
     const property = obj(raw);
     return [{ name, label: str(property.title) ?? name, required: true, allowed: allowedOf(property) }];
   });
-  return { theirCategory: productType, attributes };
+}
+
+/** The units a measure attribute accepts, from its `unit` enum. */
+function unitsOf(property: Record<string, unknown>): string[] {
+  const unit = obj(obj(obj(property.items).properties).unit);
+  return list(unit.enum).map(String);
+}
+
+/** A property's kind: a measure has a unit, a choice an enum, then number, boolean, else text. */
+function kindOf(property: Record<string, unknown>): FieldKind {
+  const props = obj(obj(property.items).properties);
+  if (props.unit) return FIELD_KIND.MEASURE;
+  if (allowedOf(property).length > 0) return FIELD_KIND.CHOICE;
+  const type = str(obj(props.value).type);
+  if (type === "number" || type === "integer") return FIELD_KIND.NUMBER;
+  if (type === "boolean") return FIELD_KIND.BOOLEAN;
+  return FIELD_KIND.TEXT;
+}
+
+/**
+ * A type's every field as the catalogue stores it (listing-model/channel-catalogue D2), each rule judged
+ * for the listing Q3 names (`amazonRequirements`); what a create always sends is the adapter's (Q5).
+ */
+export function amazonCatalogueFields(schema: Record<string, unknown>): CatalogueField[] {
+  const requirements = amazonRequirements(schema);
+  return Object.entries(obj(schema.properties)).map(([key, raw]) => {
+    const property = obj(raw);
+    const allowed = allowedOf(property);
+    const units = unitsOf(property);
+    return {
+      key,
+      label: str(property.title) ?? key,
+      requirement: requirements.get(key) ?? FIELD_REQUIREMENT.OPTIONAL,
+      kind: kindOf(property),
+      allowedValues: allowed.length > 0 ? allowed : null,
+      allowedUnits: units.length > 0 ? units : null,
+      adapterFills: SENT_BY_CREATE.has(key) || key.startsWith("other_product_image_locator"),
+    };
+  });
+}
+
+/** A type's catalogue entry, read live (channel-catalogue D2). Null when Amazon has no such type. */
+export async function amazonCatalogueType(token: TokenSource, productType: string): Promise<CatalogueType | null> {
+  const schema = await amazonTypeSchema(token, productType);
+  if (!schema) return null;
+  return { key: productType, label: str(schema.title) ?? productType, schema, schemaVersion: str(schema.$id), fields: amazonCatalogueFields(schema) };
 }
 
 /** Amazon's types matching some words, as Amazon ranks them (setup-requests Q29). */
@@ -312,16 +366,6 @@ export async function amazonVariationThemes(token: TokenSource, _account: string
 }
 
 const barcodeType = (code: string) => (code.length === 12 ? "upc" : code.length === 14 ? "gtin" : "ean");
-
-/** A mapped attribute as Amazon's shape: `name` or `name.part` paths from the mapping (D8). */
-function mapped(attributes: Record<string, string>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [path, value] of Object.entries(attributes)) {
-    const [name, part] = path.split(".");
-    out[name] = part ? [{ [part]: text(value), marketplace_id: AMAZON_IN }] : text(value);
-  }
-  return out;
-}
 
 /** The whole listing a create sends: the one place a full listing goes to Amazon (D2, D6, D7, D8). */
 export function amazonCreateBody(input: CreateListingInput): { productType: string; requirements: string; attributes: Record<string, unknown> } {
@@ -354,8 +398,9 @@ export function amazonCreateBody(input: CreateListingInput): { productType: stri
   return {
     productType: input.marketplaceType ?? "PRODUCT",
     requirements: "LISTING",
-    attributes: {
-      ...mapped(input.attributes),
+    // Our own plumbing keys trimmed to what each attribute's item declares, where the type's schema is held (field-maps Q9).
+    attributes: conformToSchema(input.typeSchema, {
+      ...amazonAttributes(input.typeSchema, input.fields),
       item_name: text(input.title),
       // Amazon's own word for an unbranded listing; never another shop's registered brand (setup-requests Q35).
       ...(input.generic ? { brand: text(AMAZON_GENERIC_BRAND) } : input.brand ? { brand: text(input.brand) } : {}),
@@ -378,7 +423,7 @@ export function amazonCreateBody(input: CreateListingInput): { productType: stri
           }
         : {}),
       ...offer,
-    },
+    }),
   };
 }
 
@@ -386,6 +431,12 @@ export function amazonCreateBody(input: CreateListingInput): { productType: stri
 export async function amazonCreate(token: TokenSource, account: string | null, input: CreateListingInput, options: { preview: boolean }): Promise<PublishAnswer> {
   if (!account) throw new MarketplaceAuthError("rejected");
   const body = amazonCreateBody(input);
+  // A value the type's schema refuses (a unit, a word, an unknown attribute) is named before Amazon is asked
+  // (field-maps D6); what is required is Amazon's to judge, in its check-only answer (proof run, 2026-11-08).
+  if (input.mode === CREATE_MODE.NEW) {
+    const problems = checkAgainstSchema(input.typeSchema, body.attributes).filter((p) => !p.missing);
+    if (problems.length > 0) return { accepted: [], issues: problems.map((p) => schemaIssue(p.attribute, p.message)), decidesLater: false };
+  }
   const query: Record<string, string> = { requirements: body.requirements, includedData: "issues", ...(options.preview ? { mode: "VALIDATION_PREVIEW" } : {}) };
   try {
     const answer = await retryBusy(() =>

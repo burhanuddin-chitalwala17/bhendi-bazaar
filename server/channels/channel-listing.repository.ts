@@ -1,3 +1,4 @@
+import { productAnswersService } from "@server/listing/product-answers.service";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
 
@@ -575,7 +576,7 @@ export const channelListingRepository = {
 
   /** The listings a family page names, with their products and those products' families (family-merge D2). */
   async forFamily(ids: readonly string[], orgId: string) {
-    return await prisma.channelListing.findMany({
+    const rows = await prisma.channelListing.findMany({
       where: { id: { in: [...ids] }, orgId },
       select: {
         id: true,
@@ -597,10 +598,13 @@ export const channelListingRepository = {
         attributes: true,
         attributesReadAt: true,
         connection: { select: { externalAccountId: true, state: true } },
-        product: { select: { id: true, name: true, sku: true, price: true, archivedAt: true, categoryId: true, productType: true, facts: true, measurements: true, familyId: true, family: { select: { id: true, name: true } } } },
+        product: { select: { id: true, name: true, sku: true, price: true, archivedAt: true, categoryId: true, productType: true, familyId: true, family: { select: { id: true, name: true } } } },
       },
       orderBy: [{ title: "asc" }, { sku: "asc" }],
     });
+    // A linked product's answers, from the value rows where they live (listing-model/dynamic-form Q16).
+    const answers = await productAnswersService.answersFor(rows.flatMap((r) => (r.product ? [r.product.id] : [])));
+    return rows.map((r) => ({ ...r, product: r.product ? { ...r.product, facts: answers.get(r.product.id)?.facts ?? {}, measurements: answers.get(r.product.id)?.measurements ?? {} } : null }));
   },
 
   /**

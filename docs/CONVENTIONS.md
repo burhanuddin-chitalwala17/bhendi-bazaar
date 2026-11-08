@@ -1,6 +1,6 @@
 # Conventions index
 
-- **Verified:** 2026-11-05
+- **Verified:** 2026-11-07
 - **Covers:** `docs/adr/*.md`, `docs/specs/*/`
 
 The canonical index of *how we work*, moved out of the root `CLAUDE.md` on 2026-11-01 so it is read when
@@ -54,8 +54,8 @@ nothing more; detail lives in the ADR so it has one wording ([ADR-0009](adr/0009
 - **A channel is classed by where the sale completes** — storefront, shopfront, marketplace; the kind decides the machinery. [ADR-0041](adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)
 - **A canonical fact is admitted by answerability, not by agreement** — one platform asking is enough, none is enough; a fact the shop cannot answer from the product is a channel extra declared as a schema, never a bag, never the union. Store the fact that derives the other. [ADR-0047](adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md), [ADR-0042](adr/0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md)
 - **A variant is a product in a family** — its own SKU, price and stock; the family carries facts, measurements and type. [ADR-0043](adr/0043-a-variant-is-a-product-in-a-family.md), [ADR-0051](adr/0051-a-products-facts-are-one-json-column-each-entry-carrying-its-origin.md)
-- **A product's facts are one JSON column, each entry carrying its origin** — parsed never cast, filled on save never on read; only discriminators earn columns. [ADR-0051](adr/0051-a-products-facts-are-one-json-column-each-entry-carrying-its-origin.md)
 - **A product type is a row selecting from facts declared in code** — answers are data, keys stored and labels shown, types belong to the platform, derivations are never stored. [ADR-0052](adr/0052-a-product-type-is-a-row-that-selects-from-facts-declared-in-code.md)
+- **A product's attributes are rows, mapped at runtime to each channel's own catalogue** — attributes added only by migration, typed value rows with a projection, a stored catalogue per channel, one field map per channel field, listings built not stored. [ADR-0070](adr/0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md)
 - **A marketplace order's money is reported, not computed** — Invariant 2's shape, not Invariant 1's exception; it never enters the payouts ledger. [ADR-0044](adr/0044-a-marketplace-orders-money-is-reported-not-computed.md)
 - **Channel mappings are dated data** — category, attribute and value rows carrying a checked date and source; required-ness is a column, never adapter code. [ADR-0045](adr/0045-channel-mappings-are-versioned-data.md), [ADR-0054](adr/0054-a-channel-mapping-carries-a-checked-date-and-source-and-required-ness-is-data.md)
 - **Readiness advises and never gates** — states are named for what the other side will think, nothing is disabled, the reason is one tap away; a gate needs a watched rejection as evidence. [ADR-0053](adr/0053-readiness-advises-and-never-gates.md)

@@ -16,8 +16,18 @@ const listeners = (): Listener[] => (registry[KEY] ??= []);
 const matches = (pattern: RegExp, sql: string): Set<string> =>
   new Set([...sql.matchAll(pattern)].map((m) => m[1]));
 
+/**
+ * Database functions that write tables their call does not name (listing-model/dynamic-form Q16): a product's
+ * answers are written by these, so a call must clear what reads ProductValue (review B3).
+ */
+const FUNCTION_WRITES: ReadonlyArray<[RegExp, string]> = [[/\bbb_(?:write_answers|write_inherited|rederive_answers)\s*\(/i, "ProductValue"]];
+
 /** Tables the statement writes. `FOR UPDATE` and `DO UPDATE SET` name no table, so they are not writes here. */
-export const tablesWritten = (sql: string): Set<string> => matches(WRITE, sql);
+export const tablesWritten = (sql: string): Set<string> => {
+  const written = matches(WRITE, sql);
+  for (const [call, table] of FUNCTION_WRITES) if (call.test(sql)) written.add(table);
+  return written;
+};
 
 /** Tables the statement reads, for the test that holds each cached read to the tables it declares. */
 export const tablesRead = (sql: string): Set<string> => matches(READ, sql);

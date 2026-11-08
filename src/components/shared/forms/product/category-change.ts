@@ -1,4 +1,5 @@
 import { answered } from "@server/listing/fill-facts";
+import { INHERITED_ANSWERS } from "@server/shared/brand-party";
 import { FACT_DECLARATIONS, type FactKey } from "@server/listing/listing-facts";
 import { holdsKind } from "@server/listing/product-type";
 import { labelForFact, type ProductTypeRecord } from "@server/listing/product-type.types";
@@ -33,7 +34,8 @@ export function answersLost(values: Answers, from: ProductTypeRecord | null, to:
 export function keepAsked<T extends Answers>(values: T, type: ProductTypeRecord | null): T {
   const kind = holdsKind(type, values.kind) ? values.kind : null;
   const facts = Object.fromEntries(
-    Object.entries(values.facts ?? {}).filter(([fact]) => !!type?.facts.includes(fact as FactKey)),
+    // Country, maker, packer and importer belong to no type: a product's own answer to one is kept whatever it is (A4).
+    Object.entries(values.facts ?? {}).filter(([fact]) => !!type?.facts.includes(fact as FactKey) || (INHERITED_ANSWERS as readonly string[]).includes(fact)),
   );
   const asked = new Set<string>(type?.measures.map((measure) => measure.key));
   const measurements = Object.fromEntries(

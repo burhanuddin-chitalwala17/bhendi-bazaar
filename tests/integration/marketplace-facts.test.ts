@@ -8,7 +8,7 @@ import "dotenv/config";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { NO_DETAILS, type ListingAttributes } from "@server/channels/providers/listing-read";
-import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
+import { isDisposableDb, ensureFixtures, setAnswers, answersOf } from "../helpers/test-db";
 
 const fake = vi.hoisted(() => {
   const state: { read: unknown } = { read: null };
@@ -43,8 +43,8 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
     ...over,
   });
 
-  const product = (extra: Record<string, unknown> = {}) =>
-    prisma.product.create({
+  const product = async ({ facts: given, measurements, ...extra }: Record<string, unknown> = {}) => {
+    const row = await prisma.product.create({
       data: {
         name: `Mat ${stamp}`,
         slug: `mf-${stamp}-${Math.random().toString(36).slice(2, 8)}`,
@@ -58,6 +58,9 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
       },
       select: { id: true },
     });
+    if (given || measurements) await setAnswers(row.id, { facts: given, measurements, weight: extra.weight as number | undefined });
+    return row;
+  };
 
   const linked = async (productId: string) =>
     prisma.channelListing.create({
@@ -115,7 +118,7 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
     const outcome = await facts.run({ orgId, listingId: listing.id });
 
     expect(outcome).toMatchObject({ outcome: "filled", facts: 2, questions: 1 });
-    const row = await prisma.product.findUniqueOrThrow({ where: { id }, select: { facts: true, weight: true, mrpPaise: true } });
+    const row = { ...(await prisma.product.findUniqueOrThrow({ where: { id }, select: { weight: true, mrpPaise: true } })), facts: (await answersOf(id)).facts };
     expect(row.facts).toMatchObject({
       colour: { value: "green", origin: "marketplace", source: { channel: "amazon", value: "Green" } },
       packQuantity: { value: 2, origin: "marketplace" },
@@ -138,7 +141,7 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
       brandId: null,
     });
     expect(filled).toEqual({ facts: [], measurements: [], weight: false, mrp: false, brand: false });
-    const row = await prisma.product.findUniqueOrThrow({ where: { id }, select: { facts: true, weight: true, mrpPaise: true } });
+    const row = { ...(await prisma.product.findUniqueOrThrow({ where: { id }, select: { weight: true, mrpPaise: true } })), facts: (await answersOf(id)).facts };
     expect(row).toMatchObject({ weight: 1.2, mrpPaise: 99_900, facts: { colour: { value: "red", origin: "product" } } });
   });
 
@@ -156,7 +159,7 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
         products.setMarketplaceAnswer(orgId, id, "facts", "material", { value: "cotton", origin: "product" }, false),
       ]),
     );
-    const rows = await prisma.product.findMany({ where: { id: { in: ids } }, select: { facts: true } });
+    const rows = await Promise.all(ids.map((pid) => answersOf(pid)));
     for (const row of rows) expect(Object.keys(row.facts as object).sort()).toEqual(["colour", "material"]);
   });
 
@@ -264,7 +267,7 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
     it("answers a question once; a second answer is told what the shop answered (ux.md Owner answered meanwhile)", async () => {
       const { id, listingId } = await filledOnce();
       await facts.change(orgId, listingId, { action: "answer", fact: "material", value: "cotton" });
-      const row = await prisma.product.findUniqueOrThrow({ where: { id }, select: { facts: true } });
+      const row = await answersOf(id);
       expect((row.facts as Record<string, unknown>).material).toMatchObject({ value: "cotton", origin: "marketplace", source: { chosen: true } });
       await expect(facts.change(orgId, listingId, { action: "answer", fact: "material", value: "silk" })).rejects.toThrow(/You already answered this: Cotton\. Nothing was changed\./);
     });
@@ -291,7 +294,7 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
       const { id } = await product({ productType: null });
       const listing = await linked(id);
       await facts.run({ orgId, listingId: listing.id });
-      expect((await prisma.product.findUniqueOrThrow({ where: { id }, select: { facts: true } })).facts).toBeNull();
+      expect((await answersOf(id)).facts).toEqual({});
       const category = await prisma.category.create({
         data: { slug: `mf-mats-${stamp}`, name: `Mats ${stamp}`, description: "", heroImage: "/brand/bhendi-bazaar.png", productType: "prayer-mat" },
         select: { id: true },
@@ -301,7 +304,7 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
         expect(card.state).toBe("category_to_confirm");
         expect(card.types[0].categories.map((c) => c.id)).toContain(category.id);
         await facts.change(orgId, listing.id, { action: "category", categoryId: category.id });
-      const row = await prisma.product.findUniqueOrThrow({ where: { id }, select: { productType: true, categoryId: true, facts: true } });
+      const row = { ...(await prisma.product.findUniqueOrThrow({ where: { id }, select: { productType: true, categoryId: true } })), facts: (await answersOf(id)).facts };
       expect(row).toMatchObject({ productType: "prayer-mat", categoryId: category.id });
         expect(row.facts).toHaveProperty("colour");
       } finally {
@@ -364,7 +367,7 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
           stock: [{ locationId, quantity: 1 }],
           answers: { material: "cotton", colour: "red", care: "anything" },
         });
-        const row = await prisma.product.findUniqueOrThrow({ where: { id: result.productId }, select: { facts: true } });
+        const row = await answersOf(result.productId);
         expect(row.facts).toMatchObject({
           colour: { value: "green", origin: "marketplace" },
           material: { value: "cotton", origin: "marketplace", source: { chosen: true } },
@@ -391,7 +394,7 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
       expect(detail?.facts).toMatchObject({ matching: true, fixedType: "prayer-mat" });
       expect(detail?.facts?.byType["prayer-mat"].fills.map((f) => f.fact)).not.toContain("colour");
       await channelSettleService.settle(orgId, userId, { listingIds: [listing.id], productId: id, stock: [], answers: { material: "cotton" } });
-      const row = await prisma.product.findUniqueOrThrow({ where: { id }, select: { facts: true } });
+      const row = await answersOf(id);
       expect(row.facts).toMatchObject({ colour: { value: "red", origin: "product" }, material: { value: "cotton", origin: "marketplace" } });
       const { JOBS_QUEUE, JOBS_SCHEMA } = await import("@server/shared/jobs/jobs.config");
       await prisma.$executeRawUnsafe(`DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->'payload'->>'listingId' = $2`, JOBS_QUEUE, listing.id);

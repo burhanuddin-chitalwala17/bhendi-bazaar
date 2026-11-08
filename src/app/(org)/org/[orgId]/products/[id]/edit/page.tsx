@@ -11,7 +11,10 @@ import type { AdminCategory } from "@/domain/admin";
 import { orgAddressService } from "@server/catalog/org.address.service";
 import { orgChannelService } from "@server/listing/org-channel.service";
 import { brandService } from "@server/catalog/brand.service";
+import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.service";
 
+import { ChannelCompletenessStrip } from "@/components/channel/channel-completeness-strip";
+import { productCompletenessDAL } from "@/data-access-layer/org/product-completeness.dal";
 import { PageShell } from "@/components/shared/page-shell";
 export default async function OrgEditProductPage({
   params,
@@ -36,14 +39,16 @@ export default async function OrgEditProductPage({
   // The question sets, and the answers for the category this product is already in — so the
   // form opens with filled dropdowns rather than empty ones. Changing the category fetches the
   // rest ([ADR-0034]).
-  const [productTypes, listingValues, familyRows, channels, brandRows] = await Promise.all([
+  const [productTypes, listingValues, familyRows, channels, brands, formTypes, completeness, listingDefaults] = await Promise.all([
     adminProductTypesDAL.getProductTypes(),
     adminProductTypesDAL.getValuesForCategory(product.category?.id ?? null, categories, orgId),
     productFamilyService.list(orgId),
     orgChannelService.list(orgId),
     brandService.list(orgId),
+    adminProductTypesDAL.getFormTypes(orgId),
+    productCompletenessDAL.forProduct(id),
+    orgListingDefaultsService.get(orgId),
   ]);
-  const brands = brandRows.map((brand) => ({ id: brand.id, name: brand.name }));
   const families = familyRows.map((family) => ({ id: family.id, name: family.name }));
 
   // The product's own org, so the form cannot reassign ownership.
@@ -64,15 +69,17 @@ export default async function OrgEditProductPage({
 
   return (
     <PageShell>
+      <ChannelCompletenessStrip states={completeness} />
       <Suspense fallback={<LoadingSkeleton />}>
         <ProductEditContainer
           help="products"
           product={product}
           categories={categories}
-          productTypes={productTypes}
+          productTypes={formTypes}
           listingValues={listingValues}
           families={families}
           brands={brands}
+          shopCountry={listingDefaults.countryOfOrigin}
           orgs={orgs}
           locations={locations}
           uploadEndpoints={orgUploadEndpoints(orgId)}

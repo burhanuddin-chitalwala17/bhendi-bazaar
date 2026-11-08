@@ -1,3 +1,4 @@
+import { productValueRepository } from "./product-value.repository";
 import { prisma } from "@server/shared/prisma";
 import { Prisma } from "@prisma/client";
 
@@ -20,16 +21,17 @@ export class OrgListingDefaultsRepository {
   async upsert(orgId: string, data: ListingDefaultsData) {
     // `null` clears the map; the JSON column needs Prisma's sentinel to say so.
     const taxCodeByCategory = data.taxCodeByCategory ?? Prisma.JsonNull;
-    return await prisma.orgListingDefaults.upsert({
-      where: { orgId },
-      create: { orgId, countryOfOrigin: data.countryOfOrigin, taxRateBps: data.taxRateBps, taxCodeByCategory },
-      update: { countryOfOrigin: data.countryOfOrigin, taxRateBps: data.taxRateBps, taxCodeByCategory },
+    return await prisma.$transaction(async (tx) => {
+      const before = await tx.orgListingDefaults.findUnique({ where: { orgId }, select: { countryOfOrigin: true } });
+      const row = await tx.orgListingDefaults.upsert({
+        where: { orgId },
+        create: { orgId, countryOfOrigin: data.countryOfOrigin, taxRateBps: data.taxRateBps, taxCodeByCategory },
+        update: { countryOfOrigin: data.countryOfOrigin, taxRateBps: data.taxRateBps, taxCodeByCategory },
+      });
+      // The shop's country fills its products that no brand answers (attributes Q6; dynamic-form Q16).
+      if (before?.countryOfOrigin !== row.countryOfOrigin) await productValueRepository.refreshForShopIn(tx, orgId);
+      return row;
     });
-  }
-
-  /** Whether the shop lists on Amazon as Generic (setup-requests Q35): its own write, so the defaults form's PUT never resets it. */
-  async setAmazonGeneric(orgId: string, amazonGeneric: boolean) {
-    return await prisma.orgListingDefaults.upsert({ where: { orgId }, create: { orgId, amazonGeneric }, update: { amazonGeneric } });
   }
 
   /** One category's tax code, only when it has none, under the row's lock (marketplace-facts Q21, D7). */

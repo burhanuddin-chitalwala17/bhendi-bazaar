@@ -52,6 +52,7 @@ const BAND: Readonly<Record<ListingProblemKind, Exclude<ListingReadiness, "ready
   [LISTING_PROBLEM.NO_CATEGORY]: LISTING_READINESS.INCOMPLETE,
   [LISTING_PROBLEM.MISSING_FACT]: LISTING_READINESS.INCOMPLETE,
   [LISTING_PROBLEM.UNMAPPED_VALUE]: LISTING_READINESS.INCOMPLETE,
+  [LISTING_PROBLEM.MISSING_FIELD]: LISTING_READINESS.INCOMPLETE,
   [LISTING_PROBLEM.NEAREST_CATEGORY]: LISTING_READINESS.WARNED,
   [LISTING_PROBLEM.MISSING_OPTIONAL_FACT]: LISTING_READINESS.WARNED,
 };
@@ -85,6 +86,12 @@ export interface AttributeMapping {
   freeText?: boolean;
 }
 
+/** What one channel type requires that nothing of ours fills, and when the channel said so (channel-catalogue D5, A4). */
+export interface ChannelRequirements {
+  asOf: string;
+  fields: readonly { key: string; label: string }[];
+}
+
 /**
  * One channel's half of the dictionary, for one product type.
  *
@@ -101,6 +108,13 @@ export interface ChannelRegister {
   attributesByCategory: ReadonlyMap<string, readonly AttributeMapping[]>;
   /** Their word exists for these of ours: list key → the value keys that are mapped. */
   mappedValues: ReadonlyMap<string, ReadonlySet<string>>;
+  /**
+   * What each of their categories requires, from the channel's own definition (channel-catalogue D5):
+   * their category → required fields nothing on the channel's side fills. Empty until a catalogue is read.
+   */
+  requiredByCategory?: ReadonlyMap<string, ChannelRequirements>;
+  /** Their attributes something on our side fills by a fill row (a constant, the SKU…), per their category. */
+  filledByCategory?: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 export interface ListingSubject {
@@ -194,6 +208,17 @@ export function listingReadiness(
     const value = String(stored.value);
     if (stored.unlisted || !register.mappedValues.get(list)?.has(value)) {
       problems.push({ problem: LISTING_PROBLEM.UNMAPPED_VALUE, fact: attribute.fact, list, value });
+    }
+  }
+
+  // What the channel itself requires and no map or fill of ours covers: named before a send, not after (R4).
+  if (theirCategory !== null) {
+    const mapped = new Set(attributes.map((a) => a.theirAttribute.split(".")[0]).concat(attributes.map((a) => a.theirAttribute)));
+    const filled = register.filledByCategory?.get(theirCategory) ?? new Set<string>();
+    const asked = register.requiredByCategory?.get(theirCategory);
+    for (const field of asked?.fields ?? []) {
+      if (mapped.has(field.key) || filled.has(field.key)) continue;
+      problems.push({ problem: LISTING_PROBLEM.MISSING_FIELD, field: field.key, label: field.label, asOf: asked!.asOf });
     }
   }
 

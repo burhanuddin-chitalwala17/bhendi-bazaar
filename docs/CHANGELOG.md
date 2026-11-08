@@ -12,6 +12,411 @@
 
 ## Entries
 
+## 2026-11-08 — listing-model / retire-old-paths: the product's old answer columns go [MIGRATION]
+
+- Migration `20261108190000_retire_frozen_answers` copies `Product.facts` and `measurements` whole into
+  `ProductAnswersArchive` (read by no code; a record so nothing is lost), then checks that every answer is in a
+  value row and the archive is complete, and fails changing nothing if not, then drops the two columns. The
+  compare script is retired: its check now runs inside the migration, on every database it reaches.
+- ADR-0051 superseded and ADR-0070 accepted; CONVENTIONS describes the new model. The programme's HANDOFF.md
+  is removed (the specs, decisions and this log carry its state).
+- **Not removed, logged as decisions Q4:** the old channel map tables, `ListingValue`, the code fact list and
+  `Product.weight` are still read by publish, feeds, readiness, the form or checkout, so dropping them would
+  break those. Each moves to the new tables in its own unit after the owner's publish test.
+- Guard: `answers-live-in-values` fails on any code naming the dropped columns or reading the archive. Ran:
+  `tsc`, unit, docs check, the migration on local dev and ci.
+
+## 2026-11-08 — listing-model / dynamic-form A4: a product sets its own country, maker, packer or importer
+
+- The product form's Details step shows "Who makes it and where it's from": each of country of origin, maker,
+  packer and importer reads "From your brand Noor: …" (or the shop's country when the brand names none);
+  Change makes it the product's own ("Set on this product"), "Use brand's" goes back (ux journey 3, R3, A4).
+  The add form now gets the shop's brands too.
+- The save keeps those four as the product's own answers (`ownOverrides` in listing-fill); the value functions
+  already never put the brand's value over one. A create sends the product's own first, then the brand's, then
+  the shop's country (`complianceFor`). The closed set is `INHERITED_ANSWER` in `server/shared/brand-party.ts`.
+- Tests: `tests/unit/product-inherited-fields.test.tsx` (the form, the publish order), listing-fill (the save).
+  Mutations: dropping the save's overrides, the publish's own-first, and the revert each failed a test.
+- **Fresh-context review, and its fixes:**
+  - **Blocker:** the form's save dropped every fact its type does not ask, and no type asks these four, so an
+    override on a new product (or after a category change) never reached the server. `keepAsked` keeps them.
+    Found with it: the edit form read stored facts through a parser that read a product with any unknown key
+    as having **no facts at all**; it now skips only that entry. Tests: `keepAsked` unit, and the real edit
+    form saving a maker, keeping it through a brand edit, and "Use brand's" bringing the brand's back
+    (`product-edit-keeps-facts`). Mutations: both fixes reverted each failed a test.
+  - A brandless product's create sent no maker or packer though its form showed the default brand's; the create
+    now uses the shop's default brand (`defaultBrandOf`; brand-parties test, mutation failed it).
+  - Copy: "Use shop defaults's", a stray space and an empty brand name fixed with whole sentences per case.
+- Ran: `tsc`, unit, the touched integration files one at a time.
+
+## 2026-11-08 — listing-model / dynamic-form unit 3b: a product's answers live in the value rows (full switch) [MIGRATION]
+
+- **Owner decision Q16:** one full switch, no product or database information lost. Migration
+  `20261108180000_answers_live_in_values` gives `ProductValue` the answer exactly as the product holds it
+  (`answer`, with origin, unlisted flag and marketplace source, so nothing is dropped) and a `measured` flag;
+  drops every value-sync trigger; adds `bb_write_answers` and `bb_write_inherited`; moves every product; and
+  refuses to finish, changing nothing, if any answer would be lost. `Product.facts` and `measurements` are
+  **not dropped**: renamed `factsFrozen`/`measurementsFrozen` in the schema, a frozen pre-switch copy read only
+  by the compare gate until retire-old-paths drops them behind the backup.
+- **One writer:** `product-value.repository` writes in each write's own transaction: product create, update,
+  bulk import, marketplace fill, answer set and undo, the fact correction, the seed; brand, party, default-brand
+  and shop-default writes refresh the products they fill. **Every reader** reads the value rows: catalog's
+  product reads attach them, the storefront joins them into its one query (query budgets unchanged), readiness,
+  channels' family read and the register's values-in-use read them.
+- **Found on the way:** two JSON-path filters on the old column (the fact correction, values in use) the type
+  checker could not see, moved to the value rows; the storefront cache declares `ProductValue`, and (review B3
+  below) a call to the value functions now counts as a write of it, so an edited answer clears cached pages.
+- **Fresh-context review, and its fixes** (all logged with the mutation that proves each test):
+  - **B1** a product inheriting its brand's country could not save its own: both rows took one id, so the save
+    failed on the primary key. Ids are now per kind (`:f:`, `:m:`, `:w`, `:i:`), `bb_write_answers` clears all
+    the product's rows before writing, and an inherited row never goes over the product's own (A4). Test: own
+    country saved, then kept through a brand edit (mutation: the old partial delete failed it).
+  - **B2** the decimal check was double-escaped, so `2.5` stayed text and `40.5 in` lost its canonical number.
+    Tests: decimal fact and measure (mutation: the double escape failed both).
+  - **B3** the cache saw only `INSERT`/`UPDATE`/`DELETE` naming a table, never `SELECT bb_write_answers(…)`, so
+    an answer-only edit did not clear cached pages. `table-writes` now maps the value functions to
+    `ProductValue` (unit test; mutation: dropping the map failed it).
+  - **S1** a re-type (marketplace category, a category's type or place, a type's measure units) left typed rows
+    in the old unit. New `bb_rederive_answers` rebuilds them from the verbatim answers, called in each of those
+    writes' transactions (tests; mutation of each of the three call sites and of the function failed them).
+  - **S2** a brand edited from default to not left its brandless products filled; update passes what it was.
+    **S3** the fact correction locks its products before reading them. **S4** decisions Q16 and HANDOFF
+    corrected (the old columns are frozen, not written). **Low:** hero products read their answers;
+    `fillEmpty` is one transaction; `forListing` typed without a cast; the guard regexes widened (mutation: a
+    planted `p."facts" ->>` failed it); `setAnswers` keeps the product's weight when none is given.
+  - The migration was regenerated; local ci and dev had its function section and backfill re-run (idempotent,
+    no-loss check passed) and its checksum updated.
+- Guards: `tests/unit/answers-live-in-values.test.ts` fails on any code touching the frozen columns, any raw
+  query or JSON-path filter on them, or any writer of ProductValue but the repository (mutation: re-adding the
+  old values-in-use query failed it). `scripts/attributes-compare.ts` now checks the frozen copy against the
+  value rows: local dev PASS. Tests moved to `setAnswers`/`answersOf` helpers. Ran: unit, integration (local ci,
+  one file at a time), `tsc`, the stop hook.
+
+## 2026-11-08 — listing-model / dynamic-form unit 3a: completeness on the product page
+
+- The channel strip ("Amazon 17 of 19", "Ready for …", what is still needed) now shows on the product view
+  page as well as the edit page (R4). The products list's channel pills already count, per channel, the
+  products it would refuse, which since unit 1 includes every field the channel's own catalogue requires:
+  one count per pill, not a second (Q2 resolved).
+- No new tests: the strip and its read are covered by unit 2's; the page only places it. Ran: `tsc`, unit.
+
+## 2026-11-08 — listing-model / dynamic-form unit 4: the brand page holds its parties and its Amazon choice [CONTRACT] [MIGRATION]
+
+- **Brand form** (R7, A5, Q13): "Who makes, packs and imports it (marketplaces ask)" with three optional
+  parties (name, address, pincode) and "List as Generic"; only the name is required. Saved with the brand in
+  one transaction through catalog's brand repository; a blank party is removed; the brand's maker and packer
+  lines follow so every reader agrees until retire-old-paths. The card shows maker, packer, importer and
+  "Not registered on Amazon: lists as Generic". Party roles are one closed set in `server/shared/brand-party.ts`.
+- **Shop-wide Generic switch retired** (Q14, superseding attributes Q16; migration
+  `20261108170000_brand_owns_amazon_choice` drops its trigger): its section, route, schema, client method and
+  repository command removed. Each brand keeps its choice; the listing screen and a create read the brand's;
+  a product with no brand takes the shop's default brand's, and only with none the shop's old column
+  (`server/channels/generic-brand.ts`). No listing changes on deploy.
+- **Fresh-context review fixes:** an Amazon create now sends maker, packer and importer each from its own
+  party with address and pincode, importer only from the importer party, so a domestic brand's packer is
+  never declared as its importer (`complianceParties`); a party with an address but no name is kept; the
+  Amazon choice is the two-way "Registered on Amazon / List as Generic"; "Couldn't save. Your changes are
+  kept."; the brand form's Partial state is shown through completeness (Q15); TRD D7 updated.
+- [CONTRACT] `brandSchema`/`updateBrandSchema` take `parties` and `amazonRegistered` instead of the two lines;
+  `BrandDto` gains both; the amazon-generic route is gone (CONTRACTS.md).
+- Tests: brand schema (parties blank to null, six-digit pincode), the brand page saving parties and the Amazon
+  choice with products following, a PATCH without parties keeping them and a blanked party removed, a
+  brandless product following the default brand, compliance lines per party (`compliance-parties.test.ts`),
+  service and integration fixtures moved to the new input.
+  Ran: unit, integration (local ci), `tsc`, `lint:boundary`, `docs:check`.
+
+## 2026-11-08 — listing-model / dynamic-form unit 2: completeness per channel, stored [CONTRACT] [MIGRATION]
+
+- **`ProductChannelState`** (migration `20261108160000_product_channel_state`; one new table): per product,
+  per channel the shop sells on, how many required fields it answers and what is missing (D3, R4). One
+  writer, `product-channel-state.repository.ts`; computed by `completeness.service.ts` with the same build a
+  send makes (Q9), in batches of 500, by the new `listing.refresh-completeness` job (`listing.jobs.ts`,
+  registered in the worker).
+- **Recomputed** after a product save, archive or restore, a bulk sheet, the fix page's answer or undo, a
+  channel turned on or off, a field map saved and a channel newly asking more; a daily sweep re-asks for
+  every shop selling anywhere (Q11). A failed ask is logged, never fails the save.
+- **Shown:** the product edit page's strip ("Amazon 17 of 19", "Ready for …", what is still needed) and a Home
+  line per channel, "38 products need up to 4 details for Flipkart", opening the products list filtered by
+  the channel (R5, Q10). [CONTRACT] `HomeAttentionDto.channelNeeds` (server read; CONTRACTS.md).
+- Tests: `tests/integration/completeness.test.ts` (stored, adapter fields not counted, moves when
+  answered — A2; archived and unread types hold no row; a channel no longer sold on loses its row); the Home line in `home-attention.test.ts`.
+- **Fresh-context review fixes:** completeness takes the shop's HSN and honours "not sold here" as a send
+  does; a channel type never read, and an archived product, hold no row (never a "Ready" not earned); the
+  row carries its shop, so listing never filters on catalog's table; one refresh per shop at a time (an
+  advisory lock). Still to build: counts on the products list's channel filter and the strip on the
+  product page (Q2 back to decided).
+- `module-boundaries`: listing's public surface gains `completeness.queue`, because a product save (catalog)
+  and a channel's new rules (channels) ask completeness to be recomputed.
+  Ran: unit, integration (local ci), `tsc`, `lint:boundary`, `docs:check`.
+
+## 2026-11-08 — listing-model / dynamic-form unit 1: the form asks every question, grouped by what channels need [MIGRATION]
+
+- **New questions answerable** (Q5, migration `20261108150000_dynamic_form_questions`): style, lining
+  material, pockets, strap type, fabric type, size system and type, form, units, stone clarity and cut,
+  metal weight, generic name and model name declared as facts with their attribute keys; their lists
+  (style and strap type from Amazon's own, sizes); each type's questions extended, capacity on bags and
+  pouches, pack quantity and care where parent Q26 asks; metal weight asked in grams; the list-sync trigger
+  knows the new facts. **Behaviour change:** every product form asks these.
+- **Grouped by channel** (R2, A1, Q6–Q8): "Required now" holds the store's required measurements and what
+  a channel the shop sells on requires, badged with it, measurements included (capacity on a bag); the rest
+  sits under "Also helps on {channels}", collapsed, opened when it holds an error; badges follow the kind
+  shown (a tote's channel types, not a backpack's). Computed on the server for every
+  type (`server/listing/form-channels.ts`, pure; `form-channels.service.ts`), handed to the form through
+  the types DAL; nothing blocks a save.
+- Not a contract change: `PLANNED_ATTRIBUTES` (`field-map.types.ts`) is emptied because its keys are now
+  facts; the admin field-map route accepts the same keys as before (CONTRACTS.md notes it).
+- **Fresh-context review fixes:** measures grouped and badged; the no-channel state as signed off; the new
+  questions' type rows follow each type's own order; badges per kind; channel use loaded in parallel with
+  the page; rule keys typed; the collapsed group's tap target 40px.
+- Tests: `tests/unit/form-channels.test.ts` (A1 required and badged, not-sold-on and optional fields help,
+  connecting makes them required, the two groups with and without channels, another type's map ignored);
+  type counts updated in `product-type-table`. Ran: unit, integration
+  (local ci), `tsc`, `lint:boundary`, `docs:check`.
+
+## 2026-11-08 — listing-model: the proof run on a production copy, and its fixes [MIGRATION]
+
+- **Run once, with the owner's permission** (2026-11-08): production copied into a local database,
+  the branch's migrations applied to the copy, both gates run, the copy dropped. Production was only read.
+- **Migrations:** all seven new migrations applied cleanly to real data.
+- **attributes compare (A3, parent Q33): PASS** — 113 products, 413 answers, 0 mismatches.
+- **field-maps proof (R7, A5):**
+  - *Amazon* (one product per mapped type with a connected shop: HANDBAG). The first run found three map
+    faults, all fixed: production had no Amazon types read yet, so the listing went out unshaped (now
+    read on demand before the first create, Q21); "false" for water resistance (yes/no now paired, and
+    Amazon receives its code for a display name, Q22, migration `20261108140000_amazon_yes_no_pairs`); the
+    local schema check refused fields Amazon itself did not ask for (now it blocks only values Amazon's
+    schema refuses, Q20). Second run: Amazon's own check-only answer asks only for answers the product
+    has not given — style, lining, pockets, strap type, capacity (the questions dynamic-form will ask) and
+    key features. No map is wrong.
+  - *Meta:* 86 items, 0 problems (items with no category left out). *Google:* 111 items; 70 apparel and
+    bag items lack gender and age group because only 17 of 87 such products answer Audience. Product
+    data, not a map: dynamic-form's "Required now" asks it; nothing is guessed.
+- Tests: Amazon code for a display name, a measure part shaped without a schema, yes/no words; the
+  whole-body schema test now checks only value problems. Ran: unit, integration (local ci), `tsc`.
+
+## 2026-11-08 — listing-model / attributes unit 3: the move's compare gate
+
+- `scripts/attributes-compare.ts` (D9, A3, parent Q33): every product's answers before the move against its
+  value rows after it, by count and value, per type, in batches of 1,000; read-only; exits non-zero on any
+  mismatch, which stops the release. The comparison is `server/listing/attribute-compare.ts` (pure).
+- First run, local dev: 44 products, 84 answers, 0 mismatches. **Production run:** the owner runs
+  `npx tsx --env-file=.env.prod scripts/attributes-compare.ts` after deploying to a copy, before release.
+- Tests: `tests/unit/attribute-compare.test.ts` (a clean move passes; a missing, changed or wrongly
+  converted answer is named; an answer kept as text passes).
+
+## 2026-11-08 — listing-model / attributes unit 2: brand parties, type follows category, new questions [MIGRATION]
+
+- **Brand parties** (migration `20261108130000_attributes_brand_parties`): `BrandParty` (maker, packer,
+  importer: name, address, pincode, D6); the value sync writes manufacturer, packer and importer from the
+  parties as one line each, else the brand's two lines (Q11), and a party edit re-derives the brand's
+  products. Parties are not copied from those lines, so today's brand page keeps reaching products. `Brand.amazonRegistered` set from the shop's Generic switch; a new
+  brand takes the shop's setting, the switch still sets every brand, and a create lists as Generic by the
+  brand (parent Q10, Q16).
+- **Type follows category** (D7, parent Q9, Q14): every save takes the category's type (its own or its
+  nearest ancestor's), a category's type or place moving re-types the products beneath it, answers kept.
+  **Behaviour change:** products whose type differed from their category's take the category's; this
+  supersedes categories' "never retype a typed product" (updated `category-type-adoption` and
+  `family-merge` tests accordingly).
+- **New questions** (parent Q26, D8, Q15): style, lining material, pockets, strap type, fabric type, size
+  system and type, form, units, stone clarity and cut, metal weight, generic name and model name, with
+  options from Amazon's own lists where they are closed; duplicates of today's facts not added, and those
+  facts attached where Q26 asks them (capacity on bags, pack quantity on every type, care on clothing).
+  `BbTypeAttribute.fromType` keeps migration-added questions when a type's facts change.
+- **Fresh-context review fixes:** brand edits reach products again (parties not copied); Q26's capacity,
+  pack quantity and care attached; a kind the new type lacks is cleared on a re-type; a family whose
+  members now share one type takes it (Q17); the admin's category audit counts the products moved before
+  the move (the old untyped-only adoption is removed); categories R7/D1b marked superseded.
+- Tests: `tests/integration/brand-parties.test.ts` (parties fill as one line, importer only from its party,
+  an edit on today's brand page still reaches products, a new brand and the shop switch for Generic, A4
+  new and reused questions with the old strap answer kept, A5 a category moving type with its family and
+  kind, a subcategory and a moved category reading their parent's type). Mutations: dropping the category
+  trigger failed A5; dropping the kind rule failed its test. Ran: unit,
+  integration (local ci), `tsc`, `lint:boundary`, `docs:check`.
+
+## 2026-11-08 — listing-model / attributes unit 1: the attribute dictionary and typed product values [MIGRATION]
+
+- **New tables** (migration `20261108120000_attributes`, nothing existing changed or dropped): `Attribute`
+  (the 28 facts and 10 measurements with their keys, weight, brand, country of origin, manufacturer,
+  packer, importer; Q3, Q5, Q6), `AttributeOption` (every list value per fact, shops' own included, Q10),
+  `BbTypeAttribute` (each type's questions, order, labels and required measurements, D2), `ProductValue`
+  (one typed answer per product per attribute with its source, a CHECK that one value column is set, D3)
+  and `ProductValueSet` (the read copy, its own table so Product keeps one writer, Q8).
+- **Kept in step by the database** until dynamic-form switches the writes (Q7): a trigger re-derives a
+  product's rows on any change to its facts, measurements, weight, brand, type or org; brand and shop
+  default edits re-derive the products they fill (Q9). Measures stored canonical with the shop's unit
+  kept (D4); an answer that does not fit its kind is kept as text (R7). The migration moves every product.
+- `product-value.repository.ts` reads (the read copy parsed, never thrown on). Not a contract change: the
+  new types are server-only (CONTRACTS.md). Generated by `scripts/attributes-migration.ts`.
+- Tests: `tests/integration/product-values.test.ts` (answers typed and present, R8 canonical measures in
+  cm and inches, A1 brand fills and follows a brand edit, A2 a default brand made later and the shop's
+  country, rows and read copy follow a change, list and type sync, D1 every stored kind handled); A3's
+  count-and-value comparison is unit 3. Mutations: dropping the brand trigger failed A1; dropping the
+  default-brand insert trigger failed A2. Ran: unit, integration
+  (local ci), `tsc`, `lint:boundary`, `docs:check`.
+
+## 2026-11-08 — listing-model / field-maps unit 3: the proof run's tooling
+
+- `scripts/field-maps-proof.ts` (R7, A5, Q5): one real product of every Amazon type a BB type publishes to,
+  through Amazon's check-only mode via the new `listingCreateService.checkOnly` (creates and stores nothing),
+  and every Google and Meta feed item against those channels' published rules
+  (`server/listing/shopfront-feed-check.ts`, the stand-in for validators neither offers outside a merchant
+  account). The owner runs it with production access; its result is recorded here when run.
+- **Found by its first local run:** Meta requires a category where Google infers one, and items with none
+  went out. The feed now leaves them out of Meta's file (shopfront-feeds D8: what a channel would reject is
+  left out). Tests: `tests/unit/shopfront-feed-check.test.ts`, a Meta case in `shopfront-feed.test.ts`.
+- **Proof result:** not yet run against production (needs the owner's `.env.prod`).
+
+## 2026-11-08 — listing-model / field-maps unit 2: default maps for all five channels, and the admin's screen [CONTRACT] [MIGRATION]
+
+- **Default maps** (migration `20261108110000_default_field_maps`, reference data, inserts and updates of its
+  own rows only), generated by `scripts/field-maps-migration.ts`: today's register carried over (each
+  mapped fact with its answers' words, each setup-request fill), then 700 maps researched from each
+  channel's own documentation, each with its source, date and reason (R2, Q3): Amazon department, gender
+  and age range from audience, model name and part number from the SKU, item type and item count as
+  defaults the product overrides, weight in grams, dimensions in centimetres, size in words, `outer` and
+  `material` both from Material, `inner`, style, pockets and strap type to the attributes subfeature's new
+  questions (strap type was mapped to Strap, the wrong question); Flipkart Type from the kind, sizes, bag
+  measures; Meesho from its templates, with its first category maps (combos stay this store only);
+  Google and Meta age group, size and weight. Fields nothing answers are marked for a developer (R1).
+- **Fresh-context review fixes** (decisions Q12–Q19 logged): a blank pair box no longer blocks a save;
+  the nearest size applies only to a measurement, inside the list and within half a step, never to a
+  count (Q15); a pair to a word the channel's list lacks is a gap, and the generator refuses to write one
+  (Q18); Meesho generic names match their category exactly; Meesho closest fits are marked nearest with a
+  note (Q19); carried answer words go only onto maps still reading their fact; a map to a question not yet
+  built fills nothing, counts as unmapped and shows as waiting (Q17); readable rule and field names; pairs
+  chosen from the channel's list. Mutations: removing the skip rule and the half-step bound each failed
+  their test.
+- **Builder:** the kind as a source; a number onto a list of numbers takes the nearest (Meesho sizes); a
+  measure onto a closed list is paired without a unit; a map for a field the type lacks is skipped once
+  the type was read; a label holding a dot ("No. of Compartments") is a field of its own.
+- **Admin screen** `/admin/channels/{channel}/{type}` (R6, ux.md): every field, required first, with its
+  source, reason, where it was checked, "Not mapped", "Needs a developer · requested", "New · added", and
+  answers with no match; search; a row opens its edit in place. The channel page lists its types with what
+  is not mapped. [CONTRACT] `PUT /api/admin/field-maps` with `fieldMapSaveSchema` (CONTRACTS.md).
+- Tests: `tests/integration/default-field-maps.test.ts` (A1 on Amazon's real HANDBAG schema; every map
+  names a rule, column, unit and question that exist, D2; no required Flipkart, Meesho, Google or Meta
+  field without a map), `listing-build.test.ts` (A4: an admin change is the next build), builder unit tests
+  for dots, nearest numbers and kinds. Ran: unit, integration (local ci), `tsc`, `lint:boundary`,
+  `docs:check`, `next build`.
+
+## 2026-11-08 — listing-model / field-maps unit 1: listings built from field maps [MIGRATION]
+
+- **New tables** `FieldMap` and `FieldValueMap` (migration `20261108100000_field_maps`; two new tables,
+  nothing dropped). One writer, `server/listing/field-map.repository.ts`. A map is keyed by the
+  channel's own names and a field path, with our type's own row over the one for every type (Q7, Q8).
+- **Builder** (`server/listing/listing-builder.ts`, pure): sources attribute, rule, core, shop, constant
+  (a default the product's answer overrides, R4) and developer; units converted (`units.ts`); answers
+  paired by the map's pair, then the channel's word of the same letters, else a `noMatch` gap (Q6, Q10);
+  required fields with no map, no answer or waiting on a developer are named. Rules in `field-rules.ts`
+  (department, age range, gender, age group from audience; size label; size display from measures).
+  `listing-build.service.ts` reads every input once per batch.
+- **Amazon create** now builds from the maps and shapes each leaf from the type's stored JSON Schema
+  (`amazon.shape.ts`, Q9); a new listing is checked against that schema with `ajv` first and refused with
+  the attribute's name, no call made (D6). `forwardAttributes`/`fillAttributes`/`mapped()` removed.
+- **Google and Meta feed** writes the built attributes as `g:` tags (channel-catalogue Q8).
+- **Setup requests:** Apply writes field maps beside the old register, so what it sets up still reaches a
+  create. **Readiness:** a field a map fills is no longer "missing" (one more statement, budget 7→8).
+- **Behaviour note:** until unit 2's default maps land, a create sends only Amazon's own core fields;
+  the branch ships as one release (parent Q31).
+- **Fresh-context review fixes:** the create body's own attributes are trimmed to the keys each item's
+  schema declares (Amazon's manufacturer contact takes `value` alone; without this every create with a
+  manufacturer was refused locally); a measure with no unit named goes in the first unit the channel lists
+  that ours converts to, else a gap; an uncompilable schema skips the local check; pairs are read only
+  as own keys; a setup request's Apply merges pairs instead of replacing them; what the maps could not fill
+  is kept on the listing as warnings (Q6); the rules' header says whose words they return. Mutations:
+  sending the body untrimmed failed the whole-body schema test; reading pairs as plain properties failed
+  the `constructor` test.
+- Not a contract change: the new `field-map.types.ts` shapes never cross the browser boundary (noted in CONTRACTS.md); the admin route comes in unit 2.
+- New package `ajv` 8.17.1 (DEPENDENCIES.md). `Product.measurements` added to catalog's listing read.
+- Tests: `tests/unit/listing-builder.test.ts` (A2, A3, pairing, gaps, overrides, Amazon shape checked
+  against the real HANDBAG schema, feed tags), `tests/integration/listing-build.test.ts` (Q7, A3, forty
+  products cost one), `setup-requests` now proves Apply through the builder. Mutations: returning the
+  answer unpaired made the no-match test fail; converting across unit families made the unit test fail.
+  Ran: unit, integration (local ci), `tsc`, `lint:boundary`, `docs:check`.
+
+## 2026-11-08 — listing-model: channel-catalogue A1 proven on Amazon's real HANDBAG schema
+
+- The owner ran `scripts/amazon-type-probe.ts HANDBAG --save` through the home brand; the schema is
+  `tests/fixtures/amazon/HANDBAG.schema.json` (157 attributes, 75 `allOf` rules).
+- **The schema's own `required` lists six attributes, all filled by the create.** Every field the shop
+  must answer sits in a rule whose `if` is "not a variation parent" (e.g. `allOf[7]`: department, item
+  weight, size info, part number, item type name, target gender). The reader before c11ad764 would have
+  named none of them; the evaluator names 19.
+- Against the 2026-11-06 refusal: every field it named is required of the shop. Readiness, with today's
+  maps, names all but `strap_type`, which is mapped, to the wrong question (detachable or not); a wrong
+  map is invisible to readiness and is field-maps' to fix. It also names `model_name`, `part_number` and
+  `item_type_name`, required by the schema for a standalone listing and sent by nothing today.
+- Tests: three cases in `tests/unit/channel-catalogue.test.ts` on the fixture. Mutation: treating rule
+  fields as conditional again (the old reader) turned five red.
+
+## 2026-11-08 — listing-model: channel-catalogue, fresh-context review of the fix unit
+
+`/bb-review` of `c11ad764` found no invariant breach and three ways "required" could still be decided wrong:
+- `properties: { x: false }` (x must be absent) was read as always true; it now holds only if x is absent.
+- An `if` nested inside a `then`/`else`, and `required` beside an `if`, were dropped; one `apply` now walks
+  every keyword of every rule.
+- Attributes a create sends only when answered (brand, bullets, description, main image, country of
+  origin) were counted as always present; `PRESENT` is now only what `amazonCreateBody` always sends.
+- `amazonTypeDefinition`'s filter is now the pure `amazonRequiredAttributes`, tested, since setup-request
+  tickets read it. The TRD's status says A1 waits for the probe; the generator's README says never to
+  overwrite an applied migration with its output.
+- Tests: three new unit cases; mutation: undoing each fix turned the suite red (1, 7 and 2 failures).
+
+## 2026-11-08 — listing-model: channel-catalogue review fixes, and Google and Meta sent for visibility [CONTRACT] [MIGRATION]
+
+Fixes from `/bb-review` of channel-catalogue units 1–2 (`a3f17ee`), which corrects that entry's claims:
+its integration test proved A1 on five stub fields, not HANDBAG's 13, and its suite was not green when run whole.
+- **Amazon's rules are judged, not lumped (Q3).** The reader stored every `allOf[].then.required` as
+  conditional, so a rule that applies to every new page (Amazon's "no `merchant_suggested_asin`") never
+  reached readiness. New `server/channels/providers/amazon/amazon.requirements.ts` evaluates each rule's
+  `if` in three values for one standalone, shop-shipped new listing on amazon.in: holds → required;
+  applies only to another listing (a parent, a theme), an either/or, or anything it cannot judge →
+  conditional. `amazonTypeDefinition` (requests) uses the same rule, so the file has one meaning of required.
+- **Writes fit the transaction:** a type's fields are written in one `INSERT … ON CONFLICT` statement
+  instead of one upsert each; ids follow the template migration's (`chf_` + md5), so a field keeps one id.
+- **A4:** each `missingField` carries `asOf`, the date its type was read; the panel says "(their list of
+  {date})". The unused `channelCatalogueRepository.readAt` and the duplicate `CatalogueChange` are gone.
+- **Daily read logged:** `maintain` logs each marketplace's catalogue read (read, failed, changed) or why
+  it read nothing (home brand unset or not connected).
+- **Test isolation:** the catalogue suite enabled Amazon on the shared test shop and never restored it,
+  failing seven readiness tests whenever it ran first; it now restores what it found.
+- **Google and Meta (Q8, owner):** gender, age group and size are sent for visibility though India does
+  not enforce them, and asked only through answers the shop already gives. Migration
+  `20261108090000_channel_visibility_attributes`: audience → `gender` maps and value pairs on both
+  channels' six apparel nodes; age group and clothing size marked adapter-derived; Meta colour required
+  on apparel. The generator now emits the same state (88 rows compared). Before this, the 2026-11-07
+  catalogue asked gender and age group as new questions on every apparel product (18 false gaps measured).
+- **`scripts/amazon-type-probe.ts`:** prints what an Amazon type requires of the Q3 listing, through the
+  home brand; `--save` keeps the schema as a test fixture. To be run where the production connection is.
+- [CONTRACT] `ListingProblem` `missingField` gains `asOf`.
+- Tests: `tests/unit/channel-catalogue.test.ts` (rule evaluation: new page, parent, else branch,
+  either/or, value test, unknown keyword); `tests/integration/channel-catalogue.test.ts` (A3 lists per
+  channel, A4 date, isolation). Mutation: inverting `not`, and treating "cannot tell" as required, each
+  turned the unit suite red. Ran: `tsc`, unit, both integration suites in sequence (17 passed).
+- Still open: A1 against Amazon's real HANDBAG schema needs the probe run once with production access.
+
+## 2026-11-07 — listing-model: each channel's own catalogue, and readiness reads it [CONTRACT] [MIGRATION]
+
+- **channel-catalogue (units 1, 2; listing-model Q22, channel-catalogue Q1–Q7).** New `ChannelType`,
+  `ChannelField` and `ChannelTypeChange` (migration `20261107120000_channel_catalogue`; three new tables,
+  nothing dropped). One writer, `server/listing/channel-catalogue.repository.ts`; listing owns the
+  catalogue so readiness can read it without importing channels.
+- **Amazon is read daily:** channels' `channelCatalogueReader.refresh` runs from `maintain` for every
+  marketplace, through the home brand, one definitions call per type a BB type publishes to. Required
+  comes from the schema's `required` and its `allOf[].then.required` rules; plumbing a create already
+  sends is marked adapter-filled. A re-read that adds a required field records it.
+- **Flipkart, Meesho, Google and Meta** load by data migration `20261107130000_channel_catalogue_templates`
+  (inserts only), generated by `scripts/channel-catalogue-migration.mjs` from the extracted templates and
+  Google's and Meta's product specs read 2026-11-07: 53 types, 1,961 fields.
+- **Readiness** gains `missingField`: a required, non-adapter field of the product's channel type that no
+  attribute map or fill covers reads Incomplete with the field's name (two more statements per batch,
+  budget raised 5→7). **Home** says "{channel} now asks {n} more details for {type}" for 14 days.
+- [CONTRACT] `NotReadyReason` gains `missingField`; `HomeAttentionDto` gains `channelAsks`.
+- Tests: `tests/unit/channel-catalogue.test.ts`, `tests/integration/channel-catalogue.test.ts` (A1 HANDBAG's
+  13 fields, A2 adapter fields absent, a vanished field gone, a re-read records a change), Home line.
+  Mutation: dropping the "filled" check in readiness made the unit test fail. Ran: unit, integration
+  (local ci), `tsc`, `lint:boundary`, `docs:check`.
+
 ## 2026-11-07 — Fix: a picker inside a dialog took no clicks (brand country of origin)
 
 - **Reported by the owner:** country of origin could not be chosen on a brand. The brand form is a

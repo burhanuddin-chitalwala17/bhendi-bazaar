@@ -215,6 +215,8 @@ enum EnhancementState {
   FAILED
 }
 
+/// Carries an attributes trigger (attributes Q14): a type or parent change re-types the products beneath it
+/// and the families whose members now share one type.
 model Category {
   id             String         @id @default(cuid())
   slug           String         @unique
@@ -267,6 +269,8 @@ model ProductPriceHistory {
   @@index([productId, recordedAt])
 }
 
+/// A BEFORE trigger sets `productType` from its category on every save, clearing a kind the type lacks
+/// (attributes Q14). Its answers live in ProductValue (dynamic-form Q16).
 model Product {
   id          String @id @default(cuid())
   slug        String @unique
@@ -297,9 +301,9 @@ model Product {
   sku               String? // Stock Keeping Unit — unique within the org, not the platform
   lowStockThreshold Int     @default(10) // Alert when stock falls below this
 
-  /// The product type resolved from the category tree at save time and kept here
-  /// (listing-vocabulary/categories D1b). A column rather than a fact because it says how to
-  /// read `facts` and `measurements`, so a row is interpretable without the tree.
+  /// The product type resolved from the category tree and kept here (listing-vocabulary/categories D1b),
+  /// always its category's: set by a trigger on every save and moved when a category's type or place
+  /// changes (listing-model Q9, attributes Q14). A column because it says how to read the answers.
   productType    String?
   /// Which kind within that type — abaya, burqa, attar, bakhoor (categories D1). A column
   /// because the channel mapping resolves a platform node from the type and the kind together,
@@ -307,15 +311,6 @@ model Product {
   kind           String?
   /// Restrict: a type in use is retired, never deleted (product-types D8).
   productTypeRef ProductType? @relation(fields: [productType], references: [key], onDelete: Restrict)
-
-  /// The declared facts this product answers, each entry holding its value and the level that
-  /// supplied it, so origin costs no second column (listing-vocabulary trd D3). Only the
-  /// discriminators above earn columns: nothing filters on a colour or a fabric, and a column
-  /// added for a filter nobody has written is a second place for a value to live (categories D6a).
-  facts        Json?
-  /// Measurements in the unit the product type fixes, same shape as `facts`. Stored because a
-  /// measurement derives a size label and a label derives no measurement (ADR-0047 D4).
-  measurements Json?
 
   /// The family this product is a member of, when it has siblings that sell separately
   /// (listing-vocabulary/variants D2). Nullable because one abaya in one colour is one product
@@ -401,6 +396,9 @@ model Product {
   @@index([familyId])
   // The brand-level correction asks for one org's products of one brand.
   @@index([brandId])
+  productValues   ProductValue[]
+  productValueSet ProductValueSet?
+  channelStates   ProductChannelState[]
 }
 
 /// One item in a product's gallery — a photograph or an embedded video, in an order
@@ -865,6 +863,7 @@ enum ReturnsPreset {
 /// The private listing context that does not belong to a brand (org-profile spec R4): what a
 /// product inherits when neither it nor its family nor its brand says otherwise. Pre-fills,
 /// never validates. The tax rate is basis points, never a float.
+/// `amazonGeneric` now serves only a product with no brand and no default brand (dynamic-form Q14).
 model OrgListingDefaults {
   orgId String @id
   org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -895,6 +894,9 @@ model Brand {
   packerOrImporter String?
   countryOfOrigin  String?
   isDefault        Boolean @default(false)
+  /// Registered on Amazon; false lists its products as Generic (listing-model Q10, attributes D6).
+  amazonRegistered Boolean @default(true)
+  parties          BrandParty[]
 
   retiredAt DateTime?
   createdAt DateTime  @default(now())
@@ -2142,6 +2144,7 @@ model Bid {
 /// One list serves every product type that asks for it, rather than a list per type: Flipkart
 /// copies its colour list per node and they have drifted — thirty-five values of which only
 /// sixteen appear in every node (D5).
+/// Carries an attributes sync trigger (attributes Q12): a value added or changed reaches AttributeOption.
 model ListingValue {
   id String @id @default(cuid())
 
@@ -2233,6 +2236,7 @@ model ProductFamily {
 /// A seller inventing its own would fragment the mappings every channel adapter depends on. The
 /// permitted *answers* stay org-scopeable (`ListingValue.orgId`) because a shop knowing a colour
 /// the platform does not is harmless, where a shop knowing a different question set is not.
+/// Carries an attributes trigger (attributes Q12): its questions are rebuilt in BbTypeAttribute.
 model ProductType {
   id String @id @default(cuid())
 
@@ -2607,6 +2611,73 @@ model ChannelAttributeMap {
   @@index([channel, theirCategory])
 }
 
+/// A channel's own product type: what it accepts, read from the channel itself, never typed by hand
+/// (listing-model/channel-catalogue D1, Q11). Written only by `channel-catalogue.repository`.
+model ChannelType {
+  id      String  @id @default(cuid())
+  /// A `CHANNEL` key.
+  channel String
+  /// The channel's own name for it: Amazon `TOTE_BAG`, Flipkart `bag`, a Google category id.
+  key     String
+  label   String
+  /// The channel's JSON Schema for the type, where it publishes one (Amazon); validated against before a send.
+  schema        Json?
+  schemaVersion String?
+  /// Where it was read from: `amazon-definitions-api`, `flipkart-template`, `google-spec`…
+  source  String
+  readAt  DateTime
+  /// The channel stopped offering it; kept so history and maps survive.
+  goneAt  DateTime?
+
+  fields  ChannelField[]
+  changes ChannelTypeChange[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([channel, key])
+}
+
+/// A required field a channel added to a type we already held: what Home tells the shops selling it
+/// (listing-model Q22, channel-catalogue D6). Written only by `channel-catalogue.repository`.
+model ChannelTypeChange {
+  id            String      @id @default(cuid())
+  channelTypeId String
+  channelType   ChannelType @relation(fields: [channelTypeId], references: [id], onDelete: Cascade)
+  /// The fields' keys and labels as the channel words them.
+  added         Json
+  detectedAt    DateTime    @default(now())
+
+  @@index([detectedAt])
+}
+
+/// One field a channel type asks, as the channel defines it (channel-catalogue D1, Q4).
+model ChannelField {
+  id            String      @id @default(cuid())
+  channelTypeId String
+  channelType   ChannelType @relation(fields: [channelTypeId], references: [id], onDelete: Cascade)
+  /// The channel's own name: `strap_type`, `outer.material`, `Bag Capacity`, `g:color`.
+  key           String
+  label         String
+  /// One of FIELD_REQUIREMENT: required, conditional, optional.
+  requirement   String
+  /// One of FIELD_KIND: choice, text, number, measure, boolean.
+  kind          String
+  /// The values it accepts, as it words them; null when free.
+  allowedValues Json?
+  /// The units it accepts for a measure; null otherwise.
+  allowedUnits  Json?
+  /// Filled by the channel's adapter (identity, offer, compliance plumbing): never asked of the shop (Q5).
+  adapterFills  Boolean   @default(false)
+  readAt        DateTime
+  goneAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([channelTypeId, key])
+}
+
 /// An attribute a channel's type requires that no fact answers: filled from the product itself or
 /// with one fixed value for that type (setup-requests D6, Q32). Written only by `channel-map.repository`.
 model ChannelAttributeFill {
@@ -2791,4 +2862,177 @@ model StockCorrection {
   correctedAt  DateTime @default(now())
 
   @@index([connectionId, correctedAt])
+}
+
+/// Where one channel field's value comes from (listing-model/field-maps D1, Q7). Keyed by the channel's
+/// own names so a default ships before the channel is read; `bbType` blank means every type of ours
+/// that publishes there, and a type's own row wins.
+model FieldMap {
+  id            String          @id @default(cuid())
+  channel       String
+  channelType   String
+  /// The channel field, or a path into it (`outer.material`); the first segment is the field (Q8).
+  fieldPath     String
+  bbType        String          @default("")
+  /// attribute / rule / core / shop / constant / developer (FIELD_SOURCE).
+  source        String
+  attributeKey  String?
+  ruleKey       String?
+  coreKey       String?
+  shopKey       String?
+  constant      String?
+  /// The channel's unit word the value is converted to (`kilograms`).
+  unitTarget    String?
+  checkedSource String
+  checkedOn     DateTime
+  reason        String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  values        FieldValueMap[]
+
+  @@unique([channel, channelType, fieldPath, bbType])
+}
+
+/// One of our answers in a channel's word, for one map (field-maps D1, Q10).
+model FieldValueMap {
+  id           String   @id @default(cuid())
+  fieldMapId   String
+  fieldMap     FieldMap @relation(fields: [fieldMapId], references: [id], onDelete: Cascade)
+  optionKey    String
+  channelValue String
+  createdAt    DateTime @default(now())
+
+  @@unique([fieldMapId, optionKey])
+}
+
+/// One question a product can answer (listing-model/attributes D1, R1). Rows come only from migrations.
+model Attribute {
+  key        String    @id
+  label      String
+  /// choice / text / number / boolean / measure / reference (ATTRIBUTE_KIND).
+  kind       String
+  /// weight / length / volume, for a measure: the family its canonical unit belongs to (D4).
+  unitFamily String?
+  multi      Boolean   @default(false)
+  /// product / brand / shop (ATTRIBUTE_SCOPE): who fills it by default (Q6).
+  scope      String    @default("product")
+  retiredAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  options AttributeOption[]
+}
+
+/// One answer an attribute's list allows (attributes D1, Q10): a platform answer, or a shop's own.
+model AttributeOption {
+  id           String    @id @default(cuid())
+  attributeKey String
+  attribute    Attribute @relation(fields: [attributeKey], references: [key], onDelete: Cascade)
+  key          String
+  label        String
+  order        Int       @default(0)
+  orgId        String?
+  productTypes String[]  @default([])
+  retiredAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@unique([attributeKey, key, orgId])
+  @@index([attributeKey])
+}
+
+/// Which attributes one of our types asks, in what order and under which label (attributes D2).
+model BbTypeAttribute {
+  id             String  @id @default(cuid())
+  productTypeKey String
+  attributeKey   String
+  group          String?
+  order          Int     @default(0)
+  labelOverride  String?
+  requiredForBb  Boolean @default(false)
+  /// Derived from the type's own facts and measures by its trigger (Q12); false: added by migration (D8).
+  fromType       Boolean @default(true)
+
+  @@unique([productTypeKey, attributeKey])
+}
+
+/// A product's answer to one attribute, typed, with where it came from (attributes D3, R2). Kept in step
+/// by a trigger until dynamic-form switches the writes (Q7); one value column set, enforced by a CHECK.
+model ProductValue {
+  id           String   @id @default(cuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attributeKey String
+  optionKey    String?
+  text         String?
+  number       Decimal?
+  /// For a measure: the unit the shop typed; `number` is canonical (grams, millimetres, millilitres, D4).
+  unit         String?
+  bool         Boolean?
+  refId        String?
+  /// product / family / brand / shop / marketplace (VALUE_SOURCE).
+  source       String
+  sourceId     String?
+  /// The answer exactly as the product holds it (`{ value, origin, unlisted?, source? }`): what every reader
+  /// reads, so the switch from Product.facts loses nothing (dynamic-form Q16); the typed columns derive from it.
+  answer       Json?
+  /// A measurement (Product.measurements' half) rather than a fact; one key may in principle be both.
+  measured     Boolean  @default(false)
+  updatedAt    DateTime @updatedAt
+
+  @@unique([productId, attributeKey, measured])
+  @@index([attributeKey, optionKey])
+}
+
+/// A product's values as one read (attributes Q8): `{ key: { v, unit?, src } }`, written with the rows.
+model ProductValueSet {
+  productId String   @id
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values    Json
+  updatedAt DateTime @updatedAt
+}
+
+/// Who makes, packs or imports a brand's goods (listing-model/attributes D6, R4): what the brand fills into
+/// its products' manufacturer, packer and importer. Every part optional but the role (parent Q29).
+model BrandParty {
+  id        String   @id @default(cuid())
+  brandId   String
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  /// maker / packer / importer (BRAND_PARTY_ROLE).
+  role      String
+  name      String?
+  address   String?
+  pincode   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([brandId, role])
+}
+
+/// How complete one product is for one channel the shop sells on (listing-model/dynamic-form D3, R4):
+/// stored by the refresh job, never computed on a page view. One writer.
+model ProductChannelState {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// The product's shop, kept here so listing counts without reading catalog's table (review).
+  orgId       String
+  channel     String
+  /// Fields the channel requires that the shop answers (adapter fields excluded).
+  required    Int
+  missing     Int
+  /// The channel's labels for what is missing, in its own words.
+  missingKeys Json
+  computedAt  DateTime @default(now())
+
+  @@unique([productId, channel])
+  @@index([orgId, channel])
+}
+
+/// A product's facts and measurements as they stood before answers moved to ProductValue (listing-model
+/// retire-old-paths R3, dynamic-form Q16), kept so dropping the columns loses nothing. Read by no code; written
+/// once by the migration that dropped them.
+model ProductAnswersArchive {
+  productId    String   @id
+  facts        Json?
+  measurements Json?
+  archivedAt   DateTime @default(now())
 }

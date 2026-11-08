@@ -41,7 +41,8 @@ export { NotFoundError };
  * The tables a product row is read from; held to them by tests/integration/read-cache-tables.test.ts.
  * Rows are shared across requests (ADR-0065); prices are not: every row is priced per request.
  */
-export const PRODUCT_ROW_TABLES = ["Product", "Category", "Org", "ProductStock", "OrgAddress", "Address", "ProductMedia", "MediaAsset"] as const;
+// ProductValue since the switch: a product's answers live there, so an answer saved clears the rows (dynamic-form Q16).
+export const PRODUCT_ROW_TABLES = ["Product", "Category", "Org", "ProductStock", "OrgAddress", "Address", "ProductMedia", "MediaAsset", "ProductValue"] as const;
 
 const catalogueRead = <T>(key: string, args: readonly unknown[], read: () => Promise<T>): Promise<T> =>
   cachedRead(key, args, { tables: PRODUCT_ROW_TABLES, seconds: CACHED_READ_EXPIRY.catalogue }, read);
@@ -358,6 +359,7 @@ export const productsDAL = {
       productType: row.productType,
       kind: row.kind,
       brandName: row.brand?.name ?? null,
+      listing: { sku: row.sku, weightKg: row.weight, barcode: row.barcode, facts: row.facts, measurements: row.measurements },
     }));
   },
 };
@@ -367,4 +369,6 @@ export interface ChannelFeedProduct {
   productType: string | null;
   kind: string | null;
   brandName: string | null;
+  /** What the field maps build the channel's attributes from (listing-model/field-maps R5). */
+  listing: { sku: string | null; weightKg: number | null; barcode: string | null; facts: unknown; measurements: unknown };
 }

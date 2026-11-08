@@ -9,6 +9,8 @@ import type { ChannelAttentionDTO } from "@server/channels/channel-connection.ty
 import { channelStockService } from "@server/channels/channel-stock.service";
 import type { StockAttentionDTO } from "@server/channels/channel-stock.types";
 import { listingProblemsService } from "@server/channels/listing-problems.service";
+import { channelCatalogueService, type CatalogueAttentionDTO } from "@server/listing/channel-catalogue.service";
+import { completenessService } from "@server/listing/completeness.service";
 import type { ListingProblemsAttentionDTO } from "@server/channels/platform-listing.types";
 import { enhancementService } from "@server/content/enhancement.service";
 import { productTeamService } from "@server/catalog/product-team.service";
@@ -35,6 +37,10 @@ export interface HomeAttentionDto {
   stock: HomeRead<StockAttentionDTO | null>;
   /** Linked listings a marketplace says need a fix, from the daily look (marketplace-publish Q23). */
   listingProblems: HomeRead<ListingProblemsAttentionDTO | null>;
+  /** A channel now asks more of a type this shop sells (listing-model Q22). */
+  channelAsks: HomeRead<CatalogueAttentionDTO | null>;
+  /** Per channel the shop sells on, how many products miss details and the most any misses (dynamic-form R5). */
+  channelNeeds: HomeRead<Array<{ channel: string; products: number; details: number }>>;
   photos: HomeRead<number>;
   /** Products the team changed, until the shop next saves each (product-form Q23). */
   teamEdits: HomeRead<{ count: number; productId: string | null }>;
@@ -68,7 +74,7 @@ async function widgetData(key: string, ctx: WidgetContext): Promise<WidgetData> 
 export const homeDAL = {
   async forOrg(orgId: string, now: Date = new Date()): Promise<HomeData> {
     const ctx: WidgetContext = { audience: "org", orgId };
-    const [shop, setup, toPackRead, lowStock, channel, stock, listingProblems, photos, teamEdits, paidOrders] = await Promise.all([
+    const [shop, setup, toPackRead, lowStock, channel, stock, listingProblems, channelAsks, channelNeeds, photos, teamEdits, paidOrders] = await Promise.all([
       settle("shop", async () => shareShopFor(await shopDetailsService.get(orgId))),
       settle("setup", () => orgOnboardingService.status(orgId)),
       settle("to pack", () => toPack(orgId)),
@@ -76,6 +82,8 @@ export const homeDAL = {
       settle("channel", async () => (await channelConnectionService.overview(orgId)).attention[0] ?? null),
       settle("stock", () => channelStockService.attention(orgId)),
       settle("listing problems", () => listingProblemsService.attention(orgId)),
+      settle("channel asks", () => channelCatalogueService.attention(orgId, now)),
+      settle("channel needs", () => completenessService.needsFor(orgId)),
       settle("photos", () => enhancementService.countAwaitingDecision(orgId)),
       settle("team edits", () => productTeamService.teamEditedSummary(orgId)),
       settle("paid orders", () => widgetData(WIDGET.PAID_ORDERS, ctx)),
@@ -83,7 +91,7 @@ export const homeDAL = {
     return {
       shop,
       setup,
-      attention: { toPack: toPackRead, lowStock, channel, stock, listingProblems, photos, teamEdits },
+      attention: { toPack: toPackRead, lowStock, channel, stock, listingProblems, channelAsks, channelNeeds, photos, teamEdits },
       hasPaidOrder: paidOrders.ok ? { ok: true, value: paidOrders.value.value > 0 } : paidOrders,
       readAt: now.toISOString(),
     };

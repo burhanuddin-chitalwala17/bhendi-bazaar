@@ -13,7 +13,7 @@ import { NextRequest } from "next/server";
 
 import { CHANNEL } from "@server/shared/channels";
 import { FACT, LIST, ORIGIN } from "@server/listing/listing-facts";
-import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
+import { isDisposableDb, ensureFixtures, setAnswers } from "../helpers/test-db";
 
 const session = vi.hoisted(() => ({ userId: "" }));
 vi.mock("next-auth", () => ({ getServerSession: async () => null }));
@@ -46,11 +46,11 @@ describe.skipIf(!isDisposableDb)("the channel register (local db)", () => {
         categoryId,
         productType: `${stamp}-type`,
         kind: "rida",
-        facts: { [FACT.COLOUR]: { value: colour, origin: ORIGIN.PRODUCT } },
         stockLocations: { create: { orgAddressId, quantity: 1 } },
       },
       select: { id: true },
     });
+    await setAnswers(row.id, { facts: { [FACT.COLOUR]: { value: colour, origin: ORIGIN.PRODUCT } } });
     productIds.push(row.id);
     return row.id;
   };

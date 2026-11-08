@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — current state
 
-- **Verified:** 2026-11-05
+- **Verified:** 2026-11-08
 - **Covers:** `src/app/*/`, `server/*/`, `prisma/schema.prisma`, `src/lib/rate-limit/**`
 
 Describes what **exists now**, at HLD level. Not a plan — planned work is in [BACKLOG.md](BACKLOG.md) and [specs/](specs/). Update *after* a structural change, never before ([../CLAUDE.md](../CLAUDE.md) Golden Rules). Domain-internal detail belongs in `<domain>/CLAUDE.md`, co-located with the code.
@@ -12,7 +12,7 @@ A single Next.js 16 application — one deployable, one database. Not a service 
 ```
 Browser ──▶ Next.js 16 (App Router, React 19)      ──▶ PostgreSQL (Prisma 7 + adapter-pg)
             ├── (main)  storefront    14 pages     ──▶ Cloudflare R2   (images and video — ADR-0028, ADR-0039)
-            ├── (admin) console       41 pages     ──▶ Razorpay         (payments)
+            ├── (admin) console       42 pages     ──▶ Razorpay         (payments)
             ├── (org)   seller portal 33 pages     ──▶ Shiprocket       (shipping rates)
             ├── (auth)  sign-in flow   4 pages     ──▶ Resend           (email)
             └── api/                 171 handlers  ──▶ YouTube          (embedded video; hosted video plays natively from R2)
@@ -58,9 +58,9 @@ No route handler reaches Prisma, and no service writes through a transaction cli
 
 ## Data
 
-PostgreSQL via Prisma 7 with the `pg` driver adapter. 123 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 73 models, 22 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the only remaining `Float` columns are weights, which are not money — `Product.rating` was the other one and is gone, because a rating is now computed from the reviews rather than stored. The Prisma client is a dev-mode global singleton in `server/shared/prisma.ts`; the `pg` Pool is constructed per module evaluation.
+PostgreSQL via Prisma 7 with the `pg` driver adapter. 136 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 86 models, 22 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the only remaining `Float` columns are weights, which are not money — `Product.rating` was the other one and is gone, because a rating is now computed from the reviews rather than stored. The Prisma client is a dev-mode global singleton in `server/shared/prisma.ts`; the `pg` Pool is constructed per module evaluation.
 
-**Several constraints live in migration SQL rather than in the schema**, because Prisma's schema language cannot express them. On `ProductMedia`: a partial unique index and a row-level `CHECK`, which together make "exactly one cover per product, and it is a photograph" a database fact rather than a convention. They are re-stated in a doc comment on the model and asserted against the migration text in `tests/unit/product-media.test.ts` — a constraint whose only home is a migration file is otherwise invisible to anyone reading the schema ([product-video](specs/product-video/) D4/D13a).
+**Several constraints live in migration SQL rather than in the schema**, because Prisma's schema language cannot express them. On `ProductMedia`: a partial unique index and a row-level `CHECK`, which together make "exactly one cover per product, and it is a photograph" a database fact rather than a convention. They are re-stated in a doc comment on the model and asserted against the migration text in `tests/unit/product-media.test.ts` — a constraint whose only home is a migration file is otherwise invisible to anyone reading the schema ([product-video](specs/product-video/) D4/D13a). **Triggers also live there, for one phase:** until dynamic-form switches the writes, `ProductValue`, `ProductValueSet`, `AttributeOption` and `BbTypeAttribute` are kept in step with today's answers, lists and types by triggers on `Product`, `Brand`, `BrandParty`, `OrgListingDefaults`, `ListingValue` and `ProductType` (listing-model/attributes Q7, Q12), and a product's type follows its category's by triggers on `Product` and `Category` (Q14); each of those models says so in a doc comment, and the switch drops them in the same migration.
 
 On `BiddingEvent` and `Bid` the same device carries more weight, because there the constraint *is* the concurrency design: a partial unique index on `productId` where the status is open makes "one live bidding event per product" something two simultaneous requests cannot both satisfy, and `CHECK`s pin an ordered window, positive money, a complete sale record, and a bid attributable to either an account or a named guest. Verified against a real database in `tests/integration/bidding-concurrency.test.ts` rather than against mocks — what is being tested is what Postgres does under contention, which a stub would happily fake ([bidding](specs/bidding/) D4/D6).
 
@@ -74,7 +74,7 @@ The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defi
 
 ## Testing
 
-361 Vitest files (275 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 37 errors, 35 of them `no-explicit-any`. None of those is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
+375 Vitest files (283 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 37 errors, 35 of them `no-explicit-any`. None of those is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
 
 ## Intentionally absent
 

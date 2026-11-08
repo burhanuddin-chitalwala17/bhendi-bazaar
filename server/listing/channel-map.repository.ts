@@ -130,12 +130,12 @@ export const channelMapRepository = {
    */
   async valuesInUse(): Promise<ValueInUse[]> {
     return await prisma.$queryRaw<ValueInUse[]>`
-      SELECT f.key AS fact, f.value->>'value' AS value, count(*)::int AS products
-        FROM "Product" p, jsonb_each(p.facts) AS f(key, value)
+      SELECT v."attributeKey" AS fact, v.answer->>'value' AS value, count(*)::int AS products
+        FROM "ProductValue" v JOIN "Product" p ON p.id = v."productId"
        WHERE p."archivedAt" IS NULL
-         AND p.facts IS NOT NULL
-         AND jsonb_typeof(f.value) = 'object'
-         AND f.value->>'value' IS NOT NULL
+         AND NOT v.measured
+         AND jsonb_typeof(v.answer) = 'object'
+         AND v.answer->>'value' IS NOT NULL
        GROUP BY 1, 2
        ORDER BY count(*) DESC, 1, 2`;
   },
@@ -414,6 +414,12 @@ export const channelMapRepository = {
     return await prisma.channelAttributeFill.findMany({ where: { channel, theirCategory: { in: [...theirCategories] } }, select: FILL_SELECT });
   },
 
+  /** The fills of some (channel, their category) pairs, in one read (channel-catalogue D5). */
+  async fillsForMany(pairs: ReadonlyArray<{ channel: string; key: string }>): Promise<AttributeFillRow[]> {
+    if (pairs.length === 0) return [];
+    return await prisma.channelAttributeFill.findMany({ where: { OR: pairs.map((p) => ({ channel: p.channel, theirCategory: p.key })) }, select: FILL_SELECT });
+  },
+
   /** Every attribute a channel's type already answers, by a fact or a fill: what is set up (setup-requests D9). */
   async answeredAttributes(channel: Channel, theirCategories: readonly string[]): Promise<Array<{ theirCategory: string; theirAttribute: string; fact: string | null }>> {
     if (theirCategories.length === 0) return [];
@@ -437,6 +443,22 @@ export const channelMapRepository = {
   async typesPublishingTo(channel: Channel, theirCategory: string): Promise<string[]> {
     const rows = await prisma.channelCategoryMap.findMany({ where: { channel, theirCategory, publishes: true }, select: { productType: true }, distinct: ["productType"] });
     return rows.map((r) => r.productType);
+  },
+
+  /** The channel types one shop's products publish to, every channel (channel-catalogue D6): products joined to maps in one read. */
+  async publishingTypesFor(orgId: string): Promise<Array<{ channel: string; theirCategory: string }>> {
+    return await prisma.$queryRaw<Array<{ channel: string; theirCategory: string }>>`
+      SELECT DISTINCT m.channel, m."theirCategory"
+      FROM "Product" p
+      JOIN "ChannelCategoryMap" m ON m."productType" = p."productType" AND m.publishes AND NOT m."notSold" AND m."theirCategory" IS NOT NULL
+        AND (m.kind IS NULL OR m.kind = p.kind)
+      WHERE p."orgId" = ${orgId} AND p."archivedAt" IS NULL`;
+  },
+
+  /** Every channel type some BB type publishes to, on a channel: what the catalogue keeps fresh (channel-catalogue D2). */
+  async publishedTypes(channel: Channel): Promise<string[]> {
+    const rows = await prisma.channelCategoryMap.findMany({ where: { channel, publishes: true, notSold: false, theirCategory: { not: null } }, select: { theirCategory: true }, distinct: ["theirCategory"] });
+    return rows.flatMap((r) => (r.theirCategory ? [r.theirCategory] : []));
   },
 
   /** The publishing type of each of some types and kinds, for the category check (setup-requests D9). */

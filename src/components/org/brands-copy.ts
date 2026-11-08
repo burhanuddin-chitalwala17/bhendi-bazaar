@@ -1,3 +1,5 @@
+import type { BrandPartyRole } from "@server/catalog/brand.types";
+
 /** The shop's brands page: the list, the retire prompts and the brand form (ADR-0067). */
 export const BRANDS_COPY = {
   retired: "Brand retired",
@@ -12,7 +14,7 @@ export const BRANDS_COPY = {
   isDefault: "Default",
   madeBy: (maker: string) => `Made by ${maker}`,
   makerMissing: "Maker not given yet",
-  packedBy: (packer: string) => `Packed or imported by ${packer}`,
+  packedBy: (packer: string) => `Packed by ${packer}`,
   from: (country: string) => `From ${country}`,
   originMissing: "Origin not given yet",
   editLabel: (name: string) => `Edit ${name}`,
@@ -25,11 +27,19 @@ export const BRANDS_COPY = {
   formIntro: "Only the name is needed now. The rest is read off the pack when you have it.",
   name: "Brand name",
   namePlaceholder: "As printed on the pack",
-  maker: "Made by",
-  makerPlaceholder: "Manufacturer",
-  makerHint: "The maker named on the label",
-  packer: "Packed or imported by",
-  packerHint: "When it differs from the maker",
+  // listing-model/dynamic-form ux copy deck: the brand's parties (R7).
+  parties: "Who makes, packs and imports it (marketplaces ask)",
+  party: { maker: "Maker", packer: "Packer", importer: "Importer" } as Record<BrandPartyRole, string>,
+  onAmazon: "On Amazon",
+  partyName: (role: string) => `${role} name`,
+  address: "Address",
+  pincode: "Pincode",
+  amazonRegistered: "Registered on Amazon",
+  amazonGeneric: "List as Generic",
+  amazonHint: "Not registered on Amazon: its products list there as Generic, with no barcode asked.",
+  saveFailed: "Couldn't save. Your changes are kept.",
+  genericBadge: "Not registered on Amazon: lists as Generic",
+  importedBy: (importer: string) => `Imported by ${importer}`,
   country: "Country of origin",
   countryHint: "Where this brand's products are made, unless a product says otherwise",
   defaultBrand: "Default brand",

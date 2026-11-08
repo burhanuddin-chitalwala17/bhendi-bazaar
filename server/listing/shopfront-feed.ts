@@ -1,5 +1,6 @@
 import { CHANNEL } from "@server/shared/channels";
 import type { CategoryMapRow } from "./channel-map.repository";
+import type { BuiltField } from "./field-map.types";
 
 /**
  * A shopfront channel's product feed, as RSS 2.0 with the `g:` namespace — the format Google
@@ -38,6 +39,8 @@ export interface FeedCandidate {
   brand: string;
   /** The channel's category id, or null to let the channel infer one (D7). */
   category: string | null;
+  /** Colour, gender, age group, size, material… built from the field maps (listing-model/field-maps R5, channel-catalogue Q8). */
+  attributes: readonly BuiltField[];
 }
 
 export type CategoryRule = Pick<CategoryMapRow, "productType" | "kind" | "theirCategory" | "notSold">;
@@ -88,6 +91,11 @@ const escapeXml = (text: string) =>
 
 const tag = (name: string, value: string) => `<${name}>${escapeXml(value)}</${name}>`;
 
+/** Tags the feed writes itself; a map never writes them twice. */
+const FIXED_TAGS = new Set(["id", "title", "description", "link", "image_link", "additional_image_link", "availability", "price", "sale_price", "brand", "condition", "identifier_exists", "google_product_category"]);
+/** A tag name is the map's field, which must be a plain XML name. */
+const TAG_NAME = /^[a-z][a-z0-9_]*$/;
+
 function item(channel: ShopfrontChannel, c: FeedCandidate): string {
   const [image, ...more] = c.images;
   const words = AVAILABILITY[channel];
@@ -106,19 +114,22 @@ function item(channel: ShopfrontChannel, c: FeedCandidate): string {
     // We hold no GTINs or MPNs; saying so is what keeps the item from being flagged (D9).
     tag("g:identifier_exists", "no"),
     ...(c.category ? [tag("g:google_product_category", c.category)] : []),
+    ...c.attributes.filter((a) => TAG_NAME.test(a.path) && !FIXED_TAGS.has(a.path)).map((a) => tag(`g:${a.path}`, a.unit ? `${a.value} ${a.unit}` : a.value)),
   ];
   return `<item>\n${lines.map((line) => `  ${line}`).join("\n")}\n</item>`;
 }
 
 /** What a channel would reject is left out rather than sent (D8). */
-const sendable = (c: FeedCandidate) => c.images.length > 0 && c.description.trim().length > 0;
+// Meta requires a category where Google infers one (field-maps proof run, 2026-11-08).
+const sendable = (channel: ShopfrontChannel, c: FeedCandidate) =>
+  c.images.length > 0 && c.description.trim().length > 0 && (channel !== CHANNEL.META || c.category !== null);
 
 export function buildFeed(
   channel: ShopfrontChannel,
   header: { title: string; link: string },
   candidates: readonly FeedCandidate[],
 ): string {
-  const items = candidates.filter(sendable).map((c) => item(channel, c));
+  const items = candidates.filter((c) => sendable(channel, c)).map((c) => item(channel, c));
   return [
     `<?xml version="1.0" encoding="UTF-8"?>`,
     `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`,

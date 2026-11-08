@@ -2,6 +2,7 @@
 
 "use client";
 
+import type { BrandDto } from "@server/catalog/brand.types";
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
@@ -37,6 +38,10 @@ interface ProductAddContainerProps {
   productTypes?: ProductTypeRecord[];
   listingValues?: Record<string, Array<{ key: string; label: string; orgId: string | null }>>;
   families?: Array<{ id: string; name: string }>;
+  /** The shop's brands, for the Brand picker and what each fills (A4). */
+  brands?: BrandDto[];
+  /** The shop's own country of origin, for a product whose brand names none (A4). */
+  shopCountry?: string | null;
   orgs: OrgSummary[];
   locations: LocationOption[];
   /** The product this one is being copied from, already scoped to the org. */
@@ -58,6 +63,8 @@ export function ProductAddContainer({
   productTypes,
   listingValues,
   families,
+  brands,
+  shopCountry = null,
   orgs,
   locations,
   copySource,
@@ -104,6 +111,8 @@ export function ProductAddContainer({
         productTypes={productTypes}
         listingValues={listingValues}
         families={families}
+        brands={brands}
+        shopCountry={shopCountry}
         orgs={orgs}
         locations={locations}
         onSubmit={submit}

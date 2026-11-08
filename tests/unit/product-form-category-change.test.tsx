@@ -142,6 +142,12 @@ describe("what a category change loses (D5)", () => {
     expect(keepAsked(values, abaya)).toEqual({ facts: { colour: "black", material: "crepe" }, measurements: { length: 54 }, kind: "rida" });
   });
 
+  it("keeps a product's own country, maker, packer and importer whatever the type, since no type asks them (A4 review)", () => {
+    const values = { facts: { colour: "black", manufacturer: "Gulf Works", countryOfOrigin: "AE" }, measurements: {}, kind: null };
+    expect(keepAsked(values, null).facts).toEqual({ manufacturer: "Gulf Works", countryOfOrigin: "AE" });
+    expect(keepAsked(values, ring).facts).toEqual({ colour: "black", manufacturer: "Gulf Works", countryOfOrigin: "AE" });
+  });
+
   it("words the sheet exactly as ux.md's copy deck", () => {
     expect(CATEGORY_SHEET.title("Ring")).toBe("Change to Ring?");
     expect(CATEGORY_SHEET.body(["Fabric", "Length", "Sleeve"], "Ring")).toBe("Fabric, Length, Sleeve won't apply to a ring.");

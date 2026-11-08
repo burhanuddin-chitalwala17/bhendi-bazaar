@@ -1,6 +1,6 @@
 # DEPENDENCIES.md — dependency registry
 
-- **Verified:** 2026-10-31
+- **Verified:** 2026-11-08
 - **Covers:** `package.json`
 
 `package.json` says *what*. This file says *why*, *who uses it*, and *when it was last checked*.
@@ -19,6 +19,7 @@
 |---|---|---|---|---|
 | `pg-boss` | `^12.34.0` | The job queue, as tables in our own Postgres ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)). Reached only through `server/shared/jobs/`; its schema is applied by our migrations, never by the library. One-person project, which is one reason it sits behind a seam | `server/shared/jobs/`, `worker/` | 2026-09-26 |
 | `next` | `16.4.3` | Framework: App Router, RSC, route handlers. Pinned exactly, not caretted — a framework minor arriving on a lockfile refresh is not something to leave to chance. **≥16.4.1 is required**: earlier 16.x is open to GHSA-2464-fhr4-w9xw (unauthenticated RCE through Image Optimization); `tests/unit/deploy-safety.test.ts` holds the floor | Everything | 2026-10-31 |
+| `ajv` | `8.17.1` | JSON Schema validation: an Amazon listing is checked against the type's own stored schema before any call, so a refusal is named to the shop without a round trip ([listing-model/field-maps](specs/listing-model/field-maps/trd.md) D6). Draft 2019-09 build (`ajv/dist/2019`), `strict: false` so Amazon's own keywords are ignored as its documentation allows. Pinned exactly | `server/channels/providers/amazon/amazon.shape.ts` | 2026-11-08 |
 | `react` / `react-dom` | `19.2.1` | UI runtime | Everything | 2026-08-03 |
 | `@prisma/client` / `prisma` | `^7.10.1` | Type-safe DB access; migrations. **The two must be bumped together** — `npm audit fix` once moved the CLI alone and every query died with `Cannot find module './query_compiler_fast_bg.js'` | `server/<domain>/*.repository.ts` | 2026-09-21 |
 | `@prisma/adapter-pg` + `pg` | `^7.10.1` / `^8.16.3` | Driver adapter — Prisma 7 reaches Postgres through `pg`. **Version-locked to `prisma`.** It also decides the *shape* of a constraint error: 7.10 reports a P2002's constraint by name where 7.1 reported its columns, which is why `server/shared/constraint.ts` reads both and `tests/unit/constraint-shapes.test.ts` pins them | `server/shared/prisma.ts` | 2026-10-31 |

@@ -192,6 +192,7 @@ export const READINESS_PANEL = {
   nearest: "This is the nearest category they have, not their own word for it.",
   missingFact: (attribute: string) => `They ask for ${attribute} and it is not answered.`,
   missingOptionalFact: (attribute: string) => `They would show ${attribute} if it were answered.`,
+  missingField: (label: string, asOf: string) => `They require ${label} (their list of ${shortDate(asOf)}), and nothing here fills it yet.`,
   unmappedValue: (list: string, value: string) =>
     `They have no word for this ${list} yet — "${value}" needs one choosing, once, for every product that uses it.`,
 } as const;
@@ -204,4 +205,11 @@ export const NOT_SOLD_COPY = {
   saving: "Saving…",
   marked: "Decide where it goes",
   mark: "Not sold here",
+} as const;
+
+/** A product's completeness per channel (listing-model/dynamic-form ux copy deck). */
+export const COMPLETENESS_COPY = {
+  count: (channel: string, done: number, of: number) => `${channel} ${done} of ${of}`,
+  ready: (channels: string[]) => `Ready for ${channels.join(", ")}`,
+  missing: (channel: string, keys: string[]) => `${channel} still needs: ${keys.join(", ")}`,
 } as const;

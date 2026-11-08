@@ -7,6 +7,8 @@ import { listingValueRepository } from "@server/listing/listing-value.repository
 import { productTypeRepository } from "@server/listing/product-type.repository";
 import { resolveProductType } from "@server/listing/product-type";
 import type { ProductTypeRecord } from "@server/listing/product-type.types";
+import { formChannelsService, type FormProductType } from "@server/listing/form-channels.service";
+import { orgChannelService } from "@server/listing/org-channel.service";
 
 /**
  * What the product-types console reads, on the server
@@ -19,6 +21,12 @@ import type { ProductTypeRecord } from "@server/listing/product-type.types";
 class ProductTypesDAL {
   getProductTypes = cache(async (includeRetired = true): Promise<ProductTypeRecord[]> => {
     return productTypeRepository.list(includeRetired);
+  });
+
+  /** Every type with which of the shop's channels need each question, for the product form (dynamic-form D1). */
+  getFormTypes = cache(async (orgId: string): Promise<FormProductType[]> => {
+    const [types, channels] = await Promise.all([this.getProductTypes(), orgChannelService.list(orgId)]);
+    return formChannelsService.withChannelUse(types, channels.filter((c) => c.enabled).map((c) => c.channel));
   });
 
   getProductType = cache(async (key: string): Promise<ProductTypeRecord | null> => {

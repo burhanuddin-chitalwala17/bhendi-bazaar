@@ -1,4 +1,5 @@
 import { CARD_STATE } from "@server/channels/channel-connection.types";
+import { CHANNEL_LABELS, type Channel } from "@server/shared/channels";
 import { STOCK_ATTENTION } from "@server/channels/channel-stock.types";
 import { ATTENTION_CAP } from "@server/analytics/attention.types";
 import type { HomeAttentionDto } from "@/data-access-layer/org/home.dal";
@@ -48,6 +49,19 @@ export function attentionLines(orgId: string, a: HomeAttentionDto, now: Date): A
   else if (a.listingProblems.value) {
     const { channel, label, problems, suppressed } = a.listingProblems.value;
     lines.push({ key: "listingProblems", ok: true, text: PROBLEMS.home(label, problems, suppressed), href: `${ROUTES.org.channelListings(orgId, channel)}?fix=1` });
+  }
+
+  // A channel now requires more of a type this shop sells (listing-model Q22).
+  if (!a.channelAsks.ok) lines.push(failed("channelAsks"));
+  else if (a.channelAsks.value) {
+    const { channel, label, typeLabel, added } = a.channelAsks.value;
+    lines.push({ key: "channelAsks", ok: true, text: LINE_COPY.channelAsks(label, added, typeLabel), href: `${ROUTES.org.products(orgId)}?channel=${channel}` });
+  }
+
+  // What each channel the shop sells on still needs, from stored completeness (listing-model/dynamic-form R5).
+  if (!a.channelNeeds.ok) lines.push(failed("channelNeeds"));
+  else for (const need of a.channelNeeds.value) {
+    lines.push({ key: `channelNeeds:${need.channel}`, ok: true, text: LINE_COPY.channelNeeds(need.products, need.details, CHANNEL_LABELS[need.channel as Channel] ?? need.channel), href: `${ROUTES.org.products(orgId)}?channel=${need.channel}` });
   }
 
   // Sales about to stop: only what sold in the last 30 days (Q31).

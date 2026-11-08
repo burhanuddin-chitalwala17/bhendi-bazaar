@@ -15,6 +15,8 @@ import { productTeamDAL } from "@/data-access-layer/org/product-team.dal";
 import { reviewsDAL } from "@/data-access-layer/reviews.dal";
 import { ProductReviewsSection, ProductReviewsSkeleton, type ProductReviewsRead } from "@/components/org/product-reviews-section";
 import { ROUTES } from "@server/shared/routes";
+import { ChannelCompletenessStrip } from "@/components/channel/channel-completeness-strip";
+import { productCompletenessDAL } from "@/data-access-layer/org/product-completeness.dal";
 
 export default async function OrgProductViewPage({
   params,
@@ -29,7 +31,7 @@ export default async function OrgProductViewPage({
   if (!product || product.org.id !== orgId) notFound();
 
   // Silent for a shop that sells nowhere else, which is most of them until they say otherwise.
-  const [verdicts, marketplaces, facts, summaries] = await Promise.all([
+  const [verdicts, marketplaces, facts, summaries, completeness] = await Promise.all([
     orgChannelReadinessDAL.forProduct(orgId, {
       productType: product.productType ?? null,
       kind: product.kind ?? null,
@@ -38,6 +40,7 @@ export default async function OrgProductViewPage({
     channelListingsDAL.forProduct(orgId, id),
     channelListingsDAL.factsForProduct(orgId, id),
     platformListingDAL.summaries(orgId, id),
+    productCompletenessDAL.forProduct(id),
   ]);
 
   return (
@@ -51,6 +54,8 @@ export default async function OrgProductViewPage({
           category={product.category}
           org={product.org}
         />
+        {/* What each channel the shop sells on still needs, as last computed (dynamic-form R4, Q2). */}
+        <ChannelCompletenessStrip states={completeness} />
         <ProductMarketplaces orgId={orgId} productId={id} links={marketplaces} summaries={summaries} />
         {facts.map((card) => (
           <MarketplaceFactsCard key={card.listingId} orgId={orgId} productId={id} shopName={product.org.name} card={card} />

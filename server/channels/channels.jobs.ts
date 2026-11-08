@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { registerJob } from "@server/shared/jobs/jobs.registry";
+import { askCompleteness } from "@server/listing/completeness.queue";
+import { orgChannelService } from "@server/listing/org-channel.service";
 import { registerSchedule } from "@server/shared/jobs/jobs.schedule";
 import { adminOrgService } from "@server/catalog/org.service";
 
@@ -18,6 +20,9 @@ import { platformListingService } from "./platform-listing.service";
 import { listingPublishService } from "./listing-publish.service";
 import { checkListingsSpec, enqueueListingCheck, publishListingSpec } from "./listing-publish.job";
 import { checkListingProblemsSpec } from "./listing-problems.job";
+import { channelCatalogueReader } from "./channel-catalogue.service";
+import { MARKETPLACE_CHANNELS } from "./channel-connection.types";
+import { CHANNEL, CHANNELS } from "@server/shared/channels";
 import { requestsDailySpec } from "@server/shared/jobs/listing-complaints.job";
 import { listingProblemsService } from "./listing-problems.service";
 import { checkOrdersSpec, checkStockSpec, ORDERS_CHECK_EVERY_SECONDS } from "./stock-checks.job";
@@ -70,6 +75,22 @@ export const channelsMaintainJob = registerJob({
     // Platform listings for anything linked since, and one more look at listings still waiting (marketplace-publish D5).
     await platformListingService.ensureForAll().catch((error: unknown) => console.error(`[channels] platform listings pass failed: ${error instanceof Error ? error.name : "error"}`));
     await listingPublishService.daily();
+    // Each marketplace's own types and fields, read through the home brand (listing-model/channel-catalogue D2).
+    // Every marketplace; one that publishes no definitions (Flipkart) reads nothing (D3).
+    // Its counts are logged: a pass that read nothing looks healthy otherwise.
+    for (const channel of MARKETPLACE_CHANNELS) {
+      const r = await channelCatalogueReader.refresh(channel).catch((error: unknown) => {
+        console.error(`[channels] catalogue refresh failed: ${error instanceof Error ? error.name : "error"}`);
+        return null;
+      });
+      if (r) console.log(`[jobs] channels.maintain ${jobId}: catalogue ${channel} ${r.skipped ? `skipped (${r.skipped})` : `read ${r.read}, failed ${r.failed}, changed ${r.changes.length}`}`);
+      // A channel that now asks more makes its shops' products less complete (dynamic-form D3, R6).
+      if (r && r.changes.length > 0) await askCompleteness(await orgChannelService.orgsSellingOn(channel));
+    }
+    // The daily completeness sweep (dynamic-form Q11): a shop whose ask after a write was lost heals within a
+    // day. Folded into this daily run rather than a fifth schedule (JOBS_MAX_SCHEDULES).
+    const orgsSelling = [...new Set((await Promise.all(CHANNELS.filter((c) => c !== CHANNEL.STORE).map((c) => orgChannelService.orgsSellingOn(c)))).flat())];
+    await askCompleteness(orgsSelling);
     // What each marketplace says stops a listing now, for every shop in one run (marketplace-publish Q23).
     await enqueue(prisma, checkListingProblemsSpec, {});
     // Setup requests: close what is now set up, raise missing categories (setup-requests D9).

@@ -4,8 +4,6 @@ import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.
 import { productsService } from "@server/catalog/admin.product.service";
 import { BrandsManager } from "@/components/org/brands-manager";
 import { ListingDefaultsForm } from "@/components/org/listing-defaults-form";
-import { AmazonGenericSetting } from "@/components/org/amazon-generic-setting";
-import { AMAZON_GENERIC_COPY } from "@/components/org/org-copy";
 import { PageHeader } from "@/components/shared/page-shell";
 import { ORG_PAGES_COPY } from "@/components/org/pages-copy";
 import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
@@ -35,10 +33,6 @@ export default async function OrgListingContextPage({
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">{ORG_PAGES_COPY.brands}</h2>
         <BrandsManager orgId={scope.orgId} brands={brands} />
-      </section>
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">{AMAZON_GENERIC_COPY.title}</h2>
-        <AmazonGenericSetting orgId={scope.orgId} initial={defaults.amazonGeneric} />
       </section>
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">{ORG_PAGES_COPY.defaults}</h2>

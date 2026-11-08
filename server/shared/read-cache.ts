@@ -62,7 +62,7 @@ export const CACHED_READ_EXPIRY = {
  */
 export const CACHED_TABLES: ReadonlySet<string> = new Set([
   "Address", "Banner", "BannerAction", "BiddingEvent", "Category", "MediaAsset", "Org", "OrgAddress",
-  "Product", "ProductMedia", "ProductStock", "Promotion", "PromotionTarget", "Review", "ReviewMedia",
+  "Product", "ProductMedia", "ProductStock", "ProductValue", "Promotion", "PromotionTarget", "Review", "ReviewMedia",
 ]);
 
 export const isCachedTable = (table: string): boolean => CACHED_TABLES.has(table);

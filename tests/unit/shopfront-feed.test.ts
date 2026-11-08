@@ -27,6 +27,7 @@ const candidate = (over: Partial<FeedCandidate> = {}): FeedCandidate => ({
   inStock: true,
   brand: "Al Noor",
   category: "1604",
+  attributes: [],
   ...over,
 });
 
@@ -86,6 +87,12 @@ describe("buildFeed", () => {
     ]);
     expect(items(xml)).toHaveLength(1);
     expect(xml).toContain("<g:id>keep</g:id>");
+  });
+
+  it("leaves an item with no category out of Meta's feed, which requires one, and keeps it in Google's, which infers one", () => {
+    const uncategorised = [candidate({ id: "no-category", category: null })];
+    expect(items(buildFeed(CHANNEL.META, HEADER, uncategorised))).toHaveLength(0);
+    expect(items(buildFeed(CHANNEL.GOOGLE, HEADER, uncategorised))).toHaveLength(1);
   });
 
   it("caps a title at 150 characters without splitting an emoji", () => {

@@ -29,8 +29,8 @@ vi.mock("@server/channels/channel-types.service", () => ({
 describe.skipIf(!isDisposableDb)("setup requests (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
   let service: typeof import("@server/requests/request.service").requestService;
-  let fillAttributes: typeof import("@server/channels/listing-create").fillAttributes;
-  let forwardAttributes: typeof import("@server/channels/listing-create").forwardAttributes;
+  let fieldMaps: typeof import("@server/listing/field-map.repository").fieldMapRepository;
+  let build: typeof import("@server/listing/listing-builder");
   let maps: typeof import("@server/listing/channel-map.repository").channelMapRepository;
 
   const stamp = `sr-${Date.now().toString(36)}`;
@@ -50,7 +50,8 @@ describe.skipIf(!isDisposableDb)("setup requests (local db)", () => {
     process.env.HOME_BRAND_ORG_ID = "home-brand-for-tests";
     ({ prisma } = await import("@server/shared/prisma"));
     ({ requestService: service } = await import("@server/requests/request.service"));
-    ({ fillAttributes, forwardAttributes } = await import("@server/channels/listing-create"));
+    ({ fieldMapRepository: fieldMaps } = await import("@server/listing/field-map.repository"));
+    build = await import("@server/listing/listing-builder");
     ({ channelMapRepository: maps } = await import("@server/listing/channel-map.repository"));
     const fixtures = await ensureFixtures();
     ({ orgId, otherOrgId, categoryId, orgAddressId } = fixtures);
@@ -58,7 +59,7 @@ describe.skipIf(!isDisposableDb)("setup requests (local db)", () => {
     await maps.setCategory({ channel: "amazon", productType: type, kind: null, theirCategory, fit: "EXACT", checkedOn: new Date() });
     for (const [n, org] of [[1, orgId], [2, otherOrgId]] as const) {
       const p = await prisma.product.create({
-        data: { name: `${stamp} bag ${n}`, slug: `${stamp}-${n}`, description: "x", thumbnail: "https://example.invalid/x.webp", price: 10_000, orgId: org, categoryId, productType: type, facts: {}, stockLocations: org === orgId ? { create: { orgAddressId, quantity: 1 } } : undefined },
+        data: { name: `${stamp} bag ${n}`, slug: `${stamp}-${n}`, description: "x", thumbnail: "https://example.invalid/x.webp", price: 10_000, orgId: org, categoryId, productType: type, stockLocations: org === orgId ? { create: { orgAddressId, quantity: 1 } } : undefined },
         select: { id: true },
       });
       productIds.push(p.id);
@@ -67,6 +68,7 @@ describe.skipIf(!isDisposableDb)("setup requests (local db)", () => {
 
   afterAll(async () => {
     await prisma.ticket.deleteMany({ where: { key: { contains: theirCategory } } });
+    await prisma.fieldMap.deleteMany({ where: { channelType: theirCategory } });
     await prisma.ticket.deleteMany({ where: { key: { contains: type } } });
     await prisma.product.deleteMany({ where: { slug: { startsWith: stamp } } });
     await prisma.channelAttributeFill.deleteMany({ where: { theirCategory } });
@@ -116,12 +118,13 @@ describe.skipIf(!isDisposableDb)("setup requests (local db)", () => {
 
     const typeRow = await prisma.productType.findUniqueOrThrow({ where: { key: type } });
     expect(typeRow.facts).toEqual(["colour", "strap"]);
-    const register = await maps.registersFor({ channels: ["amazon"], productTypes: [type], lists: ["strap"] });
-    const fills = await maps.fillsFor("amazon", [theirCategory]);
-    const sent = {
-      ...fillAttributes(theirCategory, fills, { sku: "SKU-1", name: "Bag", brand: null }),
-      ...forwardAttributes(theirCategory, register.attributes, register.values, { strap: { value: "detachable-x", origin: "product" } }),
-    };
+    // What a create builds from the field maps Apply wrote (listing-model/field-maps R5).
+    const written = await fieldMaps.forTypes([{ channel: "amazon", channelType: theirCategory }]);
+    const built = build.buildChannelListing({
+      fields: [], maps: build.mapsFor(written, type), labelOf: () => null,
+      product: { name: "Bag", sku: "SKU-1", description: "", brand: null, weightKg: null, barcode: null, kind: null, hsn: null, measurements: {}, sizeLabel: null, facts: { strap: { value: "detachable-x", origin: "product" } } },
+    });
+    const sent = Object.fromEntries(built.fields.map((f) => [f.path, f.value]));
     expect(sent).toEqual({ part_number: "SKU-1", strap_type: "Detachable X" });
   });
 
@@ -183,7 +186,7 @@ describe.skipIf(!isDisposableDb)("setup requests (local db)", () => {
 
   it("lets a product taken off sale leave its tickets, and closes one nobody needs (Q13)", async () => {
     const archived = await prisma.product.create({
-      data: { name: `${stamp} gone`, slug: `${stamp}-gone`, description: "x", thumbnail: "https://example.invalid/x.webp", price: 10_000, orgId, categoryId, productType: type, facts: {} },
+      data: { name: `${stamp} gone`, slug: `${stamp}-gone`, description: "x", thumbnail: "https://example.invalid/x.webp", price: 10_000, orgId, categoryId, productType: type },
       select: { id: true },
     });
     const subject = { kind: "issue", source: "Amazon", context: theirCategory, subjectName: null, code: "7777", message: "x" };

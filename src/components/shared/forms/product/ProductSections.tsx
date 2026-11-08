@@ -1,5 +1,6 @@
 "use client";
 
+import type { BrandDto } from "@server/catalog/brand.types";
 import { useState, type ReactNode } from "react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import type { useCategoryChange } from "./useCategoryChange";
 import { ProductFactFields } from "./ProductFactFields";
 import { ProductFamilyField } from "./ProductFamilyField";
 import { ProductBrandField } from "./ProductBrandField";
+import { ProductInheritedFields } from "./ProductInheritedFields";
 import { ProductFlagsFields } from "./ProductFlagsFields";
 import { ProductOrgShippingFields, type LocationOption } from "./ProductOrgShippingFields";
 import { alsoAsks, willAlsoAsk, type ChannelHint } from "./readiness-hints";
@@ -39,7 +41,9 @@ export interface ProductSectionsProps {
   origins: Partial<Record<string, string>>;
   families: Array<{ id: string; name: string }>;
   /** The shop's brands, for the Brand picker; what Amazon's brand complaints point at (marketplace-publish Q24). */
-  brands?: Array<{ id: string; name: string }>;
+  brands?: BrandDto[];
+  /** The shop's own country of origin, for a product whose brand names none (A4). */
+  shopCountry?: string | null;
   orgs?: OrgSummary[];
   locations: LocationOption[];
   onLocationAdded?: (location: LocationOption) => void;
@@ -65,6 +69,7 @@ export function ProductSections({
   origins,
   families,
   brands = [],
+  shopCountry = null,
   orgs,
   locations,
   onLocationAdded,
@@ -249,6 +254,7 @@ export function ProductSections({
           <section hidden={current !== "details"} className="space-y-4">
             <AlsoAsks hints={hints} />
             <ProductBrandField register={register} errors={errors} brands={brands} orgId={orgId} />
+            <ProductInheritedFields control={control} setValue={setValue} brands={brands} shopCountry={shopCountry} errors={errors.facts as never} />
             <ProductFactFields
               control={control}
               register={register}

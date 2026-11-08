@@ -91,6 +91,11 @@ export const PRODUCT_EDIT_OVERVIEW_COPY = {
 
 /** ProductFactFields.tsx */
 export const PRODUCT_FACT_FIELDS_COPY = {
+  // listing-model/dynamic-form ux copy deck: grouped by what the shop's channels need (R2).
+  requiredNow: "Required now",
+  requiredNowBody: "What the places you sell on need before they take this product. It saves either way.",
+  alsoHelpsOn: (channels: string[]) => (channels.length > 0 ? `Also helps on ${channels.join(", ")}` : "More details"),
+  channelShort: { store: "This store", amazon: "Amazon", flipkart: "Flipkart", meesho: "Meesho", google: "Google", meta: "Meta" } as Record<string, string>,
   kind: "Kind",
   productDetails: "Product details",
   whatAMarketplaceAsksAbout: "What a marketplace asks about this kind of thing. Leave anything you do not know — it saves either way.",
@@ -106,6 +111,20 @@ export const PRODUCT_BRAND_FIELD_COPY = {
   none: "Your default brand",
   noBrands: "No brands yet.",
   addBrand: "Add one in Brands and defaults",
+} as const;
+
+export const PRODUCT_INHERITED_FIELDS_COPY = {
+  title: "Who makes it and where it's from",
+  labels: { countryOfOrigin: "Country of origin", manufacturer: "Maker", packer: "Packer", importer: "Importer" },
+  fromBrand: (name: string, value: string) => `From your brand ${name}: ${value}`,
+  fromShop: (value: string) => `From your shop defaults: ${value}`,
+  brandSilent: (name: string) => `Your brand ${name} doesn't say`,
+  nothingYet: "Not given yet",
+  setOnProduct: "Set on this product",
+  change: "Change",
+  revertToBrand: "Use brand's",
+  revertToShop: "Use shop's",
+  partyPlaceholder: "Name, address, pincode",
 } as const;
 
 export const PRODUCT_FAMILY_FIELD_COPY = {

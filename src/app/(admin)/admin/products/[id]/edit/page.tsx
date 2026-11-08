@@ -39,12 +39,13 @@ export default async function AdminEditProductPage({ params }: { params: Promise
     shotList: c.shotList,
     productType: c.productType,
   }));
-  const [productTypes, listingValues, familyRows, channels, allLocations] = await Promise.all([
+  const [productTypes, listingValues, familyRows, channels, allLocations, formTypes] = await Promise.all([
     adminProductTypesDAL.getProductTypes(),
     adminProductTypesDAL.getValuesForCategory(product.category?.id ?? null, categories, orgId),
     productFamilyService.list(orgId),
     orgChannelService.list(orgId),
     orgAddressService.listLocations(orgId),
+    adminProductTypesDAL.getFormTypes(orgId),
   ]);
   // As the shop's own edit page: an inactive location still holding this product's stock stays.
   const held = new Set(product.stockLocations.map((row) => row.orgAddressId));
@@ -64,7 +65,7 @@ export default async function AdminEditProductPage({ params }: { params: Promise
         <ProductEditContainer
           product={product}
           categories={categories}
-          productTypes={productTypes}
+          productTypes={formTypes}
           listingValues={listingValues}
           families={familyRows.map((family) => ({ id: family.id, name: family.name }))}
           orgs={[product.org]}

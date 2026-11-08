@@ -1,5 +1,6 @@
 "use client";
 
+import type { BrandDto } from "@server/catalog/brand.types";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon } from "@/components/ui/icon";
 import { ActionBar } from "@/components/shared/action-bar";
@@ -31,7 +32,9 @@ interface ProductEditOverviewProps {
   origins: Partial<Record<string, string>>;
   families: Array<{ id: string; name: string }>;
   /** The shop's brands, for the Brand picker; what Amazon's brand complaints point at (marketplace-publish Q24). */
-  brands?: Array<{ id: string; name: string }>;
+  brands?: BrandDto[];
+  /** The shop's own country of origin, for a product whose brand names none (A4). */
+  shopCountry?: string | null;
   orgs?: OrgSummary[];
   locations: LocationOption[];
   onLocationAdded?: (location: LocationOption) => void;
@@ -60,6 +63,7 @@ export function ProductEditOverview({
   origins,
   families,
   brands,
+  shopCountry = null,
   orgs,
   locations,
   onLocationAdded,
@@ -207,6 +211,7 @@ export function ProductEditOverview({
             origins={origins}
             families={families}
             brands={brands}
+          shopCountry={shopCountry}
             orgs={orgs}
             locations={locations}
             onLocationAdded={onLocationAdded}

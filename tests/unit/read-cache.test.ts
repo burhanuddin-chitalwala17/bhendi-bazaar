@@ -25,6 +25,12 @@ describe("tablesWritten", () => {
     expect([...tablesWritten('INSERT INTO "public"."Cart" ("id") VALUES ($1) ON CONFLICT ("id") DO UPDATE SET "updatedAt" = $2')]).toEqual(["Cart"]);
   });
 
+  it("names ProductValue for the functions that write a product's answers (dynamic-form Q16, review B3)", () => {
+    expect([...tablesWritten("SELECT bb_write_answers($1, $2::jsonb, $3::jsonb, $4)")]).toEqual(["ProductValue"]);
+    expect([...tablesWritten("SELECT bb_write_inherited(p.id) FROM \"Product\" p WHERE p.\"brandId\" = $1")]).toEqual(["ProductValue"]);
+    expect([...tablesWritten("SELECT bb_rederive_answers(id) FROM unnest($1::text[]) AS id")]).toEqual(["ProductValue"]);
+  });
+
   it("is empty for a read, which names its tables in tablesRead instead", () => {
     const sql = 'SELECT "t0"."id" FROM "public"."Product" AS "t0" LEFT JOIN "public"."ProductStock" AS "t1" ON true';
     expect([...tablesWritten(sql)]).toEqual([]);

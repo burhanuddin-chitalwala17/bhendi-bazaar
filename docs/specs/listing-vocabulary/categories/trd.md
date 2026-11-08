@@ -39,7 +39,9 @@ without also requiring measurements**.
   nullable product type; a category that sets none takes its nearest ancestor's. Following the
   proven shape means one pattern rather than two, and the tree walk already handles the cycle a
   self-referencing tree makes possible.
-- **D1b — The resolved type is stored on the product on save, not read through the category.**
+- **D1b — The resolved type is stored on the product on save, not read through the category.** *Since
+  2026-11-08 (listing-model Q9, attributes Q14) it is kept equal to the category's by triggers, a typed
+  product included.*
   Merchandising moves categories; a product's questions and stored answers must not move with
   them (spec A1a). It also keeps the parent's D4 true — a product read is one row. Re-pointing a
   category then becomes an explicit migration of its products, which is spec R7 and reuses

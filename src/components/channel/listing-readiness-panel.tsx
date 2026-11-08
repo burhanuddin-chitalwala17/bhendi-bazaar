@@ -108,5 +108,7 @@ function wordFor(problem: ListingProblem): string {
       return READINESS_PANEL.missingOptionalFact(problem.theirAttribute);
     case LISTING_PROBLEM.UNMAPPED_VALUE:
       return READINESS_PANEL.unmappedValue(problem.list, problem.value);
+    case LISTING_PROBLEM.MISSING_FIELD:
+      return READINESS_PANEL.missingField(problem.label, problem.asOf);
   }
 }

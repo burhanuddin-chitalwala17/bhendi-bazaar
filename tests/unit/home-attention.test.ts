@@ -17,6 +17,8 @@ const quiet = (): HomeAttentionDto => ({
   channel: { ok: true, value: null },
   stock: { ok: true, value: null },
   listingProblems: { ok: true, value: null },
+  channelAsks: { ok: true, value: null },
+  channelNeeds: { ok: true, value: [] },
   photos: { ok: true, value: 0 },
   teamEdits: { ok: true, value: { count: 0, productId: null } },
 });
@@ -57,6 +59,11 @@ describe("needs you now", () => {
     expect(lines[0]).toMatchObject({ text: "3 Amazon listings need a fix: 2 hidden from shoppers", href: "/org/o1/channels/amazon/listings?fix=1" });
   });
 
+  it("says a channel now asks more of a type the shop sells, and opens that channel's products (listing-model Q22)", () => {
+    const lines = attentionLines("o1", { ...quiet(), channelAsks: { ok: true, value: { channel: "amazon", label: "Amazon", typeLabel: "Tote bag", added: 2 } } }, now);
+    expect(lines[0]).toMatchObject({ text: "Amazon now asks 2 more details for Tote bag", href: "/org/o1/products?channel=amazon" });
+  });
+
   it("puts buyers and money first and shows at most five (Q31)", () => {
     const lines = attentionLines(
       "o1",
@@ -66,6 +73,8 @@ describe("needs you now", () => {
         channel: { ok: true, value: { channel: "amazon" as never, label: "Amazon", state: CARD_STATE.NEEDS_RECONNECT, reapproveBy: null } },
         stock: { ok: true, value: { channel: "amazon", label: "Amazon", kind: STOCK_ATTENTION.OUT_OF_STOCK, count: 2 } },
         listingProblems: { ok: true, value: null },
+        channelAsks: { ok: true, value: null },
+        channelNeeds: { ok: true, value: [] },
         photos: { ok: true, value: 3 },
         teamEdits: { ok: true, value: { count: 1, productId: null } },
       },
@@ -86,5 +95,10 @@ describe("the toast after a task (R7)", () => {
     expect(doneToast(ONBOARDING_STEP.PRODUCT, 2)).toBe("Product added · 2 of 5 done");
     expect(doneToast(ONBOARDING_STEP.ADDRESS, 3)).toBe("Pickup address added · 3 of 5 done");
     expect(doneToast(ONBOARDING_STEP.SHARE, 5)).toBe("Shared · 5 of 5 done");
+  });
+
+  it("says per channel how many products still need details, from stored completeness (dynamic-form R5)", () => {
+    const needs = attentionLines("o1", { ...quiet(), channelNeeds: { ok: true, value: [{ channel: "flipkart", products: 38, details: 4 }] } }, new Date("2026-11-08T00:00:00Z"));
+    expect(needs.find((l) => l.key === "channelNeeds:flipkart")).toMatchObject({ text: "38 products need up to 4 details for Flipkart", href: "/org/o1/products?channel=flipkart" });
   });
 });

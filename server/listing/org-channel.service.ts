@@ -8,6 +8,7 @@ import {
 } from "@server/shared/channels";
 
 import { orgChannelRepository, type OrgChannelDb } from "./org-channel.repository";
+import { askCompleteness } from "./completeness.queue";
 
 export type { OrgChannelDb };
 
@@ -58,11 +59,18 @@ export const orgChannelService = {
     await orgChannelRepository.set(orgId, channel, enabled, db);
   },
 
+  /** The shops selling on a channel (dynamic-form D3: who to recompute when it asks more). */
+  async orgsSellingOn(channel: Channel): Promise<string[]> {
+    return await orgChannelRepository.orgsWith(channel);
+  },
+
   async save(orgId: string, choices: readonly { channel: Channel; enabled: boolean }[]) {
     await orgChannelRepository.setMany(
       orgId,
       choices.filter((choice) => isChannel(choice.channel)),
     );
+    // A channel turned on or off changes which completeness rows the shop's products hold (dynamic-form R5).
+    await askCompleteness([orgId]);
     return await this.list(orgId);
   },
 };
