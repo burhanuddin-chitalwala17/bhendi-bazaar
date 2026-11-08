@@ -12,6 +12,14 @@
 
 ## Entries
 
+## 2026-11-08 — listing-model / dynamic-form unit 3a: completeness on the product page
+
+- The channel strip ("Amazon 17 of 19", "Ready for …", what is still needed) now shows on the product view
+  page as well as the edit page (R4). The products list's channel pills already count, per channel, the
+  products it would refuse, which since unit 1 includes every field the channel's own catalogue requires:
+  one count per pill, not a second (Q2 resolved).
+- No new tests: the strip and its read are covered by unit 2's; the page only places it. Ran: `tsc`, unit.
+
 ## 2026-11-08 — listing-model / dynamic-form unit 4: the brand page holds its parties and its Amazon choice [CONTRACT] [MIGRATION]
 
 - **Brand form** (R7, A5, Q13): "Who makes, packs and imports it (marketplaces ask)" with three optional
