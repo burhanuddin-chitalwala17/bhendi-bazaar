@@ -1,0 +1,84 @@
+src/app/(org)/org/[orgId]/products/new/page.tsx
+  s_0972fb7ac9c18b::t_2a59b34089fc16 11-12,32,42-43,86-87
+server/listing/listing-fill.service.ts
+  s_0972fb7ac9c18b::t_d881a50296525e 145,154-164
+  s_0972fb7ac9c18b::t_7191127f173794 4-5
+tests/integration/listing-fill.test.ts
+  s_0972fb7ac9c18b::t_4e6546497e2bf6 111-116
+src/components/shared/forms/product/ProductSections.tsx
+  s_0972fb7ac9c18b::t_d1c62a36d8b6dc 23
+  s_0972fb7ac9c18b::t_a6793ec8a1300b 72
+  s_0972fb7ac9c18b::t_6e26f545c0d075 257
+  s_0972fb7ac9c18b::t_4fd2ae0d732bde 3,44-46
+src/components/product/console/productAdd/index.tsx
+  s_0972fb7ac9c18b::t_2a59b34089fc16 5,41-44,66-67,114-115
+docs/ARCHITECTURE.md
+  s_0972fb7ac9c18b::t_68bd6ec3811d8c 77
+src/components/shared/forms/product/ProductEditOverview.tsx
+  s_0972fb7ac9c18b::t_4fd2ae0d732bde 3,35-37,214
+  s_0972fb7ac9c18b::t_a6793ec8a1300b 66
+src/components/shared/forms/product/ProductInheritedFields.tsx
+  s_0972fb7ac9c18b::t_ebe7b82fb8f616 7-8,21,26-27,61,72,74
+  s_0972fb7ac9c18b::t_4641f7608e672f 1-6,9-20,22-25,28-47,52-60,62-71,73,75-79,81-90,92-104
+  s_0972fb7ac9c18b::t_bbfdd5afccab22 48-51,80,91
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_022dd42760071a 15-25,37
+src/components/shared/forms/product/ProductStepsForm.tsx
+  s_0972fb7ac9c18b::t_4fd2ae0d732bde 3,49-51,259
+  s_0972fb7ac9c18b::t_a6793ec8a1300b 119
+src/components/shared/forms/product/category-change.ts
+  s_0972fb7ac9c18b::t_bbfdd5afccab22 2,37-38
+tests/integration/product-edit-keeps-facts.test.tsx
+  s_0972fb7ac9c18b::t_ea2ddb78083f75 85-150
+tests/unit/product-form-category-change.test.tsx
+  s_0972fb7ac9c18b::t_ea2ddb78083f75 145-150
+src/components/shared/forms/product/product-copy.ts
+  s_0972fb7ac9c18b::t_4641f7608e672f 116-118,123-124,127-129
+  s_0972fb7ac9c18b::t_bbfdd5afccab22 119-122,125-126
+server/listing/listing-facts.ts
+  s_0972fb7ac9c18b::t_a14047eccde27f 3-4,453-454,456-459,461-469
+src/components/product/console/productEdit/index.tsx
+  s_0972fb7ac9c18b::t_4fd2ae0d732bde 5,35-37,104
+  s_0972fb7ac9c18b::t_a6793ec8a1300b 57
+src/components/shared/forms/product/inherited-answers.ts
+  s_0972fb7ac9c18b::t_4641f7608e672f 1-20
+server/channels/listing-create.ts
+  s_0972fb7ac9c18b::t_d881a50296525e 1,57-73
+server/shared/brand-party.ts
+  s_0972fb7ac9c18b::t_d881a50296525e 8-15
+src/app/(org)/org/[orgId]/products/[id]/edit/page.tsx
+  s_0972fb7ac9c18b::t_d1c62a36d8b6dc 14,42,50,82
+src/components/shared/forms/product/index.tsx
+  s_0972fb7ac9c18b::t_a6793ec8a1300b 118
+  s_0972fb7ac9c18b::t_4fd2ae0d732bde 3,78-80,340,368
+server/channels/generic-brand.ts
+  s_0972fb7ac9c18b::t_bbfdd5afccab22 12-19
+tests/unit/product-inherited-fields.test.tsx
+  s_0972fb7ac9c18b::t_1ad67a7c27fad2 1-66
+tests/integration/brand-parties.test.ts
+  s_0972fb7ac9c18b::t_d45e94534c2a2a 76-82
+server/channels/listing-create.service.ts
+  s_0972fb7ac9c18b::t_d881a50296525e 19
+  s_0972fb7ac9c18b::t_bbfdd5afccab22 20,117-118
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "b671ec6131c5d6ac2cbfc8d2ce4030c64320fdc2",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
