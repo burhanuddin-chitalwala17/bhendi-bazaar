@@ -1,0 +1,106 @@
+docs/specs/listing-model/HANDOFF.md
+  s_0972fb7ac9c18b::t_2b6c3852b9a5aa 18-43,123
+  s_0972fb7ac9c18b::t_f2fe89ab4dd2c3 122
+server/listing/listing.jobs.ts
+  s_0972fb7ac9c18b::t_b81ef7d5a1e0ea 12-14
+  s_0972fb7ac9c18b::t_65309813f623c5 1-11
+server/listing/completeness.queue.ts
+  s_0972fb7ac9c18b::t_584a76d137f88b 1-16
+server/listing/completeness.service.ts
+  s_0972fb7ac9c18b::t_ef53da1aed2731 2
+  s_0972fb7ac9c18b::t_ef668c49a13cba 10-11,25-28,31-32,34-35,40-46,51,59-62,65,75-76
+  s_0972fb7ac9c18b::t_65309813f623c5 1,3-9,12-24,29-30,33,36-39,47-50,52-58,63-64,66-74,77
+server/listing/readiness-fix.service.ts
+  s_0972fb7ac9c18b::t_b81ef7d5a1e0ea 4,39-40,46-48
+docs/specs/listing-model/dynamic-form/trd.md
+  s_0972fb7ac9c18b::t_fc0f0b30d6ddd3 26-29
+server/listing/field-map.service.ts
+  s_0972fb7ac9c18b::t_584a76d137f88b 1,4,32,43-45
+  s_0972fb7ac9c18b::t_7c048efd317494 6
+src/app/(org)/org/[orgId]/products/[id]/edit/page.tsx
+  s_0972fb7ac9c18b::t_e0b91690129368 15-16,41,48,71
+server/catalog/bulk/bulk-product.service.ts
+  s_0972fb7ac9c18b::t_9da3b4108defd4 438-439
+  s_0972fb7ac9c18b::t_64538b50bff85c 8
+worker/main.ts
+  s_0972fb7ac9c18b::t_65309813f623c5 33
+docs/specs/listing-model/dynamic-form/decisions.md
+  s_0972fb7ac9c18b::t_f2fe89ab4dd2c3 13,18-19
+  s_0972fb7ac9c18b::t_fc0f0b30d6ddd3 11,20-21
+server/listing/org-channel.service.ts
+  s_0972fb7ac9c18b::t_584a76d137f88b 11,72-73
+  s_0972fb7ac9c18b::t_32a81f729f48cc 62-66
+tests/unit/product-form-team-history.test.tsx
+  s_0972fb7ac9c18b::t_a2b3ee0ec2ddfb 113
+tests/integration/completeness.test.ts
+  s_0972fb7ac9c18b::t_a23b9740dddf0c 53-55,59-69
+  s_0972fb7ac9c18b::t_25953cb1a07f3e 1-52,56-58,70-77
+server/shared/jobs/completeness.job.ts
+  s_0972fb7ac9c18b::t_ca61edad967875 1-20
+src/data-access-layer/org/home.dal.ts
+  s_0972fb7ac9c18b::t_466b3124eba5cd 13,42-43,77,86,94
+docs/specs/listing-model/dynamic-form/ux.md
+  s_0972fb7ac9c18b::t_fc0f0b30d6ddd3 59
+server/listing/product-channel-state.repository.ts
+  s_0972fb7ac9c18b::t_ca61edad967875 1-6,8-16,18,25-28,30-31,33-35,37-42
+  s_0972fb7ac9c18b::t_ef668c49a13cba 7,17,19-24,29,32,36
+prisma/migrations/20261108160000_product_channel_state/migration.sql
+  s_0972fb7ac9c18b::t_3c15292aab7cf4 8,19
+  s_0972fb7ac9c18b::t_25953cb1a07f3e 1-7,9-18,20-26
+prisma/schema.prisma
+  s_0972fb7ac9c18b::t_ca61edad967875 411,3016-3022,3025-3033
+  s_0972fb7ac9c18b::t_ef668c49a13cba 3023-3024,3034
+server/catalog/admin.product.service.ts
+  s_0972fb7ac9c18b::t_9da3b4108defd4 146,159-161,168-170
+  s_0972fb7ac9c18b::t_584a76d137f88b 23,197,264-265
+src/components/channel/channel-completeness-strip.tsx
+  s_0972fb7ac9c18b::t_e0b91690129368 1-33
+src/components/org/home/home-copy.ts
+  s_0972fb7ac9c18b::t_466b3124eba5cd 48-49
+tests/unit/module-boundaries.test.ts
+  s_0972fb7ac9c18b::t_267d703e404676 73-74
+src/data-access-layer/org/product-completeness.dal.ts
+  s_0972fb7ac9c18b::t_e0b91690129368 1-10
+server/channels/channels.jobs.ts
+  s_0972fb7ac9c18b::t_ba820a4aeb7536 3-4
+  s_0972fb7ac9c18b::t_b5f5dc5c98ae2a 92-93
+  s_0972fb7ac9c18b::t_32a81f729f48cc 87-88
+  s_0972fb7ac9c18b::t_ef53da1aed2731 90-91
+  s_0972fb7ac9c18b::t_ad95ca840b5dfd 25
+tests/unit/home-attention.test.ts
+  s_0972fb7ac9c18b::t_a23b9740dddf0c 99-102
+  s_0972fb7ac9c18b::t_a2b3ee0ec2ddfb 21,77
+src/components/org/home/attention-lines.ts
+  s_0972fb7ac9c18b::t_466b3124eba5cd 2,61-64
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_89a4cd584b6666 35-36
+  s_0972fb7ac9c18b::t_f2fe89ab4dd2c3 15-21,26-28,37-38
+  s_0972fb7ac9c18b::t_fc0f0b30d6ddd3 22-25,29-34
+docs/ARCHITECTURE.md
+  s_0972fb7ac9c18b::t_f2fe89ab4dd2c3 61,77
+src/components/channel/channel-copy.ts
+  s_0972fb7ac9c18b::t_e0b91690129368 209-215
+docs/CONTRACTS.md
+  s_0972fb7ac9c18b::t_f2fe89ab4dd2c3 311
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "4008fcd6de875adaf0db76b1bf0c63afad09ac1e",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
