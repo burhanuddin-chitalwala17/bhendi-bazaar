@@ -1,0 +1,29 @@
+tests/integration/setup-answered.test.ts
+  s_0972fb7ac9c18b::t_d8f06c4b1ed4d4 1-30
+tests/unit/setup-requests.test.ts
+  s_0972fb7ac9c18b::t_a2b226c8c4dbd7 72-79
+server/listing/channel-setup.service.ts
+  s_0972fb7ac9c18b::t_1f1267ccec873d 64,67-71,74-80
+server/requests/marketplace/field-match.ts
+  s_0972fb7ac9c18b::t_11e5367ce3b1ce 22-26,29,33,36-38,53
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_f63b852c0e6fe1 3-16
+docs/ARCHITECTURE.md
+  s_0972fb7ac9c18b::t_f63b852c0e6fe1 77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "a5a238713f399754cd61aa43bc240ebd4aa3a34d",
+  "prompts": {},
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
