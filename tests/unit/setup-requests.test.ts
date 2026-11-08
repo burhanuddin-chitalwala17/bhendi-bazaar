@@ -69,6 +69,14 @@ describe("matching a marketplace field to our vocabulary (D6, Q32)", () => {
     expect(propose({ name: "pocket_count", label: "Pockets", allowed: [] }, [material], [material])).toMatchObject({ solution: FIELD_SOLUTION.NOT_POSSIBLE });
   });
 
+  it("never pairs Amazon's inner (material) with What is in the set, nor item_dimensions with Form (owner, 2026-11-08)", () => {
+    const contents = { key: "contents", label: "What is in the set", answers: [] };
+    const form = { key: "itemForm", label: "Form", answers: [] };
+    expect(propose({ name: "inner", label: "Inner", allowed: [] }, [contents, form], [])).not.toMatchObject({ fact: "contents" });
+    expect(propose({ name: "item_dimensions", label: "Item Dimensions", allowed: [] }, [contents, form], [])).not.toMatchObject({ fact: "itemForm" });
+    expect(propose({ name: "item_form", label: "Item Form", allowed: [] }, [form], [])).toMatchObject({ solution: FIELD_SOLUTION.REUSE, fact: "itemForm" });
+  });
+
   it("keys a new answer by its words, and fingerprints a plan the same way twice", () => {
     expect(valueKey("Multi Colour / Printed")).toBe("multi-colour-printed");
     expect(planHash({ a: [1, 2] })).toBe(planHash({ a: [1, 2] }));

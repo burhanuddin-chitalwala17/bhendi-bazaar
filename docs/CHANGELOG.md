@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2026-11-08 — requests: a field a field map fills is answered; no more Inner → "What is in the set"
+
+- The Amazon fields request for HANDBAG asked a developer for department, capacity, age range, number of items
+  and outer material, and proposed mapping Inner → "What is in the set" and Item dimensions → "Form". All were
+  already filled by field maps (department and age range from the audience, dimensions from length × width ×
+  height, inner and outer material from their attributes): `channelSetupService.answered` read only the old
+  register. It now also counts a field map, by its path's first part (`inner.material` answers `inner`).
+- The matcher paired words by any prefix, so `in` (from "What **in** the set") matched `inner`, and `item`
+  paired `item_dimensions` with `itemForm`. It now drops joining words and Amazon's `item_` prefix, splits our
+  camelCase keys, and counts a prefix only between words of four letters or more.
+- Read-only audit on production (owner's request): with the fix, the open HANDBAG ticket has **no** field left
+  unanswered. Tests: setup-answered (integration), the matcher's two pairings (unit). Mutations: dropping the
+  map read and reverting the matcher each failed a test.
+
 ## 2026-11-08 — CI: the e2e build cache is reused only for the exact same code and schema
 
 - The e2e job failed twice on "browse a category" (the product it had seeded never appeared) and passed

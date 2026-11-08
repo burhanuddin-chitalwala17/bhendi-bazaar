@@ -19,14 +19,22 @@ export interface FieldProposal {
   constant: string | null;
 }
 
-/** Lower-case words, with Amazon's `_type`, `_name`, `_description` tails and punctuation dropped. */
+/**
+ * Lower-case words, our camelCase keys split (`itemForm` → item, form), with Amazon's `_type`, `_name`,
+ * `_description` tails, its `item_` prefix and short joining words dropped: none says what a field is about,
+ * and matching on one paired `item_dimensions` with Form.
+ */
 export function words(name: string): string[] {
   return name
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .split(" ")
-    .filter((w) => w && !["type", "name", "description", "of", "the", "number"].includes(w));
+    .filter((w) => w && !["type", "name", "description", "of", "the", "number", "item", "is", "in", "a", "an", "and", "or", "to", "for", "what"].includes(w));
 }
+
+/** One word standing for another: equal, or one a prefix of the other when both are real words (`pocket`/`pockets`), never `in`/`inner`. */
+const sameWord = (a: string, b: string) => a === b || (Math.min(a.length, b.length) >= 4 && (a.startsWith(b) || b.startsWith(a)));
 
 /** Attributes always answered from the product itself, by Amazon's name (Q32). */
 const FROM_PRODUCT: Record<string, string> = {
@@ -42,7 +50,7 @@ function overlap(attribute: string, fact: FactOption): number {
   const a = words(attribute);
   if (a.length === 0) return 0;
   const f = new Set([...words(fact.key), ...words(fact.label)]);
-  return a.filter((w) => f.has(w) || [...f].some((x) => x.startsWith(w) || w.startsWith(x))).length / a.length;
+  return a.filter((w) => [...f].some((x) => sameWord(w, x))).length / a.length;
 }
 
 /** How many of the marketplace's allowed answers our list already has, by label. */

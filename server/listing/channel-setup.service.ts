@@ -61,15 +61,23 @@ export const channelSetupService = {
 
   /** Attributes of one marketplace type already answered by a fact or a fill. */
   async answered(channel: Channel, theirCategory: string): Promise<Set<string>> {
-    return new Set((await channelMapRepository.answeredAttributes(channel, [theirCategory])).map((r) => r.theirAttribute));
+    return (await this.answeredMany(channel, [theirCategory])).get(theirCategory) ?? new Set();
   },
 
-  /** Answered attributes for many marketplace types at once (the daily check, D9). */
+  /**
+   * Answered attributes for many marketplace types at once (the daily check, D9): by the old register, and
+   * by a field map, which is what a listing is built from. A map names a path (`inner.material`,
+   * `item_dimensions.length`); the attribute it answers is the path's first part.
+   */
   async answeredMany(channel: Channel, theirCategories: readonly string[]): Promise<Map<string, Set<string>>> {
     const out = new Map<string, Set<string>>();
-    for (const row of await channelMapRepository.answeredAttributes(channel, theirCategories)) {
-      out.set(row.theirCategory, (out.get(row.theirCategory) ?? new Set()).add(row.theirAttribute));
-    }
+    const add = (category: string, attribute: string) => out.set(category, (out.get(category) ?? new Set()).add(attribute));
+    const [register, maps] = await Promise.all([
+      channelMapRepository.answeredAttributes(channel, theirCategories),
+      fieldMapRepository.forTypes(theirCategories.map((channelType) => ({ channel, channelType }))),
+    ]);
+    for (const row of register) add(row.theirCategory, row.theirAttribute);
+    for (const map of maps) add(map.channelType, map.fieldPath.split(".")[0]);
     return out;
   },
 
