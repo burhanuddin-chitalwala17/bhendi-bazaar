@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2026-11-08 — docs: test-file count after merging listing-model into main
+
+- `docs/ARCHITECTURE.md` said 375 Vitest files; the merge of `feat/listing-model` with main's newer work gives
+  376 (284 unit). CI's docs-integrity test failed on it. Ran: that test.
+
 ## Format
 - **Append-only.** Never edit an old entry; corrections go in as new entries.
 - Newest entries at the top.
