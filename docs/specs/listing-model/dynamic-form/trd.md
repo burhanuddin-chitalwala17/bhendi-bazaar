@@ -23,9 +23,10 @@ Akeneo completeness per channel, stored and recomputed on change. Followed.
   and their source join it with the reads switch (D4).
 - **D2 — Validation** from the same model: a Zod schema built per type at runtime on the server and the
   client (`useServerForm`), never disabling Save (ADR-0053).
-- **D3 — `ProductChannelState`** (productId, channel, missingCount, missingKeys Json, inputsHash,
-  computedAt; unique product+channel); written by `listing.refresh-completeness` on product save, map or
-  catalogue change, channel connect; batched 500; one writer.
+- **D3 — `ProductChannelState`** (productId, orgId, channel, required, missing, missingKeys Json,
+  computedAt; unique product+channel); written by `listing.refresh-completeness` after a product save,
+  archive, bulk sheet, fix-page answer, channel connect, map or catalogue change, plus a daily sweep (Q11);
+  batched 500, one refresh per shop at a time; one writer. No inputs hash: a refresh is cheap and exact.
 - **D4 — Reads switched.** Storefront facets, `shopfront-feed`, readiness, the builder and the product
   page read `ProductValueSet`; `Product.facts`/`measurements` no longer read (removed in retire-old-paths).
   The migration that switches writes to `product-value.repository` drops the attributes sync triggers in

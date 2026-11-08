@@ -45,6 +45,8 @@ export function waited(ms: number): string {
 
 export const LINE_COPY = {
   /** "Amazon now asks 2 more details for Tote bags" (listing-model Q22). */
+  channelNeeds: (products: number, details: number, channel: string) =>
+    `${products} ${products === 1 ? "product needs" : "products need"} up to ${details} ${details === 1 ? "detail" : "details"} for ${channel}`,
   channelAsks: (channel: string, n: number, type: string) => `${channel} now asks ${n} more ${n === 1 ? "detail" : "details"} for ${type}`,
   toPack: (n: number, waitedMs: number) => `${plural(n, "order", "orders")} to pack · oldest waiting ${waited(waitedMs)}`,
   lowStock: (n: number, soldOut: number, soonestDays: number | null) => {

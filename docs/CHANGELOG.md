@@ -12,6 +12,30 @@
 
 ## Entries
 
+## 2026-11-08 — listing-model / dynamic-form unit 2: completeness per channel, stored [CONTRACT] [MIGRATION]
+
+- **`ProductChannelState`** (migration `20261108160000_product_channel_state`; one new table): per product,
+  per channel the shop sells on, how many required fields it answers and what is missing (D3, R4). One
+  writer, `product-channel-state.repository.ts`; computed by `completeness.service.ts` with the same build a
+  send makes (Q9), in batches of 500, by the new `listing.refresh-completeness` job (`listing.jobs.ts`,
+  registered in the worker).
+- **Recomputed** after a product save, archive or restore, a bulk sheet, the fix page's answer or undo, a
+  channel turned on or off, a field map saved and a channel newly asking more; a daily sweep re-asks for
+  every shop selling anywhere (Q11). A failed ask is logged, never fails the save.
+- **Shown:** the product edit page's strip ("Amazon 17 of 19", "Ready for …", what is still needed) and a Home
+  line per channel, "38 products need up to 4 details for Flipkart", opening the products list filtered by
+  the channel (R5, Q10). [CONTRACT] `HomeAttentionDto.channelNeeds` (server read; CONTRACTS.md).
+- Tests: `tests/integration/completeness.test.ts` (stored, adapter fields not counted, moves when
+  answered — A2; archived and unread types hold no row; a channel no longer sold on loses its row); the Home line in `home-attention.test.ts`.
+- **Fresh-context review fixes:** completeness takes the shop's HSN and honours "not sold here" as a send
+  does; a channel type never read, and an archived product, hold no row (never a "Ready" not earned); the
+  row carries its shop, so listing never filters on catalog's table; one refresh per shop at a time (an
+  advisory lock). Still to build: counts on the products list's channel filter and the strip on the
+  product page (Q2 back to decided).
+- `module-boundaries`: listing's public surface gains `completeness.queue`, because a product save (catalog)
+  and a channel's new rules (channels) ask completeness to be recomputed.
+  Ran: unit, integration (local ci), `tsc`, `lint:boundary`, `docs:check`.
+
 ## 2026-11-08 — listing-model / dynamic-form unit 1: the form asks every question, grouped by what channels need [MIGRATION]
 
 - **New questions answerable** (Q5, migration `20261108150000_dynamic_form_questions`): style, lining

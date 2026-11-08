@@ -408,6 +408,7 @@ model Product {
   @@index([brandId])
   productValues   ProductValue[]
   productValueSet ProductValueSet?
+  channelStates   ProductChannelState[]
 }
 
 /// One item in a product's gallery — a photograph or an embedded video, in an order
@@ -3011,4 +3012,24 @@ model BrandParty {
   updatedAt DateTime @updatedAt
 
   @@unique([brandId, role])
+}
+
+/// How complete one product is for one channel the shop sells on (listing-model/dynamic-form D3, R4):
+/// stored by the refresh job, never computed on a page view. One writer.
+model ProductChannelState {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// The product's shop, kept here so listing counts without reading catalog's table (review).
+  orgId       String
+  channel     String
+  /// Fields the channel requires that the shop answers (adapter fields excluded).
+  required    Int
+  missing     Int
+  /// The channel's labels for what is missing, in its own words.
+  missingKeys Json
+  computedAt  DateTime @default(now())
+
+  @@unique([productId, channel])
+  @@index([orgId, channel])
 }

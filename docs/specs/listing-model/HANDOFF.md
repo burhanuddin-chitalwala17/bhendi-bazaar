@@ -15,16 +15,32 @@
    [dynamic-form](dynamic-form/) → [retire-old-paths](retire-old-paths/).
 4. [plan.html](plan.html): the audit of 2026-11-06 and flow diagrams (open in a browser).
 
-## State on 2026-11-08
-- **channel-catalogue: done and reviewed** (units 1–2, two review rounds, A1 proven on Amazon's real
-  HANDBAG schema). **Next: field-maps unit 1** via `/bb-build listing-model/field-maps`.
-- **Searchability research: findings ready** in [searchability-spike.md](searchability-spike.md) (owner
-  asked 2026-11-08: "listed optimally so my product appears on top", plus AI search). It is a spike, not a
-  spec; it waits for the owner's answers to its open questions (is `BLOCK_CRAWLERS` set in production,
-  Merchant Center live, training crawlers allowed, Brand Registry). Then: O3+O4 as one spec, O1+O2 as
-  another, each by `/bb-sdlc spec-start`; delete the spike once they exist.
-- No open questions in any `decisions.md`. A new question goes in the right `decisions.md` first: owner decides product,
-  policy and money; reversible technical calls are yours, marked `Claude · reversible`.
+## State on 2026-11-08 (end of the first account's session)
+- **Done, reviewed, committed:** channel-catalogue; field-maps (units 1–3); attributes (units 1–3); dynamic-form
+  units 1 (new questions as facts, form grouped "Required now" / "Also helps on" with channel badges) and 2
+  (stored completeness per channel, refresh job, product edit strip, Home line).
+- **Proof on a production copy (owner's one-time permission, copy dropped):** migrations clean; compare PASS
+  (113 products, 413 answers, 0 lost); Amazon map faults fixed (field-maps Q20–Q22); remaining Amazon
+  refusals are answers products have not given; Google: 70 items lack Audience (product data).
+- **Next, in order:**
+  1. **dynamic-form unit 4 — brand form** (TRD D7, spec R7, A4, A5): three party blocks (maker, packer,
+     importer: name, address, pincode → `BrandParty`, written through catalog's brand repository, Brand's one
+     writer) and "Registered on Amazon / list as Generic" (`Brand.amazonRegistered`). Then retire the shop-wide
+     switch: drop the `OrgListingDefaults_generic_to_brands` trigger (attributes Q16), remove the shop toggle,
+     and make `platform-listing.service.ts` read the brand's flag (review note).
+  2. **dynamic-form unit 3 — switch reads and writes** (TRD D4, attributes Q7, Q13): the form saves to
+     `product-value.repository` (becomes ProductValue's one writer, keeps `ProductValueSet`); readiness, the
+     builder (`listing-build.service`), storefront facets, the feed and the product page read `ProductValueSet`;
+     a product may override country, maker, packer, importer (A4: "From your brand Noor" / "Set on this
+     product" / "Use brand's"); the migration that switches writes drops every attributes sync trigger in the
+     same migration. Move the fact's marketplace source and unlisted flag onto the value row first (attributes Q13).
+     Also left from unit 2 (dynamic-form Q2, decided): counts on the products list's channel filter from
+     `ProductChannelState`, and the strip on the product view page.
+  3. **retire-old-paths** (its own spec/TRD): backup, re-run `scripts/attributes-compare.ts`, then drop
+     `Product.facts`/`measurements`, ChannelAttributeMap/Fill/ValueMap, `FACT_DECLARATIONS` and old readers.
+- No open questions in any `decisions.md`.
+- **This machine was overloaded at the end:** run the integration suite with `--no-file-parallelism` if
+  parallel runs time out; the stop hook's related-test run can clash with a full run.
 
 ## How to build (the repo's own rules)
 - `/bb-build` per subfeature, unit by unit, on `feat/listing-model`; a failing test per acceptance id first;
@@ -103,3 +119,5 @@ The container starts with no `node_modules`, Postgres stopped and a shallow clon
 | 2026-11-08 | attributes | 3: compare gate (`scripts/attributes-compare.ts`), local run 0 mismatches | (this commit) | **Owner:** run the compare against a production copy before release. Next: dynamic-form unit 1 |
 | 2026-11-08 | field-maps, attributes | Proof run on a production copy (owner's one-time permission; copy dropped): compare PASS 0/413; Amazon map faults fixed (Q20–Q22); remaining refusals are unanswered questions | (this commit) | Next: dynamic-form unit 1 |
 | 2026-11-08 | dynamic-form | 1: new questions as facts (Q5), form grouped Required now / Also helps on with channel badges (Q6) | (this commit) | Next: dynamic-form unit 2 (completeness rows, connect prompt, bulk fill) |
+| 2026-11-08 | dynamic-form | 2: ProductChannelState + refresh job, product strip, Home line (Q9, Q10) | (this commit) | Next: dynamic-form unit 4 (brand form: parties, Generic, product overrides), then unit 3 (switch reads/writes, drop triggers) |
+| 2026-11-08 | dynamic-form | 2: review fixes (HSN, not sold, unread types, archived, shop on row, per-shop lock, daily sweep folded into channels.maintain) | (this commit) | Next: dynamic-form unit 4 (brand form), then unit 3 (switch), then retire-old-paths — see State above |

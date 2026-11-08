@@ -1,6 +1,9 @@
+import type { Channel } from "@server/shared/channels";
 import { prisma } from "@server/shared/prisma";
 
+import { askCompleteness } from "./completeness.queue";
 import { fieldMapRepository } from "./field-map.repository";
+import { orgChannelRepository } from "./org-channel.repository";
 import { FIELD_SOURCE } from "./field-map.types";
 
 /** A map as the admin's edit sends it, already parsed (field-maps D8). */
@@ -26,7 +29,7 @@ const CHECKED_BY_TEAM = "Changed by the team on the field-map screen";
 export const fieldMapService = {
   async save(change: FieldMapChange, now = new Date()): Promise<{ id: string }> {
     const reads = (source: string) => (change.source === source ? change.key : null);
-    return await prisma.$transaction((tx) =>
+    const saved = await prisma.$transaction((tx) =>
       fieldMapRepository.save({
         channel: change.channel, channelType: change.channelType, fieldPath: change.fieldPath, bbType: change.bbType,
         source: change.source,
@@ -37,5 +40,8 @@ export const fieldMapService = {
         checkedSource: CHECKED_BY_TEAM, checkedOn: now, reason: change.reason,
       }, change.values, tx),
     );
+    // Every shop selling on the channel may be more or less complete now (dynamic-form D3).
+    await askCompleteness(await orgChannelRepository.orgsWith(change.channel as Channel));
+    return saved;
   },
 };

@@ -20,6 +20,7 @@ import { orgAddressRepository } from "@server/catalog/org.address.repository";
 import { DomainError } from "@server/shared/domain-error";
 import { promotionService } from "@server/promotions/promotion.service";
 import { lockedAmong } from "@server/bidding/bidding-lock";
+import { askCompleteness } from "@server/listing/completeness.queue";
 
 /**
  * Pure, exported for tests: every submitted stock row must name a location the
@@ -142,7 +143,7 @@ export class ProductsService {
     // Checked inside the write, behind the stock lock, because opening an event takes
     // that same lock: asked beforehand, an event could open in the gap between the
     // question and the answer and the product would be archived under live bids.
-    return await adminProductsRepository.setArchived(
+    const archived = await adminProductsRepository.setArchived(
       id,
       new Date(),
       scope.userId,
@@ -155,13 +156,18 @@ export class ProductsService {
         }
       }
     );
+    // An archived product sells nowhere, so it holds no completeness rows (dynamic-form Q9).
+    await askCompleteness([scope.orgId], [id]);
+    return archived;
   }
 
   /** Restore it, at the same URL it had (product-archive R6). */
   async restoreProduct(id: string, scope: ProductActor) {
     const product = await this.ownedByOrg(id, scope.orgId);
     if (!product.archivedAt) return product;
-    return await adminProductsRepository.setArchived(id, null, scope.userId);
+    const restored = await adminProductsRepository.setArchived(id, null, scope.userId);
+    await askCompleteness([scope.orgId], [id]);
+    return restored;
   }
 
   /**
@@ -188,6 +194,7 @@ export class ProductsService {
     await this.checkMarkdown(priced);
     const product = await adminProductsRepository.createProduct(priced, editor);
     await this.syncMarkdown(product.id, priced);
+    await askCompleteness([data.orgId], [product.id]);
     return product;
   }
 
@@ -254,6 +261,8 @@ export class ProductsService {
       throw new NotFoundError("Product not found");
     }
     await this.syncMarkdown(id, priced);
+    // What each channel still needs from it is recomputed off the request (dynamic-form D3).
+    await askCompleteness([data.orgId], [id]);
     return product;
   }
 

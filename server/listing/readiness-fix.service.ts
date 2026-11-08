@@ -1,6 +1,7 @@
 import { DomainError } from "@server/shared/domain-error";
 import { productService } from "@server/catalog/product.service";
 
+import { askCompleteness } from "./completeness.queue";
 import { FACT_DECLARATIONS, ANSWER, ORIGIN, type FactKey } from "./listing-facts";
 import { listingValueRepository } from "./listing-value.repository";
 import type { FixAnswerResultDTO } from "./readiness-fix.types";
@@ -35,11 +36,15 @@ export const readinessFixService = {
       if (result && "saved" in result && result.saved) set.push(id);
       else skipped.push(id);
     }
+    // The Home line this page answers moves only when completeness is recomputed (dynamic-form Q10).
+    if (set.length > 0) await askCompleteness([orgId], set);
     return { set, skipped };
   },
 
   /** Undo a pick while it is still the answer given (R3, parent Q43). */
   async undo(orgId: string, fact: string, value: string, productId: string): Promise<boolean> {
-    return await productService.clearFactIf(orgId, productId, fact, value);
+    const undone = await productService.clearFactIf(orgId, productId, fact, value);
+    if (undone) await askCompleteness([orgId], [productId]);
+    return undone;
   },
 };

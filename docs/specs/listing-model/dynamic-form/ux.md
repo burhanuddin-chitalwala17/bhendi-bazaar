@@ -56,7 +56,7 @@
 ## Copy deck
 "Required now" · "What the places you sell on need before they take this product. It saves either way." · "Also helps on {channels}" (or "More details" when none) · "{channel} {n} of {m}" · "Ready for {channels}" ·
 "From your {level} {name}: {value}" · "Set on this product" · "Use {level}'s" · "Choose a category to see its questions." ·
-"{n} products need {m} details for {channel}" · "{channel} now asks {n} more details for {type}" · "Fill them" ·
+"{n} products need up to {m} details for {channel}" (decisions Q12) · "{channel} now asks {n} more details for {type}" · "Fill them" ·
 "Who makes, packs and imports it (marketplaces ask)" · "Maker" · "Packer" · "Importer" · "Address" · "Pincode" ·
 "Registered on Amazon" · "List as Generic" · "Couldn't save. Your changes are kept."
 

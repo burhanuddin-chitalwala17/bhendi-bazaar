@@ -70,6 +70,8 @@ const PUBLIC_SURFACE: Record<string, string[]> = {
     "admin.product-type.types",
     "product-readiness.repository",
     "org-channel.repository",
+    // listing-model/dynamic-form D3: a product save and a channel's new rules ask completeness to be recomputed.
+    "completeness.queue",
   ],
   promotions: [
     // ADR-0018: every surface that needs a price calls this resolver.

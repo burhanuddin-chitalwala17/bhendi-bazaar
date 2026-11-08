@@ -206,3 +206,10 @@ export const NOT_SOLD_COPY = {
   marked: "Decide where it goes",
   mark: "Not sold here",
 } as const;
+
+/** A product's completeness per channel (listing-model/dynamic-form ux copy deck). */
+export const COMPLETENESS_COPY = {
+  count: (channel: string, done: number, of: number) => `${channel} ${done} of ${of}`,
+  ready: (channels: string[]) => `Ready for ${channels.join(", ")}`,
+  missing: (channel: string, keys: string[]) => `${channel} still needs: ${keys.join(", ")}`,
+} as const;

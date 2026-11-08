@@ -5,6 +5,7 @@
  * creation is one transaction of createMany per table — 3 statements, not 300
  * (D5), and therefore all-or-nothing by construction (R3).
  */
+import { askCompleteness } from "@server/listing/completeness.queue";
 import { randomUUID } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import { categoryRepository } from "@server/catalog/category.read.repository";
@@ -434,6 +435,8 @@ export async function createProducts(
 
   try {
     await adminProductsRepository.importBulk(products, updates, media, stock, editor);
+    // The whole shop, as a sheet can touch any of its products (dynamic-form Q9).
+    await askCompleteness([orgId]);
   } catch (error) {
     if (isUniqueViolation(error, "sku")) {
       throw new ConflictError(
