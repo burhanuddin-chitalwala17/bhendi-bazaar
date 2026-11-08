@@ -1,7 +1,8 @@
 import { brandRepository } from "@server/catalog/brand.repository";
 import { categoryRepository } from "@server/catalog/category.read.repository";
 import { fillFacts, keepMarketplace, levelsOf, type Answers, type Filled, type FilledAnswer } from "./fill-facts";
-import { FACT_DECLARATIONS, type FactKey, type MeasureKey } from "./listing-facts";
+import { FACT_DECLARATIONS, ORIGIN, type FactKey, type MeasureKey } from "./listing-facts";
+import { INHERITED_ANSWERS } from "@server/shared/brand-party";
 import { orgListingDefaultsRepository } from "./org-listing-defaults.repository";
 import { productFamilyRepository } from "./product-family.repository";
 import { resolveProductType } from "./product-type";
@@ -141,13 +142,26 @@ export async function fillListing(input: ListingFillInput): Promise<ListingFillR
     type.measures.map((m) => m.key),
   );
 
-  const keptFacts = keepMarketplace<FactKey>(facts, input.stored?.facts as Partial<Record<FactKey, FilledAnswer>> | undefined);
+  const keptFacts = keepMarketplace<FactKey>({ ...facts, ...ownOverrides(input.facts) }, input.stored?.facts as Partial<Record<FactKey, FilledAnswer>> | undefined);
   return {
     productType,
     facts: keptFacts,
     measurements: keepMarketplace<MeasureKey>(measurements, input.stored?.measurements as Partial<Record<MeasureKey, FilledAnswer>> | undefined),
     unanswered: type.facts.filter((fact) => keptFacts[fact] === undefined),
   };
+}
+
+/**
+ * What the product set for itself over its brand (A4): country, maker, packer, importer, each its own answer.
+ * Blank is "use the brand's", so it is not kept.
+ */
+function ownOverrides(sent: ListingFillInput["facts"]): Filled<FactKey> {
+  const out: Record<string, FilledAnswer> = {};
+  for (const key of INHERITED_ANSWERS) {
+    const value = (sent as Record<string, unknown> | undefined)?.[key];
+    if (typeof value === "string" && value.trim() !== "") out[key] = { value: value.trim(), origin: ORIGIN.PRODUCT };
+  }
+  return out as Filled<FactKey>;
 }
 
 /** What a screen shows beside a filled-in fact: the wording this type uses for it. */

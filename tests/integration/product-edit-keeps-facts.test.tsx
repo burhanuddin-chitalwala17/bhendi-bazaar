@@ -82,4 +82,70 @@ describe.skipIf(!isDisposableDb)("editing a no-type product (local db)", () => {
     expect(saved.facts).toMatchObject({ colour: { value: "black" }, material: { value: "crepe", origin: "marketplace" } });
     expect(saved.measurements).toMatchObject({ length: { value: 54 } });
   });
+
+  it("a maker set on the product is saved as its own, kept through a brand edit, and 'Use brand's' brings the brand's back (A4)", async () => {
+    ({ prisma } = await import("@server/shared/prisma"));
+    const { productsService } = await import("@server/catalog/admin.product.service");
+    const { adminProductsDAL } = await import("@/data-access-layer/admin/products.dal");
+    const { brandService } = await import("@server/catalog/brand.service");
+    const { brandRepository } = await import("@server/catalog/brand.repository");
+    const { ProductForm } = await import("@/components/shared/forms/product");
+    const { orgId, orgAddressId, categoryId, userId } = await ensureFixtures();
+    const stamp = `pa4-${Date.now().toString(36)}`;
+    const brand = await brandRepository.create(orgId, { name: `Noor ${stamp}`, manufacturer: "Noor Works, Mumbai", packerOrImporter: null, countryOfOrigin: "IN", isDefault: false });
+    try {
+      const { id } = await prisma.product.create({
+        data: {
+          slug: stamp, name: `A4 ${stamp}`, description: "Created by product-edit-keeps-facts A4", price: 99_900, weight: 0.5, categoryId, orgId, brandId: brand.id,
+          thumbnail: "https://placehold.co/600x600",
+          media: { create: { kind: "IMAGE", ref: "https://placehold.co/600x600", position: 0, isThumbnail: true } },
+          stockLocations: { create: { orgAddressId, quantity: 3 } },
+        },
+        select: { id: true },
+      });
+      ids.push(id);
+      await setAnswers(id, { weight: 0.5 });
+      const own = async () => (await prisma.productValue.findFirst({ where: { productId: id, attributeKey: "manufacturer", measured: false } }));
+      expect(await own()).toMatchObject({ text: "Noor Works, Mumbai", source: "brand" });
+
+      const save = async (act: () => void) => {
+        const product = await adminProductsDAL.getProductById(id);
+        const onSubmit = vi.fn(async (data: ProductFormInput) => {
+          await productsService.updateProduct(id, { ...data, seenVersion: data.seenVersion! }, { userId, team: false });
+          return product;
+        });
+        const view = render(
+          <ProductForm
+            product={product}
+            categories={[{ id: categoryId, name: "Test Fixtures" }]}
+            orgs={[{ id: orgId, name: "Fixture", code: "F", handle: "f" }]}
+            locations={[{ id: orgAddressId, name: "Fixture warehouse", city: "Mumbai", pincode: "400001", isActive: true }]}
+            brands={await brandService.list(orgId)}
+            onSubmit={onSubmit}
+            onCancel={vi.fn()}
+          />,
+        );
+        fireEvent.click(screen.getByRole("button", { name: /^Details/ }));
+        act();
+        fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+        await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+        await onSubmit.mock.results[0].value;
+        view.unmount();
+      };
+
+      await save(() => {
+        fireEvent.click(screen.getAllByRole("button", { name: "Change" })[1]);
+        fireEvent.change(screen.getByPlaceholderText("Name, address, pincode"), { target: { value: "Gulf Works, Dubai" } });
+      });
+      expect(await own()).toMatchObject({ text: "Gulf Works, Dubai", source: "product" });
+      await brandRepository.update(orgId, brand.id, { manufacturer: "Noor Atelier, Pune" });
+      expect(await own()).toMatchObject({ text: "Gulf Works, Dubai", source: "product" });
+
+      await save(() => fireEvent.click(screen.getByRole("button", { name: "Use brand's" })));
+      expect(await own()).toMatchObject({ text: "Noor Atelier, Pune", source: "brand" });
+    } finally {
+      await prisma.product.deleteMany({ where: { slug: stamp } });
+      await prisma.brand.deleteMany({ where: { id: brand.id } });
+    }
+  });
 });

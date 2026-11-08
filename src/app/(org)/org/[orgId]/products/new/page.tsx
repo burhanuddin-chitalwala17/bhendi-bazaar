@@ -8,6 +8,8 @@ import { ProductAddContainer } from "@/components/product/console/productAdd";
 import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { orgAddressService } from "@server/catalog/org.address.service";
+import { brandService } from "@server/catalog/brand.service";
+import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.service";
 import type { AdminCategory } from "@/domain/admin";
 import { returnHref } from "@/components/org/home/return-to";
 import { ONBOARDING_STEP } from "@server/catalog/org-onboarding.types";
@@ -27,7 +29,7 @@ export default async function OrgNewProductPage({
   // Independent reads, fetched together. One org, not a list: in this portal there
   // is nothing to choose between, and offering the choice would be offering a product
   // owned by somebody else — read that org by id rather than loading every platform org.
-  const [categoriesResult, org, allLocations, copyOptions, copySource, productTypes, channels, formTypes] =
+  const [categoriesResult, org, allLocations, copyOptions, copySource, productTypes, channels, formTypes, brands, listingDefaults] =
     await Promise.all([
       adminCategoriesDAL.getCategories(),
       orgsDAL.getOrgSummary(orgId),
@@ -37,6 +39,8 @@ export default async function OrgNewProductPage({
       adminProductTypesDAL.getProductTypes(),
       orgChannelService.list(orgId),
       adminProductTypesDAL.getFormTypes(orgId),
+      brandService.list(orgId),
+      orgListingDefaultsService.get(orgId),
     ]);
 
   // The org's families, for the picker. A product belongs to none by default, which is the
@@ -79,6 +83,8 @@ export default async function OrgNewProductPage({
       categories={categories}
       productTypes={formTypes}
       families={families}
+      brands={brands}
+      shopCountry={listingDefaults.countryOfOrigin}
       orgs={orgs}
       locations={locations}
       copySource={copySource}

@@ -108,6 +108,12 @@ describe.skipIf(!isDisposableDb)("filling a listing on save (local db)", () => {
     expect(filled.facts.material).toEqual({ value: "georgette", origin: "product" });
   });
 
+  it("keeps the product's own country, maker, packer and importer over its brand's, and a blank goes back to the brand (A4)", async () => {
+    const filled = await fillListing({ categoryId, orgId, brandId, facts: { countryOfOrigin: "BD", manufacturer: " Gulf Works, Dubai ", packer: "" } as never });
+    expect(filled.facts).toMatchObject({ countryOfOrigin: { value: "BD", origin: "product" }, manufacturer: { value: "Gulf Works, Dubai", origin: "product" } });
+    expect((filled.facts as Record<string, unknown>).packer).toBeUndefined();
+  });
+
   it("names what the type asks and nothing answered, rather than refusing", async () => {
     const filled = await fillListing({ categoryId, orgId });
     expect(filled.unanswered.length).toBeGreaterThan(0);

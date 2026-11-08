@@ -1,5 +1,6 @@
 // components/shared/forms/product/index.tsx
 
+import type { BrandDto } from "@server/catalog/brand.types";
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { resolveShotList } from "@server/catalog/shot-list";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -74,7 +75,9 @@ interface ProductFormProps {
   /** The org's families, for the picker; a new one is made from the form itself (variants R2). */
   families?: Array<{ id: string; name: string }>;
   /** The shop's brands, for the Brand picker. */
-  brands?: Array<{ id: string; name: string }>;
+  brands?: BrandDto[];
+  /** The shop's own country of origin, for a product whose brand names none (A4). */
+  shopCountry?: string | null;
   orgs?: OrgSummary[];
   /** The org's pickup locations; the form shows a stock input per active one. */
   locations?: LocationOption[];
@@ -112,6 +115,7 @@ export function ProductForm({
   factOrigins,
   families = [],
   brands = [],
+  shopCountry = null,
   copyFrom,
   sellsElsewhere = false,
   team,
@@ -333,6 +337,7 @@ export function ProductForm({
           origins={origins}
           families={families}
           brands={brands}
+          shopCountry={shopCountry}
           orgs={orgs}
           locations={locations}
           onLocationAdded={team ? undefined : addLocation}
@@ -360,6 +365,7 @@ export function ProductForm({
         origins={origins}
         families={families}
         brands={brands}
+          shopCountry={shopCountry}
         orgs={orgs}
         locations={locations}
         onLocationAdded={team ? undefined : addLocation}

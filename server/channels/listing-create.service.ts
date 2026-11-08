@@ -16,8 +16,8 @@ import { isMarketplaceChannel, type MarketplaceChannel } from "./channel-connect
 import { channelConnectionRepository } from "./channel-connection.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
-import { complianceParties, pickTheme, skuFor } from "./listing-create";
-import { genericFor } from "./generic-brand";
+import { complianceFor, pickTheme, skuFor } from "./listing-create";
+import { defaultBrandOf, genericFor } from "./generic-brand";
 import { marketplacePhotoUrls } from "./listing-photos-out";
 import { enqueueListingCheck, LISTING_CHECK_AFTER_SECONDS, LISTING_CHECK_EVERY_SECONDS } from "./listing-publish.job";
 import { complaintIssues, handOverComplaints } from "./listing-complaints";
@@ -114,8 +114,8 @@ async function inputFor(orgId: string, row: CreateRow, product: Product, channel
     gaps,
     typeSchema,
     compliance: {
-      countryOfOrigin: product.brand?.countryOfOrigin ?? defaults.countryOfOrigin,
-      ...complianceParties(product.brand),
+      // A brandless product takes the shop's default brand's lines, as its form and its value rows do (A4 review).
+      ...complianceFor(product.facts, product.brand ?? (await defaultBrandOf(orgId)), defaults.countryOfOrigin),
       hsn,
     },
   };

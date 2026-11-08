@@ -73,6 +73,13 @@ describe.skipIf(!isDisposableDb)("brand parties and type follows category (local
     expect(await genericFor(orgId, null, false)).toBe(true);
     await prisma.brand.update({ where: { id: brandId }, data: { amazonRegistered: true } });
     expect(await genericFor(orgId, null, true)).toBe(false);
+    // And its maker, packer and country go out on a create, as its form shows them (A4 review).
+    const { defaultBrandOf } = await import("@server/channels/generic-brand");
+    const { complianceFor } = await import("@server/channels/listing-create");
+    const brand = await prisma.brand.findUniqueOrThrow({ where: { id: brandId }, include: { parties: true } });
+    const sent = complianceFor({}, await defaultBrandOf(orgId), "AE");
+    expect(sent.manufacturer).toBeTruthy();
+    expect(sent.countryOfOrigin).toBe(brand.countryOfOrigin ?? "AE");
     await prisma.brand.update({ where: { id: brandId }, data: { isDefault: false } });
     await prisma.brand.updateMany({ where: { id: { in: was.map((b) => b.id) } }, data: { isDefault: true } });
     expect(await genericFor(orgId, { amazonRegistered: true }, true)).toBe(false);

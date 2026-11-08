@@ -1,4 +1,4 @@
-import { BRAND_PARTY_ROLE } from "@server/shared/brand-party";
+import { BRAND_PARTY_ROLE, INHERITED_ANSWER, type InheritedAnswer } from "@server/shared/brand-party";
 
 /**
  * Turning a product into a new marketplace listing (marketplace-publish D7, D8). Pure: the variation
@@ -52,5 +52,24 @@ export function complianceParties(brand: ComplianceBrand | null): { manufacturer
     manufacturer: line(BRAND_PARTY_ROLE.MAKER) ?? brand.manufacturer,
     packer: line(BRAND_PARTY_ROLE.PACKER) ?? brand.packerOrImporter,
     importer: line(BRAND_PARTY_ROLE.IMPORTER),
+  };
+}
+
+/** The compliance a create sends: the product's own answer first, then its brand's, then the shop's country (A4). */
+export function complianceFor(
+  facts: unknown,
+  brand: (ComplianceBrand & { countryOfOrigin: string | null }) | null,
+  shopCountry: string | null,
+): { countryOfOrigin: string | null; manufacturer: string | null; packer: string | null; importer: string | null } {
+  const own = (key: InheritedAnswer): string | null => {
+    const entry = (facts as Record<string, { value?: unknown }> | null | undefined)?.[key];
+    return typeof entry?.value === "string" && entry.value.trim() !== "" ? entry.value.trim() : null;
+  };
+  const parties = complianceParties(brand);
+  return {
+    countryOfOrigin: own(INHERITED_ANSWER.COUNTRY_OF_ORIGIN) ?? brand?.countryOfOrigin ?? shopCountry,
+    manufacturer: own(INHERITED_ANSWER.MANUFACTURER) ?? parties.manufacturer,
+    packer: own(INHERITED_ANSWER.PACKER) ?? parties.packer,
+    importer: own(INHERITED_ANSWER.IMPORTER) ?? parties.importer,
   };
 }

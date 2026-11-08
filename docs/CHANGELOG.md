@@ -12,6 +12,29 @@
 
 ## Entries
 
+## 2026-11-08 — listing-model / dynamic-form A4: a product sets its own country, maker, packer or importer
+
+- The product form's Details step shows "Who makes it and where it's from": each of country of origin, maker,
+  packer and importer reads "From your brand Noor: …" (or the shop's country when the brand names none);
+  Change makes it the product's own ("Set on this product"), "Use brand's" goes back (ux journey 3, R3, A4).
+  The add form now gets the shop's brands too.
+- The save keeps those four as the product's own answers (`ownOverrides` in listing-fill); the value functions
+  already never put the brand's value over one. A create sends the product's own first, then the brand's, then
+  the shop's country (`complianceFor`). The closed set is `INHERITED_ANSWER` in `server/shared/brand-party.ts`.
+- Tests: `tests/unit/product-inherited-fields.test.tsx` (the form, the publish order), listing-fill (the save).
+  Mutations: dropping the save's overrides, the publish's own-first, and the revert each failed a test.
+- **Fresh-context review, and its fixes:**
+  - **Blocker:** the form's save dropped every fact its type does not ask, and no type asks these four, so an
+    override on a new product (or after a category change) never reached the server. `keepAsked` keeps them.
+    Found with it: the edit form read stored facts through a parser that read a product with any unknown key
+    as having **no facts at all**; it now skips only that entry. Tests: `keepAsked` unit, and the real edit
+    form saving a maker, keeping it through a brand edit, and "Use brand's" bringing the brand's back
+    (`product-edit-keeps-facts`). Mutations: both fixes reverted each failed a test.
+  - A brandless product's create sent no maker or packer though its form showed the default brand's; the create
+    now uses the shop's default brand (`defaultBrandOf`; brand-parties test, mutation failed it).
+  - Copy: "Use shop defaults's", a stray space and an empty brand name fixed with whole sentences per case.
+- Ran: `tsc`, unit, the touched integration files one at a time.
+
 ## 2026-11-08 — listing-model / dynamic-form unit 3b: a product's answers live in the value rows (full switch) [MIGRATION]
 
 - **Owner decision Q16:** one full switch, no product or database information lost. Migration

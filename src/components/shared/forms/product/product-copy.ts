@@ -113,6 +113,20 @@ export const PRODUCT_BRAND_FIELD_COPY = {
   addBrand: "Add one in Brands and defaults",
 } as const;
 
+export const PRODUCT_INHERITED_FIELDS_COPY = {
+  title: "Who makes it and where it's from",
+  labels: { countryOfOrigin: "Country of origin", manufacturer: "Maker", packer: "Packer", importer: "Importer" },
+  fromBrand: (name: string, value: string) => `From your brand ${name}: ${value}`,
+  fromShop: (value: string) => `From your shop defaults: ${value}`,
+  brandSilent: (name: string) => `Your brand ${name} doesn't say`,
+  nothingYet: "Not given yet",
+  setOnProduct: "Set on this product",
+  change: "Change",
+  revertToBrand: "Use brand's",
+  revertToShop: "Use shop's",
+  partyPlaceholder: "Name, address, pincode",
+} as const;
+
 export const PRODUCT_FAMILY_FIELD_COPY = {
   partOfAFamily: "Part of a family",
   forTheSameThingIn: "For the same thing in several colours or sizes. Most products need none.",

@@ -9,3 +9,11 @@ export async function genericFor(orgId: string, brand: { amazonRegistered: boole
   const fallback = (await brandService.list(orgId)).find((b) => b.isDefault);
   return fallback ? !fallback.amazonRegistered : shopSetting;
 }
+
+/** The shop's default brand, for a product that names none (listing-model/dynamic-form A4). */
+export async function defaultBrandOf(orgId: string) {
+  const brand = (await brandService.list(orgId)).find((b) => b.isDefault);
+  if (!brand) return null;
+  const parties = Object.entries(brand.parties).map(([role, p]) => ({ role, ...p }));
+  return { manufacturer: brand.manufacturer, packerOrImporter: brand.packerOrImporter, countryOfOrigin: brand.countryOfOrigin, parties };
+}

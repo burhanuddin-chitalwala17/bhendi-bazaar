@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { INHERITED_ANSWERS, type InheritedAnswer } from "@server/shared/brand-party";
+
 /**
  * The facts a product type may ask about, beyond the spine every product carries
  * (listing-vocabulary/categories R3, parent trd D1).
@@ -448,13 +450,23 @@ export const storedFactsSchema = z.partialRecord(
   factKeySchema,
   storedFactSchema,
 );
-export type StoredFacts = z.infer<typeof storedFactsSchema>;
+/** A product's facts, and its own answer to what its brand fills (dynamic-form A4), which no type asks. */
+export type StoredFacts = z.infer<typeof storedFactsSchema> & Partial<Record<InheritedAnswer, StoredFact>>;
 
-/** A stored tail read defensively: anything that does not parse reads as no facts, never as a throw. */
+/**
+ * A stored tail read defensively, entry by entry: a key this code does not know, or one entry that does not
+ * parse, is skipped, never a reason to read the product as having no facts at all (A4 review).
+ */
 export function parseStoredFacts(value: unknown): StoredFacts {
-  if (value === null || value === undefined) return {};
-  const parsed = storedFactsSchema.safeParse(value);
-  return parsed.success ? parsed.data : {};
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const kept = new Set<string>([...FACTS, ...INHERITED_ANSWERS]);
+  const out: Record<string, StoredFact> = {};
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    if (!kept.has(key)) continue;
+    const parsed = storedFactSchema.safeParse(entry);
+    if (parsed.success) out[key] = parsed.data;
+  }
+  return out as StoredFacts;
 }
 
 /** Measurements keyed by measure, not fact: read through the fact schema, every entry fails and the whole column reads as empty. */
