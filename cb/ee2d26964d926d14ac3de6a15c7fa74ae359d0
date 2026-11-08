@@ -1,0 +1,45 @@
+docs/specs/listing-model/retire-old-paths/decisions.md
+  s_0972fb7ac9c18b::t_d2202ba30fd98f 12,16
+prisma/migrations/20261108190000_retire_frozen_answers/migration.sql
+  s_0972fb7ac9c18b::t_f8b2bb7fb1c4a5 1-6,8-16,18-23,27,35-39,42-45
+docs/adr/0051-a-products-facts-are-one-json-column-each-entry-carrying-its-origin.md
+  s_0972fb7ac9c18b::t_6862c9e7e6245a 4
+docs/adr/0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md
+  s_0972fb7ac9c18b::t_6862c9e7e6245a 4
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_4ad1f02f19ef01 15-28
+prisma/schema.prisma
+  s_0972fb7ac9c18b::t_a206ea41cdb93a 3029-3037
+docs/ARCHITECTURE.md
+  s_0972fb7ac9c18b::t_4c3a1297cf2a43 77
+  s_0972fb7ac9c18b::t_53aa1854e4f98c 61
+tests/unit/answers-live-in-values.test.ts
+  s_0972fb7ac9c18b::t_86b417d851ba04 2-4,21-22,24
+docs/CONVENTIONS.md
+  s_0972fb7ac9c18b::t_6862c9e7e6245a 58
+docs/adr/README.md
+  s_0972fb7ac9c18b::t_0a897bec7fa9f9 91,108
+docs/specs/listing-model/retire-old-paths/spec.md
+  s_0972fb7ac9c18b::t_d2202ba30fd98f 36-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "cbee2d26964d926d14ac3de6a15c7fa74ae359d0",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
