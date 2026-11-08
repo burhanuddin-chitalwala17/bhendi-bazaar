@@ -312,17 +312,6 @@ model Product {
   /// Restrict: a type in use is retired, never deleted (product-types D8).
   productTypeRef ProductType? @relation(fields: [productType], references: [key], onDelete: Restrict)
 
-  /// The declared facts this product answers, each entry holding its value and the level that
-  /// supplied it, so origin costs no second column (listing-vocabulary trd D3). Only the
-  /// discriminators above earn columns: nothing filters on a colour or a fabric, and a column
-  /// added for a filter nobody has written is a second place for a value to live (categories D6a).
-  /// Frozen at the switch (dynamic-form Q16): read by nothing but the compare gate; dropped by retire-old-paths.
-  factsFrozen        Json? @map("facts")
-  /// Measurements in the unit the product type fixes, same shape as `facts`. Stored because a
-  /// measurement derives a size label and a label derives no measurement (ADR-0047 D4).
-  /// Frozen at the switch, as `factsFrozen`.
-  measurementsFrozen Json? @map("measurements")
-
   /// The family this product is a member of, when it has siblings that sell separately
   /// (listing-vocabulary/variants D2). Nullable because one abaya in one colour is one product
   /// and nothing asks a shop to declare a family of one — and because requiring it would refuse
@@ -3036,4 +3025,14 @@ model ProductChannelState {
 
   @@unique([productId, channel])
   @@index([orgId, channel])
+}
+
+/// A product's facts and measurements as they stood before answers moved to ProductValue (listing-model
+/// retire-old-paths R3, dynamic-form Q16), kept so dropping the columns loses nothing. Read by no code; written
+/// once by the migration that dropped them.
+model ProductAnswersArchive {
+  productId    String   @id
+  facts        Json?
+  measurements Json?
+  archivedAt   DateTime @default(now())
 }

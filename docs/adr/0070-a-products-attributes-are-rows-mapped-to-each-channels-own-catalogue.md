@@ -1,7 +1,7 @@
 # ADR-0070: A product's attributes are rows, mapped at runtime to each channel's own catalogue
 
 - **Date:** 2026-11-07
-- **Status:** Proposed
+- **Status:** Accepted (2026-11-08, listing-model release). Supersedes ADR-0051; ADR-0052 still governs the code fact list until it moves to rows
 
 ## Context
 

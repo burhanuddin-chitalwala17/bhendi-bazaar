@@ -1,7 +1,7 @@
 # ADR-0051: A product's facts are one JSON column, each entry carrying its origin
 
 - **Date:** 2026-10-05
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0070](0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md) (2026-11-08: answers live in `ProductValue`; the JSON columns were archived and dropped)
 
 ## Context
 

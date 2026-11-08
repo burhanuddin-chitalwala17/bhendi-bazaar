@@ -33,8 +33,8 @@ release as the new form (parent Q30, Q31), so the safety lives in a verified swi
 
 ## Scope
 - **Outcome:** one model left.
-- **In:** R1–R5.
-- **Later:** none.
+- **In:** R1, R2, R5; R3–R4 for the product's facts and measurements columns (decisions Q4).
+- **Later:** R3–R4 for the old map tables, `ListingValue`, the code fact list and `Product.weight`, each still read by publish, the form or checkout (decisions Q4).
 
 ## Open questions
 None.

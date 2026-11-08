@@ -1,14 +1,13 @@
 /**
- * A product's answers live in the value rows since the switch (listing-model/dynamic-form Q16). The frozen
- * pre-switch copy on Product is read only by the compare gate and dropped by retire-old-paths; nothing else
- * may read or write it, or the two would drift and an answer could be lost.
+ * A product's answers live in the value rows since the switch (listing-model/dynamic-form Q16); the old
+ * columns were archived and dropped (retire-old-paths R3, R4). Nothing may name them again, nor the archive,
+ * which is a record and not a second place for an answer to live.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROOTS = ["server", "src", "worker"];
-const ALLOWED = new Set(["scripts/attributes-compare.ts"]);
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -19,10 +18,10 @@ function files(dir: string): string[] {
 }
 
 describe("answers live in the value rows", () => {
-  it("nothing outside the compare gate touches the frozen columns", () => {
-    const all = ROOTS.flatMap(files);
+  it("nothing names the dropped columns or reads the archive", () => {
+    const all = [...ROOTS, "scripts"].flatMap(files);
     expect(all.length).toBeGreaterThan(500);
-    const offenders = all.filter((f) => !ALLOWED.has(f) && /\b(factsFrozen|measurementsFrozen)\b/.test(readFileSync(f, "utf8")));
+    const offenders = all.filter((f) => /\b(factsFrozen|measurementsFrozen|productAnswersArchive|ProductAnswersArchive)\b/.test(readFileSync(f, "utf8")));
     expect(offenders).toEqual([]);
   });
 

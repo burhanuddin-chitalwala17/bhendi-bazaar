@@ -12,6 +12,20 @@
 
 ## Entries
 
+## 2026-11-08 — listing-model / retire-old-paths: the product's old answer columns go [MIGRATION]
+
+- Migration `20261108190000_retire_frozen_answers` copies `Product.facts` and `measurements` whole into
+  `ProductAnswersArchive` (read by no code; a record so nothing is lost), then checks that every answer is in a
+  value row and the archive is complete, and fails changing nothing if not, then drops the two columns. The
+  compare script is retired: its check now runs inside the migration, on every database it reaches.
+- ADR-0051 superseded and ADR-0070 accepted; CONVENTIONS describes the new model. The programme's HANDOFF.md
+  is removed (the specs, decisions and this log carry its state).
+- **Not removed, logged as decisions Q4:** the old channel map tables, `ListingValue`, the code fact list and
+  `Product.weight` are still read by publish, feeds, readiness, the form or checkout, so dropping them would
+  break those. Each moves to the new tables in its own unit after the owner's publish test.
+- Guard: `answers-live-in-values` fails on any code naming the dropped columns or reading the archive. Ran:
+  `tsc`, unit, docs check, the migration on local dev and ci.
+
 ## 2026-11-08 — listing-model / dynamic-form A4: a product sets its own country, maker, packer or importer
 
 - The product form's Details step shows "Who makes it and where it's from": each of country of origin, maker,
