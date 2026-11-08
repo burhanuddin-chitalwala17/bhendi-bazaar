@@ -118,8 +118,6 @@ export const FIX = {
   facts: (names: string) => `Fill these on the product: ${names}.`,
   factsAction: "Fill on product",
   admin: (label: string, names: string) => `We don't ask for ${names} yet. The admin adds them for ${label}, then you fill them on the product.`,
-  adminMessage: (label: string, type: string, product: string, names: string) =>
-    `Hello Bhendi Bazaar, ${label} needs these for ${type}: ${names}. Product: ${product}. Please add them so I can fill them in.`,
   after: (label: string) => `Once they're done, open Review and publish and send it to ${label} again.`,
 } as const;
 

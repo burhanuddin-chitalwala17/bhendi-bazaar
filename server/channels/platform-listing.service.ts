@@ -40,6 +40,7 @@ import {
 } from "./platform-listing.types";
 import { providerFor } from "./providers";
 import { listingCreateService } from "./listing-create.service";
+import { complaintIssues, type ListingComplaint } from "./listing-complaints";
 
 /**
  * Each product's listing on each connected marketplace (channel-listings): made with what is live,
@@ -177,6 +178,12 @@ async function factsFor(channel: MarketplaceChannel, product: Product, theirCate
   };
 }
 
+/** A send's own answer is the newer word; with none, the daily look's complaint shows on the same fields (Q23). */
+function shownIssues(row: { issues: unknown }, mirror: { problems: unknown; problemsSince: Date | null } | undefined): ListingIssue[] {
+  const daily = mirror?.problemsSince != null && issuesOf(mirror.problems).length > 0;
+  return issuesOf(row.issues).length > 0 || !daily ? issuesOf(row.issues) : issuesOf(mirror!.problems);
+}
+
 export const platformListingService = {
   /** The listing screen (ux.md), made with what is live the first time it opens (D3). */
   async screen(orgId: string, productId: string, channelName: string): Promise<ListingScreenDTO> {
@@ -193,8 +200,7 @@ export const platformListingService = {
     const overrides = parseOverrides(row.overrides, product.media);
     const daily = mirror?.problemsSince != null && issuesOf(mirror.problems).length > 0;
     const { status, values, waiting } = statusOf(row, product, rules, daily ? complainedFields(mirror!.problems) : []);
-    // A send's own answer is the newer word; with none, the daily look's complaint shows on the same fields (Q23).
-    const issues = issuesOf(row.issues).length > 0 || !daily ? issuesOf(row.issues) : issuesOf(mirror!.problems);
+    const issues = shownIssues(row, mirror);
     return {
       id: row.id,
       version: row.version,
@@ -225,6 +231,23 @@ export const platformListingService = {
       showing: (row.showing as ListingScreenDTO["showing"]) ?? null,
       draft: row.channelListingId === null && row.createMode ? await listingCreateService.draftInfo(orgId, row, product, channel) : null,
     };
+  },
+
+  /**
+   * What the listing screen shows as errors, in the shape requests reads (setup-requests Q36): the
+   * shop's "Raise a request" hands over exactly what it sees, never a list from the browser.
+   */
+  async complaint(orgId: string, productId: string, channelName: string): Promise<ListingComplaint | null> {
+    const { connection, channel } = await connectionFor(orgId, channelName);
+    await productOf(orgId, productId);
+    const [[row], [mirror]] = await Promise.all([
+      platformListingRepository.forProducts(connection.id, [productId]),
+      channelListingRepository.mirrorsFor(connection.id, [productId]),
+    ]);
+    if (!row) throw new NotFoundError("Listing");
+    const issues = complaintIssues(shownIssues(row, mirror));
+    if (issues.length === 0) return null;
+    return { orgId, productId, channel, productType: null, kind: null, theirCategory: row.marketplaceType, issues };
   },
 
   /**

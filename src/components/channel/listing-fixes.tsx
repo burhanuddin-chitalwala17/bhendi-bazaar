@@ -6,10 +6,11 @@ import { SHOP_STATE, type ShopTicketDTO } from "@server/requests/request.types";
 import { MARKETPLACE_KIND } from "@server/requests/marketplace/marketplace.types";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { REQUESTS_COPY } from "@/components/requests/requests-copy";
+import { RaiseRequestButton, RequestsLink } from "@/components/requests/raise-request-button";
+import { formatDate } from "@/lib/format";
 import { ROUTES } from "@server/shared/routes";
 import { BRAND_FIELD_ID } from "@/components/shared/forms/product/ProductBrandField";
 
-import { AskAdminPicker } from "./ask-admin-picker";
 import { FIX } from "./platform-listing-copy";
 
 /** "How to fix it" (marketplace-publish Q24): each complaint at the place it is fixed, one button each. */
@@ -31,9 +32,8 @@ export function ListingFixes({ orgId, screen, tickets = [] }: { orgId: string; s
         return { text: REQUESTS_COPY.needsDetails(screen.label, fix.names.length, names), action: null, href: null };
     }
   };
-  const type = screen.draft?.marketplaceType ?? screen.productName;
-  // The fields ticket this listing waits on, raised by itself (setup-requests Q5); "Ask the admin" only before it exists.
-  const ticket = tickets.find((t) => t.kind === MARKETPLACE_KIND.FIELDS) ?? null;
+  // The fields ticket this listing waits on, raised by itself (setup-requests Q5); one tap raises it before it exists (Q36).
+  const ticket = fieldsTicket(tickets);
   return (
     <div className="flex flex-col gap-3">
       <p className="font-semibold">{FIX.title}</p>
@@ -48,9 +48,9 @@ export function ListingFixes({ orgId, screen, tickets = [] }: { orgId: string; s
                   <Link href={href}>{action}</Link>
                 </Button>
               ) : ticket ? (
-                <TicketLine ticket={ticket} label={screen.label} editHref={editProduct} />
+                <TicketLine orgId={orgId} ticket={ticket} label={screen.label} editHref={editProduct} />
               ) : (
-                <AskAdminPicker message={FIX.adminMessage(screen.label, type, screen.productName, FIX.list(fix.names))} />
+                <RaiseRequestButton orgId={orgId} channel={screen.channel} productId={screen.productId} />
               )}
             </li>
           );
@@ -61,12 +61,18 @@ export function ListingFixes({ orgId, screen, tickets = [] }: { orgId: string; s
   );
 }
 
-/** Where our side of a fix stands, in one word (setup-requests Q31), and the shop's next step when ready. */
-function TicketLine({ ticket, label, editHref }: { ticket: ShopTicketDTO; label: string; editHref: string }) {
+export const fieldsTicket = (tickets: readonly ShopTicketDTO[]) => tickets.find((t) => t.kind === MARKETPLACE_KIND.FIELDS) ?? null;
+
+/** Where our side of a fix stands (setup-requests Q31), when it was raised, what it covers, and where to follow it (Q36). */
+function TicketLine({ orgId, ticket, label, editHref }: { orgId: string; ticket: ShopTicketDTO; label: string; editHref: string }) {
   const names = ticket.names.join(", ");
   return (
     <div className="flex flex-col items-start gap-1">
-      <StatusBadge tone={ticket.state === SHOP_STATE.READY ? "success" : ticket.state === SHOP_STATE.WITH_US ? "info" : "neutral"}>{REQUESTS_COPY.shopState[ticket.state]}</StatusBadge>
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusBadge tone={ticket.state === SHOP_STATE.READY ? "success" : ticket.state === SHOP_STATE.WITH_US ? "info" : "neutral"}>{REQUESTS_COPY.shopState[ticket.state]}</StatusBadge>
+        <span className="text-small text-muted-foreground">{REQUESTS_COPY.raisedOn(formatDate(ticket.raisedAt, { day: "numeric", month: "short" }))}</span>
+      </div>
+      {ticket.state === SHOP_STATE.WITH_US && <p className="text-small text-muted-foreground">{names && <>{REQUESTS_COPY.covers(names)} </>}{REQUESTS_COPY.withUsHint}</p>}
       {ticket.state === SHOP_STATE.READY && names && (
         <>
           <p>{REQUESTS_COPY.fillThese(names)}</p>
@@ -74,6 +80,7 @@ function TicketLine({ ticket, label, editHref }: { ticket: ShopTicketDTO; label:
         </>
       )}
       {ticket.state === SHOP_STATE.NOT_SUPPORTED && <p>{REQUESTS_COPY.notSupported(label, names)}</p>}
+      <RequestsLink orgId={orgId} />
     </div>
   );
 }
