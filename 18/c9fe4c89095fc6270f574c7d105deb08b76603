@@ -1,0 +1,90 @@
+tests/unit/brands-and-defaults.test.ts
+  s_0972fb7ac9c18b::t_911eb3c1dc1c4e 48,63-64,68-69,73-79,91,148,155,161
+  s_0972fb7ac9c18b::t_88214668a09e77 6,38-39
+server/shared/brand-party.ts
+  s_0972fb7ac9c18b::t_f06f8347fe52b4 1-7
+prisma/schema.prisma
+  s_0972fb7ac9c18b::t_76577459952dc4 876-877
+server/catalog/product.read.repository.ts
+  s_0972fb7ac9c18b::t_b2b23c25e87941 156
+src/components/org/brands-manager.tsx
+  s_0972fb7ac9c18b::t_80f51bd8e3b3ac 13,177,225,241-249
+  s_0972fb7ac9c18b::t_ef56ed7437508f 21-22,98-101,194-199,218-224,226-230
+src/components/org/brands-copy.ts
+  s_0972fb7ac9c18b::t_ef56ed7437508f 17,30-31,34-39,41-42
+  s_0972fb7ac9c18b::t_80f51bd8e3b3ac 1-2,32-33,40
+server/catalog/brand.repository.ts
+  s_0972fb7ac9c18b::t_f06f8347fe52b4 1-3,14-35,45,51,54-59,63-69
+tests/integration/brand-parties.test.ts
+  s_0972fb7ac9c18b::t_2e244424537521 65-73
+  s_0972fb7ac9c18b::t_76577459952dc4 3
+  s_0972fb7ac9c18b::t_911eb3c1dc1c4e 77-85,91
+  s_0972fb7ac9c18b::t_565dc00afcf3b9 63-64,74,86-90
+docs/specs/listing-model/dynamic-form/trd.md
+  s_0972fb7ac9c18b::t_80f51bd8e3b3ac 37-38
+tests/unit/compliance-parties.test.ts
+  s_0972fb7ac9c18b::t_565dc00afcf3b9 1-36
+docs/CONTRACTS.md
+  s_0972fb7ac9c18b::t_9acb374fdcdf4a 311
+  s_0972fb7ac9c18b::t_1630d5c1c014e9 735-736
+server/catalog/brand.service.ts
+  s_0972fb7ac9c18b::t_ecea8598bc92a8 1,9-25,37-40,45-48
+server/channels/platform-listing.service.ts
+  s_0972fb7ac9c18b::t_b2b23c25e87941 43,194
+  s_0972fb7ac9c18b::t_b7d9761754f753 193
+server/catalog/brand.types.ts
+  s_0972fb7ac9c18b::t_80f51bd8e3b3ac 30-34,45-46
+  s_0972fb7ac9c18b::t_f06f8347fe52b4 3-4,11,47
+  s_0972fb7ac9c18b::t_6d4579a1dfb4bf 1,5-10,21-23,27-29,35,43-44,48
+tests/integration/brands.test.ts
+  s_0972fb7ac9c18b::t_911eb3c1dc1c4e 15-16
+prisma/migrations/20261108170000_brand_owns_amazon_choice/migration.sql
+  s_0972fb7ac9c18b::t_e2b965bb0a9836 1-6
+server/channels/listing-create.service.ts
+  s_0972fb7ac9c18b::t_b2b23c25e87941 19-20,72-73,118
+src/lib/validation/schemas/brand.schema.ts
+  s_0972fb7ac9c18b::t_345fef13f03636 29-40,50-51,67-69
+  s_0972fb7ac9c18b::t_9acb374fdcdf4a 52-57
+  s_0972fb7ac9c18b::t_6d4579a1dfb4bf 12-13
+docs/specs/listing-model/dynamic-form/decisions.md
+  s_0972fb7ac9c18b::t_80f51bd8e3b3ac 23-24
+  s_0972fb7ac9c18b::t_511ab078779771 22
+docs/ARCHITECTURE.md
+  s_0972fb7ac9c18b::t_39ff69531d43e5 77
+  s_0972fb7ac9c18b::t_220eaddbf94ace 18
+  s_0972fb7ac9c18b::t_950f17a9214c34 61
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_220eaddbf94ace 15-24,32-34,38-39
+  s_0972fb7ac9c18b::t_39ff69531d43e5 25-31,35-37
+server/listing/attribute.types.ts
+  s_0972fb7ac9c18b::t_f06f8347fe52b4 40-41
+docs/specs/listing-model/HANDOFF.md
+  s_0972fb7ac9c18b::t_220eaddbf94ace 124
+server/channels/generic-brand.ts
+  s_0972fb7ac9c18b::t_b2b23c25e87941 1-11
+server/channels/listing-create.ts
+  s_0972fb7ac9c18b::t_b2b23c25e87941 1-2,31-56
+docs/specs/listing-model/attributes/decisions.md
+  s_0972fb7ac9c18b::t_511ab078779771 25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "18c9fe4c89095fc6270f574c7d105deb08b76603",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
