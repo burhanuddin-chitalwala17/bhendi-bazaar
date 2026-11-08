@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FormController, FormInput } from "@/components/shared/forms/FormField";
+import { FormController, FormInput, FormSelect } from "@/components/shared/forms/FormField";
 import { CountryPicker } from "@/components/shared/forms/CountryPicker";
 import { asCountryCode, countryName } from "@server/shared/countries";
 import { FormActions } from "@/components/shared/button-groups/FormActions";
@@ -18,7 +18,8 @@ import { useServerForm } from "@/hooks/core/useServerForm";
 import { useMutation } from "@/hooks/core/useMutation";
 import { orgBrandsApiClient } from "@/components/org/orgBrandsApiClient";
 import { brandSchema, type BrandInput } from "@/lib/validation/schemas/brand.schema";
-import type { BrandDto } from "@server/catalog/brand.types";
+import { BRAND_PARTY_ROLES, type BrandDto } from "@server/catalog/brand.types";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { BRANDS_COPY } from "./brands-copy";
 
 interface BrandsManagerProps {
@@ -94,8 +95,10 @@ export function BrandsManager({ orgId, brands }: BrandsManagerProps) {
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div className="space-y-1 text-muted-foreground">
-                  <p>{brand.manufacturer ? BRANDS_COPY.madeBy(brand.manufacturer) : <em>{BRANDS_COPY.makerMissing}</em>}</p>
-                  {brand.packerOrImporter && <p>{BRANDS_COPY.packedBy(brand.packerOrImporter)}</p>}
+                  <p>{brand.parties.maker.name ? BRANDS_COPY.madeBy(brand.parties.maker.name) : <em>{BRANDS_COPY.makerMissing}</em>}</p>
+                  {brand.parties.packer.name && <p>{BRANDS_COPY.packedBy(brand.parties.packer.name)}</p>}
+                  {brand.parties.importer.name && <p>{BRANDS_COPY.importedBy(brand.parties.importer.name)}</p>}
+                  {!brand.amazonRegistered && <StatusBadge tone="neutral">{BRANDS_COPY.genericBadge}</StatusBadge>}
                   <p>{brand.countryOfOrigin ? BRANDS_COPY.from(countryName(brand.countryOfOrigin)) : <em>{BRANDS_COPY.originMissing}</em>}</p>
                 </div>
                 <div className="flex justify-end gap-1 border-t pt-3">
@@ -171,6 +174,7 @@ function BrandForm({
     schema: brandSchema,
     submit: (data) => orgBrandsApiClient.save(orgId, brand?.id, data),
     successMessage: brand ? BRANDS_COPY.updated : BRANDS_COPY.added,
+    fallbackMessage: BRANDS_COPY.saveFailed,
     onSuccess: (result) => {
       const saved = result as BrandDto;
       const isDefault = getValues("isDefault");
@@ -185,10 +189,14 @@ function BrandForm({
     },
     defaultValues: {
       name: brand?.name ?? "",
-      manufacturer: brand?.manufacturer ?? "",
-      packerOrImporter: brand?.packerOrImporter ?? "",
       countryOfOrigin: asCountryCode(brand?.countryOfOrigin),
       isDefault: brand?.isDefault ?? false,
+      amazonRegistered: brand?.amazonRegistered ?? true,
+      parties: {
+        maker: { name: brand?.parties.maker.name ?? "", address: brand?.parties.maker.address ?? "", pincode: brand?.parties.maker.pincode ?? "" },
+        packer: { name: brand?.parties.packer.name ?? "", address: brand?.parties.packer.address ?? "", pincode: brand?.parties.packer.pincode ?? "" },
+        importer: { name: brand?.parties.importer.name ?? "", address: brand?.parties.importer.address ?? "", pincode: brand?.parties.importer.pincode ?? "" },
+      },
     },
   });
 
@@ -207,19 +215,19 @@ function BrandForm({
         {...register("name")}
         error={errors.name?.message}
       />
-      <FormInput
-        label={BRANDS_COPY.maker}
-        placeholder={BRANDS_COPY.makerPlaceholder}
-        {...register("manufacturer")}
-        error={errors.manufacturer?.message}
-        hint={BRANDS_COPY.makerHint}
-      />
-      <FormInput
-        label={BRANDS_COPY.packer}
-        {...register("packerOrImporter")}
-        error={errors.packerOrImporter?.message}
-        hint={BRANDS_COPY.packerHint}
-      />
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-medium text-foreground">{BRANDS_COPY.parties}</legend>
+        {BRAND_PARTY_ROLES.map((role) => {
+          const partyErrors = errors.parties?.[role];
+          return (
+            <div key={role} className="space-y-2 rounded-card border border-border p-3">
+              <FormInput label={BRANDS_COPY.partyName(BRANDS_COPY.party[role])} {...register(`parties.${role}.name`)} error={partyErrors?.name?.message} />
+              <FormInput label={BRANDS_COPY.address} autoComplete="off" {...register(`parties.${role}.address`)} error={partyErrors?.address?.message} />
+              <FormInput label={BRANDS_COPY.pincode} inputMode="numeric" {...register(`parties.${role}.pincode`)} error={partyErrors?.pincode?.message} />
+            </div>
+          );
+        })}
+      </fieldset>
       <FormController
         name="countryOfOrigin"
         control={control}
@@ -230,6 +238,15 @@ function BrandForm({
           <CountryPicker value={typeof field.value === "string" ? field.value : null} onChange={field.onChange} />
         )}
       />
+      <FormSelect
+        label={BRANDS_COPY.onAmazon}
+        hint={BRANDS_COPY.amazonHint}
+        error={errors.amazonRegistered?.message}
+        {...register("amazonRegistered", { setValueAs: (v) => v === true || v === "true" })}
+      >
+        <option value="true">{BRANDS_COPY.amazonRegistered}</option>
+        <option value="false">{BRANDS_COPY.amazonGeneric}</option>
+      </FormSelect>
       <Checkbox
         label={BRANDS_COPY.defaultBrand}
         description={

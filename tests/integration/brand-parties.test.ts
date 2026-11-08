@@ -1,6 +1,6 @@
 /**
  * listing-model/attributes unit 2 against a real schema: a brand's parties fill manufacturer, packer and
- * importer (D6, Q11); the shop's Generic switch sets its brands (Q16); a Tote asks the new questions and keeps
+ * importer (D6, Q11); the brand page saves them and the Amazon choice (dynamic-form R7); a Tote asks the new questions and keeps
  * its old strap answer (A4); a product's type follows its category, answers kept (A5, D7).
  */
 import "dotenv/config";
@@ -60,19 +60,36 @@ describe.skipIf(!isDisposableDb)("brand parties and type follows category (local
     await prisma.brand.delete({ where: { id: other.id } });
   });
 
-  it("a new brand lists as the shop does until the brand page asks (Q16)", async () => {
-    const { brandService } = await import("@server/catalog/brand.service");
-    await prisma.orgListingDefaults.upsert({ where: { orgId }, create: { orgId, amazonGeneric: true }, update: { amazonGeneric: true } });
-    const made = await brandService.create(orgId, { name: `New ${stamp}`, manufacturer: null, packerOrImporter: null, countryOfOrigin: null, isDefault: false });
-    expect((await prisma.brand.findUniqueOrThrow({ where: { id: made.id } })).amazonRegistered).toBe(false);
-    await prisma.brand.delete({ where: { id: made.id } });
+  it("a product with no brand lists as its shop's default brand says (listing-model Q10, dynamic-form Q14)", async () => {
+    const { genericFor } = await import("@server/channels/generic-brand");
+    // This test's brand made the shop's default for the check, the real default put back after.
+    const was = await prisma.brand.findMany({ where: { orgId, isDefault: true }, select: { id: true } });
+    await prisma.brand.updateMany({ where: { orgId, isDefault: true }, data: { isDefault: false } });
+    await prisma.brand.update({ where: { id: brandId }, data: { isDefault: true, amazonRegistered: false } });
+    expect(await genericFor(orgId, null, false)).toBe(true);
+    await prisma.brand.update({ where: { id: brandId }, data: { amazonRegistered: true } });
+    expect(await genericFor(orgId, null, true)).toBe(false);
+    await prisma.brand.update({ where: { id: brandId }, data: { isDefault: false } });
+    await prisma.brand.updateMany({ where: { id: { in: was.map((b) => b.id) } }, data: { isDefault: true } });
+    expect(await genericFor(orgId, { amazonRegistered: true }, true)).toBe(false);
   });
 
-  it("the shop's Generic switch sets its brands until the brand page asks (Q16)", async () => {
-    await prisma.orgListingDefaults.upsert({ where: { orgId }, create: { orgId, amazonGeneric: true }, update: { amazonGeneric: true } });
-    expect((await prisma.brand.findUniqueOrThrow({ where: { id: brandId } })).amazonRegistered).toBe(false);
-    await prisma.orgListingDefaults.update({ where: { orgId }, data: { amazonGeneric: false } });
-    expect((await prisma.brand.findUniqueOrThrow({ where: { id: brandId } })).amazonRegistered).toBe(true);
+  it("the brand page saves parties and the Amazon choice with the brand, and products follow (dynamic-form R7, A5)", async () => {
+    const { brandService } = await import("@server/catalog/brand.service");
+    const party = (name: string | null, pincode: string | null = null) => ({ name, address: name ? "Mumbai" : null, pincode });
+    const made = await brandService.create(orgId, { name: `New ${stamp}`, countryOfOrigin: null, isDefault: false, amazonRegistered: false, parties: { maker: party(null), packer: party(null), importer: party(null) } });
+    expect(made).toMatchObject({ amazonRegistered: false, parties: { maker: { name: null } } });
+    await prisma.product.update({ where: { id: productId }, data: { brandId: made.id } });
+    await brandService.update(orgId, made.id, { parties: { maker: party("Noor Works", "400003"), packer: party(null), importer: party(null) } });
+    expect((await value("manufacturer"))?.text).toBe("Noor Works, Mumbai, 400003");
+    expect((await prisma.brand.findUniqueOrThrow({ where: { id: made.id } })).manufacturer).toBe("Noor Works");
+    // A PATCH without parties leaves them; a party blanked is removed (Q13).
+    await brandService.update(orgId, made.id, { name: `Renamed ${stamp}` });
+    expect(await prisma.brandParty.count({ where: { brandId: made.id } })).toBe(1);
+    await brandService.update(orgId, made.id, { parties: { maker: party(null), packer: party(null), importer: party(null) } });
+    expect(await prisma.brandParty.count({ where: { brandId: made.id } })).toBe(0);
+    await prisma.product.update({ where: { id: productId }, data: { brandId } });
+    await prisma.brand.delete({ where: { id: made.id } });
   });
 
   it("asks a bag the new questions and keeps today's strap answer under its own name (A4)", async () => {

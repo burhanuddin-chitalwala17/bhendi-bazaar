@@ -873,8 +873,8 @@ enum ReturnsPreset {
 /// The private listing context that does not belong to a brand (org-profile spec R4): what a
 /// product inherits when neither it nor its family nor its brand says otherwise. Pre-fills,
 /// never validates. The tax rate is basis points, never a float.
-/// Carries attributes sync triggers (attributes Q6, Q9, Q16): a country change re-derives the shop's products,
-/// and its Generic switch sets every brand's `amazonRegistered` until the brand page asks it.
+/// Carries an attributes sync trigger (attributes Q6, Q9): a country change re-derives the shop's products.
+/// `amazonGeneric` now serves only a product with no brand; each brand holds its own (dynamic-form R7).
 model OrgListingDefaults {
   orgId String @id
   org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)

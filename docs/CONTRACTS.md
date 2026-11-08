@@ -308,6 +308,7 @@ the server only (Home), never sent by a route. Two routes, `withOrg`, no body, e
 `POST /api/org/[orgId]/setup/shared` (the first share). Caller: `src/components/org/home/setupApiClient.ts`.
 **`ProjectedValues`** and the attribute closed sets, `BRAND_PARTY_ROLE` among them (`server/listing/attribute.types.ts`, listing-model/attributes units 1–2), are server-only: a product's typed values as one read. No route sends them; dynamic-form's form will.
 **`FieldMapRow`, `BuiltField`, `BuildGap`** (`server/listing/field-map.types.ts`, listing-model/field-maps unit 1) are server-only: a listing built from the field maps, handed by listing to channels' providers and to the Google/Meta feed. Since field-maps unit 2 the admin changes a map through `PUT /api/admin/field-maps` (`requirePlatformAdminId`, audited `channel.field-map.set`), parsing **`fieldMapSaveSchema`** (`src/lib/validation/schemas/field-map.schema.ts`): `{ channel, channelType, fieldPath, bbType, source, key, constant, unitTarget, reason, values }`, `source` from `FIELD_SOURCES`, `key` checked against the questions, rules, product columns or shop settings that exist, `unitTarget` a unit we can convert to, `values` the whole set of answer pairs. Since dynamic-form unit 1 the new questions are facts, so `key` accepts them as today's questions (`PLANNED_ATTRIBUTES` is empty); the accepted set is unchanged. It answers `{ id }`. Caller: `channelsApiClient.saveFieldMap`. The screens read **`AdminFieldMapsDTO`** and **`AdminChannelTypeDTO`** (`server/listing/admin.field-map.types.ts`) on the server only.
+Since listing-model/dynamic-form unit 4 (2026-11-08) a **brand** is saved with its parties: `POST /api/org/[orgId]/brands` parses **`brandSchema`** and `PATCH …/brands/[brandId]` **`updateBrandSchema`** (`src/lib/validation/schemas/brand.schema.ts`): `{ name, countryOfOrigin, isDefault, amazonRegistered, parties: { maker, packer, importer } }`, each party `{ name, address, pincode }` (all optional, a pincode six digits); the update takes `parties` whole or not at all. `manufacturer` and `packerOrImporter` are no longer accepted (they follow the maker and packer). **`BrandDto`** (`server/catalog/brand.types.ts`) gains `amazonRegistered` and `parties`. The shop-wide Generic route and `amazonGenericSchema` are removed: each brand holds the choice.
 **`HomeAttentionDto`** (`src/data-access-layer/org/home.dal.ts`) is a server read for Home's lines (since dynamic-form unit 2 also `channelNeeds`: per channel `{ channel, products, details }` from stored completeness),
 each `{ ok: true, value } | { ok: false }`; no wire shape. Since design-system Q31 (2026-11-04) it carries
 `toPack` (paid parcels still packing, with the oldest wait) and `lowStock` (products at or under their
@@ -731,8 +732,8 @@ errors with `attribute`, `field` and `need`. `MarketplaceProvider` gains `typeDe
 choices; a stale hash writes nothing and answers `{ stale: plan }`.
 
 Since setup-requests Q33–Q35: `ShopTicketDTO` is read on the shop's own Requests page; `ISSUE_CATEGORY`
-gains products, shop and payments. `OrgListingDefaultsDto` gains `amazonGeneric`, set by
-`PUT /api/org/{orgId}/listing-defaults/amazon-generic`. `CreateListingInput` gains `generic`;
+gains products, shop and payments. `OrgListingDefaultsDto` gains `amazonGeneric` (its own PUT, removed
+by listing-model/dynamic-form unit 4, which moves the choice onto each brand). `CreateListingInput` gains `generic`;
 `ListingRules` gains `genericBrand`; `ListingScreenDTO` gains `generic`; `ISSUE_NEED` gains
 `brand_name`. A product's detail (`ProductDetails`) gains `brandId`, and each stock location its
 `city`, `pincode` and `isActive`.

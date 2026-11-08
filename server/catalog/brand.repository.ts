@@ -1,3 +1,6 @@
+import type { Prisma } from "@prisma/client";
+
+import { BRAND_PARTY_ROLE, BRAND_PARTY_ROLES, type BrandPartyRole } from "@server/shared/brand-party";
 import { prisma } from "@server/shared/prisma";
 
 export interface BrandData {
@@ -6,6 +9,28 @@ export interface BrandData {
   packerOrImporter: string | null;
   countryOfOrigin: string | null;
   isDefault: boolean;
+}
+
+export interface PartyData {
+  name: string | null;
+  address: string | null;
+  pincode: string | null;
+}
+export type PartiesData = Record<BrandPartyRole, PartyData>;
+
+const WITH_PARTIES = { parties: true } as const;
+
+/**
+ * A brand's parties replaced together, in the caller's transaction (listing-model/attributes D6). The two
+ * old lines follow the maker and packer until retire-old-paths drops them, so every reader still agrees.
+ */
+async function writeParties(tx: Prisma.TransactionClient, brandId: string, parties: PartiesData): Promise<void> {
+  for (const role of BRAND_PARTY_ROLES) {
+    const p = parties[role];
+    if (!p.name && !p.address && !p.pincode) await tx.brandParty.deleteMany({ where: { brandId, role } });
+    else await tx.brandParty.upsert({ where: { brandId_role: { brandId, role } }, create: { brandId, role, ...p }, update: p });
+  }
+  await tx.brand.update({ where: { id: brandId }, data: { manufacturer: parties[BRAND_PARTY_ROLE.MAKER].name, packerOrImporter: parties[BRAND_PARTY_ROLE.PACKER].name } });
 }
 
 /**
@@ -17,22 +42,31 @@ export class BrandRepository {
   async listForOrg(orgId: string, options: { includeRetired?: boolean } = {}) {
     return await prisma.brand.findMany({
       where: { orgId, ...(options.includeRetired ? {} : { retiredAt: null }) },
+      include: WITH_PARTIES,
       orderBy: [{ isDefault: "desc" }, { name: "asc" }],
     });
   }
 
   async findById(orgId: string, id: string) {
-    return await prisma.brand.findFirst({ where: { id, orgId } });
+    return await prisma.brand.findFirst({ where: { id, orgId }, include: WITH_PARTIES });
   }
 
-  async create(orgId: string, data: BrandData, amazonRegistered = true) {
-    return await prisma.brand.create({ data: { orgId, ...data, amazonRegistered } });
+  async create(orgId: string, data: BrandData, amazonRegistered = true, parties?: PartiesData) {
+    return await prisma.$transaction(async (tx) => {
+      const brand = await tx.brand.create({ data: { orgId, ...data, amazonRegistered } });
+      if (parties) await writeParties(tx, brand.id, parties);
+      return await tx.brand.findUniqueOrThrow({ where: { id: brand.id }, include: WITH_PARTIES });
+    });
   }
 
   /** Scoped by org in the `where`, so a member of one org cannot edit another's brand by id. */
-  async update(orgId: string, id: string, data: Partial<BrandData>) {
-    const result = await prisma.brand.updateMany({ where: { id, orgId, retiredAt: null }, data });
-    return result.count === 1;
+  async update(orgId: string, id: string, data: Partial<BrandData> & { amazonRegistered?: boolean }, parties?: PartiesData) {
+    return await prisma.$transaction(async (tx) => {
+      const result = await tx.brand.updateMany({ where: { id, orgId, retiredAt: null }, data });
+      if (result.count !== 1) return false;
+      if (parties) await writeParties(tx, id, parties);
+      return true;
+    });
   }
 
   /** One default per org: setting it here clears it from every other brand in the same statement pair. */

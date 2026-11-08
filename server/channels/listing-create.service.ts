@@ -16,7 +16,8 @@ import { isMarketplaceChannel, type MarketplaceChannel } from "./channel-connect
 import { channelConnectionRepository } from "./channel-connection.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
-import { pickTheme, skuFor } from "./listing-create";
+import { complianceParties, pickTheme, skuFor } from "./listing-create";
+import { genericFor } from "./generic-brand";
 import { marketplacePhotoUrls } from "./listing-photos-out";
 import { enqueueListingCheck, LISTING_CHECK_AFTER_SECONDS, LISTING_CHECK_EVERY_SECONDS } from "./listing-publish.job";
 import { complaintIssues, handOverComplaints } from "./listing-complaints";
@@ -68,8 +69,8 @@ async function inputFor(orgId: string, row: CreateRow, product: Product, channel
   const defaults = await orgListingDefaultsService.get(orgId);
   const hsn = defaults.taxCodes.find((t) => t.categoryId === product.categoryId)?.taxCode ?? null;
   const sku = row.sku ?? skuFor(product);
-  // Registered on Amazon or listed as Generic is the brand's own (listing-model Q10); a brandless product keeps the shop's.
-  const generic = product.brand ? !product.brand.amazonRegistered : defaults.amazonGeneric;
+  // Registered on Amazon or listed as Generic is the brand's own; a brandless product takes the shop's default brand's (listing-model Q10).
+  const generic = await genericFor(orgId, product.brand, defaults.amazonGeneric);
   let fields: CreateListingInput["fields"] = [];
   let gaps: BuildGap[] = [];
   let typeSchema: unknown = null;
@@ -114,9 +115,7 @@ async function inputFor(orgId: string, row: CreateRow, product: Product, channel
     typeSchema,
     compliance: {
       countryOfOrigin: product.brand?.countryOfOrigin ?? defaults.countryOfOrigin,
-      manufacturer: product.brand?.manufacturer ?? null,
-      packer: product.brand?.packerOrImporter ?? null,
-      importer: product.brand?.packerOrImporter ?? null,
+      ...complianceParties(product.brand),
       hsn,
     },
   };

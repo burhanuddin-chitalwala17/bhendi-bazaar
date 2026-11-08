@@ -12,6 +12,31 @@
 
 ## Entries
 
+## 2026-11-08 — listing-model / dynamic-form unit 4: the brand page holds its parties and its Amazon choice [CONTRACT] [MIGRATION]
+
+- **Brand form** (R7, A5, Q13): "Who makes, packs and imports it (marketplaces ask)" with three optional
+  parties (name, address, pincode) and "List as Generic"; only the name is required. Saved with the brand in
+  one transaction through catalog's brand repository; a blank party is removed; the brand's maker and packer
+  lines follow so every reader agrees until retire-old-paths. The card shows maker, packer, importer and
+  "Not registered on Amazon: lists as Generic". Party roles are one closed set in `server/shared/brand-party.ts`.
+- **Shop-wide Generic switch retired** (Q14, superseding attributes Q16; migration
+  `20261108170000_brand_owns_amazon_choice` drops its trigger): its section, route, schema, client method and
+  repository command removed. Each brand keeps its choice; the listing screen and a create read the brand's;
+  a product with no brand takes the shop's default brand's, and only with none the shop's old column
+  (`server/channels/generic-brand.ts`). No listing changes on deploy.
+- **Fresh-context review fixes:** an Amazon create now sends maker, packer and importer each from its own
+  party with address and pincode, importer only from the importer party, so a domestic brand's packer is
+  never declared as its importer (`complianceParties`); a party with an address but no name is kept; the
+  Amazon choice is the two-way "Registered on Amazon / List as Generic"; "Couldn't save. Your changes are
+  kept."; the brand form's Partial state is shown through completeness (Q15); TRD D7 updated.
+- [CONTRACT] `brandSchema`/`updateBrandSchema` take `parties` and `amazonRegistered` instead of the two lines;
+  `BrandDto` gains both; the amazon-generic route is gone (CONTRACTS.md).
+- Tests: brand schema (parties blank to null, six-digit pincode), the brand page saving parties and the Amazon
+  choice with products following, a PATCH without parties keeping them and a blanked party removed, a
+  brandless product following the default brand, compliance lines per party (`compliance-parties.test.ts`),
+  service and integration fixtures moved to the new input.
+  Ran: unit, integration (local ci), `tsc`, `lint:boundary`, `docs:check`.
+
 ## 2026-11-08 — listing-model / dynamic-form unit 2: completeness per channel, stored [CONTRACT] [MIGRATION]
 
 - **`ProductChannelState`** (migration `20261108160000_product_channel_state`; one new table): per product,

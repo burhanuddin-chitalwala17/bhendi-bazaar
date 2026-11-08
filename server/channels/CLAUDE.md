@@ -1,6 +1,6 @@
 # CLAUDE.md — channels domain
 
-- **Verified:** 2026-11-07
+- **Verified:** 2026-11-08
 - **Covers:** `server/channels/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md). This file covers **channels** only. Requirements are in [docs/specs/marketplace-integration/](../../docs/specs/marketplace-integration/); every decision, with who made it, is in each spec's `decisions.md`.
@@ -61,7 +61,8 @@ Channels owns a shop's authorised connection to a marketplace: the consent round
 | `listing-publish.service.ts`, `listing-publish.job.ts` | The review, the publish claimed at the reviewed version, the send under a lock per listing, and the answer check, run when the next look falls due and batched across shops (marketplace-publish D3–D5, Q22) |
 | `listing-problems.service.ts`, `listing-problems.job.ts` | The daily problems look for every shop in one run: one read of every account with its token, one marketplace call per account, one write of every answer; Home's line (marketplace-publish Q23) |
 | `listing-photos-out.ts` | The photo addresses a marketplace fetches: as stored where it takes the format, else a JPEG rendition (marketplace-publish D2) |
-| `listing-create.service.ts`, `listing-create.ts` | Putting a product or a family on a marketplace: looking for its page, the draft, the check-only answer, the create; `listing-create.ts` (mapping forwards, theme, SKU) is pure (marketplace-publish D6–D8) |
+| `listing-create.service.ts`, `listing-create.ts` | Putting a product or a family on a marketplace: looking for its page, the draft, the check-only answer, the create; `listing-create.ts` (theme, SKU, the compliance lines from the brand's parties) is pure (marketplace-publish D6–D8; listing-model attributes Q11) |
+| `generic-brand.ts` | Whether a product lists on Amazon as Generic: its brand's choice, else the shop's default brand's (listing-model Q10, dynamic-form Q14) |
 | `channel-catalogue.service.ts` | Reads each marketplace's own types into listing's channel catalogue, through the home brand, once a day from `maintain`; a marketplace with no definitions reads nothing (listing-model/channel-catalogue D2) |
 | `channel-types.service.ts` | A marketplace's type definitions and type search, read through one org's connection (the home brand's) for requests; the token stays here (setup-requests D7, D10) |
 | `listing-complaints.ts` | Hands a send's, create's or look's errors to requests as one job per batch, in the caller's transaction; a failed hand-over is logged, never thrown (setup-requests D5, ADR-0053) |

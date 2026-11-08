@@ -40,6 +40,7 @@ import {
 } from "./platform-listing.types";
 import { providerFor } from "./providers";
 import { listingCreateService } from "./listing-create.service";
+import { genericFor } from "./generic-brand";
 
 /**
  * Each product's listing on each connected marketplace (channel-listings): made with what is live,
@@ -189,7 +190,8 @@ export const platformListingService = {
     ]);
     if (!row) throw new NotFoundError("Listing");
     const rules = providerFor(channel).listingRules;
-    const generic = rules.genericBrand && (await orgListingDefaultsService.get(orgId)).amazonGeneric;
+    // Registered on Amazon or listed as Generic is the brand's own (listing-model Q10); a brandless product keeps the shop's.
+    const generic = rules.genericBrand && (await genericFor(orgId, product.brand, (await orgListingDefaultsService.get(orgId)).amazonGeneric));
     const overrides = parseOverrides(row.overrides, product.media);
     const daily = mirror?.problemsSince != null && issuesOf(mirror.problems).length > 0;
     const { status, values, waiting } = statusOf(row, product, rules, daily ? complainedFields(mirror!.problems) : []);

@@ -34,8 +34,8 @@ Akeneo completeness per channel, stored and recomputed on change. Followed.
 - **D5 — Connect prompt and channel-change alert** are Home attention lines reading `ProductChannelState`
   and the catalogue's change record.
 - **D6 — Bulk fill** extends readiness-fix to any attribute: one attribute, many products, empty only.
-- **D7 — Brand form** gains three party blocks and the Amazon registration choice; `PUT` per party,
-  name-only required.
+- **D7 — Brand form** gains three party blocks and the Amazon registration choice, saved with the brand
+  in one request and transaction (Q13); name-only required; the shop-wide switch retires (Q14).
 
 ## Packages
 None.

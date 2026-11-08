@@ -12,7 +12,8 @@ describe.skipIf(!isDisposableDb)("brands (local db)", () => {
   let service: typeof import("@server/catalog/brand.service").brandService;
   let repo: typeof import("@server/catalog/brand.repository").brandRepository;
   const stamp = `bt-${Date.now().toString(36)}`;
-  const blank = { manufacturer: null, packerOrImporter: null, countryOfOrigin: null, isDefault: false };
+  const noParty = { name: null, address: null, pincode: null };
+  const blank = { countryOfOrigin: null, isDefault: false, amazonRegistered: true, parties: { maker: noParty, packer: noParty, importer: noParty } };
   let orgA: string;
   let orgB: string;
 

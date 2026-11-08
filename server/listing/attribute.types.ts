@@ -37,9 +37,8 @@ export const BRAND_ATTRIBUTE = {
   IMPORTER: "importer",
 } as const;
 
-/** A brand's parties (D6). */
-export const BRAND_PARTY_ROLE = { MAKER: "maker", PACKER: "packer", IMPORTER: "importer" } as const;
-export type BrandPartyRole = (typeof BRAND_PARTY_ROLE)[keyof typeof BRAND_PARTY_ROLE];
+/** A brand's parties (D6), declared once in shared for catalog and listing. */
+export { BRAND_PARTY_ROLE, type BrandPartyRole } from "@server/shared/brand-party";
 
 /** One stored value as the read copy holds it (Q8). */
 export interface ProjectedValue {
