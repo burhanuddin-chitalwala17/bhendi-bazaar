@@ -1,3 +1,4 @@
+import { productValueRepository } from "./product-value.repository";
 import { prisma } from "@server/shared/prisma";
 import { Prisma } from "@prisma/client";
 
@@ -20,10 +21,16 @@ export class OrgListingDefaultsRepository {
   async upsert(orgId: string, data: ListingDefaultsData) {
     // `null` clears the map; the JSON column needs Prisma's sentinel to say so.
     const taxCodeByCategory = data.taxCodeByCategory ?? Prisma.JsonNull;
-    return await prisma.orgListingDefaults.upsert({
-      where: { orgId },
-      create: { orgId, countryOfOrigin: data.countryOfOrigin, taxRateBps: data.taxRateBps, taxCodeByCategory },
-      update: { countryOfOrigin: data.countryOfOrigin, taxRateBps: data.taxRateBps, taxCodeByCategory },
+    return await prisma.$transaction(async (tx) => {
+      const before = await tx.orgListingDefaults.findUnique({ where: { orgId }, select: { countryOfOrigin: true } });
+      const row = await tx.orgListingDefaults.upsert({
+        where: { orgId },
+        create: { orgId, countryOfOrigin: data.countryOfOrigin, taxRateBps: data.taxRateBps, taxCodeByCategory },
+        update: { countryOfOrigin: data.countryOfOrigin, taxRateBps: data.taxRateBps, taxCodeByCategory },
+      });
+      // The shop's country fills its products that no brand answers (attributes Q6; dynamic-form Q16).
+      if (before?.countryOfOrigin !== row.countryOfOrigin) await productValueRepository.refreshForShopIn(tx, orgId);
+      return row;
     });
   }
 

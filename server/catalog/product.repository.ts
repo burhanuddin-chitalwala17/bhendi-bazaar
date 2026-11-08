@@ -3,6 +3,7 @@
  * Handles database operations for product management
  */
 
+import { productValueRepository } from "@server/listing/product-value.repository";
 import { prisma } from "@server/shared/prisma";
 import {
     DEFAULT_WEIGHT_KG,
@@ -136,6 +137,18 @@ const MEDIA_SELECT = {
     orderBy: { position: "asc" },
 } satisfies Prisma.Product$mediaArgs;
 
+/**
+ * A read's products with their answers attached from the value rows, where they live since the switch
+ * (listing-model/dynamic-form Q16): every caller keeps reading `facts` and `measurements` as before.
+ */
+async function withAnswers<T extends { id: string }>(rows: T[], db: Prisma.TransactionClient | typeof prisma = prisma): Promise<Array<T & { facts: Record<string, unknown>; measurements: Record<string, unknown> }>> {
+  const answers = await productValueRepository.answersFor(rows.map((r) => r.id), db);
+  return rows.map((r) => ({ ...r, facts: answers.get(r.id)?.facts ?? {}, measurements: answers.get(r.id)?.measurements ?? {} }));
+}
+async function oneWithAnswers<T extends { id: string }>(row: T | null, db: Prisma.TransactionClient | typeof prisma = prisma) {
+  return row ? (await withAnswers([row], db))[0] : null;
+}
+
 const PRODUCT_DETAILS_SELECT = {
     ...PRODUCT_LIST_SELECT,
     slug: true,
@@ -148,8 +161,6 @@ const PRODUCT_DETAILS_SELECT = {
     kind: true,
     familyId: true,
     brandId: true,
-    facts: true,
-    measurements: true,
     mrpPaise: true,
     barcode: true,
     keyFeatures: true,
@@ -439,11 +450,13 @@ export class AdminProductsRepository {
      */
     async fillFromMarketplace(orgId: string, id: string, fill: MarketplaceFill, within?: Prisma.TransactionClient): Promise<MarketplaceFilled | null> {
         const run = async (tx: Prisma.TransactionClient): Promise<MarketplaceFilled | null> => {
-            const [row] = await tx.$queryRaw<Array<{ facts: unknown; measurements: unknown; weight: number | null; mrpPaise: number | null; brandId: string | null }>>`
-                SELECT facts, measurements, weight, "mrpPaise", "brandId" FROM "Product" WHERE id = ${id} AND "orgId" = ${orgId} FOR UPDATE`;
+            const [row] = await tx.$queryRaw<Array<{ weight: number | null; mrpPaise: number | null; brandId: string | null }>>`
+                SELECT weight, "mrpPaise", "brandId" FROM "Product" WHERE id = ${id} AND "orgId" = ${orgId} FOR UPDATE`;
             if (!row) return null;
-            const facts = { ...asEntries(row.facts) };
-            const measurements = { ...asEntries(row.measurements) };
+            // Read under the row's lock from the value rows, where the answers live (dynamic-form Q16).
+            const held = await productValueRepository.answersOf(id, tx);
+            const facts = { ...held.facts };
+            const measurements = { ...held.measurements };
             const filled: MarketplaceFilled = { facts: [], measurements: [], weight: false, mrp: false, brand: false };
             for (const [key, entry] of Object.entries(fill.facts)) {
                 if (isEmptyEntry(facts[key])) (facts[key] = entry), filled.facts.push(key);
@@ -456,17 +469,18 @@ export class AdminProductsRepository {
             filled.mrp = fill.mrpPaise !== null && row.mrpPaise === null;
             filled.brand = fill.brandId !== null && row.brandId === null;
             if (!filled.facts.length && !filled.measurements.length && !filled.weight && !filled.mrp && !filled.brand) return filled;
-            await tx.product.update({
-                where: { id },
-                data: {
-                    ...(filled.facts.length ? { facts: facts as Prisma.InputJsonValue } : {}),
-                    ...(filled.measurements.length ? { measurements: measurements as Prisma.InputJsonValue } : {}),
-                    ...(filled.weight ? { weight: fill.weightKg } : {}),
-                    ...(filled.mrp ? { mrpPaise: fill.mrpPaise } : {}),
-                    ...(filled.brand ? { brandId: fill.brandId } : {}),
-                },
-                select: { id: true },
-            });
+            if (filled.weight || filled.mrp || filled.brand) {
+                await tx.product.update({
+                    where: { id },
+                    data: {
+                        ...(filled.weight ? { weight: fill.weightKg } : {}),
+                        ...(filled.mrp ? { mrpPaise: fill.mrpPaise } : {}),
+                        ...(filled.brand ? { brandId: fill.brandId } : {}),
+                    },
+                    select: { id: true },
+                });
+            }
+            await productValueRepository.writeAnswersIn(tx, id, { facts, measurements, weight: filled.weight ? fill.weightKg : row.weight });
             return filled;
         };
         // In a settle's transaction, the facts are saved with the product (marketplace-facts Q35).
@@ -486,15 +500,14 @@ export class AdminProductsRepository {
         onlyIfEmpty: boolean,
     ): Promise<{ saved: true } | { saved: false; current: unknown } | null> {
         return await prisma.$transaction(async (tx) => {
-            const [row] = column === "facts"
-                ? await tx.$queryRaw<Array<{ value: unknown }>>`SELECT facts AS value FROM "Product" WHERE id = ${id} AND "orgId" = ${orgId} FOR UPDATE`
-                : await tx.$queryRaw<Array<{ value: unknown }>>`SELECT measurements AS value FROM "Product" WHERE id = ${id} AND "orgId" = ${orgId} FOR UPDATE`;
+            const [row] = await tx.$queryRaw<Array<{ weight: number | null }>>`SELECT weight FROM "Product" WHERE id = ${id} AND "orgId" = ${orgId} FOR UPDATE`;
             if (!row) return null;
-            const entries = { ...asEntries(row.value) };
+            const held = await productValueRepository.answersOf(id, tx);
+            const entries = { ...held[column] };
             if (onlyIfEmpty && !isEmptyEntry(entries[key])) return { saved: false, current: (entries[key] as { value?: unknown }).value };
             if (entry) entries[key] = entry;
             else delete entries[key];
-            await tx.product.update({ where: { id }, data: { [column]: entries as Prisma.InputJsonValue }, select: { id: true } });
+            await productValueRepository.writeAnswersIn(tx, id, { ...held, [column]: entries, weight: row.weight });
             return { saved: true };
         });
     }
@@ -510,38 +523,43 @@ export class AdminProductsRepository {
 
     /** The category a marketplace's type led the shop to choose; the product's type follows it (marketplace-facts Q25, Q27). */
     async setCategoryFromMarketplace(orgId: string, id: string, categoryId: string, productType: string | null): Promise<boolean> {
-        const result = await prisma.product.updateMany({ where: { id, orgId }, data: { categoryId, productType, kind: null } });
-        return result.count === 1;
+        return await prisma.$transaction(async (tx) => {
+            const result = await tx.product.updateMany({ where: { id, orgId }, data: { categoryId, productType, kind: null } });
+            if (result.count !== 1) return false;
+            await productValueRepository.rederiveIn(tx, [id]);
+            return true;
+        });
     }
 
     /** Undo one answer only while it is still the one given (readiness-fix R3): a later edit is never undone. */
     async clearFactIf(orgId: string, id: string, key: string, value: string): Promise<boolean> {
         return await prisma.$transaction(async (tx) => {
-            const [row] = await tx.$queryRaw<Array<{ facts: unknown }>>`SELECT facts FROM "Product" WHERE id = ${id} AND "orgId" = ${orgId} FOR UPDATE`;
+            const [row] = await tx.$queryRaw<Array<{ weight: number | null }>>`SELECT weight FROM "Product" WHERE id = ${id} AND "orgId" = ${orgId} FOR UPDATE`;
             if (!row) return false;
-            const entries = { ...asEntries(row.facts) };
+            const held = await productValueRepository.answersOf(id, tx);
+            const entries = { ...held.facts };
             if ((entries[key] as { value?: unknown } | undefined)?.value !== value) return false;
             delete entries[key];
-            await tx.product.update({ where: { id }, data: { facts: entries as Prisma.InputJsonValue }, select: { id: true } });
+            await productValueRepository.writeAnswersIn(tx, id, { facts: entries, measurements: held.measurements, weight: row.weight });
             return true;
         });
     }
 
     /** A family's members, archived included, for adding to it (family-merge Q20): what each answers, to tell new ones apart. */
     async familyMembers(orgId: string, familyId: string) {
-        return await prisma.product.findMany({
+        return await withAnswers(await prisma.product.findMany({
             where: { orgId, familyId },
-            select: { id: true, name: true, sku: true, categoryId: true, productType: true, facts: true, measurements: true },
+            select: { id: true, name: true, sku: true, categoryId: true, productType: true },
             orderBy: { name: "asc" },
-        });
+        }));
     }
 
     /** What filling from a marketplace needs of a product, and what its card shows (marketplace-facts D5, D6). */
     async marketplaceFacts(orgId: string, id: string) {
-        return await prisma.product.findFirst({
+        return await oneWithAnswers(await prisma.product.findFirst({
             where: { id, orgId },
-            select: { id: true, categoryId: true, productType: true, kind: true, brandId: true, facts: true, measurements: true, weight: true, mrpPaise: true },
-        });
+            select: { id: true, categoryId: true, productType: true, kind: true, brandId: true, weight: true, mrpPaise: true },
+        }));
     }
 
     /** What the Settle page shows of a product being matched (product-merge R4). */
@@ -597,8 +615,6 @@ export class AdminProductsRepository {
                 kind: blankToNull(data.kind ?? undefined),
                 familyId: data.familyId ?? null,
                 brandId: data.brandId ?? null,
-                facts: data.facts as never,
-                measurements: data.measurements as never,
                 archivedAt,
                 // A team create marks the product as the team's from its first save (product-form D11).
                 ...(editor ? { lastEditedById: editor.userId, lastEditedAt: now, teamEditedAt: editor.team ? now : null } : {}),
@@ -614,16 +630,18 @@ export class AdminProductsRepository {
         // Quantities live only on the join rows (stock-locations D3); a new product has seen
         // nothing, so every row is a creation and zero rows are dropped ("not stocked here").
         await stockRepository.adjust(product.id, data.stockLocations, tx);
+        // The answers live in the value rows, written in this transaction (listing-model/dynamic-form Q16).
+        await productValueRepository.writeAnswersIn(tx, product.id, { facts: data.facts, measurements: data.measurements, weight: data.weight });
         return product;
         }
     }
 
     async getProductById(id: string) {
-        return await prisma.product.findUnique({
+        return await oneWithAnswers(await prisma.product.findUnique({
             where: { id },
             select: PRODUCT_DETAILS_SELECT,
             relationLoadStrategy: "join",
-        });
+        }));
     }
 
     /** The copy picker's list: the org's available products, names only (copy-product D3). */
@@ -669,11 +687,11 @@ export class AdminProductsRepository {
         return await prisma.$transaction(async (tx) => {
             await stockRepository.lockAll(id, tx);
             if (guard) await guard(tx);
-            const product = await tx.product.update({
+            const product = (await oneWithAnswers(await tx.product.update({
                 where: { id },
                 data: { archivedAt },
                 select: PRODUCT_DETAILS_SELECT,
-            });
+            }), tx))!;
             // In-transaction, so the trail cannot record a withdrawal that rolled back
             // (ADR-0021). `adminId` is the org membership's user, re-read by
             // `resolveOrgScope` rather than taken from the token claim.
@@ -846,9 +864,10 @@ export class AdminProductsRepository {
                     kind: blankToNull(data.kind ?? undefined),
                     familyId: data.familyId ?? null,
                     brandId: data.brandId ?? null,
-                    facts: data.facts as never,
-                    measurements: data.measurements as never,
                 },
+            }).then(async (updated) => {
+                await productValueRepository.writeAnswersIn(tx, id, { facts: data.facts, measurements: data.measurements, weight: data.weight });
+                return updated;
             });
             });
         } catch (error) {
@@ -903,14 +922,22 @@ export class AdminProductsRepository {
 
   /** The facts of every product under a predicate — the rows a fact correction rewrites. */
   async listFactsWhere(where: Prisma.ProductWhereInput) {
-    return await prisma.product.findMany({ where, select: { id: true, facts: true } });
+    const rows = await prisma.product.findMany({ where, select: { id: true } });
+    const answers = await productValueRepository.answersFor(rows.map((r) => r.id));
+    return rows.map((r) => ({ id: r.id, facts: answers.get(r.id)?.facts ?? {} }));
   }
 
-  /** Writes each product's facts whole, all-or-nothing: `updateMany` cannot merge into a JSON path. */
+  /** Writes each product's facts whole, all-or-nothing, in the value rows (dynamic-form Q16). */
   async replaceFacts(rows: Array<{ id: string; facts: Record<string, unknown> }>): Promise<void> {
-    await prisma.$transaction(
-      rows.map(({ id, facts }) => prisma.product.update({ where: { id }, data: { facts: facts as never } })),
-    );
+    await prisma.$transaction(async (tx) => {
+      // Locked before reading what each holds, so a save landing between the read and this write is not undone (review S3).
+      const locked = await tx.$queryRaw<Array<{ id: string; weight: number | null }>>`SELECT id, weight FROM "Product" WHERE id = ANY(${rows.map((r) => r.id)}::text[]) ORDER BY id FOR UPDATE`;
+      const held = await productValueRepository.answersFor(rows.map((r) => r.id), tx);
+      const weights = new Map(locked.map((p) => [p.id, p.weight]));
+      for (const { id, facts } of rows) {
+        await productValueRepository.writeAnswersIn(tx, id, { facts, measurements: held.get(id)?.measurements ?? {}, weight: weights.get(id) ?? null });
+      }
+    });
   }
 
   /**
@@ -971,6 +998,7 @@ export class AdminProductsRepository {
     media: Prisma.ProductMediaCreateManyInput[],
     stock: Prisma.ProductStockCreateManyInput[],
     editor?: ProductEditor,
+    answers: ReadonlyArray<{ id: string; facts: unknown; measurements: unknown; weight: number | null }> = [],
   ): Promise<void> {
     const now = new Date();
     const edited = editor ? { lastEditedById: editor.userId, lastEditedAt: now, teamEditedAt: editor.team ? now : null } : {};
@@ -991,6 +1019,8 @@ export class AdminProductsRepository {
       if (ids.length) await tx.productMedia.deleteMany({ where: { productId: { in: ids } } });
       if (media.length) await tx.productMedia.createMany({ data: media });
       await stockRepository.setForImport(ids, stock, tx);
+      // Each product's answers in the value rows, in the sheet's transaction (dynamic-form Q16).
+      for (const a of answers) await productValueRepository.writeAnswersIn(tx, a.id, a);
     });
   }
 

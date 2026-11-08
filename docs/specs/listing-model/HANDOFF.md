@@ -22,22 +22,15 @@
 - **Proof on a production copy (owner's one-time permission, copy dropped):** migrations clean; compare PASS
   (113 products, 413 answers, 0 lost); Amazon map faults fixed (field-maps Q20–Q22); remaining Amazon
   refusals are answers products have not given; Google: 70 items lack Audience (product data).
-- **Next, in order:**
-  1. **dynamic-form unit 4 — brand form** (TRD D7, spec R7, A4, A5): three party blocks (maker, packer,
-     importer: name, address, pincode → `BrandParty`, written through catalog's brand repository, Brand's one
-     writer) and "Registered on Amazon / list as Generic" (`Brand.amazonRegistered`). Then retire the shop-wide
-     switch: drop the `OrgListingDefaults_generic_to_brands` trigger (attributes Q16), remove the shop toggle,
-     and make `platform-listing.service.ts` read the brand's flag (review note).
-  2. **dynamic-form unit 3 — switch reads and writes** (TRD D4, attributes Q7, Q13): the form saves to
-     `product-value.repository` (becomes ProductValue's one writer, keeps `ProductValueSet`); readiness, the
-     builder (`listing-build.service`), storefront facets, the feed and the product page read `ProductValueSet`;
-     a product may override country, maker, packer, importer (A4: "From your brand Noor" / "Set on this
-     product" / "Use brand's"); the migration that switches writes drops every attributes sync trigger in the
-     same migration. Move the fact's marketplace source and unlisted flag onto the value row first (attributes Q13).
-     Also left from unit 2 (dynamic-form Q2, decided): counts on the products list's channel filter from
-     `ProductChannelState`, and the strip on the product view page.
-  3. **retire-old-paths** (its own spec/TRD): backup, re-run `scripts/attributes-compare.ts`, then drop
-     `Product.facts`/`measurements`, ChannelAttributeMap/Fill/ValueMap, `FACT_DECLARATIONS` and old readers.
+- **Done: dynamic-form unit 3b, the full switch (Q16).** Answers live in `ProductValue` (`answer` verbatim +
+  `measured`); `product-value.repository` is the one writer (`writeAnswersIn`, `refreshInheritedIn`,
+  `refreshForBrandIn`, `refreshForShopIn`, `rederiveIn`/`ForType`/`ForCategory`) through the SQL functions
+  `bb_write_answers`, `bb_write_inherited`, `bb_rederive_answers` (source: `scripts/value-switch-sql.ts`). Value
+  triggers dropped; `Product.facts`/`measurements` frozen as `factsFrozen`/`measurementsFrozen`, read only by
+  the compare gate. Reviewed in a fresh context; all findings fixed (CHANGELOG).
+- **Next: A4 overrides on the form** (country, maker, packer, importer: "From your brand Noor" / "Set on this
+  product" / "Use brand's"). The SQL already never writes an inherited row over the product's own.
+  Then **retire-old-paths**: backup, compare, drop the old columns, ChannelAttributeMap/Fill/ValueMap, old code.
 - No open questions in any `decisions.md`.
 - **This machine was overloaded at the end:** run the integration suite with `--no-file-parallelism` if
   parallel runs time out; the stop hook's related-test run can clash with a full run.
@@ -123,3 +116,4 @@ The container starts with no `node_modules`, Postgres stopped and a shallow clon
 | 2026-11-08 | dynamic-form | 2: review fixes (HSN, not sold, unread types, archived, shop on row, per-shop lock, daily sweep folded into channels.maintain) | (this commit) | Next: dynamic-form unit 4 (brand form), then unit 3 (switch), then retire-old-paths — see State above |
 | 2026-11-08 | dynamic-form | 4: brand form with parties and Amazon choice; shop-wide Generic switch retired (Q13, Q14) | (this commit) | Next: dynamic-form unit 3 (switch reads and writes, product overrides, drop triggers) |
 | 2026-11-08 | dynamic-form | 3a: strip on the product view page; Q2 resolved | (this commit) | Next: dynamic-form 3b (switch reads and writes to values, product overrides, drop triggers) |
+| 2026-11-08 | dynamic-form | 3b: full switch — answers live in ProductValue (verbatim), one writer, triggers dropped, old columns frozen not dropped, no-loss check in the migration (Q16) | (this commit) | Next: product overrides of brand values on the form (A4), then retire-old-paths |

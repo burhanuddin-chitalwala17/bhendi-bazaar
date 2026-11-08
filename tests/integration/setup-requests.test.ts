@@ -59,7 +59,7 @@ describe.skipIf(!isDisposableDb)("setup requests (local db)", () => {
     await maps.setCategory({ channel: "amazon", productType: type, kind: null, theirCategory, fit: "EXACT", checkedOn: new Date() });
     for (const [n, org] of [[1, orgId], [2, otherOrgId]] as const) {
       const p = await prisma.product.create({
-        data: { name: `${stamp} bag ${n}`, slug: `${stamp}-${n}`, description: "x", thumbnail: "https://example.invalid/x.webp", price: 10_000, orgId: org, categoryId, productType: type, facts: {}, stockLocations: org === orgId ? { create: { orgAddressId, quantity: 1 } } : undefined },
+        data: { name: `${stamp} bag ${n}`, slug: `${stamp}-${n}`, description: "x", thumbnail: "https://example.invalid/x.webp", price: 10_000, orgId: org, categoryId, productType: type, stockLocations: org === orgId ? { create: { orgAddressId, quantity: 1 } } : undefined },
         select: { id: true },
       });
       productIds.push(p.id);
@@ -186,7 +186,7 @@ describe.skipIf(!isDisposableDb)("setup requests (local db)", () => {
 
   it("lets a product taken off sale leave its tickets, and closes one nobody needs (Q13)", async () => {
     const archived = await prisma.product.create({
-      data: { name: `${stamp} gone`, slug: `${stamp}-gone`, description: "x", thumbnail: "https://example.invalid/x.webp", price: 10_000, orgId, categoryId, productType: type, facts: {} },
+      data: { name: `${stamp} gone`, slug: `${stamp}-gone`, description: "x", thumbnail: "https://example.invalid/x.webp", price: 10_000, orgId, categoryId, productType: type },
       select: { id: true },
     });
     const subject = { kind: "issue", source: "Amazon", context: theirCategory, subjectName: null, code: "7777", message: "x" };

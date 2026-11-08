@@ -9,7 +9,7 @@
  */
 import "dotenv/config";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
+import { isDisposableDb, ensureFixtures, setAnswers, answersOf } from "../helpers/test-db";
 
 describe.skipIf(!isDisposableDb)("correcting a fact at a level (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
@@ -22,7 +22,7 @@ describe.skipIf(!isDisposableDb)("correcting a fact at a level (local db)", () =
 
   /** A product carrying a fact that says which level answered it. */
   async function product(name: string, origin: string, value = "nida-matte", brand = brandId) {
-    return prisma.product.create({
+    const row = await prisma.product.create({
       data: {
         slug: `${stamp}-${name}`,
         name,
@@ -32,10 +32,11 @@ describe.skipIf(!isDisposableDb)("correcting a fact at a level (local db)", () =
         categoryId,
         orgId,
         brandId: brand,
-        facts: { material: { value, origin } } as never,
       },
       select: { id: true },
     });
+    await setAnswers(row.id, { facts: { material: { value, origin } } });
+    return row;
   }
 
   beforeAll(async () => {
@@ -80,10 +81,9 @@ describe.skipIf(!isDisposableDb)("correcting a fact at a level (local db)", () =
     expect(preview.leftAlone).toBeGreaterThanOrEqual(1);
 
     await service.apply(target());
-    const own = await prisma.product.findFirstOrThrow({
-      where: { slug: `${stamp}-own` },
-      select: { facts: true },
-    });
+    const own = await answersOf(
+      (await prisma.product.findFirstOrThrow({ where: { slug: `${stamp}-own` }, select: { id: true } })).id,
+    );
     expect((own.facts as Record<string, { value: string }>).material.value).toBe("georgette");
   });
 
@@ -104,10 +104,9 @@ describe.skipIf(!isDisposableDb)("correcting a fact at a level (local db)", () =
     await product("f", "brand");
     await service.apply(target());
 
-    const after = await prisma.product.findFirstOrThrow({
-      where: { slug: `${stamp}-f` },
-      select: { facts: true },
-    });
+    const after = await answersOf(
+      (await prisma.product.findFirstOrThrow({ where: { slug: `${stamp}-f` }, select: { id: true } })).id,
+    );
     const stored = (after.facts as Record<string, { value: string; origin: string }>).material;
     expect(stored).toEqual({ value: "crepe", origin: "brand" });
 
@@ -123,10 +122,9 @@ describe.skipIf(!isDisposableDb)("correcting a fact at a level (local db)", () =
     expect((await service.preview(target())).willChange).toBe(1);
     await service.apply(target());
 
-    const theirs = await prisma.product.findFirstOrThrow({
-      where: { slug: `${stamp}-theirs` },
-      select: { facts: true },
-    });
+    const theirs = await answersOf(
+      (await prisma.product.findFirstOrThrow({ where: { slug: `${stamp}-theirs` }, select: { id: true } })).id,
+    );
     expect((theirs.facts as Record<string, { value: string }>).material.value).toBe("nida-matte");
   });
 

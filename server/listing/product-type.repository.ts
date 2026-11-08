@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
+import { productValueRepository } from "./product-value.repository";
 
 import type { CreateProductTypeInput, UpdateProductTypeInput } from "./admin.product-type.types";
 import { parseProductTypeRecord, type ProductTypeRecord } from "./product-type.types";
@@ -126,7 +127,8 @@ export const productTypeRepository = {
 
   /** `key` is absent on purpose: products and categories store it, so renaming orphans them. */
   async update(key: string, input: UpdateProductTypeInput): Promise<ProductTypeRecord | null> {
-    const { count } = await prisma.productType.updateMany({
+    const count = await prisma.$transaction(async (tx) => {
+      const result = await tx.productType.updateMany({
       where: { key },
       data: {
         ...(input.label === undefined ? {} : { label: input.label }),
@@ -139,6 +141,10 @@ export const productTypeRepository = {
         ...(input.labelScale === undefined ? {} : { labelScale: input.labelScale as never }),
         ...(input.order === undefined ? {} : { order: input.order }),
       },
+      });
+      // A measure's unit moving changes every product's canonical number (review S1).
+      if (result.count > 0 && input.measures !== undefined) await productValueRepository.rederiveForTypeIn(tx, key);
+      return result.count;
     });
     if (count === 0) return null;
     return this.byKey(key);

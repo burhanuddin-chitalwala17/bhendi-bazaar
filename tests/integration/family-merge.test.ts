@@ -8,7 +8,7 @@ import "dotenv/config";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { NO_DETAILS } from "@server/channels/providers/listing-read";
-import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
+import { isDisposableDb, ensureFixtures, setAnswers, answersOf } from "../helpers/test-db";
 
 const fake = vi.hoisted(() => {
   const state = { colours: {} as Record<string, string>, failPhotoFor: null as string | null };
@@ -116,12 +116,12 @@ describe.skipIf(!isDisposableDb)("making one family of marketplace listings (loc
 
     const result = await family.settle(orgId, userId, input(ids));
     expect(result).toMatchObject({ members: 3, axisWord: "colours" });
-    const fam = await prisma.productFamily.findUniqueOrThrow({ where: { id: result.familyId }, select: { variantAxis: true, facts: true, products: { select: { sku: true, facts: true, price: true } } } });
+    const fam = await prisma.productFamily.findUniqueOrThrow({ where: { id: result.familyId }, select: { variantAxis: true, facts: true, products: { select: { id: true, sku: true, price: true } } } });
     expect(fam.variantAxis).toEqual(["colour"]);
     expect(fam.facts).toMatchObject({ material: { value: "cotton", origin: "marketplace" } });
     expect(fam.products.map((p) => p.sku).sort()).toEqual([sku("BLK"), sku("NVY"), sku("RED")]);
     const black = fam.products.find((p) => p.sku === sku("BLK"))!;
-    expect(black.facts).toMatchObject({ colour: { value: "black", origin: "marketplace" }, material: { value: "cotton", origin: "family" } });
+    expect((await answersOf(black.id)).facts).toMatchObject({ colour: { value: "black", origin: "marketplace" }, material: { value: "cotton", origin: "family" } });
     const linked = await prisma.channelListing.count({ where: { id: { in: ids }, productId: { not: null } } });
     expect(linked).toBe(3);
   });
@@ -152,7 +152,8 @@ describe.skipIf(!isDisposableDb)("making one family of marketplace listings (loc
 
   it("groups products settled one by one, as they are, and moves one from another family only when asked (spec A3, A6, Q11)", async () => {
     const other = await prisma.productFamily.create({ data: { orgId, name: `Other family ${stamp}`, productType: "trousers", variantAxis: ["colour"] }, select: { id: true } });
-    const p1 = await prisma.product.create({ data: { name: "Own black", slug: `fm-${stamp}-p1`, description: "", price: 120_000, categoryId, thumbnail: "/brand/bhendi-bazaar.png", orgId, sku: sku("P1"), productType: "trousers", facts: { colour: { value: "black", origin: "product" } } }, select: { id: true } });
+    const p1 = await prisma.product.create({ data: { name: "Own black", slug: `fm-${stamp}-p1`, description: "", price: 120_000, categoryId, thumbnail: "/brand/bhendi-bazaar.png", orgId, sku: sku("P1"), productType: "trousers" }, select: { id: true } });
+    await setAnswers(p1.id, { facts: { colour: { value: "black", origin: "product" } } });
     const p2 = await prisma.product.create({ data: { name: "Own red", slug: `fm-${stamp}-p2`, description: "", price: 120_000, categoryId, thumbnail: "/brand/bhendi-bazaar.png", orgId, sku: sku("P2"), productType: "trousers", familyId: other.id }, select: { id: true } });
     const ids = [
       (await listing("L1", "Navy", { productId: p1.id, linkSource: "OWNER", linkedAt: new Date() })).id,
@@ -168,9 +169,10 @@ describe.skipIf(!isDisposableDb)("making one family of marketplace listings (loc
 
     const moved = input(ids, { members: ids.map((id) => ({ listingId: id, include: true, move: true, stock: [] })) });
     const result = await family.settle(orgId, userId, moved);
-    const rows = await prisma.product.findMany({ where: { id: { in: [p1.id, p2.id] } }, select: { id: true, familyId: true, price: true, facts: true } });
+    const rows = await prisma.product.findMany({ where: { id: { in: [p1.id, p2.id] } }, select: { id: true, familyId: true, price: true } });
     expect(rows.every((r) => r.familyId === result.familyId)).toBe(true);
-    expect(rows.find((r) => r.id === p1.id)).toMatchObject({ price: 120_000, facts: { colour: { value: "black", origin: "product" } } });
+    expect(rows.find((r) => r.id === p1.id)).toMatchObject({ price: 120_000 });
+    expect((await answersOf(p1.id)).facts).toMatchObject({ colour: { value: "black", origin: "product" } });
     await prisma.product.update({ where: { id: p2.id }, data: { familyId: null } });
     expect((await prisma.product.findUniqueOrThrow({ where: { id: p2.id }, select: { familyId: true } })).familyId).toBeNull();
   });
@@ -190,8 +192,8 @@ describe.skipIf(!isDisposableDb)("making one family of marketplace listings (loc
     await read(ids);
     await expect(family.settle(orgId, userId, input(ids, { answers: { [ids[1]]: { colour: "not-a-colour" } } }))).rejects.toThrow(/Give each member its colour: Inkish is not answered/);
     const result = await family.settle(orgId, userId, input(ids, { answers: { [ids[1]]: { colour: "navy", material: "crepe" } } }));
-    const navy = await prisma.product.findFirstOrThrow({ where: { familyId: result.familyId, sku: sku("Q2") }, select: { facts: true } });
-    expect(navy.facts).toMatchObject({ colour: { value: "navy", source: { value: "Inkish" } }, material: { value: "cotton", origin: "family" } });
+    const navy = await prisma.product.findFirstOrThrow({ where: { familyId: result.familyId, sku: sku("Q2") }, select: { id: true } });
+    expect((await answersOf(navy.id)).facts).toMatchObject({ colour: { value: "navy", source: { value: "Inkish" } }, material: { value: "cotton", origin: "family" } });
   });
 
   it("adds new listings to a family that exists (Q20)", async () => {

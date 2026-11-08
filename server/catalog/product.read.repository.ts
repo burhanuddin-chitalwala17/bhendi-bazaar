@@ -4,8 +4,9 @@
  * This repository handles all database operations for products.
  */
 
+import { productValueRepository } from "@server/listing/product-value.repository";
 import { prisma } from "@server/shared/prisma";
-import { MediaAssetState, type Prisma } from "@prisma/client";
+import { MediaAssetState, Prisma } from "@prisma/client";
 import { loadDisplayPriceContext } from "@server/promotions/price-context";
 import { offerCoverage } from "@server/promotions/targeting";
 import { ProductFilter } from "@server/catalog/product.types";
@@ -38,6 +39,9 @@ export const PRODUCT_MEDIA_ASSET_SELECT = {
 
 export const PRODUCT_INCLUDE = {
   category: { select: { slug: true } },
+  // A product's answers, joined into the same one query (listing-model/dynamic-form Q16; db-ops budget):
+  // the verbatim rows, which `withAnswers` folds back into `facts` and `measurements`.
+  productValues: { where: { NOT: { answer: { equals: Prisma.DbNull } } }, select: { attributeKey: true, answer: true, measured: true } },
   org: { select: { id: true, name: true, code: true, handle: true } },
   // The gallery, in gallery order — the only order it is ever read in (product-video
   // R16). Selected explicitly rather than left to `include`'s defaults so the ordering
@@ -71,9 +75,13 @@ export const PRODUCT_INCLUDE = {
  * Derived from `PRODUCT_INCLUDE` rather than restated — the DAL mapper took `any`
  * before this existed, which let the include tree change shape unnoticed.
  */
-export type ProductWithRelations = Prisma.ProductGetPayload<{
+export type ProductWithRelations = Omit<Prisma.ProductGetPayload<{
   include: typeof PRODUCT_INCLUDE;
-}>;
+}>, "productValues"> & {
+  /** Folded from the joined value rows by every storefront read (listing-model/dynamic-form Q16). */
+  facts: unknown;
+  measurements: unknown;
+};
 
 /**
  * "Currently on offer" as a query.
@@ -107,7 +115,27 @@ async function offerFilter(ownedBy?: string) {
 }
 
 /** Enough of the client to read products — `prisma`, or a `$transaction` tx. */
-export type ProductDb = Pick<typeof prisma, "product">;
+type JoinedValue = { attributeKey: string; answer: unknown; measured: boolean };
+
+/**
+ * Storefront rows with their answers folded from the value rows joined into their own query (dynamic-form
+ * Q16): no second read, so every storefront read stays one statement.
+ */
+function fold<T extends { productValues?: JoinedValue[] }>(row: T): Omit<T, "productValues"> & { facts: Record<string, unknown>; measurements: Record<string, unknown> } {
+  const { productValues = [], ...rest } = row;
+  const facts: Record<string, unknown> = {};
+  const measurements: Record<string, unknown> = {};
+  for (const v of productValues) (v.measured ? measurements : facts)[v.attributeKey] = v.answer;
+  return { ...rest, facts, measurements };
+}
+async function withAnswers<T extends { productValues?: JoinedValue[] }>(rows: T[]) {
+  return rows.map(fold);
+}
+async function oneWithAnswers<T extends { productValues?: JoinedValue[] }>(row: T | null) {
+  return row ? fold(row) : null;
+}
+
+export type ProductDb = Pick<typeof prisma, "product" | "productValue">;
 
 /** Enough of the client to run a read the query builder cannot express. */
 export type RawDb = Pick<typeof prisma, "$queryRaw">;
@@ -147,12 +175,12 @@ export class ProductsRepository {
    * listing of an archived product still opens, and its stock goes to 0 through stock sync.
    */
   async forListing(orgId: string, productIds: readonly string[], db: ProductDb = prisma) {
-    return await db.product.findMany({
+    const rows = await db.product.findMany({
       where: { orgId, id: { in: [...productIds] } },
       select: {
         id: true, orgId: true, name: true, price: true, description: true, keyFeatures: true,
         mrpPaise: true, barcode: true, sku: true, archivedAt: true, familyId: true, categoryId: true,
-        productType: true, kind: true, facts: true, measurements: true, weight: true,
+        productType: true, kind: true, weight: true,
         brand: { select: { name: true, manufacturer: true, packerOrImporter: true, countryOfOrigin: true, amazonRegistered: true, parties: { select: { role: true, name: true, address: true, pincode: true } } } },
         stockLocations: { select: { quantity: true } },
         media: {
@@ -162,6 +190,9 @@ export class ProductsRepository {
         },
       },
     });
+    // The answers live in the value rows since the switch (listing-model/dynamic-form Q16).
+    const answers = await productValueRepository.answersFor(rows.map((r) => r.id), db);
+    return rows.map((r) => ({ ...r, facts: answers.get(r.id)?.facts ?? {}, measurements: answers.get(r.id)?.measurements ?? {} }));
   }
 
   async checkoutFacts(productIds: string[], db: ProductDb = prisma) {
@@ -416,7 +447,7 @@ export class ProductsRepository {
     if (rows.length === ProductsRepository.MAX_FEED_ROWS) {
       console.warn(`Channel feed hit its ${ProductsRepository.MAX_FEED_ROWS}-row cap; newer products are missing`);
     }
-    return rows;
+    return await withAnswers(rows);
   }
 
   private static readonly MAX_FEED_ROWS = 10_000;
@@ -471,7 +502,7 @@ export class ProductsRepository {
         ...(offset ? { skip: offset } : {}),
         take: limit ?? ProductsRepository.MAX_LIST_ROWS,
       });
-      return products;
+      return await withAnswers(products);
     } catch (error) {
       throw new NotFoundError("Products not found");
     }
@@ -503,7 +534,7 @@ export class ProductsRepository {
           ...PRODUCT_INCLUDE,
         },
       });
-      return product;
+      return await oneWithAnswers(product);
     } catch (error) {
       throw new NotFoundError("Product not found");
     }
@@ -527,7 +558,7 @@ export class ProductsRepository {
           ...PRODUCT_INCLUDE,
         },
       });
-      return product;
+      return await oneWithAnswers(product);
     } catch (error) {
       throw new NotFoundError("Product not found");
     }
@@ -544,7 +575,7 @@ export class ProductsRepository {
           ...PRODUCT_INCLUDE,
         },
       });
-      return products;
+      return await withAnswers(products);
     } catch (error) {
       throw new NotFoundError("Similar products not found");
     }
@@ -561,7 +592,7 @@ export class ProductsRepository {
           ...PRODUCT_INCLUDE,
         },
       });
-      return products;
+      return withAnswers(products);
     } catch (error) {
       throw new NotFoundError("Hero products not found");
     }
@@ -578,7 +609,7 @@ export class ProductsRepository {
           ...PRODUCT_INCLUDE,
         },
       });
-      return products;
+      return await withAnswers(products);
     } catch (error) {
       throw new NotFoundError("Offer products not found");
     }

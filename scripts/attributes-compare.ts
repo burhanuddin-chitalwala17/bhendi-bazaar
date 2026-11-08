@@ -20,11 +20,12 @@ async function main() {
   for (;;) {
     const products = await prisma.product.findMany({
       take: BATCH, ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}), orderBy: { id: "asc" },
-      select: { id: true, productType: true, facts: true, measurements: true, weight: true, productValues: { select: { attributeKey: true, optionKey: true, text: true, number: true, bool: true } } },
+      // The pre-switch snapshot (frozen at dynamic-form Q16) against the value rows that now hold the answers.
+      select: { id: true, productType: true, factsFrozen: true, measurementsFrozen: true, weight: true, productValues: { select: { attributeKey: true, optionKey: true, text: true, number: true, bool: true, measured: true } } },
     });
     if (products.length === 0) break;
     for (const p of products) {
-      const result = compareProduct({ ...p, measureUnits: types.get(p.productType ?? "") ?? {} }, p.productValues.map((r) => ({ ...r, number: r.number === null ? null : r.number.toString() })));
+      const result = compareProduct({ id: p.id, productType: p.productType, facts: p.factsFrozen, measurements: p.measurementsFrozen, weight: p.weight, measureUnits: types.get(p.productType ?? "") ?? {} }, p.productValues.map((r) => ({ ...r, number: r.number === null ? null : r.number.toString() })));
       const t = perType.get(p.productType ?? "(none)") ?? { products: 0, answers: 0, mismatches: 0 };
       t.products++; t.answers += result.answers; t.mismatches += result.mismatches.length;
       perType.set(p.productType ?? "(none)", t);

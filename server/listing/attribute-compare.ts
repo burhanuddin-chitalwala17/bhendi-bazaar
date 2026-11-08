@@ -19,6 +19,8 @@ export interface CompareProduct {
 
 export interface CompareRow {
   attributeKey: string;
+  /** A measurement row; a fact and a measurement may share a key (dynamic-form Q16). */
+  measured?: boolean;
   optionKey: string | null;
   text: string | null;
   number: string | null;
@@ -41,7 +43,8 @@ function held(row: CompareRow | undefined): string | null {
 }
 
 export function compareProduct(product: CompareProduct, rows: readonly CompareRow[]): { answers: number; mismatches: Mismatch[] } {
-  const byKey = new Map(rows.map((r) => [r.attributeKey, r]));
+  const byKey = new Map(rows.filter((r) => !r.measured).map((r) => [r.attributeKey, r]));
+  const byMeasure = new Map(rows.filter((r) => r.measured || r.attributeKey === "weight").map((r) => [r.attributeKey, r]));
   const mismatches: Mismatch[] = [];
   let answers = 0;
   const miss = (key: string, before: string, after: string | null) => mismatches.push({ productId: product.id, key, before, after });
@@ -58,7 +61,7 @@ export function compareProduct(product: CompareProduct, rows: readonly CompareRo
   for (const [key, m] of Object.entries(parseStoredMeasurements(product.measurements)) as Array<[MeasureKey, { value: number }]>) {
     answers++;
     const unit = product.measureUnits[key];
-    const row = byKey.get(key);
+    const row = byMeasure.get(key) ?? byKey.get(key);
     const canonical = unit ? convert(m.value, unit, canonicalOf(unit)!) : null;
     const ok = row && (canonical !== null ? row.number !== null && close(Number(row.number), canonical) : held(row) === String(m.value));
     if (!ok) miss(key, `${m.value}${unit ? ` ${unit}` : ""}`, held(row));

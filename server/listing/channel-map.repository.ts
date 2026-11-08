@@ -130,12 +130,12 @@ export const channelMapRepository = {
    */
   async valuesInUse(): Promise<ValueInUse[]> {
     return await prisma.$queryRaw<ValueInUse[]>`
-      SELECT f.key AS fact, f.value->>'value' AS value, count(*)::int AS products
-        FROM "Product" p, jsonb_each(p.facts) AS f(key, value)
+      SELECT v."attributeKey" AS fact, v.answer->>'value' AS value, count(*)::int AS products
+        FROM "ProductValue" v JOIN "Product" p ON p.id = v."productId"
        WHERE p."archivedAt" IS NULL
-         AND p.facts IS NOT NULL
-         AND jsonb_typeof(f.value) = 'object'
-         AND f.value->>'value' IS NOT NULL
+         AND NOT v.measured
+         AND jsonb_typeof(v.answer) = 'object'
+         AND v.answer->>'value' IS NOT NULL
        GROUP BY 1, 2
        ORDER BY count(*) DESC, 1, 2`;
   },

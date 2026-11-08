@@ -240,8 +240,7 @@ function vocabularyFor(
     kind: resolved.kind,
     // No Brand column (an old sheet, a CSV) leaves an updated product's brand as it was.
     ...(row.brandName !== undefined ? { brandId: resolved.brandId } : {}),
-    facts: resolved.facts as Prisma.InputJsonValue,
-    measurements: resolved.measurements as Prisma.InputJsonValue,
+    answers: { facts: resolved.facts, measurements: resolved.measurements },
   };
 }
 
@@ -367,6 +366,8 @@ export async function createProducts(
   }[] = [];
   const stock: { productId: string; orgAddressId: string; quantity: number }[] = [];
   const productIds: string[] = [];
+  // Each row's answers, written to the value rows in the import's transaction (dynamic-form Q16).
+  const answers: Array<{ id: string; facts: unknown; measurements: unknown; weight: number | null }> = [];
 
   rows.forEach(({ row }, index) => {
     // An updating row writes to the product it names rather than a new one, and keeps that
@@ -378,6 +379,8 @@ export async function createProducts(
     const coverName = row.cover ?? row.images[0];
     const thumbnail = row.imageUrls[coverName];
 
+    const { answers: rowAnswers, ...identity } = vocabularyFor(row, index, rows, categoryBySlug, vocabulary);
+    answers.push({ id, ...rowAnswers, weight: row.weight ?? null });
     (existingId ? updates : products).push({
       id,
       slug: slugs[index],
@@ -392,7 +395,7 @@ export async function createProducts(
       thumbnail,
       sku: row.sku ?? null,
       weight: row.weight,
-      ...vocabularyFor(row, index, rows, categoryBySlug, vocabulary),
+      ...identity,
       familyId: row.familyName ? (familyIds.get(normaliseWord(row.familyName)) ?? null) : null,
     });
 
@@ -434,7 +437,7 @@ export async function createProducts(
   for (const row of media) row.assetId = assetIds.get(row.ref) ?? null;
 
   try {
-    await adminProductsRepository.importBulk(products, updates, media, stock, editor);
+    await adminProductsRepository.importBulk(products, updates, media, stock, editor, answers);
     // The whole shop, as a sheet can touch any of its products (dynamic-form Q9).
     await askCompleteness([orgId]);
   } catch (error) {

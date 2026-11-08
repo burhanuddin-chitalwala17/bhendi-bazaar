@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 
 import { BRAND_PARTY_ROLE, BRAND_PARTY_ROLES, type BrandPartyRole } from "@server/shared/brand-party";
 import { prisma } from "@server/shared/prisma";
+import { productValueRepository } from "@server/listing/product-value.repository";
 
 export interface BrandData {
   name: string;
@@ -55,6 +56,8 @@ export class BrandRepository {
     return await prisma.$transaction(async (tx) => {
       const brand = await tx.brand.create({ data: { orgId, ...data, amazonRegistered } });
       if (parties) await writeParties(tx, brand.id, parties);
+      // What the brand fills reaches its products in this transaction (listing-model/dynamic-form Q16).
+      await productValueRepository.refreshForBrandIn(tx, brand.id);
       return await tx.brand.findUniqueOrThrow({ where: { id: brand.id }, include: WITH_PARTIES });
     });
   }
@@ -62,19 +65,26 @@ export class BrandRepository {
   /** Scoped by org in the `where`, so a member of one org cannot edit another's brand by id. */
   async update(orgId: string, id: string, data: Partial<BrandData> & { amazonRegistered?: boolean }, parties?: PartiesData) {
     return await prisma.$transaction(async (tx) => {
+      // Read before the write: a brand stopping being the default still filled the shop's brandless products (review S2).
+      const was = await tx.brand.findFirst({ where: { id, orgId }, select: { isDefault: true } });
       const result = await tx.brand.updateMany({ where: { id, orgId, retiredAt: null }, data });
       if (result.count !== 1) return false;
       if (parties) await writeParties(tx, id, parties);
+      await productValueRepository.refreshForBrandIn(tx, id, was?.isDefault ?? false);
       return true;
     });
   }
 
   /** One default per org: setting it here clears it from every other brand in the same statement pair. */
   async markDefault(orgId: string, id: string) {
-    await prisma.$transaction([
-      prisma.brand.updateMany({ where: { orgId, isDefault: true, NOT: { id } }, data: { isDefault: false } }),
-      prisma.brand.updateMany({ where: { id, orgId, retiredAt: null }, data: { isDefault: true } }),
-    ]);
+    await prisma.$transaction(async (tx) => {
+      const previous = await tx.brand.findMany({ where: { orgId, isDefault: true, NOT: { id } }, select: { id: true } });
+      await tx.brand.updateMany({ where: { orgId, isDefault: true, NOT: { id } }, data: { isDefault: false } });
+      await tx.brand.updateMany({ where: { id, orgId, retiredAt: null }, data: { isDefault: true } });
+      // The shop's brandless products now take this brand's details (dynamic-form Q16).
+      await productValueRepository.refreshForBrandIn(tx, id);
+      for (const p of previous) await productValueRepository.refreshForBrandIn(tx, p.id);
+    });
   }
 
   /** The brand a marketplace's brand name names, by name, ignoring case; retired ones never (marketplace-facts Q29). */
@@ -87,24 +97,28 @@ export class BrandRepository {
 
   /** Each field only where it is still empty, so what the shop wrote meanwhile wins (marketplace-facts D7). */
   async fillEmpty(orgId: string, id: string, fields: Partial<Pick<BrandData, "manufacturer" | "packerOrImporter" | "countryOfOrigin">>) {
-    const filled: string[] = [];
-    for (const [field, value] of Object.entries(fields)) {
-      if (!value) continue;
-      const result = await prisma.brand.updateMany({
-        where: { id, orgId, retiredAt: null, OR: [{ [field]: null }, { [field]: "" }] },
-        data: { [field]: value },
-      });
-      if (result.count === 1) filled.push(field);
-    }
-    return filled;
+    return await prisma.$transaction(async (tx) => {
+      const filled: string[] = [];
+      for (const [field, value] of Object.entries(fields)) {
+        if (!value) continue;
+        const result = await tx.brand.updateMany({
+          where: { id, orgId, retiredAt: null, OR: [{ [field]: null }, { [field]: "" }] },
+          data: { [field]: value },
+        });
+        if (result.count === 1) filled.push(field);
+      }
+      if (filled.length > 0) await productValueRepository.refreshForBrandIn(tx, id);
+      return filled;
+    });
   }
 
   async retire(orgId: string, id: string, now: Date = new Date()) {
-    const result = await prisma.brand.updateMany({
-      where: { id, orgId, retiredAt: null },
-      data: { retiredAt: now, isDefault: false },
+    return await prisma.$transaction(async (tx) => {
+      const was = await tx.brand.findFirst({ where: { id, orgId }, select: { isDefault: true } });
+      const result = await tx.brand.updateMany({ where: { id, orgId, retiredAt: null }, data: { retiredAt: now, isDefault: false } });
+      if (result.count === 1) await productValueRepository.refreshForBrandIn(tx, id, was?.isDefault ?? false);
+      return result.count === 1;
     });
-    return result.count === 1;
   }
 }
 

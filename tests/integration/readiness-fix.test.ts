@@ -5,7 +5,7 @@
 import "dotenv/config";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
+import { isDisposableDb, ensureFixtures, setAnswers, answersOf } from "../helpers/test-db";
 
 describe.skipIf(!isDisposableDb)("readiness fix (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
@@ -16,12 +16,15 @@ describe.skipIf(!isDisposableDb)("readiness fix (local db)", () => {
   const stamp = Date.now();
   let hadGoogle = false;
 
-  const bag = async (s: string, facts: Record<string, unknown> = {}) =>
-    (await prisma.product.create({
-      data: { name: `Bag ${s}`, slug: `rf-${stamp}-${s}`, description: "", price: 1000, categoryId, thumbnail: "/brand/bhendi-bazaar.png", orgId, productType: "bag", facts: facts as never },
+  const bag = async (s: string, facts: Record<string, unknown> = {}) => {
+    const { id } = await prisma.product.create({
+      data: { name: `Bag ${s}`, slug: `rf-${stamp}-${s}`, description: "", price: 1000, categoryId, thumbnail: "/brand/bhendi-bazaar.png", orgId, productType: "bag" },
       select: { id: true },
-    })).id;
-  const colourOf = async (id: string) => ((await prisma.product.findUniqueOrThrow({ where: { id }, select: { facts: true } })).facts as Record<string, { value?: string }>)?.colour?.value;
+    });
+    await setAnswers(id, { facts });
+    return id;
+  };
+  const colourOf = async (id: string) => ((await answersOf(id)).facts as Record<string, { value?: string }>).colour?.value;
 
   beforeAll(async () => {
     ({ prisma } = await import("@server/shared/prisma"));
@@ -68,7 +71,7 @@ describe.skipIf(!isDisposableDb)("readiness fix (local db)", () => {
     expect(await fix.undo(orgId, "colour", "black", a)).toBe(true);
     expect(await colourOf(a)).toBeUndefined();
     await fix.answer(orgId, "colour", "black", [a]);
-    await prisma.product.update({ where: { id: a }, data: { facts: { colour: { value: "blue", origin: "product" } } } });
+    await setAnswers(a, { facts: { colour: { value: "blue", origin: "product" } } });
     expect(await fix.undo(orgId, "colour", "black", a)).toBe(false);
     expect(await colourOf(a)).toBe("blue");
   });

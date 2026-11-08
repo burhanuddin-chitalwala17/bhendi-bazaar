@@ -269,9 +269,8 @@ model ProductPriceHistory {
   @@index([productId, recordedAt])
 }
 
-/// Carries the attributes sync trigger (listing-model/attributes Q7): a write to facts, measurements,
-/// weight, brand, type or org re-derives this product's ProductValue rows until dynamic-form. A BEFORE
-/// trigger sets `productType` from its category on every save, clearing a kind the type lacks (Q14).
+/// A BEFORE trigger sets `productType` from its category on every save, clearing a kind the type lacks
+/// (attributes Q14). Its answers live in ProductValue (dynamic-form Q16).
 model Product {
   id          String @id @default(cuid())
   slug        String @unique
@@ -317,10 +316,12 @@ model Product {
   /// supplied it, so origin costs no second column (listing-vocabulary trd D3). Only the
   /// discriminators above earn columns: nothing filters on a colour or a fabric, and a column
   /// added for a filter nobody has written is a second place for a value to live (categories D6a).
-  facts        Json?
+  /// Frozen at the switch (dynamic-form Q16): read by nothing but the compare gate; dropped by retire-old-paths.
+  factsFrozen        Json? @map("facts")
   /// Measurements in the unit the product type fixes, same shape as `facts`. Stored because a
   /// measurement derives a size label and a label derives no measurement (ADR-0047 D4).
-  measurements Json?
+  /// Frozen at the switch, as `factsFrozen`.
+  measurementsFrozen Json? @map("measurements")
 
   /// The family this product is a member of, when it has siblings that sell separately
   /// (listing-vocabulary/variants D2). Nullable because one abaya in one colour is one product
@@ -873,8 +874,7 @@ enum ReturnsPreset {
 /// The private listing context that does not belong to a brand (org-profile spec R4): what a
 /// product inherits when neither it nor its family nor its brand says otherwise. Pre-fills,
 /// never validates. The tax rate is basis points, never a float.
-/// Carries an attributes sync trigger (attributes Q6, Q9): a country change re-derives the shop's products.
-/// `amazonGeneric` now serves only a product with no brand; each brand holds its own (dynamic-form R7).
+/// `amazonGeneric` now serves only a product with no brand and no default brand (dynamic-form Q14).
 model OrgListingDefaults {
   orgId String @id
   org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -895,7 +895,6 @@ model OrgListingDefaults {
 /// A brand an organisation sells, with the facts that belong to the brand rather than the
 /// shop: who makes it, who packs or imports it, where it comes from (org-profile spec R3). A
 /// manufacturer has one; a shop carrying others' brands has many. Retired, never deleted (R9, ADR-0032).
-/// Carries an attributes sync trigger (attributes Q9): a change to what it fills re-derives its products.
 model Brand {
   id    String @id @default(cuid())
   orgId String
@@ -2248,7 +2247,7 @@ model ProductFamily {
 /// A seller inventing its own would fragment the mappings every channel adapter depends on. The
 /// permitted *answers* stay org-scopeable (`ListingValue.orgId`) because a shop knowing a colour
 /// the platform does not is harmless, where a shop knowing a different question set is not.
-/// Carries an attributes sync trigger (attributes Q12): its questions are rebuilt in BbTypeAttribute.
+/// Carries an attributes trigger (attributes Q12): its questions are rebuilt in BbTypeAttribute.
 model ProductType {
   id String @id @default(cuid())
 
@@ -2983,9 +2982,14 @@ model ProductValue {
   /// product / family / brand / shop / marketplace (VALUE_SOURCE).
   source       String
   sourceId     String?
+  /// The answer exactly as the product holds it (`{ value, origin, unlisted?, source? }`): what every reader
+  /// reads, so the switch from Product.facts loses nothing (dynamic-form Q16); the typed columns derive from it.
+  answer       Json?
+  /// A measurement (Product.measurements' half) rather than a fact; one key may in principle be both.
+  measured     Boolean  @default(false)
   updatedAt    DateTime @updatedAt
 
-  @@unique([productId, attributeKey])
+  @@unique([productId, attributeKey, measured])
   @@index([attributeKey, optionKey])
 }
 

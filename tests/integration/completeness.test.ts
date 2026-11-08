@@ -5,7 +5,7 @@
 import "dotenv/config";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { ensureFixtures, isDisposableDb } from "../helpers/test-db";
+import { ensureFixtures, isDisposableDb, setAnswers } from "../helpers/test-db";
 
 describe.skipIf(!isDisposableDb)("completeness per channel (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
@@ -34,7 +34,7 @@ describe.skipIf(!isDisposableDb)("completeness per channel (local db)", () => {
     await fieldMapRepository.save({ ...base, fieldPath: "Pockets", attributeKey: "pocketCount" }, {});
     flipkartWas = await prisma.orgChannel.findUnique({ where: { orgId_channel: { orgId, channel: "flipkart" } }, select: { enabled: true } });
     await prisma.orgChannel.upsert({ where: { orgId_channel: { orgId, channel: "flipkart" } }, create: { orgId, channel: "flipkart", enabled: true }, update: { enabled: true } });
-    productId = (await prisma.product.create({ data: { orgId, categoryId, name: "Tote", slug: `${stamp}-p`, price: 1000, description: "x", thumbnail: "/x.jpg", facts: {} } })).id;
+    productId = (await prisma.product.create({ data: { orgId, categoryId, name: "Tote", slug: `${stamp}-p`, price: 1000, description: "x", thumbnail: "/x.jpg" } })).id;
   });
 
   afterAll(async () => {
@@ -53,7 +53,7 @@ describe.skipIf(!isDisposableDb)("completeness per channel (local db)", () => {
     expect(await service.forProduct(productId)).toEqual([{ productId, orgId, channel: "flipkart", required: 2, missing: 2, missingKeys: ["Pockets", "Style"] }]);
     const before = (await service.needsFor(orgId)).find((n) => n.channel === "flipkart");
     expect(before?.details).toBeGreaterThanOrEqual(2);
-    await prisma.product.update({ where: { id: productId }, data: { facts: { style: { value: "formal", origin: "product" }, pocketCount: { value: 2, origin: "product" } } } });
+    await setAnswers(productId, { facts: { style: { value: "formal", origin: "product" }, pocketCount: { value: 2, origin: "product" } } });
     await service.refresh(orgId, [productId]);
     expect((await service.forProduct(productId))[0]).toMatchObject({ required: 2, missing: 0 });
   });

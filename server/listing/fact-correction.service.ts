@@ -53,10 +53,8 @@ function matching(target: CorrectionTarget) {
   return {
     orgId: target.orgId,
     ...under,
-    facts: {
-      path: [target.fact, "origin"],
-      equals: target.level,
-    },
+    // The answer lives in its value row since the switch (dynamic-form Q16); its verbatim copy keeps the origin.
+    productValues: { some: { attributeKey: target.fact, measured: false, answer: { path: ["origin"], equals: target.level } } },
   };
 }
 
@@ -71,7 +69,7 @@ function ownAnswer(target: CorrectionTarget) {
   return {
     orgId: target.orgId,
     ...under,
-    facts: { path: [target.fact, "origin"], equals: ORIGIN.PRODUCT },
+    productValues: { some: { attributeKey: target.fact, measured: false, answer: { path: ["origin"], equals: ORIGIN.PRODUCT } } },
   };
 }
 

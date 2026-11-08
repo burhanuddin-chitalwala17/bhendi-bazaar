@@ -6,7 +6,7 @@
 import "dotenv/config";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
+import { isDisposableDb, ensureFixtures, setAnswers, answersOf } from "../helpers/test-db";
 import type { ProductFormInput } from "@/components/product/console/types";
 
 vi.mock("next/navigation", () => ({
@@ -48,14 +48,13 @@ describe.skipIf(!isDisposableDb)("editing a no-type product (local db)", () => {
         categoryId,
         orgId,
         thumbnail: "https://placehold.co/600x600",
-        facts,
-        measurements,
         media: { create: { kind: "IMAGE", ref: "https://placehold.co/600x600", position: 0, isThumbnail: true } },
         stockLocations: { create: { orgAddressId, quantity: 3 } },
       },
       select: { id: true },
     });
     ids.push(id);
+    await setAnswers(id, { facts, measurements, weight: 0.5 });
 
     const product = await adminProductsDAL.getProductById(id);
     const onSubmit = vi.fn(async (data: ProductFormInput) => {
@@ -78,7 +77,7 @@ describe.skipIf(!isDisposableDb)("editing a no-type product (local db)", () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     await onSubmit.mock.results[0].value;
 
-    const saved = await prisma.product.findUniqueOrThrow({ where: { id }, select: { name: true, facts: true, measurements: true } });
+    const saved = { ...(await prisma.product.findUniqueOrThrow({ where: { id }, select: { name: true } })), ...(await answersOf(id)) };
     expect(saved.name).toBe(`Renamed ${stamp}`);
     expect(saved.facts).toMatchObject({ colour: { value: "black" }, material: { value: "crepe", origin: "marketplace" } });
     expect(saved.measurements).toMatchObject({ length: { value: 54 } });

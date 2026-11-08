@@ -346,10 +346,10 @@ async function main() {
         // save path does it — a product must be readable without walking the tree (categories D1b).
         productType: resolveSeedProductType(productData.categoryId),
         kind: productData.kind,
-        facts: asStoredFacts(productData.facts),
-        measurements: asStoredFacts(productData.measurements),
       },
     });
+    // The answers live in the value rows (listing-model/dynamic-form Q16), written as a save writes them.
+    await prisma.$executeRaw`SELECT bb_write_answers(${product.id}, ${JSON.stringify(asStoredFacts(productData.facts) ?? {})}::jsonb, ${JSON.stringify(asStoredFacts(productData.measurements) ?? {})}::jsonb, ${productData.weight || 0.5}::double precision)`;
     console.log(`  ✓ ${product.name} (Stock: ${productData.stock})`);
   }
   console.log(`✅ ${seedProducts.length} products seeded\n`);

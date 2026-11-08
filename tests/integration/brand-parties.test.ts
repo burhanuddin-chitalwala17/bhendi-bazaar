@@ -6,7 +6,7 @@
 import "dotenv/config";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { ensureFixtures, isDisposableDb } from "../helpers/test-db";
+import { ensureFixtures, isDisposableDb, setAnswers } from "../helpers/test-db";
 
 describe.skipIf(!isDisposableDb)("brand parties and type follows category (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
@@ -17,7 +17,9 @@ describe.skipIf(!isDisposableDb)("brand parties and type follows category (local
   let categoryId: string;
   let genericWas: boolean | null;
 
-  const value = async (key: string) => prisma.productValue.findUnique({ where: { productId_attributeKey: { productId, attributeKey: key } } });
+  const value = async (key: string) => prisma.productValue.findUnique({ where: { productId_attributeKey_measured: { productId, attributeKey: key, measured: false } } });
+  // Brand and party edits no longer reach products by trigger; unit 3b moves this call into the brand write path.
+  const refresh = async () => (await import("@server/listing/product-value.repository")).productValueRepository.refreshInheritedIn(prisma, [productId]);
 
   beforeAll(async () => {
     ({ prisma } = await import("@server/shared/prisma"));
@@ -25,8 +27,8 @@ describe.skipIf(!isDisposableDb)("brand parties and type follows category (local
     for (const k of ["a", "b"]) await prisma.productType.create({ data: { key: `${stamp}-${k}`, label: `T${k}`, facts: ["colour", "strap"], measures: [], variantAxis: [], kinds: [{ key: "x", label: "X" }], factLabels: {}, labelFrom: [] } });
     categoryId = (await prisma.category.create({ data: { name: `Cat ${stamp}`, slug: `cat-${stamp}`, description: "x", heroImage: "/x.jpg", productType: `${stamp}-a` } })).id;
     brandId = (await prisma.brand.create({ data: { orgId, name: `Party ${stamp}` } })).id;
-    productId = (await prisma.product.create({ data: { orgId, categoryId, brandId, name: "Tote", slug: `${stamp}-p`, price: 1000, description: "x", thumbnail: "/x.jpg", productType: `${stamp}-b`,
-      facts: { strap: { value: "detachable", origin: "product" } } } })).id;
+    productId = (await prisma.product.create({ data: { orgId, categoryId, brandId, name: "Tote", slug: `${stamp}-p`, price: 1000, description: "x", thumbnail: "/x.jpg", productType: `${stamp}-b` } })).id;
+    await setAnswers(productId, { facts: { strap: { value: "detachable", origin: "product" } } });
     genericWas = (await prisma.orgListingDefaults.findUnique({ where: { orgId }, select: { amazonGeneric: true } }))?.amazonGeneric ?? null;
   });
 
@@ -46,6 +48,7 @@ describe.skipIf(!isDisposableDb)("brand parties and type follows category (local
   it("the brand's parties fill manufacturer, packer and importer as one line each (D6, Q11)", async () => {
     await prisma.brandParty.create({ data: { brandId, role: "maker", name: "Noor Works", address: "12 Bhendi Bazaar, Mumbai", pincode: "400003" } });
     await prisma.brandParty.create({ data: { brandId, role: "importer", name: "Gulf Imports", pincode: "400001" } });
+    await refresh();
     expect((await value("manufacturer"))?.text).toBe("Noor Works, 12 Bhendi Bazaar, Mumbai, 400003");
     expect((await value("importer"))?.text).toBe("Gulf Imports, 400001");
     expect(await value("packer")).toBeNull();
@@ -55,6 +58,7 @@ describe.skipIf(!isDisposableDb)("brand parties and type follows category (local
     const other = await prisma.brand.create({ data: { orgId, name: `Lines ${stamp}`, manufacturer: "Old Maker" } });
     await prisma.product.update({ where: { id: productId }, data: { brandId: other.id } });
     await prisma.brand.update({ where: { id: other.id }, data: { manufacturer: "New Maker" } });
+    await refresh();
     expect((await value("manufacturer"))?.text).toBe("New Maker");
     await prisma.product.update({ where: { id: productId }, data: { brandId } });
     await prisma.brand.delete({ where: { id: other.id } });
@@ -81,6 +85,7 @@ describe.skipIf(!isDisposableDb)("brand parties and type follows category (local
     expect(made).toMatchObject({ amazonRegistered: false, parties: { maker: { name: null } } });
     await prisma.product.update({ where: { id: productId }, data: { brandId: made.id } });
     await brandService.update(orgId, made.id, { parties: { maker: party("Noor Works", "400003"), packer: party(null), importer: party(null) } });
+    await refresh();
     expect((await value("manufacturer"))?.text).toBe("Noor Works, Mumbai, 400003");
     expect((await prisma.brand.findUniqueOrThrow({ where: { id: made.id } })).manufacturer).toBe("Noor Works");
     // A PATCH without parties leaves them; a party blanked is removed (Q13).

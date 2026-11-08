@@ -202,3 +202,21 @@ export async function hasCatalogueData(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * A fixture product's answers, written as the app writes them since the switch (listing-model/dynamic-form
+ * Q16): into the value rows, never onto the product row.
+ */
+export async function setAnswers(productId: string, answers: { facts?: unknown; measurements?: unknown; weight?: number | null }): Promise<void> {
+  const { prisma } = await import("@server/shared/prisma");
+  const { productValueRepository } = await import("@server/listing/product-value.repository");
+  // The function replaces the weight row too, so an omitted weight keeps the product's own rather than erasing it.
+  const weight = answers.weight !== undefined ? answers.weight : (await prisma.product.findUnique({ where: { id: productId }, select: { weight: true } }))?.weight ?? null;
+  await productValueRepository.writeAnswersIn(prisma, productId, { ...answers, weight });
+}
+
+/** A product's answers as every reader now reads them (dynamic-form Q16). */
+export async function answersOf(productId: string): Promise<{ facts: Record<string, unknown>; measurements: Record<string, unknown> }> {
+  const { productValueRepository } = await import("@server/listing/product-value.repository");
+  return await productValueRepository.answersOf(productId);
+}

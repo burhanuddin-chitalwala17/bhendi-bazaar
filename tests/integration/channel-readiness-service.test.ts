@@ -11,7 +11,7 @@ import { describe, it, expect, beforeAll, afterAll, vi, type MockInstance } from
 import { CHANNEL } from "@server/shared/channels";
 import { FACT, LIST, ORIGIN } from "@server/listing/listing-facts";
 import { LISTING_PROBLEM, LISTING_READINESS } from "@server/listing/channel-readiness";
-import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
+import { isDisposableDb, ensureFixtures, setAnswers } from "../helpers/test-db";
 
 // Counted the way `db-ops-budget.test.ts` counts: one `prisma:query` line per billed statement,
 // and the instrument has to be set before the client module loads.
@@ -187,8 +187,8 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
     // design-system Q35: the products page's channel pill lists exactly what this read returns.
     it("lists only this shop's on-sale products the channel would refuse, each with why", async () => {
       const fx = await ensureFixtures();
-      const make = (org: string, answers: Record<string, string>, archived = false) =>
-        prisma.product.create({
+      const make = async (org: string, answers: Record<string, string>, archived = false) => {
+        const row = await prisma.product.create({
           data: {
             slug: `${stamp}-p-${Math.random().toString(36).slice(2, 8)}`,
             name: `${stamp} product`,
@@ -199,11 +199,13 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
             thumbnail: "/brand/bhendi-bazaar.png",
             productType: typeKey,
             kind: "abaya",
-            facts: facts(answers),
             archivedAt: archived ? new Date() : null,
           },
           select: { id: true },
         });
+        await setAnswers(row.id, { facts: facts(answers) });
+        return row;
+      };
       const ready = await make(orgId, { [FACT.COLOUR]: mapped });
       const noColour = await make(orgId, {});
       const archivedNoColour = await make(orgId, {}, true);

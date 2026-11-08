@@ -161,7 +161,7 @@ describe.skipIf(!isDisposableDb)("filling a listing on save (local db)", () => {
     // The fill itself does re-read — it is a save-time step. What must not change is a value
     // already stored on a product, which is a different row entirely and is never touched here.
     expect(before.productType).toBe(after.productType);
-    const stored = await prisma.product.findFirst({ where: { orgId }, select: { facts: true } });
+    const stored = await prisma.product.findFirst({ where: { orgId }, select: { id: true } });
     expect(stored).toBeDefined();
   });
 

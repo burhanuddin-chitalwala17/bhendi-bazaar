@@ -1,3 +1,4 @@
+import { productValueRepository } from "./product-value.repository";
 import { prisma } from "@server/shared/prisma";
 
 /**
@@ -23,14 +24,20 @@ export interface ComplaintSubjectRow extends ReadinessProductRow {
   archivedAt: Date | null;
 }
 
+/** Each product's facts, from the value rows where they live since the switch (dynamic-form Q16). */
+async function withFacts<T extends { id: string }>(rows: T[]): Promise<Array<T & { facts: unknown }>> {
+  const answers = await productValueRepository.answersFor(rows.map((r) => r.id));
+  return rows.map((r) => ({ ...r, facts: answers.get(r.id)?.facts ?? {} }));
+}
+
 export const productReadinessRepository = {
   /** Products named by our own rows (a marketplace's complaints), across shops, in one read (setup-requests D5). */
   async byIds(ids: readonly string[]): Promise<ComplaintSubjectRow[]> {
     if (ids.length === 0) return [];
-    return await prisma.product.findMany({
+    return await withFacts(await prisma.product.findMany({
       where: { id: { in: [...ids] } },
-      select: { id: true, productType: true, kind: true, facts: true, mrpPaise: true, archivedAt: true },
-    });
+      select: { id: true, productType: true, kind: true, mrpPaise: true, archivedAt: true },
+    }));
   },
 
   /** Each shop's product types in use, for some shops, in one read (setup-requests D9: categories). */
@@ -45,9 +52,9 @@ export const productReadinessRepository = {
   },
 
   async subjectsFor(orgId: string): Promise<ReadinessProductRow[]> {
-    return await prisma.product.findMany({
+    return await withFacts(await prisma.product.findMany({
       where: { orgId, archivedAt: null },
-      select: { id: true, productType: true, kind: true, facts: true },
-    });
+      select: { id: true, productType: true, kind: true },
+    }));
   },
 };

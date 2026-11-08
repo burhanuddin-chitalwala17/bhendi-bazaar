@@ -12,6 +12,49 @@
 
 ## Entries
 
+## 2026-11-08 — listing-model / dynamic-form unit 3b: a product's answers live in the value rows (full switch) [MIGRATION]
+
+- **Owner decision Q16:** one full switch, no product or database information lost. Migration
+  `20261108180000_answers_live_in_values` gives `ProductValue` the answer exactly as the product holds it
+  (`answer`, with origin, unlisted flag and marketplace source, so nothing is dropped) and a `measured` flag;
+  drops every value-sync trigger; adds `bb_write_answers` and `bb_write_inherited`; moves every product; and
+  refuses to finish, changing nothing, if any answer would be lost. `Product.facts` and `measurements` are
+  **not dropped**: renamed `factsFrozen`/`measurementsFrozen` in the schema, a frozen pre-switch copy read only
+  by the compare gate until retire-old-paths drops them behind the backup.
+- **One writer:** `product-value.repository` writes in each write's own transaction: product create, update,
+  bulk import, marketplace fill, answer set and undo, the fact correction, the seed; brand, party, default-brand
+  and shop-default writes refresh the products they fill. **Every reader** reads the value rows: catalog's
+  product reads attach them, the storefront joins them into its one query (query budgets unchanged), readiness,
+  channels' family read and the register's values-in-use read them.
+- **Found on the way:** two JSON-path filters on the old column (the fact correction, values in use) the type
+  checker could not see, moved to the value rows; the storefront cache declares `ProductValue`, and (review B3
+  below) a call to the value functions now counts as a write of it, so an edited answer clears cached pages.
+- **Fresh-context review, and its fixes** (all logged with the mutation that proves each test):
+  - **B1** a product inheriting its brand's country could not save its own: both rows took one id, so the save
+    failed on the primary key. Ids are now per kind (`:f:`, `:m:`, `:w`, `:i:`), `bb_write_answers` clears all
+    the product's rows before writing, and an inherited row never goes over the product's own (A4). Test: own
+    country saved, then kept through a brand edit (mutation: the old partial delete failed it).
+  - **B2** the decimal check was double-escaped, so `2.5` stayed text and `40.5 in` lost its canonical number.
+    Tests: decimal fact and measure (mutation: the double escape failed both).
+  - **B3** the cache saw only `INSERT`/`UPDATE`/`DELETE` naming a table, never `SELECT bb_write_answers(…)`, so
+    an answer-only edit did not clear cached pages. `table-writes` now maps the value functions to
+    `ProductValue` (unit test; mutation: dropping the map failed it).
+  - **S1** a re-type (marketplace category, a category's type or place, a type's measure units) left typed rows
+    in the old unit. New `bb_rederive_answers` rebuilds them from the verbatim answers, called in each of those
+    writes' transactions (tests; mutation of each of the three call sites and of the function failed them).
+  - **S2** a brand edited from default to not left its brandless products filled; update passes what it was.
+    **S3** the fact correction locks its products before reading them. **S4** decisions Q16 and HANDOFF
+    corrected (the old columns are frozen, not written). **Low:** hero products read their answers;
+    `fillEmpty` is one transaction; `forListing` typed without a cast; the guard regexes widened (mutation: a
+    planted `p."facts" ->>` failed it); `setAnswers` keeps the product's weight when none is given.
+  - The migration was regenerated; local ci and dev had its function section and backfill re-run (idempotent,
+    no-loss check passed) and its checksum updated.
+- Guards: `tests/unit/answers-live-in-values.test.ts` fails on any code touching the frozen columns, any raw
+  query or JSON-path filter on them, or any writer of ProductValue but the repository (mutation: re-adding the
+  old values-in-use query failed it). `scripts/attributes-compare.ts` now checks the frozen copy against the
+  value rows: local dev PASS. Tests moved to `setAnswers`/`answersOf` helpers. Ran: unit, integration (local ci,
+  one file at a time), `tsc`, the stop hook.
+
 ## 2026-11-08 — listing-model / dynamic-form unit 3a: completeness on the product page
 
 - The channel strip ("Amazon 17 of 19", "Ready for …", what is still needed) now shows on the product view

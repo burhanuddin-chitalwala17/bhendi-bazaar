@@ -15,6 +15,7 @@ import { Prisma } from "@prisma/client";
 import { toJsonColumn } from "@server/shared/json";
 import { parseShotList, type ShotList } from "@server/catalog/shot-list";
 import { parseProductTypeKey } from "@server/listing/product-type";
+import { productValueRepository } from "@server/listing/product-value.repository";
 
 /** `null` clears the list back to the inherited one; `undefined` leaves the column alone. */
 function shotListColumn(list: ShotList | null | undefined) {
@@ -185,7 +186,8 @@ class AdminCategoryRepository {
   ): Promise<AdminCategory | null> {
     // `slug` is intentionally absent: generated once at creation, then frozen,
     // because changing it would 404 every existing link to the category.
-    const category = await prisma.category.update({
+    const category = await prisma.$transaction(async (tx) => {
+      const row = await tx.category.update({
       where: { id },
       data: {
         name: data.name,
@@ -202,6 +204,10 @@ class AdminCategoryRepository {
           select: { products: true },
         },
       },
+      });
+      // Its products re-type through the category trigger; their typed rows follow (review S1).
+      if (data.productType !== undefined || data.parentId !== undefined) await productValueRepository.rederiveForCategoryIn(tx, id);
+      return row;
     });
 
     return {
