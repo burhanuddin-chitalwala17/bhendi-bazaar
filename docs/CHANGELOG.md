@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-11-08 — CI: the e2e build cache is reused only for the exact same code and schema
+
+- The e2e job failed twice on "browse a category" (the product it had seeded never appeared) and passed
+  each time only after the `nextjs-…` cache was deleted. Its key hashed `src/**` and `server/**` only and
+  fell back to any older cache, and `.next/cache` also holds Next's stored page data: after a schema
+  change, data built for the old code could be served. The key now also hashes `prisma/**` and
+  `next.config.*`, and the fallback `restore-keys` is gone. A miss costs a full build, a few minutes.
+- Not reproducible locally (fresh database, clean build, CI's env only: 12/12 pass), so the cause is
+  inferred from the fix, not observed. Ran: `deploy-safety` test.
+
 ## 2026-11-08 — docs: test-file count after merging listing-model into main
 
 - `docs/ARCHITECTURE.md` said 375 Vitest files; the merge of `feat/listing-model` with main's newer work gives

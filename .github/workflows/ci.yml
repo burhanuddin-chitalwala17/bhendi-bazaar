@@ -271,13 +271,15 @@ jobs:
       - name: Apply migrations to the CI database
         run: npx prisma migrate deploy
 
-      # Next's incremental compile cache; a miss only costs a full build.
+      # Next's compile cache, reused only for the exact same code and schema. No fallback key: `.next/cache`
+      # also holds Next's stored page data, and an older cache restored onto new code served the category
+      # page from data built for the old schema, so the journeys could not find the product they had just
+      # seeded (twice, 2026-11; both times fixed only by deleting the cache). A miss costs a full build.
       - name: Cache the Next.js build
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .next/cache
-          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'server/**') }}
-          restore-keys: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'server/**', 'prisma/**', 'next.config.*') }}
 
       - name: Build application
         run: npm run build
