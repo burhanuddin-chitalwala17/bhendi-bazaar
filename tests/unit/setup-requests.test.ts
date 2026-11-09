@@ -35,6 +35,10 @@ describe("which complaints become tickets (setup-requests D5)", () => {
     ]);
   });
 
+  it("never raises a barcode or exemption, even one stored before the provider marked it (2026-11-09)", () => {
+    expect(needsFrom([complaint([issue("externally_assigned_product_identifier")])], answered)).toEqual([]);
+  });
+
   it("makes a complaint naming no attribute an issue for a developer (Q18, Q21)", () => {
     const [need] = needsFrom([complaint([issue(null, { code: "8541" })])], answered);
     expect(need.subject).toMatchObject({ kind: ISSUE_KIND, source: "Amazon", context: "TOTE_BAG", subjectName: null, code: "8541" });

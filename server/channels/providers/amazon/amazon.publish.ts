@@ -66,6 +66,10 @@ const NEED_OF: Record<string, IssueNeed> = {
   // The offer is sent with `maximum_retail_price` only when the product has one.
   purchasable_offer: ISSUE_NEED.MRP,
   maximum_retail_price: ISSUE_NEED.MRP,
+  // A barcode or the exemption from one: the shop's to give, never a field a developer adds.
+  externally_assigned_product_identifier: ISSUE_NEED.BARCODE,
+  supplier_declared_has_product_identifier_exemption: ISSUE_NEED.BARCODE,
+  merchant_suggested_asin: ISSUE_NEED.BARCODE,
 };
 const fieldOf = (attribute: string): ListingField | null =>
   FIELD_OF[attribute] ?? (attribute.startsWith("other_product_image_locator") ? LISTING_FIELD.PHOTOS : null);

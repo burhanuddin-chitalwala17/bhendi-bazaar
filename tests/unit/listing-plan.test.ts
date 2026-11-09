@@ -107,6 +107,11 @@ describe("how to fix what a marketplace refused (marketplace-publish Q24)", () =
     expect(otherIssues).toEqual([vague]);
   });
 
+  it("leaves a barcode complaint to the barcode card, never the admin (2026-11-09: it was raised as a request)", () => {
+    const barcode = issue("externally_assigned_product_identifier", "'Externally assigned product identifier' is required but missing.", { need: "barcode" });
+    expect(fixesOf([barcode], true, facts)).toEqual({ fixes: [], otherIssues: [] });
+  });
+
   it("leaves an offer complaint on the price when the product already has an MRP", () => {
     const offer = issue("purchasable_offer", "Price too low", { field: "price", need: "mrp" });
     expect(fixesOf([offer], true, facts)).toEqual({ fixes: [], otherIssues: [] });

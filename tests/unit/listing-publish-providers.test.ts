@@ -98,6 +98,11 @@ describe("a marketplace's complaints (D9, Q6)", () => {
     expect(strap).toMatchObject({ field: null, attribute: "strap_type", need: null });
   });
 
+  it("calls a missing barcode or exemption the barcode, so it never becomes a request (2026-11-09)", () => {
+    const [barcode] = amazonIssues([{ code: "90220", message: "'Externally assigned product identifier' is required but missing.", severity: "ERROR", attributeNames: ["externally_assigned_product_identifier"] }]);
+    expect(barcode).toMatchObject({ attribute: "externally_assigned_product_identifier", need: "barcode" });
+  });
+
   it("reads Flipkart's per-SKU answer: a failure is a refusal even with an HTTP 200", () => {
     expect(flipkartAnswer({ A1: { status: "SUCCESS" } }, "A1", "price")).toEqual({ ok: true, issues: [] });
     const failed = flipkartAnswer({ A1: { status: "FAILURE", errors: [{ code: "PRICE_INVALID", description: "Selling price above MRP" }] } }, "A1", "price");

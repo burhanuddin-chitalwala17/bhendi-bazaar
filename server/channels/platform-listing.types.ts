@@ -57,7 +57,11 @@ export interface ListingIssue {
 }
 
 /** What a complaint is about in our terms, said by the marketplace's provider (marketplace-publish Q24). */
-export const ISSUE_NEED = { BRAND: "brand", BRAND_NAME: "brand_name", MRP: "mrp" } as const;
+export const ISSUE_NEED = {
+  BRAND: "brand", BRAND_NAME: "brand_name", MRP: "mrp",
+  /** A barcode, or the brand's exemption from one: only the shop has either (2026-11-09: it was raised as a request). */
+  BARCODE: "barcode",
+} as const;
 export type IssueNeed = (typeof ISSUE_NEED)[keyof typeof ISSUE_NEED];
 
 /** Where a complaint is fixed (marketplace-publish Q24): the brand, the MRP, a fact on the product, or the admin. */

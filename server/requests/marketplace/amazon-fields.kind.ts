@@ -8,6 +8,7 @@ import { TypesUnavailableError } from "@server/channels/channel-types.service";
 import { REQUIREMENT_MODE, TICKET_TYPE, type TicketSubject } from "../request.types";
 import { PlanUnavailableError, type TicketKindPlugin } from "../kinds/kind";
 import { planHash, propose, valueKey } from "./field-match";
+import { BARCODE_ATTRIBUTES } from "./complaint-sort";
 import { homeBrandOrgId } from "@server/shared/home-brand";
 import { FIELD_SOLUTION, MARKETPLACE_KIND, MARKETPLACE_UNAVAILABLE, fieldsChoiceSchema, type FieldsPlanDTO, type FieldsSubject } from "./marketplace.types";
 
@@ -108,7 +109,8 @@ export const amazonFieldsKind: TicketKindPlugin = {
     return (s) => {
       const f = asFields(s);
       const set = answered.get(`${f.channel}:${f.theirCategory}`);
-      return !!set && f.attributes.every((a) => set.has(a));
+      // A barcode is the shop's, never ours to set up: a ticket raised for one before that was known still closes.
+      return !!set && f.attributes.every((a) => set.has(a) || BARCODE_ATTRIBUTES.has(a));
     };
   },
 };

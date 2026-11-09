@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import type { ListingScreenDTO } from "@server/channels/platform-listing.types";
+import { ISSUE_NEED, type ListingScreenDTO } from "@server/channels/platform-listing.types";
 
 import { CREATE, PUBLISH } from "./platform-listing-copy";
 import { ROUTES } from "@server/shared/routes";
@@ -13,7 +13,7 @@ import { ROUTES } from "@server/shared/routes";
 export function ListingDraftBanner({ orgId, screen }: { orgId: string; screen: ListingScreenDTO }) {
   const draft = screen.draft;
   if (!draft) return null;
-  const needsBarcode = screen.issues.some((i) => /identifier|gtin|barcode|ean|upc/i.test(`${i.code} ${i.message}`));
+  const needsBarcode = screen.issues.some((i) => i.need === ISSUE_NEED.BARCODE || /identifier|gtin|barcode|ean|upc/i.test(`${i.code} ${i.message}`));
   return (
     <section className="flex flex-col gap-2 rounded-card bg-warning/10 p-3 text-sm">
       {draft.mode === "offer" ? (

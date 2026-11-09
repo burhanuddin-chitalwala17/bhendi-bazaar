@@ -14,6 +14,15 @@ export interface Complaint {
 }
 
 /**
+ * A marketplace's names for a barcode, or the brand's exemption from one: the shop's to give (Add barcode, or
+ * apply once in the marketplace), never a field we set up. Also read for issues stored before the provider
+ * marked them (2026-11-09: one was raised as a request and reopened it).
+ */
+export const BARCODE_ATTRIBUTES: ReadonlySet<string> = new Set([
+  "externally_assigned_product_identifier", "supplier_declared_has_product_identifier_exemption", "merchant_suggested_asin",
+]);
+
+/**
  * Which complaints are ours to fix, as needs (setup-requests D5, marketplace-publish Q24). Pure.
  * A complaint pinned to a listing field, or about the brand or MRP, is the shop's own fix and raises
  * nothing. An attribute this type already answers (a blank fact on the product) is the shop's too. An
@@ -26,7 +35,7 @@ export function needsFrom(complaints: readonly Complaint[], answered: (channel: 
     const channel = c.channel;
     const unanswered = new Set<string>();
     for (const issue of c.issues) {
-      if (issue.field !== null || issue.need !== null) continue;
+      if (issue.field !== null || issue.need !== null || (issue.attribute && BARCODE_ATTRIBUTES.has(issue.attribute))) continue;
       if (issue.attribute && c.theirCategory) {
         if (!answered(channel, c.theirCategory).has(issue.attribute)) unanswered.add(issue.attribute);
         continue;
