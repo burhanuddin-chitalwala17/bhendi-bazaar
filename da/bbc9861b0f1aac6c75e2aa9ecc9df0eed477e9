@@ -1,0 +1,38 @@
+docs/ARCHITECTURE.md
+  s_0972fb7ac9c18b::t_c798774456fecb 61,77
+src/components/channel/listing-fixes.tsx
+  s_0972fb7ac9c18b::t_94036400987dfd 76,78
+server/channels/providers/publish.ts
+  s_0972fb7ac9c18b::t_065bd4bb0a8573 96-100
+prisma/migrations/20261109090000_amazon_handbag_map_fixes/migration.sql
+  s_0972fb7ac9c18b::t_076fe07e65bc63 1-26
+server/requests/marketplace/field-match.ts
+  s_0972fb7ac9c18b::t_065bd4bb0a8573 67,70-72
+server/channels/providers/amazon/amazon.publish.ts
+  s_0972fb7ac9c18b::t_065bd4bb0a8573 299,303-309
+tests/unit/setup-requests.test.ts
+  s_0972fb7ac9c18b::t_3d0c83d557525e 80-82,86-90
+  s_0972fb7ac9c18b::t_e1062aa6f7737c 83-85
+tests/unit/amazon-grouped-attributes.test.ts
+  s_0972fb7ac9c18b::t_3d0c83d557525e 1-22
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_c798774456fecb 3-22
+src/components/requests/requests-copy.ts
+  s_0972fb7ac9c18b::t_94036400987dfd 20-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "dabbc9861b0f1aac6c75e2aa9ecc9df0eed477e9",
+  "prompts": {},
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
