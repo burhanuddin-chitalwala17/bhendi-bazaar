@@ -390,6 +390,25 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
     expect((await row(id)).channelListingId).toBe(mirror.id);
   });
 
+  it("keeps looking at a page it created until Amazon makes it buyable, and keeps the ASIN it names (2026-11-09)", async () => {
+    const id = await product("NEWPAGE", null);
+    const { id: listingId } = await create.startDraft(orgId, id, "amazon", { mode: "new", targetExternalId: null });
+    const review = await publish.review(orgId, "amazon", listingId);
+    await publish.publish(orgId, "amazon", [{ id: listingId, version: review.listings[0].version, fields: review.listings[0].changes.map((c) => c.field) }]);
+    await publish.send(listingId);
+    // Found, not yet buyable: the second look must not call it done.
+    fake.state.status = { found: true, live: false, issues: [], showing: { title: null, mainImageUrl: null }, externalId: "B0NEWPAGE1" } as never;
+    await publish.check(listingId);
+    await publish.check(listingId);
+    expect(await row(id)).toMatchObject({ publishState: "checking", live: false });
+    // Buyable at the next look: done, linked, with the ASIN.
+    fake.state.status = { found: true, live: true, issues: [], showing: { title: null, mainImageUrl: null }, externalId: "B0NEWPAGE1" } as never;
+    await publish.check(listingId);
+    expect(await row(id)).toMatchObject({ publishState: "idle", live: true });
+    const mirror = await prisma.channelListing.findFirstOrThrow({ where: { productId: id, connectionId: connections.amazon } });
+    expect(mirror.externalId).toBe("B0NEWPAGE1");
+  });
+
   it("makes a family's page before its members, which wait for it (spec A5, D7)", async () => {
     const family = await prisma.productFamily.create({ data: { orgId, name: `MP family ${stamp}`, variantAxis: ["colour"] }, select: { id: true } });
     const a = await product("FAM-A", null, { familyId: family.id });

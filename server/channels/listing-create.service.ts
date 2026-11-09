@@ -303,14 +303,14 @@ export const listingCreateService = {
   },
 
   /** What a create made: the mirror row, linked to its product, so stock sync and reads take it up (D6). */
-  async linkCreated(row: PlatformListingRow): Promise<void> {
+  async linkCreated(row: PlatformListingRow, externalId: string | null = null): Promise<void> {
     if (!row.productId || !row.sku) return;
     const product = await productOf(row.orgId, row.productId);
     const mirror = await channelListingRepository.createLinked({
       connectionId: row.connectionId, orgId: row.orgId, channel: row.channel, sku: row.sku, productId: row.productId,
       title: parseSent(row.sent)?.title ?? parseOverrides(row.pending).title ?? product.name,
       pricePaise: parseSent(row.sent)?.price ?? parseOverrides(row.pending).price ?? product.price,
-      externalId: row.createMode === CREATE_MODE.OFFER ? row.targetExternalId : null,
+      externalId: row.createMode === CREATE_MODE.OFFER ? row.targetExternalId : externalId,
     });
     await platformListingRepository.attachMirror(row.id, mirror.id);
   },

@@ -195,9 +195,10 @@ export async function amazonListingStatus(token: TokenSource, account: string | 
       live: status.includes("BUYABLE"),
       issues: amazonIssues(item.issues),
       showing: { title: str(summary.itemName), mainImageUrl: str(obj(summary.mainImage).link) },
+      externalId: str(summary.asin),
     };
   } catch (error) {
-    if (error instanceof MarketplaceRequestError && error.status === 404) return { found: false, live: null, issues: [], showing: { title: null, mainImageUrl: null } };
+    if (error instanceof MarketplaceRequestError && error.status === 404) return { found: false, live: null, issues: [], showing: { title: null, mainImageUrl: null }, externalId: null };
     throw error;
   }
 }

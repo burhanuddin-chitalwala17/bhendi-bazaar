@@ -160,7 +160,9 @@ async function lookAt(row: PlatformListingRow, connection: OrdersCheckRow | null
   const sent = parseSent(row.sent) ?? {};
   const title = pending.title ?? sent.title;
   const showing = answer.found && answer.showing.title && title && answer.showing.title !== title ? { title: answer.showing.title, mainImageUrl: null } : null;
-  const done = errors.length > 0 || (answer.found && count >= 2);
+  // A page we created is found minutes before Amazon makes it buyable; checked on, not called done while not yet on sale (2026-11-09).
+  const waitingToSell = row.createMode !== null && answer.found && answer.live === false && checkAt(count, row.publishedAt ?? now) !== null;
+  const done = errors.length > 0 || (answer.found && count >= 2 && !waitingToSell);
   const next = done ? null : checkAt(count, row.publishedAt ?? now);
   const state = errors.length > 0 ? PUBLISH_STATE.ATTENTION : done ? PUBLISH_STATE.IDLE : next ? PUBLISH_STATE.CHECKING : PUBLISH_STATE.UNANSWERED;
   const refused = new Set(errors.map((i) => i.field));
@@ -171,7 +173,9 @@ async function lookAt(row: PlatformListingRow, connection: OrdersCheckRow | null
   }
   // A fix published and found clean ends the daily look's complaint at once, not tomorrow (Q23).
   if (done && answer.found && errors.length === 0) await channelListingRepository.clearProblems(connection.id, sku);
-  if (done && answer.found && errors.length === 0 && row.channelListingId === null) await listingCreateService.linkCreated({ ...row, sent: confirmed });
+  if (done && answer.found && errors.length === 0 && row.channelListingId === null) await listingCreateService.linkCreated({ ...row, sent: confirmed }, answer.externalId ?? null);
+  // The page's own id (Amazon's ASIN), kept on the mirror once the marketplace names it; never overwrites one already held.
+  if (answer.externalId) await channelListingRepository.setExternalIdIfNone(connection.id, sku, answer.externalId);
 }
 
 export const listingPublishService = {

@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 2026-11-10 — Amazon: a created page is looked at until it is buyable; its ASIN kept; handbag silhouette sent [MIGRATION]
+
+- The first Generic HANDBAG listing was created at 20:57 UTC and Amazon made it buyable later; our follow-up
+  looked twice (about two and ten minutes after the send), found it not yet buyable, and called it done
+  (`live: false` for good). A page we created and found but not yet buyable is now looked at on the existing
+  schedule (up to two hours) and only then settles; a complaint still ends the wait at once.
+- The look reads the page's own id (Amazon's ASIN, `StatusAnswer.externalId`, optional) and keeps it on the
+  mirror row (never overwriting one held); a create's link carries it.
+- Data migration `20261110090000_amazon_handbag_silhouette`: Amazon's quality warning named
+  `handbag_silhouette`; it now follows the bag's kind, each paired to Amazon's nearest word (handbag → satchel,
+  tote → bucket, sling, messenger). Reference data only.
+- Verified first, read-only (one GET with the shop's connection, token kept in memory): Amazon holds SKU
+  NBHBT0906 as DISCOVERABLE and BUYABLE, ASIN B0HR3B6NSZ, ₹220 (MRP ₹290), FBM quantity 1. Seller Central's
+  "Missing Offer" and 0 were its inventory page lagging, not a dropped offer.
+- Tests: marketplace-publish (looks on until buyable, then settles with the ASIN); both changes mutation-checked.
+
 ## 2026-11-09 — Amazon: a missing barcode is the shop's to give, never a request [CONTRACT]
 
 - Amazon's next check of the HANDBAG listing (06:17) had one error: no barcode ("Externally assigned product

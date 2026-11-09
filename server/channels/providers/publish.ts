@@ -40,6 +40,8 @@ export interface StatusAnswer {
   issues: ListingIssue[];
   /** What the marketplace's page shows: its title and main photo (marketplace-publish Q14). */
   showing: { title: string | null; mainImageUrl: string | null };
+  /** The marketplace's own id for the page (Amazon's ASIN), once it has one; absent where a provider cannot say. */
+  externalId?: string | null;
 }
 
 /** A listing the marketplace says has a problem now (marketplace-publish Q23): its errors, and whether it is hidden from shoppers. */

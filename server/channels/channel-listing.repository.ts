@@ -519,6 +519,11 @@ export const channelListingRepository = {
     });
   },
 
+  /** A created listing's page id (Amazon's ASIN) once the marketplace names it; one already held stays. */
+  async setExternalIdIfNone(connectionId: string, sku: string, externalId: string): Promise<void> {
+    await prisma.channelListing.updateMany({ where: { connectionId, sku, externalId: null }, data: { externalId } });
+  },
+
   /** The stored reads of these products' linked listings, for a marketplace's word on a fact (readiness-fix Q6). */
   async readsFor(orgId: string, productIds: readonly string[]) {
     return await prisma.channelListing.findMany({
