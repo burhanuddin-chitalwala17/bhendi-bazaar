@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2026-11-09 — Amazon: a missing barcode is the shop's to give, never a request
+## 2026-11-09 — Amazon: a missing barcode is the shop's to give, never a request [CONTRACT]
 
 - Amazon's next check of the HANDBAG listing (06:17) had one error: no barcode ("Externally assigned product
   identifier"). The listing card said "Amazon also needs 1 detail we don't ask for yet" and the requests
@@ -9,6 +9,8 @@
 - The Amazon provider now marks those complaints `ISSUE_NEED.BARCODE` (the identifier, the exemption flag,
   a suggested ASIN); the listing plan leaves them to the barcode card; requests never raise one, even from
   an issue stored before the mark, and a ticket that named one still closes on the daily check.
+- `ISSUE_NEED` gains `barcode` (CONTRACTS.md, ListingIssue); `TypeAttribute` gains optional `parts` (internal to
+  channels and requests, no wire change).
 - Tests: listing-plan, listing-publish-providers, setup-requests; each mutation-checked.
 
 ## 2026-11-09 — Amazon: the first HANDBAG send's refusals fixed at their cause [MIGRATION]

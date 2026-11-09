@@ -547,8 +547,9 @@ or null: the daily look's complaint), `ChannelListingsPageDTO.counts` gains `pro
 `problems`, `suppressed`). No route changed.
 
 Since marketplace-publish Q24 a `ListingIssue` may carry `attribute` (the marketplace's own name) and
-`need` (`ISSUE_NEED`: brand or mrp, when its provider can tell); both are absent on issues stored
-before. `ListingScreenDTO` gains `fixes` (`ListingFixDTO[]`: `kind` from `LISTING_FIX` (brand, mrp,
+`need` (`ISSUE_NEED`: brand or mrp, when its provider can tell; `barcode` since 2026-11-09, for a missing
+barcode or exemption, which the listing's barcode card places and requests never raise); both are absent on
+issues stored before. `ListingScreenDTO` gains `fixes` (`ListingFixDTO[]`: `kind` from `LISTING_FIX` (brand, mrp,
 facts, admin) and the `names` to fill) and `otherIssues` (complaints neither a field nor a fix places).
 No route changed.
 
