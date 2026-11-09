@@ -77,6 +77,17 @@ describe("matching a marketplace field to our vocabulary (D6, Q32)", () => {
     expect(propose({ name: "item_form", label: "Item Form", allowed: [] }, [form], [])).toMatchObject({ solution: FIELD_SOLUTION.REUSE, fact: "itemForm" });
   });
 
+  it("never maps one answer onto a field made of parts: Amazon ignored it and the weight was overwritten (2026-11-09)", () => {
+    const form = { key: "itemForm", label: "Form", answers: [] };
+    const contents = { key: "contents", label: "What is in the set", answers: [] };
+    // Even a fact whose name matches it word for word: one answer cannot fill a group.
+    const dims = { key: "dimensions", label: "Dimensions", answers: [] };
+    expect(propose({ name: "item_dimensions", label: "Item Dimensions", allowed: [], parts: ["length", "width", "height"] }, [dims], [dims])).toMatchObject({ solution: FIELD_SOLUTION.NOT_POSSIBLE });
+    for (const [name, parts] of [["inner", ["material"]], ["item_dimensions", ["length", "width", "height"]], ["size_info", ["display_name"]]] as const) {
+      expect(propose({ name, label: name, allowed: [], parts: [...parts] }, [form, contents], [form, contents])).toMatchObject({ solution: FIELD_SOLUTION.NOT_POSSIBLE, fact: null });
+    }
+  });
+
   it("keys a new answer by its words, and fingerprints a plan the same way twice", () => {
     expect(valueKey("Multi Colour / Printed")).toBe("multi-colour-printed");
     expect(planHash({ a: [1, 2] })).toBe(planHash({ a: [1, 2] }));

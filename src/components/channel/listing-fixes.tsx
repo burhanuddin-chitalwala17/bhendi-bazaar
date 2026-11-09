@@ -73,9 +73,9 @@ function TicketLine({ orgId, ticket, label, editHref }: { orgId: string; ticket:
         <span className="text-small text-muted-foreground">{REQUESTS_COPY.raisedOn(formatDate(ticket.raisedAt, { day: "numeric", month: "short" }))}</span>
       </div>
       {ticket.state === SHOP_STATE.WITH_US && <p className="text-small text-muted-foreground">{names && <>{REQUESTS_COPY.covers(names)} </>}{REQUESTS_COPY.withUsHint}</p>}
-      {ticket.state === SHOP_STATE.READY && names && (
+      {ticket.state === SHOP_STATE.READY && (
         <>
-          <p>{REQUESTS_COPY.fillThese(names)}</p>
+          <p>{REQUESTS_COPY.readyFill}</p>
           <Button asChild size="sm" className="min-h-10"><Link href={editHref}>{FIX.factsAction}</Link></Button>
         </>
       )}

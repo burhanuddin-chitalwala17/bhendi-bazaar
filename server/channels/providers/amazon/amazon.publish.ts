@@ -296,8 +296,17 @@ export function amazonRequiredAttributes(schema: Record<string, unknown>): TypeD
   return Object.entries(obj(schema.properties)).flatMap(([name, raw]) => {
     if (requirements.get(name) !== FIELD_REQUIREMENT.REQUIRED || SENT_BY_CREATE.has(name) || name.startsWith("other_product_image_locator")) return [];
     const property = obj(raw);
-    return [{ name, label: str(property.title) ?? name, required: true, allowed: allowedOf(property) }];
+    return [{ name, label: str(property.title) ?? name, required: true, allowed: allowedOf(property), parts: partsOf(property) }];
   });
+}
+
+/**
+ * The named parts of a grouped attribute: what an item holds besides Amazon's own `marketplace_id` and
+ * `language_tag`, when that is not a single `value` (with or without its `unit`). Empty for a one-answer field.
+ */
+function partsOf(property: Record<string, unknown>): string[] {
+  const keys = Object.keys(obj(obj(property.items).properties)).filter((k) => k !== "marketplace_id" && k !== "language_tag");
+  return keys.includes("value") ? [] : keys;
 }
 
 /** The units a measure attribute accepts, from its `unit` enum. */

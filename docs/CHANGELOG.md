@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 2026-11-09 — Amazon: the first HANDBAG send's refusals fixed at their cause [MIGRATION]
+
+- Amazon checked the first live HANDBAG listing (2026-11-09) and refused it: Item Weight invalid with no
+  unit, Water Resistance Level not an approved value; and inner, item_dimensions and size_info ignored as
+  "not applicable". Not missing questions: wrong maps. A setup request applied on 2026-11-06/08 had mapped
+  whole groups to one text answer (inner and size_info → "What is in the set", item_dimensions and
+  **item_weight** → "Form"), the last overwriting the weight-in-grams map; and water resistance sent
+  Amazon's display words where its schema takes codes (`not_water_resistant`).
+- Data migration `20261109090000_amazon_handbag_map_fixes` (reference data only): the four wrong maps
+  removed (their part maps already send inner.material, length/width/height and the size display name),
+  item_weight restored to the product's weight in grams, water resistance paired to Amazon's codes.
+- Guard: Amazon's definition now names a group's parts (`TypeAttribute.parts`), and a request never
+  proposes one answer for a group, even a fact named after it. Tests: setup-requests, a new
+  amazon-grouped-attributes test against the stored HANDBAG schema; both mutation-checked.
+- The listing card's Ready line no longer says "Fill these on the product: …" with every field Amazon
+  named (14, most filled automatically): it sends the shop to the product, where only real gaps show.
+- Verified read-only on production: the live product builds with weight 250 g, `not_water_resistant`,
+  inner and outer material, L×W×H in cm, department Girls, age range Kid, capacity 500 ml, no gaps.
+  The HANDBAG request was already closed by the daily check (2026-11-08); nothing for the admin to do.
+
 ## 2026-11-08 — requests: a field a field map fills is answered; no more Inner → "What is in the set"
 
 - The Amazon fields request for HANDBAG asked a developer for department, capacity, age range, number of items

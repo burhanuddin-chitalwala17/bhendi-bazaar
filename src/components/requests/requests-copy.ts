@@ -17,7 +17,8 @@ export const REQUESTS_COPY = {
 
   // Shop: the listing's How to fix it line.
   needsDetails: (label: string, n: number, names: string) => `${label} also needs ${n} ${n === 1 ? "detail" : "details"} we don't ask for yet: ${names}.`,
-  fillThese: (names: string) => `Fill these on the product: ${names}.`,
+  // Not the ticket's names: those are every field the marketplace named, and most fill themselves (2026-11-09).
+  readyFill: "Set up on our side. Open the product: anything still missing is marked there; the rest fills itself.",
   // Shop: one-tap raise (Q36).
   raiseRequest: "Raise a request",
   raiseHint: "One tap. We fix it on our side and tell you here when it's ready.",

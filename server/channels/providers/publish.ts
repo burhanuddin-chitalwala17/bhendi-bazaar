@@ -93,6 +93,11 @@ export interface TypeAttribute {
   required: boolean;
   /** The answers it allows, as it words them; empty when free text. */
   allowed: string[];
+  /**
+   * A group of named parts (Amazon's `inner` → material, `item_dimensions` → length, width, height) rather than
+   * one answer: one of our answers cannot fill it, only a map per part (Amazon refusal, 2026-11-09).
+   */
+  parts?: string[];
 }
 
 /** A marketplace type's definition: what it requires and allows (setup-requests D7). */

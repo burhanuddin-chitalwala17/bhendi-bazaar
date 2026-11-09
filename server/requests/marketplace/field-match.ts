@@ -64,9 +64,12 @@ function answerOverlap(allowed: readonly string[], fact: FactOption): number {
  * One field's proposal: a fact the type asks (reuse), a declared fact it does not (add), the product
  * itself, a fixed value when Amazon allows exactly one answer, or nothing we can set up without code.
  */
-export function propose(attribute: { name: string; label: string; allowed: readonly string[] }, asked: readonly FactOption[], declared: readonly FactOption[]): FieldProposal {
+export function propose(attribute: { name: string; label: string; allowed: readonly string[]; parts?: readonly string[] }, asked: readonly FactOption[], declared: readonly FactOption[]): FieldProposal {
   const source = FROM_PRODUCT[attribute.name];
   if (source) return { solution: FIELD_SOLUTION.FROM_PRODUCT, fact: null, source, constant: null };
+  // A group of parts (inner → material, item_dimensions → length, width, height) takes a map per part, never
+  // one answer: mapping one onto it sent Amazon a value it ignored and overwrote the weight (2026-11-09).
+  if (attribute.parts && attribute.parts.length > 0) return { solution: FIELD_SOLUTION.NOT_POSSIBLE, fact: null, source: null, constant: null };
   const score = (f: FactOption) => Math.max(overlap(attribute.name, f), overlap(attribute.label, f)) + answerOverlap(attribute.allowed, f);
   const best = (pool: readonly FactOption[]) => pool.map((f) => ({ f, s: score(f) })).filter((x) => x.s >= 0.5).sort((x, y) => y.s - x.s || x.f.key.localeCompare(y.f.key))[0]?.f;
   const reuse = best(asked);
