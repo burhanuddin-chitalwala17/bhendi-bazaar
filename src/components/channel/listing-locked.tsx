@@ -10,12 +10,14 @@ import type { ListingScreenDTO } from "@server/channels/platform-listing.types";
 
 import { GENERIC, LISTING, rupees } from "./platform-listing-copy";
 import { ROUTES } from "@server/shared/routes";
+import { withFrom } from "@/lib/safe-callback-url";
 
 /**
  * "Same everywhere" (channel-listings Q10, parent Q28): strict fields shown, never editable here.
  * Each explains itself on tap and links to the product, rather than looking disabled.
  */
-export function ListingLocked({ orgId, screen }: { orgId: string; screen: ListingScreenDTO }) {
+export function ListingLocked({ orgId, screen, from }: { orgId: string; screen: ListingScreenDTO; from?: string }) {
+  const editHref = from ? withFrom(ROUTES.org.editProduct(orgId, screen.productId), from) : ROUTES.org.editProduct(orgId, screen.productId);
   const rows = [
     { key: "mrp", name: "MRP", value: screen.locked.mrpPaise !== null ? rupees(screen.locked.mrpPaise) : LISTING.none },
     { key: "barcode", name: "Barcode", value: screen.locked.barcode ?? LISTING.none },
@@ -28,7 +30,7 @@ export function ListingLocked({ orgId, screen }: { orgId: string; screen: Listin
       <ul className="flex flex-col">
         {rows.map((row) => (
           <li key={row.key}>
-            <LockedRow orgId={orgId} productId={screen.productId} name={row.name} value={row.value} />
+            <LockedRow editHref={editHref} name={row.name} value={row.value} />
           </li>
         ))}
       </ul>
@@ -42,7 +44,7 @@ export function ListingLocked({ orgId, screen }: { orgId: string; screen: Listin
   );
 }
 
-function LockedRow({ orgId, productId, name, value }: { orgId: string; productId: string; name: string; value: string }) {
+function LockedRow({ editHref, name, value }: { editHref: string; name: string; value: string }) {
   const [open, setOpen] = useState(false);
   return (
     <HandoffSheet
@@ -63,7 +65,7 @@ function LockedRow({ orgId, productId, name, value }: { orgId: string; productId
       }
     >
       <Button asChild className="min-h-10 w-full">
-        <Link href={ROUTES.org.editProduct(orgId, productId)}>{LISTING.editProduct}</Link>
+        <Link href={editHref}>{LISTING.editProduct}</Link>
       </Button>
     </HandoffSheet>
   );

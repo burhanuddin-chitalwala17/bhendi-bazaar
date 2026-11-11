@@ -45,6 +45,8 @@ interface ProductEditContainerProps {
   team?: { shopName: string };
   /** Where "Back" goes; the team returns to the product, the shop to its list. */
   backHref?: string;
+  /** Opened from another screen: a save goes back to `backHref` (navigation-flows Q8). */
+  returnOnSave?: boolean;
 }
 
 export function ProductEditContainer({
@@ -61,6 +63,7 @@ export function ProductEditContainer({
   sellsElsewhere = false,
   team,
   backHref,
+  returnOnSave = false,
   help,
 }: ProductEditContainerProps) {
   const router = useRouter();
@@ -72,11 +75,12 @@ export function ProductEditContainer({
     router.push(back);
   };
 
+
   return (
     <div className="space-y-8">
       <PageHeader
         help={help}
-        back={{ href: back, label: team ? PRODUCT_EDIT_HEADER_COPY.backTeam : PRODUCT_EDIT_HEADER_COPY.back }}
+        back={{ href: back, label: returnOnSave ? PRODUCT_EDIT_HEADER_COPY.backOpener : team ? PRODUCT_EDIT_HEADER_COPY.backTeam : PRODUCT_EDIT_HEADER_COPY.back }}
         title={`Edit Product: ${product.name}`}
       />
 
@@ -105,6 +109,7 @@ export function ProductEditContainer({
         orgs={orgs}
         locations={locations}
         onSubmit={updateProduct}
+        returnTo={returnOnSave ? back : undefined}
         onCancel={handleCancel}
         isSubmitting={isLoading}
         readOnly={false}

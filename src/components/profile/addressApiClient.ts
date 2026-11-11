@@ -10,9 +10,10 @@ export const addressApiClient = {
     return data.addresses;
   },
 
-  async addAddress(input: DeliveryAddress): Promise<boolean> {
-    await apiRequest(BASE_URL, { method: "POST", body: input });
-    return true;
+  /** Returns the address as saved, with the id the server gave it. */
+  async addAddress(input: DeliveryAddress): Promise<DeliveryAddress> {
+    const data = await apiRequest<{ address: DeliveryAddress }>(BASE_URL, { method: "POST", body: input });
+    return data.address;
   },
 
   async updateAddress(id: string, input: Partial<DeliveryAddress>): Promise<boolean> {

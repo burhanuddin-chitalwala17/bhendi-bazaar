@@ -11,6 +11,7 @@ import { ListingIssuesBanner } from "@/components/channel/listing-issues-banner"
 import { ListingDraftBanner } from "@/components/channel/listing-draft-banner";
 import { LISTING } from "@/components/channel/platform-listing-copy";
 import { ROUTES } from "@server/shared/routes";
+import { safeReturnPath, withFrom } from "@/lib/safe-callback-url";
 import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
 export const metadata = {
@@ -19,27 +20,38 @@ export const metadata = {
 };
 
 /** A product's listing on one marketplace (channel-listings ux.md "Listing screen"). */
-export default async function ListingPage({ params }: { params: Promise<{ orgId: string; id: string; channel: string }> }) {
+export default async function ListingPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ orgId: string; id: string; channel: string }>;
+  searchParams: Promise<{ from?: string | string[] }>;
+}) {
   const { orgId, id, channel } = await params;
+  const { from } = await searchParams;
   const scope = await requireOrgMember(orgId);
   const [screen, tickets] = await Promise.all([platformListingDAL.screen(scope.orgId, id, channel), platformListingDAL.tickets(scope.orgId, id)]);
   if (!screen) notFound();
+  // Back goes where this screen was opened from (Listings, filters kept); else to the product (navigation-flows Q6).
+  const productHref = ROUTES.org.product(scope.orgId, id);
+  const back = safeReturnPath(from, productHref);
+  const self = back === productHref ? ROUTES.org.productListing(scope.orgId, id, channel) : withFrom(ROUTES.org.productListing(scope.orgId, id, channel), back);
   return (
     <PageShell width="narrow">
-      <Link href={ROUTES.org.product(scope.orgId, id)} className="text-sm text-muted-foreground underline-offset-4 hover:underline">
-        ‹ {screen.productName}
+      <Link href={back} className="text-sm text-muted-foreground underline-offset-4 hover:underline">
+        ‹ {back === productHref ? screen.productName : LISTING.backToListings}
       </Link>
       <PageHeader help="channels" title={LISTING.screenTitle(screen.label)} description={LISTING.intro(screen.label)} />
       <div>
         <ListingStatusLine status={screen.status} label={screen.label} />
       </div>
-      <ListingIssuesBanner orgId={scope.orgId} screen={screen} tickets={tickets} />
-      <ListingDraftBanner orgId={scope.orgId} screen={screen} />
+      <ListingIssuesBanner orgId={scope.orgId} screen={screen} tickets={tickets} from={self} />
+      <ListingDraftBanner orgId={scope.orgId} screen={screen} from={self} />
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-3 lg:items-start">
         <div className="lg:col-span-2">
           <ListingEditor orgId={scope.orgId} screen={screen} />
         </div>
-        <ListingLocked orgId={scope.orgId} screen={screen} />
+        <ListingLocked orgId={scope.orgId} screen={screen} from={self} />
       </div>
     </PageShell>
   );

@@ -61,15 +61,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const success = await addressService.addAddress(userId, validation.data);
-    if (!success) {
-      return NextResponse.json(
-        { error: "Failed to add address" },
-        { status: 400 },
-      );
-    }
+    const address = await addressService.addAddress(userId, validation.data);
     return NextResponse.json(
-      { success: true, message: "Address added" },
+      { success: true, message: "Address added", address },
       { status: 201 },
     );
   } catch (error) {

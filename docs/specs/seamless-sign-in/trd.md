@@ -67,8 +67,9 @@ sheet is mounted once inside the storefront providers and opened through a conte
 - **D10 — Signing in at checkout needs no intent.** The guest address section gets the
   prompt; `CheckoutContainer` already switches from `GuestAddress` to
   `AuthenticatedAddress` on `useAuth`, and `useAddressManager` fetches when `autoFetch`
-  flips. Two gaps are closed on the guest → authenticated transition: the selected
-  address is cleared (the guest's has no account id), and `useCheckoutOffers` re-quotes,
+  flips. Two gaps are closed on the guest → authenticated transition: the guest's typed
+  address stays selected (an order carries its address inline, so no account id is needed;
+  was: cleared, which made a buyer type it twice — fixed 2026-11-12), and `useCheckoutOffers` re-quotes,
   because the quote route reads the session's `userId` but the hook keys only on basket
   and code.
 - **D11 — Checkout keeps its item snapshot.** `CheckoutContainer` reads the cart store once

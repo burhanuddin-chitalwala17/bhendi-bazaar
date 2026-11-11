@@ -53,13 +53,13 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
     clearSelection,
   } = useAddressManager({ autoFetch: !!user });
 
-  // Signing in here swaps the guest form for saved addresses (seamless-sign-in D10).
-  // The guest's address has no account id, so it cannot stay selected.
+  // Signing in swaps the guest form for saved addresses (seamless-sign-in D10). A filled guest
+  // address stays selected: an order carries its address inline, so it needs no account id.
   const previousUserId = useRef(user?.id ?? null);
   useEffect(() => {
-    const wasGuest = previousUserId.current === null;
+    const wasSignedIn = previousUserId.current !== null;
     previousUserId.current = user?.id ?? null;
-    if (wasGuest && user?.id) clearSelection();
+    if (wasSignedIn && !user?.id) clearSelection();
   }, [user?.id, clearSelection]);
 
   // Payment hook

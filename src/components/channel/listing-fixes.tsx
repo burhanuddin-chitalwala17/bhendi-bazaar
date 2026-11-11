@@ -9,21 +9,24 @@ import { REQUESTS_COPY } from "@/components/requests/requests-copy";
 import { RaiseRequestButton, RequestsLink } from "@/components/requests/raise-request-button";
 import { formatDate } from "@/lib/format";
 import { ROUTES } from "@server/shared/routes";
+import { withFrom } from "@/lib/safe-callback-url";
 import { BRAND_FIELD_ID } from "@/components/shared/forms/product/ProductBrandField";
 
 import { FIX } from "./platform-listing-copy";
 
 /** "How to fix it" (marketplace-publish Q24): each complaint at the place it is fixed, one button each. */
-export function ListingFixes({ orgId, screen, tickets = [] }: { orgId: string; screen: ListingScreenDTO; tickets?: ShopTicketDTO[] }) {
+/** `from` is this listing screen, so Edit product comes back here on Save and Back (navigation-flows R4). */
+export function ListingFixes({ orgId, screen, tickets = [], from }: { orgId: string; screen: ListingScreenDTO; tickets?: ShopTicketDTO[]; from?: string }) {
   if (screen.fixes.length === 0) return null;
-  const editProduct = ROUTES.org.editProduct(orgId, screen.productId);
+  const back = (href: string) => (from ? withFrom(href, from) : href);
+  const editProduct = back(ROUTES.org.editProduct(orgId, screen.productId));
   const line = (fix: ListingFixDTO) => {
     const names = FIX.list(fix.names);
     switch (fix.kind) {
       case LISTING_FIX.BRAND:
         return screen.locked.brand
           ? { text: FIX.brand(screen.label, screen.locked.brand, names), action: FIX.brandAction, href: ROUTES.org.listing(orgId) }
-          : { text: FIX.brandMissing(screen.label, names), action: FIX.brandMissingAction, href: ROUTES.org.editProductField(orgId, screen.productId, "details", BRAND_FIELD_ID) };
+          : { text: FIX.brandMissing(screen.label, names), action: FIX.brandMissingAction, href: back(ROUTES.org.editProductField(orgId, screen.productId, "details", BRAND_FIELD_ID)) };
       case LISTING_FIX.MRP:
         return { text: FIX.mrp(screen.label), action: FIX.mrpAction, href: editProduct };
       case LISTING_FIX.FACTS:
