@@ -75,7 +75,6 @@ export function ProductEditContainer({
     router.push(back);
   };
 
-
   return (
     <div className="space-y-8">
       <PageHeader

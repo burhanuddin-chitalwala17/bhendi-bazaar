@@ -1,5 +1,5 @@
 /**
- * Signing in at checkout (seamless-sign-in D10, D11): the address the guest typed stays
+ * Signing in at checkout (seamless-sign-in D10, D11, D13): the address the guest typed stays
  * selected, so it is never typed twice; offers are re-quoted for the buyer, and the items being
  * checked out stay as they were snapshotted — the sign-in merge changes the cart, not
  * this checkout (R14, R15).

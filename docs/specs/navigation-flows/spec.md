@@ -4,7 +4,7 @@
 - **Status:** Parked (2026-11-12) — owner judged the full rule not needed yet; the listing fix loop (A1) and the address fixes shipped as fixes
 - **Domain:** cross-domain (front end: seller portal, admin, store)
 - **Phase:** 13 — Design system
-- **Verified:** 2026-11-10
+- **Verified:** 2026-11-12
 - **References:** [decisions.md](decisions.md), trd.md (to come), [ADR-0067](../../adr/0067-words-live-in-copy-modules-and-our-own-paths-in-one-routes-table.md), [ADR-0053](../../adr/0053-readiness-advises-and-never-gates.md), [ADR-0015](../../adr/0015-mobile-first-design.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.

@@ -57,7 +57,7 @@ export async function POST(req: Request) {
   const validation = await validateRequest(req, addAddressSchema);
 
   if ("error" in validation) {
-    return NextResponse.json({ error: "Validation failed" }, { status: 400 });
+    return validation.error;
   }
 
   try {

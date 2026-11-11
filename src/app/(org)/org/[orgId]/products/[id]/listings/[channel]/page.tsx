@@ -35,11 +35,12 @@ export default async function ListingPage({
   // Back goes where this screen was opened from (Listings, filters kept); else to the product (navigation-flows Q6).
   const productHref = ROUTES.org.product(scope.orgId, id);
   const back = safeReturnPath(from, productHref);
+  const fromListings = back.startsWith(ROUTES.org.channelListings(scope.orgId, channel));
   const self = back === productHref ? ROUTES.org.productListing(scope.orgId, id, channel) : withFrom(ROUTES.org.productListing(scope.orgId, id, channel), back);
   return (
     <PageShell width="narrow">
       <Link href={back} className="text-sm text-muted-foreground underline-offset-4 hover:underline">
-        ‹ {back === productHref ? screen.productName : LISTING.backToListings}
+        ‹ {fromListings ? LISTING.backToListings : screen.productName}
       </Link>
       <PageHeader help="channels" title={LISTING.screenTitle(screen.label)} description={LISTING.intro(screen.label)} />
       <div>

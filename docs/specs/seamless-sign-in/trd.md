@@ -3,7 +3,7 @@
 - **Status:** Implemented — PR-111
 - **Domain:** identity, with UI in the storefront chrome, wishlist and checkout; cart
 - **Phase:** —
-- **Verified:** 2026-09-18
+- **Verified:** 2026-11-12
 - **References:** [spec.md](spec.md), [contact-us trd.md](../contact-us/trd.md), [inventory-reservation](../inventory-reservation/), [ADR-0003](../../adr/0003-one-repository-per-aggregate.md), [ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0022](../../adr/0022-design-decisions-go-through-tokens.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -67,9 +67,8 @@ sheet is mounted once inside the storefront providers and opened through a conte
 - **D10 — Signing in at checkout needs no intent.** The guest address section gets the
   prompt; `CheckoutContainer` already switches from `GuestAddress` to
   `AuthenticatedAddress` on `useAuth`, and `useAddressManager` fetches when `autoFetch`
-  flips. Two gaps are closed on the guest → authenticated transition: the guest's typed
-  address stays selected (an order carries its address inline, so no account id is needed;
-  was: cleared, which made a buyer type it twice — fixed 2026-11-12), and `useCheckoutOffers` re-quotes,
+  flips. Two gaps are closed on the guest → authenticated transition: the selected
+  address is cleared (the guest's has no account id), and `useCheckoutOffers` re-quotes,
   because the quote route reads the session's `userId` but the hook keys only on basket
   and code.
 - **D11 — Checkout keeps its item snapshot.** `CheckoutContainer` reads the cart store once
@@ -83,6 +82,9 @@ sheet is mounted once inside the storefront providers and opened through a conte
   them. This also moves the order service's direct `tx.cart` write behind the one cart
   repository (ADR-0003). After payment, the client removes the same lines instead of
   `clear()`. inventory-reservation R6 is reworded to match in the same PR.
+- **D13 — Signing in at checkout keeps the typed address** (2026-11-12, supersedes D10's
+  clearing; its re-quote stands). An order carries its address inline, so a guest's address
+  needs no account id; clearing it made a buyer type it twice. Signing out still clears.
 
 ## Packages
 
