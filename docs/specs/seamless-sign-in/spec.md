@@ -5,9 +5,9 @@
 - **Domain:** identity, with UI in the storefront chrome, wishlist and checkout; cart
 - **Phase:** —
 - **Verified:** 2026-09-18
-- **References:** [trd.md](trd.md), [contact-us](../contact-us/), [inventory-reservation](../inventory-reservation/), [ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0016](../../adr/0016-mobile-app-shell.md), [ADR-0024](../../adr/0024-phone-is-contact-data-not-an-identity-key.md)
+- **References:** `431ed6e7:docs/specs/seamless-sign-in/trd.md`, [contact-us](../contact-us/), [inventory-reservation](../inventory-reservation/), [ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0016](../../adr/0016-mobile-app-shell.md), [ADR-0024](../../adr/0024-phone-is-contact-data-not-an-identity-key.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/seamless-sign-in/trd.md`.
 
 ## What this feature is
 

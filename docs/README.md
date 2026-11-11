@@ -1,6 +1,6 @@
 # Documentation
 
-- **Verified:** 2026-11-07
+- **Verified:** 2026-11-12
 - **Covers:** `docs/*.md`, `docs/adr/*.md`, `docs/specs/*/`
 
 A map of this directory. Every link here points at a file that exists — if one does not, that is a defect ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)).
@@ -15,13 +15,13 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 |---|---|---|
 | [../CLAUDE.md](../CLAUDE.md) | Rules and invariants, loaded into every session | A rule changes (rarely) |
 | [CONVENTIONS.md](CONVENTIONS.md) | The index of standing conventions, one pointer line per ADR | A convention is added |
-| [changelog/](changelog/) | Changelog entries older than the current month, one file per month | A month closes |
+| [CHANGELOG-HISTORY.md](CHANGELOG-HISTORY.md) | A short summary per closed month | A month closes (the session-start hook prompts it) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | What exists **now**, at HLD level | Structure changes — updated *after*, never before |
 | [adr/](adr/) | Why each decision was made | Never. A new ADR supersedes an old one |
 | [CONTRACTS.md](CONTRACTS.md) | Shapes crossing the client/server boundary | A DTO changes → PR flagged `[CONTRACT]` |
 | [specs/](specs/) | Work not yet built | A feature is planned or delivered |
 | [BACKLOG.md](BACKLOG.md) | Where the project is, phase by phase | A phase starts, blocks, or completes |
-| [CHANGELOG.md](CHANGELOG.md) | What happened | Every merged PR. Append-only |
+| [CHANGELOG.md](CHANGELOG.md) | What happened this month | Every merged PR. Append-only |
 | [DEPENDENCIES.md](DEPENDENCIES.md) | Why each package is here | A package is added, bumped, or removed |
 | [TESTING.md](TESTING.md) | Test strategy and coverage targets | The strategy changes |
 | [OPERATIONS.md](OPERATIONS.md) | Env vars, deploy, runbook | The deployment or an external service changes |
@@ -63,7 +63,3 @@ The remaining domains (`catalog`, `listing`, `cart`, `identity`, `analytics`, `p
 ## Workflows
 
 Invoke these rather than recalling the steps: `/bb-brainstorm <topic>` (research before a TRD), `/bb-sdlc spec-start|ux-start|adr-new|pr-finish`, `/bb-build <feature>`, `/bb-review` (before any PR is done — checks the Invariants).
-
-## [_archive/](_archive/) — ⚠️ do not trust
-
-The pre-2026-08 documentation, superseded and retained for salvage only. 49% of its lines were pasted code and 76% of its links were dead; it contains statements now known to be false. See [_archive/README.md](_archive/README.md) for what is worth mining and what is not.

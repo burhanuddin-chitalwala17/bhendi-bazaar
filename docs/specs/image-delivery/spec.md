@@ -5,9 +5,9 @@
 - **Domain:** catalog (identity for avatars)
 - **Phase:** 2 — Operability
 - **Verified:** 2026-09-16
-- **References:** [trd.md](trd.md), [ADR-0026](../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0017](../../adr/0017-video-is-embedded-not-hosted.md), [bulk-catalog-upload](../bulk-catalog-upload/)
+- **References:** `431ed6e7:docs/specs/image-delivery/trd.md`, [ADR-0026](../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0017](../../adr/0017-video-is-embedded-not-hosted.md), [bulk-catalog-upload](../bulk-catalog-upload/)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/image-delivery/trd.md`.
 
 ## What this feature is
 Images are stored at a size worth storing and served at the size the screen actually uses, so that showing the catalogue costs a fraction of what it did and cannot quietly exhaust the hosting allowance again.

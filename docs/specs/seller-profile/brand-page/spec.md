@@ -5,9 +5,9 @@
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-28
-- **References:** [../spec.md](../spec.md) (seller-profile), [trd.md](trd.md), [storefront-pages](../../org-storefront/storefront-pages/spec.md) R3, [storefront-branding](../../org-storefront/storefront-branding/spec.md), [seller-identity](../../org-storefront/seller-identity/spec.md) R5, [ADR-0015](../../../adr/0015-mobile-first-design.md), [ADR-0016](../../../adr/0016-mobile-app-shell.md), [ADR-0018](../../../adr/0018-one-effective-price-function.md)
+- **References:** [../spec.md](../spec.md) (seller-profile), `431ed6e7:docs/specs/seller-profile/brand-page/trd.md`, [storefront-pages](../../org-storefront/storefront-pages/spec.md) R3, [storefront-branding](../../org-storefront/storefront-branding/spec.md), [seller-identity](../../org-storefront/seller-identity/spec.md) R5, [ADR-0015](../../../adr/0015-mobile-first-design.md), [ADR-0016](../../../adr/0016-mobile-app-shell.md), [ADR-0018](../../../adr/0018-one-effective-price-function.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/seller-profile/brand-page/trd.md`.
 
 ## What this feature is
 

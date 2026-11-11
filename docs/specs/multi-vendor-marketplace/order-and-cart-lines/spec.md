@@ -6,9 +6,9 @@
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-10
 - **Depends on:** money-as-paise
-- **References:** [trd.md](trd.md), [../spec.md](../spec.md), [../data-model.md](../data-model.md)
+- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/order-and-cart-lines/trd.md`, [../spec.md](../spec.md), [../data-model.md](../data-model.md)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/multi-vendor-marketplace/order-and-cart-lines/trd.md`.
 
 ## What this feature is
 What a customer bought is a relation to the product, not an id inside a blob.

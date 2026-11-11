@@ -1,5 +1,5 @@
 // What a phone number is, declared once — for pincode.ts's reason: the rule had four
-// copies that disagreed. Stored and sent as E.164 (docs/specs/international-phone/trd.md).
+// copies that disagreed. Stored and sent as E.164 (431ed6e7:docs/specs/international-phone/trd.md).
 import {
   getCountries,
   getCountryCallingCode,

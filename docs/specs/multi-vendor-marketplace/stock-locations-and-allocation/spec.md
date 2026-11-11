@@ -5,9 +5,9 @@
 - **Domain:** catalog, shipping, checkout
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-09-27
-- **References:** [trd.md](trd.md), [data-model.md](../data-model.md), [consumer-inventory.md](../consumer-inventory.md), [inventory-reservation](../../inventory-reservation/), [shipping-fulfilment](../../shipping-fulfilment/), [product-weight-and-rates](../../product-weight-and-rates/)
+- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/stock-locations-and-allocation/trd.md`, [data-model.md](../data-model.md), `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`, [inventory-reservation](../../inventory-reservation/), [shipping-fulfilment](../../shipping-fulfilment/), [product-weight-and-rates](../../product-weight-and-rates/)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/multi-vendor-marketplace/stock-locations-and-allocation/trd.md`.
 
 ## What this feature is
 A selling organisation has named pickup locations with real addresses, each product's stock is known per location, and an order ships from wherever its stock actually is — splitting into more than one parcel when no single location can cover it.

@@ -5,9 +5,9 @@
 - **Domain:** catalog
 - **Phase:** 6 — Catalogue richness
 - **Verified:** 2026-10-29
-- **References:** [trd.md](trd.md), [sheet-parsing-options.md](sheet-parsing-options.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0017](../../adr/0017-video-is-embedded-not-hosted.md)
+- **References:** `431ed6e7:docs/specs/bulk-catalog-upload/trd.md`, [sheet-parsing-options.md](sheet-parsing-options.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0017](../../adr/0017-video-is-embedded-not-hosted.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/bulk-catalog-upload/trd.md`.
 
 ## What this feature is
 

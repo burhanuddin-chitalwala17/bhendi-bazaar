@@ -5,9 +5,9 @@
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-02
-- **References:** [trd.md](trd.md), [parent spec](../spec.md), [seller-profile](../../seller-profile/)
+- **References:** `431ed6e7:docs/specs/listing-vocabulary/inherited-facts/trd.md`, [parent spec](../spec.md), [seller-profile](../../seller-profile/)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/listing-vocabulary/inherited-facts/trd.md`.
 
 ## What this feature is
 
@@ -54,7 +54,7 @@ nicety on top of it.
 ## Hazards this feature must answer
 
 Each is a bar the design must clear rather than a question for the owner, and names the
-[trd.md](trd.md) decision that answers it.
+`431ed6e7:docs/specs/listing-vocabulary/inherited-facts/trd.md` decision that answers it.
 
 - **Being filled in for you hides a wrong answer.** A fact from the brand is convenient until it
   is wrong on one product and nothing on screen says where it came from. A design that inherits

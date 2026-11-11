@@ -6,9 +6,9 @@
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-10
 - **Depends on:** —
-- **References:** [trd.md](trd.md), [../spec.md](../spec.md), [../data-model.md](../data-model.md)
+- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/category-tree/trd.md`, [../spec.md](../spec.md), [../data-model.md](../data-model.md)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/multi-vendor-marketplace/category-tree/trd.md`.
 
 ## What this feature is
 Categories nest to any depth, and the taxonomy belongs to the platform.
@@ -29,5 +29,5 @@ Adds a self-referencing parent and drops the two-level subcategory idea. The man
 - A3 — Deleting a category with products or subcategories is refused with a message naming the count; the database refuses it even if the message is bypassed.
 
 ## Out of scope (this feature)
-- Breadcrumbs, nested URLs, and which levels the home page strip shows — merchandising and chrome, not data model ([trd.md](trd.md) D4, D6).
+- Breadcrumbs, nested URLs, and which levels the home page strip shows — merchandising and chrome, not data model (`431ed6e7:docs/specs/multi-vendor-marketplace/category-tree/trd.md` D4, D6).
 - Org-facing category writes — the taxonomy stays platform-owned.

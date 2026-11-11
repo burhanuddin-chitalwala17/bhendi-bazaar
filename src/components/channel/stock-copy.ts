@@ -1,6 +1,6 @@
 /**
  * Every string stock sync, Match locations and Marketplace orders show, as signed off
- * in docs/specs/marketplace-integration/inventory-sync/ux.md. Edit there first.
+ * in 431ed6e7:docs/specs/marketplace-integration/inventory-sync/ux.md. This file is now the source (ADR-0073).
  */
 
 export const STOCK = {

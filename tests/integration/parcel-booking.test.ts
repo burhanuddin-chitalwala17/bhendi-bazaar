@@ -1,6 +1,6 @@
 /**
  * The admin books a ready parcel by hand, re-dates it, and marks it picked up; the shop reaches
- * its label only through us ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/trd.md)
+ * its label only through us (order-fulfilment (`431ed6e7:docs/specs/own-store/order-fulfilment/trd.md`)
  * U3: D11, D5, D7; spec R5–R7, A3). Owns its fixtures: a migrated schema and nothing in it.
  */
 import "dotenv/config";

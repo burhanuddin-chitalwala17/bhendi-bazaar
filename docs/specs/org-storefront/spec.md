@@ -7,7 +7,7 @@
 - **Verified:** 2026-09-19
 - **References:** [multi-vendor-marketplace](../multi-vendor-marketplace/), [promotions](../promotions/), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0016](../../adr/0016-mobile-app-shell.md), [ADR-0018](../../adr/0018-one-effective-price-function.md), [ADR-0022](../../adr/0022-design-decisions-go-through-tokens.md), and the subfeatures below
 
-> Requirements and product approach only. Each subfeature's technical approach lives in its own `trd.md`.
+> Requirements and product approach only. Each subfeature's trd.md was removed once shipped (ADR-0073); git keeps them.
 
 ## What this is
 
@@ -99,7 +99,7 @@ shared and nothing indexed. `storefront-discovery` covers the slower channels, n
 
 ## Out of scope (this programme)
 
-- **Subdomains and custom domains.** Decided against for now — see the decisions in [trd.md](trd.md) — and reachable later without moving the canonical URL.
+- **Subdomains and custom domains.** Decided against for now — see the decisions in `431ed6e7:docs/specs/org-storefront/trd.md` — and reachable later without moving the canonical URL.
 - **A page builder.** Sellers fill in fields; they do not arrange blocks. The Amazon-Stores shape is a CMS and is larger than everything above put together.
 - **Per-organisation checkout, payment accounts, or shipping policy.** R8 settles this: one basket, one payment, one set of courier rates.
 - **A product draft or publish state**, and any approval or verification before a storefront goes live. Decided against in [ADR-0030](../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md) decision 9 — a shop is live when its organisation is created.

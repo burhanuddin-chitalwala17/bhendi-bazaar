@@ -4,7 +4,7 @@
 - **Domain:** listing, with channels, catalog and requests
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-08
-- **References:** [spec.md](spec.md), [decisions.md](decisions.md), [plan.html](plan.html), [ADR-0070](../../adr/0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md), [ADR-0053](../../adr/0053-readiness-advises-and-never-gates.md), [ADR-0038](../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0003](../../adr/0003-one-repository-per-aggregate.md)
+- **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ADR-0070](../../adr/0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md), [ADR-0053](../../adr/0053-readiness-advises-and-never-gates.md), [ADR-0038](../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0003](../../adr/0003-one-repository-per-aggregate.md)
 
 > The storage and runtime design every subfeature builds on. Subfeature TRDs refine, never contradict.
 

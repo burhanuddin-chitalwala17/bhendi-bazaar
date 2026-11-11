@@ -5,9 +5,9 @@
 - **Domain:** identity
 - **Phase:** — (cross-cutting)
 - **Verified:** 2026-09-12
-- **References:** [trd.md](trd.md), [ADR-0024](../../adr/0024-phone-is-contact-data-not-an-identity-key.md), [international-phone](../international-phone/)
+- **References:** `431ed6e7:docs/specs/shared-phone-numbers/trd.md`, [ADR-0024](../../adr/0024-phone-is-contact-data-not-an-identity-key.md), [international-phone](../international-phone/)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/shared-phone-numbers/trd.md`.
 
 ## What this feature is
 One phone number can back any number of accounts. Giving a number that someone else has already given is not a reason to refuse an account or a profile change.

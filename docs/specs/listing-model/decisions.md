@@ -5,7 +5,7 @@
 > Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented ones ([ADR-0062](../../adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)).
 > Owner decides money, policy, irreversible data, external commitments, taste.
 > Claude decides the rest, marked `Claude · reversible`. Other documents cite Q ids.
-> Evidence: the audit of 2026-11-06 (how listings work today, verified in code) and Amazon's per-type rules read out of its template; both summarised in [plan.html](plan.html).
+> Evidence: the audit of 2026-11-06 (how listings work today, verified in code) and Amazon's per-type rules read out of its template; both summarised in plan.html, removed after release (2026-11-12); read it with `git show 431ed6e7:docs/specs/listing-model/plan.html`.
 
 | Q | Question | Answer | Decided by | Date | Why | State |
 |---|---|---|---|---|---|---|

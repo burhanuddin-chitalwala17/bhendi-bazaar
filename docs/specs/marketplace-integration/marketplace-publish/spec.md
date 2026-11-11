@@ -7,7 +7,7 @@
 - **Verified:** 2026-11-02
 - **References:** [decisions.md](decisions.md), parent [marketplace-integration](../spec.md) (Q1, Q4, Q33, Q39), [channel-listings](../channel-listings/spec.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md) "Editing and creating a listing", [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md. Subfeature 8, the
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/marketplace-integration/marketplace-publish/trd.md`. Subfeature 8, the
 > last of marketplace-integration.
 
 ## What this feature is

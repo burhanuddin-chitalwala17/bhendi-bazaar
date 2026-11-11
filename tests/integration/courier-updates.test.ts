@@ -1,6 +1,6 @@
 /**
  * Signed courier updates move parcels once, email once, and land what cannot apply on the admin's
- * conflict list ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/trd.md) U4: D9, D10;
+ * conflict list (order-fulfilment (`431ed6e7:docs/specs/own-store/order-fulfilment/trd.md`) U4: D9, D10;
  * spec R8, R9, A4, A5, A13). Drives the real route. Owns its fixtures: a migrated schema and nothing in it.
  */
 import "dotenv/config";

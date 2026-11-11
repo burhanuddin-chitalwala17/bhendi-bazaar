@@ -5,9 +5,9 @@
 - **Domain:** catalog (Org, OrgProfile)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-11-02
-- **References:** [decisions.md](decisions.md), [ux.md](ux.md), [own-store](../spec.md) (Q14, Q15), [seller-onboarding](../seller-onboarding/) (asks these fields), [seller-profile](../../seller-profile/) (R1, R2, R5, R12), [brand-page](../../seller-profile/brand-page/), [org-storefront](../../org-storefront/), [ADR-0030](../../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
+- **References:** [decisions.md](decisions.md), `431ed6e7:docs/specs/own-store/org-profile/ux.md`, [own-store](../spec.md) (Q14, Q15), [seller-onboarding](../seller-onboarding/) (asks these fields), [seller-profile](../../seller-profile/) (R1, R2, R5, R12), [brand-page](../../seller-profile/brand-page/), [org-storefront](../../org-storefront/), [ADR-0030](../../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md (written after UX sign-off).
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/own-store/org-profile/trd.md`.
 
 ## What this feature is
 Vertical 6 of own-store. One "Shop details" page holds the shop's facts in two labelled parts —

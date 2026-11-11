@@ -5,9 +5,9 @@
 - **Domain:** catalog (assets), content (renditions)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-27
-- **References:** [../spec.md](../spec.md) (media-library), [trd.md](trd.md), [ADR-0039](../../../adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md), [ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)
+- **References:** [../spec.md](../spec.md) (media-library), `431ed6e7:docs/specs/media-library/video-hosting/trd.md`, [ADR-0039](../../../adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md), [ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/media-library/video-hosting/trd.md`.
 
 ## What this feature is
 

@@ -22,7 +22,7 @@
  * Video is hosted and transcoded ([ADR-0039](../../docs/adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md));
  * a YouTube link stays an embed (its decision 5).
  * Why the cover is chosen rather than derived, and why nothing here pre-selects one:
- * docs/specs/product-video/trd.md D17/D17a.
+ * 431ed6e7:docs/specs/product-video/trd.md D17/D17a.
  *
  * Mobile-first (ADR-0015): one row per item at base, every control a visible button
  * rather than a hover reveal, and reordering by move-up/move-down because drag-and-drop

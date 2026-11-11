@@ -5,9 +5,9 @@
 - **Domain:** promotions, payouts, with checkout and catalog
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-10-29
-- **References:** [trd.md](trd.md), [decisions.md](decisions.md), [ux.md](ux.md), [../decisions.md](../decisions.md) Q2–Q7, Q20, Q21, [promotions](../../promotions/), [org-payouts](../../org-payouts/), [ADR-0018](../../../adr/0018-one-effective-price-function.md), [ADR-0019](../../../adr/0019-discount-is-one-winning-offer.md), [ADR-0020](../../../adr/0020-money-bearing-records-never-cascade.md)
+- **References:** `431ed6e7:docs/specs/own-store/offers-hardening/trd.md`, [decisions.md](decisions.md), `431ed6e7:docs/specs/own-store/offers-hardening/ux.md`, [../decisions.md](../decisions.md) Q2–Q7, Q20, Q21, [promotions](../../promotions/), [org-payouts](../../org-payouts/), [ADR-0018](../../../adr/0018-one-effective-price-function.md), [ADR-0019](../../../adr/0019-discount-is-one-winning-offer.md), [ADR-0020](../../../adr/0020-money-bearing-records-never-cascade.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/own-store/offers-hardening/trd.md`.
 
 ## What this feature is
 The offer engine and the earnings ledger, made safe to hand to self-serve shops and to run

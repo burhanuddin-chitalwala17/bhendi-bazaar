@@ -1,6 +1,6 @@
 /**
  * What a status change actually does to stock and to the ledger
- * ([shipment-lifecycle](../../docs/specs/shipment-lifecycle/trd.md) D6, D7).
+ * (shipment-lifecycle (`431ed6e7:docs/specs/shipment-lifecycle/trd.md`) D6, D7).
  *
  * The effects table is declared and unit-tested, but declaring `restocks: true` does nothing on
  * its own. These assert the two consequences that move real quantities: a returned parcel puts

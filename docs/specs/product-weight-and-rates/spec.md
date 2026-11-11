@@ -5,9 +5,9 @@
 - **Domain:** catalog, shipping
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-10
-- **References:** [trd.md](trd.md), [shipping-fulfilment](../shipping-fulfilment/), [CONTRACTS.md](../../CONTRACTS.md)
+- **References:** `431ed6e7:docs/specs/product-weight-and-rates/trd.md`, [shipping-fulfilment](../shipping-fulfilment/), [CONTRACTS.md](../../CONTRACTS.md)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/product-weight-and-rates/trd.md`.
 
 ## What this feature is
 

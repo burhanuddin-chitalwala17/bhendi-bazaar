@@ -1,6 +1,6 @@
 /**
  * The shop marks its own parcel ready, the admin is told once, and the sweep nudges a shop that
- * has not packed ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/trd.md) U2: D6,
+ * has not packed (order-fulfilment (`431ed6e7:docs/specs/own-store/order-fulfilment/trd.md`) U2: D6,
  * D7, D8, D18; spec A1, A2, A10, A11). Owns its fixtures: a migrated schema and nothing in it.
  */
 import "dotenv/config";

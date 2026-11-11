@@ -5,9 +5,9 @@
 - **Domain:** cross-domain (identity, catalog, checkout)
 - **Phase:** — (cross-cutting)
 - **Verified:** 2026-09-12
-- **References:** [trd.md](trd.md), [ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0015](../../adr/0015-mobile-first-design.md)
+- **References:** `431ed6e7:docs/specs/international-phone/trd.md`, [ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0015](../../adr/0015-mobile-first-design.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/international-phone/trd.md`.
 
 ## What this feature is
 Every form that asks for a phone number accepts a number from any country, with India preselected.

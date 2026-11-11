@@ -5,9 +5,9 @@
 - **Domain:** catalog, with a seam each channel adapter implements
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-04
-- **References:** [trd.md](trd.md), [ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md), [ADR-0045](../../adr/0045-channel-mappings-are-versioned-data.md), [ADR-0047](../../adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md), [listing-vocabulary](../listing-vocabulary/), [INTEGRATIONS.md](../../INTEGRATIONS.md)
+- **References:** `431ed6e7:docs/specs/channel-registry/trd.md`, [ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md), [ADR-0045](../../adr/0045-channel-mappings-are-versioned-data.md), [ADR-0047](../../adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md), [listing-vocabulary](../listing-vocabulary/), [INTEGRATIONS.md](../../INTEGRATIONS.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/channel-registry/trd.md`.
 
 ## What this feature is
 
@@ -68,7 +68,7 @@ decision somebody took rather than a guess the system made.
 ## Hazards this feature must answer
 
 Each is a bar the design must clear rather than a question for the owner, and names the
-[trd.md](trd.md) decision that answers it.
+`431ed6e7:docs/specs/channel-registry/trd.md` decision that answers it.
 
 - **A mapping that is right today is wrong next quarter.** Channels rename categories and retire
   values. A register with no date and no way to re-check becomes a confident lie. *Answered by

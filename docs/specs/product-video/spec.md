@@ -5,9 +5,9 @@
 - **Domain:** catalog, checkout
 - **Phase:** 6 — Catalogue richness
 - **Verified:** 2026-10-30
-- **References:** [trd.md](trd.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0016](../../adr/0016-mobile-app-shell.md), [CONTRACTS.md](../../CONTRACTS.md)
+- **References:** `431ed6e7:docs/specs/product-video/trd.md`, [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0016](../../adr/0016-mobile-app-shell.md), [CONTRACTS.md](../../CONTRACTS.md)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/product-video/trd.md`.
 
 > **Since 2026-09-27 video is not embed-only.** A seller can upload a short video (MP4, MOV or WebM, at most 90 seconds and 200 MB) that the worker transcodes into 1080p and 720p with a poster ([ADR-0039](../../adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md), superseding [ADR-0017](../../adr/0017-video-is-embedded-not-hosted.md); [video-hosting](../media-library/video-hosting/)). A YouTube link is still accepted and stays an embed. The requirements below hold for both kinds; R13's unavailable state is the YouTube case, and a hosted video that cannot be made playable shows "This video is not available" (`src/components/product/product-gallery.tsx`).
 
@@ -68,5 +68,5 @@ The order matters as much as the presence. A video is not an appendix to the pho
 - Live or shoppable video, and any in-video hotspot or overlay.
 - Our own captioning pipeline. (Transcoding and posters were out of scope here and shipped later in [video-hosting](../media-library/video-hosting/).)
 - Automatic captions and subtitles. R7 covers text describing the item, not a transcript of it.
-- Guaranteeing a past order's picture survives forever. R17 preserves which picture was chosen, not a private copy of the file — see [trd.md](trd.md) D19a for what that does and does not promise.
+- Guaranteeing a past order's picture survives forever. R17 preserves which picture was chosen, not a private copy of the file — see `431ed6e7:docs/specs/product-video/trd.md` D19a for what that does and does not promise.
 - Reclaiming storage for media nobody references any more.

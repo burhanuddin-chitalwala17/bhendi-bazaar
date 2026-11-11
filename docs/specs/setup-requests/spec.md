@@ -5,9 +5,9 @@
 - **Domain:** cross-domain: listing (the setup), channels (the errors), a new home for requests
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-05
-- **References:** [decisions.md](decisions.md), [ux.md](ux.md), marketplace-publish [Q24](../marketplace-integration/marketplace-publish/decisions.md), [channel-registry](../channel-registry/spec.md), [ADR-0053](../../adr/0053-readiness-advises-and-never-gates.md)
+- **References:** [decisions.md](decisions.md), `431ed6e7:docs/specs/setup-requests/ux.md`, marketplace-publish [Q24](../marketplace-integration/marketplace-publish/decisions.md), [channel-registry](../channel-registry/spec.md), [ADR-0053](../../adr/0053-readiness-advises-and-never-gates.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/setup-requests/trd.md`.
 
 ## What this feature is
 Two tickets for what a shop cannot fix itself. A **requirement** is a known problem with a known
