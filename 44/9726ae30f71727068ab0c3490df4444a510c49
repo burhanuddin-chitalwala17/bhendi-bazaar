@@ -1,0 +1,100 @@
+src/app/(org)/org/[orgId]/products/[id]/edit/page.tsx
+  s_1e292fb051bb2d::t_00cd3a2fe37d83 19-20,23,26,29-33,96-97
+src/components/product/console/productEdit/index.tsx
+  s_1e292fb051bb2d::t_00cd3a2fe37d83 48-49,66
+  s_1e292fb051bb2d::t_609b78b995ebe4 78,83,112
+src/components/profile/addressApiClient.ts
+  s_1e292fb051bb2d::t_25717f2a330b03 13-16
+src/components/profile/address-modal.tsx
+  s_1e292fb051bb2d::t_25717f2a330b03 35,155
+src/components/channel/listing-list.tsx
+  s_1e292fb051bb2d::t_b98c95d04efd73 13-14,38,46,59
+docs/specs/navigation-flows/spec.md
+  s_1e292fb051bb2d::t_7c4d4bffc53d8a 4
+  s_55df11a8af949c::t_8d811bd3742abe 1-3,5-17,20-61
+  s_55df11a8af949c::t_580345fe46277c 18-19
+src/components/checkout/components/AuthenticatedAddress.tsx
+  s_1e292fb051bb2d::t_25717f2a330b03 11,28,30-31
+src/hooks/useAddressManager.ts
+  s_1e292fb051bb2d::t_25717f2a330b03 29,68-70
+tests/unit/address-saves.test.tsx
+  s_1e292fb051bb2d::t_d7280d8474134c 1-43,46-52,58,60-68,78,82-83
+  s_1e292fb051bb2d::t_ef17af9f63e7a1 44-45
+  s_1e292fb051bb2d::t_e5981db1ff261e 59,69-77,79
+  s_1e292fb051bb2d::t_02326098730352 53-57,80-81
+src/components/profile/profile-sections.tsx
+  s_1e292fb051bb2d::t_571ee885c92046 61-65
+src/components/channel/listing-locked.tsx
+  s_1e292fb051bb2d::t_c40f8e24a3bacd 13,19-20,33,47,68
+docs/ARCHITECTURE.md
+  s_1e292fb051bb2d::t_32e38a3907f4bc 77
+src/components/checkout/index.tsx
+  s_1e292fb051bb2d::t_ad861bb763fa3f 56-57,60,62
+tests/unit/listing-fix-return.test.tsx
+  s_1e292fb051bb2d::t_a451641f91713f 1-46
+src/components/product/console/console-copy.ts
+  s_1e292fb051bb2d::t_609b78b995ebe4 96
+src/components/shared/forms/product/index.tsx
+  s_1e292fb051bb2d::t_609b78b995ebe4 101-102,124,211
+src/components/channel/listing-row.tsx
+  s_1e292fb051bb2d::t_b98c95d04efd73 22,33-34,42,82
+docs/specs/navigation-flows/decisions.md
+  s_55df11a8af949c::t_d39d8258287327 1-26,29-33
+  s_55df11a8af949c::t_bb7a5488267266 27-28
+docs/specs/navigation-flows/audit.md
+  s_55df11a8af949c::t_70edcb18628d32 1-61
+docs/specs/README.md
+  s_1e292fb051bb2d::t_7c4d4bffc53d8a 66
+docs/BACKLOG.md
+  s_55df11a8af949c::t_ad3841ac647997 196-197
+  s_1e292fb051bb2d::t_7c4d4bffc53d8a 195
+docs/CHANGELOG.md
+  s_1e292fb051bb2d::t_7c4d4bffc53d8a 3-12
+  s_1e292fb051bb2d::t_1d71da2cd517e0 13-23
+src/app/(org)/org/[orgId]/channels/[channel]/listings/page.tsx
+  s_1e292fb051bb2d::t_b98c95d04efd73 194
+src/app/(org)/org/[orgId]/products/[id]/listings/[channel]/page.tsx
+  s_1e292fb051bb2d::t_d9a1ebe1b32b92 14,23-29,31,35-38,41-42,48-49,54
+src/lib/safe-callback-url.ts
+  s_1e292fb051bb2d::t_86165d93165c69 7-11,13,15-16,19-25
+src/components/channel/listing-draft-banner.tsx
+  s_1e292fb051bb2d::t_c40f8e24a3bacd 8,14,16,31,41
+src/components/channel/listing-fixes.tsx
+  s_1e292fb051bb2d::t_c40f8e24a3bacd 12,18-19,21-22,29
+tests/unit/checkout-sign-in.test.tsx
+  s_1e292fb051bb2d::t_430d2386192c02 2-3,95,105-106
+src/components/channel/listing-issues-banner.tsx
+  s_1e292fb051bb2d::t_c40f8e24a3bacd 18,44
+src/components/channel/platform-listing-copy.ts
+  s_1e292fb051bb2d::t_d9a1ebe1b32b92 17
+src/components/shared/forms/product/useLeaveGuard.ts
+  s_1e292fb051bb2d::t_609b78b995ebe4 102-113
+docs/specs/seamless-sign-in/trd.md
+  s_1e292fb051bb2d::t_430d2386192c02 70-72
+src/app/api/addresses/route.ts
+  s_1e292fb051bb2d::t_25717f2a330b03 64,66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "449726ae30f71727068ab0c3490df4444a510c49",
+  "prompts": {},
+  "sessions": {
+    "s_1e292fb051bb2d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8c8b46ae-99e0-4838-9adf-511f301cc734",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    },
+    "s_55df11a8af949c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83714846-f98b-4aa9-9734-7a0d2bf89e37",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
