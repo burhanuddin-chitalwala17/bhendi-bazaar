@@ -1,0 +1,83 @@
+tests/unit/checkout-sign-in.test.tsx
+  s_02049fd72227df::t_2e6d324de571ed 2-3,95,105-106
+src/components/channel/listing-fixes.tsx
+  s_02049fd72227df::t_2e6d324de571ed 12,18-19,21-22,29
+docs/CONTRACTS.md
+  s_02049fd72227df::t_2e6d324de571ed 627
+src/components/channel/listing-issues-banner.tsx
+  s_02049fd72227df::t_2e6d324de571ed 18,44
+src/components/checkout/components/AuthenticatedAddress.tsx
+  s_02049fd72227df::t_2e6d324de571ed 11,28,30-31
+src/hooks/useAddressManager.ts
+  s_02049fd72227df::t_2e6d324de571ed 29,68-70
+docs/specs/navigation-flows/spec.md
+  s_02049fd72227df::t_2e6d324de571ed 1-61
+docs/specs/README.md
+  s_02049fd72227df::t_2e6d324de571ed 66
+src/app/(org)/org/[orgId]/products/[id]/listings/[channel]/page.tsx
+  s_02049fd72227df::t_2e6d324de571ed 14,23-29,31,35-39,42-43,49-50,55
+src/components/shared/forms/product/index.tsx
+  s_02049fd72227df::t_2e6d324de571ed 101-102,124,211
+src/components/product/console/productEdit/index.tsx
+  s_02049fd72227df::t_2e6d324de571ed 48-49,66,82,111
+tests/unit/address-saves.test.tsx
+  s_02049fd72227df::t_2e6d324de571ed 1-83
+docs/specs/navigation-flows/decisions.md
+  s_02049fd72227df::t_2e6d324de571ed 1-33
+src/app/(org)/org/[orgId]/products/[id]/edit/page.tsx
+  s_02049fd72227df::t_2e6d324de571ed 19-20,23,26,29-33,96-97
+src/components/channel/platform-listing-copy.ts
+  s_02049fd72227df::t_2e6d324de571ed 17
+src/components/profile/addressApiClient.ts
+  s_02049fd72227df::t_2e6d324de571ed 13-16
+tests/unit/listing-fix-return.test.tsx
+  s_02049fd72227df::t_2e6d324de571ed 1-46
+docs/BACKLOG.md
+  s_02049fd72227df::t_2e6d324de571ed 195-197
+docs/specs/seamless-sign-in/decisions.md
+  s_02049fd72227df::t_3f5529cb52b53e 1-9
+src/components/channel/listing-list.tsx
+  s_02049fd72227df::t_2e6d324de571ed 13-14,38,46,59
+src/components/channel/listing-row.tsx
+  s_02049fd72227df::t_2e6d324de571ed 22,33-34,42,82
+src/components/product/console/console-copy.ts
+  s_02049fd72227df::t_2e6d324de571ed 96
+src/components/shared/forms/product/useLeaveGuard.ts
+  s_02049fd72227df::t_2e6d324de571ed 102-113
+src/lib/safe-callback-url.ts
+  s_02049fd72227df::t_2e6d324de571ed 7-11,13,15-16,19-25
+src/components/profile/address-modal.tsx
+  s_02049fd72227df::t_2e6d324de571ed 35,155
+docs/ARCHITECTURE.md
+  s_02049fd72227df::t_00505a57b71ca7 77
+src/components/channel/listing-draft-banner.tsx
+  s_02049fd72227df::t_2e6d324de571ed 8,14,16,31,41
+docs/specs/navigation-flows/audit.md
+  s_02049fd72227df::t_2e6d324de571ed 1-61
+src/components/channel/listing-locked.tsx
+  s_02049fd72227df::t_2e6d324de571ed 13,19-20,33,47,68
+src/components/checkout/index.tsx
+  s_02049fd72227df::t_2e6d324de571ed 56-57,60,62
+src/app/api/addresses/route.ts
+  s_02049fd72227df::t_2e6d324de571ed 60,64,66
+src/components/profile/profile-sections.tsx
+  s_02049fd72227df::t_2e6d324de571ed 61-65
+src/app/(org)/org/[orgId]/channels/[channel]/listings/page.tsx
+  s_02049fd72227df::t_2e6d324de571ed 200
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "1a67d7a84e9643d69c0ddbc594bb1102955feec3",
+  "prompts": {},
+  "sessions": {
+    "s_02049fd72227df": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "72b749db-e564-49ff-b6fd-79442dc0b7f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
