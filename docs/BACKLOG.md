@@ -192,6 +192,9 @@ Added 2026-11-04 from the platform UI audit. Programme overview: [design-system]
 | design-system/brand-icons | 6–10 brand icons drafted by Claude, approved by the owner | 🔨 Built 2026-11-04, awaiting owner review |
 | design-system/image-slots | One picture field with phone and desktop versions, crop or fit, for admin and shop banners | 🔨 Built 2026-11-04, awaiting owner review |
 | design-system/render-performance | Build on the caching that landed on main | planned |
+| [navigation-flows](specs/navigation-flows/) | Every feature finishes and exits back where it started, one step at a time, without losing typed work | ⏸ Parked 2026-11-12: listing fix loop and the three address fixes shipped; the rest waits (audit.md is the worklist) |
+| navigation-flows Q13 *(later)* | Buyer returns and refunds: no flow exists today | parked |
+| navigation-flows Q14 *(later)* | Marketplace read and stock-sync wording for sellers | parked |
 | design-system Q13–Q17 *(later)* | Admin chart, auth and /sell, `shared/forms/product` move, ⌘K, view transitions | parked |
 
 ---

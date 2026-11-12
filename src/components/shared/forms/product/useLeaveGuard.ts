@@ -99,5 +99,16 @@ export function useLeaveGuard(active: boolean) {
     else router.push(target.href);
   }, [pending, router]);
 
-  return { pending: pending !== null, stay, leave };
+  // Saved and going back where the form was opened: replace, so the guard's spare entry is not left behind.
+  const leaveTo = useCallback(
+    (href: string) => {
+      leaving.current = true;
+      setPending(null);
+      if (armed.current) router.replace(href);
+      else router.push(href);
+    },
+    [router],
+  );
+
+  return { pending: pending !== null, stay, leave, leaveTo };
 }

@@ -26,7 +26,7 @@ type UseAddressManagerReturn = {
 
     // Actions
     fetchAddresses: () => Promise<void>;
-    addAddress: (address: DeliveryAddress) => Promise<void>;
+    addAddress: (address: DeliveryAddress) => Promise<DeliveryAddress>;
     updateAddress: (id: string, address: Partial<DeliveryAddress>) => Promise<void>;
     deleteAddress: (id: string) => Promise<void>;
     selectAddress: (address: DeliveryAddress) => void;
@@ -65,14 +65,9 @@ export function useAddressManager(options?: UseAddressManagerOptions): UseAddres
         setError(null);
 
         try {
-            const newAddress = { ...input, id: crypto.randomUUID() };
-            const response = await addressApiClient.addAddress(newAddress);
-            if (!response) {
-                throw new Error('Failed to add address');
-            }
-            else {
-                setAddresses(prev => [...prev, newAddress]);
-            }
+            const saved = await addressApiClient.addAddress(input);
+            setAddresses(prev => [...prev, saved]);
+            return saved;
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to add address');
             throw err;

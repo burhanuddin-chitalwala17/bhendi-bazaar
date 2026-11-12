@@ -57,19 +57,13 @@ export async function POST(req: Request) {
   const validation = await validateRequest(req, addAddressSchema);
 
   if ("error" in validation) {
-    return NextResponse.json({ error: "Validation failed" }, { status: 400 });
+    return validation.error;
   }
 
   try {
-    const success = await addressService.addAddress(userId, validation.data);
-    if (!success) {
-      return NextResponse.json(
-        { error: "Failed to add address" },
-        { status: 400 },
-      );
-    }
+    const address = await addressService.addAddress(userId, validation.data);
     return NextResponse.json(
-      { success: true, message: "Address added" },
+      { success: true, message: "Address added", address },
       { status: 201 },
     );
   } catch (error) {

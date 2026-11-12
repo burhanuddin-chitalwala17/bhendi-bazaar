@@ -10,6 +10,8 @@ interface ListingListProps {
   label: string;
   listings: ChannelListingDTO[];
   hrefFor: (listingId: string) => string;
+  /** This page's own address, handed to each row's Fix. */
+  from?: string;
   /** What each group's header offers (family-merge D6). */
   groups?: Record<string, ListingGroupDTO>;
   firstFamily?: boolean;
@@ -33,7 +35,7 @@ function blocks(listings: ChannelListingDTO[]): Block[] {
   return out;
 }
 
-export function ListingList({ orgId, shopName, channel, label, listings, hrefFor, groups = {}, firstFamily = false }: ListingListProps) {
+export function ListingList({ orgId, shopName, channel, label, listings, hrefFor, from, groups = {}, firstFamily = false }: ListingListProps) {
   const all = blocks(listings);
   // The first group that can be settled explains itself, until a family exists (family-merge Q22).
   const introParent = firstFamily ? all.find((b) => b.parent !== null && groups[b.parent])?.parent ?? null : null;
@@ -41,7 +43,7 @@ export function ListingList({ orgId, shopName, channel, label, listings, hrefFor
     <ul className="rounded-card border bg-card px-4">
       {all.map((block, i) =>
         block.parent === null ? (
-          <ListingRow key={block.row.id} orgId={orgId} shopName={shopName} channel={channel} label={label} listing={block.row} href={hrefFor(block.row.id)} />
+          <ListingRow key={block.row.id} orgId={orgId} shopName={shopName} channel={channel} label={label} listing={block.row} href={hrefFor(block.row.id)} from={from} />
         ) : (
           <ListingGroup
             key={`group-${block.parent}-${i}`}
@@ -54,7 +56,7 @@ export function ListingList({ orgId, shopName, channel, label, listings, hrefFor
             intro={block.parent === introParent}
           >
             {block.rows.map((row) => (
-              <ListingRow key={row.id} orgId={orgId} shopName={shopName} channel={channel} label={label} listing={row} href={hrefFor(row.id)} indented />
+              <ListingRow key={row.id} orgId={orgId} shopName={shopName} channel={channel} label={label} listing={row} href={hrefFor(row.id)} from={from} indented />
             ))}
           </ListingGroup>
         ),

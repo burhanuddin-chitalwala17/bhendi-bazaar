@@ -197,6 +197,7 @@ export default async function ChannelListingsPage({
               label={label}
               listings={page.listings}
               hrefFor={(id) => hrefWith({ listing: id })}
+              from={hrefWith({})}
               groups={page.groups}
               firstFamily={page.firstFamily}
             />

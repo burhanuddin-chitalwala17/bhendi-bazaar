@@ -19,6 +19,7 @@ import { ASK_ADMIN } from "./facts-copy";
 import { PROBLEMS } from "./platform-listing-copy";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@server/shared/routes";
+import { withFrom } from "@/lib/safe-callback-url";
 
 interface ListingRowProps {
   orgId: string;
@@ -29,6 +30,8 @@ interface ListingRowProps {
   listing: ChannelListingDTO;
   /** Opens the details panel: the same page with `?listing=<id>`. */
   href: string;
+  /** This Listings page as it stands, so Fix's screen can come back to it (navigation-flows R4). */
+  from?: string;
   indented?: boolean;
 }
 
@@ -36,7 +39,7 @@ interface ListingRowProps {
  * One marketplace listing (ux.md "State matrix — Listing row"). Rendered on the server; a tap opens
  * the details panel through the URL, and the one action is a client leaf.
  */
-export function ListingRow({ orgId, shopName, channel, label, listing, href, indented }: ListingRowProps) {
+export function ListingRow({ orgId, shopName, channel, label, listing, href, from, indented }: ListingRowProps) {
   const money = priceAndStock(listing.pricePaise, listing.quantity);
   const status = listing.status ? STATUS_TEXT[listing.status] : null;
 
@@ -76,7 +79,7 @@ export function ListingRow({ orgId, shopName, channel, label, listing, href, ind
       {/* The fix is the listing screen's: the reason on its field, then Review and publish (Q23). */}
       {!listing.gone && listing.product && listing.problems && (
         <Button asChild size="sm" className="min-h-10">
-          <Link href={ROUTES.org.productListing(orgId, listing.product.id, channel)}>{PROBLEMS.fix}</Link>
+          <Link href={from ? withFrom(ROUTES.org.productListing(orgId, listing.product.id, channel), from) : ROUTES.org.productListing(orgId, listing.product.id, channel)}>{PROBLEMS.fix}</Link>
         </Button>
       )}
       {!listing.gone && listing.product && (

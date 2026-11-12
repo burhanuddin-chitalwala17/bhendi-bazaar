@@ -69,6 +69,28 @@
 - Tests: `tests/unit/changelog-rollover.test.ts` (an unsummarised month is refused and nothing changes; the PR
   high-water mark is kept); docs-integrity numbering now checks the running month against that mark.
 
+## 2026-11-12 — Listings: Fix → Edit product → Save or Back comes back one step at a time
+
+- From a filtered Listings page, Fix opened the listing screen, whose Back went to the product page; from
+  there Edit product's Back and Save went to the Products list. Two steps skipped, filters lost.
+- Each screen now carries the one that opened it as `from`: the listing screen's Back returns to Listings as it
+  was left, and Edit product's Back, Cancel and Save return to the listing screen (Save after the toast). Opened
+  any other way, both behave as before. `from` is followed only if it is our own path (`safeReturnPath`, the
+  sign-in rule), else the screen's natural parent.
+- Tests: listing-fix-return (new; mutation-checked).
+
+## 2026-11-12 — Addresses: an edit changes the address; a failed add says so; sign-in at checkout keeps the typed one [CONTRACT]
+
+- Profile: editing a saved address posted it as a new one, so the book grew a duplicate and the old one stayed.
+  An address with an id is now updated in place.
+- Checkout: adding an address closed the dialog and selected it whether or not the save worked, with an id the
+  browser made up. The dialog now waits for the server, shows its error and stays open on failure, and selects
+  the address as saved. `POST /api/addresses` returns the saved address (CONTRACTS.md, Addresses); its
+  validation failures now carry their field details, so the dialog shows them on the fields.
+- Checkout: signing in threw away the address a guest had typed. It now stays selected; an order carries its
+  address inline, so it needs no account id (seamless-sign-in D13, superseding D10's clearing).
+- Tests: address-saves (new; both cases mutation-checked), checkout-sign-in updated.
+
 ## 2026-11-10 — Amazon: a created page is looked at until it is buyable; its ASIN kept; handbag silhouette sent [MIGRATION]
 
 - The first Generic HANDBAG listing was created at 20:57 UTC and Amazon made it buyable later; our follow-up

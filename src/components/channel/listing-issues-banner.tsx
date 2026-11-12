@@ -15,7 +15,7 @@ import { FIELD_NAME, PROBLEMS, PUBLISH } from "./platform-listing-copy";
  * The top of a listing with problems (marketplace-publish Q6, ux.md "Needs attention"): how many, each
  * pinned one as a link to its field, and the ones the marketplace named no field for, in full.
  */
-export function ListingIssuesBanner({ orgId, screen, tickets = [] }: { orgId: string; screen: ListingScreenDTO; tickets?: ShopTicketDTO[] }) {
+export function ListingIssuesBanner({ orgId, screen, tickets = [], from }: { orgId: string; screen: ListingScreenDTO; tickets?: ShopTicketDTO[]; from?: string }) {
   if (screen.issues.length === 0 && !screen.showing) return null;
   const pinned = screen.issues.filter((i) => i.field !== null);
   const general = screen.otherIssues;
@@ -41,7 +41,7 @@ export function ListingIssuesBanner({ orgId, screen, tickets = [] }: { orgId: st
           ))}
         </ul>
       )}
-      <ListingFixes orgId={orgId} screen={screen} tickets={tickets} />
+      <ListingFixes orgId={orgId} screen={screen} tickets={tickets} from={from} />
       {general.length > 0 && <p className="font-semibold">{REQUESTS_COPY.unrecognised(screen.label)}</p>}
       {general.map((issue) => (
         <p key={`${issue.code}-${issue.message}`}>

@@ -16,12 +16,21 @@ import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.
 import { ChannelCompletenessStrip } from "@/components/channel/channel-completeness-strip";
 import { productCompletenessDAL } from "@/data-access-layer/org/product-completeness.dal";
 import { PageShell } from "@/components/shared/page-shell";
+import { safeReturnPath } from "@/lib/safe-callback-url";
+import { ROUTES } from "@server/shared/routes";
 export default async function OrgEditProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orgId: string; id: string }>;
+  searchParams: Promise<{ from?: string | string[] }>;
 }) {
   const { orgId, id } = await params;
+  const { from } = await searchParams;
+  // Opened from another screen (a listing's Fix), Back and Save return there (navigation-flows R2–R4).
+  const productsHref = ROUTES.org.products(orgId);
+  const returnTo = safeReturnPath(from, productsHref);
+  const opener = returnTo === productsHref ? undefined : returnTo;
   const product = await adminProductsDAL.getProductById(id);
   if (!product || product.org.id !== orgId) notFound();
 
@@ -84,6 +93,8 @@ export default async function OrgEditProductPage({
           locations={locations}
           uploadEndpoints={orgUploadEndpoints(orgId)}
           sellsElsewhere={channels.some((channel) => channel.enabled)}
+          backHref={opener}
+          returnOnSave={Boolean(opener)}
         />
       </Suspense>
     </PageShell>

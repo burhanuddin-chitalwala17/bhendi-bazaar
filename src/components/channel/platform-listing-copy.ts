@@ -14,6 +14,7 @@ export const FIELD_NAME: Record<ListingField, string> = {
 
 export const LISTING = {
   screenTitle: (label: string) => `${label} listing`,
+  backToListings: "Listings",
   intro: (label: string) => `This is what ${label} gets. Fields marked "Same as product" follow your product; change one to make it ${label}'s own.`,
   edit: (label: string) => `Edit ${label} listing`,
   notOn: (label: string) => `Not on ${label}`,

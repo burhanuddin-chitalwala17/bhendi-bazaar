@@ -58,7 +58,11 @@ export function ProfileSections({
           addresses={data.profile.addresses}
           saving={saving}
           onSaveAddress={(address: DeliveryAddress) =>
-            run(() => addressApiClient.addAddress(address))
+            run(() =>
+              address.id
+                ? addressApiClient.updateAddress(address.id, address)
+                : addressApiClient.addAddress(address),
+            )
           }
           onDeleteAddress={(addressId: string) =>
             run(() => addressApiClient.deleteAddress(addressId))

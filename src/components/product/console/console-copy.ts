@@ -93,6 +93,7 @@ export const PRODUCT_ADD_HEADER_COPY = {
 
 export const PRODUCT_EDIT_HEADER_COPY = {
   backTeam: "Back to product",
+  backOpener: "Back",
   back: "Back to products",
 } as const;
 
