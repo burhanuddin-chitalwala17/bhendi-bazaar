@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { LockedAction } from "@/components/subscriptions/locked-action";
 import { useMutation } from "@/hooks/core/useMutation";
 import type { MarketplaceChannel } from "@server/channels/channel-connection.types";
 
@@ -12,6 +13,7 @@ import { channelsApiClient } from "./channelsApiClient";
 import { MatchPicker } from "./match-picker";
 import { SETTLE_ACTION, SETTLE_TOAST } from "./settle-copy";
 import { ROUTES } from "@server/shared/routes";
+import { FEATURE } from "@/components/subscriptions/features";
 
 interface ListingSettleActionsProps {
   orgId: string;
@@ -48,28 +50,34 @@ export function ListingSettleActions({ orgId, channel, label, listingId }: Listi
 
   return (
     <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:justify-end">
-      <Button asChild className="min-h-10">
-        <Link href={addNewHref}>{SETTLE_ACTION.addNew}</Link>
-      </Button>
-      <MatchPicker
-        orgId={orgId}
-        listingId={listingId}
-        label={label}
-        addNewHref={addNewHref}
-        trigger={
-          <Button variant="outline" className="min-h-10">
-            {SETTLE_ACTION.match}
-          </Button>
-        }
-      />
-      <Button
-        variant="ghost"
-        className="min-h-10"
-        onClick={() => void leaveOff.mutate().catch(() => undefined)}
-        pending={leaveOff.isLoading}
-      >
-        {SETTLE_ACTION.leaveOff}
-      </Button>
+      <LockedAction feature={FEATURE.CHANNELS} label={SETTLE_ACTION.addNew} className="min-h-10">
+        <Button asChild className="min-h-10">
+          <Link href={addNewHref}>{SETTLE_ACTION.addNew}</Link>
+        </Button>
+      </LockedAction>
+      <LockedAction feature={FEATURE.CHANNELS} label={SETTLE_ACTION.match} variant="outline" className="min-h-10">
+        <MatchPicker
+          orgId={orgId}
+          listingId={listingId}
+          label={label}
+          addNewHref={addNewHref}
+          trigger={
+            <Button variant="outline" className="min-h-10">
+              {SETTLE_ACTION.match}
+            </Button>
+          }
+        />
+      </LockedAction>
+      <LockedAction feature={FEATURE.CHANNELS} label={SETTLE_ACTION.leaveOff} variant="ghost" className="min-h-10">
+        <Button
+          variant="ghost"
+          className="min-h-10"
+          onClick={() => void leaveOff.mutate().catch(() => undefined)}
+          pending={leaveOff.isLoading}
+        >
+          {SETTLE_ACTION.leaveOff}
+        </Button>
+      </LockedAction>
     </div>
   );
 }

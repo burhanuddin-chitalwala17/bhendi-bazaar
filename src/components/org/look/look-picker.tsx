@@ -16,6 +16,8 @@ import { LookConfirmDialog } from "./look-confirm-dialog";
 import { LookPreviewDialog } from "./look-preview-dialog";
 import { ThemeCard } from "./theme-card";
 import { useLookWrite } from "./useLookWrite";
+import { PlanIcon } from "@/components/subscriptions/plan-icon";
+import { FEATURE } from "@/components/subscriptions/features";
 
 /** The palette a card opens on: the live one for the live theme, else the theme's first. */
 function startingPalettes(look: StorefrontLookState): Record<ThemeKey, PaletteKey> {
@@ -94,6 +96,7 @@ export function LookPicker({ look, share }: { look: StorefrontLookState; share: 
               setup={null}
               trigger={
                 <Button type="button" className="min-h-11">
+                  <PlanIcon feature={FEATURE.STOREFRONT} />
                   {LOOK_COPY.shareShop}
                 </Button>
               }

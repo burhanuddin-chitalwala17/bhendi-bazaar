@@ -9,6 +9,8 @@ import { ProductSortSelect } from "@/components/shared/product-sort-select";
 import { ThemedGridSkeleton } from "@/components/storefront/themed/themed-product-grid";
 import { landingHref, shopHref, visitLabel } from "@/components/storefront/themed/section-heading";
 import { productsDAL } from "@/data-access-layer/products.dal";
+import { lockedStorefrontMetadata, storefrontClosedTo } from "@/data-access-layer/storefront-access.dal";
+import { StorefrontClosed } from "@/components/subscriptions/storefront-closed";
 import { storefrontDAL } from "@/data-access-layer/storefront.dal";
 import { APP_NAME } from "@/lib/config";
 import { formatCount } from "@/lib/format";
@@ -28,6 +30,8 @@ export async function generateMetadata({ params }: ShopPageProps): Promise<Metad
   const { handle } = await params;
   const shop = await storefrontDAL.getByHandle(handle);
   if (!shop?.themeKey) return {};
+  const locked = await lockedStorefrontMetadata(shop.id, shop.name);
+  if (locked) return locked;
   return {
     title: STORE_PAGES_COPY.shopTitle(shop.name),
     description: STORE_PAGES_COPY.shopDescription(shop.name, APP_NAME),
@@ -44,6 +48,7 @@ export async function generateMetadata({ params }: ShopPageProps): Promise<Metad
 export default async function ShopPage({ params, searchParams }: ShopPageProps) {
   const [{ handle }, query] = await Promise.all([params, searchParams]);
   const shop = await resolveShopPage(handle);
+  if (await storefrontClosedTo(shop.id)) return <StorefrontClosed shop={shop} />;
   const themeKey = shop.themeKey;
   if (!themeKey) redirect(landingHref(shop.handle));
   // The shop is memoised from the layout; only the goods are worth a skeleton in the theme's card.

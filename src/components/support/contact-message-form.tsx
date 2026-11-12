@@ -16,6 +16,8 @@ interface ContactMessageFormProps {
   signedIn: boolean;
   onSent: () => void;
   onCancel: () => void;
+  /** A subject and opening line already written, as a paid feature's "Talk to us" sends (feature-access Q26). */
+  prefill?: { subject: string; message: string };
 }
 
 /**
@@ -26,6 +28,7 @@ export function ContactMessageForm({
   signedIn,
   onSent,
   onCancel,
+  prefill,
 }: ContactMessageFormProps) {
   const {
     register,
@@ -37,7 +40,7 @@ export function ContactMessageForm({
     schema: (signedIn
       ? contactMessageSchema
       : guestContactMessageSchema) as never,
-    defaultValues: { subject: "", message: "", email: "" },
+    defaultValues: { subject: prefill?.subject ?? "", message: prefill?.message ?? "", email: "" },
     submit: ({ subject, message, email }) =>
       sendContactMessage(
         signedIn ? { subject, message } : { subject, message, email },

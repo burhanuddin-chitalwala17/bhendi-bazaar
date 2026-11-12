@@ -229,7 +229,7 @@ git diff $RANGE | grep -nE 'useForm\(|NextResponse\.json\(\s*\{\s*error|error\.(
 grep -ohE '\]\([^)]+\.md[^)]*\)' <changed docs> | sed -E 's/^\]\(//; s/\)$//'
 ```
 - **No findings recorded as documentation.** A bug list, audit result, or "known broken" section does not belong in a doc — it goes stale the moment it is fixed. The requirement belongs in a spec; the defect belongs in a PR.
-- **Specs within ≤100 readable lines** ([ADR-0010](../../../docs/adr/0010-spec-convention.md)): prose only, excluding front-matter, headings, tables, fenced blocks, link-only lines, and blanks.
+- **`spec.md` within ≤100 readable lines; `ux.md` and `trd.md` uncapped** ([ADR-0010](../../../docs/adr/0010-spec-convention.md), [ADR-0071](../../../docs/adr/0071-only-the-spec-is-line-capped.md)): prose only, excluding front-matter, headings, tables, fenced blocks, link-only lines, and blanks.
 - **Comments are one or two lines, and explain *why*.** Flag a comment block that restates the code, narrates the next line, or runs to a paragraph — that reasoning belongs in an ADR or spec, linked from a short line ([`/CLAUDE.md`](../../../CLAUDE.md), Development Principles).
 
 ## Part 4 — Report

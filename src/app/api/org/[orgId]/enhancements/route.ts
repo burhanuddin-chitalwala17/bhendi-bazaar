@@ -9,10 +9,11 @@
 
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
+import { FEATURE } from "@/components/subscriptions/features";
 import { enhancementService } from "@server/content/enhancement.service";
 import { requestEnhancementSchema } from "@/lib/validation/schemas/enhancement.schema";
 
 export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
   const input = requestEnhancementSchema.parse(await request.json());
   return NextResponse.json(await enhancementService.request(scope.orgId, scope.userId, input));
-});
+}, { feature: FEATURE.IMAGE_ENHANCEMENT });

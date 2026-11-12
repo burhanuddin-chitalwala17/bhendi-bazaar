@@ -32,6 +32,7 @@ import { skuKey } from "./listing-match";
 import { planFamily, type FamilyPlan, type MemberValue, type SharedFill } from "./family-plan";
 import { providerFor } from "./providers";
 import type { ListingAttributes } from "./providers/listing-read";
+import { channelPlan } from "./channel-plan";
 
 /**
  * One family from several marketplace listings (family-merge): the page's live read and plan.
@@ -234,6 +235,7 @@ export const channelFamilyService = {
    * another family; then one transaction makes the family and every member, or nothing.
    */
   async settle(orgId: string, userId: string, input: FamilySettleInput): Promise<FamilySettleResultDTO> {
+    await channelPlan.assert(orgId);
     const chosen = new Map(input.members.map((m) => [m.listingId, m]));
     const included = input.listingIds.filter((id) => chosen.get(id)?.include !== false).slice(0, FAMILY_MAX_MEMBERS);
     if (included.length < 2 && !input.familyId) throw new DomainError("A family needs at least two members.", { status: 400, field: "members" });

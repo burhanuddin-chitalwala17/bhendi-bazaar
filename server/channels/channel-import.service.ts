@@ -38,6 +38,7 @@ import { STOCK_SYNC } from "./channel-stock.types";
 import { lastSent } from "./stock-plan";
 import { MarketplaceAuthError, MarketplaceRequestError, MarketplaceUnavailableError } from "./providers/marketplace-provider";
 import { providerFor } from "./providers";
+import { channelPlan } from "./channel-plan";
 
 /**
  * Reading a shop's marketplace listings into its inbox and linking them by SKU (channel-import).
@@ -161,6 +162,7 @@ export const channelImportService = {
 
   /** "Read again" (R2): queue a read; the job claims it, so a second tap does nothing extra (D3). */
   async requestRead(orgId: string, channel: string): Promise<void> {
+    await channelPlan.assert(orgId);
     const { row } = await connectionFor(orgId, channel);
     if (row.state !== CONNECTION_STATE.CONNECTED) throw new ConflictError("Reconnect this marketplace before reading its listings.");
     await prisma.$transaction(async (tx) => {
@@ -304,16 +306,19 @@ export const channelImportService = {
 
   /** The owner leaves an unsettled listing off Bhendi Bazaar (product-merge Q9). */
   async leaveOff(orgId: string, userId: string, id: string, reason: LeftOffReason | null = null): Promise<void> {
+    await channelPlan.assert(orgId);
     if (!(await channelListingRepository.leaveOff(id, orgId, userId, new Date(), reason))) throw new NotFoundError("Unsettled listing");
   },
 
   /** "Not one item" on a suggested group (family-merge Q21). */
   async dismissFamilyHint(orgId: string, listingIds: readonly string[]): Promise<void> {
+    await channelPlan.assert(orgId);
     if ((await channelListingRepository.dismissFamilyHint(listingIds, orgId, new Date())) === 0) throw new NotFoundError("Listing");
   },
 
   /** Back to the to-do (Q9). */
   async bringBack(orgId: string, id: string): Promise<void> {
+    await channelPlan.assert(orgId);
     if (!(await channelListingRepository.bringBack(id, orgId))) throw new NotFoundError("Left-off listing");
   },
 
@@ -338,11 +343,13 @@ export const channelImportService = {
 
   /** The owner unlinks (Q5): back to Not linked, and never linked again by a read. */
   async unlink(orgId: string, userId: string, id: string): Promise<void> {
+    await channelPlan.assert(orgId);
     if (!(await channelListingRepository.unlink(id, orgId, userId, new Date()))) throw new NotFoundError("Linked listing");
   },
 
   /** Restore the SKU match the owner removed (Q16), and only that one. */
   async linkBack(orgId: string, id: string): Promise<ChannelListingDTO> {
+    await channelPlan.assert(orgId);
     const row = await channelListingRepository.find(id, orgId);
     if (!row || !row.unlinkedAt) throw new NotFoundError("Unlinked listing");
     const productId = indexBySkuKey(await productService.listWithSku(orgId)).get(skuKey(row.sku));

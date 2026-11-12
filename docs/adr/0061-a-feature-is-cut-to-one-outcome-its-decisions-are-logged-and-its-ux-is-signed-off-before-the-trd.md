@@ -1,7 +1,7 @@
 # ADR-0061: A feature is cut to one outcome, its decisions are logged, and its UX is signed off before the TRD
 
 - **Date:** 2026-10-18
-- **Status:** Accepted (D2 amended by [ADR-0062](0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md))
+- **Status:** Accepted (D2 amended by [ADR-0062](0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md); D3 `ux.md` line cap removed by [ADR-0071](0071-only-the-spec-is-line-capped.md))
 - **Context:** The cycle in [ADR-0010](0010-spec-convention.md) goes spec → TRD → build. Three things kept failing in it, all visible in the channel connectors work of 2026-10-15. **Scope grew while planning:** connecting two marketplaces became import, two-way sync, instant notifications and publishing in one conversation, because nothing said where a feature ends. **Decisions were lost:** they were asked and answered in chat, some answered twice, some never, and the TRD's *Open questions* held only the ones that happened to be written down. **Screens were decided while coding:** neither the spec (what must be true) nor the TRD (how it is built) shows what a person will see in each state. The owner only met the experience once it existed, which is the most expensive point to change it.
 - **Decision:**
   1. **One outcome per feature, cut before the spec is written.** A feature is one outcome a person can see, shippable alone in about six units or fewer. The spec gains a **Scope** section with an *In* list and a *Later* list. Claude draws the cut, by four rules:

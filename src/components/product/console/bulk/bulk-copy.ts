@@ -75,6 +75,7 @@ export const SKIP_REASON_COPY: Record<BulkSkipReason, string> = {
   [BULK_SKIP_REASON.NOT_ON_MARKETPLACE]: "Not listed on that marketplace yet",
   [BULK_SKIP_REASON.NOTHING_TO_SEND]: "Already up to date there",
   [BULK_SKIP_REASON.SEND_IN_PROGRESS]: "Already on its way",
+  [BULK_SKIP_REASON.CHANNELS_LOCKED]: "This shop doesn't have Channels",
 };
 
 export const PRICE_INPUT_COPY = {

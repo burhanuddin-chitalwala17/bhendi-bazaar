@@ -7,6 +7,7 @@
 
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
+import { FEATURE } from "@/components/subscriptions/features";
 import { channelImportService } from "@server/channels/channel-import.service";
 import { leaveOffSchema } from "@/lib/validation/schemas/marketplace-facts.schema";
 
@@ -14,4 +15,4 @@ export const POST = withOrg<{ orgId: string; channel: string; id: string }>(asyn
   const { reason } = leaveOffSchema.parse(await request.json().catch(() => ({})));
   await channelImportService.leaveOff(scope.orgId, scope.userId, params.id, reason ?? null);
   return NextResponse.json({ ok: true });
-});
+}, { feature: FEATURE.CHANNELS });

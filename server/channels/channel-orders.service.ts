@@ -13,6 +13,7 @@ import { providerFor } from "./providers";
 import { MarketplaceAuthError } from "./providers/marketplace-provider";
 import { ORDER_LINE_STATE, type MarketplaceOrderLine } from "./providers/stock";
 import { ORDERS_CHECK_GAP_MS } from "./stock-checks.job";
+import { channelPlan } from "./channel-plan";
 
 /**
  * Sales on a marketplace, brought in by the ten-minute safety net (inventory-sync D4, D8, Q26):
@@ -53,8 +54,11 @@ export const channelOrdersService = {
    */
   async checkMany(rows: readonly OrdersCheckRow[]): Promise<Map<string, Outcome>> {
     const outcomes = new Map<string, Outcome>();
+    // One read for the pass (D8): a shop without Channels has no orders read.
+    const holding = await channelPlan.allowed([...new Set(rows.map((r) => r.orgId))]);
     const live = rows.filter(
-      (r): r is Read["row"] => isMarketplaceChannel(r.channel) && r.state === CONNECTION_STATE.CONNECTED && r.stockSync === STOCK_SYNC.ON,
+      (r): r is Read["row"] =>
+        holding.has(r.orgId) && isMarketplaceChannel(r.channel) && r.state === CONNECTION_STATE.CONNECTED && r.stockSync === STOCK_SYNC.ON,
     );
 
     const reads: Read[] = [];

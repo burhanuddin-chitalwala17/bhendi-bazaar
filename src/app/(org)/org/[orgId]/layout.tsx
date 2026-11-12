@@ -12,6 +12,7 @@ import { Icon } from "@/components/ui/icon";
 import { OrgSwitcher } from "@/components/org/org-switcher";
 import { toPack } from "@server/analytics/attention.service";
 import { ROUTES } from "@server/shared/routes";
+import { ShopPlanProvider } from "@/components/subscriptions/plan-context";
 
 /** The Orders tab's badge: parcels paid for and waiting on the shop. A failed read shows none, never a wrong one. */
 async function toPackCount(orgId: string): Promise<number> {
@@ -31,8 +32,9 @@ export default async function OrgLayout({
 }) {
   const { orgId } = await params;
 
+  let features;
   try {
-    await requireOrgMember(orgId);
+    ({ features } = await requireOrgMember(orgId));
   } catch (error) {
     if (isDomainError(error) && error.status === 401) {
       redirect(`${ROUTES.signIn}?callbackUrl=${ROUTES.org.home(orgId)}`);
@@ -74,7 +76,9 @@ export default async function OrgLayout({
           leading={<OrgSwitcher orgs={orgs} currentOrgId={orgId} variant="bar" />}
         />
         {/* Phone: clear the fixed tab bar, so the last row of every page stays tappable. */}
-        <main className="min-w-0 flex-1 p-4 pb-tabbar md:p-8">{children}</main>
+        <main className="min-w-0 flex-1 p-4 pb-tabbar md:p-8">
+          <ShopPlanProvider shop={currentOrg?.name ?? ""} features={features}>{children}</ShopPlanProvider>
+        </main>
       </div>
     </div>
   );

@@ -5,8 +5,9 @@
 
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
+import { FEATURE } from "@/components/subscriptions/features";
 import { listingCreateService } from "@server/channels/listing-create.service";
 
 export const GET = withOrg<{ orgId: string; id: string; channel: string }>(async (_request, scope, params) => {
   return NextResponse.json({ pages: await listingCreateService.findPages(scope.orgId, params.id, params.channel) });
-});
+}, { feature: FEATURE.CHANNELS });

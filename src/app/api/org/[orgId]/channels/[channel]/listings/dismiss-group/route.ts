@@ -5,6 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
+import { FEATURE } from "@/components/subscriptions/features";
 import { dismissGroupSchema } from "@/lib/validation/schemas/family-settle.schema";
 import { channelImportService } from "@server/channels/channel-import.service";
 
@@ -12,4 +13,4 @@ export const POST = withOrg<{ orgId: string; channel: string }>(async (request, 
   const { listingIds } = dismissGroupSchema.parse(await request.json());
   await channelImportService.dismissFamilyHint(scope.orgId, listingIds);
   return NextResponse.json({ ok: true });
-});
+}, { feature: FEATURE.CHANNELS });

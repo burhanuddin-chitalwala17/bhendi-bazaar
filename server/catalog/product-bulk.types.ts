@@ -61,6 +61,8 @@ export const BULK_SKIP_REASON = {
   NOTHING_TO_SEND: "nothing_to_send",
   /** A send for this listing is already on its way. */
   SEND_IN_PROGRESS: "send_in_progress",
+  /** The product's shop does not hold Channels (subscriptions/feature-access D5). */
+  CHANNELS_LOCKED: "channels_locked",
 } as const;
 export type BulkSkipReason = (typeof BULK_SKIP_REASON)[keyof typeof BULK_SKIP_REASON];
 

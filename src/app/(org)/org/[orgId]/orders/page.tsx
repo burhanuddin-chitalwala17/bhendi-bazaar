@@ -14,9 +14,12 @@ import { ShopOrdersRefused } from "@/components/org/parcels/shop-orders-refused"
 import { shopScopeOrRefused } from "./shop-scope";
 import { channelStockDAL } from "@/data-access-layer/channel-stock.dal";
 import { MarketplaceOrders } from "@/components/channel/marketplace-orders";
+import { PlanBanner } from "@/components/subscriptions/plan-banner";
+import { LOCK_COPY } from "@/components/subscriptions/subscriptions-copy";
 import { MARKETPLACE_ORDERS } from "@/components/channel/stock-copy";
 import { ROUTES } from "@server/shared/routes";
 import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
+import { FEATURE } from "@/components/subscriptions/features";
 
 export const metadata = {
   title: ORG_PAGE_TITLES.orders,
@@ -60,7 +63,12 @@ export default async function OrgOrdersPage({
       <div className="space-y-6">
         <PageHeader help="orders" title={SHOP_ORDERS_COPY.title} description={SHOP_ORDERS_COPY.marketplaceDescription} />
         {tabs("marketplace")}
-        <MarketplaceOrders orders={orders} hasMore={hasMore} moreHref={`${ROUTES.org.orders(orgId)}?tab=marketplace&more=${more + 1}`} />
+        {!scope.features.channels && <PlanBanner feature={FEATURE.CHANNELS} />}
+        {!scope.features.channels && orders.length === 0 ? (
+          <p className="rounded-card border bg-card p-4 text-sm text-muted-foreground">{LOCK_COPY.marketplaceOrdersLocked}</p>
+        ) : (
+          <MarketplaceOrders orders={orders} hasMore={hasMore} moreHref={`${ROUTES.org.orders(orgId)}?tab=marketplace&more=${more + 1}`} />
+        )}
       </div>
     );
   }

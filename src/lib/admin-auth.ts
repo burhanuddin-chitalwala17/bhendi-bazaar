@@ -100,3 +100,8 @@ export async function requirePlatformAdminId(): Promise<string> {
   const session = await requirePlatformAdmin();
   return session.user.id;
 }
+
+/** Whether this session is the platform's (a locked storefront shows its team and the admin, feature-access Q6). */
+export function isPlatformAdminSession(session: Session): boolean {
+  return session.user.platformRole === PLATFORM_ROLE.ADMIN;
+}

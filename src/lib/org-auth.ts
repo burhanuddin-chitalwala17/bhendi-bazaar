@@ -6,6 +6,8 @@ import { orgMemberRepository } from "@server/catalog/org.member.repository";
 import { DomainError, ForbiddenError } from "@server/shared/domain-error";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { ERROR_RESPONSE_COPY } from "@/lib/lib-copy";
+import { featureAccessService, holds, lockedError } from "@server/subscriptions/feature-access.service";
+import type { Feature, FeatureAccessDTO } from "@server/subscriptions/feature-access.types";
 
 /**
  * Permission to act for one org, and the id every subsequent query filters on.
@@ -18,12 +20,18 @@ export interface OrgScope {
   orgId: string;
   role: OrgRole;
   userId: string;
+  /** What this shop may use of the paid features, read beside the membership (feature-access D6). */
+  features: FeatureAccessDTO;
 }
 
 export async function resolveOrgScope(orgId: string): Promise<OrgScope> {
   const session = await requireSession();
 
-  const membership = await orgMemberRepository.findMembership(session.user.id, orgId);
+  // One extra read, in parallel; not folded into catalog's query, which would read a table it does not own (D6).
+  const [membership, features] = await Promise.all([
+    orgMemberRepository.findMembership(session.user.id, orgId),
+    featureAccessService.forOrg(orgId),
+  ]);
   if (!membership) {
     throw new ForbiddenError("You do not have access to this organisation");
   }
@@ -32,7 +40,7 @@ export async function resolveOrgScope(orgId: string): Promise<OrgScope> {
     throw new DomainError("This organisation has been suspended", { status: 403 });
   }
 
-  return { orgId: membership.orgId, role: membership.role, userId: session.user.id };
+  return { orgId: membership.orgId, role: membership.role, userId: session.user.id, features };
 }
 
 /**
@@ -51,12 +59,15 @@ export const requireOrgMember = cache(resolveOrgScope);
  * to share, and `cache()` outside a React render has no request scope to key on.
  */
 export function withOrg<P extends { orgId: string }>(
-  handler: (request: NextRequest, scope: OrgScope, params: P) => Promise<Response>
+  handler: (request: NextRequest, scope: OrgScope, params: P) => Promise<Response>,
+  options: { feature?: Feature } = {},
 ) {
   return async (request: NextRequest, context: { params: Promise<P> }) => {
     try {
       const params = await context.params;
       const scope = await resolveOrgScope(params.orgId);
+      // A paid route refuses before its handler, from the scope already read (feature-access D7).
+      if (options.feature && !holds(scope.features, options.feature)) throw lockedError(options.feature);
       return await handler(request, scope, params);
     } catch (error) {
       return toErrorResponse(error, ERROR_RESPONSE_COPY.somethingWentWrong);

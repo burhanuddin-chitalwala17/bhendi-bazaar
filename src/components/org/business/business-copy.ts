@@ -25,7 +25,7 @@ export const BUSINESS_COPY = {
       "Your own online store, phone photos made marketplace-ready, and your Amazon and Flipkart listings and stock in one place. ₹699 a month, GST included.",
   },
 
-  nav: { cta: "Open your shop" },
+  nav: { cta: "Open your shop", contact: "Talk to us" },
 
   hero: {
     label: "For shops and brands",
@@ -151,6 +151,7 @@ export const BUSINESS_COPY = {
       `Plus ${percent}% on orders paid through your Bhendi Bazaar store. Nothing on your Amazon or Flipkart sales.`,
     cancel: "Billed monthly. Cancel any month.",
     cta: "Open your shop",
+    contact: "Talk to us",
     includesTitle: "Everything included",
     includes: [
       "Your own store, themes and brand page",

@@ -6,7 +6,7 @@
  */
 import "dotenv/config";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi, type MockInstance } from "vitest";
-import { ensureFixtures, isDisposableDb } from "../helpers/test-db";
+import { ensureFixtures, grantAllFeatures, isDisposableDb } from "../helpers/test-db";
 
 process.env.PRISMA_LOG_QUERIES = "1";
 
@@ -56,6 +56,7 @@ describe.skipIf(!isDisposableDb)("order safety net: database cost does not grow 
       select: { id: true },
     });
     orgIds.push(org.id);
+    await grantAllFeatures([org.id]);
     const account = `ACC-${stamp}-${i}`;
     accounts.push(account);
     await prisma.channelConnection.create({
@@ -127,7 +128,7 @@ describe.skipIf(!isDisposableDb)("order safety net: database cost does not grow 
 
     expect(await prisma.marketplaceOrder.count({ where: { orgId: { in: orgIds } } })).toBe(many);
     expect(all, `one shop cost ${one} statements, ${many} cost ${all}`).toBe(one);
-    expect(one).toBeLessThanOrEqual(3); // the claim, the read of recorded lines, nothing written
+    expect(one).toBeLessThanOrEqual(4); // the claim, which shops hold Channels (feature-access D8), the read of recorded lines, nothing written
   });
 
   it("one shop's marketplace failing leaves the others checked and its own cursor where it was", async () => {

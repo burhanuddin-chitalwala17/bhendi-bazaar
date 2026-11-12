@@ -18,6 +18,7 @@ import type { ListingStock, StockListingRef } from "./providers/stock";
 import { countsFor, lastSent, sameCounts } from "./stock-plan";
 import { stockCorrectionRepository } from "./stock-correction.repository";
 import { checkOrdersSpec, ORDERS_CHECK_EVERY_SECONDS } from "./stock-checks.job";
+import { channelPlan } from "./channel-plan";
 
 /**
  * One stock figure per product, on every connected marketplace (inventory-sync): the push each stock
@@ -84,7 +85,10 @@ export const channelStockService = {
    * busy marketplace throws, so the queue retries; a refused listing is recorded and the others still go.
    */
   async push(productId: string): Promise<{ sent: number }> {
-    if (!(await channelListingRepository.linkedForPush(productId)).some(live)) return { sent: 0 };
+    const linked = (await channelListingRepository.linkedForPush(productId)).filter(live);
+    if (linked.length === 0) return { sent: 0 };
+    // A shop without Channels sends nothing; its listings stay up, unsynced (feature-access Q9, D8).
+    if (!(await channelPlan.can(linked[0].connection.orgId))) return { sent: 0 };
     return await prisma.$transaction(
       async (tx) => {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`stock:${productId}`}))`;
@@ -208,7 +212,10 @@ export const channelStockService = {
   },
 
   async dailyCheckAll(): Promise<number> {
-    const ids = await channelConnectionRepository.syncedConnections();
+    const rows = await channelConnectionRepository.syncedConnections();
+    // One read for the pass (D8): a shop without Channels is not checked.
+    const allowed = await channelPlan.allowed([...new Set(rows.map((r) => r.orgId))]);
+    const ids = rows.filter((r) => allowed.has(r.orgId)).map((r) => r.id);
     for (const id of ids) {
       try {
         await this.dailyCheck(id);
@@ -233,6 +240,7 @@ export const channelStockService = {
 
   /** "Turn back on" after a pause, from the Channels card: every linked product sent from scratch. */
   async turnOn(orgId: string, channelName: string): Promise<void> {
+    await channelPlan.assert(orgId);
     const { connection } = await connectionOf(orgId, channelName);
     if (unmatched(await channelLocationRepository.forConnection(connection.id))) {
       throw new DomainError("Match your locations before stock can be sent.", { status: 409, field: "locations" });

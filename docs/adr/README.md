@@ -48,7 +48,7 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0005](0005-payment-state-server-only.md) | Payment state changes only on a verified gateway signal | Accepted | 2026-08-03 |
 | [0007](0007-conditional-stock-decrement.md) | Stock moves conditionally, inside the order transaction | Accepted | 2026-08-03 |
 | [0009](0009-docs-reference-code-never-copy-it.md) | Docs reference code by path; they never copy it | Accepted | 2026-08-03 |
-| [0010](0010-spec-convention.md) | Spec layout — feature folders, spec/TRD split, ≤100 readable lines | Accepted | 2026-08-03 |
+| [0010](0010-spec-convention.md) | Spec layout — feature folders, spec/TRD split, ≤100 readable lines | Accepted (decision 4 amended by [ADR-0071](0071-only-the-spec-is-line-capped.md): only `spec.md` is capped) | 2026-08-03 |
 | [0012](0012-modules-are-vertical-slices-by-domain.md) | `server/` modules are vertical slices by domain | Accepted | 2026-08-03 |
 | [0013](0013-one-error-envelope-and-useserverform.md) | Errors travel in one envelope; forms consume it through `useServerForm` | Accepted | 2026-08-05 |
 | [0014](0014-deploys-run-their-own-migrations.md) | Deploys run their own migrations | Accepted | 2026-08-09 |
@@ -98,7 +98,7 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0058](0058-media-is-one-aggregate-a-derivative-is-lineage-not-a-use-and-usage-is-derived.md) | Media is one aggregate; a derivative is lineage, not a use; and usage is derived | Accepted | 2026-10-05 |
 | [0059](0059-an-enhancement-never-changes-the-products-pixels-proven-before-encoding.md) | An enhancement never changes the product's pixels, proven before encoding | Accepted | 2026-10-05 |
 | [0060](0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md) | Mutations stay on route handlers, and a mutating request must come from our origin | Accepted. Corrects the CSRF premise in [ADR-0048](0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)'s alternatives. | 2026-10-05 |
-| [0061](0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md) | A feature is cut to one outcome, its decisions are logged, and its UX is signed off before the TRD | Accepted (D2 amended by [ADR-0062](0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)) | 2026-10-18 |
+| [0061](0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md) | A feature is cut to one outcome, its decisions are logged, and its UX is signed off before the TRD | Accepted (D2 amended by [ADR-0062](0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md); D3 `ux.md` line cap removed by [ADR-0071](0071-only-the-spec-is-line-capped.md)) | 2026-10-18 |
 | [0062](0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md) | A decision is replaced until it is implemented, and superseded after | Accepted | 2026-10-20 |
 | [0063](0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md) | Every public route is classified for rate limiting in one registry | Accepted | 2026-10-29 |
 | [0064](0064-a-storefront-theme-is-a-token-set-and-a-section-composition-declared-in-code.md) | A storefront theme is a token set and a section composition declared in code | Accepted | 2026-10-30 |
@@ -106,4 +106,5 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0066](0066-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md) | The UI is built in tiers, and every icon goes through one seam | Proposed | 2026-11-04 |
 | [0067](0067-words-live-in-copy-modules-and-our-own-paths-in-one-routes-table.md) | Words live in copy modules, and our own paths in one routes table | Proposed | 2026-11-05 |
 | [0070](0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md) | A product's attributes are rows, mapped at runtime to each channel's own catalogue | Accepted (2026-11-08, listing-model release). Supersedes ADR-0051; ADR-0052 still governs the code fact list until it moves to rows | 2026-11-07 |
+| [0071](0071-only-the-spec-is-line-capped.md) | A TRD and a UX document are as long as they need; only the spec is capped | Accepted | 2026-11-12 |
 <!-- generated:adr-index:end -->

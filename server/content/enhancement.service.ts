@@ -4,6 +4,8 @@ import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain
 import { mediaAssetService } from "@server/catalog/media-asset.service";
 import { adminOrgService } from "@server/catalog/org.service";
 import { SHOT_ROLE } from "@server/catalog/shot-list";
+import { featureAccessService } from "@server/subscriptions/feature-access.service";
+import { FEATURE } from "@server/subscriptions/feature-access.types";
 import { enhancementRepository } from "@server/content/enhancement.repository";
 import { enhancementPolicyRepository } from "@server/content/enhancement-policy.repository";
 import {
@@ -182,6 +184,8 @@ export const enhancementService = {
     now: Date = new Date(),
   ): Promise<{ enhancement: EnhancementDto; usage: EnhancementUsage }> {
     const { tool } = input;
+    // A paid feature (feature-access D5): refused before any slot is spent. `run`, accept and discard stay free (Q12, Q32).
+    await featureAccessService.assert(orgId, FEATURE.IMAGE_ENHANCEMENT);
     // Every one of the six has a pipeline now, so this is a guard against a tool withdrawn from
     // the list later rather than one still being built — which is why it names none of them.
     if (!isAvailableTool(tool)) throw new DomainError("That improvement is not available yet", { field: "tool" });

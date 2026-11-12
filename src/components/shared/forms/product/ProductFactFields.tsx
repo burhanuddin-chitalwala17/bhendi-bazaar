@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
+import { useShopPlan } from "@/components/subscriptions/plan-context";
+import { FORM_CHANNELS_LOCKED_COPY } from "@/components/subscriptions/subscriptions-copy";
 import { useWatch, type Control, type FieldErrors, type UseFormRegister, type UseFormSetValue } from "react-hook-form";
 
 import { FormController, FormInput, FormSelect } from "../FormField";
@@ -74,6 +76,7 @@ export function ProductFactFields({
   readOnly = false,
   withFamily = true,
 }: ProductFactFieldsProps) {
+  const plan = useShopPlan();
   const typeKey = useMemo(
     () => resolveProductType(categoryId, categories),
     [categoryId, categories],
@@ -124,6 +127,8 @@ export function ProductFactFields({
       <p className="mt-1 text-sm text-muted-foreground">
         {PRODUCT_FACT_FIELDS_COPY.whatAMarketplaceAsksAbout}
       </p>
+      {/* The form is the same with Channels locked; this says why the marketplace questions are still here (feature-access Q5). */}
+      {!plan.features.channels && <p className="mt-3 rounded-card bg-info/10 p-3 text-sm">{FORM_CHANNELS_LOCKED_COPY}</p>}
 
       {withFamily && (
         <div className="mt-4">

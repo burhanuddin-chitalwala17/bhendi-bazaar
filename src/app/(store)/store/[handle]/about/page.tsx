@@ -5,6 +5,8 @@ import { PageShell } from "@/components/shared/page-shell";
 import { BrandPageSections } from "@/components/storefront/brand-page/brand-page-sections";
 import { StorefrontTheme } from "@/components/storefront/storefront-theme";
 import { Button } from "@/components/ui/button";
+import { lockedStorefrontMetadata, storefrontClosedTo } from "@/data-access-layer/storefront-access.dal";
+import { StorefrontClosed } from "@/components/subscriptions/storefront-closed";
 import { storefrontDAL } from "@/data-access-layer/storefront.dal";
 import { APP_NAME } from "@/lib/config";
 import { renditionUrlForRef } from "@server/content/renditions.service";
@@ -35,6 +37,9 @@ export async function generateMetadata({
   params,
 }: BrandPageProps): Promise<Metadata> {
   const { handle } = await params;
+  const shop = await storefrontDAL.getByHandle(handle);
+  const locked = shop ? await lockedStorefrontMetadata(shop.id, shop.name) : null;
+  if (locked) return locked;
   const page = await storefrontDAL.getBrandPage(handle);
   if (!page) return {};
 
@@ -73,6 +78,8 @@ export default async function StorefrontAboutPage({ params }: BrandPageProps) {
   const { handle } = await params;
   // A themed shop's story is its landing page (Q3): a permanent move, so printed links still arrive.
   const shop = await storefrontDAL.getByHandle(handle);
+  // Closed before the brand page's goods are read (feature-access D11).
+  if (shop && (await storefrontClosedTo(shop.id))) return <StorefrontClosed shop={shop} />;
   if (shop?.themeKey) permanentRedirect(ROUTES.store(shop.handle));
   const page = await resolveBrandPage(handle);
 

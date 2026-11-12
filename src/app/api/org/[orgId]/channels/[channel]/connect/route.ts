@@ -7,6 +7,7 @@
 
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
+import { FEATURE } from "@/components/subscriptions/features";
 import { channelConnectionService } from "@server/channels/channel-connection.service";
 import { ROUTES } from "@server/shared/routes";
 
@@ -17,4 +18,4 @@ export const GET = withOrg<{ orgId: string; channel: string }>(async (request, s
   back.searchParams.set("result", start.result);
   back.searchParams.set("channel", params.channel);
   return NextResponse.redirect(back, 302);
-});
+}, { feature: FEATURE.CHANNELS });

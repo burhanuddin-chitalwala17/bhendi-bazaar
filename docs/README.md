@@ -1,6 +1,6 @@
 # Documentation
 
-- **Verified:** 2026-11-07
+- **Verified:** 2026-11-12
 - **Covers:** `docs/*.md`, `docs/adr/*.md`, `docs/specs/*/`
 
 A map of this directory. Every link here points at a file that exists — if one does not, that is a defect ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)).
@@ -38,6 +38,7 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 | [server/payments/CLAUDE.md](../server/payments/CLAUDE.md) | Payments — the gateway conversation and the single-writer rule |
 | [server/bidding/CLAUDE.md](../server/bidding/CLAUDE.md) | Bidding — timed auctions, and the sale gate that suspends an item from normal sale |
 | [server/notifications/CLAUDE.md](../server/notifications/CLAUDE.md) | Notifications — transactional email |
+| [server/subscriptions/CLAUDE.md](../server/subscriptions/CLAUDE.md) | Subscriptions — the paid-feature switches and the one check every domain asks |
 | [src/components/CLAUDE.md](../src/components/CLAUDE.md) | The front end — its layers, and the gates each rule answers to (not a domain; loads when a component is read) |
 | [src/app/api/CLAUDE.md](../src/app/api/CLAUDE.md) | Route handlers — authorize, parse, delegate, answer (not a domain) |
 
@@ -57,7 +58,7 @@ The remaining domains (`catalog`, `listing`, `cart`, `identity`, `analytics`, `p
 
 - **No pasted implementation code.** Reference `path/file.ts` plus a symbol name. Exceptions: shell commands, env-var names, wire-format JSON, diagrams ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)).
 - **Every doc carries `Verified: YYYY-MM-DD`** — the date its claims were last checked against the code. Stale is tolerable; silently stale is not.
-- **Specs are feature folders**, `kebab-case`, no numbering; `spec.md` (product) + `trd.md` (technical, no code); ≤100 readable lines each ([ADR-0010](adr/0010-spec-convention.md)). Each also holds `decisions.md` (every question, who decided, why) and, for a feature with UI, `ux.md` (journeys, state matrix, copy, signed off before the TRD) ([ADR-0061](adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)).
+- **Specs are feature folders**, `kebab-case`, no numbering; `spec.md` (product) + `trd.md` (technical, no code); `spec.md` ≤100 readable lines, `trd.md` and `ux.md` uncapped ([ADR-0010](adr/0010-spec-convention.md), [ADR-0071](adr/0071-only-the-spec-is-line-capped.md)). Each also holds `decisions.md` (every question, who decided, why) and, for a feature with UI, `ux.md` (journeys, state matrix, copy, signed off before the TRD) ([ADR-0061](adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)).
 - **ADRs are immutable.** Supersede, never edit.
 
 ## Workflows

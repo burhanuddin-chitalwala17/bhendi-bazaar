@@ -52,6 +52,16 @@ export interface Fixtures {
   shippingProviderId: string;
 }
 
+/** Every paid feature on for these orgs, as a paying shop holds them (subscriptions/feature-access). */
+export async function grantAllFeatures(orgIds: readonly string[]): Promise<void> {
+  const prisma = await client();
+  const { FEATURES } = await import("@server/subscriptions/feature-access.types");
+  await prisma.orgFeature.createMany({
+    data: orgIds.flatMap((orgId) => FEATURES.map((feature) => ({ orgId, feature, enabled: true }))),
+    skipDuplicates: true,
+  });
+}
+
 /** Keys of the fixture world. Fixed, so every run reuses the same rows rather than leaking new ones. */
 export const FIXTURE_KEYS = {
   orgCode: "TEST-FIXTURE-ORG",
@@ -148,6 +158,10 @@ export async function ensureFixtures(): Promise<Fixtures> {
       select: { id: true },
     }),
   ]);
+
+  // The fixture shops stand in for a paying shop: every paid feature on (subscriptions/feature-access
+  // D3 makes an absent row locked). A suite that tests a lock makes its own org.
+  await grantAllFeatures([org.id, otherOrg.id]);
 
   return {
     orgId: location.orgId,
