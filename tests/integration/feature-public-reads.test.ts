@@ -65,8 +65,13 @@ describe.skipIf(!isDisposableDb)("feature locks on public reads (local db)", () 
   });
 
   afterAll(async () => {
+    // An undefined id is no filter to Prisma: a failed setup would otherwise delete every row.
+    if (!shopId || !productId) return;
     await prisma.adminLog.deleteMany({ where: { resourceId: shopId } });
     await prisma.product.deleteMany({ where: { id: productId } });
+    const links = await prisma.orgAddress.findMany({ where: { orgId: shopId }, select: { addressId: true } });
+    await prisma.orgAddress.deleteMany({ where: { orgId: shopId } });
+    await prisma.address.deleteMany({ where: { id: { in: links.map((link) => link.addressId) } } });
     await prisma.org.deleteMany({ where: { id: shopId } });
     await prisma.user.deleteMany({ where: { id: { in: [memberId, strangerId] } } });
   });

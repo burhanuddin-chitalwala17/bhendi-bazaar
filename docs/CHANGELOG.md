@@ -12,6 +12,13 @@
 
 ## Entries
 
+## 2026-11-12 — Test: feature-public-reads cleans up its shop's pickup address
+
+- CI failed in `feature-public-reads` cleanup: deleting the shop hit `OrgAddress_orgId_fkey` (an org's addresses are
+  `Restrict`). The cleanup now deletes the shop's address links and addresses first, as `pickup-address` does, and
+  skips when setup failed, since an undefined id is no filter to Prisma.
+- Tests: full integration suite passes (96 files, 727 tests).
+
 ## 2026-11-12 — Paid-feature locks: Channels, Storefront and Image enhancement per shop [MIGRATION] [CONTRACT]
 
 - **subscriptions/feature-access**, built in one pass (owner: no separate PRs). A new `subscriptions` domain
