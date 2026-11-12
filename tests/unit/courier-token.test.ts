@@ -1,6 +1,6 @@
 /**
  * A courier update is trusted only with our shared token, checked before its body is read
- * ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/trd.md) D9, D10; spec A4, Q32).
+ * (order-fulfilment (`431ed6e7:docs/specs/own-store/order-fulfilment/trd.md`) D9, D10; spec A4, Q32).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";

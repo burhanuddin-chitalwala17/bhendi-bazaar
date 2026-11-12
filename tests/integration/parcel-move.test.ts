@@ -1,7 +1,7 @@
 /**
  * The one guarded way a parcel moves, under its order's lock, with the order's status derived
  * from its parcels in the same transaction
- * ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/trd.md) D2, D4).
+ * (order-fulfilment (`431ed6e7:docs/specs/own-store/order-fulfilment/trd.md`) D2, D4).
  *
  * Owns its fixtures, like `shipment-effects.test.ts`: a migrated schema and nothing in it.
  */

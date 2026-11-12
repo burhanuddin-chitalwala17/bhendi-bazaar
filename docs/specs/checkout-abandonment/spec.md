@@ -5,9 +5,9 @@
 - **Domain:** checkout, payments
 - **Phase:** 2 — Transaction integrity
 - **Verified:** 2026-09-16
-- **References:** [trd.md](trd.md), [ADR-0025](../../adr/0025-order-codes-are-random-not-sequential.md), [inventory-reservation](../inventory-reservation/), [payment-confirmation](../payment-confirmation/)
+- **References:** `431ed6e7:docs/specs/checkout-abandonment/trd.md`, [ADR-0025](../../adr/0025-order-codes-are-random-not-sequential.md), [inventory-reservation](../inventory-reservation/), [payment-confirmation](../payment-confirmation/)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/checkout-abandonment/trd.md`.
 
 ## What this feature is
 A checkout that is started and not paid for leaves nothing behind that anyone can see: the goods go back on sale within minutes, and the half-finished order is kept for the store's own later use rather than shown as business that happened.

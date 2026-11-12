@@ -7,7 +7,7 @@
 - **Verified:** 2026-11-02
 - **References:** [decisions.md](decisions.md), parent [marketplace-integration](../spec.md) (Q19, Q21–Q29, Q39), [marketplace-publish](../marketplace-publish/spec.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md) "Editing and creating a listing", [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md. Subfeature 6 of
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/marketplace-integration/channel-listings/trd.md`. Subfeature 6 of
 > marketplace-integration; marketplace-publish (8) sends what this one prepares.
 
 ## What this feature is

@@ -20,7 +20,7 @@ This is the home for per-feature detail. The phased status map is [../BACKLOG.md
 - **Header on each:** `Summary · Status · Domain · Phase · Verified · References`. `Summary` is one line and is the row the tables below are generated from — `npm run docs:index`; the tables are never typed by hand and `docs:check` fails while they are stale.
 - Scaffold with `/bb-sdlc spec-start <feature-name>`.
 
-A spec describes a **requirement** — what must be true. It is not a defect report: a known defect either becomes a spec (because meeting the requirement needs design) or a PR (because an ADR already states the rule). Nothing in here is a bug list, and nothing here should need deleting once the work lands — the requirement remains true afterwards, and `Status` moves to Implemented.
+A spec describes a **requirement** — what must be true. It is not a defect report: a known defect either becomes a spec (because meeting the requirement needs design) or a PR (because an ADR already states the rule). Nothing in here is a bug list, and the requirement remains true after the work lands: `Status` moves to Implemented and `spec.md` and `decisions.md` stay. `ux.md` and `trd.md` are deleted in that same commit, since the code, copy modules and tests now hold the truth; links into them become pinned git references ([ADR-0073](../adr/0073-a-shipped-feature-keeps-its-spec-and-decisions-and-drops-its-ux-and-trd.md)).
 
 ## Features
 
@@ -84,7 +84,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [multi-vendor-marketplace/org-portal-chrome](multi-vendor-marketplace/org-portal-chrome/) | Inside the portal you always see which organisation you act for and who you are, can switch, and can leave | 3 | cross-domain | ✅ Implemented — PR-31, corrected in PR-32 |
 | [multi-vendor-marketplace/org-team](multi-vendor-marketplace/org-team/) | An organisation's people can be listed, added, given a role, and removed | 3 | catalog, identity | Not drafted — scope agreed, requirements provisional, no TRD yet |
 | [multi-vendor-marketplace/organisations-and-membership](multi-vendor-marketplace/organisations-and-membership/) | A vendor is an organisation with people in it; a person may belong to several | 3 | catalog, identity | ✅ Implemented — PR-23 (rename) and PR-24 (membership) |
-| [multi-vendor-marketplace/portal-separation](multi-vendor-marketplace/portal-separation/) | Three route groups for three audiences, and one authorization model that tells them apart | 3 | cross-domain | ✅ Implemented — see trd.md; requirements below were held to |
+| [multi-vendor-marketplace/portal-separation](multi-vendor-marketplace/portal-separation/) | Three route groups for three audiences, and one authorization model that tells them apart | 3 | cross-domain | ✅ Implemented; requirements below were held to |
 | [multi-vendor-marketplace/stock-locations-and-allocation](multi-vendor-marketplace/stock-locations-and-allocation/) | Stock is known per pickup location, and an order ships from wherever its stock actually is | 3 | catalog, shipping, checkout | ✅ Implemented (PR-45..49; rename PR-24..28 and reservation PR-40 as prerequisites) |
 | [org-storefront/org-handle](org-storefront/org-handle/) | Every organisation gets a short, readable name that can appear in a URL | 9 | catalog | ✅ Implemented |
 | [org-storefront/org-withdrawal](org-storefront/org-withdrawal/) | One switch takes an organisation and all its goods off the platform, and one puts it back | 9 | catalog, reaching into cart, checkout, bidding, promotions | ✅ Implemented |

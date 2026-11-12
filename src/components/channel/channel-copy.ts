@@ -4,7 +4,7 @@ import { CHANNEL, type Channel } from "@server/shared/channels";
 
 /**
  * Every string the Channels page shows, as signed off in
- * docs/specs/marketplace-integration/channel-connectors/ux.md. Edit there first, then here.
+ * 431ed6e7:docs/specs/marketplace-integration/channel-connectors/ux.md. This file is now the source (ADR-0073).
  */
 
 const DAY_MONTH_YEAR: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };

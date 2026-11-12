@@ -5,9 +5,9 @@
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-01
-- **References:** [trd.md](trd.md), [parent spec](../spec.md), [ADR-0043](../../../adr/0043-a-variant-is-a-product-in-a-family.md), [media-library](../../media-library/)
+- **References:** `431ed6e7:docs/specs/listing-vocabulary/variants/trd.md`, [parent spec](../spec.md), [ADR-0043](../../../adr/0043-a-variant-is-a-product-in-a-family.md), [media-library](../../media-library/)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/listing-vocabulary/variants/trd.md`.
 
 ## What this feature is
 
@@ -42,7 +42,7 @@ not colours, which is why what varies cannot be fixed in advance — it belongs 
 ## Hazards this feature must answer
 
 Each is a bar the design must clear rather than a question for the owner, and names the
-[trd.md](trd.md) decision that answers it.
+`431ed6e7:docs/specs/listing-vocabulary/variants/trd.md` decision that answers it.
 
 - **"Products" stops meaning one thing.** Twenty abayas in five colours is a hundred rows. A
   dashboard reading "Products: 100" tells the shop it has a hundred abayas, which is false. The

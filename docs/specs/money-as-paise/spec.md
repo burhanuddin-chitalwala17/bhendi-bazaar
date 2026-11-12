@@ -5,9 +5,9 @@
 - **Domain:** cross-domain
 - **Phase:** 2 — Transaction integrity
 - **Verified:** 2026-08-03
-- **References:** [trd.md](trd.md), [ADR-0004](../../adr/0004-money-as-integer-paise.md)
+- **References:** `431ed6e7:docs/specs/money-as-paise/trd.md`, [ADR-0004](../../adr/0004-money-as-integer-paise.md)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/money-as-paise/trd.md`.
 
 ## What this feature is
 Every amount the store displays, stores, charges, and reports is the same amount, exactly.

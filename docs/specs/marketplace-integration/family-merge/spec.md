@@ -7,7 +7,7 @@
 - **Verified:** 2026-10-29
 - **References:** [decisions.md](decisions.md), parent [marketplace-integration](../spec.md) (Q43), [product-merge](../product-merge/) (Q2), [marketplace-facts](../marketplace-facts/), [variants](../../listing-vocabulary/variants/), [ADR-0043](../../../adr/0043-a-variant-is-a-product-in-a-family.md), [ADR-0051](../../../adr/0051-a-products-facts-are-one-json-column-each-entry-carrying-its-origin.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md. Subfeature 5 of
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/marketplace-integration/family-merge/trd.md`. Subfeature 5 of
 > marketplace-integration.
 
 ## What this feature is

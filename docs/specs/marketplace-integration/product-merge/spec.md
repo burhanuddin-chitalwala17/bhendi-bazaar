@@ -7,7 +7,7 @@
 - **Verified:** 2026-10-21
 - **References:** [decisions.md](decisions.md), parent [marketplace-integration](../spec.md) and its [decisions](../decisions.md), [channel-import](../channel-import/), [ADR-0029](../../../adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md), [ADR-0043](../../../adr/0043-a-variant-is-a-product-in-a-family.md), TRACKER F-013
 
-> Requirements and product approach only. Technical approach lives in trd.md. Subfeature 3 of
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/marketplace-integration/product-merge/trd.md`. Subfeature 3 of
 > marketplace-integration.
 
 ## What this feature is

@@ -5,7 +5,7 @@
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts
 - **Verified:** 2026-09-19
-- **References:** [../spec.md](../spec.md) (programme), [../trd.md](../trd.md) D8/D9, [storefront-pages](../storefront-pages/), [home-banners](../../home-banners/), [image-delivery](../../image-delivery/), [ADR-0022](../../../adr/0022-design-decisions-go-through-tokens.md), [ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md), [ADR-0026](../../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0028](../../../adr/0028-images-live-in-cloudflare-r2.md)
+- **References:** [../spec.md](../spec.md) (programme), `431ed6e7:docs/specs/org-storefront/trd.md` D8/D9, [storefront-pages](../storefront-pages/), [home-banners](../../home-banners/), [image-delivery](../../image-delivery/), [ADR-0022](../../../adr/0022-design-decisions-go-through-tokens.md), [ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md), [ADR-0026](../../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0028](../../../adr/0028-images-live-in-cloudflare-r2.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 
@@ -62,7 +62,7 @@ sellers, and the seller who most needs an online shop is the one least able to w
 
 ## Out of scope (this feature)
 
-- Arranging sections, choosing layouts, or anything resembling a page builder ([../trd.md](../trd.md) D8).
+- Arranging sections, choosing layouts, or anything resembling a page builder (`431ed6e7:docs/specs/org-storefront/trd.md` D8).
 - Free-form colour, fonts or spacing. One accent, from the declared palette; every other axis stays as [ADR-0022](../../../adr/0022-design-decisions-go-through-tokens.md) sets it.
 - Uploaded video. A video is an embedded reference ([ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md)) if it appears at all.
 - Scheduling a banner to run between two dates. Orgs put one up and take it down; time-boxed campaigns are what [promotions](../../promotions/) is for.

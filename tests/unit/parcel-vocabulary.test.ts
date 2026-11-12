@@ -1,6 +1,6 @@
 /**
  * One parcel vocabulary, and the order's status read off it
- * ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/trd.md) D1, D4).
+ * (order-fulfilment (`431ed6e7:docs/specs/own-store/order-fulfilment/trd.md`) D1, D4).
  */
 import { describe, expect, it } from "vitest";
 

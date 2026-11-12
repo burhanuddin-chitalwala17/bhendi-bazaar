@@ -1,6 +1,6 @@
 /**
  * Every string the "Facts from {marketplace}" card, its Choose sheet and the Ask the admin sheet
- * show, as signed off in docs/specs/marketplace-integration/marketplace-facts/ux.md. Edit there first.
+ * show, as signed off in 431ed6e7:docs/specs/marketplace-integration/marketplace-facts/ux.md. This file is now the source (ADR-0073).
  */
 
 const MONTH_MS = 30 * 24 * 60 * 60_000;

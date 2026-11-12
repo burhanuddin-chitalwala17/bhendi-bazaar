@@ -5,9 +5,9 @@
 - **Domain:** content (enhancement), reading catalog (assets); runs on the worker
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-28
-- **References:** [trd.md](trd.md), [media-library](../media-library/) (R3, R8, D6, D11), [renditions](../media-library/renditions/), [worker-foundation](../worker-foundation/), [ADR-0038](../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0028](../../adr/0028-images-live-in-cloudflare-r2.md)
+- **References:** `431ed6e7:docs/specs/image-enhancement/trd.md`, [media-library](../media-library/) (R3, R8, D6, D11), [renditions](../media-library/renditions/), [worker-foundation](../worker-foundation/), [ADR-0038](../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0028](../../adr/0028-images-live-in-cloudflare-r2.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/image-enhancement/trd.md`.
 
 ## What this feature is
 

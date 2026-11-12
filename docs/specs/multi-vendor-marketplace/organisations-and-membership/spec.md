@@ -5,9 +5,9 @@
 - **Domain:** catalog, identity
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-08
-- **References:** [trd.md](trd.md), [../spec.md](../spec.md), [../data-model.md](../data-model.md), [../consumer-inventory.md](../consumer-inventory.md)
+- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/organisations-and-membership/trd.md`, [../spec.md](../spec.md), [../data-model.md](../data-model.md), `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/multi-vendor-marketplace/organisations-and-membership/trd.md`.
 
 ## What this feature is
 A vendor is an organisation with people in it, rather than a record an admin types on someone's behalf.

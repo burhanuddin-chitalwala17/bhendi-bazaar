@@ -5,9 +5,9 @@
 - **Domain:** catalog (enforcement point in checkout)
 - **Phase:** 6 — Catalogue richness
 - **Verified:** 2026-09-16
-- **References:** [trd.md](trd.md), [ADR-0020](../../adr/0020-money-bearing-records-never-cascade.md), [ADR-0023](../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [ADR-0029](../../adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md), CHANGELOG PR-112
+- **References:** `431ed6e7:docs/specs/product-archive/trd.md`, [ADR-0020](../../adr/0020-money-bearing-records-never-cascade.md), [ADR-0023](../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [ADR-0029](../../adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md), CHANGELOG PR-112
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/product-archive/trd.md`.
 
 ## What this feature is
 
@@ -63,4 +63,4 @@ Named here so the technical approach cannot quietly skip them.
 - Scheduled or timed archiving — "off sale from Tuesday". Archiving is immediate.
 - Recovering products deleted before this feature existed; there is nothing to recover them from.
 - Variant-level archiving (a single size or colour off sale) — that needs variants to be first-class rows first.
-- Bulk archiving from the catalogue upload ([bulk-catalog-upload](../bulk-catalog-upload/)). What an upload does when its SKU matches an archived product is recorded as an open question in [trd.md](trd.md).
+- Bulk archiving from the catalogue upload ([bulk-catalog-upload](../bulk-catalog-upload/)). What an upload does when its SKU matches an archived product is recorded as an open question in `431ed6e7:docs/specs/product-archive/trd.md`.

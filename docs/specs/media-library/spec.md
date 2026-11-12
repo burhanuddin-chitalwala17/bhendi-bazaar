@@ -5,9 +5,9 @@
 - **Domain:** catalog (assets, slots), content (renditions, capture checks)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-29
-- **References:** [trd.md](trd.md), [renditions](renditions/) (subfeature), [image-delivery](../image-delivery/), [product-video](../product-video/), [bulk-catalog-upload](../bulk-catalog-upload/), [ADR-0026](../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0027](../../adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md), [ADR-0028](../../adr/0028-images-live-in-cloudflare-r2.md), [ADR-0032](../../adr/0032-records-people-authored-are-retired-not-deleted.md)
+- **References:** `431ed6e7:docs/specs/media-library/trd.md`, [renditions](renditions/) (subfeature), [image-delivery](../image-delivery/), [product-video](../product-video/), [bulk-catalog-upload](../bulk-catalog-upload/), [ADR-0026](../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0027](../../adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md), [ADR-0028](../../adr/0028-images-live-in-cloudflare-r2.md), [ADR-0032](../../adr/0032-records-people-authored-are-retired-not-deleted.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/media-library/trd.md`.
 
 ## What this feature is
 

@@ -5,9 +5,9 @@
 - **Domain:** catalog, reading from checkout for the verified badge
 - **Phase:** —
 - **Verified:** 2026-09-23
-- **References:** [trd.md](trd.md), [review-media](review-media/), [seamless-sign-in](../seamless-sign-in/), [rate-limiting](../rate-limiting/), [ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0022](../../adr/0022-design-decisions-go-through-tokens.md), [ADR-0032](../../adr/0032-records-people-authored-are-retired-not-deleted.md)
+- **References:** `431ed6e7:docs/specs/product-reviews/trd.md`, [review-media](review-media/), [seamless-sign-in](../seamless-sign-in/), [rate-limiting](../rate-limiting/), [ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0022](../../adr/0022-design-decisions-go-through-tokens.md), [ADR-0032](../../adr/0032-records-people-authored-are-retired-not-deleted.md)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/product-reviews/trd.md`.
 
 ## What this feature is
 
@@ -161,7 +161,7 @@ org's page.
   and the first instinct — recompute on every write and every moderation — buys a second
   place the truth can be wrong, plus a backfill for the rows already wrong. How many
   people liked a product is a question about its reviews, not a fact about the product.
-  [trd.md](trd.md) D9 carries the migration and its cost, and D4 the query that replaces
+  `431ed6e7:docs/specs/product-reviews/trd.md` D9 carries the migration and its cost, and D4 the query that replaces
   the columns.
 
 ## Out of scope (this feature)

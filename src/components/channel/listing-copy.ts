@@ -9,7 +9,7 @@ import {
 
 /**
  * Every string the Listings page, the card's reading line and the product's "On marketplaces" block
- * show, as signed off in docs/specs/marketplace-integration/channel-import/ux.md. Edit there first.
+ * show, as signed off in 431ed6e7:docs/specs/marketplace-integration/channel-import/ux.md. This file is now the source (ADR-0073).
  */
 
 /** A read older than this reads as stale (ux.md "Stale"). */

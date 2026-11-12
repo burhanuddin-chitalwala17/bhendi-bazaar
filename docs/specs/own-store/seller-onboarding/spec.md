@@ -5,9 +5,9 @@
 - **Domain:** cross-domain — catalog (org, onboarding facts, locations, reviews), analytics (home numbers), front end
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-11-01
-- **References:** [decisions.md](decisions.md), [ux.md](ux.md), [own-store](../spec.md) (Q12, Q13, Q14), [org-profile](../org-profile/) (the fields this flow asks), [seller-profile](../../seller-profile/) (R5, R7), [org-onboarding](../../multi-vendor-marketplace/org-onboarding/), [org-portal-chrome](../../multi-vendor-marketplace/org-portal-chrome/), [ADR-0016](../../../adr/0016-mobile-app-shell.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
+- **References:** [decisions.md](decisions.md), `431ed6e7:docs/specs/own-store/seller-onboarding/ux.md`, [own-store](../spec.md) (Q12, Q13, Q14), [org-profile](../org-profile/) (the fields this flow asks), [seller-profile](../../seller-profile/) (R5, R7), [org-onboarding](../../multi-vendor-marketplace/org-onboarding/), [org-portal-chrome](../../multi-vendor-marketplace/org-portal-chrome/), [ADR-0016](../../../adr/0016-mobile-app-shell.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md (written after UX sign-off).
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/own-store/seller-onboarding/trd.md`.
 
 ## What this feature is
 Vertical 5 of own-store. From "Create shop" to the first WhatsApp share in minutes: a short create

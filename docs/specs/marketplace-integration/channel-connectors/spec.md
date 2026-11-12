@@ -5,9 +5,9 @@
 - **Domain:** channels (new)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-21
-- **References:** [decisions.md](decisions.md), [ux.md](ux.md), [trd.md](trd.md), parent [marketplace-integration](../spec.md) and its [decisions](../decisions.md), [ADR-0041](../../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md#connecting-a-seller-what-the-two-apis-actually-do), TRACKER F-013, F-014
+- **References:** [decisions.md](decisions.md), `431ed6e7:docs/specs/marketplace-integration/channel-connectors/ux.md`, `431ed6e7:docs/specs/marketplace-integration/channel-connectors/trd.md`, parent [marketplace-integration](../spec.md) and its [decisions](../decisions.md), [ADR-0041](../../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md#connecting-a-seller-what-the-two-apis-actually-do), TRACKER F-013, F-014
 
-> Requirements and product approach only. Technical approach lives in trd.md. Subfeature 1 of
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/marketplace-integration/channel-connectors/trd.md`. Subfeature 1 of
 > marketplace-integration, and the trial of [ADR-0061](../../../adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md).
 
 ## What this feature is

@@ -7,7 +7,7 @@
 - **Verified:** 2026-10-21
 - **References:** [decisions.md](decisions.md), parent [marketplace-integration](../spec.md) and its [decisions](../decisions.md), [channel-connectors](../channel-connectors/), [INTEGRATIONS.md](../../../INTEGRATIONS.md#connecting-a-seller-what-the-two-apis-actually-do), TRACKER F-013, F-014
 
-> Requirements and product approach only. Technical approach lives in trd.md. Subfeature 2 of
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/marketplace-integration/channel-import/trd.md`. Subfeature 2 of
 > marketplace-integration.
 
 ## What this feature is

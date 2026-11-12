@@ -4,7 +4,7 @@
 - **Domain:** cross-domain (catalog leads)
 - **Phase:** 10 — Discoverability
 - **Verified:** 2026-09-19
-- **References:** [spec.md](spec.md), [ADR-0018](../../adr/0018-one-effective-price-function.md), [ADR-0023](../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [ADR-0009](../../adr/0009-docs-reference-code-never-copy-it.md), [org-storefront/trd.md](../org-storefront/trd.md)
+- **References:** [spec.md](spec.md), [ADR-0018](../../adr/0018-one-effective-price-function.md), [ADR-0023](../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [ADR-0009](../../adr/0009-docs-reference-code-never-copy-it.md), org-storefront/trd.md (`431ed6e7:docs/specs/org-storefront/trd.md`)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
 
@@ -122,4 +122,4 @@ a rich result pointing at a page with a duplicate title wastes the strongest sig
   not this feature's to fix.
 - **Whether the storefront projection needs its own product-level declaration**, or whether R14 means a
   storefront product page simply canonicalises to `/product/<slug>` and declares nothing. Settle with
-  [org-storefront/trd.md](../org-storefront/trd.md) before Phase 9 ships, not after.
+  org-storefront/trd.md (`431ed6e7:docs/specs/org-storefront/trd.md`) before Phase 9 ships, not after.

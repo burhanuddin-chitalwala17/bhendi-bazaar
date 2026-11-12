@@ -6,16 +6,16 @@
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-10
 - **Depends on:** portal-separation; money widgets additionally on order-and-cart-lines
-- **References:** [trd.md](trd.md), [../spec.md](../spec.md), [../portal-split.md](../portal-split.md), [order-and-cart-lines](../order-and-cart-lines/)
+- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/dashboard-widgets/trd.md`, [../spec.md](../spec.md), `431ed6e7:docs/specs/multi-vendor-marketplace/portal-split.md`, [order-and-cart-lines](../order-and-cart-lines/)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/multi-vendor-marketplace/dashboard-widgets/trd.md`.
 
 ## What this feature is
 One dashboard, assembled from widgets. Each widget declares who it is for, so what an organisation sees
 and what a platform owner sees is a declaration in one place rather than a fork in the page.
 
 ## Why it is separate
-[../portal-split.md](../portal-split.md) classifies the dashboard as serving both audiences, which would
+`431ed6e7:docs/specs/multi-vendor-marketplace/portal-split.md` classifies the dashboard as serving both audiences, which would
 otherwise mean two pages drifting apart. A widget registry makes the audience a property of the widget —
 the same instinct as declaring a closed set once ([CLAUDE.md](../../../../CLAUDE.md)). It is small, it has
 real design in it, and folding it into `portal-separation` would bloat the largest spec in the programme.

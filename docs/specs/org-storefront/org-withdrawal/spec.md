@@ -5,7 +5,7 @@
 - **Domain:** catalog, reaching into cart, checkout, bidding, promotions
 - **Phase:** 9 — Seller storefronts
 - **Verified:** 2026-09-19
-- **References:** [../spec.md](../spec.md) (programme) R13 and H9, [../trd.md](../trd.md) D9b, [ADR-0030](../../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md) decision 10, [ADR-0023](../../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [bidding](../../bidding/)
+- **References:** [../spec.md](../spec.md) (programme) R13 and H9, `431ed6e7:docs/specs/org-storefront/trd.md` D9b, [ADR-0030](../../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md) decision 10, [ADR-0023](../../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [bidding](../../bidding/)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 

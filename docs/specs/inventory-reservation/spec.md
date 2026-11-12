@@ -5,9 +5,9 @@
 - **Domain:** checkout, catalog
 - **Phase:** 2 — Transaction integrity
 - **Verified:** 2026-09-18
-- **References:** [trd.md](trd.md), [ADR-0007](../../adr/0007-conditional-stock-decrement.md)
+- **References:** `431ed6e7:docs/specs/inventory-reservation/trd.md`, [ADR-0007](../../adr/0007-conditional-stock-decrement.md)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/inventory-reservation/trd.md`.
 
 ## What this feature is
 Stock counts mean something: an item with one unit left can be bought once.

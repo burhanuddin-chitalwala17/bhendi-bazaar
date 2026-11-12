@@ -5,9 +5,9 @@
 - **Domain:** cross-domain (guards identity, payments, checkout, cart, promotions, bidding handlers)
 - **Phase:** 4 — Enforcement
 - **Verified:** 2026-10-29
-- **References:** [trd.md](trd.md), [decisions.md](decisions.md), [ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md), [CHANGELOG PR-55](../../CHANGELOG.md), [OPERATIONS.md](../../OPERATIONS.md)
+- **References:** `431ed6e7:docs/specs/rate-limiting/trd.md`, [decisions.md](decisions.md), [ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md), [CHANGELOG PR-55](../../CHANGELOG.md), [OPERATIONS.md](../../OPERATIONS.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/rate-limiting/trd.md`.
 
 ## What this feature is
 

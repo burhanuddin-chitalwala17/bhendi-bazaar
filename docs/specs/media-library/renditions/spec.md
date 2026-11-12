@@ -5,9 +5,9 @@
 - **Domain:** content, reading catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-29
-- **References:** [../spec.md](../spec.md) (media-library), [trd.md](trd.md), [ADR-0026](../../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0027](../../../adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md)
+- **References:** [../spec.md](../spec.md) (media-library), `431ed6e7:docs/specs/media-library/renditions/trd.md`, [ADR-0026](../../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0027](../../../adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/media-library/renditions/trd.md`.
 
 ## What this feature is
 

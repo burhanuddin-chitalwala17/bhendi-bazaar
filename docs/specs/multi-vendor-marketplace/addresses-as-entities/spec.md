@@ -8,7 +8,7 @@
 - **Depends on:** —
 - **References:** [../spec.md](../spec.md), [../data-model.md](../data-model.md)
 
-> Requirements and product approach only. A `trd.md` is written when this subfeature is picked up.
+> Requirements and product approach only. Its trd.md was removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/multi-vendor-marketplace/addresses-as-entities/trd.md`.
 
 ## What this feature is
 An address is a record with columns, not a field inside a JSON blob.

@@ -1,6 +1,6 @@
 // A category's shot list is stored as JSON and resolved up the tree in code, so the shape
 // is only as trustworthy as the schema that parses it and the walk that finds it
-// (docs/specs/media-library/trd.md D4). Both are pinned here.
+// (431ed6e7:docs/specs/media-library/trd.md D4). Both are pinned here.
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_SHOT_LIST,

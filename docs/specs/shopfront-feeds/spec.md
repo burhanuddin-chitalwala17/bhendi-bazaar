@@ -5,9 +5,9 @@
 - **Domain:** cross-domain (catalog, listing, promotions, bidding)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-14
-- **References:** [trd.md](trd.md), [channel-registry](../channel-registry/), [seo](../seo/), [ADR-0018](../../adr/0018-one-effective-price-function.md), [ADR-0023](../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)
+- **References:** `431ed6e7:docs/specs/shopfront-feeds/trd.md`, [channel-registry](../channel-registry/), [seo](../seo/), [ADR-0018](../../adr/0018-one-effective-price-function.md), [ADR-0023](../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/shopfront-feeds/trd.md`.
 
 ## What this feature is
 A product feed per shopfront channel: a file at a fixed address on our site that Google, or Meta,

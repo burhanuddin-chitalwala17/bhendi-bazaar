@@ -2,7 +2,7 @@
 
 - **Status:** Draft — all six open items closed 2026-08-08
 - **Verified:** 2026-08-08
-- **References:** [spec.md](stock-locations-and-allocation/spec.md), [trd.md](stock-locations-and-allocation/trd.md), [consumer-inventory.md](consumer-inventory.md), [CONTRACTS.md](../../CONTRACTS.md)
+- **References:** [spec.md](stock-locations-and-allocation/spec.md), `431ed6e7:docs/specs/multi-vendor-marketplace/stock-locations-and-allocation/trd.md`, `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`, [CONTRACTS.md](../../CONTRACTS.md)
 
 A supporting artifact, not line-capped ([ADR-0010](../../adr/0010-spec-convention.md)). This is the target
 model, not the current schema — `prisma/schema.prisma` remains authoritative for what exists today.
@@ -145,7 +145,7 @@ erDiagram
 | `ORG_MEMBER` | `USER`↔`ORG` many-to-many. A user can operate several orgs and an org can have several operators. `role` distinguishes an owner from staff; what each may do is an authorization question this model only makes expressible. |
 | `ORDER_ITEM` | Quantity and the unit price as it stood when bought. A real FK to `PRODUCT` with `onDelete: Restrict`, so deleting a sold product fails loudly instead of orphaning a JSON blob — and per-product revenue becomes a SQL question rather than an application loop. |
 | `SHIPMENT_ITEM` | What physically went into one parcel, pointing at an `ORDER_ITEM`. This is what makes splits expressible: a line of 13 becomes 3 from the shop and 10 from the warehouse, with both halves still linked to the one thing the customer ordered. |
-| `PRODUCT_STOCK` | The `PRODUCT`↔`ORG_ADDRESS` many-to-many, named and given its payload. Quantity lives here, never on `PRODUCT`; the customer-facing figure is the sum across rows ([trd.md](stock-locations-and-allocation/trd.md) D2, D3). |
+| `PRODUCT_STOCK` | The `PRODUCT`↔`ORG_ADDRESS` many-to-many, named and given its payload. Quantity lives here, never on `PRODUCT`; the customer-facing figure is the sum across rows (`431ed6e7:docs/specs/multi-vendor-marketplace/stock-locations-and-allocation/trd.md` D2, D3). |
 | `CART_ITEM` | Quantity and the chosen size and colour need a row. Also turns the sign-in cart merge into a set operation rather than surgery on a JSON array. |
 
 ## Changed
@@ -188,4 +188,4 @@ Closed 2026-08-08. Kept so the reasoning survives the decision.
 3. **Category subtree reads** are computed in application code — load the category table, collect descendant ids, query `categoryId: { in: [...] }`. No path column, no recursive CTE, no schema addition.
 4. **Cycles prevented** on the write path, as above.
 5. **`ORDER_ITEM.unitPrice` is integer paise from birth**, so it is not migrated twice by [money-as-paise](../money-as-paise/). This is a storage and arithmetic decision only — nobody types paise into a form; the boundary converts ₹1,200.50 to `120050` on the way in and back on the way out ([ADR-0004](../../adr/0004-money-as-integer-paise.md)).
-6. **`CART_ITEM` over a JSON cart**, reversing the YAGNI position in [trd.md](stock-locations-and-allocation/trd.md) — it is the more standard and more consistent choice once everything else is relational.
+6. **`CART_ITEM` over a JSON cart**, reversing the YAGNI position in `431ed6e7:docs/specs/multi-vendor-marketplace/stock-locations-and-allocation/trd.md` — it is the more standard and more consistent choice once everything else is relational.
