@@ -1,0 +1,466 @@
+server/subscriptions/org-feature.repository.ts
+  s_e715b86ebb5c73::t_59a5edea572c15 1-53
+src/app/api/org/[orgId]/channels/[channel]/locations/route.ts
+  s_e715b86ebb5c73::t_a9f5a00970561b 8
+  s_e715b86ebb5c73::t_29e86425a3263e 16
+tests/unit/org-auth.test.ts
+  s_e715b86ebb5c73::t_a249473ea21551 15-20,34-35,52,122-146
+.claude/skills/bb-review/SKILL.md
+  s_e715b86ebb5c73::t_4f04876c7f50e3 232
+src/components/channel/listing-settle-actions.tsx
+  s_e715b86ebb5c73::t_27299ddcf4d57c 53,58,71
+  s_e715b86ebb5c73::t_ccc6499d62dfae 8,54-57,59-70,72-80
+  s_e715b86ebb5c73::t_a9f5a00970561b 16
+src/app/(org)/org/[orgId]/channels/page.tsx
+  s_e715b86ebb5c73::t_a9f5a00970561b 12
+  s_e715b86ebb5c73::t_27299ddcf4d57c 37
+  s_e715b86ebb5c73::t_76b329b764a85a 11,46
+tests/unit/storefront-closed-pages.test.ts
+  s_e715b86ebb5c73::t_207e49ada742b5 1-35
+src/components/subscriptions/subscriptions-copy.ts
+  s_e715b86ebb5c73::t_a14cfe4930f3ac 2-4,7-11,15-26,30-47,51-69
+  s_e715b86ebb5c73::t_27299ddcf4d57c 1,5-6,12-14,27-29,48-50
+src/components/org/console/org-console-copy.ts
+  s_e715b86ebb5c73::t_25389382381bd0 50
+src/lib/api-error-response.ts
+  s_e715b86ebb5c73::t_29c8e549fbaef5 8,49-54
+server/content/enhancement.service.ts
+  s_e715b86ebb5c73::t_d99580f4f2e21b 7-8,187-188
+src/components/org/media-library-grid.tsx
+  s_e715b86ebb5c73::t_b34fdb99436568 25,347-351
+  s_e715b86ebb5c73::t_27299ddcf4d57c 346
+  s_e715b86ebb5c73::t_a9f5a00970561b 31
+server/channels/listing-create.service.ts
+  s_e715b86ebb5c73::t_48644c78daab69 30,172,180,197
+src/app/api/org/[orgId]/enhancements/route.ts
+  s_e715b86ebb5c73::t_a9f5a00970561b 12
+  s_e715b86ebb5c73::t_29e86425a3263e 19
+server/channels/platform-listing.service.ts
+  s_e715b86ebb5c73::t_48644c78daab69 45,244
+src/app/api/org/[orgId]/channels/[channel]/listings/[id]/photos/retry/route.ts
+  s_e715b86ebb5c73::t_a9f5a00970561b 8
+  s_e715b86ebb5c73::t_29e86425a3263e 14
+src/components/support/contact-message-form.tsx
+  s_e715b86ebb5c73::t_25337cb411c65b 19-20,31,43
+docs/specs/README.md
+  s_e715b86ebb5c73::t_4f04876c7f50e3 14,17
+  s_e715b86ebb5c73::t_76ff2586839ca3 117
+src/components/subscriptions/plan-icon.tsx
+  s_e715b86ebb5c73::t_7b57e525079733 4,10
+  s_e715b86ebb5c73::t_8bcbc38d42acd2 1-3,5-9,11-12
+src/lib/validation/schemas/org-feature.schema.ts
+  s_e715b86ebb5c73::t_d43ae49897fb00 1-6
+src/components/subscriptions/plan-switch-row.tsx
+  s_e715b86ebb5c73::t_25389382381bd0 1-58
+docs/BACKLOG.md
+  s_e715b86ebb5c73::t_76ff2586839ca3 268
+  s_e61dfd1db14ad6::t_3d917e8a48d344 269
+src/components/shared/forms/product/ProductFactFields.tsx
+  s_e715b86ebb5c73::t_a122965837ab67 4-5,79,130-131
+docs/specs/subscriptions/feature-access/prototype.html
+  s_e61dfd1db14ad6::t_3d917e8a48d344 1-134,137-139,141,143-165,169-179,182-208,211-213,225,270-274,276-297,299-318,321,330-331,335-337,374-375
+  s_e715b86ebb5c73::t_5428380b85aa3c 135-136,142,209-210,214-224,226-269,275,298,319-320,322-329,332-334,338-373
+  s_e715b86ebb5c73::t_fe0a4c5c69a961 140,166-168,180-181
+src/app/api/org/[orgId]/channels/settle/route.ts
+  s_e715b86ebb5c73::t_a9f5a00970561b 8
+  s_e715b86ebb5c73::t_29e86425a3263e 20
+server/catalog/org-profile.repository.ts
+  s_e715b86ebb5c73::t_30fdf37f76c04d 139,143
+src/components/subscriptions/storefront-closed.tsx
+  s_e715b86ebb5c73::t_add956ef228706 15
+  s_e715b86ebb5c73::t_a96efb3f8a3489 1-14,16-32
+tests/integration/order-check-budget.test.ts
+  s_e715b86ebb5c73::t_1d04572e2af5f2 9,59,131
+src/app/api/org/[orgId]/channels/[channel]/listings/read/route.ts
+  s_e715b86ebb5c73::t_29e86425a3263e 16
+  s_e715b86ebb5c73::t_a9f5a00970561b 10
+docs/adr/0010-spec-convention.md
+  s_e715b86ebb5c73::t_4f04876c7f50e3 4
+server/catalog/product-bulk.types.ts
+  s_e715b86ebb5c73::t_bca09ca7a75ef1 64-65
+src/components/subscriptions/useLockSheet.ts
+  s_e715b86ebb5c73::t_dc05ce3c9fe6e8 1-20
+src/components/channel/marketplace-card.tsx
+  s_e715b86ebb5c73::t_22b5fffc0c96bb 10,37-38,82-83
+src/components/product/console/productsList/index.tsx
+  s_e715b86ebb5c73::t_4d178480c2b8c9 6-7,184-186,196
+  s_e715b86ebb5c73::t_27299ddcf4d57c 264
+  s_e715b86ebb5c73::t_a9f5a00970561b 25
+docs/specs/subscriptions/feature-access/ux.md
+  s_e715b86ebb5c73::t_7911a68c85cbcf 4,8-10,15-17,19-26,28-40,45-59,61-62,69-72,75,81,83,88,91,94,97-106,122,124-125,128
+  s_e61dfd1db14ad6::t_3d917e8a48d344 5
+  s_e715b86ebb5c73::t_5fbf206d9437bb 27
+  s_e61dfd1db14ad6::t_a9e334c71ce326 1-2,6-7,11-14,18,41-44,60,63-68,73-74,76-80,82,84-87,89-90,93,95-96,107-118,120-121,126-127,129-130
+  s_e715b86ebb5c73::t_feb985cdc09625 119
+  s_e715b86ebb5c73::t_22b5fffc0c96bb 123
+  s_e715b86ebb5c73::t_fe0a4c5c69a961 3,92,131
+src/app/api/admin/orgs/[id]/features/[feature]/route.ts
+  s_e715b86ebb5c73::t_d43ae49897fb00 1-23
+server/subscriptions/feature-access.types.ts
+  s_e715b86ebb5c73::t_7b57e525079733 47-57
+  s_e715b86ebb5c73::t_29c8e549fbaef5 1-46
+server/channels/channel-settle.service.ts
+  s_e715b86ebb5c73::t_48644c78daab69 35,182,388
+src/app/api/org/[orgId]/channels/[channel]/listings/[id]/link-back/route.ts
+  s_e715b86ebb5c73::t_a9f5a00970561b 8
+  s_e715b86ebb5c73::t_29e86425a3263e 14
+src/components/channel/listing-link-action.tsx
+  s_e715b86ebb5c73::t_ccc6499d62dfae 7,62-71
+  s_e715b86ebb5c73::t_a9f5a00970561b 14
+  s_e715b86ebb5c73::t_27299ddcf4d57c 61
+src/app/(main)/product/[slug]/page.tsx
+  s_e715b86ebb5c73::t_ece1b26fc6bddf 11
+  s_e715b86ebb5c73::t_49a22a791863e3 84,95
+src/components/requests/raise-request-button.tsx
+  s_e715b86ebb5c73::t_a9f5a00970561b 11
+  s_e715b86ebb5c73::t_93edd5fc30aeb6 6,26,28-31
+  s_e715b86ebb5c73::t_27299ddcf4d57c 27
+server/channels/channel-stock.service.ts
+  s_e715b86ebb5c73::t_48644c78daab69 21,243
+  s_e715b86ebb5c73::t_0885b7a294004d 88-91,215-218
+src/components/channel/product-marketplaces.tsx
+  s_e715b86ebb5c73::t_2689d28177d64c 68
+  s_e715b86ebb5c73::t_b57caf930991ad 4,71-74
+  s_e715b86ebb5c73::t_27299ddcf4d57c 70
+  s_e715b86ebb5c73::t_a9f5a00970561b 16
+src/components/org/storefront-editor.tsx
+  s_e715b86ebb5c73::t_dd32e44a9bd2db 11,112,114-120
+  s_e715b86ebb5c73::t_a9f5a00970561b 27
+  s_e715b86ebb5c73::t_27299ddcf4d57c 113
+src/components/subscriptions/features.ts
+  s_e715b86ebb5c73::t_a9f5a00970561b 1-5
+src/data-access-layer/storefront.dal.ts
+  s_e715b86ebb5c73::t_57aa50c952901a 39,256-257,261
+  s_e715b86ebb5c73::t_30fdf37f76c04d 254-255,258,262-267,269
+server/channels/CLAUDE.md
+  s_e715b86ebb5c73::t_4236234c471d51 3,24,44
+server/channels/channel-connection.service.ts
+  s_e715b86ebb5c73::t_913f37325d2d55 40,200,240,361-363,378,405-409,411,424,426,458-465
+docs/CHANGELOG.md
+  s_e715b86ebb5c73::t_4f04876c7f50e3 32-39
+  s_e715b86ebb5c73::t_fc1ebe247a0c32 3-25,31
+src/app/(store)/store/[handle]/page.tsx
+  s_e715b86ebb5c73::t_f0a76caa2eba5a 16-17,80
+  s_e715b86ebb5c73::t_0e2936aa037967 50-51
+server/channels/listing-problems.service.ts
+  s_e715b86ebb5c73::t_0aba147066075b 10,26-29
+src/components/channel/channel-card-list.tsx
+  s_e715b86ebb5c73::t_76b329b764a85a 35-36,45,91
+src/components/org/look/look-picker.tsx
+  s_e715b86ebb5c73::t_a9f5a00970561b 20
+  s_e715b86ebb5c73::t_27299ddcf4d57c 99
+  s_e715b86ebb5c73::t_8bcbc38d42acd2 19
+tests/unit/storefront-themed-routes.test.ts
+  s_e715b86ebb5c73::t_a9f5a00970561b 22-23
+src/components/subscriptions/plan-banner.tsx
+  s_e715b86ebb5c73::t_76b329b764a85a 1-2,5,9-10
+  s_e715b86ebb5c73::t_0b464b07e25239 3-4,6-8,11-17
+src/app/(org)/org/[orgId]/layout.tsx
+  s_e715b86ebb5c73::t_73b57551844997 15,35,37,79-81
+src/app/api/org/[orgId]/channels/[channel]/publish/route.ts
+  s_e715b86ebb5c73::t_a9f5a00970561b 8
+  s_e715b86ebb5c73::t_29e86425a3263e 15
+server/channels/channel-import.service.ts
+  s_e715b86ebb5c73::t_48644c78daab69 41,165,309,315,321,346,352
+prisma/migrations/20261112090000_org_feature/migration.sql
+  s_e715b86ebb5c73::t_50bf4560c723ad 1-17
+src/components/org/business/business-page.tsx
+  s_e715b86ebb5c73::t_521e165fe7faa5 80
+  s_e715b86ebb5c73::t_ec86533a9ef13c 78-79,81-86,281
+src/app/api/org/[orgId]/channels/[channel]/listings/[id]/unlink/route.ts
+  s_e715b86ebb5c73::t_29e86425a3263e 15
+  s_e715b86ebb5c73::t_a9f5a00970561b 9
+src/app/(org)/org/[orgId]/channels/[channel]/listings/page.tsx
+  s_e715b86ebb5c73::t_a9f5a00970561b 30
+  s_e715b86ebb5c73::t_36478991b1d55e 28-29,107-110
+  s_e715b86ebb5c73::t_27299ddcf4d57c 102,106
+src/components/subscriptions/talk-to-us.tsx
+  s_e715b86ebb5c73::t_25337cb411c65b 1-29
+src/components/org/shop-hub/shop-link-card.tsx
+  s_e715b86ebb5c73::t_8bcbc38d42acd2 12
+  s_e715b86ebb5c73::t_a9f5a00970561b 13
+  s_e715b86ebb5c73::t_27299ddcf4d57c 34
+src/app/api/org/[orgId]/products/[id]/listings/[channel]/pages/route.ts
+  s_e715b86ebb5c73::t_29e86425a3263e 13
+  s_e715b86ebb5c73::t_a9f5a00970561b 8
+docs/specs/subscriptions/feature-access/spec.md
+  s_e715b86ebb5c73::t_fe0a4c5c69a961 45-46,80-81
+  s_e715b86ebb5c73::t_76ff2586839ca3 4
+  s_e715b86ebb5c73::t_05a1c0c1467087 49,82
+  s_e715b86ebb5c73::t_d0f4f14ba90c3e 8
+  s_e61dfd1db14ad6::t_6f373fafbbd7d3 1-3,5-6,9-38,47-48,50-53,55-56,58,60,62,64-66,69-74,76,79,83-85,88-91
+  s_e715b86ebb5c73::t_cf4bb8e46b68ed 54,57,59,61,63
+  s_e715b86ebb5c73::t_d6f5178bce6973 7,39-44,67-68,75,77-78,86-87
+docs/ARCHITECTURE.md
+  s_e715b86ebb5c73::t_b698ffc9e349b6 41
+  s_e715b86ebb5c73::t_4236234c471d51 18,61
+  s_e715b86ebb5c73::t_eb31d09bb42c8d 3
+src/components/subscriptions/usePlanSwitch.ts
+  s_e715b86ebb5c73::t_6105c16c64971a 1-43
+server/channels/channel-facts.service.ts
+  s_e715b86ebb5c73::t_48644c78daab69 33,455,466
+server/channels/channel-types.service.ts
+  s_e715b86ebb5c73::t_99a24d4f5efc83 9,50,52-54
+src/app/(store)/store/[handle]/shop/page.tsx
+  s_e715b86ebb5c73::t_f0a76caa2eba5a 12-13,51
+  s_e715b86ebb5c73::t_0e2936aa037967 33-34
+src/components/product/product-media-manager.tsx
+  s_e715b86ebb5c73::t_b34fdb99436568 73-74,575-578,581
+  s_e715b86ebb5c73::t_a9f5a00970561b 78
+  s_e715b86ebb5c73::t_27299ddcf4d57c 816
+prisma/schema.prisma
+  s_e715b86ebb5c73::t_50bf4560c723ad 633,725,2314-2328
+docs/adr/0071-only-the-spec-is-line-capped.md
+  s_e715b86ebb5c73::t_4f04876c7f50e3 1-19
+src/app/(org)/org/[orgId]/channels/[channel]/publish/page.tsx
+  s_e715b86ebb5c73::t_95ddac56a80abc 9
+  s_e715b86ebb5c73::t_a9f5a00970561b 10
+  s_e715b86ebb5c73::t_27299ddcf4d57c 32
+docs/adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md
+  s_e715b86ebb5c73::t_4f04876c7f50e3 4
+src/components/product/console/bulk/bulk-copy.ts
+  s_e715b86ebb5c73::t_bca09ca7a75ef1 78
+src/components/CLAUDE.md
+  s_e715b86ebb5c73::t_4236234c471d51 3,46
+server/subscriptions/CLAUDE.md
+  s_e715b86ebb5c73::t_b698ffc9e349b6 1-29
+src/lib/org-auth.ts
+  s_e715b86ebb5c73::t_c7d9348db57aa7 9-10,23-24,30-34,43,62-63,69-70
+src/app/api/org/[orgId]/channels/family/route.ts
+  s_e715b86ebb5c73::t_a9f5a00970561b 8
+  s_e715b86ebb5c73::t_29e86425a3263e 20
+docs/README.md
+  s_e715b86ebb5c73::t_4f04876c7f50e3 3,61
+  s_e715b86ebb5c73::t_b698ffc9e349b6 41
+server/channels/channel-orders.service.ts
+  s_e715b86ebb5c73::t_0aba147066075b 16,57-58,60-61
+src/components/product/product-details.tsx
+  s_e715b86ebb5c73::t_49a22a791863e3 25,28,38
+  s_e715b86ebb5c73::t_c77491f5ba066b 24,26-27,39-49
+src/data-access-layer/shopfront-feed.dal.ts
+  s_e715b86ebb5c73::t_a7b47ac1c6c133 17-18,61-64
+src/app/(admin)/admin/orgs/[orgId]/page.tsx
+  s_e715b86ebb5c73::t_25389382381bd0 17,69
+  s_e715b86ebb5c73::t_feb985cdc09625 68
+tests/unit/feature-registry.test.ts
+  s_e715b86ebb5c73::t_f417476ccfe5b8 1-84
+src/app/api/org/[orgId]/channels/[channel]/listings/[id]/leave-off/route.ts
+  s_e715b86ebb5c73::t_29e86425a3263e 18
+  s_e715b86ebb5c73::t_a9f5a00970561b 10
+src/components/subscriptions/locked-action.tsx
+  s_e715b86ebb5c73::t_0b464b07e25239 1-6,8,10-32,35-44
+  s_e715b86ebb5c73::t_7b57e525079733 7,34
+  s_e715b86ebb5c73::t_dc05ce3c9fe6e8 9,33
+src/app/(org)/org/[orgId]/page.tsx
+  s_e715b86ebb5c73::t_27299ddcf4d57c 118
+  s_e715b86ebb5c73::t_57aa50c952901a 49,54,56
+  s_e715b86ebb5c73::t_a9f5a00970561b 28
+  s_e715b86ebb5c73::t_8bcbc38d42acd2 27
+src/components/subscriptions/plan-context.tsx
+  s_e715b86ebb5c73::t_73b57551844997 1-25
+src/components/channel/read-again-button.tsx
+  s_e715b86ebb5c73::t_ccc6499d62dfae 7,28-36
+  s_e715b86ebb5c73::t_a9f5a00970561b 13
+  s_e715b86ebb5c73::t_27299ddcf4d57c 27
+tests/unit/feature-locked-envelope.test.ts
+  s_e715b86ebb5c73::t_d8bf5fa3ccad14 1-15
+docs/CONTRACTS.md
+  s_e715b86ebb5c73::t_d5df2b4b73a5eb 52-56,753-762
+  s_e715b86ebb5c73::t_4236234c471d51 3
+src/app/(org)/org/[orgId]/products/[id]/listings/[channel]/new/page.tsx
+  s_e715b86ebb5c73::t_27299ddcf4d57c 32
+  s_e715b86ebb5c73::t_521e165fe7faa5 33-36
+  s_e715b86ebb5c73::t_95ddac56a80abc 9-10,27-31,37-38
+  s_e715b86ebb5c73::t_a9f5a00970561b 11
+server/channels/listing-publish.service.ts
+  s_e715b86ebb5c73::t_48644c78daab69 45,215,253,300-303
+  s_e715b86ebb5c73::t_0aba147066075b 400-401,403
+  s_e715b86ebb5c73::t_bca09ca7a75ef1 313,315-318
+src/components/product/gallery-rows.tsx
+  s_e715b86ebb5c73::t_b34fdb99436568 4,59,202,336,349-353
+server/channels/channel-location.service.ts
+  s_e715b86ebb5c73::t_48644c78daab69 13,63
+src/components/org/home/home-share.tsx
+  s_e715b86ebb5c73::t_27299ddcf4d57c 52
+  s_e715b86ebb5c73::t_8bcbc38d42acd2 14
+  s_e715b86ebb5c73::t_a9f5a00970561b 15
+src/app/api/org/[orgId]/channels/[channel]/listings/[id]/facts/route.ts
+  s_e715b86ebb5c73::t_29e86425a3263e 17
+  s_e715b86ebb5c73::t_a9f5a00970561b 9
+server/channels/channel-listing.repository.ts
+  s_e715b86ebb5c73::t_0885b7a294004d 419
+src/data-access-layer/storefront-access.dal.ts
+  s_e715b86ebb5c73::t_ece1b26fc6bddf 1,3,5-17,21-31,33-35
+  s_e715b86ebb5c73::t_f0a76caa2eba5a 46-50
+  s_e715b86ebb5c73::t_57aa50c952901a 4,18-20,32
+  s_e715b86ebb5c73::t_0e2936aa037967 2,36-45
+src/components/subscriptions/planApiClient.ts
+  s_e715b86ebb5c73::t_a14cfe4930f3ac 1-13
+src/components/subscriptions/storefront-team-banner.tsx
+  s_e715b86ebb5c73::t_add956ef228706 1-2,4-12,14-16
+  s_e715b86ebb5c73::t_27299ddcf4d57c 3,13
+docs/adr/README.md
+  s_e715b86ebb5c73::t_4f04876c7f50e3 51,101,109
+src/app/(main)/layout.tsx
+  s_e715b86ebb5c73::t_521e165fe7faa5 8,51-53
+tests/unit/module-boundaries.test.ts
+  s_e715b86ebb5c73::t_b698ffc9e349b6 105-106
+src/components/subscriptions/locked-sheet.tsx
+  s_e715b86ebb5c73::t_0b464b07e25239 1-36
+src/components/subscriptions/admin-org-plan.tsx
+  s_e715b86ebb5c73::t_25389382381bd0 1-11,13-21,23-27
+  s_e715b86ebb5c73::t_feb985cdc09625 12
+  s_e715b86ebb5c73::t_7b57e525079733 22
+src/components/channel/retry-photos-button.tsx
+  s_e715b86ebb5c73::t_27299ddcf4d57c 24
+  s_e715b86ebb5c73::t_a9f5a00970561b 13
+  s_e715b86ebb5c73::t_ccc6499d62dfae 7,25-28
+tests/integration/marketplace-publish.test.ts
+  s_e715b86ebb5c73::t_1d04572e2af5f2 171-174
+src/app/(admin)/admin/enhancements/page.tsx
+  s_e715b86ebb5c73::t_360780188fc75a 17,19,30-31,80
+  s_e715b86ebb5c73::t_a9f5a00970561b 18
+tests/helpers/test-db.ts
+  s_e715b86ebb5c73::t_231a1f6e3a814d 55-64,162-164
+docs/CONVENTIONS.md
+  s_e715b86ebb5c73::t_4f04876c7f50e3 3,15
+src/components/org/business/business-copy.ts
+  s_e715b86ebb5c73::t_ec86533a9ef13c 28,154
+src/app/api/org/[orgId]/channels/[channel]/listings/dismiss-group/route.ts
+  s_e715b86ebb5c73::t_29e86425a3263e 16
+  s_e715b86ebb5c73::t_a9f5a00970561b 8
+src/app/api/CLAUDE.md
+  s_e715b86ebb5c73::t_4236234c471d51 3,12
+src/app/api/org/[orgId]/channels/[channel]/families/[familyId]/route.ts
+  s_e715b86ebb5c73::t_a9f5a00970561b 8
+  s_e715b86ebb5c73::t_29e86425a3263e 13
+tests/integration/feature-enforcement.test.ts
+  s_e715b86ebb5c73::t_37b1e7e66eeeb3 102-104,108-109,112-116
+  s_e715b86ebb5c73::t_8df099b99fb98c 105-107,110-111,117-156
+  s_e715b86ebb5c73::t_914e1d29886157 1-101,157-173
+src/app/api/org/[orgId]/channels/route.ts
+  s_e715b86ebb5c73::t_ddefdebae48017 12,17-18
+  s_e715b86ebb5c73::t_a9f5a00970561b 13
+src/components/org/share/share-shop-sheet.tsx
+  s_e715b86ebb5c73::t_7b57e525079733 52,56
+  s_e715b86ebb5c73::t_27299ddcf4d57c 58
+  s_e715b86ebb5c73::t_a9f5a00970561b 17
+  s_e715b86ebb5c73::t_b3c764db8a219f 14-16,49-51,53-55,57,59-62
+server/subscriptions/feature-registry.ts
+  s_e715b86ebb5c73::t_f0e125b4fd61c6 41-43
+  s_e715b86ebb5c73::t_ddefdebae48017 55
+  s_e715b86ebb5c73::t_5fbf206d9437bb 79-81
+  s_e715b86ebb5c73::t_6704511a61cb47 1-40,44-54,56-78,82-153
+docs/specs/subscriptions/feature-access/decisions.md
+  s_e61dfd1db14ad6::t_42bc88ee72812b 1-10,20,43-47
+  s_e715b86ebb5c73::t_5fbf206d9437bb 41
+  s_e715b86ebb5c73::t_8df099b99fb98c 42
+  s_e715b86ebb5c73::t_4ff697811fd1b7 11-19,21-40
+server/shared/domain-error.ts
+  s_e715b86ebb5c73::t_29c8e549fbaef5 76-88
+src/components/channel/review-publish.tsx
+  s_e715b86ebb5c73::t_a9f5a00970561b 20
+  s_e715b86ebb5c73::t_b57caf930991ad 10,89-92
+  s_e715b86ebb5c73::t_27299ddcf4d57c 88
+docs/specs/subscriptions/feature-access/trd.md
+  s_e715b86ebb5c73::t_76ff2586839ca3 3
+  s_e715b86ebb5c73::t_fc1ebe247a0c32 368-400
+  s_e715b86ebb5c73::t_d96aae8e14add3 255
+  s_e715b86ebb5c73::t_f94bee1542e652 7,12,14-37,39-56,59-95,97-195,197-231,233,238-254,256-288,291-292,294-302,305-312,314-315,317-322,325-353
+  s_e715b86ebb5c73::t_49a22a791863e3 196
+  s_e715b86ebb5c73::t_92748e4b67b474 293
+  s_e715b86ebb5c73::t_2226cc8526c140 4
+  s_e715b86ebb5c73::t_cf4bb8e46b68ed 232,355-366
+  s_e715b86ebb5c73::t_273b3ded17f340 1-2,5-6,8-11,13,38,57-58,96,234-237,289-290,303-304,313,316,323-324,354,367,401-402
+server/channels/channel-connection.repository.ts
+  s_e715b86ebb5c73::t_0885b7a294004d 352-353
+src/data-access-layer/org/home.dal.ts
+  s_e715b86ebb5c73::t_540e06c45023b6 75-76,78,84-87
+src/app/api/org/[orgId]/channels/[channel]/listings/[id]/bring-back/route.ts
+  s_e715b86ebb5c73::t_29e86425a3263e 13
+  s_e715b86ebb5c73::t_a9f5a00970561b 7
+tests/integration/feature-public-reads.test.ts
+  s_e715b86ebb5c73::t_0f46a051ca0873 1-13,16-110
+src/components/channel/stock-sync-actions.tsx
+  s_e715b86ebb5c73::t_27299ddcf4d57c 40
+  s_e715b86ebb5c73::t_ccc6499d62dfae 7,32,37-39,41-42
+  s_e715b86ebb5c73::t_a9f5a00970561b 14
+src/app/(store)/store/[handle]/about/page.tsx
+  s_e715b86ebb5c73::t_f0a76caa2eba5a 8-9,40-42,81-82
+src/components/support/contact-launcher.tsx
+  s_e715b86ebb5c73::t_25337cb411c65b 17-18,22-23,31,42
+src/components/subscriptions/lock-refusal.ts
+  s_e715b86ebb5c73::t_0b464b07e25239 1-12
+src/components/channel/marketplace-card-actions.tsx
+  s_e715b86ebb5c73::t_27299ddcf4d57c 59,128
+  s_e715b86ebb5c73::t_3ee6fab7dda37e 8,57,60-73,129-137
+  s_e715b86ebb5c73::t_a9f5a00970561b 18
+src/components/support/contact-sheet.tsx
+  s_e715b86ebb5c73::t_25337cb411c65b 28-29,70,98,146
+src/app/(store)/store/[handle]/layout.tsx
+  s_e715b86ebb5c73::t_a7b39a90360685 6-7,26,28,30-31
+  s_e715b86ebb5c73::t_f0a76caa2eba5a 24-25,27
+server/subscriptions/feature-access.service.ts
+  s_e715b86ebb5c73::t_7b57e525079733 10,34
+  s_e715b86ebb5c73::t_521e165fe7faa5 1,85-89
+  s_e715b86ebb5c73::t_59a5edea572c15 2-9,11-33,35-84,90-99
+src/lib/admin-auth.ts
+  s_e715b86ebb5c73::t_57aa50c952901a 103-107
+server/channels/channel-family.service.ts
+  s_e715b86ebb5c73::t_48644c78daab69 35,238
+src/app/api/org/[orgId]/channels/[channel]/connect/route.ts
+  s_e715b86ebb5c73::t_a9f5a00970561b 10
+  s_e715b86ebb5c73::t_29e86425a3263e 21
+server/channels/channel-plan.ts
+  s_e715b86ebb5c73::t_913f37325d2d55 1-13
+src/app/api/org/[orgId]/channels/[channel]/connection/check/route.ts
+  s_e715b86ebb5c73::t_a9f5a00970561b 10
+  s_e715b86ebb5c73::t_29e86425a3263e 15
+.claude/skills/bb-sdlc/SKILL.md
+  s_e715b86ebb5c73::t_4f04876c7f50e3 171,223
+tests/unit/feature-locks-ui.test.tsx
+  s_e715b86ebb5c73::t_1e9431fca2bbf2 1-79
+src/app/(org)/org/[orgId]/orders/page.tsx
+  s_e715b86ebb5c73::t_4d178480c2b8c9 17-18,67-71
+  s_e715b86ebb5c73::t_a9f5a00970561b 22
+  s_e715b86ebb5c73::t_27299ddcf4d57c 66
+server/channels/channels.jobs.ts
+  s_e715b86ebb5c73::t_67e7fb311c984c 31-41,50,114,125,135,186
+src/components/org/console/AdminOrgTabs.tsx
+  s_e715b86ebb5c73::t_25389382381bd0 16
+tests/unit/enhancement-service.test.ts
+  s_e715b86ebb5c73::t_f0e125b4fd61c6 51-52
+src/components/channel/feed-toggle.tsx
+  s_e715b86ebb5c73::t_ddefdebae48017 7,24,35-37,39-40
+  s_e715b86ebb5c73::t_a9f5a00970561b 13
+  s_e715b86ebb5c73::t_27299ddcf4d57c 38
+CLAUDE.md
+  s_e715b86ebb5c73::t_4f04876c7f50e3 3,98
+  s_e715b86ebb5c73::t_b698ffc9e349b6 45
+tests/integration/feature-access.test.ts
+  s_e715b86ebb5c73::t_d8bf5fa3ccad14 1-79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "59138ba68e4abd7cdfd8acbec28ff305f875f177",
+  "prompts": {},
+  "sessions": {
+    "s_e61dfd1db14ad6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "18e051d6-2197-4710-b3aa-4734987fb513",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    },
+    "s_e715b86ebb5c73": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "505cc552-9a3f-4d49-86b6-522252a5d0b1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
