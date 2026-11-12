@@ -8,6 +8,8 @@ import { isConnectResult, isMarketplaceChannel } from "@server/channels/channel-
 import { CHANNEL_LABELS } from "@server/shared/channels";
 import { ORG_CHANNELS_PAGE_COPY } from "@/components/org/pages-copy";
 import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
+import { PlanBanner } from "@/components/subscriptions/plan-banner";
+import { FEATURE } from "@/components/subscriptions/features";
 
 export const metadata = {
   title: ORG_PAGE_TITLES.channels,
@@ -32,6 +34,7 @@ export default async function OrgChannelsPage({
   return (
     <div className="space-y-6">
       <PageHeader help="channels" title={ORG_CHANNELS_PAGE_COPY.title} description={PAGE_INTRO} />
+      {!scope.features.channels && <PlanBanner feature={FEATURE.CHANNELS} />}
       {outcome && (
         <ConnectResultNote
           orgId={scope.orgId}
@@ -40,7 +43,7 @@ export default async function OrgChannelsPage({
           result={outcome.result}
         />
       )}
-      <ChannelCardList orgId={scope.orgId} cards={overview.cards} storePath={storePath} storeLabel={storeLabel} />
+      <ChannelCardList orgId={scope.orgId} cards={overview.cards} storePath={storePath} storeLabel={storeLabel} channelsHeld={scope.features.channels} />
     </div>
   );
 }

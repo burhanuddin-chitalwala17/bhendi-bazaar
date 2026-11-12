@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## 2026-11-12 — Paid-feature locks: Channels, Storefront and Image enhancement per shop [MIGRATION] [CONTRACT]
+
+- **subscriptions/feature-access**, built in one pass (owner: no separate PRs). A new `subscriptions` domain
+  owns `OrgFeature` (one row per shop and feature; an absent row is locked) and the one check every domain
+  asks. The home brand (`HOME_BRAND_ORG_ID`) holds everything with no row. **Every shop but the home brand
+  starts locked**; the admin switches each feature on the shop's new **Plan** tab, audited.
+- **Locks hold at every way in** (Q29): channel actions refuse in their services and at `accessToken`;
+  enhancement requests refuse before a slot is spent; channel jobs for a locked shop end with a skip, and
+  passes over many shops leave them out; Google and Meta feeds, the `/store` directory, the sitemap and
+  "Sold by" leave a locked shop out; its storefront is "not yet available" to all but its team. Every org
+  route and job is classified in `feature-registry.ts`.
+- **Screens never hide** (Q20): paid actions keep their place with a lock and open one plan sheet whose
+  Talk to us fills the contact sheet with the feature and the shop. `/business` gains Talk to us in its
+  header and on the pricing card.
+- Migration `20261112090000_org_feature`: creates `OrgFeature`, empty; nothing dropped. **Set
+  `HOME_BRAND_ORG_ID` in every environment before deploying**, or the home brand locks too.
+- `[CONTRACT]` `FeatureAccessDTO`, `OrgPlanDTO`, `FeatureSwitchDTO`, the lock's `feature` detail on a 403,
+  and the admin switch route (CONTRACTS.md). `BULK_SKIP_REASON` gains `channels_locked`.
+- Tests: `feature-access`, `feature-enforcement`, `feature-public-reads` (integration, real Postgres);
+  `feature-registry`, `feature-locked-envelope`, `feature-locks-ui`, `org-auth` (unit). Mutations, each
+  turning its test red before restoring: removed `{ feature }` from the publish route's `withOrg`; renamed
+  the read-listings job type; removed `bringBack`'s Channels assert; removed the publish job's skip;
+  dropped the feed's holders filter; let a guest through a locked storefront; made `LockedAction` always
+  render its child; dropped the fill-facts and photos skips; locked disconnect; health-checked a locked
+  shop; removed the shop page's storefront gate.
+- Reviewed in a fresh context: the storefront gate moved from the layout into each page (a layout does not
+  stop its pages rendering into the payload); listing saves stay free (Q34); the `?shop=` product header,
+  touch target, unknown-shop 404 and raw feature strings fixed; free paths and token renewal now tested.
+
+## 2026-11-12 — Only the spec is line-capped; TRD and UX are not
+
+- [ADR-0071](adr/0071-only-the-spec-is-line-capped.md): `trd.md` is as long as its decisions need. The owner
+  reads the spec, decisions and the UX prototype, not the TRD; the 100-line cap was trimming rationale a builder and
+  reviewer need. `ux.md` uncapped too (owner). `spec.md` keeps the cap. ADR-0010 D4 and ADR-0061 D3 amended (Status lines only).
+- Moved with it: root `CLAUDE.md` cycle table, `docs/CONVENTIONS.md`, `docs/README.md`, `docs/specs/README.md`,
+  the ADR index, `/bb-sdlc` (no TRD count) and `/bb-review` (no TRD length finding).
+
 ## 2026-11-10 — Amazon: a created page is looked at until it is buyable; its ASIN kept; handbag silhouette sent [MIGRATION]
 
 - The first Generic HANDBAG listing was created at 20:57 UTC and Amazon made it buyable later; our follow-up

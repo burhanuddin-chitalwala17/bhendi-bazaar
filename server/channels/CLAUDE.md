@@ -1,6 +1,6 @@
 # CLAUDE.md — channels domain
 
-- **Verified:** 2026-11-08
+- **Verified:** 2026-11-12
 - **Covers:** `server/channels/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md). This file covers **channels** only. Requirements are in [docs/specs/marketplace-integration/](../../docs/specs/marketplace-integration/); every decision, with who made it, is in each spec's `decisions.md`.
@@ -21,6 +21,7 @@ Channels owns a shop's authorised connection to a marketplace: the consent round
 - **Renewal is serialised by a row lock.** Anything that renews or re-seals tokens takes `lockSecrets` inside a transaction and writes both tokens and expiries in one update. Flipkart replaces its refresh token near expiry; a second, unlocked renewal would keep the old one and disconnect the shop silently.
 - **Marketplace text never reaches a person or a log**, save the one exception below. Failures become `MarketplaceAuthError` (the seller must reconnect) or `MarketplaceUnavailableError` (try later), and outcomes are `CONNECT_RESULT` / `CONNECTION_ERROR` codes the UI maps to ux.md's copy. Response bodies are never logged: a token can appear in them.
 - **One switch.** `CHANNELS_CONNECT` (`channel-availability.ts`) lists the marketplaces open to connect, and is read nowhere else.
+- **Channels is a paid feature** (subscriptions/feature-access D5, D8). Every shop-facing action asserts it through `channel-plan.ts`, the only file here that reaches `subscriptions`; `accessToken` asserts it too, so a marketplace call added later cannot act for a shop without it. A pass over many shops reads the holders once; a per-shop job for a shop without it ends succeeded with a skip. Reads that draw a screen, disconnect, pausing sync and token renewal stay free.
 - **A settle links every listing or none.** The link is conditional inside the transaction that makes or updates the product; a short count rolls it back. Photo addresses are re-read from the marketplace on the server, never taken from a request.
 - **A read never deletes a listing and never undoes the owner.** Rows are keyed on (connection, SKU) so a retried read writes the same ones; only a finished read marks the unseen gone; a link is written only to a row with no product and no owner's unlink.
 - **A fill never overwrites.** Filling from a listing writes through catalog's and listing's conditional commands, which lock the row and write only what is still empty; the card is computed from the stored read, never stored as questions (marketplace-facts D6, D7).
@@ -40,6 +41,7 @@ Channels owns a shop's authorised connection to a marketplace: the consent round
 | `channel-connection.repository.ts` | The one writer of `ChannelConnection` |
 | `connect-state.ts` | The signed OAuth `state` |
 | `channel-availability.ts` | The one switch |
+| `channel-plan.ts` | Whether a shop holds Channels: the assert every action makes, and the holders among many for a pass |
 | `channel-import.service.ts` | The listing read the worker runs, Unlink, Link back, the Listings page and a product's links (channel-import) |
 | `channel-listing.repository.ts` | The one writer of `ChannelListing` |
 | `listing-match.ts` | Which listing links to which product by SKU, how similar two names are, and which unsettled listings look like one item; pure |

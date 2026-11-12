@@ -6,6 +6,9 @@ import { PageShell, PageHeader } from "@/components/shared/page-shell";
 import { PutOnMarketplace } from "@/components/channel/put-on-marketplace";
 import { CREATE } from "@/components/channel/platform-listing-copy";
 import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
+import { PlanBanner } from "@/components/subscriptions/plan-banner";
+import { LockedAction } from "@/components/subscriptions/locked-action";
+import { FEATURE } from "@/components/subscriptions/features";
 
 export const metadata = {
   title: ORG_PAGE_TITLES.newListing,
@@ -21,7 +24,18 @@ export default async function PutOnMarketplacePage({ params }: { params: Promise
   return (
     <PageShell width="narrow">
       <PageHeader help="channels" title={CREATE.putOn(start.label)} description={start.productName} />
-      <PutOnMarketplace orgId={scope.orgId} start={start} />
+      {/* Opened by its link while Channels is locked: the page explains the plan and never searches the marketplace (feature-access Q29). */}
+      {scope.features.channels ? (
+        <PutOnMarketplace orgId={scope.orgId} start={start} />
+      ) : (
+        <div className="space-y-3">
+          <PlanBanner feature={FEATURE.CHANNELS} />
+          <div className="flex flex-wrap gap-2">
+            <LockedAction feature={FEATURE.CHANNELS} label={CREATE.sellHere} variant="outline" className="min-h-10">{null}</LockedAction>
+            <LockedAction feature={FEATURE.CHANNELS} label={CREATE.createNew} className="min-h-10">{null}</LockedAction>
+          </div>
+        </div>
+      )}
     </PageShell>
   );
 }

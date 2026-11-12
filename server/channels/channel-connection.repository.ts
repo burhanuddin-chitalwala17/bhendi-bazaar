@@ -349,9 +349,8 @@ export const channelConnectionRepository = {
   },
 
   /** Connections with stock sync on, for the order check and the daily check (inventory-sync D4, D5). */
-  async syncedConnections(): Promise<string[]> {
-    const rows = await prisma.channelConnection.findMany({ where: { state: CONNECTION_STATE.CONNECTED, stockSync: STOCK_SYNC.ON }, select: { id: true } });
-    return rows.map((r) => r.id);
+  async syncedConnections(): Promise<Array<{ id: string; orgId: string }>> {
+    return await prisma.channelConnection.findMany({ where: { state: CONNECTION_STATE.CONNECTED, stockSync: STOCK_SYNC.ON }, select: { id: true, orgId: true } });
   },
 
   async touchStock(db: Pick<typeof prisma, "channelConnection">, id: string, field: "stockSentAt" | "stockCheckedAt", now: Date): Promise<void> {

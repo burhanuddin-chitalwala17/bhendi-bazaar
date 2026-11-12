@@ -21,7 +21,11 @@ const label = (key: string) => key.replace(/-/g, " ");
  * The product's words beside its photographs (StorePDP, StorePDPDesktop). A server component:
  * only the heart, share, delivery check and buy buttons are client leaves.
  */
-export function ProductDetails(product: Product) {
+/**
+ * `orgStorefrontOpen` false draws the shop's name without the link: a locked storefront is
+ * reachable from nowhere (subscriptions/feature-access Q7, Q27). The product itself is unchanged (Q8).
+ */
+export function ProductDetails({ orgStorefrontOpen = true, ...product }: Product & { orgStorefrontOpen?: boolean }) {
   const specs = [
     ...Object.entries(product.facts ?? {}).map(([key, value]) => [label(key), String(value)] as const),
     ...Object.entries(product.measurements ?? {}).map(([key, value]) => [label(key), `${value}"`] as const),
@@ -31,14 +35,18 @@ export function ProductDetails(product: Product) {
     <section className="space-y-6">
       <div className="space-y-2">
         {/* Who sells it, and the way to everything else they sell (org-storefront R5). */}
-        <Link
-          href={ROUTES.store(product.org.handle)}
-          prefetch={false}
-          className="inline-flex min-h-10 items-center gap-1 text-small font-medium text-primary md:min-h-0"
-        >
-          {product.org.name}
-          <Icon name="next" size="xs" />
-        </Link>
+        {orgStorefrontOpen ? (
+          <Link
+            href={ROUTES.store(product.org.handle)}
+            prefetch={false}
+            className="inline-flex min-h-10 items-center gap-1 text-small font-medium text-primary md:min-h-0"
+          >
+            {product.org.name}
+            <Icon name="next" size="xs" />
+          </Link>
+        ) : (
+          <p className="inline-flex min-h-10 items-center text-small font-medium text-muted-foreground md:min-h-0">{product.org.name}</p>
+        )}
         <div className="flex items-start gap-1">
           <h1 className="min-w-0 flex-1 font-heading text-headline font-semibold text-foreground">{product.name}</h1>
           <WishlistButton productId={product.id} className="shrink-0" />

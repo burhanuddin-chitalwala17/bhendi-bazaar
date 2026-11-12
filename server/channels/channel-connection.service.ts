@@ -37,6 +37,7 @@ import { providerFor } from "./providers";
 import { channelListingRepository } from "./channel-listing.repository";
 import { listingReadSpec } from "./listing-read.job";
 import type { StockSyncState } from "./channel-stock.types";
+import { channelPlan } from "./channel-plan";
 
 /**
  * A shop's connections to the marketplaces (channel-connectors). The only public surface of the
@@ -196,6 +197,7 @@ export const channelConnectionService = {
 
   /** Begin a connect, reconnect or renewal: off to the marketplace, or straight back (D5). */
   async startConnect(orgId: string, userId: string, channel: string): Promise<ConnectStart> {
+    await channelPlan.assert(orgId);
     if (!isMarketplaceChannel(channel)) throw new NotFoundError("Channel");
     const provider = providerFor(channel);
     if (!isOpen(channel) || !provider.configured()) return { result: CONNECT_RESULT.UNAVAILABLE };
@@ -235,6 +237,7 @@ export const channelConnectionService = {
   ): Promise<ConnectResult> {
     const { orgId, userId, channel, purpose } = state;
     if (consent.declined || !consent.code) return CONNECT_RESULT.CANCELLED;
+    await channelPlan.assert(orgId);
     const provider = providerFor(channel);
 
     let grant: TokenGrant;
@@ -355,6 +358,9 @@ export const channelConnectionService = {
         if (!row || row.state !== CONNECTION_STATE.CONNECTED || !row.refreshToken || !row.accessToken) {
           throw new NotFoundError("Connection");
         }
+        // The backstop: every marketplace verb fetches its token here, so a call site added later
+        // cannot act for a shop without Channels (feature-access D5). Renewal itself never comes here (Q11).
+        await channelPlan.assert(row.orgId);
         if (row.accessTokenExpiresAt && row.accessTokenExpiresAt.getTime() - now.getTime() > ACCESS_TOKEN_MARGIN_MS) {
           return decryptSecret(row.accessToken);
         }
@@ -369,6 +375,7 @@ export const channelConnectionService = {
   /** "Check now", and the daily health check: one cheap read, recorded (Q13, D7). */
   async check(orgId: string, channel: string, now = new Date()): Promise<"ok" | "needs_reconnect" | "unreachable"> {
     if (!isMarketplaceChannel(channel)) throw new NotFoundError("Channel");
+    await channelPlan.assert(orgId);
     const row = await channelConnectionRepository.secretsFor(orgId, channel);
     if (!row || row.state !== CONNECTION_STATE.CONNECTED) throw new NotFoundError("Connection");
     return await this.checkConnection(row.id, channel, now);
@@ -395,10 +402,13 @@ export const channelConnectionService = {
    * its 180-day lapse, and re-sealing under the current key. Suspended shops are skipped (Q11).
    */
   async maintain(isSuspended: (orgId: string) => Promise<boolean>, now = new Date()) {
-    const summary = { checked: 0, renewed: 0, resealed: 0, needsReconnect: 0, unreachable: 0, skipped: 0, failed: 0 };
-    for (const row of await channelConnectionRepository.live()) {
+    const summary = { checked: 0, renewed: 0, resealed: 0, needsReconnect: 0, unreachable: 0, skipped: 0, failed: 0, locked: 0 };
+    const rows = await channelConnectionRepository.live();
+    // One read for the pass (D8): a shop without Channels is renewed and re-sealed, never health-checked (Q11).
+    const allowed = await channelPlan.allowed([...new Set(rows.map((r) => r.orgId))]);
+    for (const row of rows) {
       try {
-        await this.maintainOne(row, isSuspended, summary, now);
+        await this.maintainOne(row, isSuspended, summary, now, allowed.has(row.orgId));
       } catch (error) {
         // One bad row must not stop every other shop's renewal; the id is enough to find it.
         summary.failed++;
@@ -411,8 +421,9 @@ export const channelConnectionService = {
   async maintainOne(
     row: Awaited<ReturnType<typeof channelConnectionRepository.live>>[number],
     isSuspended: (orgId: string) => Promise<boolean>,
-    summary: { checked: number; renewed: number; resealed: number; needsReconnect: number; unreachable: number; skipped: number },
+    summary: { checked: number; renewed: number; resealed: number; needsReconnect: number; unreachable: number; skipped: number; locked?: number },
     now: Date,
+    channelsHeld = true,
   ) {
     {
       if (await isSuspended(row.orgId)) {
@@ -444,10 +455,14 @@ export const channelConnectionService = {
         }
       }
 
-      const outcome = await this.checkConnection(row.id, channel, now);
-      if (outcome === "ok") summary.checked++;
-      else if (outcome === "needs_reconnect") summary.needsReconnect++;
-      else summary.unreachable++;
+      if (channelsHeld) {
+        const outcome = await this.checkConnection(row.id, channel, now);
+        if (outcome === "ok") summary.checked++;
+        else if (outcome === "needs_reconnect") summary.needsReconnect++;
+        else summary.unreachable++;
+      } else {
+        summary.locked = (summary.locked ?? 0) + 1;
+      }
 
       // Under the row lock, so a renewal racing this pass is never overwritten with older tokens.
       const resealed = await prisma.$transaction(async (tx) => {

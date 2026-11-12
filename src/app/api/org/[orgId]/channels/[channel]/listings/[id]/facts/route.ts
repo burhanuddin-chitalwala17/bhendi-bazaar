@@ -6,6 +6,7 @@
 
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
+import { FEATURE } from "@/components/subscriptions/features";
 import { marketplaceFactsChangeSchema } from "@/lib/validation/schemas/marketplace-facts.schema";
 import { channelFactsService } from "@server/channels/channel-facts.service";
 
@@ -13,4 +14,4 @@ export const POST = withOrg<{ orgId: string; channel: string; id: string }>(asyn
   const change = marketplaceFactsChangeSchema.parse(await request.json());
   const result = await channelFactsService.change(scope.orgId, params.id, change);
   return NextResponse.json({ ok: true, ...result });
-});
+}, { feature: FEATURE.CHANNELS });

@@ -32,6 +32,8 @@ interface ChannelCardListProps {
   storePath: string | null;
   /** Our host and the store's path, as a shop would type it (from `appUrl()`, never hardcoded). */
   storeLabel: string | null;
+  /** False while Channels is locked: connected cards say they are not syncing (feature-access). */
+  channelsHeld?: boolean;
 }
 
 const GRID = "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3";
@@ -40,7 +42,7 @@ const GRID = "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3";
  * Where the shop sells, then what is being built (ux.md form factors: one column on a phone, two
  * from `md:`, three from `lg:`). Cards in a row share a height; actions sit right under a rule.
  */
-export function ChannelCardList({ orgId, cards, storePath, storeLabel }: ChannelCardListProps) {
+export function ChannelCardList({ orgId, cards, storePath, storeLabel, channelsHeld = true }: ChannelCardListProps) {
   const live = cards.filter((card) => card.state !== CARD_STATE.UNAVAILABLE);
   const soon = cards.filter((card) => card.state === CARD_STATE.UNAVAILABLE);
 
@@ -86,7 +88,7 @@ export function ChannelCardList({ orgId, cards, storePath, storeLabel }: Channel
                 </ChannelCardShell>
               );
             }
-            return <MarketplaceCard key={card.channel} orgId={orgId} card={card} />;
+            return <MarketplaceCard key={card.channel} orgId={orgId} card={card} channelsHeld={channelsHeld} />;
           })}
         </div>
       </section>

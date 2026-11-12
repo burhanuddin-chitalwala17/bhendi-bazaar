@@ -1,6 +1,6 @@
 # Conventions index
 
-- **Verified:** 2026-11-07
+- **Verified:** 2026-11-12
 - **Covers:** `docs/adr/*.md`, `docs/specs/*/`
 
 The canonical index of *how we work*, moved out of the root `CLAUDE.md` on 2026-11-01 so it is read when
@@ -12,7 +12,7 @@ nothing more; detail lives in the ADR so it has one wording ([ADR-0009](adr/0009
 - **Domain docs co-locate with code** — `<domain>/CLAUDE.md`, lazy-loaded. [ADR-0001](adr/0001-monorepo-doc-structure.md)
 - **ADRs are append-only** — supersede, never edit. [ADR-0001](adr/0001-monorepo-doc-structure.md), [index](adr/README.md)
 - **ADRs are for genuine decisions** — real alternatives, the rejected one often conventional. [docs/adr/README.md](adr/README.md)
-- **Specs are `spec.md` + `trd.md`, ≤100 lines each, no code.** [ADR-0010](adr/0010-spec-convention.md)
+- **Specs are `spec.md` + `trd.md`, no code; only `spec.md` is capped (≤100 readable lines); `trd.md` and `ux.md` are uncapped.** [ADR-0010](adr/0010-spec-convention.md), [ADR-0071](adr/0071-only-the-spec-is-line-capped.md)
 - **A feature is one outcome, its decisions are logged, its UX is signed off before the TRD** — Claude cuts scope into In/Later and defaults reversible decisions; `decisions.md` holds every Q, and its **State** is read before any Q is relied on: `decided`/`implemented` bind, `superseded by Qn` defers to Qn, `open` blocks, `parked` is out of scope. A Q not yet implemented is replaced in place; only an implemented one is superseded ([ADR-0062](adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)); `ux.md` holds every state. [ADR-0061](adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)
 - **CHANGELOG is append-only, newest first, one entry per unit, unique numbers** — `[CONTRACT]` when a DTO or schema changes and `CONTRACTS.md` moves with it; `[MIGRATION]` when `prisma/migrations/` gains a folder. `docs:check` holds the numbering.
 - **Docs reference code by path, never copy it.** [ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)

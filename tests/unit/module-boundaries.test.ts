@@ -102,6 +102,8 @@ const PUBLIC_SURFACE: Record<string, string[]> = {
   channels: [],
   // setup-requests D1: its service and types only; the repository and kinds stay inside.
   requests: [],
+  // feature-access D1: services and types only; every domain asks it, it asks none.
+  subscriptions: [],
 };
 
 /** Always public, in every domain. */

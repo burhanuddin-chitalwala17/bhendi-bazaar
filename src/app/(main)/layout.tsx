@@ -5,6 +5,7 @@ import { MarketplaceChrome } from "@/components/layout/marketplace-chrome";
 import { ThemedShell, themedShop } from "@/components/storefront/themed/chrome/themed-shell";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { storefrontDAL } from "@/data-access-layer/storefront.dal";
+import { storefrontAccessDAL } from "@/data-access-layer/storefront-access.dal";
 import { wishlistDAL } from "@/data-access-layer/wishlist.dal";
 import { STOREFRONT_PRODUCT_HEADER, STOREFRONT_SHOP_HEADER } from "@/lib/storefront-chrome";
 
@@ -47,5 +48,7 @@ async function productShop() {
   const slug = forwarded.get(STOREFRONT_PRODUCT_HEADER);
   if (!handle || !slug) return null;
   const shop = await storefrontDAL.chromeShopForProduct(handle, slug);
-  return shop && themedShop(shop);
+  // A locked storefront lends no header with links into itself (feature-access Q7); the product shows plain.
+  if (!shop || !(await storefrontAccessDAL.isOpen(shop.id))) return null;
+  return themedShop(shop);
 }

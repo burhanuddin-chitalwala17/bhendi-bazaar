@@ -5,7 +5,7 @@ import {
   isNotFoundViolation,
   constraintFields,
 } from "@server/shared/constraint";
-import { isDomainError } from "@server/shared/domain-error";
+import { FeatureLockedError, isDomainError } from "@server/shared/domain-error";
 import type { ApiErrorBody, ApiErrorDetail } from "@/lib/api-error";
 import { RateLimitedError } from "@/lib/rate-limit/refusal";
 import { ERROR_RESPONSE_COPY, FIELD_LABEL_COPY, REFERENCED_BY_COPY } from "@/lib/lib-copy";
@@ -46,9 +46,12 @@ export function toErrorResponse(
     const response = json(
       {
         error: error.message,
-        ...(error.field
-          ? { details: [{ path: error.field, message: error.message }] }
-          : {}),
+        // A lock names its feature, so the client opens the right sheet (feature-access D4).
+        ...(error instanceof FeatureLockedError
+          ? { details: [{ path: "feature", message: error.feature }] }
+          : error.field
+            ? { details: [{ path: error.field, message: error.message }] }
+            : {}),
       },
       error.status
     );

@@ -1,0 +1,375 @@
+<title>Paid feature locks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap">
+<style>
+/* Layout: a canvas of phone-width screens, one row per journey, flow arrows between, a state strip under each */
+:root {
+  --bg: oklch(0.98 0.01 95);
+  --card: oklch(0.99 0.015 95);
+  --fg: oklch(0.22 0.03 40);
+  --muted: oklch(0.94 0.02 95);
+  --muted-fg: oklch(0.52 0.04 40);
+  --border: oklch(0.9 0.01 95);
+  --primary: oklch(0.55 0.17 150);
+  --primary-fg: oklch(0.99 0.015 95);
+  --destructive: oklch(0.6 0.25 27);
+  --warning: oklch(0.55 0.13 70);
+  --success: oklch(0.55 0.15 145);
+  --info: oklch(0.55 0.12 250);
+  --admin: oklch(0.2 0.03 260);
+  --admin-fg: oklch(0.96 0.02 98);
+  --canvas: oklch(0.95 0.015 95);
+  --font-head: "Playfair Display", Georgia, serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: oklch(0.16 0.03 260); --card: oklch(0.18 0.03 260); --fg: oklch(0.96 0.02 98);
+  --muted: oklch(0.24 0.04 260); --muted-fg: oklch(0.72 0.05 98); --border: oklch(0.32 0.03 260);
+  --primary: oklch(0.7 0.19 150); --primary-fg: oklch(0.16 0.03 260); --destructive: oklch(0.65 0.21 22);
+  --warning: oklch(0.78 0.13 75); --success: oklch(0.72 0.15 145); --info: oklch(0.72 0.12 250);
+  --admin: oklch(0.12 0.03 260); --admin-fg: oklch(0.96 0.02 98); --canvas: oklch(0.13 0.02 260); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: oklch(0.16 0.03 260); --card: oklch(0.18 0.03 260); --fg: oklch(0.96 0.02 98);
+  --muted: oklch(0.24 0.04 260); --muted-fg: oklch(0.72 0.05 98); --border: oklch(0.32 0.03 260);
+  --primary: oklch(0.7 0.19 150); --primary-fg: oklch(0.16 0.03 260); --destructive: oklch(0.65 0.21 22);
+  --warning: oklch(0.78 0.13 75); --success: oklch(0.72 0.15 145); --info: oklch(0.72 0.12 250);
+  --admin: oklch(0.12 0.03 260); --admin-fg: oklch(0.96 0.02 98); --canvas: oklch(0.13 0.02 260); color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--canvas); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 64px }
+header.top { max-width: 72rem; margin: 0 auto 28px; display: grid; gap: 8px }
+h1 { font-family: var(--font-head); font-size: 2rem; margin: 0; text-wrap: balance }
+.lede { color: var(--muted-fg); max-width: 65ch; margin: 0 }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px }
+section.journey { max-width: 72rem; margin: 0 auto 40px; display: grid; gap: 12px }
+.jhead { display: grid; gap: 2px }
+.jhead h2 { font-family: var(--font-head); font-size: 1.35rem; margin: 0 }
+.jhead p { margin: 0; color: var(--muted-fg); max-width: 70ch }
+.who { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; color: var(--muted-fg) }
+.flow { display: flex; align-items: flex-start; gap: 10px; overflow-x: auto; padding-bottom: 8px }
+.arrow { flex: none; align-self: center; display: grid; justify-items: center; gap: 4px; width: 72px; color: var(--muted-fg); font-size: 11px; text-align: center }
+.arrow svg { width: 40px; height: 16px }
+.before { flex: none; width: 150px; align-self: center; border: 1px dashed var(--border); border-radius: 14px; padding: 12px; font-size: 12px; color: var(--muted-fg); background: var(--bg) }
+.before b { color: var(--fg); display: block; margin-bottom: 4px }
+
+.phone { flex: none; width: 300px; background: var(--bg); border: 1px solid var(--border); border-radius: 26px; overflow: hidden; box-shadow: 0 1px 2px oklch(0 0 0 / .06), 0 8px 24px oklch(0 0 0 / .06) }
+.cap { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-fg); padding: 10px 14px 0 }
+.bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--muted-fg) }
+.bar.admin { background: var(--admin); color: var(--admin-fg); border-color: transparent }
+.screen { padding: 14px; display: grid; gap: 10px }
+.ttl { font-family: var(--font-head); font-size: 1.2rem; margin: 0; line-height: 1.2 }
+.sub { color: var(--muted-fg); font-size: 12px; margin: 0 }
+.box { border-radius: 16px; padding: 12px; display: grid; gap: 8px; font-size: 13px }
+.box.red { background: color-mix(in oklch, var(--destructive) 10%, var(--bg)) }
+.box.amber { background: color-mix(in oklch, var(--warning) 12%, var(--bg)) }
+.box.green { background: color-mix(in oklch, var(--success) 12%, var(--bg)) }
+.box.blue { background: color-mix(in oklch, var(--info) 10%, var(--bg)) }
+.box.plain { background: var(--card); border: 1px solid var(--border) }
+.box p { margin: 0 }
+.strong { font-weight: 600 }
+.red-t { color: var(--destructive) } .green-t { color: var(--success) } .amber-t { color: var(--warning) } .muted-t { color: var(--muted-fg) }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border-radius: 999px; font: 600 13px var(--font-body); border: 1px solid var(--border); background: var(--card); color: var(--fg); justify-self: start; cursor: pointer }
+.btn.primary { background: var(--primary); color: var(--primary-fg); border-color: transparent }
+.btn.full { justify-self: stretch }
+.btn.link { border: 0; background: none; padding: 0; min-height: 0; color: var(--primary); text-decoration: underline; text-underline-offset: 3px }
+.btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; justify-self: start; white-space: nowrap }
+.chip::before { content: ""; width: 6px; height: 6px; border-radius: 50% ; background: currentColor }
+.chip.req { background: color-mix(in oklch, var(--info) 14%, var(--bg)); color: var(--info) }
+.chip.ready { background: color-mix(in oklch, var(--success) 14%, var(--bg)); color: var(--success) }
+.chip.no { background: var(--muted); color: var(--muted-fg) }
+.chip.rep { background: color-mix(in oklch, var(--warning) 16%, var(--bg)); color: var(--warning) }
+.chip.att { background: color-mix(in oklch, var(--destructive) 12%, var(--bg)); color: var(--destructive) }
+.row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border) }
+.row:last-child { border-bottom: 0 }
+.row .t { font-weight: 600; font-size: 13px }
+.row .s { font-size: 12px; color: var(--muted-fg) }
+.tabs { display: flex; gap: 6px }
+.tab { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); font-size: 12px; font-weight: 600 }
+.tab.on { background: var(--primary); color: var(--primary-fg); border-color: transparent }
+.field { display: grid; gap: 4px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--card) }
+.field .k { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted-fg); font-weight: 600 }
+.input { border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; font: 400 14px var(--font-body); background: var(--bg); color: var(--fg); width: 100% }
+.opts { display: flex; flex-wrap: wrap; gap: 4px }
+.opt { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--muted); color: var(--muted-fg) }
+.radio { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--card) }
+.radio.on { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary) }
+.dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border); margin-top: 2px }
+.radio.on .dot { border-color: var(--primary); background: radial-gradient(circle, var(--primary) 45%, transparent 50%) }
+details { border-top: 1px solid var(--border); padding-top: 8px; font-size: 12px; color: var(--muted-fg) }
+summary { cursor: pointer; font-weight: 600; color: var(--fg) }
+ol.steps { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 2px }
+.toast { background: var(--fg); color: var(--bg); border-radius: 12px; padding: 10px 12px; font-size: 13px }
+.quote { border-left: 3px solid var(--border); padding-left: 10px; color: var(--muted-fg); font-size: 12px }
+textarea.input { min-height: 72px; resize: none }
+
+.model { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px }
+.flowline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px }
+.to { color: var(--muted-fg); font-size: 12px }
+table { border-collapse: collapse; width: 100%; min-width: 720px; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; font-size: 13px }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted-fg); background: var(--card) }
+tr:last-child td { border-bottom: 0 }
+td:first-child { font-weight: 600; white-space: nowrap }
+@media (prefers-reduced-motion: no-preference) { .btn { transition: filter .15s } .btn:hover { filter: brightness(1.05) } }
+.sw { width: 40px; height: 24px; border-radius: 999px; background: var(--border); position: relative; flex: none }
+.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--bg) }
+.sw.on { background: var(--primary) } .sw.on::after { left: 19px }
+.lockrow { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border) }
+.lockrow:last-child { border-bottom: 0 }
+.sheet { border-top: 1px solid var(--border); border-radius: 18px 18px 0 0; background: var(--card); padding: 14px; display: grid; gap: 10px; box-shadow: 0 -8px 24px oklch(0 0 0 / .08) }
+.dim { background: color-mix(in oklch, var(--fg) 35%, var(--bg)); padding-top: 120px }
+.nav { display: grid; gap: 2px; font-size: 13px }
+.nav span { padding: 8px 10px; border-radius: 10px; display: flex; justify-content: space-between }
+.nav .cur { background: var(--muted); font-weight: 600 }
+.lock { font-size: 11px; color: var(--muted-fg); font-weight: 600 }
+.banner { background: color-mix(in oklch, var(--info) 12%, var(--bg)); color: var(--fg); padding: 10px 14px; font-size: 12px; display: grid; gap: 6px }
+.logo { width: 56px; height: 56px; border-radius: 50%; background: var(--muted); display: grid; place-items: center; font: 700 22px var(--font-head); justify-self: center }
+.centre { text-align: center; justify-items: center }
+.hero-ph { height: 90px; border-radius: 12px; background: linear-gradient(135deg, color-mix(in oklch, var(--primary) 25%, var(--bg)), var(--muted)) }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px }
+.tile { aspect-ratio: 1; border-radius: 10px; background: var(--muted) }
+.price { font: 700 1.6rem var(--font-head) }
+.lk { width: 12px; height: 12px; margin-right: 6px; flex: none; opacity: .75 }
+.pbanner { background: color-mix(in oklch, var(--primary) 10%, var(--bg)); padding: 10px 14px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid var(--border) }
+</style>
+
+<header class="top">
+  <span class="who">subscriptions / feature-access · UX prototype · signed off 2026-11-12</span>
+  <h1>Paid feature locks</h1>
+  <p class="lede">Phone width (about 360px), the app's own colours and type. Three locks: Channels, Storefront, Image enhancement. Each row is one journey, starting from the step before it. Screens never lock; actions do. Every tab opens so the shop sees what it is missing; each paid action carries a lock and explains itself on tap, from every place it appears.</p>
+</header>
+
+<section class="journey">
+  <div class="model">
+    <div class="box plain"><p class="who">Channels</p><div class="flowline"><span class="chip ready">On</span><span class="to">⇄ admin switch ⇄</span><span class="chip no">Off</span></div>
+      <p class="sub">Off: no connect, publish, sync, reads or feeds. Live listings stay up, unsynced. The product form is unchanged.</p></div>
+    <div class="box plain"><p class="who">Storefront</p><div class="flowline"><span class="chip ready">On</span><span class="to">⇄</span><span class="chip no">Off</span></div>
+      <p class="sub">Off: the team previews it as it is; everyone else sees "not yet available". Hidden from directory, sitemap, Sold by, search.</p></div>
+    <div class="box plain"><p class="who">Image enhancement</p><div class="flowline"><span class="chip ready">On</span><span class="to">⇄</span><span class="chip no">Off</span></div>
+      <p class="sub">Off: no new enhancements. Work already queued finishes.</p></div>
+  </div>
+</section>
+
+<!-- J1 -->
+<section class="journey">
+  <div class="jhead"><span class="who">Admin</span><h2>1. Switch Channels off for a shop</h2>
+  <p>Turning off warns first, because live listings stop syncing. Every switch records who and when.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>Admin → Shops → a shop (here, Zara Hijab House).</div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>opens Plan tab</div>
+    <div class="phone"><div class="cap">/admin/orgs/{org}?tab=plan</div><div class="bar admin"><span>‹ Shops</span><span>Zara Hijab House</span></div>
+      <div class="screen"><div class="tabs"><span class="tab">Dashboard</span><span class="tab">Products</span><span class="tab on">Plan</span></div>
+        <p class="sub">What this shop pays for. Changes apply on the shop's next screen.</p>
+        <div><div class="lockrow"><div><div class="strong">Channels</div><div class="sub">Amazon, Flipkart, Google and Meta: publish, stock sync, orders, feeds.</div><div class="sub green-t">On · since 12 Nov · by Admin</div></div><span class="sw on"></span></div>
+        <div class="lockrow"><div><div class="strong">Storefront</div><div class="sub">The shop's own page at /store/zara-hijab.</div><div class="sub green-t">On · since 12 Nov · by Admin</div></div><span class="sw on"></span></div>
+        <div class="lockrow"><div><div class="strong">Image enhancement</div><div class="sub">Photos made ready for every platform.</div><div class="sub green-t">On · since 12 Nov · by Admin</div></div><span class="sw on"></span></div></div></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>taps Channels</div>
+    <div class="phone"><div class="cap">Turn-off sheet</div><div class="bar admin"><span>‹ Shops</span><span>Zara Hijab House</span></div>
+      <div class="dim"><div class="sheet"><p class="ttl">Turn off Channels for Zara Hijab House?</p>
+        <p>Publishing, stock sync, orders and feeds stop.</p>
+        <div class="box amber"><p class="strong">Live listings stay up, but their stock stops updating and may oversell.</p></div>
+        <p class="sub">Nothing the shop has set up is deleted.</p>
+        <span class="btn primary full">Turn off</span><span class="btn full">Keep on</span></div></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Turn off</div>
+    <div class="phone"><div class="cap">Plan tab</div><div class="bar admin"><span>‹ Shops</span><span>Zara Hijab House</span></div>
+      <div class="screen"><div class="tabs"><span class="tab">Dashboard</span><span class="tab">Products</span><span class="tab on">Plan</span></div>
+        <div><div class="lockrow"><div><div class="strong">Channels</div><div class="sub muted-t">Off · since 10 Nov · by Burhanuddin</div></div><span class="sw"></span></div>
+        <div class="lockrow"><div><div class="strong">Storefront</div><div class="sub green-t">On · since 12 Nov · by Admin</div></div><span class="sw on"></span></div>
+        <div class="lockrow"><div><div class="strong">Image enhancement</div><div class="sub green-t">On · since 12 Nov · by Admin</div></div><span class="sw on"></span></div></div>
+        <div class="toast">Channels off for Zara Hijab House</div></div></div>
+  </div>
+</section>
+
+<!-- J2 -->
+<section class="journey">
+  <div class="jhead"><span class="who">Admin · edge states</span><h2>2. Switching on, a failure, the home brand</h2>
+  <p>On needs no sheet: nothing is lost. The home brand has no switches at all.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>Plan tab, Storefront off.</div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>switch on</div>
+    <div class="phone"><div class="cap">Success</div><div class="bar admin"><span>Plan</span><span></span></div>
+      <div class="screen"><div class="lockrow"><div><div class="strong">Storefront</div><div class="sub green-t">On · since 10 Nov · by Burhanuddin</div></div><span class="sw on"></span></div>
+        <div class="toast">Storefront on for Zara Hijab House</div></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>network fails</div>
+    <div class="phone"><div class="cap">Retryable error</div><div class="bar admin"><span>Plan</span><span></span></div>
+      <div class="screen"><div class="lockrow"><div><div class="strong">Storefront</div><div class="sub muted-t">Off · since 2 Nov · by Burhanuddin</div></div><span class="sw"></span></div>
+        <div class="toast">Couldn't change Storefront. Try again.</div><p class="sub">The switch springs back.</p></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>opens home brand</div>
+    <div class="phone"><div class="cap">Refused · home brand</div><div class="bar admin"><span>‹ Shops</span><span>Niqab Boutique</span></div>
+      <div class="screen"><div class="tabs"><span class="tab on">Plan</span></div>
+        <div class="box blue"><p>Niqab Boutique is the home brand. Every feature stays on.</p></div></div></div>
+  </div>
+</section>
+
+<!-- J3 -->
+<section class="journey">
+  <div class="jhead"><span class="who">Shop · Channels off</span><h2>3. Explore Channels: the tab opens, the actions are locked</h2>
+  <p>No mark in the menu. The screen is the real one, so the shop sees each marketplace and what it would do. Every action carries a lock; tapping one explains it.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>Shop opens its menu.</div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>taps Channels</div>
+    <div class="phone"><div class="cap">Org sidebar · unchanged</div><div class="bar"><span>Zara Hijab House</span><span>☰</span></div>
+      <div class="screen"><div class="nav"><span>Home</span><span>Products</span><span>Orders</span><span>Offers</span><span class="cur">Channels</span><span>Storefront</span><span>Library</span><span>Earnings</span></div></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>the real screen</div>
+    <div class="phone"><div class="cap">/org/{org}/channels</div><div class="bar"><span>Channels</span><span></span></div>
+      <div class="pbanner"><span>Channels is part of the ₹699 plan.</span><span class="btn link">Talk to us</span></div>
+      <div class="screen"><div class="box plain"><div class="row" style="padding:0;border:0"><div><div class="t">Amazon</div><div class="s">Reach Amazon's buyers with the products you already have here.</div></div><span class="chip no">Not connected</span></div><span class="btn "><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Connect</span></div><div class="box plain"><div class="row" style="padding:0;border:0"><div><div class="t">Flipkart</div><div class="s">List on Flipkart from the same product, one stock count.</div></div><span class="chip no">Not connected</span></div><span class="btn "><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Connect</span></div><div class="box plain"><div class="row" style="padding:0;border:0"><div><div class="t">Google</div><div class="s">Show up in Google Shopping, free.</div></div><span class="chip no">Not connected</span></div><span class="btn "><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Connect</span></div></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>taps Connect</div>
+    <div class="phone"><div class="cap">Locked sheet</div><div class="bar"><span>Channels</span><span></span></div>
+      <div class="dim" style="padding-top:60px"><div class="sheet"><span class="chip no"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Locked</span><p class="ttl">Channels is part of the ₹699 plan</p>
+        <p>List once on Amazon, Flipkart, Google and Meta, with one stock count everywhere.</p><p class="sub">₹699 a month, GST included. Everything you've set up stays.</p>
+        <span class="btn primary full">Talk to us</span><span class="btn full">Not now</span></div></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Talk to us</div>
+    <div class="phone"><div class="cap">Contact sheet · filled in</div><div class="bar"><span>Channels</span><span></span></div>
+      <div class="dim" style="padding-top:80px"><div class="sheet"><p class="ttl">Contact us</p>
+        <div class="box plain"><p class="strong">WhatsApp</p><p class="sub">"Hi, I'd like Channels for Zara Hijab House."</p></div>
+        <div class="box plain"><p class="strong">Send a message</p><p class="sub">Same words, ready to send</p></div></div></div></div>
+  </div>
+</section>
+
+<section class="journey">
+  <div class="jhead"><span class="who">Shop · Channels off, connected before</span><h2>3b. A shop that had connected: everything visible, nothing moves</h2>
+  <p>Listings and marketplace orders still show as they are. Every action is locked; the plan banner says why stock stopped updating.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>Channels → Amazon → Listings.</div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>opens Listings</div>
+    <div class="phone"><div class="cap">/channels/amazon/listings</div><div class="bar"><span>‹ Channels</span><span>Amazon</span></div>
+      <div class="pbanner"><span>Channels is part of the ₹699 plan.</span><span class="btn link">Talk to us</span></div>
+      <div class="screen"><div class="row"><div><div class="t">Mint green rida</div><div class="s">Not syncing: Channels is off.</div></div><span class="chip ready">Live</span></div>
+        <div class="row"><div><div class="t">Tote bag (0912)</div><div class="s">Not syncing: Channels is off.</div></div><span class="chip ready">Live</span></div>
+        <span class="btn full"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Review and publish</span><span class="btn full"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Read again</span></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Orders → Marketplace</div>
+    <div class="phone"><div class="cap">/orders?tab=marketplace</div><div class="bar"><span>Orders</span><span></span></div>
+      <div class="screen"><div class="tabs"><span class="tab">Store</span><span class="tab on">Marketplace</span></div><div class="pbanner"><span>Channels is part of the ₹699 plan.</span><span class="btn link">Talk to us</span></div>
+        <p class="sub">Orders from Amazon and Flipkart show here once Channels is on.</p></div></div>
+  </div>
+</section>
+
+<section class="journey">
+  <div class="jhead"><span class="who">Shop · Channels off</span><h2>4. Just saved a product: "Put on Amazon" is locked too</h2>
+  <p>The step after saving asks to list on a marketplace. Same lock, same sheet; Not now leaves the shop on its product.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>Products → New → Save.</div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>View product</div>
+    <div class="phone"><div class="cap">/products/{id} · On marketplaces</div><div class="bar"><span>‹ Products</span><span>Tote bag</span></div>
+      <div class="screen"><p class="strong">On marketplaces</p>
+        <div class="box plain"><div class="row" style="padding:0;border:0"><div><div class="t">Amazon</div><div class="s">Amazon: 2 missing</div></div><span class="chip no">Not listed</span></div><span class="btn full"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Put on Amazon</span></div>
+        <div class="box plain"><div class="row" style="padding:0;border:0"><div><div class="t">Flipkart</div><div class="s">Ready</div></div><span class="chip no">Not listed</span></div><span class="btn full"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Put on Flipkart</span></div></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>taps Put on Amazon</div>
+    <div class="phone"><div class="cap">Locked sheet</div><div class="bar"><span>‹ Products</span><span>Tote bag</span></div>
+      <div class="dim" style="padding-top:120px"><div class="sheet"><span class="chip no"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Locked</span><p class="ttl">Channels is part of the ₹699 plan</p>
+        <p>List once on Amazon, Flipkart, Google and Meta, with one stock count everywhere.</p><p class="sub">₹699 a month, GST included. Everything you've set up stays.</p>
+        <span class="btn primary full">Talk to us</span><span class="btn full">Not now</span></div></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Not now</div>
+    <div class="phone"><div class="cap">Back on the product</div><div class="bar"><span>‹ Products</span><span>Tote bag</span></div>
+      <div class="screen"><p class="sub">Nothing changed. The direct link /listings/amazon/new opens the same screen with Create locked.</p>
+        <p class="sub">Products → bulk "Put on marketplace" and setup requests for Amazon fields carry the same lock.</p></div></div>
+  </div>
+</section>
+
+<!-- J4 -->
+<section class="journey">
+  <div class="jhead"><span class="who">Shop · Channels off</span><h2>5. Channel fields still asked, ready for later</h2>
+  <p>The form does not change with the lock. Channel fields are optional; readiness shows what's left.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>Products → a product → Edit.</div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>scrolls to channel fields</div>
+    <div class="phone"><div class="cap">Product form</div><div class="bar"><span>‹ Tote bag (0912)</span><span>Save</span></div>
+      <div class="screen"><div class="box blue"><p>These are for Amazon, Flipkart, Google and Meta. Fill them now and your listings are ready when Channels is on.</p></div>
+        <div class="field"><span class="k">Strap type · Amazon</span><input class="input" id="f1" value="Adjustable" aria-label="Strap type"></div>
+        <div class="field"><span class="k">Style · Amazon</span><input class="input" id="f2" placeholder="Optional" aria-label="Style"></div>
+        <div class="field"><span class="k">Barcode (GTIN) · Google</span><input class="input" id="f3" placeholder="Optional" aria-label="Barcode"></div></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Save, blanks allowed</div>
+    <div class="phone"><div class="cap">Products list</div><div class="bar"><span>Products</span><span></span></div>
+      <div class="screen"><div class="row"><div><div class="t">Tote bag (0912)</div><div class="s">Amazon: 2 missing · Google: 1 missing</div></div><span class="chip ready">Live here</span></div>
+        <div class="row"><div><div class="t">Mint green rida</div><div class="s">Ready for every channel</div></div><span class="chip ready">Live here</span></div>
+        <p class="sub">Readiness advises; nothing blocks the save.</p></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Channels on, later</div>
+    <div class="phone"><div class="cap">Same product, Channels on</div><div class="bar"><span>‹ Tote bag (0912)</span><span>Amazon</span></div>
+      <div class="screen"><p class="sub">Your answers are already here.</p><span class="btn primary full">Create on Amazon</span></div></div>
+  </div>
+</section>
+
+<!-- J5 + J6 -->
+<section class="journey">
+  <div class="jhead"><span class="who">Shop and buyer · Storefront off</span><h2>6. The storefront: your team sees it, nobody else does</h2>
+  <p>The shop keeps building. A buyer on the shared link sees "not yet available" and can still buy the shop's products on Bhendi Bazaar.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>Shop: Storefront → Preview. Buyer: a link on WhatsApp.</div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>team member</div>
+    <div class="phone"><div class="cap">/store/zara-hijab · member</div>
+      <div class="banner"><span>Only your team sees this. Your link shows "not yet available" until Storefront is on.</span><span class="btn link">Talk to us</span></div>
+      <div class="screen"><div class="hero-ph"></div><p class="ttl">Zara Hijab House</p><div class="grid2"><div class="tile"></div><div class="tile"></div></div></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>anyone else</div>
+    <div class="phone"><div class="cap">/store/zara-hijab · buyer</div><div class="bar"><span>Bhendi Bazaar</span><span></span></div>
+      <div class="screen centre"><div class="logo">Z</div><p class="ttl">Zara Hijab House isn't open here yet</p>
+        <p class="sub">Their products are on Bhendi Bazaar.</p><span class="btn primary">Browse Bhendi Bazaar</span></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>buyer finds a product</div>
+    <div class="phone"><div class="cap">/product/{slug}</div><div class="bar"><span>‹ Search</span><span></span></div>
+      <div class="screen"><div class="hero-ph"></div><p class="strong">Mint green rida</p><p>₹1,450</p>
+        <p class="sub">No "Sold by Zara Hijab House" link while the storefront is off.</p><span class="btn primary full">Add to cart</span></div></div>
+  </div>
+</section>
+
+<!-- J7 -->
+<section class="journey">
+  <div class="jhead"><span class="who">Shop · Image enhancement off</span><h2>7. Improve while adding photos, Enhance in the Library: both locked</h2>
+  <p>Every Improve and Enhance button stays visible with a lock. The photo stays as uploaded; nothing typed in the form is lost. A photo already enhancing finishes.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>Products → New → Photos → uploads one.</div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>the photo row</div>
+    <div class="phone"><div class="cap">Product form · photos</div><div class="bar"><span>‹ New product</span><span>Step 2 of 5</span></div>
+      <div class="screen"><div class="box amber"><p>This photo is a little dark. Marketplaces may reject it.</p><div class="flowline"><span class="btn "><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Improve</span><span class="btn">Keep it</span></div></div>
+        <div class="row"><div class="tile" style="width:56px"></div><div class="flowline"><span class="btn "><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Improve…</span></div></div></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>taps Improve</div>
+    <div class="phone"><div class="cap">Locked sheet</div><div class="bar"><span>‹ New product</span><span>Step 2 of 5</span></div>
+      <div class="dim" style="padding-top:120px"><div class="sheet"><span class="chip no"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Locked</span><p class="ttl">Image enhancement is part of the ₹699 plan</p>
+        <p>Phone photos made ready for every platform.</p><p class="sub">₹699 a month, GST included. Everything you've set up stays.</p>
+        <span class="btn primary full">Talk to us</span><span class="btn full">Not now</span></div></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>later: Library</div>
+    <div class="phone"><div class="cap">Library · a photo</div><div class="bar"><span>‹ Library</span><span></span></div>
+      <div class="screen"><div class="hero-ph" style="height:160px"></div><span class="btn full"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Enhance</span><p class="sub">Same sheet on tap.</p></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>one queued before the switch</div>
+    <div class="phone"><div class="cap">Library</div><div class="bar"><span>Library</span><span></span></div>
+      <div class="screen"><div class="grid2"><div class="tile"></div><div class="tile"></div></div>
+        <div class="toast">Your enhanced photo is ready.</div><p class="sub">Queued work finishes (Q12); no new work starts, by hand or automatic.</p></div></div>
+  </div>
+</section>
+
+<section class="journey">
+  <div class="jhead"><span class="who">Shop · Storefront off</span><h2>8. Build and preview freely; Share is locked</h2>
+  <p>The editor and Preview stay free so the store is ready on day one. Sharing the link, from anywhere it is offered, carries the lock.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>Home, or Shop → link card.</div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>sees the link</div>
+    <div class="phone"><div class="cap">Home · your link</div><div class="bar"><span>Home</span><span></span></div>
+      <div class="screen"><div class="box plain"><p class="strong">bhendibazaar.com/store/zara-hijab</p><span class="btn full primary"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Share your shop</span></div>
+        <span class="btn full">Preview</span></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>taps Share</div>
+    <div class="phone"><div class="cap">Locked sheet</div><div class="bar"><span>Home</span><span></span></div>
+      <div class="dim" style="padding-top:120px"><div class="sheet"><span class="chip no"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Locked</span><p class="ttl">Storefront is part of the ₹699 plan</p>
+        <p>Your own shop page to share on WhatsApp, cards and Instagram.</p><p class="sub">₹699 a month, GST included. Everything you've set up stays.</p>
+        <span class="btn primary full">Talk to us</span><span class="btn full">Not now</span></div></div></div>
+  </div>
+</section>
+
+<section class="journey">
+  <div class="jhead"><span class="who">Visitor · /business</span><h2>9. Talk to us on the business page</h2>
+  <p>Beside Open your shop in the header, and on the pricing card. Both open the same contact sheet.</p></div>
+  <div class="flow">
+    <div class="before"><b>Before</b>A shop owner weighing the plan.</div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>header</div>
+    <div class="phone"><div class="cap">/business · header</div><div class="bar"><span>Bhendi Bazaar</span><span class="flowline"><span class="btn" style="min-height:28px">Talk to us</span><span class="btn" style="min-height:28px">Open your shop</span></span></div>
+      <div class="screen"><p class="ttl">Sell everywhere from one place</p><p class="sub">…</p></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>scrolls to pricing</div>
+    <div class="phone"><div class="cap">/business · pricing</div><div class="bar"><span>Pricing</span><span></span></div>
+      <div class="screen"><div class="box plain"><p class="sub">Bhendi Bazaar for business</p><p class="price">₹699</p><p class="sub">per month, GST included</p>
+        <span class="btn primary full">Open your shop</span><span class="btn full">Talk to us</span></div></div></div>
+<div class="arrow"><svg viewBox="0 0 40 16"><path d="M0 8h34m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Talk to us</div>
+    <div class="phone"><div class="cap">Contact sheet</div><div class="bar"><span>/business</span><span></span></div>
+      <div class="dim" style="padding-top:80px"><div class="sheet"><p class="ttl">Contact us</p><div class="box plain"><p class="strong">WhatsApp</p></div><div class="box plain"><p class="strong">Send a message</p></div></div></div></div>
+  </div>
+</section>

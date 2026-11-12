@@ -47,6 +47,7 @@ export const ORG_TABS_COPY = {
   orders: "Orders",
   earnings: "Earnings",
   reviews: "Reviews",
+  plan: "Plan",
 } as const;
 
 export const ORG_EARNINGS_COPY = {

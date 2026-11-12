@@ -42,6 +42,7 @@ import { providerFor } from "./providers";
 import { listingCreateService } from "./listing-create.service";
 import { complaintIssues, type ListingComplaint } from "./listing-complaints";
 import { genericFor } from "./generic-brand";
+import { channelPlan } from "./channel-plan";
 
 /**
  * Each product's listing on each connected marketplace (channel-listings): made with what is live,
@@ -240,6 +241,7 @@ export const platformListingService = {
    * shop's "Raise a request" hands over exactly what it sees, never a list from the browser.
    */
   async complaint(orgId: string, productId: string, channelName: string): Promise<ListingComplaint | null> {
+    await channelPlan.assert(orgId);
     const { connection, channel } = await connectionFor(orgId, channelName);
     await productOf(orgId, productId);
     const [[row], [mirror]] = await Promise.all([

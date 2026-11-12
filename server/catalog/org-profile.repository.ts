@@ -136,10 +136,11 @@ export class OrgProfileRepository {
   async listPublicShops() {
     const rows = await prisma.orgProfile.findMany({
       where: { org: { isActive: true, products: { some: { archivedAt: null } } } },
-      select: { tagline: true, logoUrl: true, themeKey: true, org: { select: { handle: true, name: true } } },
+      select: { tagline: true, logoUrl: true, themeKey: true, org: { select: { id: true, handle: true, name: true } } },
       orderBy: { org: { name: "asc" } },
     });
     return rows.map((row) => ({
+      orgId: row.org.id,
       handle: row.org.handle,
       name: row.org.name,
       tagline: row.tagline,

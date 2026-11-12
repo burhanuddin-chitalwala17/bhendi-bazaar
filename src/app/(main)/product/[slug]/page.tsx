@@ -8,6 +8,7 @@ import { Reviews } from "@/components/product/reviews";
 import { SimilarProducts } from "@/components/product/similar-products";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { productsDAL } from "@/data-access-layer/products.dal";
+import { storefrontAccessDAL } from "@/data-access-layer/storefront-access.dal";
 import { Suspense, cache } from "react";
 import { ProductPageSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import type { Metadata } from "next";
@@ -80,6 +81,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     if (error instanceof NotFoundError) notFound();
     throw error;
   }
+  const orgStorefrontOpen = await storefrontAccessDAL.isOpen(product.org.id);
   return (
     <div className="space-y-8 md:space-y-12">
       {(() => {
@@ -90,7 +92,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {/* Photo and words share the width, as StorePDPDesktop draws them: a 3:2 photo column made the picture taller than the screen. */}
         <div className="grid gap-6 md:grid-cols-2 md:gap-8 lg:gap-12">
           <ProductGallery {...product} />
-          <ProductDetails {...product} />
+          <ProductDetails {...product} orgStorefrontOpen={orgStorefrontOpen} />
         </div>
       </Suspense>
       <Suspense fallback={<LoadingSkeleton />}>

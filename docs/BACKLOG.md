@@ -265,7 +265,8 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | marketplace-publish Q20, Q21 *(later)* | Instant answers by Amazon notification (AWS queue); a business price | parked |
 | channel-reporting | What sold where, per channel and consolidated, each figure naming the channels it covers and when each last reported | planned |
 | instagram-post | A post draft generated only on explicit intent, replaceable, regenerable, skippable; manual share first. Separate from the Meta catalogue, which is a shopfront feed | planned |
-| subscriptions | One flat price per shop, no tiers and no per-seat. Independent of the line above; needed before anyone is charged | planned |
+| [subscriptions/feature-access](specs/subscriptions/feature-access/) | The admin locks or unlocks Channels, Storefront and Image enhancement per shop; every screen, route, job and public page honours it | ✅ Built 2026-11-12 on `feat/feature-access`; set `HOME_BRAND_ORG_ID` before deploying |
+| subscriptions/billing | Collecting ₹699 a month (one flat price, no tiers, no per-seat) and flipping the same switches; needed before anyone is charged (feature-access Q21–Q23) | planned |
 
 The four foundations are done: the worker, the shop's profile, the media library and photo
 enhancement. What follows was re-sequenced on 2026-09-29 after a spike into what the platforms

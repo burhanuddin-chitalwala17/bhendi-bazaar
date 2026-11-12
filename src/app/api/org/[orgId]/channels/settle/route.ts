@@ -5,6 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
+import { FEATURE } from "@/components/subscriptions/features";
 import { settleListingSchema } from "@/lib/validation/schemas/settle-listing.schema";
 import { channelSettleService } from "@server/channels/channel-settle.service";
 import { rupeesToPaise } from "@server/shared/money";
@@ -16,4 +17,4 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
     pricePaise: price === undefined ? undefined : rupeesToPaise(price),
   });
   return NextResponse.json({ result });
-});
+}, { feature: FEATURE.CHANNELS });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, type ChangeEvent, type ReactNode } from "react";
+import { useShopPlan } from "@/components/subscriptions/plan-context";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +56,7 @@ export function CaptureBanner({
         <div className="mt-3 flex flex-wrap gap-2">
           {fix && onImprove && (
             <Button type="button" size="lg" onClick={() => onImprove(fix)}>
-              <Icon name="enhance" /> {MEDIA_COPY.rows.improve}
+              <ImproveIcon /> {MEDIA_COPY.rows.improve}
             </Button>
           )}
           <Button type="button" variant="outline" size="lg" onClick={onRemove}>
@@ -198,7 +199,7 @@ export function SlotRow({
         )}
         {onImprove && (
           <Button type="button" variant="outline" size="lg" onClick={() => onImprove()}>
-            <Icon name="enhance" /> {MEDIA_COPY.rows.improveMore}
+            <ImproveIcon /> {MEDIA_COPY.rows.improveMore}
           </Button>
         )}
         <Button type="button" variant="outline" size="lg" onClick={onMoveToExtra}>
@@ -332,7 +333,7 @@ export function ExtraRow({
         )}
         {!isVideo && onImprove && (
           <Button type="button" variant="outline" size="lg" onClick={() => onImprove()}>
-            <Icon name="enhance" /> {MEDIA_COPY.rows.improveMore}
+            <ImproveIcon /> {MEDIA_COPY.rows.improveMore}
           </Button>
         )}
         <Button type="button" variant="outline" shape="icon" size="lg" onClick={onRemove} aria-label={MEDIA_COPY.rows.removeNamed(label)}>
@@ -344,4 +345,10 @@ export function ExtraRow({
       )}
     </li>
   );
+}
+
+/** Improve's mark: a lock while Image enhancement is off, so the button says it before the tap (feature-access Q20). */
+function ImproveIcon() {
+  const { features } = useShopPlan();
+  return <Icon name={features.imageEnhancement ? "enhance" : "lock"} />;
 }

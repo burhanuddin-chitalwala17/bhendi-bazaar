@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-11-08
+- **Verified:** 2026-11-12
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -48,6 +48,11 @@ stale foreign key, exhausted stock) · 500 internal.
 throwing `DomainError` (or `NotFoundError` / `ConflictError` / `ForbiddenError`);
 anything else is treated as an internal fault and logged, because a raw Prisma message
 can name columns.
+
+**A paid feature the shop does not hold** is a 403 whose `details` name it:
+`[{ "path": "feature", "message": "channels" }]` (or `storefront`, `image_enhancement`), with the
+plan's sentence as `error`. Thrown as `FeatureLockedError`; a client opens the locked sheet on that
+detail instead of a toast (subscriptions/feature-access D4).
 
 Neither key is compiler-checked, which is why both sides go through the shared helpers
 rather than reaching into the body. A handler that hand-rolls `NextResponse.json({ ... })`
@@ -745,3 +750,13 @@ error on `ReportInput` and `AdminIssueDTO`; `AdminRequirementDTO` gains `mode`. 
 (`FieldsPlanDTO`, `CategoryPlanDTO`) live in `server/requests/marketplace/marketplace.types.ts`. The admin
 apply body is `{ action: "apply", hash, choice }`, the choice parsed by its kind.
 
+## subscriptions/feature-access
+
+What a shop may use of the paid features (`server/subscriptions/feature-access.types.ts`, D2–D4, D12).
+**`FeatureAccessDTO`** (`channels`, `storefront`, `imageEnhancement`: booleans) is what a page hands
+the leaves that draw paid actions; the home brand's is all true. **`OrgPlanDTO`** (`homeBrand`,
+`switches`) is the admin's Plan tab; each **`FeatureSwitchDTO`** is `feature`, `enabled`, `changedAt`
+(null when never switched, which is off) and `changedBy` (`name`, `email`, or null).
+`PUT /api/admin/orgs/{id}/features/{feature}` takes `orgFeatureSwitchSchema` (`{ enabled }`,
+`src/lib/validation/schemas/org-feature.schema.ts`) and answers `{ switch: FeatureSwitchDTO }`; an
+unknown feature is 404, the home brand 409.

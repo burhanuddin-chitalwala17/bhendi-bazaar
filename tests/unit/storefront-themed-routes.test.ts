@@ -19,6 +19,8 @@ const dal = vi.hoisted(() => ({
 const products = vi.hoisted(() => ({ getPage: vi.fn(), getProducts: vi.fn(), listSlugs: vi.fn() }));
 
 vi.mock("@/data-access-layer/storefront.dal", () => ({ storefrontDAL: dal }));
+// An open storefront: the lock itself is held by feature-public-reads and storefront-closed-pages (feature-access D11).
+vi.mock("@/data-access-layer/storefront-access.dal", () => ({ storefrontClosedTo: async () => false, lockedStorefrontMetadata: async () => null, storefrontAccessDAL: { isOpen: async () => true, forViewer: async () => "open" } }));
 vi.mock("@/data-access-layer/products.dal", () => ({ productsDAL: products }));
 vi.mock("@/data-access-layer/categories.dal", () => ({ categoriesDAL: { getCategories: async () => [] } }));
 vi.mock("@server/content/renditions.service", () => ({ renditionUrlForRef: async () => null }));

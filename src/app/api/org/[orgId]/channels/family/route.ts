@@ -5,6 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
+import { FEATURE } from "@/components/subscriptions/features";
 import { familySettleSchema } from "@/lib/validation/schemas/family-settle.schema";
 import { channelFamilyService } from "@server/channels/channel-family.service";
 import { rupeesToPaise } from "@server/shared/money";
@@ -16,4 +17,4 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
     members: input.members.map(({ price, ...m }) => ({ ...m, pricePaise: price === undefined ? undefined : rupeesToPaise(price) })),
   });
   return NextResponse.json({ result });
-});
+}, { feature: FEATURE.CHANNELS });

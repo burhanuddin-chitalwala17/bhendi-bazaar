@@ -36,6 +36,7 @@ import { holdCutoff } from "@server/catalog/org.handle";
 import { chromeShopFor } from "@/lib/storefront-chrome";
 import type { OrgRating } from "@server/catalog/review-rating";
 import { promotionService } from "@server/promotions/promotion.service";
+import { storefrontAccessDAL } from "@/data-access-layer/storefront-access.dal";
 import type { StorefrontOfferDto } from "@server/promotions/storefront-offers";
 
 /** One shop, as a visitor sees it. */
@@ -250,12 +251,20 @@ export const storefrontDAL = {
     return await productsRepository.countOnSaleForOrg(orgId);
   }),
 
-  /** Every shop open for business and with something to sell. */
+  /**
+   * Every shop open for business, with something to sell, and holding Storefront: the `/store`
+   * directory and the sitemap (subscriptions/feature-access D10, Q7). Which hold it is asked of
+   * `storefrontAccessDAL`, so this file keeps to catalog and promotions.
+   */
   listShops: cache(async (): Promise<ShopListing[]> => {
     const rows = await orgProfileRepository.listPublicShops();
-    return rows.map(({ themeKey, ...shop }) => ({
-      ...shop,
-      themed: readStorefrontLook(themeKey, null) !== null,
-    }));
+    const open = await storefrontAccessDAL.openAmong(rows.map((r) => r.orgId));
+    return rows
+      .filter((row) => open.has(row.orgId))
+      .map(({ themeKey, orgId: _orgId, ...shop }) => ({
+        ...shop,
+        themed: readStorefrontLook(themeKey, null) !== null,
+      }));
   }),
+
 };

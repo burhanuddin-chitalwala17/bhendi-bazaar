@@ -75,11 +75,15 @@ function Hero() {
         <Link href={ROUTES.home} prefetch={false} className="inline-flex">
           <BrandLogo size="md" priority />
         </Link>
-        <Button asChild variant="outline" size="sm" className="rounded-full">
-          <Link href={ROUTES.org.new} prefetch={false}>
-            {COPY.nav.cta}
-          </Link>
-        </Button>
+        {/* Someone weighing the plan can ask before opening a shop (feature-access Q30). */}
+        <div className="flex items-center gap-2">
+          <ContactLauncher variant="ghost" className="min-h-10 rounded-full px-3 text-small md:min-h-0 md:h-8">{COPY.nav.contact}</ContactLauncher>
+          <Button asChild variant="outline" size="sm" className="rounded-full">
+            <Link href={ROUTES.org.new} prefetch={false}>
+              {COPY.nav.cta}
+            </Link>
+          </Button>
+        </div>
       </Column>
 
       <Column className="grid items-center gap-12 pb-section pt-8 md:pt-12 lg:grid-cols-2 lg:gap-16">
@@ -274,6 +278,7 @@ function Pricing() {
             </div>
             <p className="text-small text-background/85">{p.commission(STORE_COMMISSION_PERCENT)}</p>
             <OpenShop label={p.cta} className="w-full" />
+            <ContactLauncher variant="inverse" className="h-10 w-full rounded-full">{p.contact}</ContactLauncher>
             <p className="text-caption text-background/60">{p.cancel}</p>
           </div>
           <div className="space-y-6 border-t border-background/15 p-6 md:col-span-3 md:border-l md:border-t-0 md:p-10">

@@ -168,7 +168,7 @@ Small PRs, each independently verifiable. Say which one changes behaviour.
 Q ids from decisions.md. All must be decided or parked before Draft → Accepted.
 ```
 
-9. **Enforce the cap.** ≤100 **readable** lines each (spec, ux, TRD; decisions.md is uncapped) — prose only, excluding front-matter, headings, table rows, fenced blocks, link-only lines, and blanks. Over the cap → split into subfeatures. Count it; don't estimate.
+9. **Enforce the cap.** ≤100 **readable** lines for `spec.md` only (`ux.md`, `trd.md` and `decisions.md` are uncapped, [ADR-0071](../../../docs/adr/0071-only-the-spec-is-line-capped.md)) — prose only, excluding front-matter, headings, table rows, fenced blocks, link-only lines, and blanks. Over the cap → split into subfeatures. Count it; don't estimate.
 10. **Index it.** Give the spec header a one-line `Summary`, run `npm run docs:index` (the specs tables are generated from headers; never type a row), and add the row to `docs/BACKLOG.md` under its phase by hand. Add each parked item to BACKLOG too, so a cut is never a loss.
 
 ---
@@ -220,7 +220,7 @@ The UX stage. It runs after the spec and before the TRD, for any feature a perso
 ## Sign-off
 ```
 
-9. **Enforce the cap:** ≤100 readable lines of prose. The tables are uncapped, so put the states in tables.
+9. **No line cap** ([ADR-0071](../../../docs/adr/0071-only-the-spec-is-line-capped.md)). Put the states in tables so each reads at a glance.
 
 ---
 

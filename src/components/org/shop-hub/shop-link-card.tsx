@@ -9,6 +9,8 @@ import { SHARE_COPY } from "@/components/org/share/share-copy";
 import { COPY_STATE, useShareShop } from "@/components/org/share/useShareShop";
 import { SHOP_HUB_COPY, truncateMiddle } from "@/components/org/shop-hub/shop-hub-copy";
 import type { ShareShop } from "@/lib/store-preview";
+import { PlanIcon } from "@/components/subscriptions/plan-icon";
+import { FEATURE } from "@/components/subscriptions/features";
 
 /** The Shop tab's link card (own-store onboarding D3, D13): the link, Share, Copy link, See as a buyer. */
 export function ShopLinkCard({ orgId, shop }: { orgId: string; shop: ShareShop }) {
@@ -29,7 +31,7 @@ export function ShopLinkCard({ orgId, shop }: { orgId: string; shop: ShareShop }
           setup={null}
           trigger={
             <Button type="button" size="lg" className="min-h-11">
-              <Icon name="share" />
+              <PlanIcon feature={FEATURE.STOREFRONT} name="share" />
               {SHARE_COPY.open}
             </Button>
           }

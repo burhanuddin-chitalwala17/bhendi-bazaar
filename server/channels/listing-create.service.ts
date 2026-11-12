@@ -27,6 +27,7 @@ import { CREATE_MODE, PUBLISH_STATE, type CreateMode, type ListingIssue, type Re
 import { providerFor } from "./providers";
 import { MarketplaceAuthError, MarketplaceUnavailableError } from "./providers/marketplace-provider";
 import type { CreateListingInput, PageMatch } from "./providers/publish";
+import { channelPlan } from "./channel-plan";
 
 /**
  * Putting a product, or a family, on a marketplace (marketplace-publish D6, D7, D8): looking for its
@@ -168,6 +169,7 @@ export const listingCreateService = {
 
   /** Pages already on the marketplace for a product, by barcode then name (D6). */
   async findPages(orgId: string, productId: string, channelName: string): Promise<PageMatch[]> {
+    await channelPlan.assert(orgId);
     const { connection, channel } = await connectionOf(orgId, channelName);
     const product = await productOf(orgId, productId);
     return await providerFor(channel).findPages(() => channelConnectionService.accessToken(connection.id), connection.externalAccountId, { barcode: product.barcode, keywords: product.name });
@@ -175,6 +177,7 @@ export const listingCreateService = {
 
   /** A draft listing for a product not yet on the marketplace (Q7): on a page found, or a new one. */
   async startDraft(orgId: string, productId: string, channelName: string, input: { mode: CreateMode; targetExternalId: string | null }): Promise<{ id: string }> {
+    await channelPlan.assert(orgId);
     const { connection, channel } = await connectionOf(orgId, channelName);
     if (!providerFor(channel).listingRules.canCreate) throw new ConflictError(`${CHANNEL_LABELS[channel]} products are made in its own seller hub.`);
     const product = await productOf(orgId, productId);
@@ -191,6 +194,7 @@ export const listingCreateService = {
 
   /** The family's own page and a draft for every member (Q11, D7). */
   async startFamily(orgId: string, familyId: string, channelName: string): Promise<{ id: string; members: number }> {
+    await channelPlan.assert(orgId);
     const { connection, channel } = await connectionOf(orgId, channelName);
     if (!providerFor(channel).listingRules.canCreate) throw new ConflictError(`${CHANNEL_LABELS[channel]} products are made in its own seller hub.`);
     const members = await productService.familyMembers(orgId, familyId);

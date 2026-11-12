@@ -12,6 +12,12 @@ vi.mock("@/lib/admin-auth", () => ({ requireSession: () => requireSession() }));
 vi.mock("@server/catalog/org.member.repository", () => ({
   orgMemberRepository: { findMembership: (u: string, o: string) => findMembership(u, o) },
 }));
+const forOrg = vi.fn();
+vi.mock("@server/subscriptions/feature-access.service", async (original) => ({
+  ...(await original<typeof import("@server/subscriptions/feature-access.service")>()),
+  featureAccessService: { forOrg: (o: string) => forOrg(o) },
+}));
+const NONE = { channels: false, storefront: false, imageEnhancement: false };
 
 const { withOrg } = await import("@/lib/org-auth");
 
@@ -25,6 +31,8 @@ const call = (handler: Parameters<typeof withOrg>[0], orgId = "org-a") =>
 beforeEach(() => {
   requireSession.mockReset();
   findMembership.mockReset();
+  forOrg.mockReset();
+  forOrg.mockResolvedValue(NONE);
 });
 
 describe("withOrg", () => {
@@ -41,6 +49,7 @@ describe("withOrg", () => {
       orgId: "org-a",
       role: "OWNER",
       userId: "user-1",
+      features: NONE,
     });
   });
 
@@ -108,5 +117,32 @@ describe("withOrg", () => {
 
     expect(response.status).toBe(401);
     expect(handler).not.toHaveBeenCalled();
+  });
+});
+
+describe("withOrg with a paid feature (subscriptions/feature-access D7)", () => {
+  const paid = (handler: Parameters<typeof withOrg>[0]) =>
+    withOrg(handler, { feature: "channels" })(request, { params: Promise.resolve({ orgId: "org-a" }) });
+
+  it("refuses a member whose shop lacks the feature, naming it, and never runs the handler", async () => {
+    signedInAs("user-1");
+    findMembership.mockResolvedValue({ id: "m1", orgId: "org-a", role: "OWNER" });
+    const handler = vi.fn(async () => new Response("ok"));
+
+    const response = await paid(handler);
+
+    expect(response.status).toBe(403);
+    expect((await response.json()).details).toEqual([{ path: "feature", message: "channels" }]);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("runs the handler when the shop holds the feature", async () => {
+    signedInAs("user-1");
+    findMembership.mockResolvedValue({ id: "m1", orgId: "org-a", role: "OWNER" });
+    forOrg.mockResolvedValue({ ...NONE, channels: true });
+    const handler = vi.fn(async () => new Response("ok"));
+
+    expect((await paid(handler)).status).toBe(200);
+    expect(handler).toHaveBeenCalledOnce();
   });
 });

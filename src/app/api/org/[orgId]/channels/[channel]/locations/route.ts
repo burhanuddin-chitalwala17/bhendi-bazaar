@@ -5,6 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
+import { FEATURE } from "@/components/subscriptions/features";
 import { locationMatchSchema } from "@/lib/validation/schemas/stock-sync.schema";
 import { channelLocationService } from "@server/channels/channel-location.service";
 
@@ -12,4 +13,4 @@ export const PUT = withOrg<{ orgId: string; channel: string }>(async (request, s
   const { matches } = locationMatchSchema.parse(await request.json());
   await channelLocationService.save(scope.orgId, params.channel, matches);
   return NextResponse.json({ ok: true });
-});
+}, { feature: FEATURE.CHANNELS });

@@ -10,6 +10,7 @@ import { channelLocationRepository } from "./channel-location.repository";
 import { STOCK_SYNC, type ChannelLocationDTO, type LocationMatchDTO } from "./channel-stock.types";
 import { channelStockService } from "./channel-stock.service";
 import { providerFor } from "./providers";
+import { channelPlan } from "./channel-plan";
 
 /**
  * A connected account's pickup locations and the shop's location each stands for (inventory-sync D1,
@@ -59,6 +60,7 @@ export const channelLocationService = {
 
   /** Save the owner's matches; a match names one of this shop's active locations (Q15). */
   async save(orgId: string, channel: string, input: ReadonlyArray<{ id: string; orgAddressId: string | null; notUsed: boolean }>): Promise<void> {
+    await channelPlan.assert(orgId);
     if (!isMarketplaceChannel(channel)) throw new NotFoundError("Channel");
     const connection = await channelConnectionRepository.find(orgId, channel);
     if (!connection) throw new NotFoundError("Connection");

@@ -14,9 +14,13 @@ import { CONTACT_LAUNCHER_COPY } from "./support-copy";
 export function ContactLauncher({
   className,
   children,
+  variant = "ghost",
+  prefill,
 }: {
   className?: string;
   children: React.ReactNode;
+  variant?: React.ComponentProps<typeof Button>["variant"];
+  prefill?: { subject: string; message: string };
 }) {
   const [open, setOpen] = useState(false);
   const { data: session } = useSession();
@@ -24,7 +28,7 @@ export function ContactLauncher({
   return (
     <>
       <Button
-        variant="ghost"
+        variant={variant}
         type="button"
         onClick={() => setOpen(true)}
         className={className}
@@ -35,6 +39,7 @@ export function ContactLauncher({
         open={open}
         onOpenChange={setOpen}
         signedIn={Boolean(session?.user?.email)}
+        prefill={prefill}
       />
     </>
   );
