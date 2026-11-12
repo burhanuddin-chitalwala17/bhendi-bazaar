@@ -1,0 +1,22 @@
+tests/integration/feature-public-reads.test.ts
+  s_02049fd72227df::t_28bde809e9eb28 72-74
+  s_02049fd72227df::t_272c6e66ce9bd1 68-69
+docs/CHANGELOG.md
+  ai_agent 15-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "f651dd78951e7cf81086d721435e3deef72c6afe",
+  "prompts": {},
+  "sessions": {
+    "s_02049fd72227df": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "72b749db-e564-49ff-b6fd-79442dc0b7f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
