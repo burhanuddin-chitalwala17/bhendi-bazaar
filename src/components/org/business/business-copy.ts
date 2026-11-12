@@ -37,6 +37,8 @@ export const BUSINESS_COPY = {
     perMonth: "a month",
   },
 
+  worksWith: "Works with the places your customers already shop",
+
   before: {
     label: "Why it exists",
     title: "Selling online shouldn’t take over the shop.",
@@ -239,5 +241,8 @@ export const BUSINESS_COPY = {
     earned: "Earned this week",
     earnedValue: "₹18,420",
     markPacked: "Mark packed",
+    newOrder: "New order",
+    newOrderFrom: "Amazon · ₹3,690",
+    orderLabel: "A new order arriving from Amazon",
   },
 } as const;

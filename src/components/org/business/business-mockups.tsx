@@ -18,7 +18,7 @@ function Phone({ label, className, children }: { label: string; className?: stri
     <div
       role="img"
       aria-label={label}
-      className={cn("w-64 shrink-0 rounded-4xl bg-foreground p-2 shadow-overlay md:w-72", className)}
+      className={cn("w-64 shrink-0 rounded-4xl bg-foreground p-2 shadow-overlay ring-1 ring-foreground/10 md:w-72", className)}
     >
       <div className="flex h-full flex-col overflow-hidden rounded-4xl bg-background">
         <div aria-hidden className="mx-auto mt-2 h-1.5 w-16 rounded-full bg-foreground/15" />
@@ -34,8 +34,8 @@ function ProductTile({ tint, className }: { tint: "primary" | "accent" | "muted"
     <div
       className={cn(
         "flex aspect-square items-center justify-center rounded-card",
-        tint === "primary" && "bg-primary/10 text-primary",
-        tint === "accent" && "bg-accent/50 text-accent-foreground",
+        tint === "primary" && "bg-gradient-to-br from-primary/20 to-primary/5 text-primary",
+        tint === "accent" && "bg-gradient-to-br from-accent to-accent/30 text-accent-foreground",
         tint === "muted" && "bg-muted text-muted-foreground",
         className,
       )}
@@ -199,7 +199,7 @@ export function OrdersMockup({ className }: { className?: string }) {
 export function LiveEverywhereCard({ className }: { className?: string }) {
   const marks = BUSINESS_COPY.hub.channels.flatMap((c) => (c.mark ? [c.mark] : []));
   return (
-    <div role="img" aria-label={M.channelsLabel} className={cn("w-60 rounded-card border border-border bg-card p-4 shadow-overlay", className)}>
+    <div role="img" aria-label={M.channelsLabel} className={cn("w-56 rounded-card border border-border bg-card p-4 shadow-overlay", className)}>
       <div aria-hidden className="space-y-3">
         <p className="text-caption font-semibold">{M.liveOn}</p>
         <div className="flex gap-1.5">
@@ -211,6 +211,22 @@ export function LiveEverywhereCard({ className }: { className?: string }) {
           <Icon name="refresh" size="xs" tone="primary" />
           {M.synced}
         </p>
+      </div>
+    </div>
+  );
+}
+
+/** Beside the hero's phone: a marketplace order landing on the same screen as the store's. */
+export function NewOrderCard({ className }: { className?: string }) {
+  return (
+    <div role="img" aria-label={M.orderLabel} className={cn("w-56 rounded-card border border-border bg-card p-3 shadow-overlay", className)}>
+      <div aria-hidden className="flex items-center gap-3">
+        <PlatformMark name="amazon" size="sm" />
+        <div className="min-w-0 flex-1">
+          <p className="text-caption font-semibold">{M.newOrder}</p>
+          <p className="truncate text-2xs text-muted-foreground">{M.newOrderFrom}</p>
+        </div>
+        <Icon name="parcel" size="sm" tone="primary" />
       </div>
     </div>
   );

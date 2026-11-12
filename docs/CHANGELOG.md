@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2026-11-12 — /business: a design pass on the page a shop decides on
+
+- Desktop hero no longer leaves the right half empty: the phone sits on a tinted stage with a "New order"
+  card and the "Live on every channel" card tucked to its edges, so neither covers the phone's button.
+- A "works with" strip under the hero names Amazon, Flipkart, Google Shopping, Facebook & Instagram.
+- "How it works" is one framed diagram (product → one stock count → channels) instead of three loose
+  columns with dead space; feature, closing and product tiles get tinted stages instead of flat grey.
+- "Why shops choose us" items are cards; "Questions? Talk to us" is an outline button, not bare text —
+  `ContactLauncher` passes `variant` and `size` through to its `Button` (ghost stays the default).
+- Display only: no route, data or contract change. Copy added to `business-copy.ts`.
+
 ## 2026-11-10 — Amazon: a created page is looked at until it is buyable; its ASIN kept; handbag silhouette sent [MIGRATION]
 
 - The first Generic HANDBAG listing was created at 20:57 UTC and Amazon made it buyable later; our follow-up

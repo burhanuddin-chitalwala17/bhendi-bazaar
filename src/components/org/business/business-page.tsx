@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { ROUTES } from "@server/shared/routes";
 
 import { BUSINESS_COPY as COPY, STORE_COMMISSION_PERCENT, SUBSCRIPTION_MONTHLY_PAISE } from "./business-copy";
-import { FEATURE_MOCKUPS, LiveEverywhereCard, StoreMockup } from "./business-mockups";
+import { FEATURE_MOCKUPS, LiveEverywhereCard, NewOrderCard, StoreMockup } from "./business-mockups";
 
 const PRICE = formatCurrency(SUBSCRIPTION_MONTHLY_PAISE);
 
@@ -25,6 +25,7 @@ export function BusinessPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <main className="flex-1">
         <Hero />
+        <WorksWith />
         <BeforeAfter />
         <Hub />
         <Features />
@@ -73,7 +74,7 @@ function Hero() {
     <section className="border-b border-border bg-card">
       <Column className="flex items-center justify-between py-4">
         <Link href={ROUTES.home} prefetch={false} className="inline-flex">
-          <BrandLogo size="md" priority />
+          <BrandLogo size="lg" priority />
         </Link>
         <Button asChild variant="outline" size="sm" className="rounded-full">
           <Link href={ROUTES.org.new} prefetch={false}>
@@ -82,8 +83,8 @@ function Hero() {
         </Button>
       </Column>
 
-      <Column className="grid items-center gap-12 pb-section pt-8 md:pt-12 lg:grid-cols-2 lg:gap-16">
-        <div className="flex flex-col items-start gap-6">
+      <Column className="grid items-center gap-12 pb-section pt-8 md:pt-12 lg:grid-cols-12 lg:gap-16">
+        <div className="flex flex-col items-start gap-6 lg:col-span-7">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 text-caption text-muted-foreground">
             <Icon name="shop" size="xs" tone="primary" />
             {COPY.hero.label}
@@ -109,10 +110,31 @@ function Hero() {
           </div>
         </div>
 
-        <div className="relative flex justify-center pb-10 lg:justify-end lg:pr-16">
-          <StoreMockup />
-          <LiveEverywhereCard className="absolute bottom-0 left-1/2 -translate-x-1/2 md:left-auto md:right-0 md:translate-x-0" />
+        <div className="relative flex justify-center rounded-card bg-gradient-to-br from-primary/15 via-muted to-accent/40 px-4 pb-20 pt-10 lg:col-span-5">
+          <StoreMockup className="lg:w-80" />
+          <NewOrderCard className="absolute -top-5 right-4 hidden md:block" />
+          <LiveEverywhereCard className="absolute -bottom-6 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0" />
         </div>
+      </Column>
+    </section>
+  );
+}
+
+/** The marketplaces by name, once, right under the promise — the quickest proof of "everywhere". */
+function WorksWith() {
+  const channels = COPY.hub.channels.filter((c) => c.mark);
+  return (
+    <section className="border-b border-border py-8">
+      <Column className="flex flex-col items-center gap-5 md:flex-row md:justify-between">
+        <p className="text-small text-muted-foreground">{COPY.worksWith}</p>
+        <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+          {channels.map((channel) => (
+            <li key={channel.name} className="flex items-center gap-2 text-small font-semibold">
+              {channel.mark && <PlatformMark name={channel.mark} size="sm" />}
+              {channel.name}
+            </li>
+          ))}
+        </ul>
       </Column>
     </section>
   );
@@ -123,8 +145,8 @@ function BeforeAfter() {
     <section className="py-section">
       <Column className="space-y-10">
         <SectionIntro label={COPY.before.label} title={COPY.before.title} lead={COPY.before.lead} />
-        <div className="overflow-hidden rounded-card border border-border bg-card">
-          <div className="hidden grid-cols-2 border-b border-border md:grid">
+        <div className="overflow-hidden rounded-card border border-border bg-card shadow-lifted">
+          <div className="hidden grid-cols-2 border-b border-border bg-muted/60 md:grid">
             <p className="px-6 py-3 text-small font-semibold text-muted-foreground">{COPY.before.today}</p>
             <p className="border-l border-border px-6 py-3 text-small font-semibold text-primary">{COPY.before.with}</p>
           </div>
@@ -155,31 +177,27 @@ function Hub() {
       <Column className="space-y-12">
         <SectionIntro label={COPY.hub.label} title={COPY.hub.title} lead={COPY.hub.lead} center />
 
-        <div className="grid items-center gap-6 lg:grid-cols-3">
-          <div className="mx-auto w-full max-w-sm rounded-card border border-border bg-background p-5 shadow-lifted lg:mx-0">
-            <div className="flex items-center gap-4">
-              <span className="flex size-16 items-center justify-center rounded-card bg-primary/10 text-primary">
-                <Icon name="rida" size="xl" />
-              </span>
-              <div>
-                <p className="text-body font-semibold">{product.name}</p>
-                <p className="text-small text-muted-foreground">
-                  {product.price} · {product.stock}
-                </p>
-              </div>
-            </div>
+        <div className="mx-auto grid max-w-5xl items-center gap-6 rounded-card border border-border bg-background p-5 shadow-lifted md:p-10 lg:grid-cols-7">
+          <div className="mx-auto w-full max-w-sm rounded-card border border-border bg-card p-4 lg:col-span-3 lg:mx-0">
+            <span className="flex aspect-video items-center justify-center rounded-card bg-gradient-to-br from-primary/20 to-primary/5 text-primary">
+              <Icon name="rida" size="2xl" />
+            </span>
+            <p className="pt-4 text-body font-semibold">{product.name}</p>
+            <p className="text-small text-muted-foreground">
+              {product.price} · {product.stock}
+            </p>
           </div>
 
-          <div className="flex flex-col items-center gap-2 text-center">
+          <div className="flex flex-col items-center gap-2 text-center lg:col-span-1">
             <span className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
               <Icon name="forward" size="md" className="rotate-90 lg:rotate-0" />
             </span>
             <p className="max-w-48 text-caption text-muted-foreground">{stockNote}</p>
           </div>
 
-          <ul className="mx-auto grid w-full max-w-sm gap-2 lg:mx-0">
+          <ul className="mx-auto grid w-full max-w-sm gap-2 lg:col-span-3 lg:mx-0">
             {channels.map((channel) => (
-              <li key={channel.name} className="flex items-center gap-3 rounded-card border border-border bg-background p-3">
+              <li key={channel.name} className="flex items-center gap-3 rounded-card border border-border bg-card p-3">
                 {channel.mark ? (
                   <PlatformMark name={channel.mark} size="md" />
                 ) : (
@@ -187,10 +205,11 @@ function Hub() {
                     <Icon name="shop" size="md" />
                   </span>
                 )}
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-small font-semibold">{channel.name}</p>
                   <p className="text-caption text-muted-foreground">{channel.note}</p>
                 </div>
+                <Icon name="done" size="sm" tone="primary" />
               </li>
             ))}
           </ul>
@@ -221,7 +240,7 @@ function Features() {
                   ))}
                 </ul>
               </div>
-              <div className="flex justify-center rounded-card bg-muted/60 px-6 py-10 md:py-14">
+              <div className="flex justify-center rounded-card bg-gradient-to-br from-primary/10 via-muted/60 to-accent/30 px-6 py-10 md:py-14">
                 <Mockup />
               </div>
             </article>
@@ -237,9 +256,9 @@ function Strengths() {
     <section className="border-t border-border py-section">
       <Column className="space-y-10">
         <SectionIntro label={COPY.strengths.label} title={COPY.strengths.title} />
-        <ul className="grid gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {COPY.strengths.items.map((item) => (
-            <li key={item.title} className="space-y-2">
+            <li key={item.title} className="space-y-2 rounded-card border border-border bg-card p-6">
               <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Icon name={item.icon} size="md" />
               </span>
@@ -349,12 +368,14 @@ function Closing() {
   return (
     <section className="pb-section">
       <Column>
-        <div className="flex flex-col items-center gap-5 rounded-card border border-border bg-card px-6 py-14 text-center md:py-20">
+        <div className="flex flex-col items-center gap-5 rounded-card bg-gradient-to-br from-primary/15 via-muted to-accent/40 px-6 py-14 text-center md:py-20">
           <h2 className="font-heading text-display font-bold">{COPY.closing.title}</h2>
           <p className="text-body text-muted-foreground">{COPY.closing.lead}</p>
           <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
             <OpenShop label={COPY.closing.cta} className="w-full sm:w-auto" />
-            <ContactLauncher className="h-10 w-full rounded-full sm:w-auto">{COPY.closing.contact}</ContactLauncher>
+            <ContactLauncher variant="outline" size="lg" className="w-full rounded-full sm:w-auto">
+              {COPY.closing.contact}
+            </ContactLauncher>
           </div>
         </div>
       </Column>
