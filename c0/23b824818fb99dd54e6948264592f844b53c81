@@ -1,0 +1,239 @@
+docs/specs/marketplace-integration/channel-import/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 10
+docs/specs/product-archive/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10,66
+tests/unit/courier-token.test.ts
+  s_02049fd72227df::t_3d79529d02aed5 3
+docs/specs/marketplace-integration/channel-listings/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 10
+scripts/changelog-rollover.mjs
+  s_02049fd72227df::t_3d79529d02aed5 1-8,10-12,14-33,35,37-57,59-68
+src/components/product/product-media-manager.tsx
+  s_02049fd72227df::t_3d79529d02aed5 25
+docs/specs/multi-vendor-marketplace/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8
+src/components/channel/settle-copy.ts
+  s_02049fd72227df::t_3d79529d02aed5 3
+docs/specs/bulk-catalog-upload/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+tests/integration/courier-updates.test.ts
+  s_02049fd72227df::t_3d79529d02aed5 3
+tests/unit/shot-list.test.ts
+  s_02049fd72227df::t_3d79529d02aed5 3
+docs/specs/multi-vendor-marketplace/data-model.md
+  s_02049fd72227df::t_3d79529d02aed5 5,148,191
+docs/specs/multi-vendor-marketplace/dashboard-widgets/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 9,11,18
+docs/specs/payment-confirmation/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+tests/unit/changelog-rollover.test.ts
+  s_02049fd72227df::t_3d79529d02aed5 1-55
+docs/specs/multi-vendor-marketplace/portal-separation/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 4,11,19,26
+src/components/channel/stock-copy.ts
+  s_02049fd72227df::t_3d79529d02aed5 3
+docs/specs/international-phone/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/shopfront-feeds/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+src/components/channel/listing-copy.ts
+  s_02049fd72227df::t_3d79529d02aed5 12
+docs/TRACKER.md
+  s_02049fd72227df::t_3d79529d02aed5 4
+server/notifications/CLAUDE.md
+  s_02049fd72227df::t_3d79529d02aed5 13,21
+docs/specs/marketplace-integration/family-merge/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 10
+tests/integration/parcel-move.test.ts
+  s_02049fd72227df::t_3d79529d02aed5 4
+docs/specs/listing-model/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8
+docs/specs/seamless-sign-in/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+.claude/settings.json
+  s_02049fd72227df::t_3d79529d02aed5 25-35
+docs/specs/listing-vocabulary/categories/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10,57
+docs/specs/multi-vendor-marketplace/addresses-as-entities/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 11
+docs/specs/listing-model/channel-catalogue/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/org-storefront/seller-identity/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8
+docs/specs/product-video/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10,71
+docs/specs/seller-profile/brand-page/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/adr/0072-the-changelog-holds-the-running-month-and-a-closed-month-becomes-a-summary.md
+  s_02049fd72227df::t_3d79529d02aed5 1-26
+.claude/skills/bb-build/SKILL.md
+  s_02049fd72227df::t_3d79529d02aed5 40,46
+docs/specs/inventory-reservation/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/marketplace-integration/product-merge/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 10
+docs/specs/own-store/product-form/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/org-storefront/storefront-browse/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8
+docs/specs/org-storefront/storefront-branding/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,65
+docs/specs/seller-profile/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+tests/integration/parcel-ready.test.ts
+  s_02049fd72227df::t_3d79529d02aed5 3
+docs/specs/listing-vocabulary/product-types/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10,59
+docs/specs/image-delivery/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/marketplace-integration/inventory-sync/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 10
+docs/specs/multi-vendor-marketplace/org-portal-chrome/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 9,11
+docs/specs/org-storefront/org-handle/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8
+docs/README.md
+  s_02049fd72227df::t_3d79529d02aed5 18,24
+docs/specs/listing-vocabulary/variants/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10,45
+docs/BACKLOG.md
+  s_02049fd72227df::t_3d79529d02aed5 66,374
+docs/CHANGELOG-HISTORY.md
+  s_02049fd72227df::t_3d79529d02aed5 1-55
+docs/DEPENDENCIES.md
+  s_02049fd72227df::t_3d79529d02aed5 35,38,40-41
+docs/specs/channel-registry/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10,71
+docs/specs/multi-vendor-marketplace/organisations-and-membership/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/org-storefront/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 10,102
+docs/specs/org-storefront/storefront-discovery/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8
+docs/specs/own-store/bulk-sheet/trd.md
+  s_02049fd72227df::t_3d79529d02aed5 7,12
+docs/specs/own-store/offers-hardening/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/own-store/order-fulfilment/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/own-store/org-profile/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/media-library/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/marketplace-integration/channel-connectors/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/listing-model/decisions.md
+  s_02049fd72227df::t_3d79529d02aed5 8
+docs/specs/marketplace-integration/marketplace-publish/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 10
+docs/specs/listing-vocabulary/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/org-storefront/storefront-pages/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,58
+docs/specs/checkout-abandonment/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/contact-us/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/copy-product/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/media-library/video-hosting/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/org-storefront/org-withdrawal/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8
+docs/specs/own-store/storefront-themes/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/multi-vendor-marketplace/category-tree/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 9,11,32
+docs/specs/listing-model/trd.md
+  s_02049fd72227df::t_3d79529d02aed5 7
+docs/specs/media-library/renditions/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/product-reviews/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10,164
+docs/specs/README.md
+  s_02049fd72227df::t_3d79529d02aed5 23,87
+docs/specs/shipment-lifecycle/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/product-weight-and-rates/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/multi-vendor-marketplace/order-and-cart-lines/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 9,11
+docs/specs/rate-limiting/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/server-side-pricing-authority/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/seo/trd.md
+  s_02049fd72227df::t_3d79529d02aed5 7,125
+docs/specs/listing-vocabulary/inherited-facts/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10,57
+docs/specs/setup-requests/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/adr/0017-video-is-embedded-not-hosted.md
+  s_02049fd72227df::t_3d79529d02aed5 17
+docs/specs/money-as-paise/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/adr/0024-phone-is-contact-data-not-an-identity-key.md
+  s_02049fd72227df::t_3d79529d02aed5 5
+docs/specs/shared-phone-numbers/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/image-enhancement/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/worker-foundation/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+server/shipping/shipment-status.service.ts
+  s_02049fd72227df::t_3d79529d02aed5 22
+docs/specs/product-reviews/review-media/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/bulk-catalog-upload/sheet-parsing-options.md
+  s_02049fd72227df::t_3d79529d02aed5 4
+docs/specs/marketplace-integration/marketplace-facts/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 10
+docs/CONTRACTS.md
+  s_02049fd72227df::t_3d79529d02aed5 630,633,653,655,657
+server/shared/phone.ts
+  s_02049fd72227df::t_3d79529d02aed5 2
+docs/specs/own-store/seller-onboarding/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+scripts/hooks/session-start.sh
+  s_02049fd72227df::t_3d79529d02aed5 1-15
+docs/specs/multi-vendor-marketplace/stock-locations-and-allocation/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/bidding/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 8,10
+docs/specs/multi-vendor-marketplace/org-onboarding/spec.md
+  s_02049fd72227df::t_3d79529d02aed5 9,11
+src/components/channel/channel-copy.ts
+  s_02049fd72227df::t_3d79529d02aed5 7
+src/components/channel/facts-copy.ts
+  s_02049fd72227df::t_3d79529d02aed5 3
+src/components/channel/family-copy.ts
+  s_02049fd72227df::t_3d79529d02aed5 3
+tests/integration/parcel-booking.test.ts
+  s_02049fd72227df::t_3d79529d02aed5 3
+tests/integration/parcel-cancel.test.ts
+  s_02049fd72227df::t_3d79529d02aed5 2
+tests/integration/refund-start.test.ts
+  s_02049fd72227df::t_3d79529d02aed5 3
+tests/integration/shipment-effects.test.ts
+  s_02049fd72227df::t_3d79529d02aed5 3
+docs/adr/0073-a-shipped-feature-keeps-its-spec-and-decisions-and-drops-its-ux-and-trd.md
+  s_02049fd72227df::t_3d79529d02aed5 1-26
+tests/unit/parcel-vocabulary.test.ts
+  s_02049fd72227df::t_3d79529d02aed5 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "c023b824818fb99dd54e6948264592f844b53c81",
+  "prompts": {},
+  "sessions": {
+    "s_02049fd72227df": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "72b749db-e564-49ff-b6fd-79442dc0b7f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
