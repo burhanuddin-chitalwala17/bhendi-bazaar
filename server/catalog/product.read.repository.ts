@@ -564,11 +564,12 @@ export class ProductsRepository {
     }
   }
 
-  async getSimilarProducts(slug: string, count: number) {
+  /** `orgId` keeps a shop's product page to that shop's goods (storefront-themes Q33). */
+  async getSimilarProducts(slug: string, count: number, orgId?: string) {
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
-        where: { slug: { not: slug }, ...AVAILABLE, ...FROM_ACTIVE_ORG },
+        where: { slug: { not: slug }, ...(orgId && { orgId }), ...AVAILABLE, ...FROM_ACTIVE_ORG },
         orderBy: { createdAt: "desc" },
         take: count,
         include: {

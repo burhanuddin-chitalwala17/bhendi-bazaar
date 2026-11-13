@@ -35,7 +35,8 @@ import { productsDAL } from "@/data-access-layer/products.dal";
 import type { Category } from "@/domain/category";
 import type { Product } from "@/domain/product";
 import { holdCutoff } from "@server/catalog/org.handle";
-import { chromeShopFor } from "@/lib/storefront-chrome";
+import { headers } from "next/headers";
+import { STOREFRONT_PRODUCT_HEADER, STOREFRONT_SHOP_HEADER, chromeShopFor } from "@/lib/storefront-chrome";
 import type { OrgRating } from "@server/catalog/review-rating";
 import { promotionService } from "@server/promotions/promotion.service";
 import { storefrontAccessDAL } from "@/data-access-layer/storefront-access.dal";
@@ -276,3 +277,19 @@ export const storefrontDAL = {
   }),
 
 };
+
+/**
+ * The themed shop a product page was reached from, or null (storefront-themes Q33). Middleware
+ * forwards `?shop=`; the product must be that shop's and its storefront open, or the page is the
+ * marketplace's. One answer per request, read by the layout for the chrome and the page for its links.
+ */
+export const productChromeShop = cache(async (): Promise<Storefront | null> => {
+  const forwarded = await headers();
+  const handle = forwarded.get(STOREFRONT_SHOP_HEADER);
+  const slug = forwarded.get(STOREFRONT_PRODUCT_HEADER);
+  if (!handle || !slug) return null;
+  const shop = await storefrontDAL.chromeShopForProduct(handle, slug);
+  // A locked storefront lends no header with links into itself (feature-access Q7); the product shows plain.
+  if (!shop || !(await storefrontAccessDAL.isOpen(shop.id))) return null;
+  return shop;
+});

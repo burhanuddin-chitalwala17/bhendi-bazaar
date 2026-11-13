@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { WishlistButton } from "@/components/wishlist/wishlist-button";
 import { PriceDisplay } from "./PriceDisplay";
 import { PRODUCT_CARD_COPY } from "./shared-copy";
-import { ROUTES } from "@server/shared/routes";
+import { productHref } from "@/components/shared/product-href";
 
 /**
  * The slot a tile occupies, per PRODUCT_GRID_CLASSES: half a phone, a third of a tablet, a sixth
@@ -16,7 +16,8 @@ import { ROUTES } from "@server/shared/routes";
 export const PRODUCT_TILE_SIZES = "(min-width: 1024px) 240px, (min-width: 768px) 33vw, 50vw";
 
 /** One product in a grid: the photograph first, then who sells it, what it is and what it costs. */
-export function ProductCard(product: Product) {
+export function ProductCard({ shopHandle = null, ...product }: Product & { shopHandle?: string | null }) {
+  const href = productHref(product.slug, shopHandle);
   const off = percentOff(product);
   const soldOut = product.stock === 0;
 
@@ -24,7 +25,7 @@ export function ProductCard(product: Product) {
     <div className="group relative flex flex-col gap-2.5">
       <div className="relative aspect-4/5 overflow-hidden rounded-field bg-muted">
         {/* Prefetch off: a grid puts a dozen in view and a dynamic route's prefetch is discarded unused. */}
-        <Link href={ROUTES.product(product.slug)} prefetch={false} className="absolute inset-0">
+        <Link href={href} prefetch={false} className="absolute inset-0">
           <Image
             src={product.thumbnail}
             alt={product.name}
@@ -49,7 +50,7 @@ export function ProductCard(product: Product) {
         </div>
       </div>
 
-      <Link href={ROUTES.product(product.slug)} prefetch={false} className="flex flex-col gap-0.5">
+      <Link href={href} prefetch={false} className="flex flex-col gap-0.5">
         {product.org?.name && <span className="truncate text-caption text-muted-foreground">{product.org.name}</span>}
         <h3 className="line-clamp-2 text-small font-medium text-foreground">{product.name}</h3>
         <PriceDisplay price={product.price} salePrice={product.salePrice} size="sm" showBadge={false} className="mt-0.5" />

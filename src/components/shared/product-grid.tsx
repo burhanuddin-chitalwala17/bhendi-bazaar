@@ -13,12 +13,21 @@ export const PRODUCT_GRID_CLASSES = "grid grid-cols-2 gap-x-3 gap-y-6 md:grid-co
 /** A long grid skips painting tiles off screen (ADR-0066 D7); the reserved height stops the scrollbar jumping. */
 const OFFSCREEN = "[content-visibility:auto] [contain-intrinsic-size:auto_22rem]";
 
-export function ProductGrid({ products, className }: { products: Product[]; className?: string }) {
+export function ProductGrid({
+  products,
+  className,
+  shopHandle = null,
+}: {
+  products: Product[];
+  className?: string;
+  /** Inside a themed shop, each card keeps the buyer there (storefront-themes Q33). */
+  shopHandle?: string | null;
+}) {
   return (
     <ul className={cn(PRODUCT_GRID_CLASSES, className)}>
       {products.map((product) => (
         <li key={product.id} className={OFFSCREEN}>
-          <ProductCard {...product} />
+          <ProductCard {...product} shopHandle={shopHandle} />
         </li>
       ))}
     </ul>

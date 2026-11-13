@@ -48,9 +48,6 @@ export const shopAllLabel = (count: number) => `Shop all ${formatCount(count)}`;
 export const landingHref = (handle: string) => ROUTES.store(handle);
 export const dealsHref = (handle: string) => `${shopHref(handle)}?deals=1`;
 
-/** Q33: a product reached from a shop keeps that shop's chrome; the canonical stays `/product/{slug}`. */
-export const storefrontProductHref = (slug: string, handle: string) =>
-  `${ROUTES.product(slug)}?shop=${encodeURIComponent(handle)}`;
 
 /** Past this many characters the button reads VISIT_COPY.short (own-store Q23). */
 export const VISIT_NAME_MAX = 20;

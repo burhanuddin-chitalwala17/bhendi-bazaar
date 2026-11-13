@@ -13,6 +13,7 @@ import { ContactLauncher } from "@/components/support/contact-launcher";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@server/shared/routes";
+import { productHref } from "@/components/shared/product-href";
 import { PRODUCT_PAGE_COPY } from "./product-copy";
 
 const label = (key: string) => key.replace(/-/g, " ");
@@ -25,7 +26,15 @@ const label = (key: string) => key.replace(/-/g, " ");
  * `orgStorefrontOpen` false draws the shop's name without the link: a locked storefront is
  * reachable from nowhere (subscriptions/feature-access Q7, Q27). The product itself is unchanged (Q8).
  */
-export function ProductDetails({ orgStorefrontOpen = true, ...product }: Product & { orgStorefrontOpen?: boolean }) {
+export function ProductDetails({
+  orgStorefrontOpen = true,
+  shopHandle = null,
+  ...product
+}: Product & {
+  orgStorefrontOpen?: boolean;
+  /** The themed shop this page was reached from; its links keep the buyer there (storefront-themes Q33). */
+  shopHandle?: string | null;
+}) {
   const specs = [
     ...Object.entries(product.facts ?? {}).map(([key, value]) => [label(key), String(value)] as const),
     ...Object.entries(product.measurements ?? {}).map(([key, value]) => [label(key), `${value}"`] as const),
@@ -88,7 +97,7 @@ export function ProductDetails({ orgStorefrontOpen = true, ...product }: Product
             {product.siblings.map((sibling) => (
               <li key={sibling.slug}>
                 <Link
-                  href={ROUTES.product(sibling.slug)}
+                  href={productHref(sibling.slug, shopHandle)}
                   prefetch={false}
                   aria-current={sibling.isCurrent ? "page" : undefined}
                   className={cn(
