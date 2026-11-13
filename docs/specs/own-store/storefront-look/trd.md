@@ -61,7 +61,7 @@ None — no new model. The text-below-image hero follows Shopify Dawn's `image-b
   kept, so the composition does not change.
 - **D7 — Product page in a store** (Q2): `product-details.tsx` sets the title in `font-display` (which falls back to
   the platform heading face outside a theme, so the marketplace page is unchanged) with the theme's display weight.
-  The price keeps `PriceDisplay size="lg"`, which adds Tailwind's `in-[[data-theme]]:text-title`: inside a store it
+  The price keeps `PriceDisplay size="lg"`, which adds Tailwind's built-in `in-data-theme:text-title`: inside a store it
   is title size, on the marketplace it stays headline. A CSS variant, not a prop, because the product page does not
   know which chrome its layout drew (storefront-themes Q33).
 - **D8 — The unthemed store page** (`/store/{handle}` with no look) is out of scope: it keeps `HomeHero` and the

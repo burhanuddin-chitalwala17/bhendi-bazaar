@@ -31,7 +31,7 @@ export function ThemedCollections({
               sizes="(min-width: 1024px) 1200px, 100vw"
               className="aspect-[4/5] w-full md:aspect-[21/9]"
             />
-            <span className="mt-3 block font-display text-title uppercase tracking-headline">{tile.name}</span>
+            <span className="mt-3 block font-display text-title font-display-weight display-case tracking-headline">{tile.name}</span>
             <span className="font-label text-tag uppercase tracking-tag underline underline-offset-4">{THEMED_COPY.sections.explore}</span>
           </Link>
         ))}

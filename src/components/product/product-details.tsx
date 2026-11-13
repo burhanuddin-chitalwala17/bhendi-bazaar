@@ -48,7 +48,7 @@ export function ProductDetails({ orgStorefrontOpen = true, ...product }: Product
           <p className="inline-flex min-h-10 items-center text-small font-medium text-muted-foreground md:min-h-0">{product.org.name}</p>
         )}
         <div className="flex items-start gap-1">
-          <h1 className="min-w-0 flex-1 font-heading text-headline font-semibold text-foreground">{product.name}</h1>
+          <h1 className="min-w-0 flex-1 break-words font-display text-headline font-display-weight text-foreground">{product.name}</h1>
           <WishlistButton productId={product.id} className="shrink-0" />
           <ShareButton
             url={ROUTES.product(product.slug)}

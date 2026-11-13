@@ -105,7 +105,7 @@ async function ShopGoods({
           <p className="font-label text-tag uppercase tracking-tag text-muted-foreground">
             {formatCount(total)} {STORE_PAGES_COPY.productCount(total)}
           </p>
-          <h1 className="break-words font-display text-title tracking-headline">
+          <h1 className="break-words font-display text-title font-display-weight display-case tracking-headline">
             {search ? STORE_PAGES_COPY.searchIn(search, shop.name) : shop.name}
           </h1>
         </div>
@@ -153,7 +153,7 @@ async function ShopGoods({
           </Button>
         </div>
       ) : (
-        <p className="py-section text-center font-display text-title">
+        <p className="py-section text-center font-display text-title font-display-weight display-case">
           {STORE_PAGES_COPY.settingUp(shop.name)}
         </p>
       )}

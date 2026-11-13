@@ -29,7 +29,7 @@ export function ThemedReviews({
               <blockquote
                 className={cn(
                   "break-words",
-                  variant === "highlight" ? "font-display text-title" : "line-clamp-4 text-body",
+                  variant === "highlight" ? "font-display text-title font-display-weight display-case" : "line-clamp-4 text-body",
                 )}
               >
                 {review.comment}

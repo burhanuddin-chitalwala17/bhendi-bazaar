@@ -28,7 +28,7 @@ export function SectionHeading({
         {overline && (
           <p className="font-label text-tag uppercase tracking-tag text-muted-foreground">{overline}</p>
         )}
-        <h2 className="font-display text-title tracking-headline text-foreground">{title}</h2>
+        <h2 className="font-display text-title font-display-weight display-case tracking-headline text-foreground">{title}</h2>
       </div>
       {action && (
         <Link

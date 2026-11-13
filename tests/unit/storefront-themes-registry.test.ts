@@ -69,7 +69,7 @@ describe("themes (R1, D2)", () => {
 
   it("themes differ in at least three non-colour roles, pairwise (A1)", () => {
     const ROLES = [
-      "--text-headline", "--tracking-headline", "--spacing-section", "--spacing-grid",
+      "--tracking-headline", "--font-display-weight", "--display-case",
       "--radius-card", "--radius-field", "--shadow-tile-value", "--font-display-face",
     ];
     for (const a of THEME_KEYS) {
@@ -82,9 +82,22 @@ describe("themes (R1, D2)", () => {
     }
   });
 
+  // storefront-look Q1: templates differ in style, never in proportion.
+  const PROPORTION = /^--(?:text-|spacing-|container-)/;
+  it.each(THEME_KEYS)("%s sets no size, spacing or width of its own (storefront-look A6)", (theme) => {
+    const set = [...themeScope(theme).keys()].filter((k) => PROPORTION.test(k));
+    expect(set, `${theme} overrides the platform scale`).toEqual([]);
+  });
+
+  it.each(THEME_KEYS)("%s declares its display weight and case (storefront-look Q1, Q7)", (theme) => {
+    const scope = themeScope(theme);
+    expect(scope.get("--font-display-weight")).toMatch(/^[1-9]00$/);
+    expect(scope.get("--display-case")).toMatch(/^(?:none|uppercase)$/);
+  });
+
   it("every type size keeps a rem floor and a rem term, never viewport-only (D2)", () => {
     const sizes = [...CSS.matchAll(/--text-(?:headline|title):\s*([^;]+);/g)].map((m) => m[1]);
-    expect(sizes.length).toBeGreaterThan(4);
+    expect(sizes.length).toBeGreaterThanOrEqual(2);
     for (const size of sizes) {
       expect(size).toMatch(/^clamp\([\d.]+rem, [\d.]+rem \+ [\d.]+vw, [\d.]+rem\)$/);
     }

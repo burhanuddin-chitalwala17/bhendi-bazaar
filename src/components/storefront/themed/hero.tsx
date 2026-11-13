@@ -46,7 +46,7 @@ export function ThemedHero({ variant, ...hero }: HeroSlice & { variant: HeroVari
         />
         <div className={cn("min-w-0 space-y-3", !split && "col-span-3")}>
           <Mark hero={hero} />
-          <h1 className="break-words font-display text-headline tracking-headline">{hero.name}</h1>
+          <h1 className="break-words font-display text-headline font-display-weight display-case tracking-headline">{hero.name}</h1>
           {hero.line && <p className="break-words text-body text-muted-foreground">{hero.line}</p>}
           {cta}
         </div>
@@ -75,12 +75,7 @@ export function ThemedHero({ variant, ...hero }: HeroSlice & { variant: HeroVari
         >
           <div className="mx-auto w-full max-w-store space-y-3">
             <Mark hero={hero} />
-            <h1
-              className={cn(
-                "break-words font-display text-headline tracking-headline",
-                ribbon && "uppercase",
-              )}
-            >
+            <h1 className="break-words font-display text-headline font-display-weight display-case tracking-headline">
               {hero.name}
             </h1>
             {!ribbon && (

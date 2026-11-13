@@ -49,7 +49,7 @@ export function ProductShelf({
       <SectionHeading title={title} action={action} />
       {rows.map((row) => (
         <div key={row.key} className="space-y-3">
-          {row.title && <h3 className="font-display text-body font-semibold">{row.title}</h3>}
+          {row.title && <h3 className="font-display text-body font-display-weight">{row.title}</h3>}
           {layout === "grid" ? (
             <ul className={cn("grid gap-grid", GRID[columns].cols)}>
               {row.products.map((p) => (

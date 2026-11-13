@@ -175,7 +175,7 @@ export function ThemedSections({ theme, page, preview = false }: { theme: ThemeK
 function SettingUp({ name }: { name: string }) {
   return (
     <section className="mx-auto max-w-store space-y-3 px-gutter py-section text-center">
-      <p className="break-words font-display text-title">{name} is setting up. Check back soon.</p>
+      <p className="break-words font-display text-title font-display-weight display-case">{name} is setting up. Check back soon.</p>
       <Link href="/" prefetch={false} className="font-label text-tag uppercase tracking-tag underline underline-offset-4">
         Shop all of {APP_NAME}
       </Link>

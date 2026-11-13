@@ -12,6 +12,22 @@
 
 ## Entries
 
+## 2026-11-13 — Storefront look, unit 1: every template on the platform type scale
+
+- **own-store/storefront-look** unit 1 (Q1, Q2, Q6, Q7; R1–R3; A1, A6). The four `[data-theme]` scopes in
+  `globals.css` no longer set any `--text-*`, `--spacing-*` or `--container-*`: shop names, titles, prices and
+  section spacing are the platform's in every template (Bloom's headline was up to 72px, Edge's 96px). A theme
+  keeps face, tracking, shape, motion and pattern, and gains `--font-display-weight` and `--display-case`
+  (Darbar's caps, Daily's heavy weight) read by the new `font-display-weight` and `display-case` utilities at every `font-display` site.
+- Product page inside a store: the title is the theme's display face at headline size (was the platform's
+  Playfair, bold, at the theme's size); `PriceDisplay size="lg"` is title size under a themed shell through the
+  built-in `in-data-theme:` variant, unchanged on the marketplace. Daily keeps three phone columns (Q6, owner).
+- Tests: `storefront-themes-registry` now fails if a theme scope sets a size, spacing or width (storefront-look
+  A6) and requires each theme's weight and case; the pairwise difference check reads weight and case in place of
+  size. New `storefront-look-scale` pins the product title and price (A1). **Mutation:** adding
+  `--text-headline: clamp(2.5rem, 1.9rem + 3vw, 4.5rem)` back to the themes failed 3 tests; restored, all pass.
+  Ran: `tsc --noEmit`, `vitest run tests/unit`.
+
 ## 2026-11-12 — Test: feature-public-reads cleans up its shop's pickup address
 
 - CI failed in `feature-public-reads` cleanup: deleting the shop hit `OrgAddress_orgId_fkey` (an org's addresses are
