@@ -1,0 +1,53 @@
+tests/integration/read-cache-tables.test.ts
+  s_60bcf53c6d1bb5::t_13797d732a989b 80,90
+src/data-access-layer/products.dal.ts
+  s_60bcf53c6d1bb5::t_a4a8af5929dfdd 265-276
+src/components/shared/product-href.ts
+  ai_agent 1-8
+docs/CHANGELOG.md
+  s_60bcf53c6d1bb5::t_5a9d2d845388f1 23-24,27,29
+  s_60bcf53c6d1bb5::t_baf08e44231162 15-22,25-26,28,30
+tests/unit/storefront-variant-links.test.tsx
+  s_60bcf53c6d1bb5::t_6e6a3388ae573d 1-46
+  s_60bcf53c6d1bb5::t_8ba90bd23d403f 47-57
+src/components/product/product-details.tsx
+  s_60bcf53c6d1bb5::t_13797d732a989b 16
+  s_60bcf53c6d1bb5::t_c2fcb24bd7d21d 29-37,100
+src/components/storefront/themed/reviews.tsx
+  s_60bcf53c6d1bb5::t_13797d732a989b 6-7,41
+src/data-access-layer/storefront.dal.ts
+  s_60bcf53c6d1bb5::t_a1a71e700c5ffb 38-39,280-295
+src/components/shared/product-card.tsx
+  s_60bcf53c6d1bb5::t_13797d732a989b 9
+  s_60bcf53c6d1bb5::t_c2fcb24bd7d21d 19-20,28,53
+src/components/storefront/themed/themed-product-card.tsx
+  s_60bcf53c6d1bb5::t_13797d732a989b 7,47
+server/catalog/product.read.repository.ts
+  s_60bcf53c6d1bb5::t_a4a8af5929dfdd 567-568,572
+src/app/(main)/layout.tsx
+  s_60bcf53c6d1bb5::t_1b8da7955265bb 6,41,43-44
+src/app/(main)/product/[slug]/page.tsx
+  s_60bcf53c6d1bb5::t_c2fcb24bd7d21d 12,85-89,100,108,118,120-127
+src/components/shared/product-grid.tsx
+  s_60bcf53c6d1bb5::t_c2fcb24bd7d21d 16-25,30
+src/components/product/similar-products.tsx
+  s_60bcf53c6d1bb5::t_c2fcb24bd7d21d 8,11,17
+docs/ARCHITECTURE.md
+  s_60bcf53c6d1bb5::t_baf08e44231162 77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "503ac7a85baae036b83ce160a0397017d02bbf80",
+  "prompts": {},
+  "sessions": {
+    "s_60bcf53c6d1bb5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ddba7a9-29ee-4fcf-a319-985b96702c36",
+        "model": "unknown"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
