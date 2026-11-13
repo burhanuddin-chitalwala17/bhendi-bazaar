@@ -1,0 +1,65 @@
+src/components/org/look/look-picker.tsx
+  s_60bcf53c6d1bb5::t_e657a4bc0b3999 52
+server/catalog/storefront-look.types.ts
+  s_60bcf53c6d1bb5::t_ecae66d64f490b 1,16-17,30-31
+server/catalog/org-profile.repository.ts
+  s_60bcf53c6d1bb5::t_ecae66d64f490b 31,34,88,93,100,105
+server/catalog/storefront.types.ts
+  s_60bcf53c6d1bb5::t_52724846d4f522 12
+  s_60bcf53c6d1bb5::t_4dcedaa7f6c1db 75-76
+docs/specs/own-store/storefront-font/decisions.md
+  s_60bcf53c6d1bb5::t_34619957f179dc 16
+server/catalog/storefront-themes.ts
+  s_60bcf53c6d1bb5::t_485c8b9c355261 200-202
+src/data-access-layer/storefront.dal.ts
+  s_60bcf53c6d1bb5::t_52724846d4f522 24,27,59-60,146
+  s_60bcf53c6d1bb5::t_485c8b9c355261 28,163
+prisma/migrations/20261113090000_org_profile_font_key/migration.sql
+  ai_agent 1-4
+src/lib/validation/schemas/storefront.schema.ts
+  s_60bcf53c6d1bb5::t_485c8b9c355261 157-159
+  s_60bcf53c6d1bb5::t_ecae66d64f490b 15
+tests/integration/storefront-look-publish.test.ts
+  s_60bcf53c6d1bb5::t_e657a4bc0b3999 56,62-63,77,79,87,108
+  s_60bcf53c6d1bb5::t_b65a83e1142d83 116-144
+tests/unit/storefront-look-picker.test.tsx
+  s_60bcf53c6d1bb5::t_485c8b9c355261 59,73-74
+  s_60bcf53c6d1bb5::t_2df623e1b7e689 62,67-72
+  s_60bcf53c6d1bb5::t_873c4047ee14c5 153
+  s_60bcf53c6d1bb5::t_e657a4bc0b3999 38,41,120,170
+  s_60bcf53c6d1bb5::t_fe8d7c9765aa1d 78
+  s_60bcf53c6d1bb5::t_c365d45091c83c 83-87
+tests/unit/storefront-public-dto.test.ts
+  s_60bcf53c6d1bb5::t_aa2780f10a2c5d 53-54,198
+server/catalog/storefront.service.ts
+  s_60bcf53c6d1bb5::t_485c8b9c355261 41,207
+  s_60bcf53c6d1bb5::t_52724846d4f522 38,228-229
+docs/ARCHITECTURE.md
+  s_60bcf53c6d1bb5::t_34619957f179dc 61
+prisma/schema.prisma
+  s_60bcf53c6d1bb5::t_77c9704aa99afd 801-802,809
+docs/CHANGELOG.md
+  s_60bcf53c6d1bb5::t_485c8b9c355261 17-18
+  s_60bcf53c6d1bb5::t_34619957f179dc 15-16,19-31
+server/catalog/storefront-look.service.ts
+  s_60bcf53c6d1bb5::t_ecae66d64f490b 9,38,40,43,46-47,59,70,72-83,89,97,121,130
+docs/CONTRACTS.md
+  s_60bcf53c6d1bb5::t_485c8b9c355261 214-215,218
+  s_60bcf53c6d1bb5::t_34619957f179dc 216-217,219
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "210f5eec7fc8fe74736e836a48e45a5018448a48",
+  "prompts": {},
+  "sessions": {
+    "s_60bcf53c6d1bb5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ddba7a9-29ee-4fcf-a319-985b96702c36",
+        "model": "unknown"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
