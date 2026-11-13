@@ -1,0 +1,59 @@
+src/components/org/look/look-font-copy.ts
+  s_60bcf53c6d1bb5::t_e220cf7fcce72d 1-19
+docs/CHANGELOG.md
+  s_60bcf53c6d1bb5::t_a587c3fec7bcea 15-19,25-28,30-34
+  s_60bcf53c6d1bb5::t_006d76be93f922 20-24,29
+src/components/org/look/look-picker.tsx
+  s_60bcf53c6d1bb5::t_64a21923e03ec0 12-13,39-40,55,130,133-134,152,165
+  s_60bcf53c6d1bb5::t_c3271ef0b3a28d 82
+  s_60bcf53c6d1bb5::t_e220cf7fcce72d 62,119-122
+src/components/org/look/look-preview-dialog.tsx
+  s_60bcf53c6d1bb5::t_64a21923e03ec0 14,77,87-88,98
+docs/specs/own-store/storefront-look/ux.md
+  s_60bcf53c6d1bb5::t_006d76be93f922 91,94-95,104,116,121
+src/components/org/look/look-font-picker.tsx
+  s_60bcf53c6d1bb5::t_e220cf7fcce72d 1-158
+src/components/storefront/themed/chrome/themed-shell.tsx
+  s_60bcf53c6d1bb5::t_60a30e8367fa7f 3-4,16-17,39-40,62,64-65
+docs/specs/own-store/storefront-font/decisions.md
+  s_60bcf53c6d1bb5::t_a587c3fec7bcea 12,19
+src/app/(preview)/org/[orgId]/storefront/preview/page.tsx
+  s_60bcf53c6d1bb5::t_60a30e8367fa7f 15,30,38-39,47
+src/components/org/look/theme-card.tsx
+  s_60bcf53c6d1bb5::t_64a21923e03ec0 6,15,18,22,26,29-30,36,42-47
+  s_60bcf53c6d1bb5::t_e220cf7fcce72d 64
+  s_60bcf53c6d1bb5::t_e05706f36b6fe8 7
+tests/unit/storefront-look-picker.test.tsx
+  s_60bcf53c6d1bb5::t_a4a0420b680c18 159
+  s_60bcf53c6d1bb5::t_e05706f36b6fe8 18-21
+  s_60bcf53c6d1bb5::t_d49190368be88b 151
+src/components/CLAUDE.md
+  s_60bcf53c6d1bb5::t_b8ef4726b70341 3
+docs/ARCHITECTURE.md
+  s_60bcf53c6d1bb5::t_e05706f36b6fe8 77
+tests/unit/storefront-font-picker.test.tsx
+  s_60bcf53c6d1bb5::t_c0fb54f8a8b5fe 1-9,11-26,32-53,57-69,72-73,76-77,81-85,87-95,97-106,108-130,141-153
+  s_60bcf53c6d1bb5::t_ba82f2fb97c24e 10
+  s_60bcf53c6d1bb5::t_388b91b86c5198 74-75,78-80,86,96,107,131-140
+  s_60bcf53c6d1bb5::t_535991a7ca1933 27-31,54-56,70-71
+src/components/storefront/preview/preview-href.ts
+  s_60bcf53c6d1bb5::t_60a30e8367fa7f 1,15,18-19
+docs/specs/own-store/storefront-font/trd.md
+  s_60bcf53c6d1bb5::t_006d76be93f922 48-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "2ea8c6134414a742e2cfc30858d2ca16347b4438",
+  "prompts": {},
+  "sessions": {
+    "s_60bcf53c6d1bb5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ddba7a9-29ee-4fcf-a319-985b96702c36",
+        "model": "unknown"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
