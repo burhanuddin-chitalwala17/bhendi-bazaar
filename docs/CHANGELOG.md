@@ -12,6 +12,23 @@
 
 ## Entries
 
+## 2026-11-13 — Storefront font, unit 2: the heading face is published with the look [MIGRATION] [CONTRACT]
+
+- **own-store/storefront-font** unit 2 (Q6, Q7; D3, D4; A1, A3). The face rides the look: the look schema requires
+  `font` (a listed key or null), so a tab opened before this deploy is refused rather than clearing a chosen face; `publish` writes it under the same `lookVersion` compare-and-set;
+  a change of font alone is a change of look, so the face it replaces is kept for Switch back, which restores it.
+  `Storefront` and `StorefrontPageDto` carry `fontKey`, parsed on read (a retired key reads as the theme's own). The
+  picker sends the live face unchanged until unit 3 gives it a control.
+- Migration `20261113090000_org_profile_font_key`: adds nullable `OrgProfile.fontKey` and `previousFontKey`. Additive;
+  no backfill; nothing dropped. Applied to the local dev database only.
+- `[CONTRACT]` `StorefrontLookInput`, `LookKeys` (`StorefrontLookState.live`, `.previous`), `Storefront.fontKey`,
+  `StorefrontPageDto.fontKey` (CONTRACTS.md).
+- Tests: `storefront-look-publish` (integration, local Postgres) gains a font-only publish, Switch back restoring
+  the default face, and a retired key reading as null; `storefront-look-picker` checks the schema accepts listed
+  keys and null and refuses a family name or a CSS value. **Mutation:** dropping `font` from the same-look check
+  failed 2 integration tests; restored. Ran: `tsc --noEmit`, `vitest run tests/unit`, the look and editor integration
+  suites against `bhendi_bazaar_dev`.
+
 ## 2026-11-13 — Storefront font, unit 1: the heading-font list, its faces and ADR-0074
 
 - **own-store/storefront-font** unit 1 (Q1, Q7, Q8, Q10; D1, D2, D5, D8). No behaviour change: nothing sets

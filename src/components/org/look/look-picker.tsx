@@ -49,6 +49,7 @@ export function LookPicker({ look, share }: { look: StorefrontLookState; share: 
       orgStorefrontApiClient.publishLook(look.orgId, {
         theme: previewing!,
         palette: palettes[previewing!],
+        font: look.live.font,
         lookVersion: look.lookVersion,
       }),
     () => {

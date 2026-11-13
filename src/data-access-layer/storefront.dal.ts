@@ -21,9 +21,11 @@ import {
 } from "@server/catalog/storefront.types";
 import {
   LANDING_SHELF_LIMIT,
+  readFontKey,
   readStorefrontLook,
   type PaletteKey,
-  type StorefrontLook,
+  type FontKey,
+  type PreviewLook,
   type ThemeKey,
 } from "@server/catalog/storefront-themes";
 import type { HeroBannerContent } from "@/components/home/hero-banner";
@@ -54,6 +56,8 @@ export interface Storefront {
   /** The published look, parsed (storefront-themes D1); both null for an unthemed shop. */
   themeKey: ThemeKey | null;
   paletteKey: PaletteKey | null;
+  /** The shop's heading face; null for the theme's own or an unthemed shop (storefront-font D3, Q7). */
+  fontKey: FontKey | null;
 }
 
 /** A themed landing page as its sections read it: the DTO plus the goods, priced here (ADR-0018). */
@@ -139,6 +143,7 @@ export const storefrontDAL = {
       accent: profile.accent,
       themeKey: look?.theme ?? null,
       paletteKey: look?.palette ?? null,
+      fontKey: look ? readFontKey(profile.fontKey) : null,
     };
   }),
 
@@ -155,7 +160,7 @@ export const storefrontDAL = {
    * The landing page in a look its owner is trying (D12), published or not: the same reads a
    * buyer's page makes, so the preview is the page, not a picture of it.
    */
-  getStorefrontPreview: async (handle: string, look: StorefrontLook): Promise<StorefrontPage | null> => {
+  getStorefrontPreview: async (handle: string, look: PreviewLook): Promise<StorefrontPage | null> => {
     return await storefrontPageFrom(await storefrontService.storefrontPage(handle, look));
   },
 

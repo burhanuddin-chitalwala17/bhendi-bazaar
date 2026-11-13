@@ -50,6 +50,8 @@ const PUBLIC_PROFILE_FIELDS = [
   "hiddenSections",
   "themeKey",
   "paletteKey",
+  // The heading face a buyer's page is drawn in (storefront-font D3): a key into code, never a value.
+  "fontKey",
   "heroLine",
   "claims",
   "openingHours",
@@ -193,6 +195,7 @@ describe("storefrontDAL.getByHandle after the profile split", () => {
       accent: "primary",
       themeKey: null,
       paletteKey: null,
+      fontKey: null,
     });
   });
 

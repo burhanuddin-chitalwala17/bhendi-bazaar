@@ -211,6 +211,12 @@ server's record. Both answer **`StorefrontLookState`** (`server/catalog/storefro
 "{Name} published {theme} {n} min ago." (Q31); a switch back after the 30 days is 410 "Your previous look is no
 longer kept."; a member who is not the owner gets 403.
 
+Since storefront-font unit 2 **`StorefrontLookInput`** gains **`font`**, required: a key from `FONT_KEYS` or null for the
+template's own face (absent or any other value is refused, so an old client cannot clear a chosen face). **`LookKeys`** — `live` and `previous` in
+`StorefrontLookState` — gains **`font`** the same way, so Switch back restores the face with the theme. `Storefront`
+(`storefront.dal.ts`) and **`StorefrontPageDto`** gain **`fontKey`** (null unthemed, unchosen, or a key retired from
+code); `storefrontService.storefrontPage` takes a `PreviewLook` whose `font` a preview passes. Stored as `OrgProfile.fontKey` and `previousFontKey`.
+
 Since storefront-themes unit 6 **`StorefrontSettingsInput`** (`storefrontSettingsSchema`, `PATCH
 /api/org/[orgId]/storefront`) loses `accent` and gains a required **`expectedUpdatedAt`** (ISO; the save is a
 compare-and-set on it, a miss 409 "Changed by {Name} just now. Load theirs?") and the editor's optional

@@ -28,9 +28,10 @@ export const PUBLIC_PROFILE_SELECT = {
   ownerPhotoUrl: true,
   // `pillars` is retired and kept (org-profile D5): never read for a buyer again.
   hiddenSections: true,
-  // The published look (storefront-themes D1): keys into code, parsed on read.
+  // The published look (storefront-themes D1; storefront-font D3): keys into code, parsed on read.
   themeKey: true,
   paletteKey: true,
+  fontKey: true,
   // The themed page's content (D13): parsed on read, never shown raw.
   heroLine: true,
   claims: true,
@@ -84,20 +85,24 @@ export type ShopDetailsSectionData =
 export interface OrgLookWrite {
   themeKey: string | null;
   paletteKey: string | null;
+  fontKey: string | null;
   lookPublishedAt: Date;
   lookPublishedByUserId: string;
   previousThemeKey: string | null;
   previousPaletteKey: string | null;
+  previousFontKey: string | null;
   previousLookUntil: Date | null;
 }
 
 const LOOK_SELECT = {
   themeKey: true,
   paletteKey: true,
+  fontKey: true,
   lookVersion: true,
   lookPublishedAt: true,
   previousThemeKey: true,
   previousPaletteKey: true,
+  previousFontKey: true,
   previousLookUntil: true,
   lookPublishedBy: { select: { name: true } },
   org: { select: { id: true, handle: true, name: true } },

@@ -197,6 +197,9 @@ export interface StorefrontLook {
   palette: PaletteKey;
 }
 
+/** The look an owner is trying in the preview: a face too, when they picked one (storefront-font D7). */
+export type PreviewLook = StorefrontLook & { font?: FontKey | null };
+
 /**
  * Stored keys parsed on read (D1). An unknown theme reads as unthemed (`null`), so a key
  * retired from code falls back to today's pages; a palette not of that theme reads as the

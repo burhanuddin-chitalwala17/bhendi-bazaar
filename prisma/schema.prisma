@@ -798,12 +798,15 @@ model OrgProfile {
   /// `previousLookUntil` so "Switch back" works for 30 days (Q4).
   themeKey              String?
   paletteKey            String?
+  /// The shop's heading face (storefront-font D3, Q7): a key into code, parsed on read; null is the theme's own.
+  fontKey               String?
   lookVersion           Int       @default(0)
   lookPublishedAt       DateTime?
   lookPublishedByUserId String?
   lookPublishedBy       User?     @relation("OrgLookPublishedBy", fields: [lookPublishedByUserId], references: [id], onDelete: Restrict)
   previousThemeKey      String?
   previousPaletteKey    String?
+  previousFontKey       String?
   previousLookUntil     DateTime?
 
   /// What the themed page's editor writes (storefront-themes D13): the hero's one line, up to three
