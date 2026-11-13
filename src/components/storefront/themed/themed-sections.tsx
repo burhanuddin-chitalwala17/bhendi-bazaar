@@ -52,7 +52,9 @@ type Renderers = {
  * in the registry without a renderer a compile error.
  */
 const RENDER = {
-  [SECTION.HERO]: ({ variant }, { page }) => <ThemedHero variant={variant} {...heroSlice(page)} />,
+  [SECTION.HERO]: ({ variant }, { page, theme }) => (
+    <ThemedHero variant={variant} cardStyle={COMPOSITIONS[theme].cardStyle} {...heroSlice(page)} />
+  ),
   [SECTION.COLLECTIONS]: ({ variant }, { page }) => {
     const slice = collectionsSlice(page);
     return slice && <ThemedCollections variant={variant} {...slice} />;

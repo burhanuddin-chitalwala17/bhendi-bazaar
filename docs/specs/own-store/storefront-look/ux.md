@@ -48,10 +48,10 @@
 ## Template by template (what changes)
 | Template | Hero, phone | Hero, desktop | Categories | Card and product page |
 |---|---|---|---|---|
-| Edge | Banner edge to edge, no shade; identity bar on solid ground below; banner label in a solid chip below the photo | Banner 7 of 12 columns; identity + 2 featured products | Rail of 4:5 tiles, 140px wide | Mono category line, name at body, price at price size |
-| Darbar | Banner, then a solid ivory name card overlapping its foot, caps, tracked; ribbon line below | Banner left, name card and 4 featured right | Rail of arched tiles, 120px wide (was three full-screen tiles) | Centred caps name at tag size, price tracked |
-| Bloom | Banner, identity stacked below with chips | Identity above a 2×2 of featured products, beside the banner (fills the old empty pink) | Circles, 4 to a phone row, 6 on desktop | Square image, rating chip |
-| Daily | Banner carousel (up to three), trust strip below (Returns 7 days · COD · Ships in 2 days) | Banner plus two side offer tiles | Circles, 4 to a row | Dense: 3 columns on phone (Q6, owner), % off chip, bold price |
+| Edge | Photo edge to edge, no shade; a titled banner's words on a solid label at its foot; identity on solid ground below, with Shop all | Photo in 2 of 3 columns; identity + 2 featured products | Rail of 4:5 tiles, 140px wide | Mono category line, name at body, price at price size |
+| Darbar | Photo, then a solid ivory name card overlapping its foot, caps, tracked; ribbon line below | Photo centred, name card overlapping, ribbon, then a row of 4 featured | Rail of arched tiles, 112px wide, 176px on desktop (was three full-screen tiles) | Centred caps name at tag size, price tracked |
+| Bloom | Photo, identity stacked below with chips | Identity above a row of 4 best selling, beside the photo (fills the old empty pink) | Circles, 4 to a phone row, 6 on desktop | Square image, rating chip |
+| Daily | Rail of up to three: the shop's banners (title on a solid label, tap follows its link), then hero photos; strip of derived facts below | Three slides: main in 2 of 3 columns, two stacked beside it; two slides: equal halves | Circles, 4 to a row | Dense: 3 columns on phone (Q6, owner), % off chip, bold price |
 
 ## State matrix — Store home
 | State | What the buyer sees | Copy | Action |
@@ -59,7 +59,7 @@
 | First use | n/a — a buyer never sets a store up; the shop's first-use is storefront-themes' setup list | — | — |
 | Empty (no products) | Identity strip and banner/pattern; storefront-themes' "setting up" line in place of shelves | "Niqab Boutique is setting up. Check back soon." | Browse Bhendi Bazaar |
 | Loading | Header and identity render with the page (server render); images fade in over the palette's muted ground, at their final size, so nothing jumps | — | — |
-| Partial (no photo, 1 product, no categories) | Pattern at banner height with the name; one featured product and pattern tiles; no rail | name only | Shop all 1 |
+| Partial (no photo, 1 product, no categories) | Pattern as a short band with the shop's initial; one featured product and pattern tiles; no rail | name only | Shop all 1 (Edge on a phone, every theme from `md:`; elsewhere the shelf's Shop all) |
 | Success | Journey 1 | "Shop all 112" | tap a category or product |
 | Retryable error | storefront-themes' error page, unchanged | "This page didn't load. Try again." | Try again |
 | Terminal error | n/a — a missing store is the platform's 404, unchanged | — | — |
@@ -106,7 +106,8 @@
 ## Copy deck
 **Store (buyer)**
 - Identity chips: "★ 4.7 (38)" · "Since 2019" · "112 products"
-- Hero button: "Shop all 112" · Section headings: "Shop by category", "Bestsellers", "New in"
+- Hero button: "Shop all 112" (on a phone, Edge only, Q13) · Section headings: "Shop by category", "Best selling", "New in"
+- Bloom's desktop row label: "Best selling" (the platform's word; "seller" is retired vocabulary)
 - Banner label (solid, below or beside the photo): banner's own title, then "Shop now"
 - Daily trust strip: "7-day returns" · "Cash on delivery" · "Ships in 2 days" (derived facts only, storefront-themes Q21)
 - Product page: "Inclusive of all taxes" · "Add to cart" · "Buy now"

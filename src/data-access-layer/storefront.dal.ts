@@ -67,6 +67,8 @@ export interface StorefrontPage extends StorefrontPageDto {
   offers: StorefrontOfferDto[];
   /** Goods the one resolver prices below list, for the deals strip (Q12, ADR-0018). */
   dealProducts: Product[];
+  /** The shop's active banners, which lead Daily's hero (storefront-themes Q14; storefront-look D3). */
+  banners: HeroBannerContent[];
 }
 
 /**
@@ -97,7 +99,7 @@ export interface ShopListing {
 /** A landing page's goods, priced here (ADR-0018), around the service's DTO. */
 async function storefrontPageFrom(dto: StorefrontPageDto | null): Promise<StorefrontPage | null> {
   if (!dto) return null;
-  const [bestSold, newIn, categories, productCount, offers, dealProducts] = await Promise.all([
+  const [bestSold, newIn, categories, productCount, offers, dealProducts, banners] = await Promise.all([
     dto.bestSellingIds.length
       ? productsDAL.getProducts({ orgId: dto.id, ids: dto.bestSellingIds })
       : Promise.resolve([]),
@@ -107,10 +109,11 @@ async function storefrontPageFrom(dto: StorefrontPageDto | null): Promise<Storef
     // Asked here, never by storefrontService: an offer is promotions' to word (D10).
     promotionService.storefrontOffers(dto.id),
     productsDAL.getProducts({ orgId: dto.id, offerOnly: true, ownOffersOnly: true, limit: LANDING_SHELF_LIMIT }),
+    storefrontDAL.promotionsFor(dto.id),
   ]);
   const rank = new Map(dto.bestSellingIds.map((id, index) => [id, index]));
   const bestSelling = [...bestSold].sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
-  return { ...dto, bestSelling, newIn, categories, productCount, offers, dealProducts };
+  return { ...dto, bestSelling, newIn, categories, productCount, offers, dealProducts, banners };
 }
 
 export const storefrontDAL = {

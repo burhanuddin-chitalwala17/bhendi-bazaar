@@ -12,6 +12,34 @@
 
 ## Entries
 
+## 2026-11-13 — Storefront look, units 2–4: heroes never bare, no shade on photos, compact Darbar categories [CONTRACT]
+
+- **own-store/storefront-look** units 2, 3 and 4 in one change (the hero rebuild is what removes its scrim, so the
+  two could not land apart). Q3, Q4, Q5, Q8, Q11, Q12; R4–R7, R9; A2–A5.
+- **Heroes** (`themed/hero.tsx`), each variant kept and reshaped to the signed-off prototype: text never sits on a
+  photo. One identity block (logo, name, line, chips: rating above its floor · since · products, Shop all) sits
+  below the photo on a phone and beside it from `md:`. Edge and Bloom fill the desktop side with featured goods
+  (best selling in stock, then new in; Q11, no new query); Darbar's solid name card overlaps the photo's foot;
+  Daily shows a rail of the shop's banners (title on a solid label, tap follows its link) then hero photos, and a
+  strip of derived facts; Edge labels its photo with the first titled banner; Darbar's desktop adds four featured
+  goods. Photos and banners keep their slot's shape (4:5; 16:9 or 5:2 from `md:`, Q12); with no photo the pattern
+  is a short band. Hero "Shop all" shows on a phone in Edge only (Q13). `StorefrontPage` gains `banners`, read
+  with the landing page (one more cached query); `[CONTRACT]` CONTRACTS.md moves with it.
+- **No shade** (Q3): the photo scrim leaves the hero and the themed card; the offer badge sits on the deal ground
+  (Bloom, Daily) or as deal ink on the card ground (Edge, Darbar), and "Sold out" on the card ground. The
+  marketplace card keeps its scrim (Q9, parked).
+- **Darbar categories** (Q5): `editorial` is a rail of arched tiles (112px phone, 176px desktop) with the same
+  heading as the other themes, in place of three full-screen tiles.
+- Product page in a store: Darbar's title is in capitals and "Product details" takes the theme's face.
+- Tests: new `storefront-look-hero` (each theme's hero holds identity and chips outside the photo, R9 with no
+  photo and one product, featured order, Darbar's six-tile rail); `storefront-palettes` gains a scan that no
+  themed component uses a scrim and a deal-on-card contrast check for Edge and Darbar's palettes.
+  **Mutations:** a `bg-photo-scrim` put back on the Edge identity block failed the scan; slicing Darbar's rail to
+  three tiles failed the rail test; letting Daily's first slide span two rows with two slides failed the no-blank
+  test; all restored. Checked in the running app at 360×740 and 1280×800 for all four
+  themes; the product title measured 22px / 32px and the price 18px / 22px. Ran: `tsc --noEmit`,
+  `vitest run tests/unit`, `lint:boundary`.
+
 ## 2026-11-13 — Storefront look, unit 1: every template on the platform type scale
 
 - **own-store/storefront-look** unit 1 (Q1, Q2, Q6, Q7; R1–R3; A1, A6). The four `[data-theme]` scopes in

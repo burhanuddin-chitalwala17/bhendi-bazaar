@@ -70,9 +70,11 @@ describe.each(THEME_KEYS)("%s with a name, a logo and one product (A4)", (theme)
   it("draws the pattern where the hero photo is missing, and the product", () => {
     const { container } = render(<ThemedSections theme={theme} page={bare()} />);
     const hero = container.querySelector(`[data-section="${SECTION.HERO}"]`) as HTMLElement;
-    expect(within(hero).getByTestId("theme-pattern")).toBeTruthy();
+    // The photo slot and any unfilled featured slot draw it (storefront-look R9).
+    expect(within(hero).getAllByTestId("theme-pattern").length).toBeGreaterThan(0);
     expect(within(hero).getByRole("heading", { level: 1 }).textContent).toBe("Noor Attar House");
-    expect(screen.getByText("Piece 1")).toBeTruthy();
+    // Edge and Bloom also feature it beside the hero on desktop (storefront-look Q11).
+    expect(screen.getAllByText("Piece 1").length).toBeGreaterThan(0);
     expect(container.textContent).not.toMatch(/undefined|null|NaN/);
   });
 

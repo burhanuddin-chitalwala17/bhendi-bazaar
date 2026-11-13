@@ -58,21 +58,21 @@ export function ThemedProductCard({
           sizes={sizes}
           className={cn(ASPECT[cardStyle], "bg-muted")}
         />
-        {/* The badge is the resolved price's own figure, so it is what the cart charges (A3, A6). */}
+        {/* The badge is the resolved price's own figure, so it is what the cart charges (A3, A6); solid ground, never a shade (storefront-look Q3). */}
         {off > 0 && !soldOut && (
           <span
             className={cn(
               "absolute left-2 top-2 rounded-field px-1.5 py-0.5 font-label text-tag uppercase tracking-tag",
               cardStyle === CARD_STYLE.DENSE || cardStyle === CARD_STYLE.SQUARE
                 ? "bg-deal text-deal-foreground"
-                : "bg-photo-scrim text-on-photo",
+                : "bg-card text-deal",
             )}
           >
             {off}% off
           </span>
         )}
         {soldOut && (
-          <span className="absolute inset-x-0 bottom-0 bg-photo-scrim py-1 text-center font-label text-tag uppercase tracking-tag text-on-photo">
+          <span className="absolute inset-x-0 bottom-0 bg-card py-1 text-center font-label text-tag uppercase tracking-tag text-card-foreground">
             {THEMED_COPY.card.soldOut}
           </span>
         )}

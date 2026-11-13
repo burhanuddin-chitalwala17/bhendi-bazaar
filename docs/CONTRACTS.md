@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-11-12
+- **Verified:** 2026-11-13
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -196,6 +196,10 @@ offers and the codes it ticked, worded from the offer (Q13), soonest ending firs
 shop's `promotionFormSchema`, `POST /api/org/[orgId]/promotions` and `PATCH …/[id]`) gains **`showOnStorefront`**
 (boolean, default false), stored as `Promotion.showOnStorefront` only for a shop's code; `PlatformPromotionFormInput`
 strips it.
+
+Since storefront-look units 2–4 `StorefrontPage` gains **`banners: HeroBannerContent[]`** (the shop's active banners, from
+`storefrontDAL.promotionsFor`, links already held to the shop's own pages by storefront-branding R2c), which lead Daily's
+hero and label Edge's photo. Read-only; no route handler or wire shape changes.
 
 Since storefront-themes unit 5 a shop publishes its look through **`StorefrontLookInput`**
 (`storefrontLookSchema` in `src/lib/validation/schemas/storefront.schema.ts`, `PUT /api/org/[orgId]/storefront/look`):

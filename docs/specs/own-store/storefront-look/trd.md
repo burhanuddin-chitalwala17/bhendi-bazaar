@@ -36,19 +36,25 @@ None — no new model. The text-below-image hero follows Shopify Dawn's `image-b
   `font-display` call site adds the weight and case utilities those tokens drive.
 - **D2 — Daily keeps three phone columns** (Q6, owner): `THEMES.daily.phoneColumns` stays 3; card text sizes are the
   platform's, only the image is smaller.
-- **D3 — Hero variants, per the prototype** (Q4, Q11):
-  - `fullBleed` (Edge): phone — photo at the hero slot's phone shape, solid label chip on its lower edge, identity
-    block on `bg-card` below. `md:` — photo in two of three columns, identity + two featured products in the third.
+- **D3 — Hero variants, per the prototype** (Q4, Q11, Q13):
+  - `fullBleed` (Edge): phone — photo at the hero slot's phone shape, the first titled banner's words on a solid
+    label at its foot, identity block on `bg-card` below with Shop all. `md:` — photo in two of three columns,
+    identity + two featured products in the third.
   - `ribbon` (Darbar): photo; a solid `bg-card` name card overlaps its foot (negative margin, not absolute, so the
-    card's height is real); ribbon line below on `bg-feature`. Desktop: same, card centred at `max-w-xl`.
+    card's height is real); ribbon line below on `bg-feature`. Desktop: photo centred at `max-w-4xl`, card at
+    `max-w-xl`, then a row of four featured products.
   - `split` (Bloom): phone — photo, then identity stacked with chips. `md:` — photo left; identity, then a
-    "Bestsellers this week" 4-up row on the right.
-  - `banner` (Daily): phone — rail of up to three banners (shop's offer banners, then hero photos), trust strip of
-    derived facts, identity. `md:` — main banner with two offer tiles beside it.
+    "Best selling" row of four on the right.
+  - `banner` (Daily): a rail of up to three slides — the shop's banners (with their title on a solid label and
+    their link), then its hero photos. `md:` — three: the first in two of three columns, two rows high, the
+    others stacked beside it; two: equal halves; so no cell is blank. Then a strip of derived facts and
+    the identity block.
   - **Identity block** is one shared piece: logo, name (`h1`, `text-headline`), line, chips (rating · since ·
-    products, rating only above brand-page's floor), and "Shop all {n}".
-  - **Featured products** are `page.bestSelling` minus sold-out, first N; a missing slot draws the theme pattern
-    tile (R9). No new query.
+    products, rating only above brand-page's floor), and "Shop all {n}" — on a phone only in Edge (Q13).
+  - **Featured products** are best selling in stock, topped up from new in, never twice (Q11); a missing slot
+    draws the theme pattern tile (R9). No new query.
+  - **Banners** reach the page through the landing read (`storefrontPageFrom` → `promotionsFor`), one more query
+    per landing page, cached as the page is (ADR-0065).
 - **D4 — Picture shapes are the slot's** (Q12). Hero photos keep `IMAGE_SLOT.STOREFRONT_HERO` (phone 4:5,
   desktop 16:9); Daily's offer banners keep `ORG_BANNER` (phone 4:5, desktop 5:2). The layout gives the photo its
   column and lets the slot's aspect set the height; the side column aligns to the top.
@@ -57,7 +63,7 @@ None — no new model. The text-below-image hero follows Shopify Dawn's `image-b
   a `bg-card` chip. `--color-photo-scrim` and `--color-on-photo` stay in `globals.css` only while the marketplace
   `product-card.tsx`, `wishlist-grid.tsx` and `utils.ts` use them (Q9, parked).
 - **D6 — Darbar collections** (Q5): `editorial` becomes a rail of arched tiles — 3:4, top radius full, 112px wide on
-  a phone and 184px from `md:`, name in display caps beneath. Same rail mechanics as `rail` (Edge). Variant name
+  a phone and 176px from `md:`, name in display caps beneath. Same rail mechanics as `rail` (Edge). Variant name
   kept, so the composition does not change.
 - **D7 — Product page in a store** (Q2): `product-details.tsx` sets the title in `font-display` (which falls back to
   the platform heading face outside a theme, so the marketplace page is unchanged) with the theme's display weight.
@@ -108,6 +114,8 @@ None.
 3. **Heroes** — D3, D4, shared identity block, featured slots.
 4. **Darbar collections** — D6.
 Each unit runs `/bb-review`; the owner walks the preview on a phone after unit 3.
+Units 2–4 shipped as one commit (2026-11-13): the hero rebuild is what removes the hero's scrim, so unit 2's scan
+could not pass without unit 3.
 
 ## Open questions
 None.
