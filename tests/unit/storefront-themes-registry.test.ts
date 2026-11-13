@@ -21,6 +21,11 @@ import {
   THEMES,
   THEME_KEYS,
   readStorefrontLook,
+  FONT_KEYS,
+  FONTS as FONTS_LIST,
+  SUGGESTED_FONTS,
+  defaultFont,
+  readFontKey,
 } from "@server/catalog/storefront-themes";
 
 const CSS = readFileSync("src/app/globals.css", "utf8");
@@ -113,9 +118,12 @@ describe("fonts (D5)", () => {
   const loaders = [...FONTS.matchAll(/= (\w+)\(\{([\s\S]*?)\}\);/g)];
 
   it("loads every family the registry names, and only those", () => {
-    const named = new Set(THEME_KEYS.flatMap((t) => Object.values(THEMES[t].faces)));
+    const themeVars = THEME_KEYS.flatMap((t) => Object.values(THEMES[t].faces)).map((f) => FACE_VARIABLE[f]);
+    const fontVars = FONT_KEYS.map((k) => FONTS_LIST[k].variable);
     const loadedVars = loaders.map(([, , body]) => body.match(/variable: "([\w-]+)"/)?.[1]);
-    const expected = [...named].map((f) => FACE_VARIABLE[f]).filter((v) => v !== "--font-body-face");
+    // The root layout's DM Sans and Playfair Display are already on every page.
+    const ROOT = new Set(["--font-body-face", "--font-heading-face"]);
+    const expected = [...new Set([...themeVars, ...fontVars])].filter((v) => !ROOT.has(v));
     expect(loadedVars.sort()).toEqual(expected.sort());
   });
 
@@ -204,5 +212,51 @@ describe("compositions (U2; R2, A1, Q8)", () => {
     expect([...HIDEABLE_SECTIONS].sort()).toEqual(
       [SECTION.COLLECTIONS, SECTION.STORY, SECTION.VISIT].sort(),
     );
+  });
+});
+
+describe("a shop's heading font (storefront-font R1, R4, Q1, Q7; D1, D5)", () => {
+  it("the list is the eight the owner chose", () => {
+    expect([...FONT_KEYS].sort()).toEqual(
+      ["cormorant", "dmsans", "jost", "marcellus", "mulish", "playfair", "poppins", "space"].sort(),
+    );
+  });
+
+  it("a scope per font, and a font per scope, each pointing the display face at its family", () => {
+    expect(scopeKeys("font").sort()).toEqual([...FONT_KEYS].sort());
+    for (const key of FONT_KEYS) {
+      const body = CSS.split(`[data-font="${key}"] {`)[1]?.split("}")[0] ?? "";
+      const declarations = [...body.matchAll(/^\s*([\w-]+):\s*([^;]+);/gm)].map(([, k, v]) => `${k}: ${v}`);
+      expect(declarations[0], key).toBe(`--font-display-face: var(${FONTS_LIST[key].variable})`);
+      // A one-weight face may refuse a faked bold; nothing else (R3).
+      expect(declarations.slice(1).every((d) => d === "font-synthesis-weight: none"), key).toBe(true);
+    }
+  });
+
+  it("a font scope sets the face only, never a size, weight or case (storefront-font R3)", () => {
+    for (const key of FONT_KEYS) {
+      const body = CSS.split(`[data-font="${key}"] {`)[1]?.split("}")[0] ?? "";
+      expect(body).not.toMatch(/--(?:text|spacing|font-display-weight|display-case)/);
+    }
+  });
+
+  it.each(THEME_KEYS)("%s suggests its own face first, and only listed fonts", (theme) => {
+    const suggested = SUGGESTED_FONTS[theme];
+    expect(suggested[0]).toBe(defaultFont(theme));
+    for (const key of suggested) expect(FONT_KEYS).toContain(key);
+  });
+
+  it("no font reads a role a theme repoints, so DM Sans is DM Sans inside Darbar too", () => {
+    for (const key of FONT_KEYS) expect(FONTS_LIST[key].variable).not.toBe("--font-body-face");
+  });
+
+  it("an unknown or absent key reads as the template's default (null)", () => {
+    expect(readFontKey("comic-sans")).toBeNull();
+    expect(readFontKey(null)).toBeNull();
+    expect(readFontKey("marcellus")).toBe("marcellus");
+  });
+
+  it("every theme's default face is on the list", () => {
+    for (const theme of THEME_KEYS) expect(FONT_KEYS).toContain(defaultFont(theme));
   });
 });

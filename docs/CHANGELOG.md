@@ -12,6 +12,21 @@
 
 ## Entries
 
+## 2026-11-13 — Storefront font, unit 1: the heading-font list, its faces and ADR-0074
+
+- **own-store/storefront-font** unit 1 (Q1, Q7, Q8, Q10; D1, D2, D5, D8). No behaviour change: nothing sets
+  `data-font` yet. `FONT` in `server/catalog/storefront-themes.ts` lists the eight faces the owner chose, each with its
+  own CSS variable, a one-line kind, and per-theme suggestions led by the theme's own face; `readFontKey` reads an
+  unknown key as the template's default. `theme-fonts.ts` loads Marcellus, Poppins and a standalone DM Sans
+  (`preload: false`), and `globals.css` gains a `[data-font]` scope per key that repoints the display face only.
+- A chosen DM Sans reads its own variable, not `--font-body-face`, which Darbar repoints to Jost. Marcellus ships one
+  weight, so its scope refuses a faked bold (`font-synthesis-weight: none`) where a theme asks for 600 or 800.
+- **ADR-0074**: a theme never sets proportion, and a shop picks its heading face from a closed list. It amends
+  ADR-0064 D1, D6 (a chosen face is a third family on a page) and its last consequence. CONVENTIONS.md gains the line.
+- Tests: `storefront-themes-registry` checks the list, one scope per key pointing at that key's own variable, no
+  size, weight or case in a font scope, suggestions, key parsing, and that every face is loaded. **Mutation:**
+  pointing DM Sans at `--font-body-face` failed 2 tests; restored. Ran: `tsc --noEmit`, `vitest run tests/unit`.
+
 ## 2026-11-13 — Storefront look, units 2–4: heroes never bare, no shade on photos, compact Darbar categories [CONTRACT]
 
 - **own-store/storefront-look** units 2, 3 and 4 in one change (the hero rebuild is what removes its scrim, so the

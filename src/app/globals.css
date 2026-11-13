@@ -565,6 +565,41 @@
   --pattern-size: auto;
 }
 
+/* A shop's heading face (storefront-font D5): the face only; size, weight and case stay the theme's (R3). */
+[data-font="space"] {
+  --font-display-face: var(--font-space-grotesk);
+}
+
+[data-font="jost"] {
+  --font-display-face: var(--font-jost);
+}
+
+[data-font="dmsans"] {
+  --font-display-face: var(--font-dm-sans);
+}
+
+[data-font="mulish"] {
+  --font-display-face: var(--font-mulish);
+}
+
+[data-font="poppins"] {
+  --font-display-face: var(--font-poppins);
+}
+
+[data-font="cormorant"] {
+  --font-display-face: var(--font-cormorant-garamond);
+}
+
+[data-font="playfair"] {
+  --font-display-face: var(--font-heading-face);
+}
+
+/* Marcellus ships one weight; a theme's 600 or 800 must not be faked as a smeared bold. */
+[data-font="marcellus"] {
+  --font-display-face: var(--font-marcellus);
+  font-synthesis-weight: none;
+}
+
 /* Reduced motion stops every theme's motion (storefront-themes D14, R12). */
 @media (prefers-reduced-motion: reduce) {
   [data-theme] {

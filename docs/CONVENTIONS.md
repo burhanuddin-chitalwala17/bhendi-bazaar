@@ -1,6 +1,6 @@
 # Conventions index
 
-- **Verified:** 2026-11-12
+- **Verified:** 2026-11-13
 - **Covers:** `docs/adr/*.md`, `docs/specs/*/`
 
 The canonical index of *how we work*, moved out of the root `CLAUDE.md` on 2026-11-01 so it is read when
@@ -46,6 +46,7 @@ nothing more; detail lives in the ADR so it has one wording ([ADR-0009](adr/0009
 - **The audit trail records an action; it never decides whether it happened.** [ADR-0021](adr/0021-audit-trail-never-fails-the-action.md)
 - **An org storefront is a scoped projection of the marketplace, on one domain.** [ADR-0030](adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md)
 - **A storefront theme is a token set and a section composition declared in code** — one section library, three palettes each, the shop stores keys only, every palette contrast-tested. [ADR-0064](adr/0064-a-storefront-theme-is-a-token-set-and-a-section-composition-declared-in-code.md)
+- **A theme never sets proportion; a shop picks its heading face from a closed list** — sizes, spacing and widths are the platform's in every theme; a font key repoints the display face only. [ADR-0074](adr/0074-a-shop-chooses-its-storefronts-heading-face-from-a-closed-list.md)
 - **Images live in Cloudflare R2, behind one seam.** [ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)
 - **Images are stored small and delivered through the optimizer.** [ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)
 - **A zoomable surface declares the size it zooms to; the stored ceiling clears it.** [ADR-0027](adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md)

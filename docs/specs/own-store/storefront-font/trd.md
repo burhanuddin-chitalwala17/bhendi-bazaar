@@ -49,8 +49,8 @@ not Dawn's heading-scale slider (sizes are fixed, R3).
   opens a sheet (ADR-0040: bottom sheet on a phone, side panel from `md:`). Each option is the shop's name set in that
   face, truncated at 24 characters. The live preview iframe takes `font` as a query key beside `theme` and
   `palette` (`preview-href.ts`); the preview page parses it with the same reader.
-- **D8 — ADR** (Q8): a new ADR, "A shop may choose its storefront's heading face from a closed list", superseding
-  ADR-0064's last consequence for headings; ADR-0064 D5 and D6 stand.
+- **D8 — ADR** (Q8): a new ADR, "A shop may choose its storefront's heading face from a closed list", amending
+  ADR-0064 D1, D6 and its last consequence for headings; ADR-0064 D5 stands.
 
 ## Packages
 None. Marcellus and Poppins are in the installed `next/font/google` data.

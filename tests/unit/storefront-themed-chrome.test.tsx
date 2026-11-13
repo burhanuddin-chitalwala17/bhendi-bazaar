@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("next/font/google", () => {
   const face = () => ({ variable: "face", className: "face", style: {} });
-  return { Space_Grotesk: face, Geist_Mono: face, Jost: face, Cormorant_Garamond: face, DM_Mono: face, Mulish: face };
+  return { Space_Grotesk: face, Geist_Mono: face, Jost: face, Cormorant_Garamond: face, DM_Mono: face, DM_Sans: face, Mulish: face, Marcellus: face, Poppins: face };
 });
 vi.mock("next-auth/react", () => ({ useSession: () => ({ data: null }) }));
 vi.mock("@/context/AuthSheetContext", () => ({ useAuthSheet: () => ({ open: vi.fn() }) }));
