@@ -4,7 +4,7 @@ import { effectivePrice, hasOffer, percentOff, type Product } from "@/domain/pro
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CARD_STYLE, type CardStyle } from "@server/catalog/storefront-themes";
-import { storefrontProductHref } from "./section-heading";
+import { productHref } from "@/components/shared/product-href";
 import { ThemePhoto } from "./theme-photo";
 import { THEMED_COPY } from "./themed-copy";
 
@@ -44,7 +44,7 @@ export function ThemedProductCard({
 
   return (
     <Link
-      href={storefrontProductHref(product.slug, shopHandle)}
+      href={productHref(product.slug, shopHandle)}
       prefetch={false}
       className={cn(
         "group block h-full overflow-hidden rounded-card bg-card text-card-foreground shadow-tile",

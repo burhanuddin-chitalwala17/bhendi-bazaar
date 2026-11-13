@@ -77,6 +77,7 @@ describe.skipIf(!isDisposableDb)("cached reads name every table they read (local
     await categoryRepository.list();
     await productsDAL.getProductBySlug(any.slug);
     await productsDAL.getSimilarProducts(any.slug, 4);
+    await productsDAL.getSimilarProductsForOrg(any.slug, fixtures.orgId, 4);
     await productsDAL.getProducts({ limit: 12 });
     // No category: the harness serialises reads, so one nested inside another (the category tree) would wait on itself.
     await productsDAL.countListing({});
@@ -86,7 +87,7 @@ describe.skipIf(!isDisposableDb)("cached reads name every table they read (local
     await reviewService.getPage(product.id, 1, null, { shared: true });
 
     expect([...seen.keys()].sort()).toEqual(
-      expect.arrayContaining(["active-banners", "all-categories", "display-bidding-locks", "family-siblings", "product-count", "review-page", "display-price-context", "product-by-slug", "product-rows", "rating-rows", "similar-products"]),
+      expect.arrayContaining(["active-banners", "all-categories", "display-bidding-locks", "family-siblings", "product-count", "review-page", "display-price-context", "product-by-slug", "product-rows", "rating-rows", "similar-products", "similar-products-org"]),
     );
   });
 

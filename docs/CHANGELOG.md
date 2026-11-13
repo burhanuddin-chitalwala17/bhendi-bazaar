@@ -12,6 +12,22 @@
 
 ## Entries
 
+## 2026-11-13 — Fix: a variant opened from a shop's product page left the shop
+
+- **Bug:** on a themed shop's product page (`/product/{slug}?shop={handle}`), tapping another variant under "Also
+  available" opened `/product/{variant}` without `?shop=`, so the page fell back to the marketplace chrome and the
+  buyer was out of the shop (storefront-themes Q33 broken). "Similar products" below did the same, and listed other
+  shops' goods.
+- **Fix:** the shop a product page keeps is now one per-request answer, `productChromeShop()` in
+  `storefront.dal.ts`, read by both the `(main)` layout (for the chrome) and the product page (for its links), so
+  the two cannot disagree. Variant links, the similar-products grid and the themed cards (which drop `storefrontProductHref`) share one `productHref`
+  (`src/components/shared/product-href.ts`) that adds `?shop=` inside a shop and stays canonical elsewhere. Inside
+  a shop, similar products are that shop's own (`getSimilarProductsForOrg`). The marketplace product page is unchanged.
+- Tests: new `storefront-variant-links`: a variant and a similar-product card keep `?shop=` inside a shop and are
+  canonical outside one; `read-cache-tables` (integration) exercises the new `similar-products-org` read. **Mutation:** putting back `ROUTES.product(sibling.slug)` failed it; restored. Checked in the
+  running app: from a shop's product, tapping the variant kept the shop's look, and no product link on the page left
+  the shop. Ran: `tsc --noEmit`, `vitest run tests/unit`, `read-cache-tables` against `bhendi_bazaar_dev`, `lint:boundary`.
+
 ## 2026-11-13 — Storefront font, unit 3: a shop picks its heading face, and its store draws it
 
 - **own-store/storefront-font** unit 3 (Q2, Q9; R1–R7; D6, D7; A1–A4). Each card in Storefront → Look gains a

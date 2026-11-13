@@ -262,6 +262,18 @@ export const productsDAL = {
     return rows.map((product) => mapProduct(product, context, locks, ratings));
   },
 
+  /** A themed shop's product page: the shop's own goods only, so "similar" never leads out of it (Q33). */
+  getSimilarProductsForOrg: async (slug: string, orgId: string, count: number): Promise<Product[]> => {
+    const [products, context, locks] = await Promise.all([
+      catalogueRead("similar-products-org", [slug, orgId, count], () => productsRepository.getSimilarProducts(slug, count, orgId)),
+      loadDisplayPriceContext(),
+      loadDisplayBiddingLockContext(),
+    ]);
+    const rows = products.filter((p) => p !== null);
+    const ratings = await ratingsFor(rows);
+    return rows.map((product) => mapProduct(product, context, locks, ratings));
+  },
+
   getOfferProducts: async (limit: number): Promise<Product[]> => {
     const [products, context, locks] = await Promise.all([
       productsRepository.getOfferProducts(limit),

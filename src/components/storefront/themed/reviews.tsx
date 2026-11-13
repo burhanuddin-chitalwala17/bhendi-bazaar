@@ -3,7 +3,8 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { SectionVariant } from "@server/catalog/storefront-themes";
 import type { ReviewsSlice } from "./page-data";
-import { SectionHeading, storefrontProductHref } from "./section-heading";
+import { SectionHeading } from "./section-heading";
+import { productHref } from "@/components/shared/product-href";
 import { THEMED_COPY } from "./themed-copy";
 
 /**
@@ -37,7 +38,7 @@ export function ThemedReviews({
             )}
             <p className="text-tag">
               {review.authorName} · on{" "}
-              <Link href={storefrontProductHref(review.product.slug, handle)} prefetch={false} className="underline underline-offset-4">
+              <Link href={productHref(review.product.slug, handle)} prefetch={false} className="underline underline-offset-4">
                 {review.product.name}
               </Link>
             </p>
