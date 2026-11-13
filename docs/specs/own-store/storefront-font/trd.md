@@ -45,8 +45,10 @@ not Dawn's heading-scale slider (sizes are fixed, R3).
   page title. The shell's header name, section headings, card names, category names, banner titles and the hero
   name already use or will use `font-display` after storefront-look; prices, chips, buttons and body keep `font-sans`
   / `font-label`. A registry test lists the components allowed `font-display`, so a price cannot pick it up by drift.
-- **D7 — Picker** (Q9; ux.md Look and Font sheet): a `FontRow` on the selected template card in `look-picker.tsx`
-  opens a sheet (ADR-0040: bottom sheet on a phone, side panel from `md:`). Each option is the shop's name set in that
+- **D7 — Picker** (Q9; ux.md Look and Font sheet): a "Font for headings" row on every template card, below the
+  palette dots, opens `ResponsivePicker` (ADR-0040 decision 1: bottom sheet on a phone, popover from `md:`). One face
+  is chosen across the cards; a face picked is kept across templates, even a template's own, and only "Use template
+  default" clears it (R6). Each option is the shop's name set in that
   face, truncated at 24 characters. The live preview iframe takes `font` as a query key beside `theme` and
   `palette` (`preview-href.ts`); the preview page parses it with the same reader.
 - **D8 — ADR** (Q8): a new ADR, "A shop may choose its storefront's heading face from a closed list", amending

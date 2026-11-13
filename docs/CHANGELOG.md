@@ -12,6 +12,26 @@
 
 ## Entries
 
+## 2026-11-13 — Storefront font, unit 3: a shop picks its heading face, and its store draws it
+
+- **own-store/storefront-font** unit 3 (Q2, Q9; R1–R7; D6, D7; A1–A4). Each card in Storefront → Look gains a
+  "Font for headings" row. It opens the eight faces as samples of the shop's own name, cut at 24 characters,
+  suggested for the template first, then more fonts, with "Use template default". It is a bottom sheet on a phone
+  and a popover from `md:` (`ResponsivePicker`, ADR-0040 decision 1); each face is a pressed/unpressed button. A face
+  picked carries across templates, even a template's own; only "Use template default" clears it (R6). A "Previewing
+  · not live yet" banner shows while the face differs from the live one. The cards and the full preview pass it as `?font=`, the preview page draws
+  it, Publish sends it, the confirm reads "Publish {Template} with {Face}?" and the toast "Published. Your store now
+  uses {Face}."; the old "Your new look is live." and "Publish {Template}?" strings are gone.
+- The themed shell sets `data-font` and the face's loader class when a face is chosen, so the shop name, section
+  titles, product names and the product page title take it. Prices, body, buttons and chips keep the theme's faces.
+- Tests: new `storefront-font-picker` covers the row's default, the samples, long names, a chosen face redrawing
+  the card, the face carrying to another template and being published, Use template default sending none, and
+  the shell's `data-font`, and a template's own face kept across templates. **Mutations:** publishing the live face instead of the chosen one failed 2 tests;
+  dropping `data-font` from the shell failed 1; both restored. Checked in the running app as the local seed's shop
+  owner: the phone sheet, the desktop popover, and the store at 360px with Marcellus (Darbar) and Poppins (Bloom).
+  Headings measured 22px phone and 18px section titles in the chosen face, prices in the theme's face, and only
+  the chosen face downloaded. Ran: `tsc --noEmit`, `vitest run tests/unit`, `lint:boundary`.
+
 ## 2026-11-13 — Storefront font, unit 2: the heading face is published with the look [MIGRATION] [CONTRACT]
 
 - **own-store/storefront-font** unit 2 (Q6, Q7; D3, D4; A1, A3). The face rides the look: the look schema requires

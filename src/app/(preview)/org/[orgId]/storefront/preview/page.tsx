@@ -12,7 +12,7 @@ import { productsDAL } from "@/data-access-layer/products.dal";
 import { storefrontDAL } from "@/data-access-layer/storefront.dal";
 import { requireOrgMember } from "@/lib/org-auth";
 import { storefrontLookService } from "@server/catalog/storefront-look.service";
-import { readStorefrontLook } from "@server/catalog/storefront-themes";
+import { readFontKey, readStorefrontLook } from "@server/catalog/storefront-themes";
 import { PREVIEW_PAGE_COPY } from "@/app/(preview)/preview-copy";
 
 export const metadata: Metadata = { title: PREVIEW_PAGE_COPY.title, robots: { index: false, follow: false } };
@@ -27,7 +27,7 @@ export default async function LookPreviewPage({
   searchParams,
 }: {
   params: Promise<{ orgId: string }>;
-  searchParams: Promise<{ theme?: string; palette?: string; view?: string }>;
+  searchParams: Promise<{ theme?: string; palette?: string; view?: string; font?: string }>;
 }) {
   const [{ orgId }, query] = await Promise.all([params, searchParams]);
   const scope = await requireOrgMember(orgId).catch(() => null);
@@ -35,7 +35,8 @@ export default async function LookPreviewPage({
   if (!scope || !look) notFound();
 
   const { handle } = await storefrontLookService.getLook(scope.orgId);
-  const page = await storefrontDAL.getStorefrontPreview(handle, look);
+  const font = readFontKey(query.font);
+  const page = await storefrontDAL.getStorefrontPreview(handle, { ...look, font });
   if (!page) notFound();
   const sample = page.productCount === 0;
   const data = withSampleGoods(themedPageData(page), page);
@@ -43,7 +44,7 @@ export default async function LookPreviewPage({
   const goods = shopView && !sample ? (await productsDAL.getPage({ orgId: page.id })).products : [];
 
   return (
-    <ThemedShell shop={{ handle, name: page.name, logoUrl: page.logoUrl, themeKey: look.theme, paletteKey: look.palette }}>
+    <ThemedShell shop={{ handle, name: page.name, logoUrl: page.logoUrl, themeKey: look.theme, paletteKey: look.palette, fontKey: font }}>
       <PreviewFrameGuard />
       <div data-storefront-preview="">
         {sample && (

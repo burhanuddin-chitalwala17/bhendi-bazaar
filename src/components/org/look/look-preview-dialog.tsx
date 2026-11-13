@@ -11,6 +11,7 @@ import {
 } from "@/components/storefront/preview/preview-href";
 import {
   THEMES,
+  type FontKey,
   type PaletteKey,
   type ThemeKey,
 } from "@server/catalog/storefront-themes";
@@ -73,6 +74,7 @@ export function LookPreviewDialog({
   orgId,
   theme,
   palette,
+  font,
   view,
   onPalette,
   onView,
@@ -82,6 +84,8 @@ export function LookPreviewDialog({
   orgId: string;
   theme: ThemeKey;
   palette: PaletteKey;
+  /** The heading face being tried (storefront-font D7). */
+  font: FontKey | null;
   view: PreviewView;
   onPalette: (palette: PaletteKey) => void;
   onView: (view: PreviewView) => void;
@@ -91,7 +95,7 @@ export function LookPreviewDialog({
   const [section, setSection] = useTappedSection();
   const [revision, setRevision] = useState(0);
   const tapHint = useTapHintOnce();
-  const src = lookPreviewHref(orgId, theme, palette, view, revision);
+  const src = lookPreviewHref(orgId, theme, palette, view, revision, font);
   const name = THEMES[theme].label;
   return (
     <TaskDialog

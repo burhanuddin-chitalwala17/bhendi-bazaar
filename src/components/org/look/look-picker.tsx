@@ -9,7 +9,8 @@ import { ShareShopSheet } from "@/components/org/share/share-shop-sheet";
 import { orgStorefrontApiClient } from "@/components/org/orgStorefrontApiClient";
 import { PREVIEW_VIEW, type PreviewView } from "@/components/storefront/preview/preview-href";
 import type { ShareShop } from "@/lib/store-preview";
-import { THEME_KEYS, THEMES, type PaletteKey, type ThemeKey } from "@server/catalog/storefront-themes";
+import { FONTS, THEME_KEYS, THEMES, defaultFont, type FontKey, type PaletteKey, type ThemeKey } from "@server/catalog/storefront-themes";
+import { FONT_COPY } from "./look-font-copy";
 import { lookName, type StorefrontLookState } from "@server/catalog/storefront-look.types";
 import { LOOK_COPY } from "./look-copy";
 import { LookConfirmDialog } from "./look-confirm-dialog";
@@ -35,6 +36,8 @@ function startingPalettes(look: StorefrontLookState): Record<ThemeKey, PaletteKe
  */
 export function LookPicker({ look, share }: { look: StorefrontLookState; share: ShareShop | null }) {
   const [palettes, setPalettes] = useState(() => startingPalettes(look));
+  // One face across the cards: changing template keeps it (storefront-font R6); null is each template's own.
+  const [font, setFont] = useState<FontKey | null>(look.live.font);
   const [previewing, setPreviewing] = useState<ThemeKey | null>(null);
   const [view, setView] = useState<PreviewView>(PREVIEW_VIEW.LANDING);
   const [confirming, setConfirming] = useState(false);
@@ -49,14 +52,14 @@ export function LookPicker({ look, share }: { look: StorefrontLookState; share: 
       orgStorefrontApiClient.publishLook(look.orgId, {
         theme: previewing!,
         palette: palettes[previewing!],
-        font: look.live.font,
+        font,
         lookVersion: look.lookVersion,
       }),
     () => {
       setConfirming(false);
       setPreviewing(null);
       setPublished(true);
-      toast.success(LOOK_COPY.published);
+      toast.success(FONT_COPY.published(FONTS[font ?? defaultFont(previewing!)].family));
     },
   );
 
@@ -76,6 +79,7 @@ export function LookPicker({ look, share }: { look: StorefrontLookState; share: 
     publish.reset();
     revert.reset();
     const live = look.live;
+    setFont(live.font);
     if (live.theme && live.palette) {
       setPalettes((all) => ({ ...all, [live.theme!]: live.palette! }));
       setPreviewing(live.theme);
@@ -112,13 +116,22 @@ export function LookPicker({ look, share }: { look: StorefrontLookState; share: 
         </div>
       )}
 
+      {font !== look.live.font && (
+        <p role="status" className="rounded-field bg-warning/10 px-3 py-2 text-small text-foreground">
+          {FONT_COPY.previewing}
+        </p>
+      )}
+
       <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {THEME_KEYS.map((theme) => (
           <li key={theme}>
             <ThemeCard
               orgId={look.orgId}
+              shopName={look.name}
               theme={theme}
               palette={palettes[theme]}
+              font={font}
+              onFont={setFont}
               live={look.live.theme === theme}
               suggestedFor={look.suggested?.theme === theme ? look.suggested.label : undefined}
               onPalette={setPalette(theme)}
@@ -136,6 +149,7 @@ export function LookPicker({ look, share }: { look: StorefrontLookState; share: 
           orgId={look.orgId}
           theme={previewing}
           palette={palettes[previewing]}
+          font={font}
           view={view}
           onPalette={setPalette(previewing)}
           onView={setView}
@@ -148,7 +162,7 @@ export function LookPicker({ look, share }: { look: StorefrontLookState; share: 
         <LookConfirmDialog
           open={confirming}
           onOpenChange={setConfirming}
-          title={LOOK_COPY.publishTitle(THEMES[previewing].label)}
+          title={FONT_COPY.publishTitle(THEMES[previewing].label, FONTS[font ?? defaultFont(previewing)].family)}
           body={LOOK_COPY.publishBody}
           confirmLabel={LOOK_COPY.publish}
           busyLabel={LOOK_COPY.publishing}

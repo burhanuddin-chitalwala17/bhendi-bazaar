@@ -15,6 +15,10 @@ vi.mock("@/components/org/orgStorefrontApiClient", () => ({
 vi.mock("@/components/org/share/share-shop-sheet", () => ({
   ShareShopSheet: ({ trigger }: { trigger: React.ReactNode }) => trigger,
 }));
+vi.mock("next/font/google", () => {
+  const face = () => ({ variable: "face", className: "face", style: {} });
+  return { Space_Grotesk: face, Geist_Mono: face, Jost: face, Cormorant_Garamond: face, DM_Mono: face, DM_Sans: face, Mulish: face, Marcellus: face, Poppins: face };
+});
 // The frames are their own test below; here a card's frame is just its src.
 vi.mock("@/components/org/look/look-frame", () => ({
   FRAME_DEVICE: { PHONE: { width: 390, height: 844 }, DESKTOP: { width: 1280, height: 800 } },
@@ -144,7 +148,7 @@ describe("preview & publish (ux.md journeys 1 and 4)", () => {
     expect(frames()).toContain(lookPreviewHref("org_1", "darbar", "emerald", PREVIEW_VIEW.SHOP));
 
     press(LOOK_COPY.publishThisLook);
-    expect(screen.getByText("Publish Darbar?")).toBeTruthy();
+    expect(screen.getByText("Publish Darbar with Jost?")).toBeTruthy();
     expect(screen.getByText(LOOK_COPY.publishBody)).toBeTruthy();
     expect(screen.getByRole("button", { name: LOOK_COPY.notYet })).toBeTruthy();
     press(LOOK_COPY.publish);
@@ -152,7 +156,7 @@ describe("preview & publish (ux.md journeys 1 and 4)", () => {
     await waitFor(() =>
       expect(h.publishLook).toHaveBeenCalledWith("org_1", { theme: "darbar", palette: "emerald", font: null, lookVersion: 3 }),
     );
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith(LOOK_COPY.published));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Published. Your store now uses Jost."));
     expect(h.refresh).toHaveBeenCalled();
     expect(await screen.findByRole("button", { name: LOOK_COPY.shareShop })).toBeTruthy();
   });

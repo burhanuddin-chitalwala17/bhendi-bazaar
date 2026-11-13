@@ -88,11 +88,11 @@
 ## State matrix — Look picker and Font sheet
 | State | What the shop sees | Copy | Action |
 |---|---|---|---|
-| First use (no font chosen) | Font row shows the template's face | "Font · Jost · Template default" | tap row |
+| First use (no font chosen) | Font row on every card shows that template's face | "Font for headings · Jost · Template default" | tap row |
 | Empty | n/a — the list is fixed in code and never empty | — | — |
 | Loading | Sheet opens at once; each sample is drawn in the system font for a moment, then swaps to its face (`swap`) | — | — |
-| Partial (one face failed to load) | That sample stays in the system font with a note; still selectable | "Preview unavailable — it will show on your store" | pick |
-| Success | Chosen row ticked; preview redraws; banner on the card | "Previewing · not live yet" | Publish |
+| Partial (one face failed to load) | n/a — every face is served from our own domain with the page; a slow one shows in its metric-matched fallback until it swaps (`display: swap`) | — | — |
+| Success | Tapping a face picks it and closes the picker; the row is ticked; every card's preview redraws; a banner above the cards | "Previewing · not live yet" | Preview → Publish |
 | Retryable error | Toast; draft kept | "Couldn't publish. Check your connection and try again." | Try again |
 | Terminal error | n/a — a font key is fixed in code; an unknown one reads as the default (font Q7) | — | — |
 | Refused (stale look) | Sheet | "Ayesha published Bloom 4 min ago. Look at theirs first, or publish yours over it." | See latest · Publish mine |
@@ -101,7 +101,7 @@
 | Long content | Shop name over 24 characters: the sample shows the first 24 and an ellipsis | — | — |
 | Many items | Eight fonts, grouped: Suggested for {template} first, then More fonts | — | — |
 | Slow (>3s publish) | Publish button shows a spinner and "Publishing…"; the sheet stays | "Publishing…" | — |
-| Phone / tablet / desktop | Phone: bottom sheet. `md:` the same sheet as a side panel beside the preview | — | — |
+| Phone / tablet / desktop | Phone: bottom sheet. `md:` a popover against the row (ADR-0040 decision 1: a value picked from a set) | — | — |
 
 ## Copy deck
 **Store (buyer)**
@@ -113,12 +113,12 @@
 - Product page: "Inclusive of all taxes" · "Add to cart" · "Buy now"
 
 **Look (shop)**
-- Font row: "Font" · value "{Face} · Template default" or "{Face}"
+- Font row: "Font for headings" · value "{Face}", with "Template default" while none is chosen
 - Sheet title: "Font for headings"
 - Sheet help: "Your shop name, headings and product names use this font. Sizes stay the same."
 - Group labels: "Suggested for {Template}", "More fonts"
 - Tags: "Template default", "Suggested"
-- Buttons: "Use this font", "Use template default", "Cancel"
+- Buttons: "Use template default" (tapping a face picks it; the sheet closes by swipe or outside tap)
 - Preview banner: "Previewing · not live yet"
 - Confirm title: "Publish {Template} with {Face}?"
 - Confirm body: "Your store changes for everyone straight away. You can switch back for 30 days."
@@ -126,7 +126,6 @@
 - Toasts: "Published. Your store now uses {Face}." · "Couldn't publish. Check your connection and try again."
 - Stale: "{Name} published {Template} {n} min ago. Look at theirs first, or publish yours over it." · "See latest" · "Publish mine"
 - Not owner: "Only the shop owner can publish a look. Ask {Owner} to publish it." · "OK"
-- Face failed: "Preview unavailable — it will show on your store"
 
 ## Sign-off
 Owner, 2026-11-13: "the look is amazing, make sure you follow the prototype." The look is approved as prototyped; desktop hero pictures keep the uploaded shape (storefront-look Q12).
