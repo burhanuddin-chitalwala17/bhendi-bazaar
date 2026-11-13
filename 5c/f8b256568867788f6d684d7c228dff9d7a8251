@@ -1,0 +1,61 @@
+docs/BACKLOG.md
+  s_60bcf53c6d1bb5::t_c07fbd3189d7ef 198,218
+  s_60bcf53c6d1bb5::t_d1a21545fccd9c 216-217
+docs/specs/README.md
+  s_60bcf53c6d1bb5::t_84fc52a52a73bd 125-126
+docs/specs/own-store/storefront-font/decisions.md
+  s_60bcf53c6d1bb5::t_6f4054d483a911 11
+  s_60bcf53c6d1bb5::t_adf6b121ad6a62 12
+  s_60bcf53c6d1bb5::t_8fdf28d899d159 20
+  s_60bcf53c6d1bb5::t_a874fcae53d5d8 1-10,13-19,21-23
+docs/specs/own-store/storefront-look/spike.md
+  s_60bcf53c6d1bb5::t_d3c4f5a5d85d86 7,98-100
+  s_60bcf53c6d1bb5::t_31c2307e414ca9 1-6,8-97,101
+docs/specs/own-store/storefront-look/decisions.md
+  s_60bcf53c6d1bb5::t_6f4054d483a911 18
+  s_60bcf53c6d1bb5::t_28cbefd5341ad2 1-17,19,21-23,25-28
+  s_60bcf53c6d1bb5::t_d296c19f1236db 20
+  s_60bcf53c6d1bb5::t_8fdf28d899d159 24
+docs/specs/own-store/storefront-font/spec.md
+  s_60bcf53c6d1bb5::t_96b78cd91cd951 1-3,5-23,27-47
+  s_60bcf53c6d1bb5::t_adf6b121ad6a62 24-26,48
+  s_60bcf53c6d1bb5::t_84fc52a52a73bd 4
+docs/specs/own-store/storefront-look/ux.md
+  s_60bcf53c6d1bb5::t_8fdf28d899d159 131
+  s_60bcf53c6d1bb5::t_1bba62fb374c48 5
+  s_60bcf53c6d1bb5::t_4516e64e2537a9 1-2,4,6-116,118-130
+  s_60bcf53c6d1bb5::t_adf6b121ad6a62 3,117,132-134
+docs/specs/own-store/storefront-look/prototype.html
+  s_60bcf53c6d1bb5::t_5015beddb3d773 178
+  s_60bcf53c6d1bb5::t_adf6b121ad6a62 501
+  s_60bcf53c6d1bb5::t_6756110a5616b8 476-477,525
+  s_60bcf53c6d1bb5::t_1379204b9346ab 1-177,179-475,478-500,502-524,526-600
+docs/specs/own-store/storefront-look/trd.md
+  s_60bcf53c6d1bb5::t_82df7cf00955a0 63-66
+  s_60bcf53c6d1bb5::t_c8fc072e0f723b 1-2,4-62,67-113
+  s_60bcf53c6d1bb5::t_84fc52a52a73bd 3
+docs/specs/own-store/storefront-look/spec.md
+  s_60bcf53c6d1bb5::t_e908996bbc3e7b 1-3,5-59
+  s_60bcf53c6d1bb5::t_adf6b121ad6a62 60
+  s_60bcf53c6d1bb5::t_84fc52a52a73bd 4
+docs/specs/own-store/storefront-font/trd.md
+  s_60bcf53c6d1bb5::t_13cc9018d437bf 1-2,4-78,80-95
+  s_60bcf53c6d1bb5::t_84fc52a52a73bd 3
+  s_60bcf53c6d1bb5::t_fc6408d51ba603 79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "5cf8b256568867788f6d684d7c228dff9d7a8251",
+  "prompts": {},
+  "sessions": {
+    "s_60bcf53c6d1bb5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ddba7a9-29ee-4fcf-a319-985b96702c36",
+        "model": "unknown"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
