@@ -195,6 +195,7 @@ Added 2026-11-04 from the platform UI audit. Programme overview: [design-system]
 | [navigation-flows](specs/navigation-flows/) | Every feature finishes and exits back where it started, one step at a time, without losing typed work | ⏸ Parked 2026-11-12: listing fix loop and the three address fixes shipped; the rest waits (audit.md is the worklist) |
 | navigation-flows Q13 *(later)* | Buyer returns and refunds: no flow exists today | parked |
 | navigation-flows Q14 *(later)* | Marketplace read and stock-sync wording for sellers | parked |
+| storefront-look Q9 *(later)* | The marketplace home banner without a shade, as storefronts | parked |
 | design-system Q13–Q17 *(later)* | Admin chart, auth and /sell, `shared/forms/product` move, ⌘K, view transitions | parked |
 
 ---
@@ -212,6 +213,9 @@ Added 2026-10-29: track 1 of three (see *Three tracks*). Programme overview: [ow
 | own-store/seller-onboarding | Task home, setup list, grouped navigation, phone tab bar, in-place creation | planned |
 | own-store/org-profile | Essentials only; contact and legal editable; tax and bank asked at first payout | planned |
 | own-store/storefront-themes | Four templates, own header with the platform's logo and contacts, shared cart, "Visit {Shop name}" | planned |
+| [own-store/storefront-look](specs/own-store/storefront-look/) | Every template on the platform type scale, a first phone screen never bare, banners vivid with no shade | 🔨 UX signed off 2026-11-13; TRD drafted |
+| [own-store/storefront-font](specs/own-store/storefront-font/) | A shop picks its store's heading font from a short curated list; sizes stay the platform's | 🔨 UX signed off 2026-11-13; TRD drafted |
+| storefront-font Q3–Q5 *(later)* | Body-font choice, fonts on request, non-Latin scripts | parked |
 | offers-hardening Q8 *(later)* | A shop ending its own markdown just before a platform campaign | parked |
 | offers-hardening Q10, Q13 *(later)* | Coupon use and ledger reversal for an order cancelled before dispatch or before payment | parked, order-fulfilment |
 
