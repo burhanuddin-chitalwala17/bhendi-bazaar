@@ -5,9 +5,11 @@ import type { BrandOwner } from "@server/catalog/brand-page-sections";
 import { RETURNS_PRESET_LABEL, type ReturnsPreset } from "@server/catalog/shop-details.types";
 import type { BrandProof } from "@server/catalog/storefront.types";
 import type { StorefrontOfferDto } from "@server/promotions/storefront-offers";
+import type { HeroBannerContent } from "@/components/home/hero-banner";
 import { LANDING_SHELF_LIMIT, SECTION, type HideableSection } from "@server/catalog/storefront-themes";
 import { formatCount } from "@/lib/format";
 import { APP_NAME } from "@/lib/config";
+import { THEMED_COPY } from "./themed-copy";
 
 /**
  * What a themed page's sections read (storefront-themes D8). The page DTO that fills it is
@@ -31,6 +33,8 @@ export interface ThemedPageData {
   /** The shop's running offers (Q12) and the goods priced below list (ADR-0018). */
   offers: StorefrontOfferDto[];
   dealProducts: Product[];
+  /** The shop's active banners, title and link included (storefront-themes Q14); absent reads as none. */
+  banners?: HeroBannerContent[];
   collections: CollectionTile[];
   proof: BrandProof | null;
   since: number;
@@ -73,10 +77,33 @@ export interface HeroSlice {
   photoUrl: string | null;
   /** The first hero photo framed for phone and desktop (image-slots D10). */
   image: ResponsiveImageDto | null;
+  /** Daily's rail: the shop's banners first, then its hero photos (storefront-look D3). */
+  slides: HeroSlide[];
   line: string | null;
   since: number;
   productCount: number;
+  /** Derived, above brand-page's floor, or null (storefront-themes Q15). */
+  rating: { average: number; count: number } | null;
+  /** What fills the hero's side (storefront-look Q11): best selling in stock, then new in. */
+  featured: Product[];
+  /** Derived facts only, for Daily's trust strip (storefront-themes Q21). */
+  trust: string[];
 }
+
+export interface HeroSlide {
+  key: string;
+  src: string | null;
+  image: ResponsiveImageDto | null;
+  /** A banner's own title and link, drawn on a solid label below the picture (storefront-look Q3). */
+  title: string | null;
+  href: string | null;
+  actionLabel: string | null;
+}
+
+/** The most a hero shows beside its photo (storefront-look D3: Bloom's row of four). */
+export const HERO_FEATURED_MAX = 4;
+/** Daily shows a main slide and two beside it (storefront-look D3). */
+export const HERO_SLIDES_MAX = 3;
 
 export interface ShelfSlice {
   handle: string;
@@ -135,10 +162,59 @@ export const heroSlice = (page: ThemedPageData): HeroSlice => ({
   logoUrl: page.logoUrl,
   photoUrl: page.heroPhotos[0] ?? null,
   image: page.heroImages?.[0] ?? null,
+  slides: heroSlides(page),
   line: page.heroLine ?? page.tagline,
   since: page.since,
   productCount: page.productCount,
+  rating: page.proof?.rating ?? null,
+  featured: featuredProducts(page, HERO_FEATURED_MAX),
+  trust: trustFacts(page),
 });
+
+/** Best selling first, then new in, never sold out and never twice (storefront-look Q11). */
+export function featuredProducts(page: ThemedPageData, max: number): Product[] {
+  const seen = new Set<string>();
+  const picked: Product[] = [];
+  for (const product of [...page.bestSelling, ...page.newIn]) {
+    if (picked.length === max) break;
+    if (product.stock <= 0 || seen.has(product.id)) continue;
+    seen.add(product.id);
+    picked.push(product);
+  }
+  return picked;
+}
+
+function heroSlides(page: ThemedPageData): HeroSlide[] {
+  const banners: HeroSlide[] = (page.banners ?? [])
+    .filter((banner) => banner.image)
+    .map((banner) => ({
+      key: `banner-${banner.id}`,
+      src: null,
+      image: banner.image ?? null,
+      title: banner.title ?? null,
+      href: banner.actions?.[0]?.href ?? null,
+      actionLabel: banner.actions?.[0]?.label ?? null,
+    }));
+  const photos: HeroSlide[] = page.heroPhotos.map((src, index) => ({
+    key: `photo-${index}`,
+    src,
+    image: page.heroImages?.[index] ?? null,
+    title: null,
+    href: null,
+    actionLabel: null,
+  }));
+  return [...banners, ...photos].slice(0, HERO_SLIDES_MAX);
+}
+
+/** Facts the platform knows, in the order a buyer weighs them; never typed (storefront-themes Q21, Q22). */
+function trustFacts(page: ThemedPageData): string[] {
+  const facts: string[] = [];
+  if (page.returns) facts.push(returnsText(page.returns.preset));
+  if (page.dispatchDays != null) facts.push(THEMED_COPY.facts.ships(dispatchWithin(page.dispatchDays)));
+  const orders = page.proof?.ordersFulfilled;
+  if (orders != null) facts.push(THEMED_COPY.facts.ordersDelivered(formatCount(orders)));
+  return facts;
+}
 
 export const collectionsSlice = (page: ThemedPageData): CollectionsSlice | null =>
   page.collections.length && !hidden(page, SECTION.COLLECTIONS)
@@ -182,10 +258,10 @@ export function whyBuySlice(page: ThemedPageData): WhyBuySlice | null {
   }
   const orders = page.proof?.ordersFulfilled;
   if (orders != null) {
-    earned.push({ key: "orders", text: `${formatCount(orders)}+ orders delivered` });
+    earned.push({ key: "orders", text: THEMED_COPY.facts.ordersDelivered(formatCount(orders)) });
   }
   if (page.dispatchDays != null) {
-    earned.push({ key: "dispatch", text: `Ships ${dispatchWithin(page.dispatchDays)}` });
+    earned.push({ key: "dispatch", text: THEMED_COPY.facts.ships(dispatchWithin(page.dispatchDays)) });
   }
   if (!earned.length && !page.claims.length) return null;
 

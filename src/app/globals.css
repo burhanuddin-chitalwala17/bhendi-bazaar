@@ -5,6 +5,7 @@
    component's `dark:` style must not fire inside one. */
 @custom-variant dark (&:is(.dark *):where(:not([data-palette], [data-palette] *)));
 
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -487,7 +488,8 @@
    palette (below) repoints colour. The face classes from
    src/components/storefront/theme-fonts.ts sit on the same element, which is where these
    `var(--font-…)` references resolve. The font-family is restated because the root's was
-   computed on `html`, before any scope existed. */
+   computed on `html`, before any scope existed. A theme never sets a size, spacing or width
+   (storefront-look Q1): templates differ in style, not proportion. */
 [data-theme] {
   font-family: var(--font-body-face);
 }
@@ -496,20 +498,10 @@
   --font-display-face: var(--font-space-grotesk);
   --font-body-face: var(--font-space-grotesk);
   --font-label-face: var(--font-geist-mono);
-  --text-headline: clamp(2.5rem, 1.6rem + 4.4vw, 6rem);
-  --text-headline--line-height: 1;
-  --text-title: clamp(1.75rem, 1.5rem + 1.2vw, 2.5rem);
-  --text-title--line-height: 1.1;
-  --text-body: 1rem;
-  --text-body--line-height: 1.4;
-  --text-tag: 0.75rem;
-  --text-price: 1rem;
-  --tracking-headline: -0.03em;
+  --font-display-weight: 600;
+  --display-case: none;
+  --tracking-headline: -0.02em;
   --tracking-tag: 0.1em;
-  --spacing-section: clamp(4rem, 2.4rem + 8vw, 9rem);
-  --spacing-gutter: clamp(1rem, 0.5rem + 4vw, 5.25rem);
-  --spacing-grid: clamp(0.75rem, 0.5rem + 1.2vw, 1.5rem);
-  --container-store: 89rem;
   --radius-card: 1.5rem;
   --radius-field: 9999px;
   --shadow-tile-value: 0 0 #0000;
@@ -524,20 +516,10 @@
   --font-display-face: var(--font-jost);
   --font-body-face: var(--font-jost);
   --font-label-face: var(--font-cormorant-garamond);
-  --text-headline: clamp(1.75rem, 1.55rem + 1vw, 2.25rem);
-  --text-headline--line-height: 1.2;
-  --text-title: clamp(1.5rem, 1.3rem + 1vw, 2rem);
-  --text-title--line-height: 1.25;
-  --text-body: 1rem;
-  --text-body--line-height: 1.5;
-  --text-tag: 0.75rem;
-  --text-price: 1rem;
-  --tracking-headline: 0.28em;
+  --font-display-weight: 400;
+  --display-case: uppercase;
+  --tracking-headline: 0.18em;
   --tracking-tag: 0.15em;
-  --spacing-section: clamp(2.5rem, 1.4rem + 5.5vw, 6rem);
-  --spacing-gutter: clamp(1.25rem, 1rem + 1.25vw, 2.5rem);
-  --spacing-grid: clamp(0.25rem, 0.2rem + 0.25vw, 0.5rem);
-  --container-store: 75rem;
   --radius-card: 0;
   --radius-field: 0;
   --shadow-tile-value: 0 0 #0000;
@@ -551,20 +533,10 @@
 [data-theme="bloom"] {
   --font-display-face: var(--font-body-face);
   --font-label-face: var(--font-dm-mono);
-  --text-headline: clamp(2.5rem, 1.9rem + 3vw, 4.5rem);
-  --text-headline--line-height: 1.05;
-  --text-title: clamp(1.75rem, 1.65rem + 0.5vw, 2rem);
-  --text-title--line-height: 1.15;
-  --text-body: 0.875rem;
-  --text-body--line-height: 1.4;
-  --text-tag: 0.6875rem;
-  --text-price: 0.875rem;
-  --tracking-headline: -0.02em;
+  --font-display-weight: 600;
+  --display-case: none;
+  --tracking-headline: -0.01em;
   --tracking-tag: 0.18em;
-  --spacing-section: clamp(2rem, 1.3rem + 3.5vw, 5rem);
-  --spacing-gutter: clamp(1.25rem, 0.9rem + 1.75vw, 3rem);
-  --spacing-grid: clamp(0.75rem, 0.5rem + 1.2vw, 1.5rem);
-  --container-store: 78.75rem;
   --radius-card: 0;
   --radius-field: 0;
   --shadow-tile-value: 0 0 #0000;
@@ -579,20 +551,10 @@
   --font-display-face: var(--font-mulish);
   --font-body-face: var(--font-mulish);
   --font-label-face: var(--font-mulish);
-  --text-headline: clamp(1.25rem, 1.1rem + 0.75vw, 1.8rem);
-  --text-headline--line-height: 1.2;
-  --text-title: clamp(1rem, 0.9rem + 0.5vw, 1.375rem);
-  --text-title--line-height: 1.25;
-  --text-body: 0.875rem;
-  --text-body--line-height: 1.5;
-  --text-tag: 0.625rem;
-  --text-price: 1rem;
+  --font-display-weight: 800;
+  --display-case: none;
   --tracking-headline: 0;
   --tracking-tag: 0.02em;
-  --spacing-section: clamp(1rem, 0.6rem + 2vw, 2.5rem);
-  --spacing-gutter: clamp(0.75rem, 0.5rem + 1.2vw, 1.5rem);
-  --spacing-grid: clamp(0.5rem, 0.45rem + 0.25vw, 0.625rem);
-  --container-store: 80rem;
   --radius-card: 0.875rem;
   --radius-field: 9999px;
   --shadow-tile-value: 0 1px 4px 0 rgb(0 0 0 / 0.12);
@@ -601,6 +563,41 @@
   /* What fills a missing photo (Q17). */
   --pattern-image: repeating-linear-gradient(0deg, color-mix(in oklab, var(--foreground) 14%, transparent) 0 1px, transparent 1px 1.75rem), repeating-linear-gradient(90deg, color-mix(in oklab, var(--foreground) 14%, transparent) 0 1px, transparent 1px 1.75rem);
   --pattern-size: auto;
+}
+
+/* A shop's heading face (storefront-font D5): the face only; size, weight and case stay the theme's (R3). */
+[data-font="space"] {
+  --font-display-face: var(--font-space-grotesk);
+}
+
+[data-font="jost"] {
+  --font-display-face: var(--font-jost);
+}
+
+[data-font="dmsans"] {
+  --font-display-face: var(--font-dm-sans);
+}
+
+[data-font="mulish"] {
+  --font-display-face: var(--font-mulish);
+}
+
+[data-font="poppins"] {
+  --font-display-face: var(--font-poppins);
+}
+
+[data-font="cormorant"] {
+  --font-display-face: var(--font-cormorant-garamond);
+}
+
+[data-font="playfair"] {
+  --font-display-face: var(--font-heading-face);
+}
+
+/* Marcellus ships one weight; a theme's 600 or 800 must not be faked as a smeared bold. */
+[data-font="marcellus"] {
+  --font-display-face: var(--font-marcellus);
+  font-synthesis-weight: none;
 }
 
 /* Reduced motion stops every theme's motion (storefront-themes D14, R12). */
@@ -1006,6 +1003,15 @@
   background-color: var(--muted);
   background-image: var(--pattern-image);
   background-size: var(--pattern-size);
+}
+
+/* A theme's display weight and case (storefront-look Q1, Q7); outside a theme, the platform heading's. */
+@utility font-display-weight {
+  font-weight: var(--font-display-weight, 600);
+}
+
+@utility display-case {
+  text-transform: var(--display-case, none);
 }
 
 /* A theme's transition length; zeroed under reduced motion. */

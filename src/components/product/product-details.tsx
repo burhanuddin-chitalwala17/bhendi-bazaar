@@ -48,7 +48,7 @@ export function ProductDetails({ orgStorefrontOpen = true, ...product }: Product
           <p className="inline-flex min-h-10 items-center text-small font-medium text-muted-foreground md:min-h-0">{product.org.name}</p>
         )}
         <div className="flex items-start gap-1">
-          <h1 className="min-w-0 flex-1 font-heading text-headline font-semibold text-foreground">{product.name}</h1>
+          <h1 className="min-w-0 flex-1 break-words font-display text-headline font-display-weight display-case text-foreground in-data-theme:tracking-headline">{product.name}</h1>
           <WishlistButton productId={product.id} className="shrink-0" />
           <ShareButton
             url={ROUTES.product(product.slug)}
@@ -129,7 +129,7 @@ export function ProductDetails({ orgStorefrontOpen = true, ...product }: Product
 
       {(product.description || specs.length > 0) && (
         <div className="space-y-3">
-          <h2 className="font-heading text-title font-semibold">{PRODUCT_PAGE_COPY.details.heading}</h2>
+          <h2 className="font-display text-title font-display-weight display-case">{PRODUCT_PAGE_COPY.details.heading}</h2>
           {product.description && <p className="whitespace-pre-line text-body text-muted-foreground">{product.description}</p>}
           {specs.length > 0 && (
             <dl className="grid grid-cols-1 gap-x-6 divide-y divide-border md:grid-cols-2 md:divide-y-0">

@@ -9,7 +9,7 @@ import {
   type HideableBrandPageSection,
 } from "@server/catalog/brand-page-sections";
 import type { ReturnsPreset } from "@server/catalog/shop-details.types";
-import type { HideableSection, PaletteKey, ThemeKey } from "@server/catalog/storefront-themes";
+import type { FontKey, HideableSection, PaletteKey, ThemeKey } from "@server/catalog/storefront-themes";
 import type { OpeningHours } from "@server/catalog/storefront-hours";
 import type { ClaimKey } from "@server/catalog/storefront-claims";
 
@@ -72,6 +72,8 @@ export interface BrandPageDto {
 export interface StorefrontPageDto extends BrandPageDto {
   themeKey: ThemeKey;
   paletteKey: PaletteKey;
+  /** The shop's heading face, or null for the theme's own (storefront-font D3). */
+  fontKey: FontKey | null;
   /** By units sold in paid orders over 90 days, most first (Q34); the section needs four. */
   bestSellingIds: string[];
   /** Median whole days from paid to ready; null under the floor (Q38, Q39). */

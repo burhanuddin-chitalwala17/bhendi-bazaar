@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-11-12
+- **Verified:** 2026-11-13
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -197,6 +197,10 @@ shop's `promotionFormSchema`, `POST /api/org/[orgId]/promotions` and `PATCH …/
 (boolean, default false), stored as `Promotion.showOnStorefront` only for a shop's code; `PlatformPromotionFormInput`
 strips it.
 
+Since storefront-look units 2–4 `StorefrontPage` gains **`banners: HeroBannerContent[]`** (the shop's active banners, from
+`storefrontDAL.promotionsFor`, links already held to the shop's own pages by storefront-branding R2c), which lead Daily's
+hero and label Edge's photo. Read-only; no route handler or wire shape changes.
+
 Since storefront-themes unit 5 a shop publishes its look through **`StorefrontLookInput`**
 (`storefrontLookSchema` in `src/lib/validation/schemas/storefront.schema.ts`, `PUT /api/org/[orgId]/storefront/look`):
 `{ theme, palette, lookVersion }`, strict, the palette one of its theme's three. **`StorefrontRevertInput`**
@@ -206,6 +210,12 @@ server's record. Both answer **`StorefrontLookState`** (`server/catalog/storefro
 `previous: { theme, palette, until } | null` while it is kept (30 days, Q4). A stale `lookVersion` is 409 with
 "{Name} published {theme} {n} min ago." (Q31); a switch back after the 30 days is 410 "Your previous look is no
 longer kept."; a member who is not the owner gets 403.
+
+Since storefront-font unit 2 **`StorefrontLookInput`** gains **`font`**, required: a key from `FONT_KEYS` or null for the
+template's own face (absent or any other value is refused, so an old client cannot clear a chosen face). **`LookKeys`** — `live` and `previous` in
+`StorefrontLookState` — gains **`font`** the same way, so Switch back restores the face with the theme. `Storefront`
+(`storefront.dal.ts`) and **`StorefrontPageDto`** gain **`fontKey`** (null unthemed, unchosen, or a key retired from
+code); `storefrontService.storefrontPage` takes a `PreviewLook` whose `font` a preview passes. Stored as `OrgProfile.fontKey` and `previousFontKey`.
 
 Since storefront-themes unit 6 **`StorefrontSettingsInput`** (`storefrontSettingsSchema`, `PATCH
 /api/org/[orgId]/storefront`) loses `accent` and gains a required **`expectedUpdatedAt`** (ISO; the save is a

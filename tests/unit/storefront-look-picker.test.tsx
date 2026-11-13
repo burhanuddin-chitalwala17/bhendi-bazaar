@@ -15,6 +15,10 @@ vi.mock("@/components/org/orgStorefrontApiClient", () => ({
 vi.mock("@/components/org/share/share-shop-sheet", () => ({
   ShareShopSheet: ({ trigger }: { trigger: React.ReactNode }) => trigger,
 }));
+vi.mock("next/font/google", () => {
+  const face = () => ({ variable: "face", className: "face", style: {} });
+  return { Space_Grotesk: face, Geist_Mono: face, Jost: face, Cormorant_Garamond: face, DM_Mono: face, DM_Sans: face, Mulish: face, Marcellus: face, Poppins: face };
+});
 // The frames are their own test below; here a card's frame is just its src.
 vi.mock("@/components/org/look/look-frame", () => ({
   FRAME_DEVICE: { PHONE: { width: 390, height: 844 }, DESKTOP: { width: 1280, height: 800 } },
@@ -35,10 +39,10 @@ const LIVE_EDGE: StorefrontLookState = {
   orgId: "org_1",
   handle: "zaveri",
   name: "Zaveri & Sons",
-  live: { theme: "edge", palette: "graphite" },
+  live: { theme: "edge", palette: "graphite", font: null },
   lookVersion: 3,
   publishedAt: "2026-11-01T09:00:00.000Z",
-  previous: { theme: "darbar", palette: "navy", until: "2026-12-01T09:00:00.000Z" },
+  previous: { theme: "darbar", palette: "navy", font: null, until: "2026-12-01T09:00:00.000Z" },
   suggested: null,
 };
 
@@ -56,23 +60,35 @@ function openPublish(theme = "Darbar") {
 
 describe("look schemas (D11; Invariant 4)", () => {
   it("takes a theme, one of its own palettes and the version seen", () => {
-    expect(storefrontLookSchema.parse({ theme: "darbar", palette: "kumkum", lookVersion: 2 })).toEqual({
+    expect(storefrontLookSchema.parse({ theme: "darbar", palette: "kumkum", font: null, lookVersion: 2 })).toEqual({
       theme: "darbar",
       palette: "kumkum",
+      font: null,
       lookVersion: 2,
     });
   });
 
+  it("takes a listed heading face or null, and refuses any other (storefront-font D4, Q7)", () => {
+    const base = { theme: "darbar", palette: "kumkum", lookVersion: 2 };
+    expect(storefrontLookSchema.parse({ ...base, font: "marcellus" }).font).toBe("marcellus");
+    expect(storefrontLookSchema.parse({ ...base, font: null }).font).toBeNull();
+    expect(storefrontLookSchema.safeParse({ ...base, font: "Comic Sans MS" }).success).toBe(false);
+    expect(storefrontLookSchema.safeParse({ ...base, font: "var(--font-heading-face)" }).success).toBe(false);
+    // Required: a client from before the face existed cannot clear one by leaving it out.
+    expect(storefrontLookSchema.safeParse(base).success).toBe(false);
+  });
+
   it("refuses another theme's palette (own-store Q15)", () => {
-    expect(storefrontLookSchema.safeParse({ theme: "darbar", palette: "carbon", lookVersion: 0 }).success).toBe(false);
+    expect(storefrontLookSchema.safeParse({ theme: "darbar", palette: "carbon", font: null, lookVersion: 0 }).success).toBe(false);
   });
 
   it("refuses server-owned fields and an unknown theme", () => {
     for (const body of [
-      { theme: "darbar", palette: "navy", lookVersion: 0, lookPublishedByUserId: "u" },
-      { theme: "darbar", palette: "navy", lookVersion: 0, previousThemeKey: "edge" },
-      { theme: "royal", palette: "navy", lookVersion: 0 },
-      { theme: "darbar", palette: "navy" },
+      { theme: "darbar", palette: "navy", font: null, lookVersion: 0, lookPublishedByUserId: "u" },
+      { theme: "darbar", palette: "navy", font: null, lookVersion: 0, previousThemeKey: "edge" },
+      { theme: "darbar", palette: "navy", font: null, lookVersion: 0, previousFontKey: "jost" },
+      { theme: "royal", palette: "navy", font: null, lookVersion: 0 },
+      { theme: "darbar", palette: "navy", font: null },
     ]) {
       expect(storefrontLookSchema.safeParse(body).success, JSON.stringify(body)).toBe(false);
     }
@@ -105,7 +121,7 @@ describe("look picker (ux.md picker)", () => {
   });
 
   it("an unthemed shop has no Live tag and no Switch back", () => {
-    render(<LookPicker look={{ ...LIVE_EDGE, live: { theme: null, palette: null }, previous: null }} share={null} />);
+    render(<LookPicker look={{ ...LIVE_EDGE, live: { theme: null, palette: null, font: null }, previous: null }} share={null} />);
     expect(screen.queryByText(LOOK_COPY.liveNow)).toBeNull();
     expect(screen.queryByRole("button", { name: /Switch back/ })).toBeNull();
   });
@@ -132,15 +148,15 @@ describe("preview & publish (ux.md journeys 1 and 4)", () => {
     expect(frames()).toContain(lookPreviewHref("org_1", "darbar", "emerald", PREVIEW_VIEW.SHOP));
 
     press(LOOK_COPY.publishThisLook);
-    expect(screen.getByText("Publish Darbar?")).toBeTruthy();
+    expect(screen.getByText("Publish Darbar with Jost?")).toBeTruthy();
     expect(screen.getByText(LOOK_COPY.publishBody)).toBeTruthy();
     expect(screen.getByRole("button", { name: LOOK_COPY.notYet })).toBeTruthy();
     press(LOOK_COPY.publish);
 
     await waitFor(() =>
-      expect(h.publishLook).toHaveBeenCalledWith("org_1", { theme: "darbar", palette: "emerald", lookVersion: 3 }),
+      expect(h.publishLook).toHaveBeenCalledWith("org_1", { theme: "darbar", palette: "emerald", font: null, lookVersion: 3 }),
     );
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith(LOOK_COPY.published));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Published. Your store now uses Jost."));
     expect(h.refresh).toHaveBeenCalled();
     expect(await screen.findByRole("button", { name: LOOK_COPY.shareShop })).toBeTruthy();
   });
@@ -155,7 +171,7 @@ describe("preview & publish (ux.md journeys 1 and 4)", () => {
     expect(screen.getByRole("button", { name: LOOK_COPY.seeIt })).toBeTruthy();
 
     // The refresh brings the other member's version; the resend must carry it, or it is refused again.
-    rerender(<LookPicker look={{ ...LIVE_EDGE, live: { theme: "bloom", palette: "peach" }, lookVersion: 4 }} share={null} />);
+    rerender(<LookPicker look={{ ...LIVE_EDGE, live: { theme: "bloom", palette: "peach", font: null }, lookVersion: 4 }} share={null} />);
     h.publishLook.mockResolvedValueOnce(LIVE_EDGE);
     press(LOOK_COPY.publishAnyway);
     await waitFor(() => expect(h.publishLook).toHaveBeenCalledTimes(2));

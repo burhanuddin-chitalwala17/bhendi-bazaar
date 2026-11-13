@@ -12,6 +12,102 @@
 
 ## Entries
 
+## 2026-11-13 — Storefront font, unit 3: a shop picks its heading face, and its store draws it
+
+- **own-store/storefront-font** unit 3 (Q2, Q9; R1–R7; D6, D7; A1–A4). Each card in Storefront → Look gains a
+  "Font for headings" row. It opens the eight faces as samples of the shop's own name, cut at 24 characters,
+  suggested for the template first, then more fonts, with "Use template default". It is a bottom sheet on a phone
+  and a popover from `md:` (`ResponsivePicker`, ADR-0040 decision 1); each face is a pressed/unpressed button. A face
+  picked carries across templates, even a template's own; only "Use template default" clears it (R6). A "Previewing
+  · not live yet" banner shows while the face differs from the live one. The cards and the full preview pass it as `?font=`, the preview page draws
+  it, Publish sends it, the confirm reads "Publish {Template} with {Face}?" and the toast "Published. Your store now
+  uses {Face}."; the old "Your new look is live." and "Publish {Template}?" strings are gone.
+- The themed shell sets `data-font` and the face's loader class when a face is chosen, so the shop name, section
+  titles, product names and the product page title take it. Prices, body, buttons and chips keep the theme's faces.
+- Tests: new `storefront-font-picker` covers the row's default, the samples, long names, a chosen face redrawing
+  the card, the face carrying to another template and being published, Use template default sending none, and
+  the shell's `data-font`, and a template's own face kept across templates. **Mutations:** publishing the live face instead of the chosen one failed 2 tests;
+  dropping `data-font` from the shell failed 1; both restored. Checked in the running app as the local seed's shop
+  owner: the phone sheet, the desktop popover, and the store at 360px with Marcellus (Darbar) and Poppins (Bloom).
+  Headings measured 22px phone and 18px section titles in the chosen face, prices in the theme's face, and only
+  the chosen face downloaded. Ran: `tsc --noEmit`, `vitest run tests/unit`, `lint:boundary`.
+
+## 2026-11-13 — Storefront font, unit 2: the heading face is published with the look [MIGRATION] [CONTRACT]
+
+- **own-store/storefront-font** unit 2 (Q6, Q7; D3, D4; A1, A3). The face rides the look: the look schema requires
+  `font` (a listed key or null), so a tab opened before this deploy is refused rather than clearing a chosen face; `publish` writes it under the same `lookVersion` compare-and-set;
+  a change of font alone is a change of look, so the face it replaces is kept for Switch back, which restores it.
+  `Storefront` and `StorefrontPageDto` carry `fontKey`, parsed on read (a retired key reads as the theme's own). The
+  picker sends the live face unchanged until unit 3 gives it a control.
+- Migration `20261113090000_org_profile_font_key`: adds nullable `OrgProfile.fontKey` and `previousFontKey`. Additive;
+  no backfill; nothing dropped. Applied to the local dev database only.
+- `[CONTRACT]` `StorefrontLookInput`, `LookKeys` (`StorefrontLookState.live`, `.previous`), `Storefront.fontKey`,
+  `StorefrontPageDto.fontKey` (CONTRACTS.md).
+- Tests: `storefront-look-publish` (integration, local Postgres) gains a font-only publish, Switch back restoring
+  the default face, and a retired key reading as null; `storefront-look-picker` checks the schema accepts listed
+  keys and null and refuses a family name or a CSS value. **Mutation:** dropping `font` from the same-look check
+  failed 2 integration tests; restored. Ran: `tsc --noEmit`, `vitest run tests/unit`, the look and editor integration
+  suites against `bhendi_bazaar_dev`.
+
+## 2026-11-13 — Storefront font, unit 1: the heading-font list, its faces and ADR-0074
+
+- **own-store/storefront-font** unit 1 (Q1, Q7, Q8, Q10; D1, D2, D5, D8). No behaviour change: nothing sets
+  `data-font` yet. `FONT` in `server/catalog/storefront-themes.ts` lists the eight faces the owner chose, each with its
+  own CSS variable, a one-line kind, and per-theme suggestions led by the theme's own face; `readFontKey` reads an
+  unknown key as the template's default. `theme-fonts.ts` loads Marcellus, Poppins and a standalone DM Sans
+  (`preload: false`), and `globals.css` gains a `[data-font]` scope per key that repoints the display face only.
+- A chosen DM Sans reads its own variable, not `--font-body-face`, which Darbar repoints to Jost. Marcellus ships one
+  weight, so its scope refuses a faked bold (`font-synthesis-weight: none`) where a theme asks for 600 or 800.
+- **ADR-0074**: a theme never sets proportion, and a shop picks its heading face from a closed list. It amends
+  ADR-0064 D1, D6 (a chosen face is a third family on a page) and its last consequence. CONVENTIONS.md gains the line.
+- Tests: `storefront-themes-registry` checks the list, one scope per key pointing at that key's own variable, no
+  size, weight or case in a font scope, suggestions, key parsing, and that every face is loaded. **Mutation:**
+  pointing DM Sans at `--font-body-face` failed 2 tests; restored. Ran: `tsc --noEmit`, `vitest run tests/unit`.
+
+## 2026-11-13 — Storefront look, units 2–4: heroes never bare, no shade on photos, compact Darbar categories [CONTRACT]
+
+- **own-store/storefront-look** units 2, 3 and 4 in one change (the hero rebuild is what removes its scrim, so the
+  two could not land apart). Q3, Q4, Q5, Q8, Q11, Q12; R4–R7, R9; A2–A5.
+- **Heroes** (`themed/hero.tsx`), each variant kept and reshaped to the signed-off prototype: text never sits on a
+  photo. One identity block (logo, name, line, chips: rating above its floor · since · products, Shop all) sits
+  below the photo on a phone and beside it from `md:`. Edge and Bloom fill the desktop side with featured goods
+  (best selling in stock, then new in; Q11, no new query); Darbar's solid name card overlaps the photo's foot;
+  Daily shows a rail of the shop's banners (title on a solid label, tap follows its link) then hero photos, and a
+  strip of derived facts; Edge labels its photo with the first titled banner; Darbar's desktop adds four featured
+  goods. Photos and banners keep their slot's shape (4:5; 16:9 or 5:2 from `md:`, Q12); with no photo the pattern
+  is a short band. Hero "Shop all" shows on a phone in Edge only (Q13). `StorefrontPage` gains `banners`, read
+  with the landing page (one more cached query); `[CONTRACT]` CONTRACTS.md moves with it.
+- **No shade** (Q3): the photo scrim leaves the hero and the themed card; the offer badge sits on the deal ground
+  (Bloom, Daily) or as deal ink on the card ground (Edge, Darbar), and "Sold out" on the card ground. The
+  marketplace card keeps its scrim (Q9, parked).
+- **Darbar categories** (Q5): `editorial` is a rail of arched tiles (112px phone, 176px desktop) with the same
+  heading as the other themes, in place of three full-screen tiles.
+- Product page in a store: Darbar's title is in capitals and "Product details" takes the theme's face.
+- Tests: new `storefront-look-hero` (each theme's hero holds identity and chips outside the photo, R9 with no
+  photo and one product, featured order, Darbar's six-tile rail); `storefront-palettes` gains a scan that no
+  themed component uses a scrim and a deal-on-card contrast check for Edge and Darbar's palettes.
+  **Mutations:** a `bg-photo-scrim` put back on the Edge identity block failed the scan; slicing Darbar's rail to
+  three tiles failed the rail test; letting Daily's first slide span two rows with two slides failed the no-blank
+  test; all restored. Checked in the running app at 360×740 and 1280×800 for all four
+  themes; the product title measured 22px / 32px and the price 18px / 22px. Ran: `tsc --noEmit`,
+  `vitest run tests/unit`, `lint:boundary`.
+
+## 2026-11-13 — Storefront look, unit 1: every template on the platform type scale
+
+- **own-store/storefront-look** unit 1 (Q1, Q2, Q6, Q7; R1–R3; A1, A6). The four `[data-theme]` scopes in
+  `globals.css` no longer set any `--text-*`, `--spacing-*` or `--container-*`: shop names, titles, prices and
+  section spacing are the platform's in every template (Bloom's headline was up to 72px, Edge's 96px). A theme
+  keeps face, tracking, shape, motion and pattern, and gains `--font-display-weight` and `--display-case`
+  (Darbar's caps, Daily's heavy weight) read by the new `font-display-weight` and `display-case` utilities at every `font-display` site.
+- Product page inside a store: the title is the theme's display face at headline size (was the platform's
+  Playfair, bold, at the theme's size); `PriceDisplay size="lg"` is title size under a themed shell through the
+  built-in `in-data-theme:` variant, unchanged on the marketplace. Daily keeps three phone columns (Q6, owner).
+- Tests: `storefront-themes-registry` now fails if a theme scope sets a size, spacing or width (storefront-look
+  A6) and requires each theme's weight and case; the pairwise difference check reads weight and case in place of
+  size. New `storefront-look-scale` pins the product title and price (A1). **Mutation:** adding
+  `--text-headline: clamp(2.5rem, 1.9rem + 3vw, 4.5rem)` back to the themes failed 3 tests; restored, all pass.
+  Ran: `tsc --noEmit`, `vitest run tests/unit`.
+
 ## 2026-11-12 — Test: feature-public-reads cleans up its shop's pickup address
 
 - CI failed in `feature-public-reads` cleanup: deleting the shop hit `OrgAddress_orgId_fkey` (an org's addresses are

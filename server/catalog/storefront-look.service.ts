@@ -6,7 +6,7 @@
 import { OrgRole } from "@prisma/client";
 
 import { orgProfileRepository } from "@server/catalog/org-profile.repository";
-import { THEME_KEYS, THEMES, suggestedTheme, type PaletteKey } from "@server/catalog/storefront-themes";
+import { THEME_KEYS, THEMES, readFontKey, suggestedTheme, type PaletteKey } from "@server/catalog/storefront-themes";
 import { SHOP_KINDS } from "@server/catalog/storefront-claims";
 import { productsRepository } from "@server/catalog/product.read.repository";
 import {
@@ -35,15 +35,16 @@ interface Actor {
  * Stored keys parsed on read (D1). Unlike `readStorefrontLook`, a stored palette not of its theme
  * reads as none rather than the default, so a switch back never restores a look nobody chose.
  */
-function keysOf(themeKey: string | null, paletteKey: string | null): LookKeys {
+function keysOf(themeKey: string | null, paletteKey: string | null, fontKey: string | null): LookKeys {
   const theme = THEME_KEYS.find((key) => key === themeKey) ?? null;
-  if (!theme) return { theme: null, palette: null };
+  if (!theme) return { theme: null, palette: null, font: null };
   const palettes = THEMES[theme].palettes;
   const palette: PaletteKey = (palettes.find((p) => p.key === paletteKey) ?? palettes[0]).key;
-  return { theme, palette };
+  return { theme, palette, font: readFontKey(fontKey) };
 }
 
-const sameLook = (a: LookKeys, b: LookKeys) => a.theme === b.theme && a.palette === b.palette;
+// A font alone is a change of look (storefront-font D4): it is kept for Switch back like a theme.
+const sameLook = (a: LookKeys, b: LookKeys) => a.theme === b.theme && a.palette === b.palette && a.font === b.font;
 
 type LookRow = NonNullable<Awaited<ReturnType<typeof orgProfileRepository.findLook>>>;
 
@@ -55,7 +56,7 @@ async function readRow(orgId: string): Promise<LookRow> {
 
 function previousOf(row: LookRow, now: Date): StorefrontLookState["previous"] {
   if (!row.previousLookUntil || row.previousLookUntil <= now) return null;
-  return { ...keysOf(row.previousThemeKey, row.previousPaletteKey), until: row.previousLookUntil.toISOString() };
+  return { ...keysOf(row.previousThemeKey, row.previousPaletteKey, row.previousFontKey), until: row.previousLookUntil.toISOString() };
 }
 
 /**
@@ -66,15 +67,26 @@ async function writeLook(orgId: string, actor: Actor, expectedVersion: number, n
   if (actor.role !== OrgRole.OWNER) throw new ForbiddenError(LOOK_OWNER_ONLY);
   const row = await readRow(orgId);
   const now = new Date();
-  const live = keysOf(row.themeKey, row.paletteKey);
+  const live = keysOf(row.themeKey, row.paletteKey, row.fontKey);
   const kept = sameLook(live, next)
-    ? { previousThemeKey: row.previousThemeKey, previousPaletteKey: row.previousPaletteKey, previousLookUntil: row.previousLookUntil }
-    : { previousThemeKey: live.theme, previousPaletteKey: live.palette, previousLookUntil: new Date(now.getTime() + LOOK_KEPT_DAYS * DAY_MS) };
+    ? {
+        previousThemeKey: row.previousThemeKey,
+        previousPaletteKey: row.previousPaletteKey,
+        previousFontKey: row.previousFontKey,
+        previousLookUntil: row.previousLookUntil,
+      }
+    : {
+        previousThemeKey: live.theme,
+        previousPaletteKey: live.palette,
+        previousFontKey: live.font,
+        previousLookUntil: new Date(now.getTime() + LOOK_KEPT_DAYS * DAY_MS),
+      };
 
   // The version check is the write's own (Q31), so two publishes racing past this read still meet it.
   const written = await orgProfileRepository.publishLookIfVersion(orgId, expectedVersion, {
     themeKey: next.theme,
     paletteKey: next.palette,
+    fontKey: next.font,
     lookPublishedAt: now,
     lookPublishedByUserId: actor.userId,
     ...kept,
@@ -82,7 +94,7 @@ async function writeLook(orgId: string, actor: Actor, expectedVersion: number, n
   if (!written) {
     const current = await readRow(orgId);
     throw new ConflictError(
-      lookConflictMessage(current.lookPublishedBy?.name ?? null, keysOf(current.themeKey, current.paletteKey).theme, current.lookPublishedAt, now),
+      lookConflictMessage(current.lookPublishedBy?.name ?? null, keysOf(current.themeKey, current.paletteKey, null).theme, current.lookPublishedAt, now),
     );
   }
 
@@ -106,7 +118,7 @@ export const storefrontLookService = {
       orgId: row.org.id,
       handle: row.org.handle,
       name: row.org.name,
-      live: keysOf(row.themeKey, row.paletteKey),
+      live: keysOf(row.themeKey, row.paletteKey, row.fontKey),
       lookVersion: row.lookVersion,
       publishedAt: row.lookPublishedAt?.toISOString() ?? null,
       previous: previousOf(row, new Date()),
@@ -115,7 +127,7 @@ export const storefrontLookService = {
 
   /** Publish (D11): live for every buyer on the next load (A9). */
   async publish(orgId: string, actor: Actor, input: StorefrontLookInput): Promise<StorefrontLookState> {
-    const next: LookKeys = { theme: input.theme, palette: input.palette };
+    const next: LookKeys = { theme: input.theme, palette: input.palette, font: input.font };
     return await writeLook(orgId, actor, input.lookVersion, next, LOOK_AUDIT.PUBLISHED);
   },
 

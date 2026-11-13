@@ -7,10 +7,7 @@ import { SectionHeading, shopHref } from "./section-heading";
 import { ThemePhoto } from "./theme-photo";
 import { THEMED_COPY } from "./themed-copy";
 
-/** Darbar's editorial run is three tall tiles (spec Theme cards). */
-const EDITORIAL_COUNT = 3;
-
-/** The shop's categories as a rail, an editorial run, or circles (Q8, Q10). */
+/** The shop's categories as a rail, an arched rail, or circles (Q8, Q10). */
 export function ThemedCollections({
   variant,
   handle,
@@ -18,23 +15,32 @@ export function ThemedCollections({
 }: CollectionsSlice & { variant: SectionVariant<"collections"> }) {
   const href = (slug: string) => `${shopHref(handle)}?category=${encodeURIComponent(slug)}`;
 
+  // Darbar: arched tiles in a rail, the same size as Edge's, several to a screen (storefront-look Q5).
   if (variant === "editorial") {
     return (
-      <section className="mx-auto max-w-store space-y-6 py-section">
-        {tiles.slice(0, EDITORIAL_COUNT).map((tile) => (
-          <Link key={tile.slug} href={href(tile.slug)} prefetch={false} className="block text-center">
-            <ThemePhoto
-              src={tile.photoUrl}
-              image={tile.image}
-              alt={tile.name}
-              initial={tile.name}
-              sizes="(min-width: 1024px) 1200px, 100vw"
-              className="aspect-[4/5] w-full md:aspect-[21/9]"
-            />
-            <span className="mt-3 block font-display text-title uppercase tracking-headline">{tile.name}</span>
-            <span className="font-label text-tag uppercase tracking-tag underline underline-offset-4">{THEMED_COPY.sections.explore}</span>
-          </Link>
-        ))}
+      <section className="mx-auto max-w-store space-y-4 py-section">
+        <div className="px-gutter">
+          <SectionHeading title={THEMED_COPY.sections.shopByCategory} />
+        </div>
+        <ul className="no-scrollbar flex snap-x gap-grid overflow-x-auto px-gutter">
+          {tiles.map((tile) => (
+            <li key={tile.slug} className="w-28 shrink-0 snap-start md:w-44">
+              <Link href={href(tile.slug)} prefetch={false} className="block space-y-2 text-center">
+                <ThemePhoto
+                  src={tile.photoUrl}
+                  image={tile.image}
+                  alt={tile.name}
+                  initial={tile.name}
+                  sizes="(min-width: 768px) 176px, 112px"
+                  className="aspect-[3/4] rounded-t-full border border-border"
+                />
+                <span className="line-clamp-2 block break-words font-display text-caption font-display-weight display-case tracking-tag">
+                  {tile.name}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
     );
   }

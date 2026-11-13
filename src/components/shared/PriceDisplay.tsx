@@ -29,7 +29,8 @@ export function PriceDisplay({
     xs: { price: "text-caption", original: "text-2xs", row: "flex-wrap gap-x-1.5 gap-y-0" },
     sm: { price: "text-small", original: "text-caption", row: "flex-wrap gap-x-1.5 gap-y-0.5" },
     md: { price: "text-title", original: "text-small", row: "flex-wrap gap-x-2" },
-    lg: { price: "text-headline", original: "text-body", row: "flex-wrap gap-x-3" },
+    // Inside a store the product page's price is title size (storefront-look Q2); the layout, not the page, knows.
+    lg: { price: "text-headline in-data-theme:text-title", original: "text-body", row: "flex-wrap gap-x-3" },
   };
 
   return (

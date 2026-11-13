@@ -88,7 +88,7 @@ function OfferCard({
       )}
     >
       <p className="font-label text-tag uppercase tracking-tag">{offer.title}</p>
-      <p className={cn("break-words", lead && variant === "campaign" ? "font-display text-title" : "text-body font-semibold")}>
+      <p className={cn("break-words", lead && variant === "campaign" ? "font-display text-title font-display-weight display-case" : "text-body font-semibold")}>
         {offer.headline}
       </p>
       <p className="text-tag">
