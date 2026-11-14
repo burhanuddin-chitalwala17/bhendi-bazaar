@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { BUSINESS_COPY } from "@/components/org/business/business-copy";
+import { AUDIENCE, BUSINESS_COPY } from "@/components/org/business/business-copy";
 import { BusinessPage } from "@/components/org/business/business-page";
 import { appUrl } from "@server/shared/app-url";
 import { ROUTES } from "@server/shared/routes";
@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   alternates: { canonical: `${appUrl()}${ROUTES.business}` },
 };
 
-export default function BusinessRoute() {
-  return <BusinessPage />;
+export default async function BusinessRoute({ searchParams }: { searchParams: Promise<{ for?: string }> }) {
+  const { for: audience } = await searchParams;
+  return <BusinessPage audience={audience === AUDIENCE.PARTNER ? AUDIENCE.PARTNER : AUDIENCE.SHOP} />;
 }

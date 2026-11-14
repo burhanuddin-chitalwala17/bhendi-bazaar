@@ -1,5 +1,7 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 
+import { BrandLogo } from "@/components/layout/brand-logo";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { Icon } from "@/components/ui/icon";
 import { PlatformMark } from "@/components/ui/icons/platform-marks";
@@ -8,10 +10,17 @@ import { cn } from "@/lib/utils";
 import { BUSINESS_COPY } from "./business-copy";
 
 /**
- * The product, drawn rather than screenshotted: the seed catalogue is placeholder data, and a
- * marketing page must show the real screens' shape with content a shop would recognise.
+ * The product, drawn rather than screenshotted where a shop's own data would show, and the live
+ * site photographed where a partner needs to see the real page their banner would sit on.
+ * No people: the page sells the platform, not a portrait (owner, 2026-11-14).
  */
 const M = BUSINESS_COPY.mockup;
+
+/** Captured from bhendi-bazaar.com at 1280×800, 1.5×. Re-capture when the home page changes. */
+export const SITE_SHOTS = {
+  home: "/business/site-home.webp",
+  category: "/business/site-category.webp",
+} as const;
 
 function Phone({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
   return (
@@ -20,7 +29,7 @@ function Phone({ label, className, children }: { label: string; className?: stri
       aria-label={label}
       className={cn("w-64 shrink-0 rounded-4xl bg-foreground p-2 shadow-overlay ring-1 ring-foreground/10 md:w-72", className)}
     >
-      <div className="flex h-full flex-col overflow-hidden rounded-4xl bg-background">
+      <div className="flex h-full flex-col overflow-hidden rounded-4xl bg-background text-foreground">
         <div aria-hidden className="mx-auto mt-2 h-1.5 w-16 rounded-full bg-foreground/15" />
         <div aria-hidden className="flex flex-1 flex-col gap-3 p-4">{children}</div>
       </div>
@@ -34,7 +43,7 @@ function ProductTile({ tint, className }: { tint: "primary" | "accent" | "muted"
     <div
       className={cn(
         "flex aspect-square items-center justify-center rounded-card",
-        tint === "primary" && "bg-gradient-to-br from-primary/20 to-primary/5 text-primary",
+        tint === "primary" && "bg-gradient-to-br from-primary/25 to-primary/5 text-primary",
         tint === "accent" && "bg-gradient-to-br from-accent to-accent/30 text-accent-foreground",
         tint === "muted" && "bg-muted text-muted-foreground",
         className,
@@ -128,39 +137,38 @@ export function PhotoMockup({ className }: { className?: string }) {
   );
 }
 
-export function ChannelsMockup({ className }: { className?: string }) {
-  const { product, channels } = BUSINESS_COPY.hub;
+/** A sheet of rows on the left becoming product tiles on the right. */
+export function CatalogueMockup({ className }: { className?: string }) {
   return (
-    <Phone label={M.channelsLabel} className={className}>
-      <div className="flex items-center gap-3">
-        <ProductTile tint="primary" className="w-14" />
-        <div className="min-w-0">
-          <p className="truncate text-small font-semibold">{product.name}</p>
-          <p className="text-caption text-muted-foreground">{product.price}</p>
+    <div role="img" aria-label={M.catalogueLabel} className={cn("grid w-full max-w-md grid-cols-5 items-center gap-3", className)}>
+      <div aria-hidden className="col-span-3 overflow-hidden rounded-card border border-border bg-card text-2xs shadow-lifted">
+        <div className="grid grid-cols-3 gap-2 border-b border-border bg-muted px-3 py-2 font-semibold">
+          {M.sheetHeader.map((cell) => (
+            <span key={cell}>{cell}</span>
+          ))}
         </div>
-      </div>
-      <ul className="divide-y divide-border rounded-card border border-border bg-card">
-        {channels.map((channel) => (
-          <li key={channel.name} className="flex items-center gap-2 px-2.5 py-2">
-            {channel.mark ? (
-              <PlatformMark name={channel.mark} size="sm" />
-            ) : (
-              <span className="flex size-8 items-center justify-center rounded-field bg-primary text-primary-foreground">
-                <Icon name="shop" size="sm" />
+        {M.sheetRows.map((row) => (
+          <div key={row[0]} className="grid grid-cols-3 gap-2 border-b border-border px-3 py-2 last:border-b-0">
+            {row.map((cell) => (
+              <span key={cell} className="truncate">
+                {cell}
               </span>
-            )}
-            <span className="min-w-0 flex-1 truncate text-caption">{channel.name}</span>
-            <StatusBadge tone="success" dot>
-              {M.live}
-            </StatusBadge>
-          </li>
+            ))}
+          </div>
         ))}
-      </ul>
-      <p className="flex items-center gap-1.5 text-caption text-muted-foreground">
-        <Icon name="refresh" size="xs" tone="primary" />
-        {M.synced}
-      </p>
-    </Phone>
+      </div>
+      <div aria-hidden className="col-span-2 space-y-2">
+        <div className="grid grid-cols-2 gap-1.5">
+          {(["primary", "accent", "accent", "primary"] as const).map((tint, i) => (
+            <ProductTile key={i} tint={tint} />
+          ))}
+        </div>
+        <p className="flex items-center gap-1 text-2xs font-semibold text-primary">
+          <Icon name="done" size="xs" />
+          {M.addedCount}
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -177,29 +185,39 @@ export function OrdersMockup({ className }: { className?: string }) {
         </div>
       </div>
       <p className="text-small font-semibold">{M.needsYou}</p>
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 rounded-card border border-border bg-card p-2.5">
-          <Icon name="parcel" size="sm" tone="primary" />
-          <span className="flex-1 text-caption">{M.toPack}</span>
-          <span className="rounded-full bg-primary px-2.5 py-1 text-2xs font-semibold text-primary-foreground">
-            {M.markPacked}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 rounded-card border border-border bg-card p-2.5">
-          <Icon name="warning" size="sm" tone="warning" />
-          <span className="flex-1 text-caption">{M.lowStock}</span>
-          <Icon name="next" size="xs" tone="muted" />
-        </div>
+      <div className="flex items-center gap-2 rounded-card border border-border bg-card p-2.5">
+        <Icon name="parcel" size="sm" tone="primary" />
+        <span className="flex-1 text-caption">{M.toPack}</span>
+      </div>
+      <div className="flex items-center gap-2 rounded-card bg-primary/10 p-2.5 text-primary">
+        <Icon name="success" size="sm" />
+        <span className="flex-1 text-caption font-semibold">{M.courierBooked}</span>
       </div>
     </Phone>
   );
 }
 
+/** Beside the hero's phone: a marketplace order landing on the same screen as the store's. */
+export function NewOrderCard({ className }: { className?: string }) {
+  return (
+    <div role="img" aria-label={M.orderLabel} className={cn("w-56 rounded-card border border-border bg-card p-3 text-card-foreground shadow-overlay", className)}>
+      <div aria-hidden className="flex items-center gap-3">
+        <PlatformMark name="amazon" size="sm" />
+        <div className="min-w-0 flex-1">
+          <p className="text-caption font-semibold">{M.newOrder}</p>
+          <p className="truncate text-2xs text-muted-foreground">{M.newOrderFrom}</p>
+        </div>
+        <Icon name="parcel" size="sm" tone="primary" />
+      </div>
+    </div>
+  );
+}
+
 /** Beside the hero's phone: the same product, live everywhere, one stock count. */
 export function LiveEverywhereCard({ className }: { className?: string }) {
-  const marks = BUSINESS_COPY.hub.channels.flatMap((c) => (c.mark ? [c.mark] : []));
+  const marks = BUSINESS_COPY.shop.everywhere.places.flatMap((p) => (p.mark && p.status === "live" ? [p.mark] : []));
   return (
-    <div role="img" aria-label={M.channelsLabel} className={cn("w-56 rounded-card border border-border bg-card p-4 shadow-overlay", className)}>
+    <div role="img" aria-label={M.liveOn} className={cn("w-56 rounded-card border border-border bg-card p-4 text-card-foreground shadow-overlay", className)}>
       <div aria-hidden className="space-y-3">
         <p className="text-caption font-semibold">{M.liveOn}</p>
         <div className="flex gap-1.5">
@@ -216,25 +234,86 @@ export function LiveEverywhereCard({ className }: { className?: string }) {
   );
 }
 
-/** Beside the hero's phone: a marketplace order landing on the same screen as the store's. */
-export function NewOrderCard({ className }: { className?: string }) {
+/** A browser window around a photograph of the live site, with whatever sits on top of it. */
+export function SiteShot({
+  src,
+  alt,
+  sizes,
+  priority,
+  className,
+  children,
+}: {
+  src: string;
+  alt: string;
+  sizes: string;
+  priority?: boolean;
+  className?: string;
+  children?: ReactNode;
+}) {
   return (
-    <div role="img" aria-label={M.orderLabel} className={cn("w-56 rounded-card border border-border bg-card p-3 shadow-overlay", className)}>
-      <div aria-hidden className="flex items-center gap-3">
-        <PlatformMark name="amazon" size="sm" />
-        <div className="min-w-0 flex-1">
-          <p className="text-caption font-semibold">{M.newOrder}</p>
-          <p className="truncate text-2xs text-muted-foreground">{M.newOrderFrom}</p>
+    <figure className={cn("overflow-hidden rounded-card border border-border bg-card shadow-overlay", className)}>
+      <div aria-hidden className="flex items-center gap-1.5 border-b border-border bg-muted px-3 py-2">
+        <span className="size-2 rounded-full bg-foreground/20" />
+        <span className="size-2 rounded-full bg-foreground/20" />
+        <span className="size-2 rounded-full bg-foreground/20" />
+      </div>
+      <div className="relative aspect-video">
+        <Image src={src} alt={alt} fill sizes={sizes} priority={priority} className="object-cover object-top" />
+        {children}
+      </div>
+    </figure>
+  );
+}
+
+/** The banner a partner's name would fill, drawn over a site photograph. */
+export function BrandBanner({ label, note, className }: { label: string; note?: string; className?: string }) {
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        "flex items-center justify-center gap-2 rounded-card border border-dashed border-accent bg-scrim/90 px-4 py-3 text-on-photo shadow-overlay",
+        className,
+      )}
+    >
+      <span className="size-4 shrink-0 rounded-full border-2 border-accent" />
+      <span className="text-caption font-bold uppercase tracking-eyebrow">{label}</span>
+      {note && <span className="text-2xs text-accent">{note}</span>}
+    </div>
+  );
+}
+
+/** One of Bhendi Bazaar's own posts, co-branded. */
+export function CampaignMockup({ className }: { className?: string }) {
+  const c = BUSINESS_COPY.partner.placements.campaign;
+  const brand = BUSINESS_COPY.partner.hero.brand;
+  return (
+    <div role="img" aria-label={c.label} className={cn("w-full overflow-hidden rounded-card border border-border bg-card shadow-overlay", className)}>
+      <div aria-hidden>
+        <div className="relative flex aspect-video flex-col justify-end gap-1 bg-gradient-to-br from-primary to-hero p-4 text-primary-foreground">
+          <div className="absolute inset-0 flex items-center justify-center text-primary-foreground/20">
+            <Icon name="rida" size="2xl" />
+          </div>
+          <span className="absolute right-3 top-3">
+            <PlatformMark name="instagram" size="sm" />
+          </span>
+          <p className="relative font-heading text-title font-bold">{c.postTitle}</p>
+          <p className="relative text-caption text-primary-foreground/80">{c.postBody}</p>
         </div>
-        <Icon name="parcel" size="sm" tone="primary" />
+        <div className="flex items-center gap-2 border-t border-border px-3 py-2">
+          <BrandLogo size="sm" className="h-6" />
+          <span className="ml-auto text-2xs text-muted-foreground">{c.presentedBy}</span>
+          <span className="rounded-full border border-dashed border-accent px-2 py-0.5 text-2xs font-bold uppercase tracking-eyebrow">
+            {brand}
+          </span>
+        </div>
       </div>
     </div>
   );
 }
 
 export const FEATURE_MOCKUPS = {
-  store: StoreMockup,
+  catalogue: CatalogueMockup,
   photos: PhotoMockup,
-  everywhere: ChannelsMockup,
-  business: OrdersMockup,
+  store: StoreMockup,
+  orders: OrdersMockup,
 } as const;

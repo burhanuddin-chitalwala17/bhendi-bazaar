@@ -7,242 +7,316 @@ export const SUBSCRIPTION_MONTHLY_PAISE = 69_900;
 /** The owner's stated default on store orders (2026-11-05). Display only — payouts reads `Org.commissionBps`. */
 export const STORE_COMMISSION_PERCENT = 2;
 
-export type BusinessFeature = {
-  id: string;
-  label: string;
-  title: string;
-  body: string;
-  points: readonly string[];
-};
+/** The two sides of /business, chosen by `?for=` so each audience gets its own link. */
+export const AUDIENCE = { SHOP: "shop", PARTNER: "partner" } as const;
+export type Audience = (typeof AUDIENCE)[keyof typeof AUDIENCE];
 
-export type BusinessChannel = { mark: PlatformMarkName | null; name: string; note: string };
+/** Live today, or announced. The owner's call (2026-11-14): show what is coming, labelled as coming. */
+export type PlaceStatus = "live" | "soon";
 
-/** Every word on /business, in one place, ready to translate (own-store: plain words). */
+export type SellingPlace = { mark: PlatformMarkName | null; name: string; note: string; status: PlaceStatus };
+
+export type BusinessFeature = { id: "catalogue" | "photos" | "store" | "orders"; label: string; title: string; body: string };
+
+/** Every word on /business, in one place. Plain words: a shopkeeper or a brand manager, not an engineer. */
 export const BUSINESS_COPY = {
   meta: {
-    title: "Bhendi Bazaar for business — your shop, online everywhere",
+    title: "Bhendi Bazaar for business — sell with us, or partner with us",
     description:
-      "Your own online store, phone photos made marketplace-ready, and your Amazon and Flipkart listings and stock in one place. ₹699 a month, GST included.",
+      "Shops: your own online store, studio-ready photos and Amazon, all from your phone, for ₹699 a month. Brands: put your name where Bhendi Bazaar's buyers arrive.",
   },
 
-  nav: { cta: "Open your shop" },
+  eyebrow: "Bhendi Bazaar for business",
+  switchLabel: "Who is this page for",
+  tabs: { shop: "Sell with us", partner: "Partner with us" },
 
-  hero: {
-    label: "For shops and brands",
-    title: "Run your whole shop online, from one place.",
-    lead: "Bhendi Bazaar gives your shop its own online store, turns phone photos into marketplace-ready pictures, and keeps your Amazon and Flipkart listings and stock in step — all from your phone.",
-    primary: "Open your shop",
-    secondary: "See how it works",
-    proof: ["GST included", "Cancel any month", "Made in Mumbai"],
-    perMonth: "a month",
-  },
+  shop: {
+    hero: {
+      title: "Run your whole shop online,",
+      titleEmphasis: "from one place.",
+      lead: "Your own online store, studio-ready product photos and your marketplace listings — all from your phone.",
+      cta: "Open your shop",
+      perMonth: "a month",
+      facts: ["GST included", "Cancel any month"],
+    },
 
-  worksWith: "Works with the places your customers already shop",
-
-  before: {
-    label: "Why it exists",
-    title: "Selling online shouldn’t take over the shop.",
-    lead: "Most shopkeepers we meet do the same work three times and still lose sales. Here is what changes.",
-    today: "Today",
-    with: "With Bhendi Bazaar",
-    rows: [
-      {
-        today: "The same product typed into Amazon, Flipkart and a WhatsApp catalogue.",
-        with: "Describe it once. Every channel reads that one entry.",
-      },
-      {
-        today: "Phone photos rejected for the background, the size or the light.",
-        with: "Cut out, on white or in a scene, sized for each platform in a tap.",
-      },
-      {
-        today: "The last piece sells on one marketplace and stays live on another.",
-        with: "One stock count. A sale anywhere updates it everywhere.",
-      },
-      {
-        today: "A catalogue on WhatsApp that can’t take a payment or book a courier.",
-        with: "A real store at your own link, with checkout and delivery booked for you.",
-      },
-    ],
-  },
-
-  hub: {
-    label: "How it works",
-    title: "One product in. Every place you sell, out.",
-    lead: "You add a product once — its photos, price, sizes and stock. Bhendi Bazaar carries it to your store and to the platforms your customers already use, and brings their orders back to one screen.",
-    product: { name: "Emerald satin abaya", price: "₹3,690", stock: "12 in stock" },
-    stockNote: "One stock count, shared by every channel",
-    channels: [
-      { mark: null, name: "Your store", note: "Your own link" },
-      { mark: "amazon", name: "Amazon", note: "Listings, stock, orders" },
-      { mark: "flipkart", name: "Flipkart", note: "Listings, stock, orders" },
-      { mark: "google", name: "Google Shopping", note: "Automatic feed" },
-      { mark: "meta", name: "Facebook & Instagram", note: "Automatic catalogue" },
-    ] satisfies BusinessChannel[],
-  },
-
-  features: [
-    {
-      id: "store",
-      label: "Your own store",
-      title: "A store you’re proud to hand out.",
-      body: "Your shop gets its own address — ready for WhatsApp, your visiting card and the pamphlet on the counter. It looks like your brand, not like ours.",
-      points: [
-        "Themes, your logo and a brand page that tells your story",
-        "Checkout, payments and courier pickup built in",
-        "Offers, coupons and timed auctions for one-of-a-kind pieces",
-        "Stock kept per shop and godown",
+    problem: {
+      label: "Why it exists",
+      title: "Selling online shouldn’t",
+      titleEmphasis: "take over the shop.",
+      today: "Today",
+      with: "With Bhendi Bazaar",
+      rows: [
+        { today: "The same product typed again for every app.", with: "Describe it once. Every place you sell reads it." },
+        { today: "Phone photos rejected for the background or the light.", with: "Studio-ready photos in a tap." },
+        { today: "The last piece sells in one place and stays up in another.", with: "One stock count. A sale anywhere updates it everywhere." },
+        { today: "A catalogue that can’t take a payment or book a courier.", with: "A real store with checkout and delivery booked for you." },
       ],
     },
-    {
-      id: "photos",
-      label: "Photos made ready",
-      title: "Phone photo in. Studio photo out.",
-      body: "Take the picture in the shop. Remove the background, put it on white, in a studio or in a scene — then keep it or throw it away.",
-      points: [
-        "The product itself is never altered, only what is around it",
-        "Every photo and short video in one library",
-        "Guided capture for the angles marketplaces ask for",
+
+    everywhere: {
+      label: "How it works",
+      title: "List once.",
+      titleEmphasis: "Sell everywhere.",
+      lead: "Add a product once. It goes to your store and to the places your customers already shop — and every order comes back to one screen.",
+      product: { name: "Hand bag, dusty rose", price: "₹850", stock: "12 in stock" },
+      live: "Live",
+      soon: "Coming soon",
+      places: [
+        { mark: null, name: "Your own store", note: "Your own link to share", status: "live" },
+        { mark: "amazon", name: "Amazon", note: "Listings, stock and orders", status: "live" },
+        { mark: "google", name: "Google Shopping", note: "Your products in Google search", status: "live" },
+        { mark: "meta", name: "Facebook & Instagram shop", note: "Your catalogue, kept up to date", status: "live" },
+        { mark: "flipkart", name: "Flipkart", note: "Listings, stock and orders", status: "soon" },
+        { mark: "meesho", name: "Meesho", note: "Buyers in every town", status: "soon" },
+        { mark: "whatsapp", name: "WhatsApp", note: "Your catalogue in their chats", status: "soon" },
+        { mark: "instagram", name: "Instagram posts", note: "Posts, reels and stories", status: "soon" },
+      ] satisfies SellingPlace[],
+    },
+
+    features: {
+      label: "What you get",
+      title: "Everything a shop needs",
+      titleEmphasis: "to grow online.",
+      items: [
+        {
+          id: "catalogue",
+          label: "Add products",
+          title: "Describe it once.",
+          body: "Snap it on your phone, add hundreds from one sheet, or bring over what you already sell on Amazon.",
+        },
+        {
+          id: "photos",
+          label: "Photo studio",
+          title: "Phone photo in. Studio photo out.",
+          body: "Only the background changes. Your product stays exactly as it is.",
+        },
+        {
+          id: "store",
+          label: "Your store",
+          title: "A store you’ll be proud to share.",
+          body: "Your logo, your colours and your own link. Payments and courier pickup included.",
+        },
+        {
+          id: "orders",
+          label: "Orders",
+          title: "Mark it packed. We book the courier.",
+          body: "Store and marketplace orders in one list, with your earnings on every order.",
+        },
+      ] satisfies BusinessFeature[],
+    },
+
+    coming: {
+      label: "Coming soon",
+      title: "More places to sell,",
+      titleEmphasis: "at no extra cost.",
+      lead: "We are adding the platforms India shops on. Each one arrives in your plan the day it is ready — nothing more to pay, nothing to set up again.",
+      items: [
+        { mark: "flipkart", name: "Flipkart", body: "List, update stock and take orders on one of India’s biggest marketplaces." },
+        { mark: "meesho", name: "Meesho", body: "Reach buyers in smaller towns, from the same product you already added." },
+        { mark: "whatsapp", name: "WhatsApp", body: "Your catalogue inside the chats your customers already use." },
+        { mark: "instagram", name: "Instagram", body: "Turn a product into a post, a reel or a story in a tap." },
+      ] satisfies { mark: PlatformMarkName; name: string; body: string }[],
+    },
+
+    pricing: {
+      label: "Pricing",
+      title: "One plan.",
+      titleEmphasis: "Everything included.",
+      lead: "No tiers to compare and nothing held back. Every shop pays the same.",
+      planName: "Bhendi Bazaar for business",
+      perMonth: "a month, GST included",
+      commission: (percent: number) =>
+        `Plus ${percent}% on orders paid through your own store. Nothing on your Amazon sales.`,
+      cancel: "Billed monthly. Cancel any month.",
+      includesTitle: "Included",
+      includes: [
+        "Your own store and brand page",
+        "Photo studio",
+        "Amazon, Google and Facebook & Instagram",
+        "Add hundreds of products at once",
+        "Orders and courier booking",
+        "Offers and coupons",
+        "Every new platform as it arrives",
       ],
     },
-    {
-      id: "everywhere",
-      label: "Sell everywhere",
-      title: "Your Amazon and Flipkart, finally in one place.",
-      body: "Connect your Amazon and Flipkart accounts and every listing you already have arrives in one inbox, matched to your products. From then on you manage them here.",
-      points: [
-        "One stock count across your store, Amazon and Flipkart",
-        "Publish to Amazon, update price and stock on Flipkart",
-        "Google Shopping and Facebook and Instagram catalogues, automatic",
-        "Add hundreds of products at once from a sheet",
+
+    steps: {
+      label: "Getting started",
+      title: "Open today.",
+      titleEmphasis: "Sell tonight.",
+      items: [
+        { title: "Open your shop", body: "Sign in, name your shop and choose your link. A couple of minutes." },
+        { title: "Add your products", body: "Snap them, upload a sheet, or bring them over from Amazon." },
+        { title: "Share your link", body: "Send it to your customers. Google, Facebook and Amazon bring the rest." },
       ],
     },
-    {
-      id: "business",
-      label: "Run the business",
-      title: "Know what to do next, every morning.",
-      body: "Your home screen says what needs you now — orders to pack, stock running low — and what you have earned.",
-      points: [
-        "Store and marketplace orders side by side",
-        "Mark a parcel packed; we book the courier",
-        "Earnings order by order, and what is still to come",
-        "Reviews, and the products customers are saving",
+
+    faq: {
+      label: "Questions",
+      title: "Before you start",
+      items: [
+        { q: "Is there more than one plan?", a: "No. One plan, every feature, the same price for every shop." },
+        {
+          q: "What do you charge on sales?",
+          a: `${STORE_COMMISSION_PERCENT}% on orders paid through your own Bhendi Bazaar store. Nothing on your Amazon sales.`,
+        },
+        { q: "Can I cancel?", a: "Yes, any month. You are billed monthly and there is no lock-in." },
+        {
+          q: "I already sell on Amazon. Do I start again?",
+          a: "No. Connect your Amazon account and the products you already sell there come across, matched to yours.",
+        },
+        {
+          q: "When do Flipkart, Meesho, WhatsApp and Instagram arrive?",
+          a: "They are on the way. Each one is added to your plan the day it is ready, at no extra cost.",
+        },
+        {
+          q: "Do I need to be good with technology?",
+          a: "No. Everything is made for your phone, in plain words. If anything is unclear, talk to us.",
+        },
       ],
     },
-  ] satisfies BusinessFeature[],
 
-  strengths: {
-    label: "Why shops choose us",
-    title: "Built for the way a shop really works.",
-    items: [
-      { icon: "phone", title: "Made for your phone", body: "Every screen is designed for the phone in your hand first, then the laptop." },
-      { icon: "message", title: "Plain words", body: "“Money you’ll receive”, not “ledger”. If you use WhatsApp, you can run this." },
-      { icon: "photo", title: "Your photos stay true", body: "Enhancement changes the background, never the product. Buyers get what they saw." },
-      { icon: "info", title: "Warns, never blocks", body: "If Amazon may reject a listing, we tell you why — the choice stays yours." },
-      { icon: "shop", title: "Your brand, your customers", body: "Your store carries your name, your colours and your story." },
-      { icon: "connect", title: "Made for Indian marketplaces", body: "Amazon.in and Flipkart built in, with GST-ready prices and Indian couriers." },
-    ] satisfies { icon: IconName; title: string; body: string }[],
+    closing: {
+      title: "Your shop deserves",
+      titleEmphasis: "to be found.",
+      lead: "Open it today. Share your link tonight.",
+      cta: "Open your shop",
+    },
   },
 
-  pricing: {
-    label: "Pricing",
-    title: "One plan. Every feature. No surprises.",
-    lead: "No tiers to compare and nothing held back. Every shop pays the same.",
-    planName: "Bhendi Bazaar for business",
-    perMonth: "per month, GST included",
-    commission: (percent: number) =>
-      `Plus ${percent}% on orders paid through your Bhendi Bazaar store. Nothing on your Amazon or Flipkart sales.`,
-    cancel: "Billed monthly. Cancel any month.",
-    cta: "Open your shop",
-    includesTitle: "Everything included",
-    includes: [
-      "Your own store, themes and brand page",
-      "Photo enhancement and media library",
-      "Amazon and Flipkart: import, publish, stock",
-      "Google and Meta catalogues",
-      "Bulk upload and variants",
-      "Orders, delivery booking and earnings",
-      "Offers, coupons and auctions",
-      "Every new feature as it ships",
-    ],
-    soonTitle: "Arriving in your plan",
-    soon: ["Sales by channel", "Instagram posts"],
-  },
+  partner: {
+    hero: {
+      title: "Put your brand",
+      titleEmphasis: "where the buyers arrive.",
+      lead: "Partner with Bhendi Bazaar and be seen on our home page, our category pages and in every campaign we run — beside the shops changing how India sells online.",
+      cta: "Become a partner",
+      secondary: "See where you’d appear",
+      facts: ["Home page", "Category pages", "Every campaign"],
+      brand: "Your brand",
+      featured: "Featured partner",
+    },
 
-  steps: {
-    label: "Getting started",
-    title: "Open today. Sell tonight.",
-    items: [
-      { title: "Open your shop", body: "Sign in, name your shop and choose your link. A couple of minutes." },
-      { title: "Add your products", body: "Snap them on your phone, upload a sheet, or import from Amazon and Flipkart." },
-      { title: "Share your link", body: "Send it to your customers. Google, Meta and the marketplaces bring the rest." },
-    ],
-  },
+    arrive: {
+      label: "Why now",
+      title: "India’s shops and shoppers",
+      titleEmphasis: "are meeting online.",
+      lead: "Buyers come from the apps they already use and land on bhendi-bazaar.com and on each shop’s own store. That is where your brand would be.",
+      from: [
+        { mark: "google", name: "Google" },
+        { mark: "meta", name: "Facebook" },
+        { mark: "instagram", name: "Instagram" },
+        { mark: "amazon", name: "Amazon" },
+        { mark: "whatsapp", name: "WhatsApp" },
+      ] satisfies { mark: PlatformMarkName; name: string }[],
+      landsOn: "They land on bhendi-bazaar.com",
+      siteAlt: "Bhendi Bazaar’s home page",
+    },
 
-  faq: {
-    label: "Questions",
-    title: "Before you start",
-    items: [
-      {
-        q: "Are there other plans?",
-        a: "No. One plan with every feature, at the same price for every shop.",
+    placements: {
+      label: "Where you’d appear",
+      title: "Three places",
+      titleEmphasis: "your brand could be.",
+      home: {
+        title: "Home page banner",
+        body: "The first thing every visitor sees.",
+        alt: "Bhendi Bazaar’s home page, where a partner banner would sit",
       },
-      {
-        q: "What do you charge on sales?",
-        a: `${STORE_COMMISSION_PERCENT}% on orders paid through your Bhendi Bazaar store, which covers the payment and the platform. Nothing on sales made on Amazon or Flipkart — those are between you and them.`,
+      category: {
+        title: "Category pages",
+        body: "Be the name on the section your buyers shop in.",
+        alt: "The Ridas category page, where a partner banner would sit",
+        presents: "presents Ridas",
       },
-      {
-        q: "Can I cancel?",
-        a: "Yes, any month. You are billed monthly and there is no lock-in.",
+      campaign: {
+        title: "Every campaign we run",
+        body: "Your name on our posts, reels and stories.",
+        label: "A Bhendi Bazaar post presented by a partner brand",
+        presentedBy: "Presented by",
+        postTitle: "New this week",
+        postBody: "Fresh pieces from the shops of Bhendi Bazaar",
       },
-      {
-        q: "I already sell on Amazon or Flipkart. Do I start again?",
-        a: "No. Connect your marketplace account and your existing listings arrive in one inbox, matched to your products by SKU.",
-      },
-      {
-        q: "I don’t sell on any marketplace yet.",
-        a: "Start with your own store and the Google and Meta catalogues. Connect a marketplace whenever you are ready.",
-      },
-      {
-        q: "Do I need to be good with technology?",
-        a: "No. Everything is built for a phone, in plain words. If something is unclear, you can reach us directly.",
-      },
-    ],
-  },
+    },
 
-  closing: {
-    title: "Your shop deserves to be found.",
-    lead: "Open it today, share your link tonight.",
-    cta: "Open your shop",
-    contact: "Questions? Talk to us",
+    values: {
+      label: "What it says about you",
+      title: "Associate with innovation.",
+      titleEmphasis: "Be seen supporting growth.",
+      items: [
+        { icon: "trend", title: "Modern", body: "Be seen beside the platform changing how India sells online." },
+        { icon: "shop", title: "Supportive", body: "Stand behind small shops as they grow, one shop at a time." },
+        { icon: "show", title: "In front of buyers", body: "On the home page, the category pages and every campaign we run." },
+      ] satisfies { icon: IconName; title: string; body: string }[],
+    },
+
+    steps: {
+      label: "How it works",
+      title: "Three steps",
+      titleEmphasis: "to go live.",
+      items: [
+        { title: "Tell us about your brand", body: "On WhatsApp or by message — who you are and who you want to reach." },
+        { title: "Choose together", body: "We agree the placements, the dates and the price with you." },
+        { title: "Go live", body: "Your brand appears across Bhendi Bazaar on the dates you chose." },
+      ],
+    },
+
+    faq: {
+      label: "Questions",
+      title: "Before you reach out",
+      items: [
+        {
+          q: "What does it cost?",
+          a: "It depends on where you appear and for how long. Tell us what you have in mind and we will send you a simple quote.",
+        },
+        { q: "Can I choose the category?", a: "Yes. Pick the categories your buyers shop in, and we will place you there." },
+        { q: "Do I need to sell on Bhendi Bazaar?", a: "No. Any brand that wants to reach our buyers can partner with us." },
+        { q: "How soon can we go live?", a: "Once we agree the placements and dates, your brand goes live on the first day you chose." },
+      ],
+    },
+
+    closing: {
+      title: "Grow with the shops",
+      titleEmphasis: "changing how India sells online.",
+      lead: "Tell us about your brand. We reply within a day.",
+      cta: "Become a partner",
+      times: "×",
+      brand: "Your brand",
+    },
   },
 
   mockup: {
     storeLabel: "A shop’s own store on Bhendi Bazaar",
     shopName: "Noor Boutique",
-    shopTagline: "Abayas, attars and gifts from Bhendi Bazaar",
+    shopTagline: "Abayas, attars and gifts",
     storeTabs: ["Abayas", "Attars", "Jewellery"],
     products: [
       { name: "Emerald satin abaya", price: "₹3,690" },
-      { name: "Sandalwood amber attar", price: "₹1,530" },
+      { name: "Sandalwood attar", price: "₹1,530" },
     ],
-    photoLabel: "A phone photo before and after enhancement",
+    addToBag: "Add to bag",
+    photoLabel: "A phone photo before and after the photo studio",
     before: "Phone photo",
     after: "Ready for Amazon",
     tools: ["Cut out", "On white", "Studio", "Scene"],
-    channelsLabel: "One product listed on every channel",
-    live: "Live",
-    liveOn: "Live on every channel",
-    addToBag: "Add to bag",
-    synced: "12 in stock everywhere",
-    ordersLabel: "The shop’s home screen",
+    catalogueLabel: "A sheet of products becoming a catalogue",
+    sheetHeader: ["Product", "Price", "Stock"],
+    sheetRows: [
+      ["Rida, mint", "₹1,500", "6"],
+      ["Rida, beige", "₹2,650", "4"],
+      ["Abaya, black", "₹3,200", "9"],
+      ["Attar, oud", "₹1,250", "12"],
+    ],
+    addedCount: "128 products added",
+    ordersLabel: "The shop’s orders screen",
     needsYou: "Needs you now",
     toPack: "2 orders to pack",
-    lowStock: "1 product running low",
+    courierBooked: "Packed · courier booked",
     earned: "Earned this week",
     earnedValue: "₹18,420",
-    markPacked: "Mark packed",
     newOrder: "New order",
-    newOrderFrom: "Amazon · ₹3,690",
+    newOrderFrom: "Amazon · ₹850",
     orderLabel: "A new order arriving from Amazon",
+    liveOn: "Live on every channel",
+    synced: "12 in stock everywhere",
   },
 } as const;

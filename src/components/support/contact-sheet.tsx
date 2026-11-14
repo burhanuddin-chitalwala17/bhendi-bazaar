@@ -21,10 +21,14 @@ import { CONTACT_SHEET_COPY } from "./support-copy";
 
 type Step = "choices" | "message" | "sent";
 
+/** Why the sheet was opened: a shopper's question, or a brand asking to partner (/business). */
+export type ContactIntent = "support" | "partner";
+
 interface ContactSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   signedIn: boolean;
+  intent?: ContactIntent;
 }
 
 // A full-width 56px row keeps both options thumb-reachable in a bottom sheet (ADR-0015).
@@ -65,8 +69,14 @@ export function ContactSheet({
   open,
   onOpenChange,
   signedIn,
+  intent = "support",
 }: ContactSheetProps) {
   const [step, setStep] = useState<Step>("choices");
+  const partner = intent === "partner";
+  const heading =
+    partner && step === "choices"
+      ? { title: CONTACT_SHEET_COPY.partnerTitle, description: CONTACT_SHEET_COPY.partnerDescription }
+      : TITLES[step];
 
   function handleOpenChange(next: boolean) {
     if (!next) setStep("choices");
@@ -78,8 +88,8 @@ export function ContactSheet({
       <SheetContent side="adaptive">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1.5">
-            <SheetTitle>{TITLES[step].title}</SheetTitle>
-            <SheetDescription>{TITLES[step].description}</SheetDescription>
+            <SheetTitle>{heading.title}</SheetTitle>
+            <SheetDescription>{heading.description}</SheetDescription>
           </div>
           <SheetClose
             aria-label={CONTACT_SHEET_COPY.close}
@@ -92,7 +102,7 @@ export function ContactSheet({
         {step === "choices" && (
           <div className="space-y-2 pt-1">
             <a
-              href={whatsappSupportUrl()}
+              href={partner ? whatsappSupportUrl(CONTACT_SHEET_COPY.partnerWhatsappMessage) : whatsappSupportUrl()}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => handleOpenChange(false)}
@@ -123,23 +133,26 @@ export function ContactSheet({
             </Button>
 
             {/* The footer that carries these links is hidden on a phone (store-policies D4). */}
-            <Link
-              href={ROUTES.policies}
-              onClick={() => handleOpenChange(false)}
-              className={OPTION_ROW}
-            >
-              <Icon name="file" size="md" tone="muted" />
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold">{CONTACT_SHEET_COPY.storePolicies}</span>
-                <span className="block text-2xs text-muted-foreground">{CONTACT_SHEET_COPY.shippingReturnsRefundsPrivacy}</span>
-              </span>
-            </Link>
+            {!partner && (
+              <Link
+                href={ROUTES.policies}
+                onClick={() => handleOpenChange(false)}
+                className={OPTION_ROW}
+              >
+                <Icon name="file" size="md" tone="muted" />
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold">{CONTACT_SHEET_COPY.storePolicies}</span>
+                  <span className="block text-2xs text-muted-foreground">{CONTACT_SHEET_COPY.shippingReturnsRefundsPrivacy}</span>
+                </span>
+              </Link>
+            )}
           </div>
         )}
 
         {step === "message" && (
           <ContactMessageForm
             signedIn={signedIn}
+            defaultSubject={partner ? CONTACT_SHEET_COPY.partnerSubject : ""}
             onSent={() => setStep("sent")}
             onCancel={() => setStep("choices")}
           />

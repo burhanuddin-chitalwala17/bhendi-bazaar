@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 
-import { ContactSheet } from "@/components/support/contact-sheet";
+import { ContactSheet, type ContactIntent } from "@/components/support/contact-sheet";
 import { Button } from "@/components/ui/button";
 import { CONTACT_LAUNCHER_COPY } from "./support-copy";
 
@@ -18,11 +18,13 @@ export function ContactLauncher({
   children,
   variant = "ghost",
   size,
+  intent,
 }: {
   className?: string;
   children: React.ReactNode;
   variant?: ButtonAxes["variant"];
   size?: ButtonAxes["size"];
+  intent?: ContactIntent;
 }) {
   const [open, setOpen] = useState(false);
   const { data: session } = useSession();
@@ -42,6 +44,7 @@ export function ContactLauncher({
         open={open}
         onOpenChange={setOpen}
         signedIn={Boolean(session?.user?.email)}
+        intent={intent}
       />
     </>
   );

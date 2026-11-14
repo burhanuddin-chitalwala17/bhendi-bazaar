@@ -20,6 +20,8 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // The one ask on a marketing surface, in gold so it reads on emerald and ink alike.
+        spotlight: "bg-accent text-accent-foreground font-semibold shadow-raised hover:bg-accent/90",
         // On a dark surface (the selection bar): a quiet button that inherits the surface's light text.
         inverse: "bg-background/10 text-background hover:bg-background/20",
       },

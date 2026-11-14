@@ -18,6 +18,8 @@ export const ROUTES = {
   orders: "/orders",
   profile: "/profile",
   business: "/business",
+  /** The same page opened on its partner side (one page, two audiences). */
+  businessPartner: "/business?for=partner",
   signIn: "/signin",
   signUp: "/signup",
   forgotPassword: "/forgot-password",

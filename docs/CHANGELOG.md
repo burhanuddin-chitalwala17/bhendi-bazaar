@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 2026-11-14 — /business: one page, two sides — Sell with us and Partner with us
+
+- The owner's direction, from the brand films (`business-page-video-frames` branch, `docs/video-frames/scenes.md`):
+  one page with a switch between **Sell with us** and **Partner with us**, plain words, one ask per side.
+  `/business` opens on the shop side; `/business?for=partner` (`ROUTES.businessPartner`) on the partner side.
+  The switch is links, so each side has its own URL and renders on the server.
+- Shop side: hero, the problem, "List once. Sell everywhere." (live places, and Flipkart, Meesho, WhatsApp
+  and Instagram posts marked **Coming soon**, owner 2026-11-14), four things it does, a coming-soon section,
+  the ₹699 plan, three steps, questions, close. One button, "Open your shop".
+- Partner side (new): who it's for, where buyers arrive, three placements (home page banner, category pages,
+  every campaign) drawn over photographs of the live site, what it says about the brand, three steps,
+  questions, close. One button, "Become a partner", opens Contact us in its partner version — a
+  partner title, a WhatsApp message and the subject "Partnership" filled in. No new form, no price
+  (quote on request).
+- No people on the page (owner): drawn product screens, and two captures of bhendi-bazaar.com in
+  `public/business/`.
+- Shared pieces, each one entry: `Button` variant `spotlight` (the gold ask), `PageTabs` variant
+  `segmented`, `ContactLauncher`/`ContactSheet` `intent="partner"`, `ContactMessageForm` `defaultSubject`.
+- Display only: no data, route handler or contract change.
+
 ## 2026-11-12 — /business: a design pass on the page a shop decides on
 
 - Desktop hero no longer leaves the right half empty: the phone sits on a tinted stage with a "New order"

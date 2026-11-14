@@ -14,6 +14,8 @@ import { CONTACT_MESSAGE_FORM_COPY } from "./support-copy";
 interface ContactMessageFormProps {
   /** True when a session with an email exists — the reply address is then the account's. */
   signedIn: boolean;
+  /** What the subject starts as: "Partnership" when a brand opened the sheet from /business. */
+  defaultSubject?: string;
   onSent: () => void;
   onCancel: () => void;
 }
@@ -24,6 +26,7 @@ interface ContactMessageFormProps {
  */
 export function ContactMessageForm({
   signedIn,
+  defaultSubject = "",
   onSent,
   onCancel,
 }: ContactMessageFormProps) {
@@ -37,7 +40,7 @@ export function ContactMessageForm({
     schema: (signedIn
       ? contactMessageSchema
       : guestContactMessageSchema) as never,
-    defaultValues: { subject: "", message: "", email: "" },
+    defaultValues: { subject: defaultSubject, message: "", email: "" },
     submit: ({ subject, message, email }) =>
       sendContactMessage(
         signedIn ? { subject, message } : { subject, message, email },
