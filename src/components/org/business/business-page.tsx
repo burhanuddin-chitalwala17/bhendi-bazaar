@@ -17,6 +17,7 @@ import {
   AUDIENCE,
   type Audience,
   BUSINESS_COPY as COPY,
+  PARTNER_PACKAGES_FROM_PAISE,
   STORE_COMMISSION_PERCENT,
   SUBSCRIPTION_MONTHLY_PAISE,
 } from "./business-copy";
@@ -32,6 +33,7 @@ import {
 } from "./business-mockups";
 
 const PRICE = formatCurrency(SUBSCRIPTION_MONTHLY_PAISE);
+const PARTNER_FROM = formatCurrency(PARTNER_PACKAGES_FROM_PAISE);
 const S = COPY.shop;
 const P = COPY.partner;
 
@@ -430,6 +432,9 @@ function PartnerHero() {
             </Button>
           </div>
           <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-small text-muted-foreground">
+            <span>
+              {h.packagesFrom} <strong className="font-sans text-title font-extrabold text-foreground">{PARTNER_FROM}</strong>
+            </span>
             {h.facts.map((fact) => (
               <span key={fact} className="inline-flex items-center gap-1">
                 <Icon name="done" size="xs" tone="primary" />
@@ -553,7 +558,9 @@ function PartnerClosing() {
           </span>
         </div>
         <Headline title={c.title} emphasis={c.titleEmphasis} />
-        <p className="text-body text-primary-foreground/80">{c.lead}</p>
+        <p className="text-body text-primary-foreground/80">
+          {c.lead} {P.hero.packagesFrom} <strong className="font-extrabold text-primary-foreground">{PARTNER_FROM}</strong>.
+        </p>
         <BecomePartner label={c.cta} className="w-full sm:w-auto" />
       </Column>
     </section>

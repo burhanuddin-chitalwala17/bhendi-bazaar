@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-11-14 — /business partner side: packages from ₹899
+
+- "Packages from ₹899" beside the partner side's first ask and in its close; the cost question answers
+  with it. No period on purpose: campaigns are charged on top (owner, 2026-11-14).
+  `PARTNER_PACKAGES_FROM_PAISE` in `business-copy.ts`, display only.
+
 ## 2026-11-14 — /business: one page, two sides — Sell with us and Partner with us
 
 - The owner's direction, from the brand films (`business-page-video-frames` branch, `docs/video-frames/scenes.md`):

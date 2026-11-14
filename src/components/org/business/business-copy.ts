@@ -1,11 +1,16 @@
 import type { IconName } from "@/components/ui/icon";
 import type { PlatformMarkName } from "@/components/ui/icons/platform-marks";
+import { formatCurrency } from "@/lib/format";
 
 /** One flat price per shop, GST included, no tiers and no per-seat (BACKLOG: subscriptions). Display only. */
 export const SUBSCRIPTION_MONTHLY_PAISE = 69_900;
 
 /** The owner's stated default on store orders (2026-11-05). Display only — payouts reads `Org.commissionBps`. */
 export const STORE_COMMISSION_PERCENT = 2;
+
+/** The lowest partner package (owner, 2026-11-14). No period on purpose: campaigns are charged too. Display only. */
+export const PARTNER_PACKAGES_FROM_PAISE = 89_900;
+const PARTNER_FROM = formatCurrency(PARTNER_PACKAGES_FROM_PAISE);
 
 /** The two sides of /business, chosen by `?for=` so each audience gets its own link. */
 export const AUDIENCE = { SHOP: "shop", PARTNER: "partner" } as const;
@@ -192,6 +197,7 @@ export const BUSINESS_COPY = {
       lead: "Partner with Bhendi Bazaar and be seen on our home page, our category pages and in every campaign we run — beside the shops changing how India sells online.",
       cta: "Become a partner",
       secondary: "See where you’d appear",
+      packagesFrom: "Packages from",
       facts: ["Home page", "Category pages", "Every campaign"],
       brand: "Your brand",
       featured: "Featured partner",
@@ -266,7 +272,7 @@ export const BUSINESS_COPY = {
       items: [
         {
           q: "What does it cost?",
-          a: "It depends on where you appear and for how long. Tell us what you have in mind and we will send you a simple quote.",
+          a: `Packages start at ${PARTNER_FROM}. The final price depends on where you appear, for how long, and any campaigns you add. Tell us what you have in mind and we will send you a simple quote.`,
         },
         { q: "Can I choose the category?", a: "Yes. Pick the categories your buyers shop in, and we will place you there." },
         { q: "Do I need to sell on Bhendi Bazaar?", a: "No. Any brand that wants to reach our buyers can partner with us." },
