@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { LockedAction } from "@/components/subscriptions/locked-action";
 import { Spinner } from "@/components/ui/spinner";
 import { useMutation } from "@/hooks/core/useMutation";
 import { CARD_STATE, type CardState, type MarketplaceChannel } from "@server/channels/channel-connection.types";
@@ -14,6 +15,7 @@ import { channelsApiClient } from "./channelsApiClient";
 import { ACTION, CARD, CHECK_RESULT } from "./channel-copy";
 import { DisconnectDialog } from "./disconnect-dialog";
 import { StockSyncActions } from "./stock-sync-actions";
+import { FEATURE } from "@/components/subscriptions/features";
 
 interface MarketplaceCardActionsProps {
   orgId: string;
@@ -52,20 +54,23 @@ export function MarketplaceCardActions({ orgId, channel, label, state, stale, st
   });
 
   const href = channelsApiClient.connectUrl(orgId, channel);
+  // Channels is paid: each way to a marketplace keeps its place with a lock, opening the plan sheet (feature-access Q29).
   const goTo = (text: string, variant: "default" | "outline" = "default") => (
-    <Button asChild variant={variant} className="min-h-10 w-full md:w-auto">
-      <a href={href} onClick={() => setOpening(true)} aria-busy={opening}>
-        {opening ? (
-          <>
-            <Spinner />
-            {ACTION.connecting(label)}
-            {slow ? ` ${ACTION.stillWorking}` : ""}
-          </>
-        ) : (
-          text
-        )}
-      </a>
-    </Button>
+    <LockedAction feature={FEATURE.CHANNELS} label={text} variant={variant} className="min-h-10 w-full md:w-auto">
+      <Button asChild variant={variant} className="min-h-10 w-full md:w-auto">
+        <a href={href} onClick={() => setOpening(true)} aria-busy={opening}>
+          {opening ? (
+            <>
+              <Spinner />
+              {ACTION.connecting(label)}
+              {slow ? ` ${ACTION.stillWorking}` : ""}
+            </>
+          ) : (
+            text
+          )}
+        </a>
+      </Button>
+    </LockedAction>
   );
 
   // Pause sits beside Disconnect (inventory-sync Q28): sync runs by itself, so stopping it is the exception.
@@ -120,14 +125,16 @@ export function MarketplaceCardActions({ orgId, channel, label, state, stale, st
       return (
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           {stale && (
-            <Button
-              variant="outline"
-              className="min-h-10 w-full md:w-auto"
-              onClick={() => void check.mutate().catch(() => undefined)}
-              pending={check.isLoading}
-            >
-              {ACTION.checkNow}
-            </Button>
+            <LockedAction feature={FEATURE.CHANNELS} label={ACTION.checkNow} variant="outline" className="min-h-10 w-full md:w-auto">
+              <Button
+                variant="outline"
+                className="min-h-10 w-full md:w-auto"
+                onClick={() => void check.mutate().catch(() => undefined)}
+                pending={check.isLoading}
+              >
+                {ACTION.checkNow}
+              </Button>
+            </LockedAction>
           )}
           {pauseControl}
           {disconnectControl}

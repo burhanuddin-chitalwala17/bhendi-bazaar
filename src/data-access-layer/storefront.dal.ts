@@ -21,9 +21,11 @@ import {
 } from "@server/catalog/storefront.types";
 import {
   LANDING_SHELF_LIMIT,
+  readFontKey,
   readStorefrontLook,
   type PaletteKey,
-  type StorefrontLook,
+  type FontKey,
+  type PreviewLook,
   type ThemeKey,
 } from "@server/catalog/storefront-themes";
 import type { HeroBannerContent } from "@/components/home/hero-banner";
@@ -33,9 +35,11 @@ import { productsDAL } from "@/data-access-layer/products.dal";
 import type { Category } from "@/domain/category";
 import type { Product } from "@/domain/product";
 import { holdCutoff } from "@server/catalog/org.handle";
-import { chromeShopFor } from "@/lib/storefront-chrome";
+import { headers } from "next/headers";
+import { STOREFRONT_PRODUCT_HEADER, STOREFRONT_SHOP_HEADER, chromeShopFor } from "@/lib/storefront-chrome";
 import type { OrgRating } from "@server/catalog/review-rating";
 import { promotionService } from "@server/promotions/promotion.service";
+import { storefrontAccessDAL } from "@/data-access-layer/storefront-access.dal";
 import type { StorefrontOfferDto } from "@server/promotions/storefront-offers";
 
 /** One shop, as a visitor sees it. */
@@ -53,6 +57,8 @@ export interface Storefront {
   /** The published look, parsed (storefront-themes D1); both null for an unthemed shop. */
   themeKey: ThemeKey | null;
   paletteKey: PaletteKey | null;
+  /** The shop's heading face; null for the theme's own or an unthemed shop (storefront-font D3, Q7). */
+  fontKey: FontKey | null;
 }
 
 /** A themed landing page as its sections read it: the DTO plus the goods, priced here (ADR-0018). */
@@ -66,6 +72,8 @@ export interface StorefrontPage extends StorefrontPageDto {
   offers: StorefrontOfferDto[];
   /** Goods the one resolver prices below list, for the deals strip (Q12, ADR-0018). */
   dealProducts: Product[];
+  /** The shop's active banners, which lead Daily's hero (storefront-themes Q14; storefront-look D3). */
+  banners: HeroBannerContent[];
 }
 
 /**
@@ -96,7 +104,7 @@ export interface ShopListing {
 /** A landing page's goods, priced here (ADR-0018), around the service's DTO. */
 async function storefrontPageFrom(dto: StorefrontPageDto | null): Promise<StorefrontPage | null> {
   if (!dto) return null;
-  const [bestSold, newIn, categories, productCount, offers, dealProducts] = await Promise.all([
+  const [bestSold, newIn, categories, productCount, offers, dealProducts, banners] = await Promise.all([
     dto.bestSellingIds.length
       ? productsDAL.getProducts({ orgId: dto.id, ids: dto.bestSellingIds })
       : Promise.resolve([]),
@@ -106,10 +114,11 @@ async function storefrontPageFrom(dto: StorefrontPageDto | null): Promise<Storef
     // Asked here, never by storefrontService: an offer is promotions' to word (D10).
     promotionService.storefrontOffers(dto.id),
     productsDAL.getProducts({ orgId: dto.id, offerOnly: true, ownOffersOnly: true, limit: LANDING_SHELF_LIMIT }),
+    storefrontDAL.promotionsFor(dto.id),
   ]);
   const rank = new Map(dto.bestSellingIds.map((id, index) => [id, index]));
   const bestSelling = [...bestSold].sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
-  return { ...dto, bestSelling, newIn, categories, productCount, offers, dealProducts };
+  return { ...dto, bestSelling, newIn, categories, productCount, offers, dealProducts, banners };
 }
 
 export const storefrontDAL = {
@@ -135,6 +144,7 @@ export const storefrontDAL = {
       accent: profile.accent,
       themeKey: look?.theme ?? null,
       paletteKey: look?.palette ?? null,
+      fontKey: look ? readFontKey(profile.fontKey) : null,
     };
   }),
 
@@ -151,7 +161,7 @@ export const storefrontDAL = {
    * The landing page in a look its owner is trying (D12), published or not: the same reads a
    * buyer's page makes, so the preview is the page, not a picture of it.
    */
-  getStorefrontPreview: async (handle: string, look: StorefrontLook): Promise<StorefrontPage | null> => {
+  getStorefrontPreview: async (handle: string, look: PreviewLook): Promise<StorefrontPage | null> => {
     return await storefrontPageFrom(await storefrontService.storefrontPage(handle, look));
   },
 
@@ -250,12 +260,36 @@ export const storefrontDAL = {
     return await productsRepository.countOnSaleForOrg(orgId);
   }),
 
-  /** Every shop open for business and with something to sell. */
+  /**
+   * Every shop open for business, with something to sell, and holding Storefront: the `/store`
+   * directory and the sitemap (subscriptions/feature-access D10, Q7). Which hold it is asked of
+   * `storefrontAccessDAL`, so this file keeps to catalog and promotions.
+   */
   listShops: cache(async (): Promise<ShopListing[]> => {
     const rows = await orgProfileRepository.listPublicShops();
-    return rows.map(({ themeKey, ...shop }) => ({
-      ...shop,
-      themed: readStorefrontLook(themeKey, null) !== null,
-    }));
+    const open = await storefrontAccessDAL.openAmong(rows.map((r) => r.orgId));
+    return rows
+      .filter((row) => open.has(row.orgId))
+      .map(({ themeKey, orgId: _orgId, ...shop }) => ({
+        ...shop,
+        themed: readStorefrontLook(themeKey, null) !== null,
+      }));
   }),
+
 };
+
+/**
+ * The themed shop a product page was reached from, or null (storefront-themes Q33). Middleware
+ * forwards `?shop=`; the product must be that shop's and its storefront open, or the page is the
+ * marketplace's. One answer per request, read by the layout for the chrome and the page for its links.
+ */
+export const productChromeShop = cache(async (): Promise<Storefront | null> => {
+  const forwarded = await headers();
+  const handle = forwarded.get(STOREFRONT_SHOP_HEADER);
+  const slug = forwarded.get(STOREFRONT_PRODUCT_HEADER);
+  if (!handle || !slug) return null;
+  const shop = await storefrontDAL.chromeShopForProduct(handle, slug);
+  // A locked storefront lends no header with links into itself (feature-access Q7); the product shows plain.
+  if (!shop || !(await storefrontAccessDAL.isOpen(shop.id))) return null;
+  return shop;
+});

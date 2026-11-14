@@ -72,17 +72,19 @@ async function widgetData(key: string, ctx: WidgetContext): Promise<WidgetData> 
 
 /** Home asks each area whether it needs the shop (own-store onboarding D7). */
 export const homeDAL = {
-  async forOrg(orgId: string, now: Date = new Date()): Promise<HomeData> {
+  /** `channels` false leaves out every channel nudge: the shop could not act on one (feature-access Q31). */
+  async forOrg(orgId: string, now: Date = new Date(), { channels = true }: { channels?: boolean } = {}): Promise<HomeData> {
     const ctx: WidgetContext = { audience: "org", orgId };
+    const none = async () => null;
     const [shop, setup, toPackRead, lowStock, channel, stock, listingProblems, channelAsks, channelNeeds, photos, teamEdits, paidOrders] = await Promise.all([
       settle("shop", async () => shareShopFor(await shopDetailsService.get(orgId))),
       settle("setup", () => orgOnboardingService.status(orgId)),
       settle("to pack", () => toPack(orgId)),
       settle("low stock", () => sellingLowStock(orgId, now)),
-      settle("channel", async () => (await channelConnectionService.overview(orgId)).attention[0] ?? null),
-      settle("stock", () => channelStockService.attention(orgId)),
-      settle("listing problems", () => listingProblemsService.attention(orgId)),
-      settle("channel asks", () => channelCatalogueService.attention(orgId, now)),
+      settle("channel", channels ? async () => (await channelConnectionService.overview(orgId)).attention[0] ?? null : none),
+      settle("stock", channels ? () => channelStockService.attention(orgId) : none),
+      settle("listing problems", channels ? () => listingProblemsService.attention(orgId) : none),
+      settle("channel asks", channels ? () => channelCatalogueService.attention(orgId, now) : none),
       settle("channel needs", () => completenessService.needsFor(orgId)),
       settle("photos", () => enhancementService.countAwaitingDecision(orgId)),
       settle("team edits", () => productTeamService.teamEditedSummary(orgId)),

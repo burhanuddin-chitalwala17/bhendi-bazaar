@@ -25,6 +25,9 @@ import { CHANNEL } from "@server/shared/channels";
 import { PageHeader } from "@/components/shared/page-shell";
 import { ROUTES } from "@server/shared/routes";
 import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
+import { PlanBanner } from "@/components/subscriptions/plan-banner";
+import { LockedAction } from "@/components/subscriptions/locked-action";
+import { FEATURE } from "@/components/subscriptions/features";
 
 export const metadata = {
   title: ORG_PAGE_TITLES.listings,
@@ -96,12 +99,15 @@ export default async function ChannelListingsPage({
 
   return (
     <div className="space-y-4">
+      {!scope.features.channels && <PlanBanner feature={FEATURE.CHANNELS} />}
       {waiting > 0 && (
         <div className="flex flex-col gap-2 rounded-card bg-info/10 p-3 text-sm md:flex-row md:items-center md:justify-between">
           <p className="font-semibold">{PUBLISH.bar(waiting)}</p>
-          <Button asChild size="sm" className="min-h-10 self-start md:self-auto">
-            <Link href={ROUTES.org.channelPublish(scope.orgId, channel)}>{LISTING.reviewAndPublish}</Link>
-          </Button>
+          <LockedAction feature={FEATURE.CHANNELS} label={LISTING.reviewAndPublish} size="sm" className="min-h-10 self-start md:self-auto">
+            <Button asChild size="sm" className="min-h-10 self-start md:self-auto">
+              <Link href={ROUTES.org.channelPublish(scope.orgId, channel)}>{LISTING.reviewAndPublish}</Link>
+            </Button>
+          </LockedAction>
         </div>
       )}
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -191,6 +197,7 @@ export default async function ChannelListingsPage({
               label={label}
               listings={page.listings}
               hrefFor={(id) => hrefWith({ listing: id })}
+              from={hrefWith({})}
               groups={page.groups}
               firstFamily={page.firstFamily}
             />

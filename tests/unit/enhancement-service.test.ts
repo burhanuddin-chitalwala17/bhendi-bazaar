@@ -48,6 +48,8 @@ vi.mock("@server/content/enhancement-settings.repository", () => ({ enhancementS
 vi.mock("@server/catalog/org.service", () => ({ adminOrgService: orgs }));
 vi.mock("@server/catalog/media-asset.service", () => ({ mediaAssetService: media }));
 vi.mock("@server/shared/prisma", () => ({ prisma }));
+// A paying shop: the lock itself is held by tests/integration/feature-enforcement.test.ts (feature-access A5).
+vi.mock("@server/subscriptions/feature-access.service", () => ({ featureAccessService: { assert: async () => undefined } }));
 vi.mock("@server/shared/jobs", () => ({ enqueue: (...args: unknown[]) => enqueue(...args) }));
 vi.mock("@server/content/tools/light", () => ({ lightFix: vi.fn() }));
 vi.mock("@server/content/tools/cutout", () => ({ cutOut: vi.fn() }));

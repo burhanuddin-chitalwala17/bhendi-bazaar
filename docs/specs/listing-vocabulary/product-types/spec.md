@@ -5,9 +5,9 @@
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-03
-- **References:** [trd.md](trd.md), [parent spec](../spec.md), [categories](../categories/), [ADR-0047](../../../adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md)
+- **References:** `431ed6e7:docs/specs/listing-vocabulary/product-types/trd.md`, [parent spec](../spec.md), [categories](../categories/), [ADR-0047](../../../adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/listing-vocabulary/product-types/trd.md`.
 
 ## What this feature is
 
@@ -56,7 +56,7 @@ both.
 ## Hazards this feature must answer
 
 Each is a bar the design must clear rather than a question for the owner, and names the
-[trd.md](trd.md) decision that answers it.
+`431ed6e7:docs/specs/listing-vocabulary/product-types/trd.md` decision that answers it.
 
 - **A wrong type is worse than no type.** It asks a seller the wrong questions, and the answers
   are stored and published before anybody notices. The screen has to make a bad type hard to

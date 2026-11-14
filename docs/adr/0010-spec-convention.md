@@ -1,7 +1,7 @@
 # ADR-0010: Spec layout — feature folders, spec/TRD split, ≤100 readable lines
 
 - **Date:** 2026-08-03
-- **Status:** Accepted
+- **Status:** Accepted (decision 4 amended by [ADR-0071](0071-only-the-spec-is-line-capped.md): only `spec.md` is capped)
 - **Context:** There was no spec convention and no specs — work went from idea straight to code, which shows up in a commit history of broad, undescribed changes where it is not recoverable what a given change was *meant* to touch. Stating intent before implementing is the cheapest way to catch a change that has quietly grown beyond its purpose.
 
   Separately, the documentation that did exist had no length discipline, with single files reaching well over a thousand lines. Past a certain size a document stops being reviewed and is only skimmed, so errors in it survive indefinitely — which makes a length cap a correctness mechanism, not a style preference.

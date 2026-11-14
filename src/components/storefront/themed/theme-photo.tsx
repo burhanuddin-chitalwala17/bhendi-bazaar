@@ -41,7 +41,7 @@ export function ThemePhoto({
           className="bg-theme-pattern absolute inset-0 flex items-center justify-center"
         >
           {initial && (
-            <span aria-hidden className="font-display text-headline text-muted-foreground">
+            <span aria-hidden className="font-display text-headline font-display-weight text-muted-foreground">
               {initial.slice(0, 1).toUpperCase()}
             </span>
           )}

@@ -1,6 +1,6 @@
 # Conventions index
 
-- **Verified:** 2026-11-07
+- **Verified:** 2026-11-13
 - **Covers:** `docs/adr/*.md`, `docs/specs/*/`
 
 The canonical index of *how we work*, moved out of the root `CLAUDE.md` on 2026-11-01 so it is read when
@@ -12,9 +12,10 @@ nothing more; detail lives in the ADR so it has one wording ([ADR-0009](adr/0009
 - **Domain docs co-locate with code** — `<domain>/CLAUDE.md`, lazy-loaded. [ADR-0001](adr/0001-monorepo-doc-structure.md)
 - **ADRs are append-only** — supersede, never edit. [ADR-0001](adr/0001-monorepo-doc-structure.md), [index](adr/README.md)
 - **ADRs are for genuine decisions** — real alternatives, the rejected one often conventional. [docs/adr/README.md](adr/README.md)
-- **Specs are `spec.md` + `trd.md`, ≤100 lines each, no code.** [ADR-0010](adr/0010-spec-convention.md)
+- **Specs are `spec.md` + `trd.md`, no code; only `spec.md` is capped (≤100 readable lines); `trd.md` and `ux.md` are uncapped.** [ADR-0010](adr/0010-spec-convention.md), [ADR-0071](adr/0071-only-the-spec-is-line-capped.md)
+- **A shipped feature keeps `spec.md` + `decisions.md` only** — `ux.md` and `trd.md` go in the commit that flips Status to Implemented; links become `<sha>:path` refs. [ADR-0073](adr/0073-a-shipped-feature-keeps-its-spec-and-decisions-and-drops-its-ux-and-trd.md)
 - **A feature is one outcome, its decisions are logged, its UX is signed off before the TRD** — Claude cuts scope into In/Later and defaults reversible decisions; `decisions.md` holds every Q, and its **State** is read before any Q is relied on: `decided`/`implemented` bind, `superseded by Qn` defers to Qn, `open` blocks, `parked` is out of scope. A Q not yet implemented is replaced in place; only an implemented one is superseded ([ADR-0062](adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)); `ux.md` holds every state. [ADR-0061](adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)
-- **CHANGELOG is append-only, newest first, one entry per unit, unique numbers** — `[CONTRACT]` when a DTO or schema changes and `CONTRACTS.md` moves with it; `[MIGRATION]` when `prisma/migrations/` gains a folder. `docs:check` holds the numbering.
+- **CHANGELOG is append-only, newest first, one entry per unit, unique numbers** — `[CONTRACT]` when a DTO or schema changes and `CONTRACTS.md` moves with it; `[MIGRATION]` when `prisma/migrations/` gains a folder. `docs:check` holds the numbering. It holds the running month; a closed month is summarised in `CHANGELOG-HISTORY.md` and dropped, prompted at session start. [ADR-0072](adr/0072-the-changelog-holds-the-running-month-and-a-closed-month-becomes-a-summary.md)
 - **Docs reference code by path, never copy it.** [ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)
 - **A doc's `Verified:` date is a gate** — declare `Covers:`; `npm run docs:check` fails on drift. [ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)
 - **One error envelope, consumed by `useServerForm`** — `toErrorResponse` out, `readApiError` in, `DomainError` to opt into a shown message. [ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)
@@ -45,6 +46,7 @@ nothing more; detail lives in the ADR so it has one wording ([ADR-0009](adr/0009
 - **The audit trail records an action; it never decides whether it happened.** [ADR-0021](adr/0021-audit-trail-never-fails-the-action.md)
 - **An org storefront is a scoped projection of the marketplace, on one domain.** [ADR-0030](adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md)
 - **A storefront theme is a token set and a section composition declared in code** — one section library, three palettes each, the shop stores keys only, every palette contrast-tested. [ADR-0064](adr/0064-a-storefront-theme-is-a-token-set-and-a-section-composition-declared-in-code.md)
+- **A theme never sets proportion; a shop picks its heading face from a closed list** — sizes, spacing and widths are the platform's in every theme; a font key repoints the display face only. [ADR-0074](adr/0074-a-shop-chooses-its-storefronts-heading-face-from-a-closed-list.md)
 - **Images live in Cloudflare R2, behind one seam.** [ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)
 - **Images are stored small and delivered through the optimizer.** [ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)
 - **A zoomable surface declares the size it zooms to; the stored ceiling clears it.** [ADR-0027](adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md)

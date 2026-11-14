@@ -7,7 +7,7 @@
 - **Verified:** 2026-11-04
 - **References:** [decisions.md](decisions.md), parent [marketplace-integration](../spec.md) (Q24, Q30–Q32, Q35, Q38–Q40), [INTEGRATIONS.md](../../../INTEGRATIONS.md) "Detecting a sale", [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [ADR-0044](../../../adr/0044-a-marketplace-orders-money-is-reported-not-computed.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md. Subfeature 7 of
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/marketplace-integration/inventory-sync/trd.md`. Subfeature 7 of
 > marketplace-integration; it needs only linked listings, so it does not wait for family-merge or
 > channel-listings.
 

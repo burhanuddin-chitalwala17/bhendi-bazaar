@@ -7,12 +7,13 @@
 
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
+import { FEATURE } from "@/components/subscriptions/features";
 import { channelImportService } from "@server/channels/channel-import.service";
 
 export const POST = withOrg<{ orgId: string; channel: string }>(async (_request, scope, params) => {
   await channelImportService.requestRead(scope.orgId, params.channel);
   return NextResponse.json({ ok: true });
-});
+}, { feature: FEATURE.CHANNELS });
 
 export const GET = withOrg<{ orgId: string; channel: string }>(async (_request, scope, params) => {
   return NextResponse.json(await channelImportService.readProgress(scope.orgId, params.channel));

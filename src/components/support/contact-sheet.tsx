@@ -28,6 +28,8 @@ interface ContactSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   signedIn: boolean;
+  /** Words already written for WhatsApp and the message, from a paid feature's lock (feature-access Q26). */
+  prefill?: { subject: string; message: string };
   intent?: ContactIntent;
 }
 
@@ -69,6 +71,7 @@ export function ContactSheet({
   open,
   onOpenChange,
   signedIn,
+  prefill,
   intent = "support",
 }: ContactSheetProps) {
   const [step, setStep] = useState<Step>("choices");
@@ -102,7 +105,7 @@ export function ContactSheet({
         {step === "choices" && (
           <div className="space-y-2 pt-1">
             <a
-              href={partner ? whatsappSupportUrl(CONTACT_SHEET_COPY.partnerWhatsappMessage) : whatsappSupportUrl()}
+              href={prefill ? whatsappSupportUrl(prefill.message) : whatsappSupportUrl()}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => handleOpenChange(false)}
@@ -152,7 +155,7 @@ export function ContactSheet({
         {step === "message" && (
           <ContactMessageForm
             signedIn={signedIn}
-            defaultSubject={partner ? CONTACT_SHEET_COPY.partnerSubject : ""}
+            prefill={prefill}
             onSent={() => setStep("sent")}
             onCancel={() => setStep("choices")}
           />

@@ -14,6 +14,8 @@ import {
   type ShopfrontChannel,
 } from "@server/listing/shopfront-feed";
 import { shopfrontFeedService } from "@server/listing/shopfront-feed.service";
+import { featureAccessService } from "@server/subscriptions/feature-access.service";
+import { FEATURE } from "@server/subscriptions/feature-access.types";
 import { productsDAL, type ChannelFeedProduct } from "@/data-access-layer/products.dal";
 import { effectivePrice, hasOffer } from "@/domain/product";
 import { APP_NAME } from "@/lib/config";
@@ -56,7 +58,10 @@ export async function shopfrontFeedXml(channel: ShopfrontChannel): Promise<strin
   // Pre-launch, as the sitemap does: a valid feed with nothing in it (D11).
   if (crawlersBlocked()) return buildFeed(channel, header, []);
 
-  const orgIds = await shopfrontFeedService.orgsSellingOn(channel);
+  const selling = await shopfrontFeedService.orgsSellingOn(channel);
+  // Google and Meta are part of Channels: a shop without it is in no feed (feature-access D10, A2).
+  const holding = await featureAccessService.allowedOrgs(FEATURE.CHANNELS, selling);
+  const orgIds = selling.filter((id) => holding.has(id));
   if (orgIds.length === 0) return buildFeed(channel, header, []);
 
   const [products, rules] = await Promise.all([

@@ -14,6 +14,9 @@ import { EnhancementSettingsForm } from "@/components/content/enhancement-settin
 import { OrgEnhancementPolicyForm } from "@/components/content/org-enhancement-policy-form";
 import { formatCurrency } from "@/lib/format";
 import { ADMIN_ENHANCEMENTS_COPY } from "./enhancements-copy";
+import { featureAccessService } from "@server/subscriptions/feature-access.service";
+import { FEATURE } from "@/components/subscriptions/features";
+import { LOCK_COPY } from "@/components/subscriptions/subscriptions-copy";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -24,6 +27,8 @@ export default async function AdminEnhancementsPage() {
     enhancementService.platformSpendToday(),
     enhancementService.listOrgUsage(),
   ]);
+  // A shop without Image enhancement keeps its policy, shown paused by the plan (feature-access Q33).
+  const enhancing = await featureAccessService.allowedOrgs(FEATURE.IMAGE_ENHANCEMENT, orgs.map((org) => org.orgId));
   const capReached = spentTodayPaise >= settings.dailyCapPaise;
 
   return (
@@ -72,6 +77,7 @@ export default async function AdminEnhancementsPage() {
                       </p>
                     </div>
                     {org.paused && <StatusBadge tone="destructive">{ADMIN_ENHANCEMENTS_COPY.paused}</StatusBadge>}
+                    {!enhancing.has(org.orgId) && <StatusBadge tone="warning">{LOCK_COPY.enhancementPaused}</StatusBadge>}
                   </div>
 
                   <dl className="grid grid-cols-2 gap-2 text-small">

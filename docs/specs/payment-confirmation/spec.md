@@ -5,9 +5,9 @@
 - **Domain:** payments, checkout
 - **Phase:** 2 — Transaction integrity
 - **Verified:** 2026-08-03
-- **References:** [trd.md](trd.md), [ADR-0005](../../adr/0005-payment-state-server-only.md), [INTEGRATIONS.md](../../INTEGRATIONS.md)
+- **References:** `431ed6e7:docs/specs/payment-confirmation/trd.md`, [ADR-0005](../../adr/0005-payment-state-server-only.md), [INTEGRATIONS.md](../../INTEGRATIONS.md)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/payment-confirmation/trd.md`.
 
 ## What this feature is
 An order becomes paid when the payment gateway says it was paid, for the right amount, and never for any other reason.

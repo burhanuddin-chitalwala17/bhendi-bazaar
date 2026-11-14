@@ -1,4 +1,4 @@
-import { THEMES, type PaletteKey, type ThemeKey } from "@server/catalog/storefront-themes";
+import { THEMES, type FontKey, type PaletteKey, type ThemeKey } from "@server/catalog/storefront-themes";
 
 /** Q4: "Switch back" works this long after a publish. */
 export const LOOK_KEPT_DAYS = 30;
@@ -13,6 +13,8 @@ export const LOOK_NOT_KEPT = "Your previous look is no longer kept.";
 export interface StorefrontLookInput {
   theme: ThemeKey;
   palette: PaletteKey;
+  /** The shop's heading face, or null for the template's own (storefront-font D4, Q6). */
+  font: FontKey | null;
   lookVersion: number;
 }
 
@@ -25,6 +27,8 @@ export interface StorefrontRevertInput {
 export interface LookKeys {
   theme: ThemeKey | null;
   palette: PaletteKey | null;
+  /** Null is the template's own face (storefront-font Q7). */
+  font: FontKey | null;
 }
 
 /** The picker's read (D11): what is live, at which version, and what Switch back restores. */

@@ -73,6 +73,19 @@ export class ForbiddenError extends DomainError {
   }
 }
 
+/**
+ * A paid feature this shop does not hold (subscriptions/feature-access D4). 403, carrying the feature
+ * key, so the envelope's `feature` detail tells the client which lock to explain.
+ */
+export class FeatureLockedError extends DomainError {
+  readonly feature: string;
+  constructor(feature: string, label: string) {
+    super(`${label} is part of the ₹699 plan`, { status: 403 });
+    this.name = "FeatureLockedError";
+    this.feature = feature;
+  }
+}
+
 export function isDomainError(error: unknown): error is DomainError {
   return error instanceof DomainError;
 }

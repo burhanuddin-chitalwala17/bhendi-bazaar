@@ -416,7 +416,7 @@ export const channelListingRepository = {
         externalId: true,
         attributes: true,
         stockSent: true,
-        connection: { select: { state: true, stockSync: true, externalAccountId: true } },
+        connection: { select: { state: true, stockSync: true, externalAccountId: true, orgId: true } },
       },
     });
   },

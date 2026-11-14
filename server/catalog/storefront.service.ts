@@ -35,9 +35,10 @@ import {
   LANDING_SHELF_LIMIT,
   SECTION,
   readHiddenSections,
+  readFontKey,
   readStorefrontLook,
   type HideableSection,
-  type StorefrontLook,
+  type PreviewLook,
 } from "@server/catalog/storefront-themes";
 import { CLAIM_LABEL, claimsFor, readClaims, type ClaimKey } from "@server/catalog/storefront-claims";
 import { readOpeningHours, type OpeningHours } from "@server/catalog/storefront-hours";
@@ -203,7 +204,7 @@ export const storefrontService = {
    * of checkout. Ids only: the DAL prices the goods (ADR-0018). `preview` draws any shop in the
    * look its owner is trying (D12), published or not.
    */
-  async storefrontPage(handle: string, preview?: StorefrontLook): Promise<StorefrontPageDto | null> {
+  async storefrontPage(handle: string, preview?: PreviewLook): Promise<StorefrontPageDto | null> {
     const profile = await orgProfileRepository.findPublicByHandle(handle);
     // A preview draws the look the owner is trying, not the published one (D12).
     const look = profile ? (preview ?? readStorefrontLook(profile.themeKey, profile.paletteKey)) : null;
@@ -224,6 +225,8 @@ export const storefrontService = {
       ...(!shown(SECTION.STORY) && { about: null, owner: null }),
       themeKey: look.theme,
       paletteKey: look.palette,
+      // A preview draws the face the owner is trying; a buyer's page, the published one (storefront-font D7).
+      fontKey: preview ? (preview.font ?? null) : readFontKey(profile.fontKey),
       bestSellingIds,
       dispatchDays,
       heroLine: profile.heroLine?.trim() || null,

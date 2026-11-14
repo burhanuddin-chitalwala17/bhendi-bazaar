@@ -24,6 +24,8 @@ import type { SalesPeriod } from "@server/analytics/sales.types";
 import { homeDAL } from "@/data-access-layer/org/home.dal";
 import { requireOrgMember } from "@/lib/org-auth";
 import { ROUTES } from "@server/shared/routes";
+import { PlanIcon } from "@/components/subscriptions/plan-icon";
+import { FEATURE } from "@/components/subscriptions/features";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -44,14 +46,14 @@ export default async function OrgHome({
   const scope = await requireOrgMember(orgId);
   return (
     <Suspense fallback={<HomeSkeleton />}>
-      <HomeBody orgId={scope.orgId} done={done} period={parsePeriod(period)} />
+      <HomeBody orgId={scope.orgId} channels={scope.features.channels} done={done} period={parsePeriod(period)} />
     </Suspense>
   );
 }
 
-async function HomeBody({ orgId, done, period }: { orgId: string; done: unknown; period: SalesPeriod }) {
+async function HomeBody({ orgId, channels, done, period }: { orgId: string; channels: boolean; done: unknown; period: SalesPeriod }) {
   const now = new Date();
-  const home = await homeDAL.forOrg(orgId, now);
+  const home = await homeDAL.forOrg(orgId, now, { channels });
   const lines = attentionLines(orgId, home.attention, now);
   const setup = home.setup.ok ? home.setup.value : null;
   const doneStep = parseDoneStep(done);
@@ -113,6 +115,7 @@ async function HomeBody({ orgId, done, period }: { orgId: string; done: unknown;
                   setup={shareSetup}
                   trigger={
                     <Button type="button" variant="outline" size="sm">
+                      <PlanIcon feature={FEATURE.STOREFRONT} />
                       {HOME_COPY.shareShop}
                     </Button>
                   }

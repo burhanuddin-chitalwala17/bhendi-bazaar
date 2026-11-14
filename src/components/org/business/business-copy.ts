@@ -34,6 +34,8 @@ export const BUSINESS_COPY = {
   eyebrow: "Bhendi Bazaar for business",
   switchLabel: "Who is this page for",
   tabs: { shop: "Sell with us", partner: "Partner with us" },
+  /** Someone weighing the plan can ask before opening a shop (feature-access Q30). */
+  contact: "Talk to us",
 
   shop: {
     hero: {
@@ -196,6 +198,7 @@ export const BUSINESS_COPY = {
       titleEmphasis: "where the buyers arrive.",
       lead: "Partner with Bhendi Bazaar and be seen on our home page, our category pages and in every campaign we run — beside the shops changing how India sells online.",
       cta: "Become a partner",
+      prefill: { subject: "Partnership", message: "Hi, I'd like to talk about partnering with Bhendi Bazaar." },
       secondary: "See where you’d appear",
       packagesFrom: "Packages from",
       facts: ["Home page", "Category pages", "Every campaign"],

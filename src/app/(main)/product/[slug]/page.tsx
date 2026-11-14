@@ -8,6 +8,8 @@ import { Reviews } from "@/components/product/reviews";
 import { SimilarProducts } from "@/components/product/similar-products";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { productsDAL } from "@/data-access-layer/products.dal";
+import { storefrontAccessDAL } from "@/data-access-layer/storefront-access.dal";
+import { productChromeShop } from "@/data-access-layer/storefront.dal";
 import { Suspense, cache } from "react";
 import { ProductPageSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import type { Metadata } from "next";
@@ -80,6 +82,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
     if (error instanceof NotFoundError) notFound();
     throw error;
   }
+  const [orgStorefrontOpen, chromeShop] = await Promise.all([
+    storefrontAccessDAL.isOpen(product.org.id),
+    productChromeShop(),
+  ]);
+  const shopHandle = chromeShop?.handle ?? null;
   return (
     <div className="space-y-8 md:space-y-12">
       {(() => {
@@ -90,7 +97,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {/* Photo and words share the width, as StorePDPDesktop draws them: a 3:2 photo column made the picture taller than the screen. */}
         <div className="grid gap-6 md:grid-cols-2 md:gap-8 lg:gap-12">
           <ProductGallery {...product} />
-          <ProductDetails {...product} />
+          <ProductDetails {...product} orgStorefrontOpen={orgStorefrontOpen} shopHandle={shopHandle} />
         </div>
       </Suspense>
       <Suspense fallback={<LoadingSkeleton />}>
@@ -98,7 +105,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       </Suspense>
       {/* Streamed: the product renders without waiting for its neighbours (B12). */}
       <Suspense fallback={<LoadingSkeleton />}>
-        <SimilarFor slug={slug} />
+        <SimilarFor slug={slug} shop={chromeShop ? { id: chromeShop.id, handle: chromeShop.handle } : null} />
       </Suspense>
       {/* The phone's docked price and Add to bag, above the tab bar; inline in the details from a tablet up. */}
       <ActionBar className="-mx-3 sm:-mx-6 md:hidden" status={<DockedPrice price={product.price} salePrice={product.salePrice} />}>
@@ -108,13 +115,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
   );
 }
 
-async function SimilarFor({ slug }: { slug: string }) {
+async function SimilarFor({ slug, shop }: { slug: string; shop: { id: string; handle: string } | null }) {
   // A side section: if it cannot load, it is left out rather than replacing the product with an error.
-  const products = await productsDAL.getSimilarProducts(slug, 4).catch((error: unknown) => {
-    console.error("[product] similar products unavailable:", error);
-    return [];
-  });
-  return <SimilarProducts products={products} />;
+  const products = await (shop ? productsDAL.getSimilarProductsForOrg(slug, shop.id, 4) : productsDAL.getSimilarProducts(slug, 4)).catch(
+    (error: unknown) => {
+      console.error("[product] similar products unavailable:", error);
+      return [];
+    },
+  );
+  // Inside a shop, only that shop's goods, and each keeps the buyer in the shop (storefront-themes Q33).
+  return <SimilarProducts products={products} shopHandle={shop?.handle ?? null} />;
 }
 
 function DockedPrice({ price, salePrice }: { price: number; salePrice?: number }) {

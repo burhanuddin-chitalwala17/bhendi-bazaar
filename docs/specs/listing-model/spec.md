@@ -5,7 +5,7 @@
 - **Domain:** listing, with channels, catalog and requests
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-07
-- **References:** [decisions.md](decisions.md), [plan.html](plan.html) (flow diagrams and evidence), [ADR-0052](../../adr/0052-a-product-type-is-a-row-that-selects-from-facts-declared-in-code.md), [ADR-0053](../../adr/0053-readiness-advises-and-never-gates.md), [setup-requests](../setup-requests/), [channel-catalogue](channel-catalogue/)
+- **References:** [decisions.md](decisions.md), [ADR-0052](../../adr/0052-a-product-type-is-a-row-that-selects-from-facts-declared-in-code.md), [ADR-0053](../../adr/0053-readiness-advises-and-never-gates.md), [setup-requests](../setup-requests/), [channel-catalogue](channel-catalogue/)
 
 > The parent of five subfeatures. Each has its own spec, decisions, UX and TRD; this file holds only
 > the model they share and their order.

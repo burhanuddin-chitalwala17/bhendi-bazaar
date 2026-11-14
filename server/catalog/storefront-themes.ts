@@ -47,6 +47,10 @@ export const FACE_VARIABLE = {
   "DM Sans": "--font-body-face",
   "DM Mono": "--font-dm-mono",
   Mulish: "--font-mulish",
+  // The root layout's heading face, already on every page (storefront-font D2).
+  "Playfair Display": "--font-heading-face",
+  Marcellus: "--font-marcellus",
+  Poppins: "--font-poppins",
 } as const;
 export type FaceFamily = keyof typeof FACE_VARIABLE;
 
@@ -126,6 +130,62 @@ export const THEMES: Record<ThemeKey, ThemeDefinition> = {
   },
 };
 
+/**
+ * The heading faces a shop may choose (storefront-font D1, Q1, Q4). A key is stored, never a family;
+ * a font changes the face only, so sizes, weight and case stay the theme's (R3, ADR-0064 D5).
+ */
+export const FONT = {
+  SPACE: "space",
+  JOST: "jost",
+  DM_SANS: "dmsans",
+  MULISH: "mulish",
+  POPPINS: "poppins",
+  CORMORANT: "cormorant",
+  PLAYFAIR: "playfair",
+  MARCELLUS: "marcellus",
+} as const;
+export type FontKey = (typeof FONT)[keyof typeof FONT];
+export const FONT_KEYS = Object.values(FONT) as [FontKey, ...FontKey[]];
+
+export interface FontDefinition {
+  key: FontKey;
+  family: FaceFamily;
+  /** The variable the scope reads. Its own, never a role a theme repoints (`--font-body-face` is Jost in Darbar). */
+  variable: string;
+  /** What the shop reads under the sample, in its own words ("Serif · carved caps"). */
+  kind: string;
+}
+
+export const FONTS: Record<FontKey, FontDefinition> = {
+  [FONT.SPACE]: { key: FONT.SPACE, family: "Space Grotesk", variable: "--font-space-grotesk", kind: "Sans · geometric" },
+  [FONT.JOST]: { key: FONT.JOST, family: "Jost", variable: "--font-jost", kind: "Sans · classic" },
+  [FONT.DM_SANS]: { key: FONT.DM_SANS, family: "DM Sans", variable: "--font-dm-sans", kind: "Sans · friendly" },
+  [FONT.MULISH]: { key: FONT.MULISH, family: "Mulish", variable: "--font-mulish", kind: "Sans · plain" },
+  [FONT.POPPINS]: { key: FONT.POPPINS, family: "Poppins", variable: "--font-poppins", kind: "Sans · round" },
+  [FONT.CORMORANT]: { key: FONT.CORMORANT, family: "Cormorant Garamond", variable: "--font-cormorant-garamond", kind: "Serif · elegant" },
+  [FONT.PLAYFAIR]: { key: FONT.PLAYFAIR, family: "Playfair Display", variable: "--font-heading-face", kind: "Serif · bold" },
+  [FONT.MARCELLUS]: { key: FONT.MARCELLUS, family: "Marcellus", variable: "--font-marcellus", kind: "Serif · carved caps" },
+};
+
+/** Shown first, marked Suggested, the theme's own face leading (storefront-font R4; prototype). */
+export const SUGGESTED_FONTS: Record<ThemeKey, readonly FontKey[]> = {
+  [THEME.EDGE]: [FONT.SPACE, FONT.POPPINS, FONT.DM_SANS],
+  [THEME.DARBAR]: [FONT.JOST, FONT.MARCELLUS, FONT.CORMORANT, FONT.PLAYFAIR],
+  [THEME.BLOOM]: [FONT.DM_SANS, FONT.POPPINS, FONT.PLAYFAIR, FONT.CORMORANT],
+  [THEME.DAILY]: [FONT.MULISH, FONT.POPPINS, FONT.DM_SANS],
+};
+
+/** The template's own display face as a key: what "Template default" means. */
+export function defaultFont(theme: ThemeKey): FontKey {
+  const family = THEMES[theme].faces.display;
+  return FONT_KEYS.find((key) => FONTS[key].family === family) ?? FONT.DM_SANS;
+}
+
+/** A stored key parsed on read (Q7): unknown or absent reads as the template's default. */
+export function readFontKey(value: unknown): FontKey | null {
+  return FONT_KEYS.find((key) => key === value) ?? null;
+}
+
 /** The theme a shop that mostly sells this product type is shown as "Suggested" (Q19). */
 export function suggestedTheme(productType: string | null): ThemeKey | null {
   if (!productType) return null;
@@ -136,6 +196,9 @@ export interface StorefrontLook {
   theme: ThemeKey;
   palette: PaletteKey;
 }
+
+/** The look an owner is trying in the preview: a face too, when they picked one (storefront-font D7). */
+export type PreviewLook = StorefrontLook & { font?: FontKey | null };
 
 /**
  * Stored keys parsed on read (D1). An unknown theme reads as unthemed (`null`), so a key

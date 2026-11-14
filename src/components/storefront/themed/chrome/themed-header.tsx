@@ -40,7 +40,7 @@ export function ThemedHeader({
             className="size-8 shrink-0 overflow-hidden rounded-full"
           />
           {!long && (
-            <span className="truncate font-display text-body font-semibold tracking-headline">{name}</span>
+            <span className="truncate font-display text-body font-display-weight display-case tracking-headline">{name}</span>
           )}
         </Link>
 

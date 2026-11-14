@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PageTabs } from "@/components/shared/page-tabs";
+import { LockedSheet } from "@/components/subscriptions/locked-sheet";
+import { useShopPlan } from "@/components/subscriptions/plan-context";
 import { SelectionBar } from "@/components/shared/selection-bar";
 import { BULK_ACTION, type BulkAction } from "@server/catalog/product-bulk.types";
 import { BulkActionDialog, type BulkLocation, type BulkMarketplace, type BulkTarget } from "../bulk/BulkActionDialog";
@@ -20,6 +22,7 @@ import { ChannelFilterNote, ChannelPills } from "./components/ChannelFilter";
 import { CHANNEL_FILTER } from "./channel-filter-copy";
 import { PRODUCT_CONSOLE_COPY } from "../console-copy";
 import { PRODUCTS_LIST_EMPTY_COPY } from "@/components/product/console/console-copy";
+import { FEATURE } from "@/components/subscriptions/features";
 
 interface ProductsContainerProps {
   readOnly?: boolean;
@@ -178,6 +181,9 @@ export function ProductsContainer({
   const matching: { scope: ProductListScope; count: number } | undefined = allMatching
     ? { scope: scopeOf(initialFilters), count: total }
     : undefined;
+  // Sending to a marketplace is part of Channels: kept in the menu, it explains the plan when locked (feature-access Q29).
+  const plan = useShopPlan();
+  const [planSheet, setPlanSheet] = useState(false);
   // Stock is entered per product and location, so it is offered only for the rows on screen.
   const actions = [
     BULK_ACTION.PRICE,
@@ -187,6 +193,7 @@ export function ProductsContainer({
   ].map((action) => ({
     label: BULK_COPY.actionLabel[action],
     onClick: () => {
+      if (action === BULK_ACTION.SEND && !plan.features.channels) return setPlanSheet(true);
       setTargets(picked);
       setBulk(action);
     },
@@ -254,6 +261,7 @@ export function ProductsContainer({
         matching={matching}
         onDone={clearSelection}
       />
+      <LockedSheet feature={FEATURE.CHANNELS} shop={plan.shop} open={planSheet} onOpenChange={setPlanSheet} />
     </div>
   );
 }

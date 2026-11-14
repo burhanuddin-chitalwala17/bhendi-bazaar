@@ -1,7 +1,7 @@
 # Spike — spreadsheet parsing options
 
 - **Verified:** 2026-08-21
-- **Feeds:** [trd.md](trd.md) D2
+- **Feeds:** `431ed6e7:docs/specs/bulk-catalog-upload/trd.md` D2
 
 The question: which library reads shopkeeper-supplied .xlsx inside a Vercel
 function, and can also generate the per-org sample sheet?

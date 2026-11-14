@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { LockedAction } from "@/components/subscriptions/locked-action";
 import type { ProductMarketplaceLinkDTO } from "@server/channels/channel-connection.types";
 import type { ProductListingSummaryDTO } from "@server/channels/platform-listing.types";
 import { ListingStatusLine } from "./listing-status-line";
@@ -12,6 +13,7 @@ import { RetryPhotosButton } from "./retry-photos-button";
 import { PRODUCT_PHOTOS } from "./settle-copy";
 import { LINK_SOURCE } from "@server/channels/channel-connection.types";
 import { ROUTES } from "@server/shared/routes";
+import { FEATURE } from "@/components/subscriptions/features";
 
 /**
  * Where this product is linked on each connected marketplace, read-only (channel-import Q19, ux.md
@@ -63,10 +65,13 @@ export function ProductMarketplaces({
                 <Link href={listingHref}>{LISTING.edit(link.label)}</Link>
               </Button>
             )}
+            {/* Right after a product is saved this is the ask to list it; locked, it explains the plan (feature-access Q29). */}
             {!summary?.status && !link.listing && summary?.canCreate && (
-              <Button asChild size="sm" className="min-h-10 self-start md:self-auto">
-                <Link href={`${listingHref}/new`}>{CREATE.putOn(link.label)}</Link>
-              </Button>
+              <LockedAction feature={FEATURE.CHANNELS} label={CREATE.putOn(link.label)} size="sm" className="min-h-10 self-start md:self-auto">
+                <Button asChild size="sm" className="min-h-10 self-start md:self-auto">
+                  <Link href={`${listingHref}/new`}>{CREATE.putOn(link.label)}</Link>
+                </Button>
+              </LockedAction>
             )}
             {link.listing && (
               <div className="flex flex-wrap gap-2">

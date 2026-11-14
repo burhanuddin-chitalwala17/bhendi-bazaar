@@ -4,12 +4,12 @@
 - **Domain:** catalog (bulk), with listing (vocabulary) and shared (audit)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-11-01
-- **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), [own-store](../decisions.md) (Q10, Q11, Q17, Q24), [product-form](../product-form/trd.md), [bulk-catalog-upload](../../bulk-catalog-upload/trd.md), [ADR-0003](../../../adr/0003-one-repository-per-aggregate.md), [ADR-0013](../../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0021](../../../adr/0021-audit-trail-never-fails-the-action.md), [ADR-0029](../../../adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md), [ADR-0046](../../../adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md), [ADR-0048](../../../adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md), [ADR-0052](../../../adr/0052-a-product-type-is-a-row-that-selects-from-facts-declared-in-code.md), [ADR-0055](../../../adr/0055-an-admin-surface-reads-through-projections-and-writes-through-the-aggregates-one-repository.md)
+- **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), [own-store](../decisions.md) (Q10, Q11, Q17, Q24), product-form (`431ed6e7:docs/specs/own-store/product-form/trd.md`), bulk-catalog-upload (`431ed6e7:docs/specs/bulk-catalog-upload/trd.md`), [ADR-0003](../../../adr/0003-one-repository-per-aggregate.md), [ADR-0013](../../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0021](../../../adr/0021-audit-trail-never-fails-the-action.md), [ADR-0029](../../../adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md), [ADR-0046](../../../adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md), [ADR-0048](../../../adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md), [ADR-0052](../../../adr/0052-a-product-type-is-a-row-that-selects-from-facts-declared-in-code.md), [ADR-0055](../../../adr/0055-an-admin-surface-reads-through-projections-and-writes-through-the-aggregates-one-repository.md)
 
 > Technical approach and decisions. No code — references to existing code only.
 
 ## Approach
-The validate-then-create pipeline of [bulk-catalog-upload](../../bulk-catalog-upload/trd.md) stays:
+The validate-then-create pipeline of bulk-catalog-upload (`431ed6e7:docs/specs/bulk-catalog-upload/trd.md`) stays:
 server-side parse, every row through the same checks, images uploaded only after a clean check,
 one all-or-nothing transaction (D5 there; own-store Q19 here). What changes is the workbook at
 both ends. The generator (`server/catalog/bulk/sample-sheet.ts`) writes an Instructions tab, a tab

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { LockedAction } from "@/components/subscriptions/locked-action";
 import { ActionBar } from "@/components/shared/action-bar";
 import { useMutation } from "@/hooks/core/useMutation";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ import type { ListingPublishInput } from "@/lib/validation/schemas/platform-list
 import { listingsApiClient } from "./listingsApiClient";
 import { FIELD_NAME, LISTING, PUBLISH, rupees } from "./platform-listing-copy";
 import { ROUTES } from "@server/shared/routes";
+import { FEATURE } from "@/components/subscriptions/features";
 
 const PAGE = 20;
 const key = (listingId: string, field: ListingField) => `${listingId}:${field}`;
@@ -83,9 +85,11 @@ export function ReviewPublish({ orgId, review, single }: { orgId: string; review
         </Button>
       )}
       <ActionBar className="-mx-4 md:mx-0">
-        <Button type="button" className="min-h-10 w-full md:w-auto" pending={publish.isLoading} onClick={() => (items.length === 0 ? toast.info(PUBLISH.nothingLeft) : void publish.mutate({ items }).catch(() => undefined))}>
-          {creating && count === review.totalChanges && review.listings.every((l) => l.creating) ? PUBLISH.create(review.label) : PUBLISH.publish(count, review.label)}
-        </Button>
+        <LockedAction feature={FEATURE.CHANNELS} label={PUBLISH.publish(count, review.label)} className="min-h-10 w-full md:w-auto">
+          <Button type="button" className="min-h-10 w-full md:w-auto" pending={publish.isLoading} onClick={() => (items.length === 0 ? toast.info(PUBLISH.nothingLeft) : void publish.mutate({ items }).catch(() => undefined))}>
+            {creating && count === review.totalChanges && review.listings.every((l) => l.creating) ? PUBLISH.create(review.label) : PUBLISH.publish(count, review.label)}
+          </Button>
+        </LockedAction>
       </ActionBar>
     </div>
   );

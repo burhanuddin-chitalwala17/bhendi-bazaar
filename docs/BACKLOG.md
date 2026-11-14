@@ -63,7 +63,7 @@ Also in this phase, no spec required (they are corrections with an ADR already s
 
 `shipping-fulfilment`'s open question was decided 2026-08-10 — keep the current flow (live quotes, manual fulfilment); see its `spec.md`. It depends on `product-weight-and-rates`, since booking real parcels at fictional weights is worse than not booking them.
 
-`multi-vendor-marketplace` sits between them and is the largest thing in the backlog. It began as one feature about where a product ships from and became nine subfeatures: answering it properly needed an owner for a pickup location, which needed an organisation, which needed people to belong to one — at which point the panel called "admin" was doing two jobs for two audiences. See its [spec.md](specs/multi-vendor-marketplace/spec.md) for the programme and [portal-split.md](specs/multi-vendor-marketplace/portal-split.md) for where each of today's 15 admin pages and 22 handlers lands.
+`multi-vendor-marketplace` sits between them and is the largest thing in the backlog. It began as one feature about where a product ships from and became nine subfeatures: answering it properly needed an owner for a pickup location, which needed an organisation, which needed people to belong to one — at which point the panel called "admin" was doing two jobs for two audiences. See its [spec.md](specs/multi-vendor-marketplace/spec.md) for the programme and `431ed6e7:docs/specs/multi-vendor-marketplace/portal-split.md` for where each of today's 15 admin pages and 22 handlers lands.
 
 One recorded gap remains on the money path: shipping is charged at the rate the client says it selected — the server matches it to a quoted parcel but does not re-derive the price. A server-side re-quote at order time would close it; watch item.
 
@@ -192,6 +192,10 @@ Added 2026-11-04 from the platform UI audit. Programme overview: [design-system]
 | design-system/brand-icons | 6–10 brand icons drafted by Claude, approved by the owner | 🔨 Built 2026-11-04, awaiting owner review |
 | design-system/image-slots | One picture field with phone and desktop versions, crop or fit, for admin and shop banners | 🔨 Built 2026-11-04, awaiting owner review |
 | design-system/render-performance | Build on the caching that landed on main | planned |
+| [navigation-flows](specs/navigation-flows/) | Every feature finishes and exits back where it started, one step at a time, without losing typed work | ⏸ Parked 2026-11-12: listing fix loop and the three address fixes shipped; the rest waits (audit.md is the worklist) |
+| navigation-flows Q13 *(later)* | Buyer returns and refunds: no flow exists today | parked |
+| navigation-flows Q14 *(later)* | Marketplace read and stock-sync wording for sellers | parked |
+| storefront-look Q9 *(later)* | The marketplace home banner without a shade, as storefronts | parked |
 | design-system Q13–Q17 *(later)* | Admin chart, auth and /sell, `shared/forms/product` move, ⌘K, view transitions | parked |
 
 ---
@@ -209,6 +213,9 @@ Added 2026-10-29: track 1 of three (see *Three tracks*). Programme overview: [ow
 | own-store/seller-onboarding | Task home, setup list, grouped navigation, phone tab bar, in-place creation | planned |
 | own-store/org-profile | Essentials only; contact and legal editable; tax and bank asked at first payout | planned |
 | own-store/storefront-themes | Four templates, own header with the platform's logo and contacts, shared cart, "Visit {Shop name}" | planned |
+| [own-store/storefront-look](specs/own-store/storefront-look/) | Every template on the platform type scale, a first phone screen never bare, banners vivid with no shade | 🔨 UX signed off 2026-11-13; TRD drafted |
+| [own-store/storefront-font](specs/own-store/storefront-font/) | A shop picks its store's heading font from a short curated list; sizes stay the platform's | 🔨 UX signed off 2026-11-13; TRD drafted |
+| storefront-font Q3–Q5 *(later)* | Body-font choice, fonts on request, non-Latin scripts | parked |
 | offers-hardening Q8 *(later)* | A shop ending its own markdown just before a platform campaign | parked |
 | offers-hardening Q10, Q13 *(later)* | Coupon use and ledger reversal for an order cancelled before dispatch or before payment | parked, order-fulfilment |
 
@@ -265,7 +272,8 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | marketplace-publish Q20, Q21 *(later)* | Instant answers by Amazon notification (AWS queue); a business price | parked |
 | channel-reporting | What sold where, per channel and consolidated, each figure naming the channels it covers and when each last reported | planned |
 | instagram-post | A post draft generated only on explicit intent, replaceable, regenerable, skippable; manual share first. Separate from the Meta catalogue, which is a shopfront feed | planned |
-| subscriptions | One flat price per shop, no tiers and no per-seat. Independent of the line above; needed before anyone is charged | planned |
+| [subscriptions/feature-access](specs/subscriptions/feature-access/) | The admin locks or unlocks Channels, Storefront and Image enhancement per shop; every screen, route, job and public page honours it | ✅ Built 2026-11-12 on `feat/feature-access`; set `HOME_BRAND_ORG_ID` before deploying |
+| subscriptions/billing | Collecting ₹699 a month (one flat price, no tiers, no per-seat) and flipping the same switches; needed before anyone is charged (feature-access Q21–Q23) | planned |
 
 The four foundations are done: the worker, the shop's profile, the media library and photo
 enhancement. What follows was re-sequenced on 2026-09-29 after a spike into what the platforms
@@ -370,7 +378,7 @@ Not a phase, but tracked:
 - **Existing products all weigh 0.5 kg** — weight was collected and never persisted until PR-22, so every row created before it carries the schema default. [product-weight-and-rates](specs/product-weight-and-rates/) R6; rates are wrong in both directions until the catalogue is corrected.
 - ~~**`Product.categoryId` cascades on delete**~~ ✅ Closed — the `category_tree` migration moved it to `onDelete: Restrict` on 2026-08-10 (`prisma/migrations/20260810120000_category_tree/`); this entry stayed open for six days afterwards because the fix was a local judgement with nothing to check the watch list against. Now a stated rule: [ADR-0020](adr/0020-money-bearing-records-never-cascade.md).
 
-- **Documentation system** — see [CHANGELOG.md](CHANGELOG.md) PR-01. Remaining: mine and delete [_archive/](_archive/). The dead CSRF helper was deleted on 2026-10-05; the Origin check in `src/middleware.ts` is the protection ([ADR-0060](adr/0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md)).
+- **Documentation system** — see [CHANGELOG.md](CHANGELOG.md) PR-01. The pre-2026-08 `_archive/` was deleted on 2026-11-12 (readable at commit 431ed6e7). The dead CSRF helper was deleted on 2026-10-05; the Origin check in `src/middleware.ts` is the protection ([ADR-0060](adr/0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md)).
 
 ---
 

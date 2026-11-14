@@ -14,10 +14,10 @@ import { CONTACT_MESSAGE_FORM_COPY } from "./support-copy";
 interface ContactMessageFormProps {
   /** True when a session with an email exists — the reply address is then the account's. */
   signedIn: boolean;
-  /** What the subject starts as: "Partnership" when a brand opened the sheet from /business. */
-  defaultSubject?: string;
   onSent: () => void;
   onCancel: () => void;
+  /** A subject and opening line already written, as a paid feature's "Talk to us" sends (feature-access Q26). */
+  prefill?: { subject: string; message: string };
 }
 
 /**
@@ -26,9 +26,9 @@ interface ContactMessageFormProps {
  */
 export function ContactMessageForm({
   signedIn,
-  defaultSubject = "",
   onSent,
   onCancel,
+  prefill,
 }: ContactMessageFormProps) {
   const {
     register,
@@ -40,7 +40,7 @@ export function ContactMessageForm({
     schema: (signedIn
       ? contactMessageSchema
       : guestContactMessageSchema) as never,
-    defaultValues: { subject: defaultSubject, message: "", email: "" },
+    defaultValues: { subject: prefill?.subject ?? "", message: prefill?.message ?? "", email: "" },
     submit: ({ subject, message, email }) =>
       sendContactMessage(
         signedIn ? { subject, message } : { subject, message, email },

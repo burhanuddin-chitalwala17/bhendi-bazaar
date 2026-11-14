@@ -16,6 +16,16 @@ export const THEMED_COPY = {
     shopByCategory: "Shop by category",
     explore: "Explore",
   },
+  hero: {
+    since: (year: number) => `Since ${year}`,
+    products: (count: number, formatted: string) => `${formatted} ${count === 1 ? "product" : "products"}`,
+    rating: (average: number, count: string) => `★ ${average} (${count})`,
+    bestSelling: "Best selling",
+  },
+  facts: {
+    ships: (within: string) => `Ships ${within}`,
+    ordersDelivered: (count: string) => `${count}+ orders delivered`,
+  },
   card: {
     soldOut: "Sold out",
     inAuction: "In an auction",

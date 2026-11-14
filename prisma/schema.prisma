@@ -630,6 +630,7 @@ model User {
   biddingEventsSettled BiddingEvent[]      @relation("BiddingSettledBy")
   channelsConnected    ChannelConnection[] @relation("ChannelConnectedBy")
   channelsDisconnected ChannelConnection[] @relation("ChannelDisconnectedBy")
+  featuresChanged      OrgFeature[]
   productsLastEdited   Product[]           @relation("ProductLastEditedBy")
 
   @@index([platformRole])
@@ -721,6 +722,7 @@ model Org {
   listingValues      ListingValue[]
   productFamilies    ProductFamily[]
   channels           OrgChannel[]
+  features           OrgFeature[]
   channelConnections ChannelConnection[]
   ticketNeeds        TicketNeed[]
 
@@ -796,12 +798,15 @@ model OrgProfile {
   /// `previousLookUntil` so "Switch back" works for 30 days (Q4).
   themeKey              String?
   paletteKey            String?
+  /// The shop's heading face (storefront-font D3, Q7): a key into code, parsed on read; null is the theme's own.
+  fontKey               String?
   lookVersion           Int       @default(0)
   lookPublishedAt       DateTime?
   lookPublishedByUserId String?
   lookPublishedBy       User?     @relation("OrgLookPublishedBy", fields: [lookPublishedByUserId], references: [id], onDelete: Restrict)
   previousThemeKey      String?
   previousPaletteKey    String?
+  previousFontKey       String?
   previousLookUntil     DateTime?
 
   /// What the themed page's editor writes (storefront-themes D13): the hero's one line, up to three
@@ -2307,6 +2312,23 @@ model OrgChannel {
 
   @@id([orgId, channel])
   @@index([channel])
+}
+
+/// What one shop may use of the paid features (subscriptions/feature-access D1). The one writer is
+/// `server/subscriptions/org-feature.repository.ts`. **An absent row is locked** (Q14, Q15): a shop
+/// has a feature only once the admin has switched it on. The home brand is never read (Q13).
+model OrgFeature {
+  orgId       String
+  org         Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  /// A `FEATURE` key. Not an enum, as `OrgChannel.channel`: a feature is declared in code.
+  feature     String
+  enabled     Boolean   @default(false)
+  changedById String?
+  changedBy   User?     @relation(fields: [changedById], references: [id], onDelete: SetNull)
+  changedAt   DateTime  @default(now())
+
+  @@id([orgId, feature])
+  @@index([feature, enabled])
 }
 
 /// A shop's authorised connection to one marketplace (channel-connectors TRD D2). Tokens are

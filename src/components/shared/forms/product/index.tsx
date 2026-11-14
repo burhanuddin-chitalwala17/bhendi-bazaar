@@ -98,6 +98,8 @@ interface ProductFormProps {
   sellsElsewhere?: boolean;
   /** The Bhendi Bazaar team acting for this shop: a banner, a required reason, its own words (R10, D11). */
   team?: { shopName: string };
+  /** Edit only: a save goes here, the screen that opened the form (navigation-flows R2). */
+  returnTo?: string;
 }
 
 export function ProductForm({
@@ -119,6 +121,7 @@ export function ProductForm({
   copyFrom,
   sellsElsewhere = false,
   team,
+  returnTo,
 }: ProductFormProps) {
   const isEdit = !!product;
   // A new product is five steps (product-form U1); an edit is an overview of the same sections (U4).
@@ -205,6 +208,7 @@ export function ProductForm({
       if (overview) {
         rebaser.saved(result);
         toast.success(team ? `Saved. ${team.shopName} will see what changed.` : "Saved. Live on your store now.");
+        if (returnTo) guard.leaveTo(returnTo);
       }
     },
     // The stepped create opens the step holding the first problem (ProductStepsForm), not a banner (D2).

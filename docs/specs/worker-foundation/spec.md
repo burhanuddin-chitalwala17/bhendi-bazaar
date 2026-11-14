@@ -5,9 +5,9 @@
 - **Domain:** cross-domain (`server/shared/jobs/`, `worker/`)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-29
-- **References:** [trd.md](trd.md), [ADR-0038](../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0037](../../adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md), [ADR-0021](../../adr/0021-audit-trail-never-fails-the-action.md), [OPERATIONS.md](../../OPERATIONS.md)
+- **References:** `431ed6e7:docs/specs/worker-foundation/trd.md`, [ADR-0038](../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0037](../../adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md), [ADR-0021](../../adr/0021-audit-trail-never-fails-the-action.md), [OPERATIONS.md](../../OPERATIONS.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/worker-foundation/trd.md`.
 
 ## What this feature is
 

@@ -6,9 +6,9 @@
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-09
 - **Depends on:** portal-separation
-- **References:** [trd.md](trd.md), [../spec.md](../spec.md), [../org-onboarding](../org-onboarding/)
+- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/org-portal-chrome/trd.md`, [../spec.md](../spec.md), [../org-onboarding](../org-onboarding/)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/multi-vendor-marketplace/org-portal-chrome/trd.md`.
 
 ## What this feature is
 Inside the portal you can always see which organisation you are acting for and who you are signed in

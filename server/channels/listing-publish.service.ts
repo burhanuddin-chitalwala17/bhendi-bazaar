@@ -42,6 +42,7 @@ import { providerFor } from "./providers";
 import { MarketplaceAuthError, MarketplaceUnavailableError } from "./providers/marketplace-provider";
 import type { PublishChanges } from "./providers/publish";
 import { marketplacePhotoUrls } from "./listing-photos-out";
+import { channelPlan } from "./channel-plan";
 
 /**
  * Sending a listing's reviewed changes and following each until the marketplace answers
@@ -211,6 +212,7 @@ export const listingPublishService = {
    * fields the shop kept; one moved since is refused. The send is enqueued in the same transaction.
    */
   async publish(orgId: string, channelName: string, items: ReadonlyArray<{ id: string; version: number; fields: ListingField[] }>): Promise<PublishResultDTO> {
+    await channelPlan.assert(orgId);
     const { connection, channel } = await connectionFor(orgId, channelName);
     const rules = providerFor(channel).listingRules;
     const refused: string[] = [];
@@ -248,6 +250,7 @@ export const listingPublishService = {
    * left out with its reason. The listings are made first with what is live, as the screen does (D3).
    */
   async publishProducts(orgId: string, channelName: string, productIds: readonly string[]): Promise<BulkSendResult> {
+    await channelPlan.assert(orgId);
     const { connection, channel } = await connectionFor(orgId, channelName);
     const rules = providerFor(channel).listingRules;
     await ensure(orgId, connection, channel, productIds);
@@ -294,7 +297,10 @@ export const listingPublishService = {
   async bulkSend(actor: BulkActor, channelName: MarketplaceChannel, productIds: readonly string[]): Promise<BulkActionResultDTO> {
     const byOrg = new Map<string, string[]>();
     const skipped: BulkSkippedDTO[] = [];
-    if (actor.kind === BULK_ACTOR.ORG) byOrg.set(actor.orgId, [...productIds]);
+    if (actor.kind === BULK_ACTOR.ORG) {
+      await channelPlan.assert(actor.orgId);
+      byOrg.set(actor.orgId, [...productIds]);
+    }
     else {
       const owners = new Map((await productBulkService.ownersOf(productIds, null)).map((o) => [o.id, o.orgId]));
       for (const id of productIds) {
@@ -304,9 +310,12 @@ export const listingPublishService = {
       }
     }
     const sent: Array<{ productId: string; orgId: string }> = [];
+    const holding = await channelPlan.allowed([...byOrg.keys()]);
     for (const [orgId, ids] of byOrg) {
-      // The team's selection may span a shop with no connection there: its products are not on it.
-      const result = actor.kind === BULK_ACTOR.TEAM && !(await channelConnectionRepository.find(orgId, channelName))
+      // The team's selection may span a shop with no connection there, or without Channels: skipped, never failed.
+      const result = !holding.has(orgId)
+        ? { sent: [], skipped: ids.map((productId) => ({ productId, reason: BULK_SKIP_REASON.CHANNELS_LOCKED })) }
+        : actor.kind === BULK_ACTOR.TEAM && !(await channelConnectionRepository.find(orgId, channelName))
         ? { sent: [], skipped: ids.map((productId) => ({ productId, reason: BULK_SKIP_REASON.NOT_ON_MARKETPLACE })) }
         : await this.publishProducts(orgId, channelName, ids);
       sent.push(...result.sent.map((productId) => ({ productId, orgId })));
@@ -388,8 +397,10 @@ export const listingPublishService = {
     );
     const skus = await mirrorSkus(rows.filter((row) => row.sku === null && row.productId !== null && connections.has(row.connectionId)));
     const tokens = new Map<string, () => Promise<string>>();
+    // One read for the pass (D8). A shop without Channels is not asked: the look is recorded missed, as for a dropped connection.
+    const holding = await channelPlan.allowed([...new Set(rows.map((row) => row.orgId))]);
     for (const row of rows) {
-      const connection = connections.get(row.connectionId) ?? null;
+      const connection = holding.has(row.orgId) ? connections.get(row.connectionId) ?? null : null;
       if (connection && !tokens.has(connection.id)) tokens.set(connection.id, tokenFor(connection));
       try {
         const sku = row.sku ?? (row.productId ? skus.get(`${row.connectionId}:${row.productId}`) ?? null : null);

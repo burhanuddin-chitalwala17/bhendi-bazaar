@@ -1,7 +1,7 @@
 import { Suspense, type ReactNode } from "react";
 
-import type { PaletteKey, ThemeKey } from "@server/catalog/storefront-themes";
-import { THEME_FONT_CLASSES } from "../../theme-fonts";
+import type { FontKey, PaletteKey, ThemeKey } from "@server/catalog/storefront-themes";
+import { FONT_CLASSES, THEME_FONT_CLASSES } from "../../theme-fonts";
 import { ThemedFooter } from "./themed-footer";
 import { ThemedHeader } from "./themed-header";
 import { ThemedTabBar } from "./themed-tab-bar";
@@ -13,6 +13,8 @@ export interface ThemedShop {
   logoUrl: string | null;
   themeKey: ThemeKey;
   paletteKey: PaletteKey;
+  /** The shop's heading face; null or absent is the theme's own (storefront-font D5). */
+  fontKey?: FontKey | null;
 }
 
 /**
@@ -34,7 +36,8 @@ export function ThemedShell({
     <div
       data-theme={shop.themeKey}
       data-palette={shop.paletteKey}
-      className={`${THEME_FONT_CLASSES[shop.themeKey]} flex min-h-screen flex-col bg-background text-foreground`}
+      data-font={shop.fontKey ?? undefined}
+      className={`${THEME_FONT_CLASSES[shop.themeKey]} ${shop.fontKey ? FONT_CLASSES[shop.fontKey] : ""} flex min-h-screen flex-col bg-background text-foreground`}
     >
       <ThemedHeader handle={shop.handle} name={shop.name} logoUrl={shop.logoUrl} />
       <main className="flex-1">{children}</main>
@@ -56,7 +59,8 @@ export function themedShop(shop: {
   logoUrl: string | null;
   themeKey: ThemeKey | null;
   paletteKey: PaletteKey | null;
+  fontKey?: FontKey | null;
 }): ThemedShop | null {
-  const { handle, name, logoUrl, themeKey, paletteKey } = shop;
-  return themeKey && paletteKey ? { handle, name, logoUrl, themeKey, paletteKey } : null;
+  const { handle, name, logoUrl, themeKey, paletteKey, fontKey = null } = shop;
+  return themeKey && paletteKey ? { handle, name, logoUrl, themeKey, paletteKey, fontKey } : null;
 }

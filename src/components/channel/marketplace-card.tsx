@@ -7,6 +7,7 @@ import { STOCK_SYNC } from "@server/channels/channel-stock.types";
 import type { MarketplaceChannel } from "@server/channels/channel-connection.types";
 
 import { ChannelCardShell } from "./channel-card-shell";
+import { LOCK_COPY } from "@/components/subscriptions/subscriptions-copy";
 import { CARD, CHIP, MARKETPLACE_PITCH, PURPOSE, REASON, lastChecked } from "./channel-copy";
 import { channelMark } from "./channel-mark";
 import { ExpandableLine } from "./expandable-line";
@@ -33,7 +34,8 @@ const chipFor = (card: ChannelCardDTO) => {
 };
 
 /** One marketplace (ux.md "State matrix — Marketplace card"). Renders on the server; the buttons are a leaf. */
-export function MarketplaceCard({ orgId, card }: { orgId: string; card: ChannelCardDTO }) {
+/** `channelsHeld` false: a connection kept from before the lock shows it is not syncing (feature-access ux.md "Partial"). */
+export function MarketplaceCard({ orgId, card, channelsHeld = true }: { orgId: string; card: ChannelCardDTO; channelsHeld?: boolean }) {
   const live = card.state === CARD_STATE.CONNECTED || card.state === CARD_STATE.RENEWAL_DUE;
   const reading = live ? cardReadLine(card.read, card.listings, card.label) : null;
 
@@ -77,7 +79,8 @@ export function MarketplaceCard({ orgId, card }: { orgId: string; card: ChannelC
           {card.reapproveBy && card.state === CARD_STATE.CONNECTED ? ` · ${CARD.reapproveBy(card.reapproveBy)}` : ""}
         </p>
       )}
-      {live && card.stockSync === STOCK_SYNC.ON && <p>{STOCK.cardOn}</p>}
+      {live && !channelsHeld && <p className="font-medium text-warning">{LOCK_COPY.notSyncing}</p>}
+      {live && channelsHeld && card.stockSync === STOCK_SYNC.ON && <p>{STOCK.cardOn}</p>}
       {live && card.stockSync === STOCK_SYNC.PAUSED && <p className="font-medium text-warning">{STOCK.paused}</p>}
       {reading && (
         <div className="flex flex-col gap-1">

@@ -22,7 +22,7 @@
  * Video is hosted and transcoded ([ADR-0039](../../docs/adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md));
  * a YouTube link stays an embed (its decision 5).
  * Why the cover is chosen rather than derived, and why nothing here pre-selects one:
- * docs/specs/product-video/trd.md D17/D17a.
+ * 431ed6e7:docs/specs/product-video/trd.md D17/D17a.
  *
  * Mobile-first (ADR-0015): one row per item at base, every control a visible button
  * rather than a hover reveal, and reordering by move-up/move-down because drag-and-drop
@@ -70,9 +70,12 @@ import {
 import { ExtraRow, SlotRow } from "@/components/product/gallery-rows";
 import { CropDialog } from "@/components/product/crop-dialog";
 import { ImproveDialog, type ImproveTarget } from "@/components/product/improve-dialog";
+import { LockedSheet } from "@/components/subscriptions/locked-sheet";
+import { useShopPlan } from "@/components/subscriptions/plan-context";
 import type { AvailableTool, EnhancementDto } from "@server/content/enhancement.types";
 import { MEDIA_COPY } from "./media-copy";
 import { MEDIA_MANAGER_NOTICE_COPY } from "@/components/product/media-copy";
+import { FEATURE } from "@/components/subscriptions/features";
 
 interface ProductMediaManagerProps {
   value: ProductMediaInput[];
@@ -569,8 +572,13 @@ export function ProductMediaManager({
 
   const keep = (ref: string) => setKept((current) => new Set(current).add(ref));
 
+  // Image enhancement is paid: every Improve, while photos go in, opens the plan sheet instead (feature-access Q29).
+  const plan = useShopPlan();
+  const [planSheet, setPlanSheet] = useState(false);
+
   /** Open the sheet on a photo, on the tool a capture warning named where it named one (spec R6). */
   const openImprove = (target: ImproveTarget, tool?: AvailableTool) => {
+    if (!plan.features.imageEnhancement) return setPlanSheet(true);
     setImproving(target);
     setPreselect(tool ?? null);
   };
@@ -805,6 +813,7 @@ export function ProductMediaManager({
           onClose={closeImprove}
         />
       )}
+      <LockedSheet feature={FEATURE.IMAGE_ENHANCEMENT} shop={plan.shop} open={planSheet} onOpenChange={setPlanSheet} />
 
       <CropDialog
         photo={current ? { id: current.id, src: current.previewUrl } : null}

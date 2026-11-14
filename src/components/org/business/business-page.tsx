@@ -102,7 +102,7 @@ function OpenShop({ label, className }: { label: string; className?: string }) {
 
 function BecomePartner({ label, className }: { label: string; className?: string }) {
   return (
-    <ContactLauncher intent="partner" variant="spotlight" size="lg" className={cn("h-12 rounded-full px-7", className)}>
+    <ContactLauncher intent="partner" prefill={P.hero.prefill} variant="spotlight" size="lg" className={cn("h-12 rounded-full px-7", className)}>
       {label}
       <Icon name="forward" />
     </ContactLauncher>
@@ -115,15 +115,22 @@ function TopBar({ audience }: { audience: Audience }) {
       <Link href={ROUTES.home} prefetch={false} className="inline-flex">
         <BrandLogo size="lg" tone="light" priority />
       </Link>
-      <PageTabs
-        variant="segmented"
-        label={COPY.switchLabel}
-        current={audience}
-        tabs={[
-          { key: AUDIENCE.SHOP, label: COPY.tabs.shop, href: ROUTES.business },
-          { key: AUDIENCE.PARTNER, label: COPY.tabs.partner, href: ROUTES.businessPartner },
-        ]}
-      />
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <PageTabs
+          variant="segmented"
+          label={COPY.switchLabel}
+          current={audience}
+          tabs={[
+            { key: AUDIENCE.SHOP, label: COPY.tabs.shop, href: ROUTES.business },
+            { key: AUDIENCE.PARTNER, label: COPY.tabs.partner, href: ROUTES.businessPartner },
+          ]}
+        />
+        {audience === AUDIENCE.SHOP && (
+          <ContactLauncher variant="ghost" className="min-h-10 rounded-full px-4 text-small">
+            {COPY.contact}
+          </ContactLauncher>
+        )}
+      </div>
     </Column>
   );
 }
@@ -378,6 +385,9 @@ function Pricing() {
             ))}
           </ul>
           <OpenShop label={S.hero.cta} className="w-full" />
+          <ContactLauncher variant="outline" className="mt-3 h-10 w-full rounded-full">
+            {COPY.contact}
+          </ContactLauncher>
           <p className="pt-3 text-center text-caption text-muted-foreground">{p.cancel}</p>
         </div>
       </Column>

@@ -30,6 +30,7 @@ import { listingFactsSpec, type ListingFactsPayload } from "./listing-facts.job"
 import { providerFor } from "./providers";
 import { MarketplaceAuthError, MarketplaceUnavailableError } from "./providers/marketplace-provider";
 import type { ListingAttributes } from "./providers/listing-read";
+import { channelPlan } from "./channel-plan";
 
 /**
  * Filling a product from its linked marketplace listings (marketplace-facts): the read stored on
@@ -451,6 +452,7 @@ export const channelFactsService = {
 
   /** "Fill from {marketplace}": read now, in the request, so the card can say busy or reconnect at once (Q32). */
   async fillNow(orgId: string, listingId: string): Promise<FillNowOutcome> {
+    await channelPlan.assert(orgId);
     try {
       return (await this.run({ orgId, listingId })).outcome;
     } catch (error) {
@@ -461,6 +463,7 @@ export const channelFactsService = {
 
   /** The card's commands (D8). Each changes one thing, through its aggregate's repository. */
   async change(orgId: string, listingId: string, change: MarketplaceFactsChange): Promise<{ outcome?: FillNowOutcome }> {
+    await channelPlan.assert(orgId);
     if (change.action === "fill") return { outcome: await this.fillNow(orgId, listingId) };
     const [row] = await channelListingRepository.forFacts(orgId, { id: listingId });
     if (!row?.productId) throw new NotFoundError("Linked listing");

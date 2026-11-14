@@ -13,6 +13,8 @@ import { OffersStrip, OFFERS_IN_STRIP } from "@/components/home/offers-strip";
 import { CategoryLanes } from "@/components/category/category-lanes";
 import type { Product } from "@/domain/product";
 import { productsDAL } from "@/data-access-layer/products.dal";
+import { lockedStorefrontMetadata, storefrontClosedTo } from "@/data-access-layer/storefront-access.dal";
+import { StorefrontClosed } from "@/components/subscriptions/storefront-closed";
 import { storefrontDAL } from "@/data-access-layer/storefront.dal";
 import { appUrl } from "@server/shared/app-url";
 import { ThemedSections } from "@/components/storefront/themed/themed-sections";
@@ -45,6 +47,8 @@ export async function generateMetadata({
   const { handle } = await params;
   const shop = await storefrontDAL.getByHandle(handle);
   if (!shop) return {};
+  const locked = await lockedStorefrontMetadata(shop.id, shop.name);
+  if (locked) return locked;
 
   const preview = storePreview(shop);
   const url = `${appUrl()}${ROUTES.store(shop.handle)}`;
@@ -73,6 +77,7 @@ export default async function StorefrontPage({
 }: StorefrontPageProps) {
   const [{ handle }, query] = await Promise.all([params, searchParams]);
   const shop = await resolveStorefront(handle);
+  if (await storefrontClosedTo(shop.id)) return <StorefrontClosed shop={shop} />;
 
   // A shop that published a look has a landing page here and its goods at /shop (Q3); a link
   // into today's filtered grid follows the goods there (R13: no URL a shop shared breaks).

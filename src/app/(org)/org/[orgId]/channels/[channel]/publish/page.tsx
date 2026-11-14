@@ -6,6 +6,8 @@ import { PageShell, PageHeader } from "@/components/shared/page-shell";
 import { ReviewPublish } from "@/components/channel/review-publish";
 import { PUBLISH } from "@/components/channel/platform-listing-copy";
 import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
+import { PlanBanner } from "@/components/subscriptions/plan-banner";
+import { FEATURE } from "@/components/subscriptions/features";
 
 export const metadata = {
   title: ORG_PAGE_TITLES.publish,
@@ -27,6 +29,7 @@ export default async function ReviewPublishPage({
   return (
     <PageShell width="narrow">
       <PageHeader help="channels" title={PUBLISH.reviewTitle(review.label)} description={PUBLISH.nothingSent} />
+      {!scope.features.channels && <PlanBanner feature={FEATURE.CHANNELS} />}
       <ReviewPublish orgId={scope.orgId} review={review} single={listing ?? null} />
     </PageShell>
   );

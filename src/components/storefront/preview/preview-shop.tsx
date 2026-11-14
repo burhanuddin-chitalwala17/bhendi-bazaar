@@ -28,7 +28,7 @@ export function PreviewShop({
           <p className="font-label text-tag uppercase tracking-tag text-muted-foreground">
             {formatCount(total)} {total === 1 ? "product" : "products"}
           </p>
-          <h1 className="break-words font-display text-title tracking-headline">{name}</h1>
+          <h1 className="break-words font-display text-title font-display-weight display-case tracking-headline">{name}</h1>
         </div>
         <span className="shrink-0 font-label text-tag uppercase tracking-tag underline underline-offset-4">
           {visitLabel(name)}

@@ -5,9 +5,9 @@
 - **Domain:** catalog
 - **Phase:** —
 - **Verified:** 2026-09-23
-- **References:** [../spec.md](../spec.md) (parent) R18, [../trd.md](../trd.md), [product-video](../../product-video/), [ADR-0015](../../../adr/0015-mobile-first-design.md), [ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md), [ADR-0026](../../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0028](../../../adr/0028-images-live-in-cloudflare-r2.md), [ADR-0032](../../../adr/0032-records-people-authored-are-retired-not-deleted.md)
+- **References:** [../spec.md](../spec.md) (parent) R18, `431ed6e7:docs/specs/product-reviews/trd.md`, [product-video](../../product-video/), [ADR-0015](../../../adr/0015-mobile-first-design.md), [ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md), [ADR-0026](../../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0028](../../../adr/0028-images-live-in-cloudflare-r2.md), [ADR-0032](../../../adr/0032-records-people-authored-are-retired-not-deleted.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/product-reviews/review-media/trd.md`.
 
 ## What this feature is
 

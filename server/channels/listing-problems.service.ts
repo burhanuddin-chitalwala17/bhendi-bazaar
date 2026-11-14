@@ -7,6 +7,7 @@ import { channelListingRepository } from "./channel-listing.repository";
 import type { ListingIssue, ListingProblemsAttentionDTO } from "./platform-listing.types";
 import { complaintIssues, handOverComplaints } from "./listing-complaints";
 import { providerFor } from "./providers";
+import { channelPlan } from "./channel-plan";
 
 /** Accounts read at once: each has its own rate limit, so a few in parallel cost no one's (as inventory-sync Q26). */
 const READ_CONCURRENCY = 4;
@@ -22,7 +23,10 @@ export const listingProblemsService = {
    * statement records every answer. An account that cannot be read keeps what it had.
    */
   async checkAll(now = new Date()): Promise<{ accounts: number; problems: number }> {
-    const connections = (await channelConnectionRepository.connectedWithTokens()).filter((c) => isMarketplaceChannel(c.channel));
+    const all = (await channelConnectionRepository.connectedWithTokens()).filter((c) => isMarketplaceChannel(c.channel));
+    // One read for the pass (D8): a shop without Channels is not read.
+    const holding = await channelPlan.allowed([...new Set(all.map((c) => c.orgId))]);
+    const connections = all.filter((c) => holding.has(c.orgId));
     const read: string[] = [];
     const found: Array<{ connectionId: string; sku: string; problems: unknown; suppressed: boolean }> = [];
     for (let i = 0; i < connections.length; i += READ_CONCURRENCY) {

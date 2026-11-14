@@ -11,6 +11,10 @@ import { truncateMiddle } from "@/components/org/shop-hub/shop-hub-copy";
 import type { ShareShop } from "@/lib/store-preview";
 import { SHARE_COPY, whatsappHref } from "./share-copy";
 import { COPY_STATE, useShareShop, type ShareSetup } from "./useShareShop";
+import { useShopPlan } from "@/components/subscriptions/plan-context";
+import { TalkToUs } from "@/components/subscriptions/talk-to-us";
+import { FEATURE_NAME, LOCK_COPY } from "@/components/subscriptions/subscriptions-copy";
+import { FEATURE } from "@/components/subscriptions/features";
 
 const LINK_MAX = 44;
 
@@ -42,6 +46,20 @@ export function ShareShopSheet({
   const setOpen = onOpenChange ?? setOwnOpen;
   const { shareOnWhatsApp, copyLink, copyState } = useShareShop(orgId, shop.url, setup);
   const shown = shop.url.replace(/^https?:\/\//, "");
+  // Every way to share the link meets this one sheet; while Storefront is locked it explains the plan (feature-access Q29).
+  const plan = useShopPlan();
+  if (!plan.features.storefront) {
+    const name = FEATURE_NAME[FEATURE.STOREFRONT];
+    return (
+      <HandoffSheet open={open} onOpenChange={setOpen} wide={HANDOFF_WIDE.POPOVER} title={LOCK_COPY.partOfPlan(name)} closeLabel={SHARE_COPY.close} trigger={trigger}>
+        <div className="space-y-3 text-small">
+          <p>{LOCK_COPY.value[FEATURE.STOREFRONT]}</p>
+          <p className="text-muted-foreground">{LOCK_COPY.price}</p>
+          <TalkToUs feature={FEATURE.STOREFRONT} shop={plan.shop || shop.name} className="h-11 w-full" />
+        </div>
+      </HandoffSheet>
+    );
+  }
 
   return (
     <HandoffSheet

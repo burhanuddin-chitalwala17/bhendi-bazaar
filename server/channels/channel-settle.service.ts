@@ -32,6 +32,7 @@ import { copyablePhotos } from "./listing-photos";
 import { PHOTO_COPY_MODE, listingPhotosSpec, type ListingPhotosPayload } from "./listing-photos.job";
 import { providerFor } from "./providers";
 import type { ListingDetail } from "./providers/listing-read";
+import { channelPlan } from "./channel-plan";
 
 /**
  * Settling a marketplace listing (product-merge): matched to a product, or added as a new one,
@@ -178,6 +179,7 @@ export const channelSettleService = {
 
   /** "Add product" or "Link and save" (D4): every listing linked, or none, and the product with them. */
   async settle(orgId: string, userId: string, input: SettleInput): Promise<SettleResultDTO> {
+    await channelPlan.assert(orgId);
     const rows = await channelListingRepository.forSettle(input.listingIds, orgId);
     if (rows.length !== input.listingIds.length) throw new NotFoundError("Listing");
     if (new Set(rows.map((r) => r.connectionId)).size !== rows.length) {
@@ -383,6 +385,7 @@ export const channelSettleService = {
 
   /** Try again on the photos that failed (Q21): the whole copy runs again; stored copies are reused. */
   async retryPhotos(orgId: string, listingId: string): Promise<void> {
+    await channelPlan.assert(orgId);
     const [row] = await channelListingRepository.forSettle([listingId], orgId);
     if (!row || !row.productId) throw new NotFoundError("Linked listing");
     // The same kind of copy as the first: a match still replaces, and only when all arrive (D6).

@@ -7,7 +7,7 @@
 - **Verified:** 2026-10-25
 - **References:** [decisions.md](decisions.md), parent [marketplace-integration](../spec.md) and its [decisions](../decisions.md) (Q42), [product-merge](../product-merge/), [ADR-0047](../../../adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md), [ADR-0051](../../../adr/0051-a-products-facts-are-one-json-column-each-entry-carrying-its-origin.md), [ADR-0054](../../../adr/0054-a-channel-mapping-carries-a-checked-date-and-source-and-required-ness-is-data.md), TRACKER F-013
 
-> Requirements and product approach only. Technical approach lives in trd.md. Subfeature 4 of
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/marketplace-integration/marketplace-facts/trd.md`. Subfeature 4 of
 > marketplace-integration.
 
 ## What this feature is

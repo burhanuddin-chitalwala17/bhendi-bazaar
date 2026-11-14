@@ -11,6 +11,8 @@ import type { ShareSetup } from "@/components/org/share/useShareShop";
 import type { ShareShop } from "@/lib/store-preview";
 import { DoneToast } from "./home-leaves";
 import { HOME_COPY } from "./home-copy";
+import { PlanIcon } from "@/components/subscriptions/plan-icon";
+import { FEATURE } from "@/components/subscriptions/features";
 
 /**
  * Home's link with its Share (R10, D13). After the first product is saved, the toast offers Share
@@ -47,7 +49,7 @@ export function HomeShareLink({
         onOpenChange={setOpen}
         trigger={
           <Button type="button" variant="outline" size="sm" className="min-h-11 shrink-0">
-            <Icon name="share" size="sm" />
+            <PlanIcon feature={FEATURE.STOREFRONT} name="share" size="sm" />
             {SHARE_COPY.open}
           </Button>
         }

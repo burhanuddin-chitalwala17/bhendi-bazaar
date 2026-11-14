@@ -1,7 +1,7 @@
 # ADR-0064: A storefront theme is a token set and a section composition declared in code
 
 - **Date:** 2026-10-30
-- **Status:** Accepted
+- **Status:** Accepted (D1, D6 and the last consequence amended by [ADR-0074](0074-a-shop-chooses-its-storefronts-heading-face-from-a-closed-list.md))
 
 ## Context
 

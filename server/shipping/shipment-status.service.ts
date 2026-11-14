@@ -19,7 +19,7 @@ import { stockService } from "@server/catalog/stock.service";
 
 /**
  * The only thing that writes `Shipment.status`
- * ([shipment-lifecycle](../../docs/specs/shipment-lifecycle/trd.md) D12).
+ * (shipment-lifecycle (`431ed6e7:docs/specs/shipment-lifecycle/trd.md`) D12).
  *
  * Two route handlers used to write it directly with string literals — one of them a value the
  * type did not even contain — which is how the column came to hold three vocabularies at once.

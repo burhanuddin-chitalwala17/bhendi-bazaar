@@ -6,9 +6,9 @@
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-09
 - **Depends on:** organisations-and-membership, portal-separation (the org portal it lands in)
-- **References:** [trd.md](trd.md), [../spec.md](../spec.md), [../portal-separation](../portal-separation/)
+- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/org-onboarding/trd.md`, [../spec.md](../spec.md), [../portal-separation](../portal-separation/)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/multi-vendor-marketplace/org-onboarding/trd.md`.
 
 ## What this feature is
 Someone with no organisation can start one from the store itself and arrive in a working portal as its

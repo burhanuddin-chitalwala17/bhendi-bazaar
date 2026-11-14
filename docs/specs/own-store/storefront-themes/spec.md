@@ -5,9 +5,9 @@
 - **Domain:** catalog (storefront), with promotions (read only)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-10-30
-- **References:** [decisions.md](decisions.md), [ux.md](ux.md), [own-store](../spec.md) (Q15, Q22, Q23), [org-storefront](../../org-storefront/), [brand-page](../../seller-profile/brand-page/), [ADR-0016](../../../adr/0016-mobile-app-shell.md), [ADR-0018](../../../adr/0018-one-effective-price-function.md), [ADR-0022](../../../adr/0022-design-decisions-go-through-tokens.md), [ADR-0026](../../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0027](../../../adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md), [ADR-0030](../../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md), [ADR-0049](../../../adr/0049-colour-is-a-primitive-palette-read-through-semantic-tokens.md), [ADR-0050](../../../adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
+- **References:** [decisions.md](decisions.md), `431ed6e7:docs/specs/own-store/storefront-themes/ux.md`, [own-store](../spec.md) (Q15, Q22, Q23), [org-storefront](../../org-storefront/), [brand-page](../../seller-profile/brand-page/), [ADR-0016](../../../adr/0016-mobile-app-shell.md), [ADR-0018](../../../adr/0018-one-effective-price-function.md), [ADR-0022](../../../adr/0022-design-decisions-go-through-tokens.md), [ADR-0026](../../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0027](../../../adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md), [ADR-0030](../../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md), [ADR-0049](../../../adr/0049-colour-is-a-primitive-palette-read-through-semantic-tokens.md), [ADR-0050](../../../adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md (written after UX sign-off).
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/own-store/storefront-themes/trd.md`.
 
 ## What this feature is
 Vertical 7 of own-store. Today every storefront is the marketplace in a different accent: the

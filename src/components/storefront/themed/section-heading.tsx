@@ -28,7 +28,7 @@ export function SectionHeading({
         {overline && (
           <p className="font-label text-tag uppercase tracking-tag text-muted-foreground">{overline}</p>
         )}
-        <h2 className="font-display text-title tracking-headline text-foreground">{title}</h2>
+        <h2 className="font-display text-title font-display-weight display-case tracking-headline text-foreground">{title}</h2>
       </div>
       {action && (
         <Link
@@ -48,9 +48,6 @@ export const shopAllLabel = (count: number) => `Shop all ${formatCount(count)}`;
 export const landingHref = (handle: string) => ROUTES.store(handle);
 export const dealsHref = (handle: string) => `${shopHref(handle)}?deals=1`;
 
-/** Q33: a product reached from a shop keeps that shop's chrome; the canonical stays `/product/{slug}`. */
-export const storefrontProductHref = (slug: string, handle: string) =>
-  `${ROUTES.product(slug)}?shop=${encodeURIComponent(handle)}`;
 
 /** Past this many characters the button reads VISIT_COPY.short (own-store Q23). */
 export const VISIT_NAME_MAX = 20;

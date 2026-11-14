@@ -32,7 +32,7 @@ export function AddressModal({
   const isEditing = mode === "edit" || mode === "add";
 
   function handleSave(data: DeliveryAddress) {
-    void onSave({ ...address, ...data });
+    return onSave({ ...address, ...data });
   }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/40 px-4">
@@ -152,7 +152,7 @@ function AddressViewMode({
 interface AddressFormProps {
   address: DeliveryAddress;
   saving: boolean;
-  onSubmit: (address: DeliveryAddress) => void;
+  onSubmit: (address: DeliveryAddress) => void | Promise<void>;
   onCancel: () => void;
 }
 

@@ -1,5 +1,5 @@
 /**
- * Cancelling a paid parcel gives everything back exactly once ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/trd.md)
+ * Cancelling a paid parcel gives everything back exactly once (order-fulfilment (`431ed6e7:docs/specs/own-store/order-fulfilment/trd.md`)
  * U5: D12–D16; spec A6, A7, A8, A12; the cancel/pickup race, double cancel, the coupon after both
  * parcels, the settlement floor). Owns its fixtures: a migrated schema and nothing in it.
  */

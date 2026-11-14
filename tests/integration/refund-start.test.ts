@@ -1,6 +1,6 @@
 /**
  * A refund owed for every cause, and the admin's button that starts it exactly once
- * ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/trd.md) U6: D16, D17; spec R13, R14,
+ * (order-fulfilment (`431ed6e7:docs/specs/own-store/order-fulfilment/trd.md`) U6: D16, D17; spec R13, R14,
  * A9; Q12, Q25). The gateway is stubbed at its adapter; the row, the claim and the email are real.
  * Owns its fixtures: a migrated schema and nothing in it.
  */

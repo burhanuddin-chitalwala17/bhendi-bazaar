@@ -2,7 +2,7 @@
 
 - **Date:** 2026-09-12
 - **Status:** Accepted
-- **Context:** `User.mobile` has been unique since the first auth migration, which made a phone number a second identity key alongside email without anyone deciding that it should be one. [international-phone](../specs/international-phone/trd.md) then leaned on that index: normalising to E.164 was partly justified by making the uniqueness check compare one spelling rather than two.
+- **Context:** `User.mobile` has been unique since the first auth migration, which made a phone number a second identity key alongside email without anyone deciding that it should be one. international-phone (`431ed6e7:docs/specs/international-phone/trd.md`) then leaned on that index: normalising to E.164 was partly justified by making the uniqueness check compare one spelling rather than two.
 
   A phone number does not identify a person the way an email address does. One number is routinely shared — a household where a parent's phone is the only one, a shop where the counter number is the contact for everyone who works there, a buyer ordering on behalf of a relative who has no phone at all. Each of those is a separate account with its own cart, orders and addresses, and each has a legitimate reason to give the same number as the one we should ring about a delivery.
 

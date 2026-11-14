@@ -5,9 +5,9 @@
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-28
-- **References:** [trd.md](trd.md), [brand-page](brand-page/) (subfeature), [org-storefront](../org-storefront/) (seller-identity R5, storefront-branding, storefront-pages R3), [ADR-0032](../../adr/0032-records-people-authored-are-retired-not-deleted.md), [ADR-0037](../../adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md)
+- **References:** `431ed6e7:docs/specs/seller-profile/trd.md`, [brand-page](brand-page/) (subfeature), [org-storefront](../org-storefront/) (seller-identity R5, storefront-branding, storefront-pages R3), [ADR-0032](../../adr/0032-records-people-authored-are-retired-not-deleted.md), [ADR-0037](../../adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/seller-profile/trd.md`.
 
 ## What this feature is
 

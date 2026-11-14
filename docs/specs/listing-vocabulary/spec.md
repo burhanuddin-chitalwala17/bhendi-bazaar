@@ -5,9 +5,9 @@
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-01
-- **References:** [trd.md](trd.md), [categories](categories/), [variants](variants/), [inherited-facts](inherited-facts/), [ADR-0047](../../adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md), [ADR-0043](../../adr/0043-a-variant-is-a-product-in-a-family.md), [seller-profile](../seller-profile/), [media-library](../media-library/)
+- **References:** `431ed6e7:docs/specs/listing-vocabulary/trd.md`, [categories](categories/), [variants](variants/), [inherited-facts](inherited-facts/), [ADR-0047](../../adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md), [ADR-0043](../../adr/0043-a-variant-is-a-product-in-a-family.md), [seller-profile](../seller-profile/), [media-library](../media-library/)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/listing-vocabulary/trd.md`.
 > This is the overview; the three subfeatures below hold the detail.
 
 ## What this feature is

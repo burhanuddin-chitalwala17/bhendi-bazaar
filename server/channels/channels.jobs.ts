@@ -28,6 +28,17 @@ import { listingProblemsService } from "./listing-problems.service";
 import { checkOrdersSpec, checkStockSpec, ORDERS_CHECK_EVERY_SECONDS } from "./stock-checks.job";
 import { enqueue, enqueueLater } from "@server/shared/jobs/jobs.enqueue";
 import { prisma } from "@server/shared/prisma";
+import { channelPlan } from "./channel-plan";
+
+/**
+ * A shop without Channels: the job ends succeeded with a skip, never failed or retried, since a lock
+ * is a decision, not a fault (subscriptions/feature-access D8).
+ */
+async function lockedSkip(type: string, jobId: string, orgId: string): Promise<boolean> {
+  if (await channelPlan.can(orgId)) return false;
+  console.log(`[jobs] ${type} ${jobId}: skipped, Channels is off for ${orgId}`);
+  return true;
+}
 
 /**
  * A shop's listing read (channel-import D3): one per connection at a time, claimed inside the
@@ -36,6 +47,7 @@ import { prisma } from "@server/shared/prisma";
 export const listingReadJob = registerJob({
   ...listingReadSpec,
   handler: async ({ jobId, payload }) => {
+    if (await lockedSkip("channels.read-listings", jobId, payload.orgId)) return;
     const outcome = await channelImportService.runRead(payload.connectionId);
     // A listing linked by its SKU fills its product once, like one settled by hand (marketplace-facts Q36).
     await channelFactsService.fillUnread(payload.connectionId).catch((error: unknown) => {
@@ -99,7 +111,7 @@ export const channelsMaintainJob = registerJob({
     console.log(
       `[jobs] channels.maintain ${jobId}: checked ${summary.checked}, renewed ${summary.renewed}, ` +
         `resealed ${summary.resealed}, needs reconnect ${summary.needsReconnect}, ` +
-        `unreachable ${summary.unreachable}, skipped ${summary.skipped}`,
+        `unreachable ${summary.unreachable}, skipped ${summary.skipped}, Channels off ${summary.locked}`,
     );
   },
 });
@@ -110,6 +122,7 @@ registerSchedule(channelsMaintainJob, {}, CHANNELS_MAINTAIN_INTERVAL_SECONDS);
 export const listingPhotosJob = registerJob({
   ...listingPhotosSpec,
   handler: async ({ jobId, payload }) => {
+    if (await lockedSkip("channels.copy-listing-photos", jobId, payload.orgId)) return;
     const outcome = await channelSettleService.copyPhotos(payload);
     console.log(`[jobs] channels.copy-listing-photos ${jobId}: ${JSON.stringify({ listing: payload.listingId, ...outcome })}`);
   },
@@ -119,6 +132,7 @@ export const listingPhotosJob = registerJob({
 export const listingFactsJob = registerJob({
   ...listingFactsSpec,
   handler: async ({ jobId, payload }) => {
+    if (await lockedSkip("channels.fill-facts", jobId, payload.orgId)) return;
     const outcome = await channelFactsService.run(payload);
     console.log(`[jobs] channels.fill-facts ${jobId}: ${JSON.stringify({ listing: payload.listingId, ...outcome })}`);
   },
@@ -169,6 +183,7 @@ export const checkStockJob = registerJob({
 export const publishListingJob = registerJob({
   ...publishListingSpec,
   handler: async ({ jobId, payload }) => {
+    if (await lockedSkip("channels.publish-listing", jobId, payload.orgId)) return;
     const outcome = await listingPublishService.send(payload.listingId);
     console.log(`[jobs] channels.publish-listing ${jobId}: ${JSON.stringify({ listing: payload.listingId, ...outcome })}`);
   },

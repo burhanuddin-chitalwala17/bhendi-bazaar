@@ -8,7 +8,7 @@ import { DeliveryAddress } from "@/domain/profile";
 interface AuthenticatedAddressProps {
   selectedAddress: DeliveryAddress | null;
   onAddressChange: (address: DeliveryAddress) => void;
-  onAddressAdded: (address: DeliveryAddress) => void;
+  onAddressAdded: (address: DeliveryAddress) => Promise<DeliveryAddress>;
   onAddressUpdated: (id: string, address: DeliveryAddress) => void;
   addresses: DeliveryAddress[];
 }
@@ -25,9 +25,10 @@ export function AuthenticatedAddress({
 
   // No default address (addresses-as-entities D3): the buyer picks every time; Pay says so if they haven't.
 
+  // A failed save throws into the form, which keeps the dialog open and shows why.
   const handleSaveNewAddress = async (address: DeliveryAddress) => {
-    onAddressAdded(address);
-    onAddressChange(address);
+    const saved = await onAddressAdded(address);
+    onAddressChange(saved);
     setShowAddressModal(false);
   };
 

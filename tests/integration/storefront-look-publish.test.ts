@@ -53,14 +53,14 @@ describe.skipIf(!isDisposableDb)("storefront look publish (local db)", () => {
 
   it("STAFF is refused with ux.md's words and nothing is written (Q31)", async () => {
     await expect(
-      service.publish(orgId, { userId: staffId, role: OrgRole.STAFF }, { theme: "darbar", palette: "navy", lookVersion: 0 }),
+      service.publish(orgId, { userId: staffId, role: OrgRole.STAFF }, { theme: "darbar", palette: "navy", font: null, lookVersion: 0 }),
     ).rejects.toMatchObject({ status: 403, message: types.LOOK_OWNER_ONLY });
     expect((await service.getLook(orgId)).lookVersion).toBe(0);
   });
 
   it("publish makes the look live, bumps the version, keeps the old page 30 days, and is audited (D11, Q4)", async () => {
-    const look = await service.publish(orgId, owner(), { theme: "darbar", palette: "navy", lookVersion: 0 });
-    expect(look.live).toEqual({ theme: "darbar", palette: "navy" });
+    const look = await service.publish(orgId, owner(), { theme: "darbar", palette: "navy", font: null, lookVersion: 0 });
+    expect(look.live).toEqual({ theme: "darbar", palette: "navy", font: null });
     expect(look.lookVersion).toBe(1);
     expect(look.previous).toMatchObject({ theme: null, palette: null });
     const days = (new Date(look.previous!.until).getTime() - Date.now()) / 86_400_000;
@@ -74,9 +74,9 @@ describe.skipIf(!isDisposableDb)("storefront look publish (local db)", () => {
 
   it("a stale version is 409 naming who published what, and writes nothing (Q31)", async () => {
     await prisma.orgMember.create({ data: { orgId, userId: otherOwnerId, role: OrgRole.OWNER } });
-    await service.publish(orgId, { userId: otherOwnerId, role: OrgRole.OWNER }, { theme: "edge", palette: "carbon", lookVersion: 1 });
+    await service.publish(orgId, { userId: otherOwnerId, role: OrgRole.OWNER }, { theme: "edge", palette: "carbon", font: null, lookVersion: 1 });
     await expect(
-      service.publish(orgId, owner(), { theme: "bloom", palette: "peach", lookVersion: 1 }),
+      service.publish(orgId, owner(), { theme: "bloom", palette: "peach", font: null, lookVersion: 1 }),
     ).rejects.toMatchObject({ status: 409, message: "Murtaza published Edge 1 min ago." });
     const look = await service.getLook(orgId);
     expect(look).toMatchObject({ live: { theme: "edge", palette: "carbon" }, lookVersion: 2 });
@@ -84,7 +84,7 @@ describe.skipIf(!isDisposableDb)("storefront look publish (local db)", () => {
   });
 
   it("'Publish mine anyway' resends at the new version and wins", async () => {
-    const look = await service.publish(orgId, owner(), { theme: "bloom", palette: "peach", lookVersion: 2 });
+    const look = await service.publish(orgId, owner(), { theme: "bloom", palette: "peach", font: null, lookVersion: 2 });
     expect(look).toMatchObject({ live: { theme: "bloom", palette: "peach" }, lookVersion: 3, previous: { theme: "edge" } });
   });
 
@@ -105,12 +105,41 @@ describe.skipIf(!isDisposableDb)("storefront look publish (local db)", () => {
       status: 410,
       message: types.LOOK_NOT_KEPT,
     });
-    expect((await service.getLook(orgId)).live).toEqual({ theme: "edge", palette: "carbon" });
+    expect((await service.getLook(orgId)).live).toEqual({ theme: "edge", palette: "carbon", font: null });
   });
 
   it("STAFF cannot switch back either (Q31)", async () => {
     await expect(service.revert(orgId, { userId: staffId, role: OrgRole.STAFF }, { lookVersion: 4 })).rejects.toMatchObject({
       status: 403,
     });
+  });
+
+  // storefront-font D3, D4 (Q6, Q7; A1, A3): the heading face rides the look.
+  it("an unthemed or fontless look reads font null, the template's own (Q7)", async () => {
+    expect((await service.getLook(orgId)).live.font).toBeNull();
+  });
+
+  it("publishing only a new font is a publish: version bumps, the old face is kept for Switch back (storefront-font A1)", async () => {
+    const before = await service.getLook(orgId);
+    const look = await service.publish(orgId, owner(), { theme: "edge", palette: "carbon", font: "marcellus", lookVersion: before.lookVersion });
+    expect(look.live).toEqual({ theme: "edge", palette: "carbon", font: "marcellus" });
+    expect(look.lookVersion).toBe(before.lookVersion + 1);
+    expect(look.previous).toMatchObject({ theme: "edge", palette: "carbon", font: null });
+    const { storefrontService } = await import("@server/catalog/storefront.service");
+    expect(await storefrontService.storefrontPage(handle)).toMatchObject({ fontKey: "marcellus" });
+  });
+
+  it("switch back restores the template's default face (storefront-font A3)", async () => {
+    const before = await service.getLook(orgId);
+    const look = await service.revert(orgId, owner(), { lookVersion: before.lookVersion });
+    expect(look.live).toEqual({ theme: "edge", palette: "carbon", font: null });
+    expect(look.previous).toMatchObject({ font: "marcellus" });
+  });
+
+  it("a stored key retired from code reads as the default, never raw (Q7)", async () => {
+    await prisma.orgProfile.update({ where: { orgId }, data: { fontKey: "comic-sans" } });
+    expect((await service.getLook(orgId)).live.font).toBeNull();
+    const { storefrontDAL } = await import("@/data-access-layer/storefront.dal");
+    expect((await storefrontDAL.getByHandle(handle))?.fontKey ?? null).toBeNull();
   });
 });

@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { LockedAction } from "@/components/subscriptions/locked-action";
 import { useMutation } from "@/hooks/core/useMutation";
 import type { MarketplaceChannel } from "@server/channels/channel-connection.types";
 
 import { channelsApiClient } from "./channelsApiClient";
 import { ROW } from "./listing-copy";
 import { SETTLE_ACTION, SETTLE_TOAST } from "./settle-copy";
+import { FEATURE } from "@/components/subscriptions/features";
 
 interface ListingLinkActionProps {
   orgId: string;
@@ -56,14 +58,16 @@ export function ListingLinkAction({ orgId, channel, listingId, kind }: ListingLi
   const action = kind === "unlink" ? unlink : kind === "linkBack" ? linkBack : bringBack;
   const label = kind === "unlink" ? ROW.unlink : kind === "linkBack" ? ROW.linkBack : SETTLE_ACTION.bringBack;
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      className="min-h-10 shrink-0"
-      onClick={() => void action.mutate().catch(() => undefined)}
-      pending={action.isLoading}
-    >
-      {label}
-    </Button>
+    <LockedAction feature={FEATURE.CHANNELS} label={label} variant="outline" size="sm" className="min-h-10 shrink-0">
+      <Button
+        variant="outline"
+        size="sm"
+        className="min-h-10 shrink-0"
+        onClick={() => void action.mutate().catch(() => undefined)}
+        pending={action.isLoading}
+      >
+        {label}
+      </Button>
+    </LockedAction>
   );
 }

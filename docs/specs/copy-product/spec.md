@@ -5,9 +5,9 @@
 - **Domain:** catalog
 - **Phase:** 6 — Catalogue richness
 - **Verified:** 2026-09-23
-- **References:** [trd.md](trd.md), [product-archive](../product-archive/spec.md), [ADR-0015](../../adr/0015-mobile-first-design.md)
+- **References:** `431ed6e7:docs/specs/copy-product/trd.md`, [product-archive](../product-archive/spec.md), [ADR-0015](../../adr/0015-mobile-first-design.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/copy-product/trd.md`.
 
 ## What this feature is
 An org starts a new product from one of its existing products, so the descriptive work already done on a sibling item is not typed again.

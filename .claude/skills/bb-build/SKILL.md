@@ -37,10 +37,10 @@ Emit the unit list as the TRD's Delivery section states it — one commit each �
 ## 3. Close the feature
 
 - **Spec versus shipped:** every R, A and D is either *closed in PR-n*, *deferred — spec updated to say so*, or a finding. A promise the code did not keep (variants D7, 2026-10-04) is exactly what this step exists to catch.
-- **Flip Status together**: spec and TRD move to Implemented in the same commit; run `npm run docs:index`; add the row to `docs/BACKLOG.md`. `docs-integrity` fails a spec whose TRD disagrees.
+- **Flip Status and clear the build docs**: spec moves to Implemented, and in the same commit `trd.md` and `ux.md` are deleted, every link into them rewritten as a pinned `<sha>:path` ref (the last commit that had them) ([ADR-0073](../../../docs/adr/0073-a-shipped-feature-keeps-its-spec-and-decisions-and-drops-its-ux-and-trd.md)); run `npm run docs:index`; add the row to `docs/BACKLOG.md`.
 - **Update ARCHITECTURE.md** only if structure changed, and only after it did. A new domain adds itself to `PUBLIC_SURFACE`, the Domains table and `docs/README.md`.
 - **The acceptance report**, written for the owner, not for an engineer: one line per `A<n>` — the test that proves it or the manual check that was done, at what width — then one line per `ux.md` state saying how to reach it on the preview, plus the preview URL. The owner's review is walking that list on a phone, not reading the diff.
 
 ## Definition of done, per unit
 
-A failing test existed for each acceptance id claimed · the gates pass · a new guard has its mutation recorded · the CHANGELOG entry exists and names the suites that ran · spec and TRD Status agree · no decision it relied on is open · every ux.md state it built is reachable · `/bb-review` ran in a clean context · no allowlist grew without a reason sentence.
+A failing test existed for each acceptance id claimed · the gates pass · a new guard has its mutation recorded · the CHANGELOG entry exists and names the suites that ran · spec is Implemented and its trd.md and ux.md are gone · no decision it relied on is open · every ux.md state it built is reachable · `/bb-review` ran in a clean context · no allowlist grew without a reason sentence.

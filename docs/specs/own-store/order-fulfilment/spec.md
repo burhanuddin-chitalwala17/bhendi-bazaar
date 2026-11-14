@@ -5,9 +5,9 @@
 - **Domain:** cross-domain — shipping, checkout, payments, promotions, payouts, notifications
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-11-01
-- **References:** [decisions.md](decisions.md), [ux.md](ux.md), [own-store](../spec.md) (Q5, Q8, Q9, Q18, Q19), [offers-hardening](../offers-hardening/) (Q10, Q13, unit 1), [shipment-lifecycle](../../shipment-lifecycle/), [shipping-fulfilment](../../shipping-fulfilment/), [ADR-0005](../../../adr/0005-payment-state-server-only.md), [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [ADR-0020](../../../adr/0020-money-bearing-records-never-cascade.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
+- **References:** [decisions.md](decisions.md), `431ed6e7:docs/specs/own-store/order-fulfilment/ux.md`, [own-store](../spec.md) (Q5, Q8, Q9, Q18, Q19), [offers-hardening](../offers-hardening/) (Q10, Q13, unit 1), [shipment-lifecycle](../../shipment-lifecycle/), [shipping-fulfilment](../../shipping-fulfilment/), [ADR-0005](../../../adr/0005-payment-state-server-only.md), [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [ADR-0020](../../../adr/0020-money-bearing-records-never-cascade.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md (written after UX sign-off).
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/own-store/order-fulfilment/trd.md`.
 
 ## What this feature is
 Vertical 2 of own-store. Each shop marks its own parcel ready, the admin books the courier by

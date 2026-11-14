@@ -5,7 +5,7 @@
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts
 - **Verified:** 2026-09-19
-- **References:** [../spec.md](../spec.md) (programme), [../trd.md](../trd.md) D2/D4/D10, [seo](../../seo/), [seller-identity](../seller-identity/), [storefront-pages](../storefront-pages/), [storefront-branding](../storefront-branding/)
+- **References:** [../spec.md](../spec.md) (programme), `431ed6e7:docs/specs/org-storefront/trd.md` D2/D4/D10, [seo](../../seo/), [seller-identity](../seller-identity/), [storefront-pages](../storefront-pages/), [storefront-branding](../storefront-branding/)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 

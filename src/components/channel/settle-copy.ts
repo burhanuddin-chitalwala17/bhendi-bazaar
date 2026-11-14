@@ -1,6 +1,6 @@
 /**
  * Every string product-merge shows, as signed off in
- * docs/specs/marketplace-integration/product-merge/ux.md. Edit there first, then here.
+ * 431ed6e7:docs/specs/marketplace-integration/product-merge/ux.md. This file is now the source (ADR-0073).
  */
 
 export const SETTLE_ACTION = {

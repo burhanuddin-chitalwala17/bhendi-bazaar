@@ -12,6 +12,7 @@ import {
   PALETTE_KEYS,
   THEME_KEYS,
   THEMES,
+  FONT_KEYS,
 } from "@server/catalog/storefront-themes";
 import { CLAIM_DETAIL_MAX, CLAIM_KEYS, MAX_CLAIMS } from "@server/catalog/storefront-claims";
 import { TIME_PATTERN } from "@server/catalog/storefront-hours";
@@ -153,6 +154,9 @@ export const storefrontLookSchema = z
   .object({
     theme: z.enum(THEME_KEYS),
     palette: z.enum(PALETTE_KEYS),
+    // The heading face, or null for the template's own (storefront-font D4). Required, so a client from
+    // before the face existed is refused rather than silently clearing a shop's chosen face.
+    font: z.enum(FONT_KEYS).nullable(),
     lookVersion: z.number().int().min(0),
   })
   .strict()

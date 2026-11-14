@@ -7,7 +7,7 @@
  * Mutation-tested by lightening one primitive (see the CHANGELOG entry for U1).
  */
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 import { PALETTE, PALETTE_TONE, THEMES } from "@server/catalog/storefront-themes";
 
@@ -114,6 +114,7 @@ describe("a palette is fixed light or dark (Q5)", () => {
   });
 });
 
+// The marketplace card and wishlist still lay text on the scrim (storefront-look Q9, parked).
 describe("text over a photograph sits on the scrim (D4)", () => {
   const mix = CSS.match(/--color-photo-scrim:\s*color-mix\(in oklab, var\((--[\w-]+)\) (\d+)%, transparent\);/);
   const onPhoto = CSS.match(/--color-on-photo:\s*var\((--[\w-]+)\);/)?.[1];
@@ -128,5 +129,24 @@ describe("text over a photograph sits on the scrim (D4)", () => {
     // Compositing in linear light is a close enough model of the browser's blend for a floor.
     const ground = ink.map((v, i) => v * alpha + photo[i] * (1 - alpha)) as Rgb;
     expect(contrast(PRIMITIVES.get(onPhoto!)!, ground)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+// storefront-look Q3, Q8: a store never shades a photograph; text sits beside, below, or on a solid label.
+describe("no themed component darkens a photo (storefront-look A4)", () => {
+  const dir = "src/components/storefront/themed";
+  const files = readdirSync(dir, { recursive: true, encoding: "utf8" }).filter((f) => f.endsWith(".tsx"));
+
+  it.each(files)("%s uses no scrim", (file) => {
+    const source = readFileSync(`${dir}/${file}`, "utf8");
+    expect(source).not.toMatch(/\bbg-(?:photo-)?scrim\b|text-on-photo|\bbg-gradient-to-/);
+  });
+});
+
+// Edge and Darbar draw the offer badge as deal ink on the card ground; Bloom and Daily use the deal ground.
+describe("the offer badge on a solid card ground is readable (storefront-look Q3)", () => {
+  const badgeOnCard = [THEMES.edge, THEMES.darbar].flatMap((t) => t.palettes.map((p) => p.key));
+  it.each(badgeOnCard)("%s: deal on card", (key) => {
+    expect(contrast(resolve(key, "deal"), resolve(key, "card"))).toBeGreaterThanOrEqual(4.5);
   });
 });

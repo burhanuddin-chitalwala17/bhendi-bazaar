@@ -5,9 +5,9 @@
 - **Domain:** checkout, payments
 - **Phase:** 2 — Transaction integrity
 - **Verified:** 2026-08-03
-- **References:** [trd.md](trd.md), [ADR-0002](../../adr/0002-server-holds-pricing-authority.md), [CONTRACTS.md](../../CONTRACTS.md)
+- **References:** `431ed6e7:docs/specs/server-side-pricing-authority/trd.md`, [ADR-0002](../../adr/0002-server-holds-pricing-authority.md), [CONTRACTS.md](../../CONTRACTS.md)
 
-> Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
+> Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/server-side-pricing-authority/trd.md`.
 
 ## What this feature is
 The amount a customer is charged is determined by the store, from its own catalogue, at the moment of purchase.

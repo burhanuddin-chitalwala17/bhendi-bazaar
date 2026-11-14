@@ -5,9 +5,9 @@
 - **Domain:** channels, with listing (readiness)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-07
-- **References:** [decisions.md](decisions.md), parent [listing-model](../spec.md) Q2, Q11, [plan.html](../plan.html) §2–§4, [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
+- **References:** [decisions.md](decisions.md), parent [listing-model](../spec.md) Q2, Q11, [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
-> Requirements and product approach only. Technical approach lives in trd.md. Subfeature 1 of 5.
+> Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/listing-model/channel-catalogue/trd.md`. Subfeature 1 of 5.
 
 ## What this feature is
 Bhendi Bazaar keeps, for every channel type a product can go to, the list of fields that channel

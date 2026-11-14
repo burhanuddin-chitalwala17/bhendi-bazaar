@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormActions } from "@/components/shared/button-groups/FormActions";
+import { LockedAction } from "@/components/subscriptions/locked-action";
 import { ImageUpload } from "@/components/shared/image-upload";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { orgStorefrontApiClient } from "@/components/org/orgStorefrontApiClient";
@@ -23,6 +24,7 @@ import {
 } from "@server/catalog/brand-page-sections";
 import { STOREFRONT_EDITOR_COPY } from "./storefront-copy";
 import { ROUTES } from "@server/shared/routes";
+import { FEATURE } from "@/components/subscriptions/features";
 
 export interface StorefrontSettings {
   handle: string;
@@ -107,12 +109,15 @@ export function StorefrontEditor({
             <code className="rounded-field bg-muted px-2 py-1 text-sm">
               {ROUTES.store(settings.handle)}
             </code>
-            <Button asChild variant="ghost" size="sm">
-              <Link href={ROUTES.store(settings.handle)} target="_blank">
-                <Icon name="external" />
-                {STOREFRONT_EDITOR_COPY.open}
-              </Link>
-            </Button>
+            {/* Opening the public store is locked with Storefront; Preview stays free (feature-access Q18). */}
+            <LockedAction feature={FEATURE.STOREFRONT} label={STOREFRONT_EDITOR_COPY.open} variant="ghost" size="sm">
+              <Button asChild variant="ghost" size="sm">
+                <Link href={ROUTES.store(settings.handle)} target="_blank">
+                  <Icon name="external" />
+                  {STOREFRONT_EDITOR_COPY.open}
+                </Link>
+              </Button>
+            </LockedAction>
             <HandleChangeDialog
               orgId={orgId}
               currentHandle={settings.handle}

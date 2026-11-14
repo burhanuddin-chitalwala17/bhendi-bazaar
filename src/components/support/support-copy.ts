@@ -31,8 +31,6 @@ export const CONTACT_SHEET_COPY = {
   wayOurInbox: "It is on its way to our inbox.",
   partnerTitle: "Become a partner",
   partnerDescription: "Tell us about your brand on WhatsApp, or send us a message. We reply within a day.",
-  partnerWhatsappMessage: "Hi, I'd like to talk about partnering with Bhendi Bazaar.",
-  partnerSubject: "Partnership",
 } as const;
 
 export const STORE_POLICIES_COPY = {

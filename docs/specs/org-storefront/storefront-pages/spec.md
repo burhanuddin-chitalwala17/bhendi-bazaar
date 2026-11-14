@@ -5,7 +5,7 @@
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts
 - **Verified:** 2026-09-19
-- **References:** [../spec.md](../spec.md) (programme), [../trd.md](../trd.md) D1/D5/D10, [org-handle](../org-handle/), [seamless-sign-in](../../seamless-sign-in/), [ADR-0015](../../../adr/0015-mobile-first-design.md), [ADR-0016](../../../adr/0016-mobile-app-shell.md)
+- **References:** [../spec.md](../spec.md) (programme), `431ed6e7:docs/specs/org-storefront/trd.md` D1/D5/D10, [org-handle](../org-handle/), [seamless-sign-in](../../seamless-sign-in/), [ADR-0015](../../../adr/0015-mobile-first-design.md), [ADR-0016](../../../adr/0016-mobile-app-shell.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 
@@ -55,4 +55,4 @@ almost every visit will start.
 - Letting an organisation edit any of this — [storefront-branding](../storefront-branding/). Until that lands, the pages are built from fields the organisation already has: name, description, logo.
 - Link previews, sitemap entries and the shop directory — [storefront-discovery](../storefront-discovery/).
 - Curated or featured products. `ProductFlag.FEATURED` and `HERO` exist and orgs already set them, so the mechanism is there — arranging a storefront around them is [storefront-branding](../storefront-branding/)'s business, not this feature's.
-- Re-serving product pages under the storefront path. One product keeps one URL ([../trd.md](../trd.md) D4).
+- Re-serving product pages under the storefront path. One product keeps one URL (`431ed6e7:docs/specs/org-storefront/trd.md` D4).

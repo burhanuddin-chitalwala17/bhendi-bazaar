@@ -1,6 +1,6 @@
 # CLAUDE.md — the front end
 
-- **Verified:** 2026-11-08
+- **Verified:** 2026-11-13
 - **Covers:** `src/components/**`, `src/hooks/**`, `src/app/globals.css`
 
 > Read the root [`/CLAUDE.md`](../../CLAUDE.md) first. This file loads when a component is read, so its rules are in front of you while you write one. Each rule names the test that enforces it; a rule with no test says so.
@@ -43,6 +43,7 @@ Each layer reads only from the one above. A component that skips a layer is the 
 - **Every design axis is a semantic token:** colour, type size, tracking, elevation, shape, page width (`PageShell`/`PageHeader`). Never a palette class, an arbitrary `[…]` value, or a primitive like `--emerald-550`. `tests/unit/design-tokens.test.ts`
   - A new token in `globals.css` must also be registered in `cn`, or `tailwind-merge` silently drops it. `tests/unit/cn-tokens.test.ts`
   - Raw colour inside an arbitrary value (`bg-[radial-gradient(…rgba(…))]`) passes the suite. Review catches it, so don't write it.
+- **A paid action goes through `LockedAction`** (`src/components/subscriptions/`): held, its child unchanged; locked, the same button with a lock that opens the plan sheet, never disabled. The shop's plan comes from `useShopPlan`, given once by the org layout. A screen never hides for a lock (subscriptions/feature-access Q20, Q29).
 - **An overlay's surface follows its content:** a picker uses `ResponsivePicker`, a canvas task `TaskDialog`, a short handed-off flow (hint, share, pickup address) `HandoffSheet`. Only the files listed in the test reach for `SheetContent`. `tests/unit/overlay-surfaces.test.ts` ([ADR-0040](../../docs/adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md))
 - **Images go through `next/image`.** `fill` needs a `sizes` that describes the real slot, never `100vw` on a thumbnail. A browser-direct upload downscales first. `tests/unit/image-delivery.test.ts` ([ADR-0026](../../docs/adr/0026-images-are-delivered-through-the-optimizer.md))
 

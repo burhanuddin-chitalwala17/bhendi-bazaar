@@ -1,6 +1,6 @@
 /**
  * Every string the family page and the Listings page's group entry points show, as signed off in
- * docs/specs/marketplace-integration/family-merge/ux.md. Edit there first.
+ * 431ed6e7:docs/specs/marketplace-integration/family-merge/ux.md. This file is now the source (ADR-0073).
  */
 
 export const FAMILY = {

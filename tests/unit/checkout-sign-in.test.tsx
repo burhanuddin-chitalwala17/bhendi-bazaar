@@ -1,6 +1,6 @@
 /**
- * Signing in at checkout (seamless-sign-in D10, D11): the guest's address is cleared
- * for the account's saved ones, offers are re-quoted for the buyer, and the items being
+ * Signing in at checkout (seamless-sign-in D10, D11, D13): the address the guest typed stays
+ * selected, so it is never typed twice; offers are re-quoted for the buyer, and the items being
  * checked out stay as they were snapshotted — the sign-in merge changes the cart, not
  * this checkout (R14, R15).
  */
@@ -92,7 +92,7 @@ describe("signing in at checkout", () => {
     expect(openAuthSheet).toHaveBeenCalledTimes(1);
   });
 
-  it("clears the guest's address, re-quotes offers, and keeps the snapshotted items (A10)", async () => {
+  it("keeps the guest's typed address, re-quotes offers, and keeps the snapshotted items (A10)", async () => {
     const view = render(<CheckoutContainer />);
     fireEvent.click(screen.getByRole("button", { name: "fill guest address" }));
     await waitFor(() => expect(quoteCalls()).toBe(1));
@@ -102,8 +102,8 @@ describe("signing in at checkout", () => {
     auth.user = { id: "user-1", name: "Buyer" };
     view.rerender(<CheckoutContainer />);
 
-    // …the guest address is gone, so the account's saved ones must be chosen from…
-    expect(await screen.findByText("selected: none")).toBeInTheDocument();
+    // …the address the guest typed is still the one chosen…
+    expect(await screen.findByText("selected: Guest Address")).toBeInTheDocument();
     await waitFor(() => expect(getAddresses).toHaveBeenCalled());
     // …offers are priced again for the account…
     await waitFor(() => expect(quoteCalls()).toBe(2));

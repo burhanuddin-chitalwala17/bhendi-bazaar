@@ -10,7 +10,7 @@ Transactional email. One provider (Resend, in `email.service.ts`), one shell, ei
 redelivered job is one email (ADR-0038 D4). The job's spec lives in `server/shared/jobs/`, so the
 domain that enqueues it never imports this one.
 
-**A parcel email is a row first** ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/trd.md) D8).
+**A parcel email is a row first** (order-fulfilment (`431ed6e7:docs/specs/own-store/order-fulfilment/trd.md`) D8).
 `notice.service.ts` writes a `Notice` on the caller's transaction, unique per (parcel, kind,
 audience), and only a newly written row enqueues `notify.send`; the handler skips a row already
 sent and keys Resend on the notice id. Kinds and wording: `notice.types.ts`, `templates/parcelNoticeEmail.ts`.
@@ -18,7 +18,7 @@ A notice's data never holds a buyer phone or address (spec A10).
 
 `contactMessageEmail.ts` is the one addressed to the store, not a buyer: Contact us delivers
 a message to `SUPPORT_INBOX` with the sender as Reply-To and stores nothing, so its route
-awaits the send and reports a failure ([contact-us](../../docs/specs/contact-us/trd.md) D2, D4).
+awaits the send and reports a failure (contact-us (`431ed6e7:docs/specs/contact-us/trd.md`) D2, D4).
 A signed-in sender's Reply-To is the session's email, never one from the request body.
 
 ## Every email renders through `renderEmail`

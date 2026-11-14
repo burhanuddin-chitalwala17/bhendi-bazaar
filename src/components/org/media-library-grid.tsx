@@ -22,11 +22,13 @@ import { useMutation } from "@/hooks/core/useMutation";
 import { orgMediaApiClient } from "@/components/org/orgMediaApiClient";
 import { CropDialog } from "@/components/product/crop-dialog";
 import { ImproveDialog } from "@/components/product/improve-dialog";
+import { LockedAction } from "@/components/subscriptions/locked-action";
 import type { CropTransform } from "@/lib/image/crop-transform";
 import { formatDay, formatDuration } from "@/lib/format";
 import { describeUses, type MediaAssetDto, type MediaUseDto } from "@server/catalog/media-library.types";
 import type { Pagination } from "@server/shared/pagination";
 import { MEDIA_GRID_COPY } from "./media-library-copy";
+import { FEATURE } from "@/components/subscriptions/features";
 
 interface MediaLibraryGridProps {
   orgId: string;
@@ -341,10 +343,12 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                 <div className="flex flex-col gap-2 sm:flex-row">
                   {open.kind === "IMAGE" && (
                     <>
-                      <Button type="button" variant="outline" onClick={() => setImproving(open)}>
-                        <Icon name="enhance" className="mr-2" />
-                        {MEDIA_GRID_COPY.improve}
-                      </Button>
+                      <LockedAction feature={FEATURE.IMAGE_ENHANCEMENT} label={MEDIA_GRID_COPY.improve} variant="outline">
+                        <Button type="button" variant="outline" onClick={() => setImproving(open)}>
+                          <Icon name="enhance" className="mr-2" />
+                          {MEDIA_GRID_COPY.improve}
+                        </Button>
+                      </LockedAction>
                       <Button type="button" variant="outline" onClick={() => setReframing(open)}>
                         <Icon name="crop" className="mr-2" />
                         {MEDIA_GRID_COPY.crop}

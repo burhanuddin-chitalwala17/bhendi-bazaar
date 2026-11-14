@@ -7,7 +7,7 @@ import { STORE_PAGES_COPY } from "../store-pages-copy";
 export default function ShopError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
   return (
     <div role="alert" className="mx-auto flex max-w-store flex-col items-center gap-4 px-gutter py-section text-center">
-      <p className="font-display text-title">{STORE_PAGES_COPY.errorTitle}</p>
+      <p className="font-display text-title font-display-weight display-case">{STORE_PAGES_COPY.errorTitle}</p>
       <Button variant="outline" onClick={() => retry()}>
         {STORE_PAGES_COPY.tryAgain}
       </Button>
