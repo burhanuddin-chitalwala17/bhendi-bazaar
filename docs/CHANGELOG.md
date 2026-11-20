@@ -12,6 +12,18 @@
 
 ## Entries
 
+## 2026-11-20 — Fix: an Amazon create leaves out attributes its type does not have
+
+- **Incident:** the masalla bag's first create under RUG stopped at our own schema check with "Amazon won't take This
+  listing as it is (must NOT have additional properties)". Amazon's type schemas are closed at the top
+  (`additionalProperties: false`), and the create body always adds our compliance and plumbing attributes (HSN line,
+  contact information, dangerous-goods declaration…) plus whatever the field maps build, whether or not that type
+  declares them. One undeclared attribute fails the whole listing, and the message named none.
+- **Fix:** `conformToSchema` (`amazon.shape.ts`) drops a top-level attribute a closed schema does not declare, as it
+  already trimmed undeclared keys inside an item. `checkAgainstSchema` names an undeclared attribute instead of
+  "This listing", should one still reach it.
+- Tests: `tests/unit/listing-builder.test.ts` — an undeclared attribute is left out, and is named when checked.
+
 ## 2026-11-20 — Fix: a new Amazon page follows its type's category; the admin channel page loads again
 
 - **Incident 1:** a draft started before its product type had an Amazon category kept "no category" for ever, and

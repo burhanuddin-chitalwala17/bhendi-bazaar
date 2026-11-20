@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { amazonAttributes, checkAgainstSchema } from "@server/channels/providers/amazon/amazon.shape";
+import { amazonAttributes, checkAgainstSchema, conformToSchema } from "@server/channels/providers/amazon/amazon.shape";
 import { amazonCreateBody } from "@server/channels/providers/amazon/amazon.publish";
 import { buildChannelListing, mapsFor, type BuildProduct } from "@server/listing/listing-builder";
 import { ANY_BB_TYPE, FIELD_SOURCE, GAP_REASON, type FieldMapRow } from "@server/listing/field-map.types";
@@ -207,6 +207,18 @@ describe("Amazon's shape comes from the type's own schema (Q9, D6)", () => {
       const problems = checkAgainstSchema(schema, amazonCreateBody(variant).attributes);
       expect(problems.filter((p) => !p.missing)).toEqual([]);
     }
+  });
+
+  it("leaves out an attribute the type does not declare, which Amazon would refuse the whole listing for (2026-11-20)", () => {
+    const shaped = conformToSchema(schema, { ...amazonAttributes(schema, fields), not_a_handbag_field: [{ value: "x" }] });
+    expect(shaped).not.toHaveProperty("not_a_handbag_field");
+    expect(shaped).toHaveProperty("outer");
+  });
+
+  it("names the attribute the type does not declare, rather than 'This listing'", () => {
+    const problems = checkAgainstSchema(schema, { not_a_handbag_field: [{ value: "x" }] }).filter((p) => !p.missing);
+    expect(problems.map((p) => p.attribute)).toEqual(["not_a_handbag_field"]);
+    expect(problems[0].message).toMatch(/not_a_handbag_field/);
   });
 
   it("a schema that cannot be compiled skips the local check rather than refusing every create", () => {

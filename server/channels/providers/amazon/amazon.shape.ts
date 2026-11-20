@@ -100,8 +100,11 @@ export function amazonAttributes(schema: unknown, fields: readonly BuiltField[])
 export function conformToSchema(schema: unknown, attributes: Json): Json {
   const properties = obj(obj(schema).properties);
   if (Object.keys(properties).length === 0) return attributes;
+  // A closed type refuses the whole listing for one attribute it does not have (a home type has no HSN line).
+  const closed = obj(schema).additionalProperties === false;
   const out: Json = {};
   for (const [name, value] of Object.entries(attributes)) {
+    if (closed && !(name in properties)) continue;
     const items = obj(obj(properties[name]).items);
     const declared = obj(items.properties);
     if (items.additionalProperties !== false || !Array.isArray(value)) {
@@ -148,13 +151,15 @@ export function checkAgainstSchema(schema: unknown, attributes: Json): SchemaPro
   for (const e of validate.errors ?? []) {
     // allOf/if branches repeat one missing attribute many times; the shop needs it once.
     const missing = e.keyword === "required" ? String((e.params as { missingProperty?: string }).missingProperty ?? "") : null;
-    const attribute = missing || e.instancePath.split("/")[1] || null;
+    const extra = e.keyword === "additionalProperties" && e.instancePath === "" ? String((e.params as { additionalProperty?: string }).additionalProperty ?? "") : null;
+    const attribute = missing || extra || e.instancePath.split("/")[1] || null;
     if (e.keyword === "if" || e.keyword === "anyOf" || e.keyword === "oneOf" || e.keyword === "allOf") continue;
     const key = `${attribute}:${e.keyword}`;
     if (seen.has(key)) continue;
     seen.add(key);
     const title = attribute ? (obj(obj(obj(schema).properties)[attribute]).title as string | undefined) ?? attribute : "This listing";
-    out.push({ attribute, missing: !!missing, message: missing ? `Amazon needs ${title} for this type.` : `Amazon won't take ${title} as it is (${e.message ?? "not allowed"}).` });
+    const message = missing ? `Amazon needs ${title} for this type.` : extra ? `Amazon has no ${extra} for this type.` : `Amazon won't take ${title} as it is (${e.message ?? "not allowed"}).`;
+    out.push({ attribute, missing: !!missing, message });
   }
   return out;
 }
