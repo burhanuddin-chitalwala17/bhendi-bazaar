@@ -12,6 +12,13 @@
 
 ## Entries
 
+## 2026-11-20 — [MIGRATION] Amazon RUG's Item Dimensions L x W mapped to length and width
+
+- `20261120090000_amazon_rug_length_width`: RUG's `item_length_width` is one attribute of two measures, and the admin
+  screen can map a whole field to one answer only, so it had been mapped to a size word. The migration removes that
+  whole-field map and maps `item_length_width.length` / `.width` to the product's length and width in centimetres,
+  as the default maps do `item_dimensions`. Reference data only.
+
 ## 2026-11-20 — Fix: an Amazon create leaves out attributes its type does not have
 
 - **Incident:** the masalla bag's first create under RUG stopped at our own schema check with "Amazon won't take This
