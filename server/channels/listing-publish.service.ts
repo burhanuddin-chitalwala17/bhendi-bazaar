@@ -162,7 +162,9 @@ async function lookAt(row: PlatformListingRow, connection: OrdersCheckRow | null
   const pending = parseOverrides(row.pending);
   const sent = parseSent(row.sent) ?? {};
   const title = pending.title ?? sent.title;
-  const showing = answer.found && answer.showing.title && title && answer.showing.title !== title ? { title: answer.showing.title, mainImageUrl: null } : null;
+  // Amazon recases an all-capital title by its own style rules; only different words are other content.
+  const words = (t: string) => t.replace(/\s+/g, " ").trim().toLowerCase();
+  const showing = answer.found && answer.showing.title && title && words(answer.showing.title) !== words(title) ? { title: answer.showing.title, mainImageUrl: null } : null;
   // A page we created is found minutes before Amazon makes it buyable; checked on, not called done while not yet on sale (2026-11-09).
   const waitingToSell = row.createMode !== null && answer.found && answer.live === false && checkAt(count, row.publishedAt ?? now) !== null;
   const done = errors.length > 0 || (answer.found && count >= 2 && !waitingToSell);

@@ -46,7 +46,7 @@ export function ListingDraftBanner({ orgId, screen, from }: { orgId: string; scr
           </div>
         </div>
       )}
-      <p className="text-muted-foreground">{CREATE.draftNote}</p>
+      <p className="text-muted-foreground">{CREATE.draftNoteFor(screen.status.status, screen.label)}</p>
     </section>
   );
 }

@@ -46,6 +46,13 @@ describe("rules fill what the shop never answers (spec A2)", () => {
     expect(r.gaps).toEqual([]);
   });
 
+  it("a size in words from the measurements uses length x width where there is no height, as a rug's is (2026-11-20)", () => {
+    const sizeMap = [map("size", { source: FIELD_SOURCE.RULE, ruleKey: "size_display_from_measures" })];
+    expect(sent(build([field("size")], sizeMap))).toEqual({ size: "40 x 12 x 35 cm" });
+    expect(sent(build([field("size")], sizeMap, product({ measurements: { length: { value: 60, unit: "cm" }, width: { value: 40, unit: "cm" } } })))).toEqual({ size: "60 x 40 cm" });
+    expect(sent(build([field("size")], sizeMap, product({ measurements: { length: { value: 60, unit: "cm" } } })))).toEqual({ size: "Free Size" });
+  });
+
   it("gender reaches Amazon in Amazon's case, from the same rule Google reads", () => {
     const r = build([field("target_gender", { kind: "choice", allowedValues: ["Female", "Male", "Unisex"] })], [
       map("target_gender", { source: FIELD_SOURCE.RULE, ruleKey: "gender_from_audience" }),

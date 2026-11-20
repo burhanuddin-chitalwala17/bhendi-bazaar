@@ -7,7 +7,7 @@ import { orgChannelRepository } from "./org-channel.repository";
 import { FIELD_SOURCE } from "./field-map.types";
 import { channelCatalogueRepository } from "./channel-catalogue.repository";
 import { partsByField } from "./schema-parts";
-import { DomainError } from "@server/shared/domain-error";
+import { DomainError, NotFoundError } from "@server/shared/domain-error";
 
 /** A map as the admin's edit sends it, already parsed (field-maps D8). */
 export interface FieldMapChange {
@@ -54,5 +54,11 @@ export const fieldMapService = {
     // Every shop selling on the channel may be more or less complete now (dynamic-form D3).
     await askCompleteness(await orgChannelRepository.orgsWith(change.channel as Channel));
     return saved;
+  },
+
+  /** Remove one map (field-maps Q24): the next listing built for the type leaves the field unfilled. */
+  async remove(key: { channel: string; channelType: string; fieldPath: string; bbType: string }): Promise<void> {
+    if (!(await fieldMapRepository.remove(key))) throw new NotFoundError("That map is already gone.");
+    await askCompleteness(await orgChannelRepository.orgsWith(key.channel as Channel));
   },
 };

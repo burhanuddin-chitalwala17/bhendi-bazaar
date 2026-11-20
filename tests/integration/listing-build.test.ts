@@ -141,6 +141,14 @@ describe.skipIf(!isDisposableDb)("a field made of parts is mapped part by part (
     expect(dims.maps.map((m) => [m.fieldPath, m.wholeOnParts])).toEqual([["item_dimensions.width", false]]);
   });
 
+  it("removes a map, its pairs with it, so the field reads unmapped again (field-maps Q24)", async () => {
+    await save("item_dimensions.length");
+    await fieldMapService.remove({ channel: "amazon", channelType: theirType, fieldPath: "item_dimensions.length", bbType: "" });
+    const dims = (await adminFieldMapService.view("amazon", theirType))!.rows.find((r) => r.field === "item_dimensions")!;
+    expect(dims.maps.map((m) => m.fieldPath)).not.toContain("item_dimensions.length");
+    await expect(fieldMapService.remove({ channel: "amazon", channelType: theirType, fieldPath: "item_dimensions.length", bbType: "" })).rejects.toThrow(/already gone|not found/i);
+  });
+
   it("a field with no parts saves as before", async () => {
     await expect(save("department")).resolves.toHaveProperty("id");
   });

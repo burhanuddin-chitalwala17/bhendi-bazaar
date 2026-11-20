@@ -151,6 +151,11 @@ export const CREATE = {
   noBarcode: "None · we'll ask Amazon for the brand's exemption",
   reviewAndCreate: "Review and create",
   draftNote: "Nothing was created on Amazon; the draft waits here.",
+  /** Where a create stands: waiting here, being sent, or accepted and waiting to go on sale (2026-11-20). */
+  draftNoteFor: (status: ListingStatusDTO["status"], label: string) =>
+    status === LISTING_STATUS.SENT ? `Sending to ${label}…`
+    : status === LISTING_STATUS.CHECKING ? `Accepted by ${label} · waiting for it to go on sale.`
+    : `Nothing was created on ${label}; the draft waits here.`,
   familyOf: (n: number, axis: string) => `One page with ${n} ${axis}`,
   flipkartHow: "New products are made in Flipkart Seller Hub. Once it's there, Read again links it here.",
   unreachable: (label: string) => `Couldn't reach ${label}. Try again.`,
@@ -202,3 +207,10 @@ export function statusTone(status: ListingStatusDTO["status"]): "success" | "inf
 }
 
 export const rupees = (paise: number) => formatCurrency(paise);
+
+/** The listing editor's save bar when nothing is being edited: a draft is ready to create, not "6 changes waiting". */
+export function saveBarStatus({ draft, sending, waiting, label }: { draft: boolean; sending: boolean; waiting: number; label: string }): string | null {
+  if (sending) return null;
+  if (draft) return `Not on ${label} yet · ready to create`;
+  return waiting > 0 ? LISTING.waiting(waiting) : LISTING.nothingWaiting;
+}

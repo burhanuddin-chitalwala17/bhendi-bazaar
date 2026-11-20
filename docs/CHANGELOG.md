@@ -12,6 +12,22 @@
 
 ## Entries
 
+## 2026-11-20 — Listing drafts say where a create stands; a field map can be removed; size from length x width [CONTRACT]
+
+- **Wording** (`platform-listing-copy.ts`): a listing not yet on Amazon reads "Not on Amazon yet · ready to create"
+  in its save bar instead of "6 changes waiting" (every field differs from a page that does not exist), and its draft
+  panel says "Sending to Amazon…" or "Accepted by Amazon · waiting for it to go on sale." instead of "Nothing was
+  created on Amazon" while the create is out (`CREATE.draftNoteFor`, `saveBarStatus`).
+- **"Amazon is showing other content"** no longer fires when Amazon only recased the title (its style rules rewrite an
+  all-capital one): titles are compared ignoring case and spacing (`lookAt`, `listing-publish.service.ts`).
+- **Remove a field map** (field-maps Q24): `DELETE /api/admin/field-maps` (`fieldMapRemoveSchema`: channel,
+  channelType, fieldPath, bbType; audited `channel.field-map.remove`; 404 when already gone), `fieldMapService.remove`,
+  a Remove button beside each map. No confirm step, as a change has none (Q4).
+- **Size from the measurements:** the rule `size_display_from_measures` sends "60 x 40 cm" for a product with length
+  and width but no height (a rug, a prayer mat); it fell back to "Free Size" before. Products with all three are unchanged.
+- Tests: `tests/unit/listing-draft-wording.test.ts`, `listing-builder.test.ts` (the rule), `field-map-parts.test.tsx`
+  (Remove), `tests/integration/listing-build.test.ts` (remove), `marketplace-publish.test.ts` (a recased title).
+
 ## 2026-11-20 — A field made of parts is mapped part by part on the admin's field maps [CONTRACT]
 
 - **Why:** the field-map screen mapped a whole channel field to one answer only, so Amazon RUG's Item Dimensions

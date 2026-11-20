@@ -47,6 +47,12 @@ export const fieldMapRepository = {
     return rows.map(({ values, ...row }) => ({ ...row, values: Object.fromEntries(values.map((v) => [v.optionKey, v.channelValue])) }));
   },
 
+  /** One map, its pairs with it (field-maps Q24). False when it was already gone. */
+  async remove(key: { channel: string; channelType: string; fieldPath: string; bbType: string }, db: Db = prisma): Promise<boolean> {
+    const { count } = await db.fieldMap.deleteMany({ where: key });
+    return count > 0;
+  },
+
   /** Every whole-field map on a field in parts, for any type of ours: one answer cannot fill it (Q23). Their pairs go with them. */
   async removeWhole(key: { channel: string; channelType: string; fieldPath: string }, db: Db = prisma): Promise<void> {
     await db.fieldMap.deleteMany({ where: key });

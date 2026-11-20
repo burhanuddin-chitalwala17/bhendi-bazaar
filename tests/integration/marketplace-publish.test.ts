@@ -428,6 +428,19 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
     expect((await listings.screen(orgId, id, "amazon")).issues.map((i) => i.code)).toEqual(["no_category"]);
   });
 
+  it("does not call Amazon's title 'other content' when it only changed the capitals (2026-11-20)", async () => {
+    const id = await product("RECASE", "amazon");
+    await editAndPublish(id, "amazon", { title: "OLIVE GREEN MASALLA BAG" });
+    const listingId = (await row(id)).id;
+    await publish.send(listingId);
+    fake.state.status = { found: true, live: true, issues: [], showing: { title: "Olive Green  Masalla Bag", mainImageUrl: null } };
+    await publish.check(listingId);
+    expect((await row(id)).showing).toBeNull();
+    fake.state.status = { found: true, live: true, issues: [], showing: { title: "Green Prayer Mat", mainImageUrl: null } };
+    await publish.check(listingId);
+    expect((await row(id)).showing).toMatchObject({ title: "Green Prayer Mat" });
+  });
+
   it("refuses a new page whose type has no Amazon category without asking Amazon", async () => {
     const id = await product("NOCAT", null);
     const { id: listingId } = await create.startDraft(orgId, id, "amazon", { mode: "new", targetExternalId: null });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,6 +13,8 @@ import type { AdminFieldMapsDTO, AdminFieldRowDTO } from "@server/listing/admin.
 import type { Channel } from "@server/shared/channels";
 import { FIELD_MAP_COPY } from "./field-map-copy";
 import { FieldMapForm } from "./field-map-form";
+import { channelsApiClient } from "./channelsApiClient";
+import { useMutation } from "@/hooks/core/useMutation";
 
 /**
  * Every field of one channel type and where its value comes from (listing-model/field-maps ux.md): required
@@ -89,14 +92,18 @@ function FieldRow({ row, view, attributeLabel, open, setOpen }: FieldRowProps) {
             <p className="text-small text-warning">{FIELD_MAP_COPY.unpaired(m.unpaired.length, view.channelLabel)}</p>
           )}
           {m.waiting && <p className="text-small text-warning">{FIELD_MAP_COPY.waiting}</p>}
-          {m.wholeOnParts ? (
-            <p className="text-small text-warning">{FIELD_MAP_COPY.wholeOnParts}</p>
-          ) : editing(m.fieldPath, m.bbType) ? (
+          {m.wholeOnParts && <p className="text-small text-warning">{FIELD_MAP_COPY.wholeOnParts}</p>}
+          {editing(m.fieldPath, m.bbType) ? (
             <FieldMapForm channel={view.channel as Channel} channelType={view.typeKey} typeLabel={view.typeLabel} fieldPath={m.fieldPath} map={m} choices={view.choices} onDone={close} />
           ) : (
-            <Button variant="outline" size="sm" className="min-h-10" onClick={() => setOpen(`${row.field}::${m.fieldPath}::${m.bbType}`)}>
-              {m.unpaired.length > 0 ? FIELD_MAP_COPY.pairThem : FIELD_MAP_COPY.change}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {!m.wholeOnParts && (
+                <Button variant="outline" size="sm" className="min-h-10" onClick={() => setOpen(`${row.field}::${m.fieldPath}::${m.bbType}`)}>
+                  {m.unpaired.length > 0 ? FIELD_MAP_COPY.pairThem : FIELD_MAP_COPY.change}
+                </Button>
+              )}
+              <RemoveMapButton channel={view.channel} channelType={view.typeKey} typeLabel={view.typeLabel} fieldPath={m.fieldPath} bbType={m.bbType} />
+            </div>
           )}
         </div>
       ))}
@@ -122,5 +129,20 @@ function FieldRow({ row, view, attributeLabel, open, setOpen }: FieldRowProps) {
         <Button variant="outline" size="sm" className="min-h-10" onClick={() => setOpen(`${row.field}::${row.field}::`)}>{FIELD_MAP_COPY.map}</Button>
       ))}
     </li>
+  );
+}
+
+/** Remove one map (field-maps Q24): no confirm step, as a change has none (Q4); the field reads unmapped again. */
+function RemoveMapButton({ channel, channelType, typeLabel, fieldPath, bbType }: { channel: string; channelType: string; typeLabel: string; fieldPath: string; bbType: string }) {
+  const router = useRouter();
+  const remove = useMutation(() => channelsApiClient.removeFieldMap({ channel: channel as Channel, channelType, fieldPath, bbType }), {
+    successMessage: FIELD_MAP_COPY.removed(typeLabel),
+    errorMessage: FIELD_MAP_COPY.removeFailed,
+    onSuccess: () => router.refresh(),
+  });
+  return (
+    <Button variant="ghost" size="sm" className="min-h-10" pending={remove.isLoading} onClick={() => void remove.mutate().catch(() => undefined)}>
+      {FIELD_MAP_COPY.remove}
+    </Button>
   );
 }

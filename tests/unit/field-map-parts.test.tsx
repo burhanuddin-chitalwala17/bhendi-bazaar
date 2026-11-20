@@ -45,6 +45,11 @@ describe("a field made of parts (field-maps Q23)", () => {
     expect(screen.getByRole("button", { name: "Map length" })).toBeTruthy();
   });
 
+  it("every map can be removed, a whole-field one on a field in parts included (field-maps Q24)", () => {
+    render(<FieldMapList view={view([row({ maps: [map("item_length_width.length"), map("item_length_width", { source: "constant", key: null, constant: "Large", wholeOnParts: true })] })])} />);
+    expect(screen.getAllByRole("button", { name: "Remove" })).toHaveLength(2);
+  });
+
   it("a field with no parts keeps its one Map", () => {
     render(<FieldMapList view={view([row({ field: "department", label: "Department", parts: [] })])} />);
     expect(screen.getByRole("button", { name: "Map it" })).toBeTruthy();
