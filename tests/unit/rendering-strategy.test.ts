@@ -63,6 +63,21 @@ function tsxFiles(dir: string): string[] {
   return out;
 }
 
+/** Plain `.ts` modules, which can re-export a component and so import it on a server's behalf. */
+function tsFiles(dir: string): string[] {
+  const out: string[] = [];
+  const walk = (d: string) => {
+    if (!existsSync(d)) return;
+    for (const entry of readdirSync(d)) {
+      const p = join(d, entry);
+      if (statSync(p).isDirectory()) walk(p);
+      else if (p.endsWith(".ts") && !p.endsWith(".d.ts")) out.push(p);
+    }
+  };
+  walk(dir);
+  return out;
+}
+
 const isClient = (f: string) => /^\s*["']use client["']/m.test(readFileSync(f, "utf8"));
 
 const appFiles = tsxFiles(join(ROOT, "src/app"));
@@ -131,10 +146,11 @@ describe("render on the server by default", () => {
     // from a server component; the admin Amazon channel page crashed on exactly this (2026-11-20).
     // A file with no directive runs on the client when only client files import it, so it is judged by its importers.
     const all = [...appFiles, ...componentFiles];
+    const sources = [...all, ...tsFiles(join(ROOT, "src"))];
     const importers = (f: string) => {
       const name = f.replace(/\.tsx$/, "").split("/").pop()!;
       const from = new RegExp(`from ["'][^"']*/${name}["']`);
-      return all.filter((other) => other !== f && from.test(readFileSync(other, "utf8")));
+      return sources.filter((other) => other !== f && from.test(readFileSync(other, "utf8")));
     };
     const offenders = all
       .filter((f) => /<(ResourceList|DataTable)\b/.test(readFileSync(f, "utf8")))

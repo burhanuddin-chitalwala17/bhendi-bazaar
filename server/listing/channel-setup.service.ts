@@ -90,8 +90,11 @@ export const channelSetupService = {
   publishingOf(rows: ReadonlyArray<{ productType: string; kind: string | null; theirCategory: string | null }>, productType: string | null, kind: string | null): string | null {
     if (!productType) return null;
     const mine = rows.filter((r) => r.productType === productType);
-    // A kind's own row first, then the type's row for every kind, as readiness picks (channel-readiness categoryFor).
-    return (kind !== null ? mine.find((r) => r.kind === kind) : undefined)?.theirCategory ?? mine.find((r) => r.kind === null)?.theirCategory ?? null;
+    // A kind's own row first, then the type's row for every kind, as readiness picks (channel-readiness categoryFor);
+    // a kind's own not-sold row, which has no category, ends the search there.
+    const own = kind !== null ? mine.find((r) => r.kind === kind) : undefined;
+    if (own) return own.theirCategory;
+    return mine.find((r) => r.kind === null)?.theirCategory ?? null;
   },
 
   async typeLabel(key: string): Promise<string> {

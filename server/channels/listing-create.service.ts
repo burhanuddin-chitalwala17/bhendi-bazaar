@@ -58,12 +58,14 @@ async function categoryOf(product: Pick<Product, "productType" | "kind">, channe
 }
 
 /**
- * The category a draft goes under: its type's mapping as it is now, else the one recorded at the start.
- * A copy frozen at the start sent Amazon "PRODUCT" for a type mapped afterwards (2026-11-20).
+ * The category a new page goes under: its type's mapping as it is now, recorded on the draft. A copy frozen at
+ * the start sent Amazon "PRODUCT" for a type mapped afterwards (2026-11-20).
  */
 async function followCategory<R extends PlatformListingRow>(row: R, product: Product, channel: MarketplaceChannel): Promise<R> {
+  // An offer sits on a page that already has its type; only a new page takes ours.
+  if (row.createMode !== CREATE_MODE.NEW) return row;
   const theirCategory = await categoryOf(product, channel);
-  if (!theirCategory || theirCategory === row.marketplaceType) return row;
+  if (theirCategory === row.marketplaceType) return row;
   await platformListingRepository.setMarketplaceType(row.id, theirCategory);
   return { ...row, marketplaceType: theirCategory };
 }
@@ -201,7 +203,7 @@ export const listingCreateService = {
     const product = await productOf(orgId, productId);
     const [mirror] = await channelListingRepository.mirrorsFor(connection.id, [productId]);
     if (mirror) throw new ConflictError(`This product is already on ${CHANNEL_LABELS[channel]}.`);
-    const { theirCategory } = await readinessOf(orgId, product, channel);
+    const theirCategory = await categoryOf(product, channel);
     const row = await platformListingRepository.createDraft({
       orgId, channel, connectionId: connection.id, productId, familyId: null,
       createMode: input.mode, targetExternalId: input.mode === CREATE_MODE.OFFER ? input.targetExternalId : null,
@@ -218,7 +220,7 @@ export const listingCreateService = {
     const members = await productService.familyMembers(orgId, familyId);
     if (members.length === 0) throw new NotFoundError("Family");
     const first = await productOf(orgId, members[0].id);
-    const { theirCategory } = await readinessOf(orgId, first, channel);
+    const theirCategory = await categoryOf(first, channel);
     const parent = await platformListingRepository.createDraft({
       orgId, channel, connectionId: connection.id, productId: null, familyId,
       createMode: CREATE_MODE.NEW, targetExternalId: null, marketplaceType: theirCategory, sku: `FAM-${familyId.slice(-10).toUpperCase()}`,
@@ -238,7 +240,7 @@ export const listingCreateService = {
     const creating = row.createMode === CREATE_MODE.NEW;
     const { stillNeeds } = creating ? await readinessOf(orgId, product, channel) : { stillNeeds: [] };
     const current = creating ? await categoryOf(product, channel) : null;
-    return { mode: (row.createMode as CreateMode | null) ?? CREATE_MODE.NEW, targetExternalId: row.targetExternalId, marketplaceType: current ?? row.marketplaceType, stillNeeds };
+    return { mode: (row.createMode as CreateMode | null) ?? CREATE_MODE.NEW, targetExternalId: row.targetExternalId, marketplaceType: creating ? current : row.marketplaceType, stillNeeds };
   },
 
   /** A family's page on the review: a create of its title (Q11). */

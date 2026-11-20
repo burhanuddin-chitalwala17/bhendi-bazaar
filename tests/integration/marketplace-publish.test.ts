@@ -97,7 +97,7 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
   const connections: Record<string, string> = {};
   const stamp = Date.now();
 
-  const product = async (s: string, channel: "amazon" | "flipkart" | null, extra: { familyId?: string; productType?: string; kind?: string } = {}) => {
+  const product = async (s: string, channel: "amazon" | "flipkart" | null, extra: { familyId?: string; productType?: string; kind?: string | null } = {}) => {
     const p = await prisma.product.create({
       data: { name: `Hijab ${s}`, slug: `mp-${stamp}-${s}`, description: "Ours.", price: 44_900, categoryId, thumbnail: "/brand/bhendi-bazaar.png", orgId, sku: `MP-${stamp}-${s}`, ...extra },
       select: { id: true },
@@ -109,8 +109,9 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
     }
     return p.id;
   };
-  // A reference type and kind Amazon has a category for (PANTS), shipped by migration; only read here.
-  const MAPPED = { productType: "trousers", kind: "palazzo" };
+  // A type of the test's own, mapped to an Amazon category, with one kind marked not sold there.
+  const TYPE = `mp-type-${stamp}`;
+  const MAPPED = { productType: TYPE, kind: null };
   const row = async (productId: string) => prisma.platformListing.findFirstOrThrow({ where: { productId } });
   const editAndPublish = async (productId: string, channel: "amazon" | "flipkart", overrides: Record<string, unknown>, fields?: string[]) => {
     const opened = await listings.screen(orgId, productId, channel);
@@ -140,6 +141,9 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
     await cleanup();
     await prisma.channelLocation.deleteMany({ where: { orgId } });
     await prisma.channelConnection.deleteMany({ where: { orgId } });
+    await prisma.productType.create({ data: { key: TYPE, label: "MP test type", facts: [], measures: [], variantAxis: [], kinds: [{ key: "skipped", label: "Skipped" }], factLabels: {}, labelFrom: [] } });
+    await prisma.channelCategoryMap.create({ data: { channel: "amazon", productType: TYPE, theirCategory: "SCARF", fit: "EXACT", checkedOn: new Date(), publishes: true } });
+    await prisma.channelCategoryMap.create({ data: { channel: "amazon", productType: TYPE, kind: "skipped", theirCategory: null, notSold: true, fit: "EXACT", checkedOn: new Date(), publishes: false } });
     for (const channel of ["amazon", "flipkart"] as const) {
       connections[channel] = (await prisma.channelConnection.create({ data: { orgId, channel, state: "CONNECTED", externalAccountId: `${channel}-${stamp}`, ...sealedTokens() }, select: { id: true } })).id;
     }
@@ -150,6 +154,8 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
   });
   afterAll(async () => {
     await cleanup();
+    await prisma.channelCategoryMap.deleteMany({ where: { productType: TYPE } });
+    await prisma.productType.deleteMany({ where: { key: TYPE } });
     await prisma.channelConnection.deleteMany({ where: { orgId } });
   });
 
@@ -404,12 +410,22 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
     expect((await row(id)).marketplaceType).toBeNull();
     // The type is given an Amazon category after the draft was started (2026-11-20).
     await prisma.product.update({ where: { id }, data: MAPPED });
-    expect((await listings.screen(orgId, id, "amazon")).draft?.marketplaceType).toBe("PANTS");
+    expect((await listings.screen(orgId, id, "amazon")).draft?.marketplaceType).toBe("SCARF");
     const review = await publish.review(orgId, "amazon", listingId);
     await publish.publish(orgId, "amazon", [{ id: listingId, version: review.listings[0].version, fields: review.listings[0].changes.map((c) => c.field) }]);
     await publish.send(listingId);
-    expect(fake.state.created.map((c) => c.marketplaceType)).toEqual(["PANTS", "PANTS"]);
-    expect((await row(id)).marketplaceType).toBe("PANTS");
+    expect(fake.state.created.map((c) => c.marketplaceType)).toEqual(["SCARF", "SCARF"]);
+    expect((await row(id)).marketplaceType).toBe("SCARF");
+  });
+
+  it("does not create a page for a kind marked not sold, even though its type has a category", async () => {
+    const id = await product("NOTSOLD", null, { productType: TYPE, kind: "skipped" });
+    const { id: listingId } = await create.startDraft(orgId, id, "amazon", { mode: "new", targetExternalId: null });
+    const review = await publish.review(orgId, "amazon", listingId);
+    await publish.publish(orgId, "amazon", [{ id: listingId, version: review.listings[0].version, fields: review.listings[0].changes.map((c) => c.field) }]);
+    await publish.send(listingId);
+    expect(fake.state.created).toEqual([]);
+    expect((await listings.screen(orgId, id, "amazon")).issues.map((i) => i.code)).toEqual(["no_category"]);
   });
 
   it("refuses a new page whose type has no Amazon category without asking Amazon", async () => {
@@ -459,11 +475,9 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
 
   it("makes a family's page before its members, which wait for it (spec A5, D7)", async () => {
     const family = await prisma.productFamily.create({ data: { orgId, name: `MP family ${stamp}`, variantAxis: ["colour"] }, select: { id: true } });
-    const a = await product("FAM-A", null, { familyId: family.id });
-    await product("FAM-B", null, { familyId: family.id });
+    const a = await product("FAM-A", null, { familyId: family.id, ...MAPPED });
+    await product("FAM-B", null, { familyId: family.id, ...MAPPED });
     const { id: parentId } = await create.startFamily(orgId, family.id, "amazon");
-    // The fixture's category maps to no Amazon type; a real family takes its members' (Q10).
-    await prisma.platformListing.updateMany({ where: { orgId }, data: { marketplaceType: "SCARF" } });
     const review = await publish.review(orgId, "amazon");
     expect(review.listings).toHaveLength(3);
     await publish.publish(orgId, "amazon", review.listings.map((l) => ({ id: l.id, version: l.version, fields: l.changes.map((c) => c.field) })));

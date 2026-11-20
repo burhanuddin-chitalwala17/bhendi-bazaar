@@ -17,16 +17,20 @@
 - **Incident 1:** a draft started before its product type had an Amazon category kept "no category" for ever, and
   was sent as Amazon's placeholder `PRODUCT`, which Amazon refuses for a new page. The ticket raised from it was
   filed under the type's later category (RUG), pointing the admin at a mapping with nothing wrong in it.
-- **Fix:** `listing-create.service.ts` resolves the category from the type's mapping each time a draft is shown or
-  sent (`categoryOf`, through `channelSetupService.publishing`, whether or not the shop has the channel switched on),
-  and records it on the draft (`platformListingRepository.setMarketplaceType`). A new page with no category at all
-  is refused locally as `no_category`, with no call to Amazon and no ticket: the admin's Channels worklist already
-  lists a type with nowhere to go.
+- **Fix:** a new page's category is the type's mapping as it is now, read when the draft is started, shown and
+  sent (`categoryOf` in `listing-create.service.ts`, through `channelSetupService.publishing`, whether or not the
+  shop has the channel switched on) and recorded on the draft (`platformListingRepository.setMarketplaceType`).
+  An offer keeps the page's own type. A new page with no category is refused locally as `no_category`, with no
+  call to Amazon and no ticket: the admin's Channels worklist already lists a type with nowhere to go.
+- `publishingFor` now returns a kind's not-sold row, and `publishingOf` stops there, as readiness's `categoryFor`
+  does: a kind marked not sold is no longer read as its type's catch-all category (this also corrects the category
+  a marketplace ticket is filed under).
 - **Incident 2:** `/admin/channels/[channel]` failed to load: `ChannelTypeList` handed `ResourceList` its
   `cell`/`rowKey`/`rowHref` functions from a server component. It is now a client component, and
   `tests/unit/rendering-strategy.test.ts` fails any table reached from server code without `"use client"`.
-- Tests: `tests/integration/marketplace-publish.test.ts` — a draft made before its type was mapped is sent under the
-  mapping as it is now; one with no category is refused without asking Amazon.
+- Tests: `tests/integration/marketplace-publish.test.ts`, on a test-owned type and mapping — a draft made before its
+  type was mapped is sent under the mapping as it is now; one with no category, or a kind marked not sold, is
+  refused without asking Amazon.
 
 ## 2026-11-20 — Publishing says why a listing was not sent, and does not offer one still being sent [CONTRACT]
 

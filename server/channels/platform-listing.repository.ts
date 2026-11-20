@@ -144,7 +144,7 @@ export const platformListingRepository = {
   },
 
   /** A draft's marketplace category, followed to what its type maps to now; derived, so no version bump. */
-  async setMarketplaceType(id: string, marketplaceType: string, db: Db = prisma): Promise<void> {
+  async setMarketplaceType(id: string, marketplaceType: string | null, db: Db = prisma): Promise<void> {
     await db.platformListing.updateMany({ where: { id }, data: { marketplaceType } });
   },
 
