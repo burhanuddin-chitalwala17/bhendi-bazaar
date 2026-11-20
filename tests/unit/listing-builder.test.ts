@@ -51,6 +51,8 @@ describe("rules fill what the shop never answers (spec A2)", () => {
     expect(sent(build([field("size")], sizeMap))).toEqual({ size: "40 x 12 x 35 cm" });
     expect(sent(build([field("size")], sizeMap, product({ measurements: { length: { value: 60, unit: "cm" }, width: { value: 40, unit: "cm" } } })))).toEqual({ size: "60 x 40 cm" });
     expect(sent(build([field("size")], sizeMap, product({ measurements: { length: { value: 60, unit: "cm" } } })))).toEqual({ size: "Free Size" });
+    // A garment with a size label keeps it: length x width stands in only where nothing names the size.
+    expect(sent(build([field("size")], sizeMap, product({ sizeLabel: "M", measurements: { length: { value: 100, unit: "cm" }, width: { value: 50, unit: "cm" } } })))).toEqual({ size: "M" });
   });
 
   it("gender reaches Amazon in Amazon's case, from the same rule Google reads", () => {

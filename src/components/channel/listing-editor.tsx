@@ -248,7 +248,7 @@ function SaveBar({ orgId, screen, dirty, pending }: { orgId: string; screen: Lis
   const waiting = screen.waitingFields.length;
   // A send still out is refused by publish, so it is not offered until the marketplace answers.
   const sending = screen.status.status === LISTING_STATUS.SENT || screen.status.status === LISTING_STATUS.CHECKING;
-  const status = saveBarStatus({ draft: screen.draft !== null, sending, waiting, label: screen.label }) ?? statusText(screen.status, screen.label, (iso) => ago(iso, now()));
+  const status = saveBarStatus({ draft: screen.draft !== null, sending, waiting, label: screen.label, status: screen.status.status }) ?? statusText(screen.status, screen.label, (iso) => ago(iso, now()));
   return (
     <ActionBar
       className="-mx-4 md:mx-0"

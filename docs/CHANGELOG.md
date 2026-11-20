@@ -24,7 +24,10 @@
   channelType, fieldPath, bbType; audited `channel.field-map.remove`; 404 when already gone), `fieldMapService.remove`,
   a Remove button beside each map. No confirm step, as a change has none (Q4).
 - **Size from the measurements:** the rule `size_display_from_measures` sends "60 x 40 cm" for a product with length
-  and width but no height (a rug, a prayer mat); it fell back to "Free Size" before. Products with all three are unchanged.
+  and width, no height and no size label (a rug, a prayer mat); it fell back to "Free Size" before. A product with all
+  three measures, or with a size label ("M"), is unchanged. Only Amazon `size_info.display_name` maps it by default.
+- A draft Amazon refused or has not answered shows its own status in the save bar, not "ready to create"; an
+  unanswered create reads "Amazon hasn't answered yet; the page may still appear there."
 - Tests: `tests/unit/listing-draft-wording.test.ts`, `listing-builder.test.ts` (the rule), `field-map-parts.test.tsx`
   (Remove), `tests/integration/listing-build.test.ts` (remove), `marketplace-publish.test.ts` (a recased title).
 

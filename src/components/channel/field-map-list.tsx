@@ -139,6 +139,8 @@ function RemoveMapButton({ channel, channelType, typeLabel, fieldPath, bbType }:
     successMessage: FIELD_MAP_COPY.removed(typeLabel),
     errorMessage: FIELD_MAP_COPY.removeFailed,
     onSuccess: () => router.refresh(),
+    // Already gone (another tab removed it): the screen catches up rather than failing every click.
+    onError: () => router.refresh(),
   });
   return (
     <Button variant="ghost" size="sm" className="min-h-10" pending={remove.isLoading} onClick={() => void remove.mutate().catch(() => undefined)}>
