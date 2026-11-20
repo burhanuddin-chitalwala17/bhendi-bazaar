@@ -12,6 +12,13 @@
 
 ## Entries
 
+## 2026-11-20 — Fix: CI's production audit blocked on a new advisory in Prisma's `effect`
+
+- `scripts/audit-prod.mjs` failed on GHSA-7589-6fvf-x4pw (high, ReDoS in `Schema.TemplateLiteral`) in `effect@3.20.0`,
+  which `@prisma/config@7.10.1` pins exactly. Prisma 7.10.1 is the newest 7.x, so no upgrade carries the fix.
+- `package.json` `overrides` lifts `effect` to `3.22.5`, the patched release in the same major. `prisma validate`
+  and the unit suite pass on it. Row in [DEPENDENCIES.md](DEPENDENCIES.md); drop the override once Prisma ships it.
+
 ## 2026-11-20 — Images no longer go through Vercel's optimizer: each photograph is stored at its delivery widths
 
 - **Incident:** every product image answered `402 Payment Required` from `/_next/image`. The Vercel Hobby

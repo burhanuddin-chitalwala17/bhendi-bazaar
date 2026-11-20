@@ -1,6 +1,6 @@
 # DEPENDENCIES.md — dependency registry
 
-- **Verified:** 2026-11-08
+- **Verified:** 2026-11-20
 - **Covers:** `package.json`
 
 `package.json` says *what*. This file says *why*, *who uses it*, and *when it was last checked*.
@@ -62,6 +62,7 @@
 | `tsconfig-paths` | `^3.15.0` | Resolves the `@server/*` alias for that seed run. Was present transitively and relied on by accident until PR-125; the seed reaches aliased modules through `org.handle`, and without it `db seed` dies on the first one. Needs `baseUrl` in `tsconfig.json`, which is why that field exists. |
 | `@types/*` | — | Type definitions |
 | `vite` | `^7.3.0` | Not imported — declared to satisfy the `overrides` entry that pins Vitest's transitive copy onto one patched version |
+| `effect` (override only) | `3.22.5` | Not declared or imported. `prisma`'s `@prisma/config@7.10.1` pins `effect@3.20.0`, which carries GHSA-7589-6fvf-x4pw (high, ReDoS); the override lifts it to the patched release in the same major. Drop it once a Prisma release ships `effect` ≥3.22.1 |
 
 ## Removed
 

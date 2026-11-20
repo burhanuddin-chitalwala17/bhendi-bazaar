@@ -94,6 +94,7 @@
   "overrides": {
     "vite": "$vite",
     "@radix-ui/react-dismissable-layer": "1.2.1",
-    "@radix-ui/react-focus-scope": "1.3.1"
+    "@radix-ui/react-focus-scope": "1.3.1",
+    "effect": "3.22.5"
   }
 }
