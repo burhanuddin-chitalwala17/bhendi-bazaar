@@ -20,9 +20,12 @@
   contact information, dangerous-goods declaration…) plus whatever the field maps build, whether or not that type
   declares them. One undeclared attribute fails the whole listing, and the message named none.
 - **Fix:** `conformToSchema` (`amazon.shape.ts`) drops a top-level attribute a closed schema does not declare, as it
-  already trimmed undeclared keys inside an item. `checkAgainstSchema` names an undeclared attribute instead of
-  "This listing", should one still reach it.
-- Tests: `tests/unit/listing-builder.test.ts` — an undeclared attribute is left out, and is named when checked.
+  already trimmed undeclared keys inside an item; an open schema keeps it. A mapped answer dropped this way is a
+  warning on the listing (`leftOutWarnings`, `amazon.publish.ts`: "Amazon's RUG has no "x" field, so it was left
+  out"), so nothing is left out unseen (field-maps Q6). `checkAgainstSchema` names an undeclared attribute instead of
+  "This listing", should one still reach it. Which attribute RUG refused is not known: the check's message named none.
+- Tests: `tests/unit/listing-builder.test.ts` — an undeclared attribute is left out of a closed type and kept by an
+  open one, a mapped one is warned of, and one reaching the check is named.
 
 ## 2026-11-20 — Fix: a new Amazon page follows its type's category; the admin channel page loads again
 

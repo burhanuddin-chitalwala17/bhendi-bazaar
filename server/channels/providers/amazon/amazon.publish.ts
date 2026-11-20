@@ -4,7 +4,7 @@ import { amazonRequirements } from "./amazon.requirements";
 import { FIELD_KIND, FIELD_REQUIREMENT, type CatalogueField, type CatalogueType, type CreateListingInput, type FieldKind, type ListingProblem, type PageMatch, type PublishAnswer, type PublishChanges, type PublishRef, type StatusAnswer, type TypeDefinition, type TypeMatch } from "../publish";
 import { CREATE_MODE, ISSUE_NEED, LISTING_FIELD, LISTING_FIELDS, type IssueNeed, type ListingField, type ListingIssue, type ListingRules } from "../../platform-listing.types";
 import { AMAZON_IN, spApi } from "./amazon.listings";
-import { amazonAttributes, checkAgainstSchema, conformToSchema } from "./amazon.shape";
+import { amazonAttributes, checkAgainstSchema, conformToSchema, undeclaredAttributes } from "./amazon.shape";
 
 /**
  * What Amazon lets us write on a listing and its limits (channel-listings Q5, Q12): every field,
@@ -412,7 +412,7 @@ export function amazonCreateBody(input: CreateListingInput): { productType: stri
   return {
     productType: input.marketplaceType ?? "PRODUCT",
     requirements: "LISTING",
-    // Our own plumbing keys trimmed to what each attribute's item declares, where the type's schema is held (field-maps Q9).
+    // Trimmed to what the type's schema declares, where it is held (field-maps Q9): attributes and each item's keys.
     attributes: conformToSchema(input.typeSchema, {
       ...amazonAttributes(input.typeSchema, input.fields),
       item_name: text(input.title),
@@ -441,15 +441,26 @@ export function amazonCreateBody(input: CreateListingInput): { productType: stri
   };
 }
 
+/**
+ * A mapped answer left out because the type has no such attribute: a warning, so nothing is left out unseen
+ * (field-maps Q6). The map has drifted from Amazon's type; the shop is told, and the listing still goes.
+ */
+export function leftOutWarnings(input: Pick<CreateListingInput, "typeSchema" | "fields" | "marketplaceType">): ListingIssue[] {
+  return undeclaredAttributes(input.typeSchema, input.fields.map((f) => f.path.split(".")[0])).map((name) => ({
+    ...amazonIssues([{ severity: "WARNING", code: "not_on_type", message: `Amazon's ${input.marketplaceType ?? "type"} has no "${name}" field, so it was left out.`, attributeNames: [name] }])[0],
+  }));
+}
+
 /** Create a listing, or with `preview` only ask Amazon what it would say (Q9: check-only mode first). */
 export async function amazonCreate(token: TokenSource, account: string | null, input: CreateListingInput, options: { preview: boolean }): Promise<PublishAnswer> {
   if (!account) throw new MarketplaceAuthError("rejected");
   const body = amazonCreateBody(input);
-  // A value the type's schema refuses (a unit, a word, an unknown attribute) is named before Amazon is asked
-  // (field-maps D6); what is required is Amazon's to judge, in its check-only answer (proof run, 2026-11-08).
+  // A value the type's schema refuses (a unit, a word) is named before Amazon is asked; an attribute the type lacks
+  // was left out above and is warned of (field-maps D6). What is required is Amazon's to judge, in its check-only answer.
+  const leftOut = input.mode === CREATE_MODE.NEW ? leftOutWarnings(input) : [];
   if (input.mode === CREATE_MODE.NEW) {
     const problems = checkAgainstSchema(input.typeSchema, body.attributes).filter((p) => !p.missing);
-    if (problems.length > 0) return { accepted: [], issues: problems.map((p) => schemaIssue(p.attribute, p.message)), decidesLater: false };
+    if (problems.length > 0) return { accepted: [], issues: [...problems.map((p) => schemaIssue(p.attribute, p.message)), ...leftOut], decidesLater: false };
   }
   const query: Record<string, string> = { requirements: body.requirements, includedData: "issues", ...(options.preview ? { mode: "VALIDATION_PREVIEW" } : {}) };
   try {
@@ -459,11 +470,12 @@ export async function amazonCreate(token: TokenSource, account: string | null, i
         body: JSON.stringify({ productType: body.productType, requirements: body.requirements, attributes: body.attributes }),
       }),
     );
-    const result = answerOf(answer, LISTING_FIELDS.slice());
+    const answered = answerOf(answer, LISTING_FIELDS.slice());
+    const result = { ...answered, issues: [...answered.issues, ...leftOut] };
     // Any error means not created; a preview's VALID only means "no known errors" (Q9).
     return result.issues.some((i) => i.severity === "error") ? { ...result, accepted: [] } : result;
   } catch (error) {
-    if (error instanceof MarketplaceRequestError) return { accepted: [], issues: [refused("request")], decidesLater: false };
+    if (error instanceof MarketplaceRequestError) return { accepted: [], issues: [refused("request"), ...leftOut], decidesLater: false };
     throw error;
   }
 }

@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { amazonAttributes, checkAgainstSchema, conformToSchema } from "@server/channels/providers/amazon/amazon.shape";
-import { amazonCreateBody } from "@server/channels/providers/amazon/amazon.publish";
+import { amazonCreateBody, leftOutWarnings } from "@server/channels/providers/amazon/amazon.publish";
 import { buildChannelListing, mapsFor, type BuildProduct } from "@server/listing/listing-builder";
 import { ANY_BB_TYPE, FIELD_SOURCE, GAP_REASON, type FieldMapRow } from "@server/listing/field-map.types";
 import type { CatalogueFieldRow } from "@server/listing/channel-catalogue.repository";
@@ -213,6 +213,16 @@ describe("Amazon's shape comes from the type's own schema (Q9, D6)", () => {
     const shaped = conformToSchema(schema, { ...amazonAttributes(schema, fields), not_a_handbag_field: [{ value: "x" }] });
     expect(shaped).not.toHaveProperty("not_a_handbag_field");
     expect(shaped).toHaveProperty("outer");
+  });
+
+  it("keeps an undeclared attribute where the schema is open, since only a closed type refuses one", () => {
+    expect(conformToSchema({ ...schema, additionalProperties: true }, { not_a_handbag_field: [{ value: "x" }] })).toHaveProperty("not_a_handbag_field");
+  });
+
+  it("warns the shop of a mapped answer left out because the type has no such attribute", () => {
+    const warnings = leftOutWarnings({ typeSchema: schema, marketplaceType: "HANDBAG", fields: [...fields, { path: "not_a_handbag_field.part", value: "x" }] });
+    expect(warnings.map((w) => [w.severity, w.attribute])).toEqual([["warning", "not_a_handbag_field"]]);
+    expect(warnings[0].message).toBe('Amazon\'s HANDBAG has no "not_a_handbag_field" field, so it was left out.');
   });
 
   it("names the attribute the type does not declare, rather than 'This listing'", () => {

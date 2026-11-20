@@ -93,14 +93,14 @@ export function amazonAttributes(schema: unknown, fields: readonly BuiltField[])
 }
 
 /**
- * Each attribute's items keep only the keys their schema declares where it closes the item
- * (`additionalProperties: false`): Amazon's manufacturer contact takes `value` alone, where our text
- * shape adds a language and a marketplace. Without a schema, unchanged.
+ * Only what the type's schema declares, where it is closed (`additionalProperties: false`): an attribute the
+ * type does not have is left out, and an item keeps only its declared keys (Amazon's manufacturer contact takes
+ * `value` alone, where our text shape adds a language and a marketplace). Without a schema, unchanged.
  */
 export function conformToSchema(schema: unknown, attributes: Json): Json {
   const properties = obj(obj(schema).properties);
   if (Object.keys(properties).length === 0) return attributes;
-  // A closed type refuses the whole listing for one attribute it does not have (a home type has no HSN line).
+  // A closed type refuses the whole listing for one attribute it does not have.
   const closed = obj(schema).additionalProperties === false;
   const out: Json = {};
   for (const [name, value] of Object.entries(attributes)) {
@@ -114,6 +114,13 @@ export function conformToSchema(schema: unknown, attributes: Json): Json {
     out[name] = value.map((item) => Object.fromEntries(Object.entries(obj(item)).filter(([k]) => k in declared)));
   }
   return out;
+}
+
+/** The attributes among these a closed type does not declare, which `conformToSchema` leaves out. */
+export function undeclaredAttributes(schema: unknown, names: readonly string[]): string[] {
+  const properties = obj(obj(schema).properties);
+  if (Object.keys(properties).length === 0 || obj(schema).additionalProperties !== false) return [];
+  return [...new Set(names.filter((name) => !(name in properties)))];
 }
 
 /** A problem the schema finds, worded for the shop: the attribute and what it lacks. */
@@ -158,7 +165,7 @@ export function checkAgainstSchema(schema: unknown, attributes: Json): SchemaPro
     if (seen.has(key)) continue;
     seen.add(key);
     const title = attribute ? (obj(obj(obj(schema).properties)[attribute]).title as string | undefined) ?? attribute : "This listing";
-    const message = missing ? `Amazon needs ${title} for this type.` : extra ? `Amazon has no ${extra} for this type.` : `Amazon won't take ${title} as it is (${e.message ?? "not allowed"}).`;
+    const message = missing ? `Amazon needs ${title} for this type.` : extra ? `Amazon has no "${extra}" field for this type.` : `Amazon won't take ${title} as it is (${e.message ?? "not allowed"}).`;
     out.push({ attribute, missing: !!missing, message });
   }
   return out;
