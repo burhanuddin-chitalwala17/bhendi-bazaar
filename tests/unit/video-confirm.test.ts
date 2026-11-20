@@ -16,6 +16,7 @@ const store = {
   getObject: vi.fn(),
   presignUpload: vi.fn(),
   deleteObject: vi.fn(),
+  ensureWidthCopies: vi.fn(),
   publicUrlFor: (key: string) => `https://img.test/${key}`,
 };
 const tx = { marker: "the transaction client" };

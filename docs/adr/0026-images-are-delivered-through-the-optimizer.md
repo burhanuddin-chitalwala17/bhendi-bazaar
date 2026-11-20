@@ -1,7 +1,7 @@
 # ADR-0026: Images are stored small and delivered through the optimizer
 
 - **Date:** 2026-09-16
-- **Status:** Accepted (D3, D4 amended by [ADR-0027](0027-zoomable-surfaces-declare-the-size-they-zoom-to.md); D5 amended by [media-library](../specs/media-library/) D2 — the confirm step reads the stored object)
+- **Status:** Accepted (D3, D4 amended by [ADR-0027](0027-zoomable-surfaces-declare-the-size-they-zoom-to.md); D5 amended by [media-library](../specs/media-library/) D2 — the confirm step reads the stored object; delivery through the optimizer and D6 superseded by [ADR-0075](0075-photographs-are-stored-at-each-delivery-width-and-served-without-an-optimizer.md))
 - **Context:** The Vercel account exhausted the free tier's 10 GB monthly Blob **Data Transfer** allowance before launch. On that tier the allowance is not billed past its limit, it is withdrawn — so the failure mode is every product image on the storefront going blank, which is the same hazard [ADR-0017](0017-video-is-embedded-not-hosted.md) named when it refused to host video in Blob. That ADR governed what we put *into* Blob. Nothing governed how it came back out.
 
   Three independent causes, none of which changed how anything looked:

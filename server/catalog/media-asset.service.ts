@@ -3,7 +3,7 @@ import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@serv
 import { MediaAssetKind, MediaAssetSource, MediaAssetState, type Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
 import { enqueue } from "@server/shared/jobs";
-import { deleteObject, getObject, headObject, presignUpload, publicBaseUrl, publicUrlFor, putObject } from "@server/catalog/object-store";
+import { deleteObject, ensureWidthCopies, getObject, headObject, presignUpload, publicBaseUrl, publicUrlFor, putObject } from "@server/catalog/object-store";
 import { sha256Hex } from "@server/shared/hash";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
@@ -162,6 +162,10 @@ export const mediaAssetService = {
       width = meta.width;
       height = meta.height;
     }
+
+    // The browser PUT the original only. Before the record is usable, the copies the image loader
+    // will ask for must exist, or the first page to show it renders a broken image (ADR-0075).
+    await ensureWidthCopies(asset.objectKey);
 
     const confirmed = await mediaAssetRepository.confirm(asset.id, {
       width,

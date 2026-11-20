@@ -80,6 +80,9 @@ export function ReviewPhotoPicker({
               fill
               // An honest slot: a 72px thumbnail, never a zoom surface (ADR-0026).
               sizes="72px"
+              // Its width copies are written when the review is submitted (ADR-0075), so until then
+              // only the original exists.
+              unoptimized
               className="rounded-card object-cover"
             />
             {/* The target and the badge are deliberately different sizes. ADR-0015 wants

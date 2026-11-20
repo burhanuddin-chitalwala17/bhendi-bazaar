@@ -38,8 +38,8 @@ function storeHost(): string[] {
   try {
     return [`https://${new URL(base).hostname}`];
   } catch {
-    // A malformed R2_PUBLIC_BASE_URL already breaks image rendering at the optimizer
-    // (next.config.ts reads the same variable); it must not also break every response.
+    // A malformed R2_PUBLIC_BASE_URL already breaks image delivery (next.config.ts reads
+    // the same variable); it must not also break every response.
     return [];
   }
 }
@@ -49,7 +49,15 @@ const MARKETPLACE_IMAGE_HOSTS = ["https://m.media-amazon.com", "https://*.ssl-im
 
 /** Hosts `next/image` is allowed to render from — kept beside `next.config.ts`'s list. */
 function imageHosts(): string[] {
-  return ["https://i.ytimg.com", "https://placehold.co", "https://shiprocket.in", ...MARKETPLACE_IMAGE_HOSTS, ...storeHost()];
+  // Google sign-in avatars: the browser fetches them itself now the optimizer is gone (ADR-0075).
+  return [
+    "https://i.ytimg.com",
+    "https://placehold.co",
+    "https://shiprocket.in",
+    "https://lh3.googleusercontent.com",
+    ...MARKETPLACE_IMAGE_HOSTS,
+    ...storeHost(),
+  ];
 }
 
 /**

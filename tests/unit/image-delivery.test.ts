@@ -14,7 +14,7 @@ import { join } from "node:path";
 
 /** A raw <img> goes straight to Blob at full size: no resize, no format negotiation. */
 const RAW_IMG = /<img[\s>]/g;
-/** `unoptimized` hands the original to the browser, whatever `sizes` claims. */
+/** `unoptimized` skips the loader and hands the original to the browser, whatever `sizes` claims. */
 const BYPASS = /\bunoptimized\b/g;
 
 const RULES = [
@@ -26,7 +26,7 @@ const RULES = [
   {
     name: "optimization bypasses",
     pattern: BYPASS,
-    fix: "drop `unoptimized` — it serves the full original from Blob",
+    fix: "drop `unoptimized` — it skips the loader and serves the full original (ADR-0075)",
   },
 ] as const;
 
@@ -66,6 +66,11 @@ const ALLOWLIST: Record<string, { rules: readonly string[]; reason: string }> = 
     rules: ["optimization bypasses"],
     reason:
       "A marketplace's own listing picture, hotlinked from Amazon or Flipkart (channel-import Q14), shown at 48px in a row and 96px in the details panel. Not our asset to optimize; the bypass is conditional, and the product's own picture through the same component is optimized.",
+  },
+  "src/components/product/review-photo-picker.tsx": {
+    rules: ["optimization bypasses"],
+    reason:
+      "The reviewer's own just-uploaded photographs, at 72px while the review is written. Their width copies are made when the review is submitted (ADR-0075), so before that only the downscaled original exists to show.",
   },
   "src/components/product/youtube-poster.tsx": {
     rules: ["optimization bypasses"],
@@ -142,13 +147,8 @@ describe("every filled Image states the size of its slot", () => {
   });
 });
 
-// The 4-hour default would otherwise apply silently. Blob paths are timestamped, so a
-// URL's bytes never change and a long TTL can never serve something stale.
-describe("the optimizer cache TTL is stated, not defaulted", () => {
-  it("sets minimumCacheTTL in next.config.ts", () => {
-    expect(readFileSync("next.config.ts", "utf8")).toMatch(/minimumCacheTTL:\s*\d+/);
-  });
-});
+// The optimizer and its cache TTL are gone: every photograph is stored at each delivery width and
+// the custom loader picks one (ADR-0075). tests/unit/image-widths.test.ts pins that config.
 
 // The stored ceiling and the zoom cap are one decision in two numbers: a surface that
 // magnifies 3x needs three times its box in real pixels, and a zoom raised without

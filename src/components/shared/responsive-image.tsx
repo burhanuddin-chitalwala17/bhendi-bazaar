@@ -21,7 +21,7 @@ const percent = (point: FocusPoint) => `${Math.round(point.x * 1000) / 10}% ${Ma
 const fillOf = (side: ResponsiveImageSide) => (side.fit === IMAGE_FIT.CONTAIN && side.fill ? side.fill : "transparent");
 
 /**
- * Every slot picture, phone and desktop (image-slots trd D6): two optimizer `srcset`s in one
+ * Every slot picture, phone and desktop (image-slots trd D6): two loader `srcset`s in one
  * `<picture>`, so a phone downloads only the phone file. One `<img>` serves both sources, so the
  * framing that differs by form factor travels as custom properties the `md:` classes switch between.
  * Fills its positioned parent; the box's shape is the caller's.
@@ -63,7 +63,7 @@ export function ResponsiveImage({
   return (
     <picture>
       <source media={DESKTOP_MEDIA} srcSet={desktop.srcSet} sizes={desktop.sizes} />
-      {/* The optimizer's own srcset and sizes, via getImageProps (ADR-0026). */}
+      {/* The loader's own srcset and sizes, via getImageProps (ADR-0075). */}
       <img {...phone} alt={image.alt} style={{ ...phone.style, ...framing }} className={classes} />
     </picture>
   );

@@ -7,13 +7,15 @@
  * is what made the move off Vercel Blob a ten-file change ([ADR-0028]).
  *
  * Reads never come through here. A stored object is public and is fetched straight from
- * `R2_PUBLIC_BASE_URL` by the browser or the image optimizer, which is the whole reason
+ * `R2_PUBLIC_BASE_URL` by the browser, at the width the image loader picked, which is the whole reason
  * R2 has no egress meter to exhaust.
  */
 
 import { AwsClient } from "aws4fetch";
 import { DomainError } from "@server/shared/domain-error";
 import { OUTBOUND_TIMEOUT_MS, transferTimeoutFor } from "@server/shared/deadline";
+import { IMAGE_QUALITY } from "@server/catalog/media";
+import { DELIVERY_WIDTHS, hasWidthCopies, widthPathFor } from "@server/catalog/image-widths";
 
 function required(name: string): string {
   const value = process.env[name];
@@ -77,12 +79,53 @@ function objectUrl(pathname: string): string {
   return `${client().endpoint}/${encoded}`;
 }
 
-/** Store bytes and return the public URL they are now reachable at. */
+/**
+ * Store bytes and return the public URL they are now reachable at. A photograph gets its width
+ * copies in the same call, so no caller can store one the image loader cannot serve (ADR-0075).
+ */
 export async function putObject(
   pathname: string,
   body: Buffer,
   contentType: string
 ): Promise<string> {
+  await putBytes(pathname, body, contentType);
+  if (contentType.startsWith("image/") && hasWidthCopies(pathname)) {
+    await writeWidthCopies(pathname, body);
+  }
+  return publicUrlFor(pathname);
+}
+
+/** The copies at every DELIVERY_WIDTH. Never enlarged: a narrow original's copies are its own size. */
+async function writeWidthCopies(pathname: string, original: Buffer): Promise<void> {
+  // Loaded here rather than at the top: sharp is a native binary, and the route handlers that only
+  // presign or delete should not pay for it.
+  const { default: sharp } = await import("sharp");
+  await Promise.all(
+    DELIVERY_WIDTHS.map(async (width) => {
+      const copy = await sharp(original, { animated: true })
+        .rotate()
+        .resize({ width, withoutEnlargement: true })
+        .webp({ quality: Math.round(IMAGE_QUALITY * 100) })
+        .toBuffer();
+      await putBytes(widthPathFor(pathname, width), copy, "image/webp");
+    }),
+  );
+}
+
+/**
+ * Make sure a stored photograph has its width copies, writing them from the original when any is
+ * missing. For bytes that reached the store without passing through `putObject` — a browser's
+ * presigned PUT — and for the backfill. Returns whether anything was written.
+ */
+export async function ensureWidthCopies(pathname: string): Promise<boolean> {
+  if (!hasWidthCopies(pathname)) return false;
+  const present = await Promise.all(DELIVERY_WIDTHS.map((width) => headObject(widthPathFor(pathname, width))));
+  if (present.every(Boolean)) return false;
+  await writeWidthCopies(pathname, await getObject(pathname));
+  return true;
+}
+
+async function putBytes(pathname: string, body: Buffer, contentType: string): Promise<void> {
   const response = await client().client.fetch(objectUrl(pathname), {
     method: "PUT",
     signal: AbortSignal.timeout(transferTimeoutFor(body.byteLength)),
@@ -102,10 +145,8 @@ export async function putObject(
   if (!response.ok) {
     throw new Error(`Object store rejected ${pathname}: ${response.status} ${await response.text()}`);
   }
-  return publicUrlFor(pathname);
 }
 
-/** Remove an object. A URL that is not ours is ignored rather than guessed at. */
 /** What the store holds at a pathname, or null when nothing does. Used to confirm an upload. */
 export async function headObject(
   pathname: string
@@ -139,9 +180,15 @@ export async function getObject(
   return Buffer.from(await response.arrayBuffer());
 }
 
+/** Remove an object, and a photograph's width copies with it. A URL that is not ours is ignored. */
 export async function deleteObject(url: string): Promise<void> {
   const pathname = pathnameFor(url);
   if (!pathname) return;
+  const copies = hasWidthCopies(pathname) ? DELIVERY_WIDTHS.map((width) => widthPathFor(pathname, width)) : [];
+  await Promise.all([pathname, ...copies].map(deletePath));
+}
+
+async function deletePath(pathname: string): Promise<void> {
   const response = await client().client.fetch(objectUrl(pathname), {
     method: "DELETE",
     signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS.quick),
@@ -150,6 +197,23 @@ export async function deleteObject(url: string): Promise<void> {
   if (!response.ok && response.status !== 404) {
     throw new Error(`Could not delete ${pathname}: ${response.status}`);
   }
+}
+
+/** One page of the bucket's keys, for the width-copy backfill. `next` is null on the last page. */
+export async function listObjectKeys(continuation?: string): Promise<{ keys: string[]; next: string | null }> {
+  const query = new URLSearchParams({ "list-type": "2", ...(continuation ? { "continuation-token": continuation } : {}) });
+  const response = await client().client.fetch(`${client().endpoint}?${query}`, {
+    signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS.quick),
+  });
+  if (!response.ok) throw new Error(`Could not list the bucket: ${response.status}`);
+  const xml = await response.text();
+  const unescape = (value: string) =>
+    value.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+  const keys = [...xml.matchAll(/<Key>([^<]*)<\/Key>/g)].map((match) => unescape(match[1]));
+  const next = /<IsTruncated>true<\/IsTruncated>/.test(xml)
+    ? unescape(/<NextContinuationToken>([^<]*)<\/NextContinuationToken>/.exec(xml)?.[1] ?? "") || null
+    : null;
+  return { keys, next };
 }
 
 /** How long a browser has to start an upload it asked permission for. */

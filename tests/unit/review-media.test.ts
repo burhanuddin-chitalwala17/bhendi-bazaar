@@ -29,6 +29,8 @@ const repository = {
   getReviewById: vi.fn(),
 };
 const deleted: string[] = [];
+const sized: string[] = [];
+let sizingFails = false;
 
 vi.mock("@server/catalog/review.repository", () => ({ reviewRepository: repository }));
 vi.mock("@server/catalog/product.read.repository", () => ({
@@ -58,6 +60,11 @@ vi.mock("@server/catalog/object-store", async () => {
     deleteObject: async (url: string) => {
       deleted.push(url);
     },
+    ensureWidthCopies: async (pathname: string) => {
+      if (sizingFails) throw new Error("store down");
+      sized.push(pathname);
+      return true;
+    },
   };
 });
 
@@ -71,6 +78,8 @@ const { DomainError } = await import("@server/shared/domain-error");
 beforeEach(() => {
   vi.clearAllMocks();
   deleted.length = 0;
+  sized.length = 0;
+  sizingFails = false;
   repository.create.mockResolvedValue({
     id: "rev-1",
     userId: "u1",
@@ -140,6 +149,18 @@ describe("what the service does with media", () => {
       { kind: "IMAGE", ref: own("a.webp") },
       { kind: "IMAGE", ref: own("b.webp") },
     ]);
+  });
+
+  it("writes each cited photograph's width copies, which the browser's PUT did not (ADR-0075)", async () => {
+    await reviewService.create("u1", "p1", { rating: 5, photos: [own("a.webp"), own("b.webp")] });
+    expect(sized).toHaveLength(2);
+    expect(sized.every((pathname) => pathname.startsWith("reviews/u1/"))).toBe(true);
+  });
+
+  it("tells the reviewer to re-add a photo whose copies could not be made, and saves nothing", async () => {
+    sizingFails = true;
+    await expect(reviewService.create("u1", "p1", { rating: 5, photos: [own("a.webp")] })).rejects.toBeInstanceOf(DomainError);
+    expect(repository.create).not.toHaveBeenCalled();
   });
 
   it("refuses a photograph on a host that is not ours", async () => {

@@ -17,7 +17,7 @@ export function readFileDimensions(file: File): Promise<{ width: number; height:
   });
 }
 
-/** The optimizer's copy of a stored picture at this width: same origin, so a canvas may read it. */
+/** The loader's copy of a stored picture at this width: the smallest file that will do for a sample. */
 export const optimizedUrl = (src: string, width: number) =>
   getImageProps({ src, alt: "", width, height: width }).props.src;
 
@@ -60,6 +60,8 @@ export function sampleEdgeColour(src: string): Promise<string | null> {
       }
     };
     image.onerror = () => resolve(null);
+    // The copy is on the bucket's domain now, not ours (ADR-0075): without CORS the canvas is tainted.
+    image.crossOrigin = "anonymous";
     image.src = optimizedUrl(src, 64);
   });
 }

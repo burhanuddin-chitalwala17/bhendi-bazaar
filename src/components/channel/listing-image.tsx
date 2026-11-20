@@ -1,8 +1,8 @@
 import Image from "next/image";
 
 /**
- * A listing's picture straight from the marketplace (channel-import Q14), theirs to host so not run
- * through our optimizer; or the product's own, which is. No picture, or not over https, is the initial.
+ * A listing's picture straight from the marketplace (channel-import Q14), theirs to host so served as it
+ * is; or the product's own, at its stored width (ADR-0075). No picture, or not over https, is the initial.
  */
 export function ListingImage({
   url,

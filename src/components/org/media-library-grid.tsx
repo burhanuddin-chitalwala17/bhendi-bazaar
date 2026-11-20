@@ -394,7 +394,7 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
 }
 
 /**
- * A photo through the optimizer; a video as its poster, marked so it reads as one. A hosted video
+ * A photo at its stored width (ADR-0075); a video as its poster, marked so it reads as one. A hosted video
  * has a poster only once the worker has made it (video-hosting D7); before that, and after a
  * failure, the tile is a film mark and the badge says which.
  */

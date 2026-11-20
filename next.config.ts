@@ -42,18 +42,20 @@ const nextConfig: NextConfig = {
       { source: "/sell", destination: "/business", permanent: true },
     ];
   },
+  // The loader runs in the browser, which has no other way to know which host is ours.
+  env: { IMAGE_STORE_BASE_URL: (process.env.R2_PUBLIC_BASE_URL ?? "").replace(/\/+$/, "") },
   images: {
-    // A year, matching the `immutable, max-age=31536000` that object-store.ts writes.
-    // buildImagePath timestamps every stored path, so a URL's bytes never change and
-    // there is nothing a shorter TTL could protect against — while a shorter one costs
-    // real money: a transformation is billed per cache MISS, and Hobby includes only
-    // 5,000 a month. At 30 days the whole catalogue re-transformed monthly for nothing.
-    minimumCacheTTL: 31536000,
+    // Not Vercel's optimizer: it bills per transformation and answered 402 once the Hobby
+    // quota ran out. Photographs are stored at each width instead, and this picks one (ADR-0075).
+    loader: "custom",
+    loaderFile: "./src/lib/image/loader.ts",
+    // The widths a srcset may name: the stored copies, then the 2048 original (DELIVERY_WIDTHS,
+    // MAX_IMAGE_EDGE). A fixed-width image picks from the same list.
+    deviceSizes: [320, 800, 1200, 2048],
+    imageSizes: [],
     remotePatterns: [
-      // The object store, read from the environment rather than pinned here: the bucket
-      // is r2.dev while developing and a custom domain in production (ADR-0028), and a
-      // host missing from this list makes every image 404 at the optimizer with no
-      // error anywhere.
+      // Inert under the custom loader; kept as the list of hosts we render, which the CSP's
+      // img-src mirrors (src/lib/security-headers.ts).
       ...(process.env.R2_PUBLIC_BASE_URL
         ? [
             {

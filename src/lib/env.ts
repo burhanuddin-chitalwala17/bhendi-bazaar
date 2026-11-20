@@ -33,8 +33,8 @@ const requiredEnvVars = [
   "R2_BUCKET",
   "R2_ACCESS_KEY_ID",
   "R2_SECRET_ACCESS_KEY",
-  // Read by next.config.ts at build time for `remotePatterns` as well as at runtime; a
-  // wrong value 404s every image at the optimizer with nothing in the logs.
+  // Read by next.config.ts at build time, which inlines it for the image loader, as well as at
+  // runtime; a wrong value serves every photograph at full size with nothing in the logs.
   "R2_PUBLIC_BASE_URL",
   // KV_REST_API_URL / KV_REST_API_TOKEN are not listed: assertRateLimitConfig refuses a
   // deployed environment without them, which is the stronger check.

@@ -22,6 +22,7 @@ const store = {
   headObject: vi.fn(),
   getObject: vi.fn(),
   deleteObject: vi.fn(),
+  ensureWidthCopies: vi.fn(),
   publicUrlFor: (key: string) => `https://img.test/${key}`,
 };
 vi.mock("@server/catalog/media-asset.repository", () => ({ mediaAssetRepository: repo }));
@@ -94,6 +95,20 @@ describe("confirmUpload", () => {
     expect(result).toEqual({ assetId: "a1", ref: pending.ref, state: "READY", alreadyReady: false });
     expect(repo.confirm).toHaveBeenCalledWith("a1", { width: 800, height: 600, bytes: 1234, mimeType: "image/webp" });
     expect(store.getObject).not.toHaveBeenCalled();
+  });
+
+  it("writes the width copies before the record becomes usable (ADR-0075)", async () => {
+    repo.findById.mockResolvedValue(pending);
+    await mediaAssetService.confirmUpload({ assetId: "a1", orgId: "org-1", width: 800, height: 600 });
+    expect(store.ensureWidthCopies).toHaveBeenCalledWith(pending.objectKey);
+    expect(store.ensureWidthCopies.mock.invocationCallOrder[0]).toBeLessThan(repo.confirm.mock.invocationCallOrder[0]);
+  });
+
+  it("leaves the record pending when the copies could not be written", async () => {
+    repo.findById.mockResolvedValue(pending);
+    store.ensureWidthCopies.mockRejectedValueOnce(new Error("store down"));
+    await expect(mediaAssetService.confirmUpload({ assetId: "a1", orgId: "org-1", width: 800, height: 600 })).rejects.toThrow(/store down/);
+    expect(repo.confirm).not.toHaveBeenCalled();
   });
 
   it("reads the dimensions from the object when the browser could not", async () => {

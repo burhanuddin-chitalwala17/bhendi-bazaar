@@ -33,7 +33,8 @@ npm run dev                 # http://localhost:3000
 | `APP_ENV` | ✅ | The environment, named by us: `local`, `preview` or `production` ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) D2). **Set it in Vercel for both Preview and Production** — a production build without it refuses to guess, and the admin dashboard's worker card shows "status unavailable" until it is set (it took the whole dashboard down once, PR-158). Defaults to `local` only outside a production build. The worker keys its heartbeat on it. `NODE_ENV` is never set by us: Vercel and Next.js set it to `production` for every build, which is why `APP_ENV` is required there |
 | `WORKER_VERSION` | ○ | What the worker reports as its version in its heartbeat — the image tag once it is deployed, `dev` locally |
 | `CRON_SECRET` | ➖ | **Read by nothing since PR-210.** Reconciliation moved onto the worker, which calls the domain directly and needs no bearer token; the route it guarded is gone. Safe to remove from the deployment |
-| `R2_PUBLIC_BASE_URL` | ✅ | Where a stored image is read from — a custom domain on the Cloudflare zone for each bucket, the production one and `dev.bhendi-bazaar.com` for the development bucket. An `r2.dev` URL also works and is the fallback before a domain is attached, but it can serve no image transformations, which is what background removal is (`IMAGE_SEGMENT_PROVIDER`). **Also feeds `next.config.ts` `remotePatterns` at build time**, so a wrong value 404s every image at the optimizer with no error anywhere |
+| `R2_PUBLIC_BASE_URL` | ✅ | Where a stored image is read from — a custom domain on the Cloudflare zone for each bucket, the production one and `dev.bhendi-bazaar.com` for the development bucket. An `r2.dev` URL also works and is the fallback before a domain is attached, but it can serve no image transformations, which is what background removal is (`IMAGE_SEGMENT_PROVIDER`). **Also read by `next.config.ts` at build time**, which inlines it as `IMAGE_STORE_BASE_URL` for the image loader, so a wrong value serves every photograph at full size with no error anywhere |
+| `IMAGE_STORE_BASE_URL` | — | **Never set by hand.** `next.config.ts` derives it from `R2_PUBLIC_BASE_URL` and inlines it into the browser bundle, so the image loader knows which images have width copies ([ADR-0075](adr/0075-photographs-are-stored-at-each-delivery-width-and-served-without-an-optimizer.md)) |
 | `R2_ENDPOINT` | ✅ | The S3 API endpoint, `https://<account-id>.r2.cloudflarestorage.com`. Not public — never used to build an image URL |
 | `FFMPEG_PATH` / `FFPROBE_PATH` | — | Worker only, optional. Where the transcoder's binaries are when they are not on `PATH` ([ADR-0039](adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md)); the image installs ffmpeg as an OS package, so neither is set there |
 | `R2_BUCKET` | ✅ | Bucket name |
@@ -158,7 +159,7 @@ Until this is done, `r2.dev` works. It is rate-limited and Cloudflare says not t
 
 Every origin that uploads must be listed — add Vercel preview URLs if you upload from them. Only `PUT` is needed: reads are plain public GETs and are not a CORS matter.
 
-**5. Set the five variables** locally and in Vercel (see the table above), then redeploy. `R2_PUBLIC_BASE_URL` is read by `next.config.ts` **at build time** for `remotePatterns`, so a change to it needs a new build, not just a restart.
+**5. Set the five variables** locally and in Vercel (see the table above), then redeploy. `R2_PUBLIC_BASE_URL` is read by `next.config.ts` **at build time** for the image loader, so a change to it needs a new build, not just a restart.
 
 **6. Smoke-test before trusting it.** Upload one image through the admin UI. That exercises the whole path — presign, PUT, public URL, optimizer — and is where a wrong endpoint or a missing CORS rule shows up. Then check the image renders on the storefront, which proves `remotePatterns` too.
 
@@ -558,7 +559,7 @@ Who owns what. Verified 2026-08-05 from `.vercel/project.json`, `.env`, and whic
 | Database | **Prisma Postgres** (`db.prisma.io`), **Mumbai region** | Provisioned through the Vercel marketplace integration. **Not** Vercel Postgres/Neon — a different dashboard, different connection limits, and its own backup story. Anything that talks to it constantly — the worker of [worker-foundation](specs/worker-foundation/) — is placed in the same region |
 | Connection pooling | **Prisma Accelerate** — provisioned, **not in use** | See below |
 | Redis (rate limiting) | **Upstash** | Required in preview and production ([Rate limiting](#rate-limiting)); provisioned through the Vercel integration, hence the `KV_REST_API_*` fallback names |
-| File storage | **Cloudflare R2** | `R2_*` variables; `R2_PUBLIC_BASE_URL` is read by `next.config.ts` at build time for `remotePatterns`. No egress meter ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)) |
+| File storage | **Cloudflare R2** | `R2_*` variables; `R2_PUBLIC_BASE_URL` is read by `next.config.ts` at build time for the image loader. No egress meter; photographs are stored at each delivery width, so there is no optimizer meter either ([ADR-0075](adr/0075-photographs-are-stored-at-each-delivery-width-and-served-without-an-optimizer.md)) ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)) |
 | Payments | **Razorpay** | Test keys locally (`rzp_test_*`) |
 | Email | **Resend** | |
 | Shipping | **Shiprocket** | Rates live; booking see [ARCHITECTURE.md](ARCHITECTURE.md) |

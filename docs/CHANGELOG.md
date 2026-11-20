@@ -12,6 +12,26 @@
 
 ## Entries
 
+## 2026-11-20 — Images no longer go through Vercel's optimizer: each photograph is stored at its delivery widths
+
+- **Incident:** every product image answered `402 Payment Required` from `/_next/image`. The Vercel Hobby
+  image-optimization quota (5,000 transformations a month) was spent, and on the free tier it switches images off.
+- **Fix ([ADR-0075](adr/0075-photographs-are-stored-at-each-delivery-width-and-served-without-an-optimizer.md)):**
+  every raster photograph is also stored as `.w320`, `.w800` and `.w1200` WebP copies beside its original
+  (`server/catalog/image-widths.ts`). A custom `next/image` loader (`src/lib/image/loader.ts`) points the
+  browser at the nearest copy in R2. `sizes` still decides which one; nothing is transformed on request.
+- The store writes the copies, so no caller can forget them: `putObject` for server writes, `confirmUpload`
+  for the library and wizards, and review submit/edit for review photos (`ensureWidthCopies`). `deleteObject`
+  removes them with the original.
+- **Deploy order:** run `npm run images:backfill-widths -- --write` against production **before** this
+  deploys, and **again right after**, to catch anything the old code stored in between. A photograph
+  without copies renders broken under the new loader.
+- R2's CORS rules must allow GET from our origin: the fit-it-in edge sampler reads a copy into a canvas.
+- No TRD: an incident fix for a production outage, done at the owner's direction (2026-11-20). ADR-0075 records the design.
+- CSP `img-src` gains `lh3.googleusercontent.com`: Google avatars are now fetched by the browser, not the optimizer.
+- No migration, no contract change. Tests: `tests/unit/image-widths.test.ts`, plus confirm and review cases;
+  each new hook mutation-checked (removing it fails its test).
+
 ## 2026-11-14 — /business partner side: packages from ₹899
 
 - "Packages from ₹899" beside the partner side's first ask and in its close; the cost question answers

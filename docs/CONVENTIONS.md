@@ -1,6 +1,6 @@
 # Conventions index
 
-- **Verified:** 2026-11-13
+- **Verified:** 2026-11-20
 - **Covers:** `docs/adr/*.md`, `docs/specs/*/`
 
 The canonical index of *how we work*, moved out of the root `CLAUDE.md` on 2026-11-01 so it is read when
@@ -48,7 +48,8 @@ nothing more; detail lives in the ADR so it has one wording ([ADR-0009](adr/0009
 - **A storefront theme is a token set and a section composition declared in code** — one section library, three palettes each, the shop stores keys only, every palette contrast-tested. [ADR-0064](adr/0064-a-storefront-theme-is-a-token-set-and-a-section-composition-declared-in-code.md)
 - **A theme never sets proportion; a shop picks its heading face from a closed list** — sizes, spacing and widths are the platform's in every theme; a font key repoints the display face only. [ADR-0074](adr/0074-a-shop-chooses-its-storefronts-heading-face-from-a-closed-list.md)
 - **Images live in Cloudflare R2, behind one seam.** [ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)
-- **Images are stored small and delivered through the optimizer.** [ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)
+- **Images are stored small; every `<Image>` states `sizes`.** [ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)
+- **Photographs are stored at each delivery width and served by our loader, not an optimizer** — the object store writes and deletes the copies; a browser upload gets them at confirm. [ADR-0075](adr/0075-photographs-are-stored-at-each-delivery-width-and-served-without-an-optimizer.md)
 - **A zoomable surface declares the size it zooms to; the stored ceiling clears it.** [ADR-0027](adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md)
 - **Video is stored in our own object store and transcoded by the worker; a YouTube link stays an embed.** [ADR-0039](adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md)
 - **Every response carries a nonce-based CSP** — `script-src` never gains `'unsafe-inline'`. [ADR-0035](adr/0035-every-response-carries-a-nonce-based-csp.md)

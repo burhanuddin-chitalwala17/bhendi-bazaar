@@ -34,7 +34,7 @@ const stop = (event: React.SyntheticEvent) => event.stopPropagation();
 /**
  * A hosted video as its poster with a play control, becoming a native `<video>` only on a tap
  * (ADR-0039 decision 3; ADR-0017 decision 3, kept). Nothing here comes from another host: the
- * poster is our image through the optimizer, the file is our rendition, full screen is the
+ * poster is our image at its stored width, the file is our rendition, full screen is the
  * browser's own control. The rendition is picked by viewport once and can be switched by hand;
  * a switch keeps the viewer's place.
  */

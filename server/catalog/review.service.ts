@@ -18,7 +18,7 @@ import {
   type ProductRating,
 } from "@server/catalog/review-rating";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
-import { deleteObject, isOwnObjectUrl, pathnameFor } from "@server/catalog/object-store";
+import { deleteObject, ensureWidthCopies, isOwnObjectUrl, pathnameFor } from "@server/catalog/object-store";
 import { MAX_REVIEW_PHOTOS } from "@server/catalog/media";
 import type {
   ReviewListFilters,
@@ -93,6 +93,26 @@ function mediaFrom(input: ReviewSubmission, userId: string): ReviewMediaDto[] {
     }
   }
   return photos.map((ref) => ({ kind: "IMAGE", ref }));
+}
+
+/**
+ * The same, once each photograph has the width copies the page will ask for. A review photo is
+ * PUT by the browser with no confirm step, so citing it is the first moment the server can
+ * make them (ADR-0075). Idempotent: a photo kept across an edit already has them.
+ */
+async function sizedMediaFrom(input: ReviewSubmission, userId: string): Promise<ReviewMediaDto[]> {
+  const media = mediaFrom(input, userId);
+  try {
+    await Promise.all(
+      media.map(({ ref }) => {
+        const pathname = pathnameFor(ref);
+        return pathname ? ensureWidthCopies(pathname) : null;
+      }),
+    );
+  } catch (cause) {
+    throw new DomainError("One of your photos didn't finish uploading. Remove it and add it again.", { cause });
+  }
+  return media;
 }
 
 /**
@@ -239,7 +259,7 @@ export class ReviewService {
       title: input.title?.trim() || null,
       comment: input.comment?.trim() || null,
       isVerified: purchased.has(productId),
-      media: mediaFrom(input, userId),
+      media: await sizedMediaFrom(input, userId),
     });
 
     return toDto(row, userId);
@@ -257,7 +277,7 @@ export class ReviewService {
       rating: input.rating,
       title: input.title?.trim() || null,
       comment: input.comment?.trim() || null,
-      media: mediaFrom(input, userId),
+      media: await sizedMediaFrom(input, userId),
     };
     // What the edit drops is deleted from the store afterwards, so an author who removes
     // a photo removes the file too (R12) — read before the replacement, deleted after.

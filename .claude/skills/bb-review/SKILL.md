@@ -138,7 +138,7 @@ git diff $RANGE -- 'src/**/*.tsx' | grep -nE 'text-\[[0-9.]+(rem|px|em)|tracking
 ```
 The grep is a prompt, not the check — the suite already blocks the mechanical cases, so a hit here is usually either a blind spot above or a false positive.
 
-**Image delivery** ([ADR-0026](../../../docs/adr/0026-images-are-delivered-through-the-optimizer.md) — stored small, served through the optimizer)
+**Image delivery** ([ADR-0026](../../../docs/adr/0026-images-are-delivered-through-the-optimizer.md) — stored small; [ADR-0075](../../../docs/adr/0075-photographs-are-stored-at-each-delivery-width-and-served-without-an-optimizer.md) — stored at each delivery width, served by our loader, no optimizer)
 
 Vercel Blob's free transfer allowance was exhausted pre-launch by three changes that all looked right on screen; images now live in R2 ([ADR-0028](../../../docs/adr/0028-images-live-in-cloudflare-r2.md)) and the same rules hold. `tests/unit/image-delivery.test.ts` fails the build on a raw `<img>`, on `unoptimized`, and on `fill` without `sizes`. **The review job is what it cannot judge:**
 
@@ -146,7 +146,9 @@ Vercel Blob's free transfer allowance was exhausted pre-launch by three changes 
 - A **`sizes` that overstates the slot.** The test only checks that `sizes` exists. `sizes="100vw"` on a 64px avatar passes it and downloads the viewport width — the same overrun, now invisible. Read the value against the class list: a `size-16` box is `64px`, not `100vw`. The product tile's value is `PRODUCT_TILE_SIZES`; a second spelling of the same grid is a finding.
 - A **new upload path that skips normalisation.** A server upload reaching `putObject` (`server/catalog/object-store.ts`) without `normalizeImage`. Browser-direct uploads (`uploadDirect`) must `downscaleImage` first, and `image-delivery.test.ts` fails a caller that doesn't, so judge only new allowlist entries.
 - **A second spelling of the size budget.** `MAX_IMAGE_EDGE` and `IMAGE_QUALITY` are declared once in `server/catalog/media.ts` because two paths enforce them; a local `1600` is the drift starting.
-- An **image fetched server-side per render** — an OG image or a metadata route pulling an R2 URL on every request is egress the optimizer never sees.
+- An **image fetched server-side per render** — an OG image or a metadata route pulling an R2 URL on every request.
+- **A photograph reaching the store without width copies.** A write through `putObject` gets them; bytes a browser PUT directly need `ensureWidthCopies` before anything renders them through `next/image`, or the loader points at a file that does not exist. A new presigned path with no confirm step is the case to look for.
+- **A canvas reading a stored image** needs `crossOrigin = "anonymous"`: the loader's URL is the bucket's domain, not ours.
 
 ```bash
 git diff $RANGE -- 'src/**/*.tsx' | grep -nE '<img|unoptimized|sizes="100vw"|no-img-element'

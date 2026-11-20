@@ -5,8 +5,8 @@ import { ResponsiveImage } from "@/components/shared/responsive-image";
 import type { ResponsiveImageDto } from "@server/catalog/image-framing";
 
 /**
- * A photo slot that is never an empty box (R10, Q17): the image through the optimizer at the
- * size its slot declares (R11, ADR-0026), or the theme's drawn pattern with the shop's initial
+ * A photo slot that is never an empty box (R10, Q17): the image at the stored width for the
+ * size its slot declares (R11, ADR-0075), or the theme's drawn pattern with the shop's initial
  * where a mark belongs. The box's shape is the caller's, so a variant declares its own aspect.
  */
 export function ThemePhoto({
