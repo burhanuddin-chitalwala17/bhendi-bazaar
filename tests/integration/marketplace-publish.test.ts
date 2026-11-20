@@ -300,7 +300,18 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
     const again = await listings.screen(orgId, id, "amazon");
     await listings.save(orgId, id, "amazon", { seenVersion: again.version, overrides: { title: "Second" } });
     const result = await publish.publish(orgId, "amazon", [{ id: opened.id, version: review.listings[0].version, fields: ["title"] }]);
-    expect(result).toEqual({ sent: 0, refused: [opened.id] });
+    expect(result).toEqual({ sent: 0, refused: [{ id: opened.id, reason: "changed" }] });
+  });
+
+  it("leaves a listing whose send is still out off the review, and refuses it as sending, not as changed", async () => {
+    const id = await product("INFLIGHT", "amazon");
+    const { id: listingId, review } = await editAndPublish(id, "amazon", { title: "Out" });
+    expect((await row(id)).publishState).toBe("sent");
+    const again = await publish.review(orgId, "amazon", listingId);
+    expect(again.listings).toEqual([]);
+    expect(again.sending).toBe(1);
+    const result = await publish.publish(orgId, "amazon", [{ id: listingId, version: review.listings[0].version + 1, fields: ["title"] }]);
+    expect(result).toEqual({ sent: 0, refused: [{ id: listingId, reason: "sending" }] });
   });
 
   it("keeps a refused field waiting with the marketplace's words on it (spec A2, Q6)", async () => {

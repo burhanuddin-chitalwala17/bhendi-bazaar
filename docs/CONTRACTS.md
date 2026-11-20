@@ -589,8 +589,11 @@ brand, stock), `status` (**`ListingStatusDTO`**: `LISTING_STATUS`, waiting and i
 `waitingFields`, `issues` (**`ListingIssue`**: code, message, severity, our field or null), `showing`
 and `draft` (create mode, target page, marketplace type, facts still needed). **`ProductListingSummaryDTO`**
 gives each connected marketplace's status for a product. **`ReviewDTO`** lists **`ReviewListingDTO`**s
-(id, version, name, status, `creating`, and **`ReviewChangeDTO`**s: field, `from` or null, `to`, `big`);
-**`PublishResultDTO`** is `{ sent, refused }`. `server/channels/providers/publish.ts` holds `PageMatch`
+(id, version, name, status, `creating`, and **`ReviewChangeDTO`**s: field, `from` or null, `to`, `big`)
+and `sending`, how many listings were left out because their last send has no answer yet (2026-11-20);
+**`PublishResultDTO`** is `{ sent, refused }`, each refused entry `{ id, reason }` with `reason` one of
+`PUBLISH_REFUSAL`: `changed` (edited, removed or claimed since the review), `sending` (the last send is
+still out) or `nothing` (nothing the marketplace takes differs) `[CONTRACT]` (2026-11-20). `server/channels/providers/publish.ts` holds `PageMatch`
 (ASIN, title, image, matched by barcode or name).
 
 Routes, all `withOrg`; bodies in `platform-listing.schema.ts`:

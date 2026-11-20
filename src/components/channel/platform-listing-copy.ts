@@ -69,7 +69,14 @@ export const PUBLISH = {
   bigChange: (from: string, to: string) => `Big change: ${from} → ${to}. Check before publishing.`,
   sentToast: (label: string) => `Sent to ${label}. Pending until it answers; we'll tell you here.`,
   failed: "Couldn't reach Bhendi Bazaar. Nothing was sent.",
-  refused: "This listing changed while you were reviewing. Review it again.",
+  /** One line per reason a reviewed listing was not sent (marketplace-publish D3). */
+  refused: {
+    changed: (n: number) => `${n === 1 ? "This listing" : `${n} listings`} changed while you were reviewing. Review again.`,
+    sending: (n: number, label: string) => `${n === 1 ? "This listing was" : `${n} listings were`} already sent to ${label} and ${n === 1 ? "is" : "are"} waiting for its answer. Publish again once ${label} answers.`,
+    nothing: (n: number, label: string) => `${n === 1 ? "This listing has" : `${n} listings have`} nothing new for ${label}.`,
+  },
+  sending: (n: number, label: string) => `${n} listing${n === 1 ? " is" : "s are"} already sent to ${label}, waiting for its answer. ${n === 1 ? "It shows" : "They show"} here again once ${label} answers.`,
+  pendingAnswer: (label: string) => `Sent to ${label}, waiting for its answer`,
   reviewAgain: "Review again",
   summary: (sent: number, attention: number) => `${sent} sent · ${attention} need attention`,
   bar: (n: number) => `${n} listing${n === 1 ? " has" : "s have"} changes`,

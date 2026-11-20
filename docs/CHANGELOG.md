@@ -12,6 +12,17 @@
 
 ## Entries
 
+## 2026-11-20 — Publishing says why a listing was not sent, and does not offer one still being sent [CONTRACT]
+
+- **Symptom:** every refusal read "This listing changed while you were reviewing", including a listing whose
+  last send was still waiting on Amazon, which the review kept offering because its fields stay waiting until confirmed.
+- **Review:** a listing in `sent` or `checking` is left off the review and counted in `ReviewDTO.sending`, which
+  the page says in words; the Listings bar no longer counts it. The listing editor shows "Sent to Amazon, waiting
+  for its answer" in place of Review and publish.
+- **Publish:** `PublishResultDTO.refused` is now `{ id, reason }[]` (`PUBLISH_REFUSAL`: changed, sending, nothing),
+  and the page shows one message per reason. The claim's version guard is unchanged.
+- Test: `tests/integration/marketplace-publish.test.ts` — a listing still out is off the review and refused as sending.
+
 ## 2026-11-20 — Fix: the worker skipped every publish for the home-brand shop
 
 - **Incident:** Niqab Boutique's Amazon publishes sat at "Pending" and never reached Amazon; publishing again
