@@ -97,6 +97,7 @@ export const REQUESTS_COPY = {
   stale: "Amazon's fields changed since you opened this. Here's the new list.",
   notConnected: "Connect the home brand to Amazon to see Amazon's fields, or set it up in the channel register.",
   openRegister: "Open the channel register",
+  openFieldMaps: "Map each part",
   unreachable: "Couldn't reach Amazon. Try again.",
   tryAgain: "Try again",
   reading: (type: string) => `Reading Amazon's fields for ${type}…`,
@@ -111,6 +112,7 @@ export const REQUESTS_COPY = {
     [FIELD_SOLUTION.FROM_PRODUCT]: "Filled from the product",
     [FIELD_SOLUTION.FIXED]: "Always the same value",
     [FIELD_SOLUTION.NOT_POSSIBLE]: "Needs a developer: no question fits",
+    [FIELD_SOLUTION.MAP_PARTS]: "In parts: map each part on its field maps",
   } satisfies Record<FieldSolution, string>,
   source: { sku: "SKU", name: "Name", brand: "Brand" } as Record<string, string>,
   step: {

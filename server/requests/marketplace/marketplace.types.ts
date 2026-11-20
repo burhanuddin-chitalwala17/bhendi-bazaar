@@ -37,6 +37,8 @@ export const FIELD_SOLUTION = {
   FROM_PRODUCT: "from_product",
   FIXED: "fixed",
   NOT_POSSIBLE: "not_possible",
+  /** A field in parts: mapped part by part on the type's field maps, not by applying (field-maps Q23). */
+  MAP_PARTS: "map_parts",
 } as const;
 export type FieldSolution = (typeof FIELD_SOLUTION)[keyof typeof FIELD_SOLUTION];
 

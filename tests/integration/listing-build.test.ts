@@ -4,6 +4,7 @@
  * converted for the channel (spec A3).
  */
 import "dotenv/config";
+import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it, vi, type MockInstance } from "vitest";
 
 import { isDisposableDb } from "../helpers/test-db";
@@ -88,5 +89,55 @@ describe.skipIf(!isDisposableDb)("building channel listings (local db)", () => {
     const forty = await countQueries(() => service.build("amazon", Array.from({ length: 40 }, (_, i) => ({ channelType: theirType, product: source(`p${i}`, i % 2 ? "men" : "women") }))));
     expect(one).toBeGreaterThan(0);
     expect(forty).toBe(one);
+  });
+});
+
+describe.skipIf(!isDisposableDb)("a field made of parts is mapped part by part (field-maps Q23)", () => {
+  let prisma: typeof import("@server/shared/prisma").prisma;
+  let fieldMapService: typeof import("@server/listing/field-map.service").fieldMapService;
+  let adminFieldMapService: typeof import("@server/listing/admin.field-map.service").adminFieldMapService;
+  const theirType = `LB${Date.now().toString(36).toUpperCase()}_PARTS`;
+  const raw = JSON.parse(readFileSync("tests/fixtures/amazon/HANDBAG.schema.json", "utf8"));
+  const save = (fieldPath: string) =>
+    fieldMapService.save({ channel: "amazon", channelType: theirType, fieldPath, bbType: "", source: "attribute", key: "width", constant: null, unitTarget: "centimeters", reason: "test", values: {} });
+
+  beforeAll(async () => {
+    ({ prisma } = await import("@server/shared/prisma"));
+    ({ fieldMapService } = await import("@server/listing/field-map.service"));
+    ({ adminFieldMapService } = await import("@server/listing/admin.field-map.service"));
+    const { channelCatalogueService } = await import("@server/listing/channel-catalogue.service");
+    const { fieldMapRepository } = await import("@server/listing/field-map.repository");
+    const f = (key: string) => ({ key, label: key, requirement: "required" as const, kind: "text" as const, allowedValues: null, allowedUnits: null, adapterFills: false });
+    await channelCatalogueService.store("amazon", { key: theirType, label: "Parts", schema: raw.schema ?? raw, schemaVersion: null, fields: [f("item_dimensions"), f("department")] }, "test", new Date());
+    // A whole-field map made before parts could be mapped, as RUG's was to a size word.
+    await fieldMapRepository.save({ channel: "amazon", channelType: theirType, fieldPath: "item_dimensions", bbType: "", source: "constant", attributeKey: null, ruleKey: null, coreKey: null, shopKey: null, constant: "Large", unitTarget: null, checkedSource: "test", checkedOn: new Date(), reason: "test" }, {});
+  });
+
+  afterAll(async () => {
+    await prisma.fieldMap.deleteMany({ where: { channelType: theirType } });
+    await prisma.channelType.deleteMany({ where: { key: theirType } });
+  });
+
+  it("lists a field's parts, and marks a whole-field map on it as one that cannot fill it", async () => {
+    const view = await adminFieldMapService.view("amazon", theirType);
+    const dims = view!.rows.find((r) => r.field === "item_dimensions")!;
+    expect([...dims.parts].sort()).toEqual(["height", "length", "width"]);
+    expect(dims.maps.map((m) => [m.fieldPath, m.wholeOnParts])).toEqual([["item_dimensions", true]]);
+    expect(view!.rows.find((r) => r.field === "department")!.parts).toEqual([]);
+  });
+
+  it("refuses a part the type does not have, and a whole-field map on a field in parts", async () => {
+    await expect(save("item_dimensions.depth")).rejects.toThrow(/depth/);
+    await expect(save("item_dimensions")).rejects.toThrow(/each part/);
+  });
+
+  it("saves a part, which replaces the whole-field map it supersedes", async () => {
+    await save("item_dimensions.width");
+    const dims = (await adminFieldMapService.view("amazon", theirType))!.rows.find((r) => r.field === "item_dimensions")!;
+    expect(dims.maps.map((m) => [m.fieldPath, m.wholeOnParts])).toEqual([["item_dimensions.width", false]]);
+  });
+
+  it("a field with no parts saves as before", async () => {
+    await expect(save("department")).resolves.toHaveProperty("id");
   });
 });

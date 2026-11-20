@@ -12,6 +12,22 @@
 
 ## Entries
 
+## 2026-11-20 — A field made of parts is mapped part by part on the admin's field maps [CONTRACT]
+
+- **Why:** the field-map screen mapped a whole channel field to one answer only, so Amazon RUG's Item Dimensions
+  L x W (length and width) was mapped to a size word and needed a migration (field-maps Q23, ux signed off).
+- **Screen** (`field-map-list.tsx`): a field in parts says "In parts: length, width" and lists each part,
+  "{Field} · {part}", with its own map or "Not mapped" and "Map {part}". It offers no whole-field Map; a whole-field
+  map made before is marked "Can't fill a field in parts. Map each part instead."
+- **Server:** parts are read off the type's stored schema (`server/listing/schema-parts.ts`, now also what the Amazon
+  provider uses). `fieldMapService.save` refuses a whole-field map on a field in parts and a part the type does not
+  declare; a part's map removes the whole-field map it supersedes (`fieldMapRepository.removeWhole`).
+- **Requests:** a field in parts in an Amazon fields plan is `map_parts` ("In parts: map each part on its field
+  maps", with a link to the type's maps) instead of "Needs a developer"; Apply skips it.
+- `schema-parts` joins listing's public surface (`tests/unit/module-boundaries.test.ts`).
+- Tests: `tests/unit/field-map-parts.test.tsx` (the screen), `tests/integration/listing-build.test.ts` (view and
+  save rules), `tests/unit/setup-requests.test.ts` (`map_parts`).
+
 ## 2026-11-20 — [MIGRATION] Amazon RUG's Item Dimensions L x W mapped to length and width
 
 - `20261120090000_amazon_rug_length_width`: RUG's `item_length_width` is one attribute of two measures, and the admin

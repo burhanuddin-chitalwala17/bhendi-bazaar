@@ -13,6 +13,7 @@ import { formatTime } from "@/lib/format";
 import type { PlanUnavailableDTO } from "@server/requests/request.types";
 import { FIELD_SOLUTION, MARKETPLACE_KIND, MARKETPLACE_UNAVAILABLE, type MarketplacePlanDTO } from "@server/requests/marketplace/marketplace.types";
 import { ROUTES } from "@server/shared/routes";
+import { CHANNEL } from "@server/shared/channels";
 
 import { adminRequestsApiClient } from "../adminRequestsApiClient";
 import { REQUESTS_COPY as C } from "../requests-copy";
@@ -116,6 +117,11 @@ export function MarketplacePlan({ id, kind, shopsWaiting }: RequirementPlanProps
                   {f.source ? ` · ${C.source[f.source] ?? f.source}` : ""}
                   {f.constant ? ` · "${f.constant}"` : ""}
                 </p>
+                {f.solution === FIELD_SOLUTION.MAP_PARTS && (
+                  <Button asChild variant="outline" size="sm" className="min-h-10 self-start">
+                    <Link href={ROUTES.admin.channelType(CHANNEL.AMAZON, plan.theirCategory)}>{C.openFieldMaps}</Link>
+                  </Button>
+                )}
                 {f.allowed.length > 0 && <p className="break-words text-caption text-muted-foreground">{f.allowed.slice(0, 8).join(" · ")}{f.allowed.length > 8 ? ` · +${f.allowed.length - 8}` : ""}</p>}
               </li>
             ))}
@@ -123,7 +129,7 @@ export function MarketplacePlan({ id, kind, shopsWaiting }: RequirementPlanProps
           <details className="border-t pt-2 text-small text-muted-foreground">
             <summary className="cursor-pointer font-semibold text-foreground">{C.whatApplyDoes}</summary>
             <ol className="mt-2 list-decimal space-y-1 pl-5">
-              {plan.fields.filter((f) => f.solution !== FIELD_SOLUTION.NOT_POSSIBLE).map((f) => (
+              {plan.fields.filter((f) => f.solution !== FIELD_SOLUTION.NOT_POSSIBLE && f.solution !== FIELD_SOLUTION.MAP_PARTS).map((f) => (
                 <li key={f.attribute}>
                   {f.solution === FIELD_SOLUTION.REUSE ? C.step.reuse(f.attribute, f.factLabel ?? "")
                     : f.solution === FIELD_SOLUTION.ADD ? C.step.add(f.attribute, f.factLabel ?? "", plan.productTypes.map((t) => t.label).join(", "))
@@ -133,7 +139,7 @@ export function MarketplacePlan({ id, kind, shopsWaiting }: RequirementPlanProps
               ))}
             </ol>
           </details>
-          <Button className="min-h-10 w-full" pending={act.isLoading} onClick={apply}>{C.applyFields(plan.fields.filter((f) => f.solution !== FIELD_SOLUTION.NOT_POSSIBLE).length)}</Button>
+          <Button className="min-h-10 w-full" pending={act.isLoading} onClick={apply}>{C.applyFields(plan.fields.filter((f) => f.solution !== FIELD_SOLUTION.NOT_POSSIBLE && f.solution !== FIELD_SOLUTION.MAP_PARTS).length)}</Button>
         </>
       )}
 

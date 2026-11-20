@@ -51,6 +51,11 @@ export const fieldMapRepository = {
    * One map and its pairs (spec R6): `replace` makes the given pairs the whole set, as the admin's edit
    * does; `merge` adds them beside the held ones, as a setup request's Apply does.
    */
+  /** The whole-field map a part's map supersedes, on a field in parts (Q23); its pairs go with it. */
+  async removeWhole(key: { channel: string; channelType: string; fieldPath: string; bbType: string }, db: Db = prisma): Promise<void> {
+    await db.fieldMap.deleteMany({ where: key });
+  },
+
   async save(input: FieldMapInput, values: Record<string, string>, db: Db = prisma, pairs: PairMode = PAIR_MODE.REPLACE): Promise<{ id: string }> {
     const key = { channel_channelType_fieldPath_bbType: { channel: input.channel, channelType: input.channelType, fieldPath: input.fieldPath, bbType: input.bbType } };
     const row = await db.fieldMap.upsert({ where: key, create: input, update: input, select: { id: true } });

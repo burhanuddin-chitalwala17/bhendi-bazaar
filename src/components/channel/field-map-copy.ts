@@ -44,6 +44,10 @@ export const FIELD_MAP_COPY = {
     }
   },
   part: (path: string) => `Part: ${path}`,
+  inParts: (parts: readonly string[]) => `In parts: ${parts.join(", ")}`,
+  partOf: (field: string, part: string) => `${field} · ${part}`,
+  mapPart: (part: string) => `Map ${part}`,
+  wholeOnParts: "Can't fill a field in parts. Map each part instead.",
   forType: (bbType: string) => `Only for our type ${bbType}`,
   unit: (u: string) => `in ${u}`,
   filledBySystem: "Filled by the system",
