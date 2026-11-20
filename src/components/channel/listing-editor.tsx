@@ -15,7 +15,7 @@ import { LISTING_FIELD, LISTING_STATUS, type ListingField, type ListingIssue, ty
 import { ago } from "./listing-copy";
 import { FieldIssues, FieldLine, FieldShell, OwnerChip } from "./listing-field";
 import { ListingPhotosField } from "./listing-photos-field";
-import { FIELD_NAME, LISTING, PUBLISH, rupees } from "./platform-listing-copy";
+import { FIELD_NAME, LISTING, rupees, statusText } from "./platform-listing-copy";
 import { useListingForm } from "./useListingForm";
 import { ROUTES } from "@server/shared/routes";
 
@@ -248,7 +248,7 @@ function SaveBar({ orgId, screen, dirty, pending }: { orgId: string; screen: Lis
   const waiting = screen.waitingFields.length;
   // A send still out is refused by publish, so it is not offered until the marketplace answers.
   const sending = screen.status.status === LISTING_STATUS.SENT || screen.status.status === LISTING_STATUS.CHECKING;
-  const status = sending ? PUBLISH.pendingAnswer(screen.label) : waiting > 0 ? LISTING.waiting(waiting) : LISTING.nothingWaiting;
+  const status = sending ? statusText(screen.status, screen.label, (iso) => ago(iso, now())) : waiting > 0 ? LISTING.waiting(waiting) : LISTING.nothingWaiting;
   return (
     <ActionBar
       className="-mx-4 md:mx-0"

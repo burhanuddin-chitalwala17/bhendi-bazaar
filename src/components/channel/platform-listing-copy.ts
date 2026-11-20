@@ -72,11 +72,10 @@ export const PUBLISH = {
   /** One line per reason a reviewed listing was not sent (marketplace-publish D3). */
   refused: {
     changed: (n: number) => `${n === 1 ? "This listing" : `${n} listings`} changed while you were reviewing. Review again.`,
-    sending: (n: number, label: string) => `${n === 1 ? "This listing was" : `${n} listings were`} already sent to ${label} and ${n === 1 ? "is" : "are"} waiting for its answer. Publish again once ${label} answers.`,
+    sending: (n: number, label: string) => `${n === 1 ? "This listing is" : `${n} listings are`} still pending, waiting for ${label}'s answer. Publish again once it answers.`,
     nothing: (n: number, label: string) => `${n === 1 ? "This listing has" : `${n} listings have`} nothing new for ${label}.`,
   },
-  sending: (n: number, label: string) => `${n} listing${n === 1 ? " is" : "s are"} already sent to ${label}, waiting for its answer. ${n === 1 ? "It shows" : "They show"} here again once ${label} answers.`,
-  pendingAnswer: (label: string) => `Sent to ${label}, waiting for its answer`,
+  sending: (n: number, label: string) => `${n} listing${n === 1 ? " is" : "s are"} pending, waiting for ${label}'s answer. ${n === 1 ? "It shows" : "They show"} here again once ${label} answers.`,
   reviewAgain: "Review again",
   summary: (sent: number, attention: number) => `${sent} sent · ${attention} need attention`,
   bar: (n: number) => `${n} listing${n === 1 ? " has" : "s have"} changes`,

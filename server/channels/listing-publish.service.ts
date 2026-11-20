@@ -99,9 +99,6 @@ const checkAt = (count: number, from: Date) => {
   return after === undefined ? null : new Date(from.getTime() + after * 1000);
 };
 
-/** A send out and not yet answered: nothing more may be published on the listing until it is. */
-const inFlight = (state: string) => state === PUBLISH_STATE.SENT || state === PUBLISH_STATE.CHECKING;
-
 /** A send still "Sent" after the queue's retries (about 15 minutes) is one it gave up on. */
 const STUCK_AFTER_MS = 3_600_000;
 
@@ -192,7 +189,7 @@ export const listingPublishService = {
     const all = listingId ? [await platformListingRepository.find(listingId, orgId)].filter((r): r is PlatformListingRow => r !== null && r.connectionId === connection.id) : await platformListingRepository.onConnection(connection.id);
     // A listing whose send is still out has nothing to publish until the marketplace answers.
     const placed = all.filter((r) => r.productId !== null || r.familyId !== null);
-    const rows = placed.filter((r) => !inFlight(r.publishState));
+    const rows = placed.filter((r) => SENDABLE.has(r.publishState));
     const sending = placed.length - rows.length;
     const productIds = rows.map((r) => r.productId).filter((id): id is string => id !== null);
     const [products, mirrors] = await Promise.all([productService.forListing(orgId, productIds), channelListingRepository.mirrorsFor(connection.id, productIds)]);
@@ -229,7 +226,7 @@ export const listingPublishService = {
       const refusal = await prisma.$transaction(async (tx): Promise<PublishRefusal | null> => {
         const row = await platformListingRepository.find(item.id, orgId, tx);
         if (!row || row.connectionId !== connection.id) return PUBLISH_REFUSAL.CHANGED;
-        if (inFlight(row.publishState)) return PUBLISH_REFUSAL.SENDING;
+        if (!SENDABLE.has(row.publishState)) return PUBLISH_REFUSAL.SENDING;
         if (row.version !== item.version) return PUBLISH_REFUSAL.CHANGED;
         let pending: ListingOverrides = {};
         if (row.productId) {

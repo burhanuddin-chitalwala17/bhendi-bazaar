@@ -314,6 +314,14 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
     expect(result).toEqual({ sent: 0, refused: [{ id: listingId, reason: "sending" }] });
   });
 
+  it("refuses a live listing with nothing kept to send as nothing, and claims nothing", async () => {
+    const id = await product("NOTHING", "amazon");
+    const opened = await listings.screen(orgId, id, "amazon");
+    const result = await publish.publish(orgId, "amazon", [{ id: opened.id, version: opened.version, fields: [] }]);
+    expect(result).toEqual({ sent: 0, refused: [{ id: opened.id, reason: "nothing" }] });
+    expect((await row(id)).publishState).toBe("idle");
+  });
+
   it("keeps a refused field waiting with the marketplace's words on it (spec A2, Q6)", async () => {
     const id = await product("REFUSED", "amazon");
     fake.state.refuse = new Set(["title"]);

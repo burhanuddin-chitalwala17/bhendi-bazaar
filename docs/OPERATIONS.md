@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-11-05
+- **Verified:** 2026-11-20
 - **Covers:** `src/lib/rate-limit/**`, `src/instrumentation.ts`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
