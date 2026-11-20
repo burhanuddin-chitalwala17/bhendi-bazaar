@@ -8,6 +8,7 @@ import { listingBuildService } from "@server/listing/listing-build.service";
 import { channelCatalogueReader } from "./channel-catalogue.service";
 import { GAP_REASON, type BuildGap } from "@server/listing/field-map.types";
 import { channelReadinessService } from "@server/listing/channel-readiness.service";
+import { channelSetupService } from "@server/listing/channel-setup.service";
 import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.service";
 import { productFamilyService } from "@server/listing/product-family.service";
 import { FACT_DECLARATIONS, type FactKey } from "@server/listing/listing-facts";
@@ -48,6 +49,23 @@ async function productOf(orgId: string, productId: string, db?: Tx): Promise<Pro
   const [product] = await productService.forListing(orgId, [productId], db);
   if (!product) throw new NotFoundError("Product");
   return product;
+}
+
+/** The category the product's type and kind publish to on a channel now, whether or not the shop has switched the channel on. */
+async function categoryOf(product: Pick<Product, "productType" | "kind">, channel: MarketplaceChannel): Promise<string | null> {
+  if (!product.productType) return null;
+  return channelSetupService.publishingOf(await channelSetupService.publishing(channel, [product.productType]), product.productType, product.kind);
+}
+
+/**
+ * The category a draft goes under: its type's mapping as it is now, else the one recorded at the start.
+ * A copy frozen at the start sent Amazon "PRODUCT" for a type mapped afterwards (2026-11-20).
+ */
+async function followCategory<R extends PlatformListingRow>(row: R, product: Product, channel: MarketplaceChannel): Promise<R> {
+  const theirCategory = await categoryOf(product, channel);
+  if (!theirCategory || theirCategory === row.marketplaceType) return row;
+  await platformListingRepository.setMarketplaceType(row.id, theirCategory);
+  return { ...row, marketplaceType: theirCategory };
 }
 
 /** Where a product lists on a marketplace, and the facts that marketplace still needs (Q10). */
@@ -217,8 +235,10 @@ export const listingCreateService = {
 
   /** What a draft screen adds: how it will be made, and what the marketplace still needs (ux.md "Put on Amazon"). */
   async draftInfo(orgId: string, row: PlatformListingRow, product: Product, channel: MarketplaceChannel) {
-    const { stillNeeds } = row.createMode === CREATE_MODE.NEW ? await readinessOf(orgId, product, channel) : { stillNeeds: [] };
-    return { mode: (row.createMode as CreateMode | null) ?? CREATE_MODE.NEW, targetExternalId: row.targetExternalId, marketplaceType: row.marketplaceType, stillNeeds };
+    const creating = row.createMode === CREATE_MODE.NEW;
+    const { stillNeeds } = creating ? await readinessOf(orgId, product, channel) : { stillNeeds: [] };
+    const current = creating ? await categoryOf(product, channel) : null;
+    return { mode: (row.createMode as CreateMode | null) ?? CREATE_MODE.NEW, targetExternalId: row.targetExternalId, marketplaceType: current ?? row.marketplaceType, stillNeeds };
   },
 
   /** A family's page on the review: a create of its title (Q11). */
@@ -243,16 +263,19 @@ export const listingCreateService = {
     const now = new Date();
     let input: BuiltInput;
     try {
-      if (row.familyId) {
-        const family = await productFamilyService.byId(row.orgId, row.familyId);
-        const members = await productService.familyMembers(row.orgId, row.familyId);
+      const familyId = row.familyId;
+      if (familyId) {
+        const family = await productFamilyService.byId(row.orgId, familyId);
+        const members = await productService.familyMembers(row.orgId, familyId);
         const first = await productOf(row.orgId, members[0].id);
-        const theme = await themeFor(row.orgId, connection, channel, row.familyId, row.marketplaceType);
+        row = await followCategory(row, first, channel);
+        const theme = await themeFor(row.orgId, connection, channel, familyId, row.marketplaceType);
         if (!theme) return await this.refuse(row, [{ code: "no_theme", message: `${CHANNEL_LABELS[channel]} has no way to group this family's ${family.variantAxis.join(" and ") || "items"} for its type.`, severity: "error", field: null }]);
         input = { ...(await inputFor(row.orgId, row, first, channel, { role: "parent", theme })), title: family.name, description: family.description ?? first.description };
       } else {
         if (!row.productId) return "skipped";
         const product = await productOf(row.orgId, row.productId);
+        row = await followCategory(row, product, channel);
         let family: CreateListingInput["family"] = null;
         if (product.familyId && row.createMode === CREATE_MODE.NEW) {
           const parent = await platformListingRepository.forFamily(connection.id, product.familyId);
@@ -265,6 +288,10 @@ export const listingCreateService = {
           }
         }
         input = await inputFor(row.orgId, row, product, channel, family);
+      }
+      // Amazon refuses a new page under no category; a type nobody has mapped is the admin's to map, not a ticket.
+      if (input.mode === CREATE_MODE.NEW && !input.marketplaceType) {
+        return await this.refuse(row, [{ code: "no_category", message: `${CHANNEL_LABELS[channel]} has no category for this kind of product yet, so nothing was sent. Publish again once one is set.`, severity: "error", field: null }], { ticket: false });
       }
       if (input.mode === CREATE_MODE.NEW) {
         const preview = await provider.createListing(token, connection.externalAccountId, input, { preview: true });
@@ -299,10 +326,10 @@ export const listingCreateService = {
     return { issues: answer.issues, gaps: input.gaps };
   },
 
-  async refuse(row: PlatformListingRow, issues: ListingIssue[]): Promise<string> {
+  async refuse(row: PlatformListingRow, issues: ListingIssue[], options: { ticket?: boolean } = {}): Promise<string> {
     await platformListingRepository.recordAnswer(row.id, { sent: null, publishState: PUBLISH_STATE.ATTENTION, issues, nextCheckAt: null }, new Date(), prisma, [PUBLISH_STATE.SENT]);
     // What only we can fix becomes a ticket without the shop asking (setup-requests Q5).
-    if (row.productId) await handOverComplaints([{ orgId: row.orgId, productId: row.productId, channel: row.channel, productType: null, kind: null, theirCategory: row.marketplaceType, issues: complaintIssues(issues) }]);
+    if (row.productId && options.ticket !== false) await handOverComplaints([{ orgId: row.orgId, productId: row.productId, channel: row.channel, productType: null, kind: null, theirCategory: row.marketplaceType, issues: complaintIssues(issues) }]);
     return PUBLISH_STATE.ATTENTION;
   },
 

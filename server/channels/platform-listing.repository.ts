@@ -143,6 +143,11 @@ export const platformListingRepository = {
     return count === 1;
   },
 
+  /** A draft's marketplace category, followed to what its type maps to now; derived, so no version bump. */
+  async setMarketplaceType(id: string, marketplaceType: string, db: Db = prisma): Promise<void> {
+    await db.platformListing.updateMany({ where: { id }, data: { marketplaceType } });
+  },
+
   /**
    * Record a marketplace's answer (D3, D9). `onlyIf` guards on the state the caller read, so an answer
    * landing after the listing moved on (a newer publish, another look) changes nothing; false then.

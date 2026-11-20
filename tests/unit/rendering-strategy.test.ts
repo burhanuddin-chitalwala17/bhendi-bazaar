@@ -126,4 +126,22 @@ describe("render on the server by default", () => {
     expect(vague.map(([k]) => k), "A reason short enough to be a shrug is not a reason.").toEqual([]);
   });
 
+  it("a table that takes functions is rendered from a client component", () => {
+    // ResourceList and DataTable take `cell`, `rowKey` and `rowHref` as functions, which cannot cross
+    // from a server component; the admin Amazon channel page crashed on exactly this (2026-11-20).
+    // A file with no directive runs on the client when only client files import it, so it is judged by its importers.
+    const all = [...appFiles, ...componentFiles];
+    const importers = (f: string) => {
+      const name = f.replace(/\.tsx$/, "").split("/").pop()!;
+      const from = new RegExp(`from ["'][^"']*/${name}["']`);
+      return all.filter((other) => other !== f && from.test(readFileSync(other, "utf8")));
+    };
+    const offenders = all
+      .filter((f) => /<(ResourceList|DataTable)\b/.test(readFileSync(f, "utf8")))
+      .filter((f) => !isClient(f))
+      .filter((f) => /\/(page|layout)\.tsx$/.test(f) || importers(f).some((i) => !isClient(i)))
+      .map((f) => relative(ROOT, f));
+    expect(offenders, 'Mark these "use client", or pass the table only serialisable props:\n' + offenders.map((o) => `    ${o}`).join("\n")).toEqual([]);
+  });
+
 });

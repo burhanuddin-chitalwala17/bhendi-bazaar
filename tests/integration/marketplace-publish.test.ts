@@ -22,7 +22,7 @@ vi.spyOn(console, "log").mockImplementation((...args) => {
 const fake = vi.hoisted(() => {
   const state = {
     published: [] as Array<{ sku: string; changes: Record<string, unknown> }>,
-    created: [] as Array<{ sku: string; preview: boolean; family: unknown }>,
+    created: [] as Array<{ sku: string; preview: boolean; family: unknown; marketplaceType: string | null }>,
     /** Fields the marketplace refuses on the next publish. */
     refuse: new Set<string>(),
     decidesLater: true,
@@ -68,8 +68,8 @@ vi.mock("@server/channels/providers", async () => {
       return s.status;
     },
     findPages: async () => [],
-    createListing: async (_t: unknown, _a: unknown, input: { sku: string; family: unknown }, options: { preview: boolean }) => {
-      s.created.push({ sku: input.sku, preview: options.preview, family: input.family });
+    createListing: async (_t: unknown, _a: unknown, input: { sku: string; family: unknown; marketplaceType: string | null }, options: { preview: boolean }) => {
+      s.created.push({ sku: input.sku, preview: options.preview, family: input.family, marketplaceType: input.marketplaceType });
       if (options.preview && s.previewErrors) return { accepted: [], issues: [{ code: "8541", message: "Brand needs approval.", severity: "error", field: null }], decidesLater: false };
       return { accepted: ["title"], issues: [], decidesLater: true };
     },
@@ -97,7 +97,7 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
   const connections: Record<string, string> = {};
   const stamp = Date.now();
 
-  const product = async (s: string, channel: "amazon" | "flipkart" | null, extra: { familyId?: string } = {}) => {
+  const product = async (s: string, channel: "amazon" | "flipkart" | null, extra: { familyId?: string; productType?: string; kind?: string } = {}) => {
     const p = await prisma.product.create({
       data: { name: `Hijab ${s}`, slug: `mp-${stamp}-${s}`, description: "Ours.", price: 44_900, categoryId, thumbnail: "/brand/bhendi-bazaar.png", orgId, sku: `MP-${stamp}-${s}`, ...extra },
       select: { id: true },
@@ -109,6 +109,8 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
     }
     return p.id;
   };
+  // A reference type and kind Amazon has a category for (PANTS), shipped by migration; only read here.
+  const MAPPED = { productType: "trousers", kind: "palazzo" };
   const row = async (productId: string) => prisma.platformListing.findFirstOrThrow({ where: { productId } });
   const editAndPublish = async (productId: string, channel: "amazon" | "flipkart", overrides: Record<string, unknown>, fields?: string[]) => {
     const opened = await listings.screen(orgId, productId, channel);
@@ -383,7 +385,7 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
   });
 
   it("creates nothing when Amazon's check-only answer has an error (Q9)", async () => {
-    const id = await product("NEW", null);
+    const id = await product("NEW", null, MAPPED);
     fake.state.previewErrors = true;
     const { id: listingId } = await create.startDraft(orgId, id, "amazon", { mode: "new", targetExternalId: null });
     const review = await publish.review(orgId, "amazon", listingId);
@@ -394,6 +396,32 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
     const screen = await listings.screen(orgId, id, "amazon");
     expect(screen.status.status).toBe("attention");
     expect(screen.issues[0].message).toBe("Brand needs approval.");
+  });
+
+  it("sends a new page under its type's category as it is now, not as it was when the draft was made", async () => {
+    const id = await product("LATEMAP", null);
+    const { id: listingId } = await create.startDraft(orgId, id, "amazon", { mode: "new", targetExternalId: null });
+    expect((await row(id)).marketplaceType).toBeNull();
+    // The type is given an Amazon category after the draft was started (2026-11-20).
+    await prisma.product.update({ where: { id }, data: MAPPED });
+    expect((await listings.screen(orgId, id, "amazon")).draft?.marketplaceType).toBe("PANTS");
+    const review = await publish.review(orgId, "amazon", listingId);
+    await publish.publish(orgId, "amazon", [{ id: listingId, version: review.listings[0].version, fields: review.listings[0].changes.map((c) => c.field) }]);
+    await publish.send(listingId);
+    expect(fake.state.created.map((c) => c.marketplaceType)).toEqual(["PANTS", "PANTS"]);
+    expect((await row(id)).marketplaceType).toBe("PANTS");
+  });
+
+  it("refuses a new page whose type has no Amazon category without asking Amazon", async () => {
+    const id = await product("NOCAT", null);
+    const { id: listingId } = await create.startDraft(orgId, id, "amazon", { mode: "new", targetExternalId: null });
+    const review = await publish.review(orgId, "amazon", listingId);
+    await publish.publish(orgId, "amazon", [{ id: listingId, version: review.listings[0].version, fields: review.listings[0].changes.map((c) => c.field) }]);
+    await publish.send(listingId);
+    expect(fake.state.created).toEqual([]);
+    const screen = await listings.screen(orgId, id, "amazon");
+    expect(screen.status.status).toBe("attention");
+    expect(screen.issues.map((i) => i.code)).toEqual(["no_category"]);
   });
 
   it("creates after a clean check, and links the new listing once Amazon has it (spec A4, D6)", async () => {
@@ -411,7 +439,7 @@ describe.skipIf(!isDisposableDb)("marketplace publish (local db)", () => {
   });
 
   it("keeps looking at a page it created until Amazon makes it buyable, and keeps the ASIN it names (2026-11-09)", async () => {
-    const id = await product("NEWPAGE", null);
+    const id = await product("NEWPAGE", null, MAPPED);
     const { id: listingId } = await create.startDraft(orgId, id, "amazon", { mode: "new", targetExternalId: null });
     const review = await publish.review(orgId, "amazon", listingId);
     await publish.publish(orgId, "amazon", [{ id: listingId, version: review.listings[0].version, fields: review.listings[0].changes.map((c) => c.field) }]);
