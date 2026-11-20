@@ -34,7 +34,7 @@
 | Needs a developer | "Needs a developer · requested" | — |
 | Unpaired answers | "3 answers have no Amazon match" under the row; each pair chosen from the channel's list, or "No match" | Pair them |
 | Waiting on a question | "Waiting on a new question; fills nothing yet" under a map naming a question not built yet (decisions Q17, 2026-11-08) | Change |
-| A field in parts | Under the field's label, "In parts: {part}, {part}"; then one line per part: "{Field} · {part}" with its source, or "Not mapped" in amber. No whole-field Map. A whole-field map made before this shows "Can't fill a field in parts. Map each part instead." in amber, with no Change: mapping any part removes it (2026-11-20, built; was: with Change, which the server's refusal of a whole-field save would only fail) | Map each part |
+| A field in parts | Under the field's label, "In parts: {part}, {part}"; then one line per part: "{Field} · {part}" with its source, or "Not mapped" in amber. No whole-field Map. A whole-field map made before this shows "Can't fill a field in parts. Map each part instead." in amber, with no Change: mapping any part removes it, for every type of ours; a field the create fills itself stays "Filled by the system" (2026-11-20, built; was: with Change, which the server's refusal of a whole-field save would only fail) | Map each part |
 | Changed by the channel | A row marked "New · added 7 Nov" | Map it |
 | Saved | Toast "Saved. Every {type} uses it from now on." | — |
 | Loading / slow | Skeleton rows | — |

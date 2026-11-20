@@ -73,7 +73,9 @@ export const adminFieldMapService = {
       .map((f) => {
         const allowed = Array.isArray(f.allowedValues) ? (f.allowedValues as unknown[]).map(String) : [];
         return {
-          field: f.key, label: f.label, requirement: f.requirement, adapterFills: f.adapterFills, addedOn: addedOn.get(f.key) ?? null, parts: parts.get(f.key) ?? [],
+          field: f.key, label: f.label, requirement: f.requirement, adapterFills: f.adapterFills, addedOn: addedOn.get(f.key) ?? null,
+          // What the create fills itself stays "Filled by the system", never parts to map.
+          parts: f.adapterFills ? [] : (parts.get(f.key) ?? []),
           maps: maps.filter((m) => fieldOfMap(m) === f.key).map((m) => toDTO(m, allowed, f.kind === FIELD_KIND.CHOICE)),
         };
       })

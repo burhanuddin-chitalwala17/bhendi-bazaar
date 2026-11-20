@@ -40,7 +40,7 @@ export const fieldMapService = {
     if (parts.length > 0 && !part) throw new DomainError(`${field} is in parts (${parts.join(", ")}). Map each part instead.`, { field: "fieldPath" });
     if (parts.length > 0 && !parts.includes(part)) throw new DomainError(`${field} has no part "${part}". Its parts are ${parts.join(", ")}.`, { field: "fieldPath" });
     const saved = await prisma.$transaction(async (tx) => {
-      if (parts.length > 0) await fieldMapRepository.removeWhole({ channel: change.channel, channelType: change.channelType, fieldPath: field, bbType: change.bbType }, tx);
+      if (parts.length > 0) await fieldMapRepository.removeWhole({ channel: change.channel, channelType: change.channelType, fieldPath: field }, tx);
       return await fieldMapRepository.save({
         channel: change.channel, channelType: change.channelType, fieldPath: change.fieldPath, bbType: change.bbType,
         source: change.source,

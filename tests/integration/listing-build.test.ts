@@ -108,8 +108,10 @@ describe.skipIf(!isDisposableDb)("a field made of parts is mapped part by part (
     const { channelCatalogueService } = await import("@server/listing/channel-catalogue.service");
     const { fieldMapRepository } = await import("@server/listing/field-map.repository");
     const f = (key: string) => ({ key, label: key, requirement: "required" as const, kind: "text" as const, allowedValues: null, allowedUnits: null, adapterFills: false });
-    await channelCatalogueService.store("amazon", { key: theirType, label: "Parts", schema: raw.schema ?? raw, schemaVersion: null, fields: [f("item_dimensions"), f("department")] }, "test", new Date());
+    await channelCatalogueService.store("amazon", { key: theirType, label: "Parts", schema: raw.schema ?? raw, schemaVersion: null, fields: [f("item_dimensions"), f("department"), { ...f("purchasable_offer"), adapterFills: true }] }, "test", new Date());
     // A whole-field map made before parts could be mapped, as RUG's was to a size word.
+    // And one made for a single type of ours, which a part's map for every type also supersedes.
+    await fieldMapRepository.save({ channel: "amazon", channelType: theirType, fieldPath: "item_dimensions", bbType: "rug", source: "constant", attributeKey: null, ruleKey: null, coreKey: null, shopKey: null, constant: "Small", unitTarget: null, checkedSource: "test", checkedOn: new Date(), reason: "test" }, {});
     await fieldMapRepository.save({ channel: "amazon", channelType: theirType, fieldPath: "item_dimensions", bbType: "", source: "constant", attributeKey: null, ruleKey: null, coreKey: null, shopKey: null, constant: "Large", unitTarget: null, checkedSource: "test", checkedOn: new Date(), reason: "test" }, {});
   });
 
@@ -122,8 +124,10 @@ describe.skipIf(!isDisposableDb)("a field made of parts is mapped part by part (
     const view = await adminFieldMapService.view("amazon", theirType);
     const dims = view!.rows.find((r) => r.field === "item_dimensions")!;
     expect([...dims.parts].sort()).toEqual(["height", "length", "width"]);
-    expect(dims.maps.map((m) => [m.fieldPath, m.wholeOnParts])).toEqual([["item_dimensions", true]]);
+    expect(dims.maps.map((m) => [m.fieldPath, m.bbType, m.wholeOnParts])).toEqual(expect.arrayContaining([["item_dimensions", "", true], ["item_dimensions", "rug", true]]));
     expect(view!.rows.find((r) => r.field === "department")!.parts).toEqual([]);
+    // What the create fills itself is "Filled by the system", never parts to map.
+    expect(view!.rows.find((r) => r.field === "purchasable_offer")!.parts).toEqual([]);
   });
 
   it("refuses a part the type does not have, and a whole-field map on a field in parts", async () => {
@@ -131,7 +135,7 @@ describe.skipIf(!isDisposableDb)("a field made of parts is mapped part by part (
     await expect(save("item_dimensions")).rejects.toThrow(/each part/);
   });
 
-  it("saves a part, which replaces the whole-field map it supersedes", async () => {
+  it("saves a part, which replaces every whole-field map it supersedes, a single type's too", async () => {
     await save("item_dimensions.width");
     const dims = (await adminFieldMapService.view("amazon", theirType))!.rows.find((r) => r.field === "item_dimensions")!;
     expect(dims.maps.map((m) => [m.fieldPath, m.wholeOnParts])).toEqual([["item_dimensions.width", false]]);

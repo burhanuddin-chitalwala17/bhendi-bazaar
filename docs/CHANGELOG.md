@@ -21,7 +21,9 @@
   map made before is marked "Can't fill a field in parts. Map each part instead."
 - **Server:** parts are read off the type's stored schema (`server/listing/schema-parts.ts`, now also what the Amazon
   provider uses). `fieldMapService.save` refuses a whole-field map on a field in parts and a part the type does not
-  declare; a part's map removes the whole-field map it supersedes (`fieldMapRepository.removeWhole`).
+  declare; a part's map removes every whole-field map on that field, for any type of ours
+  (`fieldMapRepository.removeWhole`). A field the create fills itself (Amazon's offer, stock, parentage) stays
+  "Filled by the system" and is never listed in parts.
 - **Requests:** a field in parts in an Amazon fields plan is `map_parts` ("In parts: map each part on its field
   maps", with a link to the type's maps) instead of "Needs a developer"; Apply skips it.
 - `schema-parts` joins listing's public surface (`tests/unit/module-boundaries.test.ts`).
