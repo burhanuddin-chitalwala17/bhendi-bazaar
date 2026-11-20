@@ -12,6 +12,17 @@
 
 ## Entries
 
+## 2026-11-20 — Fix: the worker skipped every publish for the home-brand shop
+
+- **Incident:** Niqab Boutique's Amazon publishes sat at "Pending" and never reached Amazon; publishing again
+  read "This listing changed while you were reviewing". Each `channels.publish-listing` job completed in ~140 ms
+  having called nothing, leaving the listing `sent`.
+- **Cause:** the home brand holds every paid feature through `HOME_BRAND_ORG_ID` (`server/shared/home-brand.ts`),
+  not an `OrgFeature` row. Vercel has the variable; the worker's deploy never passed it, so `lockedSkip` read
+  Channels as off on the worker while the site let the publish through.
+- **Fix:** `HOME_BRAND_ORG_ID` joins the worker's env list in `ci.yml` and `staging-worker.yml`
+  (`WORKER_ENV_HOME_BRAND_ORG_ID`, `WORKER_STAGING_ENV_HOME_BRAND_ORG_ID`). Needs the secret set and a worker redeploy.
+
 ## 2026-11-20 — Fix: CI's production audit blocked on a new advisory in Prisma's `effect`
 
 - `scripts/audit-prod.mjs` failed on GHSA-7589-6fvf-x4pw (high, ReDoS in `Schema.TemplateLiteral`) in `effect@3.20.0`,
