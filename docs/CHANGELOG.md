@@ -12,6 +12,22 @@
 
 ## Entries
 
+## 2026-11-21 — Shops have credit for AI pictures; offline money is recorded with proof [MIGRATION] [CONTRACT]
+
+- [shop-credits](specs/ai-images/shop-credits/): `CreditLine` (append-only, the balance is the sum), the
+  platform's and each shop's margin, and the platform's payment details, all in the payouts domain
+  (`server/payouts/credit.*`, ai-images Q39). Charging, settling and refunding a picture are
+  `creditService.charge/settle/refund`, for improve-with-ai; a charge is refused unless the balance covers
+  the most expensive model that might answer, under a per-shop advisory lock.
+- **[MIGRATION] `20261121110000_shop_credits`** gives every existing shop its ₹2,500 starting credit; a shop
+  made later is granted on first read. Adds `Settlement.method` and `Settlement.receiptRef`.
+- **[CONTRACT]** `PATCH /api/admin/settlements/[id]` with `PAID` now needs `method` and `reference`, and takes
+  `paidOn` (was `paidAt`) — the payouts sheet records them, with an optional receipt. CONTRACTS.md updated.
+- Admin: a **Credits** tab in the shop console (balance, margin, record a top-up with proof, reverse a line),
+  `/admin/payment-details` (UPI id, QR code, bank account, the platform margin), and the `payments` upload
+  folder for receipts and the QR. Shop: a **Credits** button on the Photos page opens the credit sheet.
+- Tests: `credit-ledger`, `payment-proof`.
+
 ## 2026-11-21 — Library images carry tags: Product and Reference [MIGRATION]
 
 - [media-tags](specs/ai-images/media-tags/): `MediaAsset.tags`, a GIN-indexed array of the closed `MediaTag`

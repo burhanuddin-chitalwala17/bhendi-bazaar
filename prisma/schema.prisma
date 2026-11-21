@@ -786,6 +786,8 @@ model Org {
   commissionRules    OrgCommissionRule[]
   ledgerEntries      OrgLedgerEntry[]
   settlements        Settlement[]
+  creditLines        CreditLine[]
+  creditPolicy       OrgCreditPolicy?
   biddingEvents      BiddingEvent[]
   listingValues      ListingValue[]
   productFamilies    ProductFamily[]
@@ -1836,6 +1838,92 @@ enum LedgerEntryState {
   REVERSED
 }
 
+/// How money moved outside the platform (shop-credits D6): a top-up in, a payout out.
+enum PaymentMethod {
+  UPI
+  BANK_TRANSFER
+  CASH
+  OTHER
+}
+
+enum CreditLineKind {
+  /// The one-time starting credit (ai-images Q14).
+  GRANT
+  /// Money the shop paid the platform offline, recorded by the admin with proof (Q17).
+  TOP_UP
+  /// An AI picture, charged when asked for (shop-credits D5).
+  CHARGE
+  /// The difference when a fallback model answered at another price.
+  ADJUSTMENT
+  /// A picture that was not made: what its charge and adjustment netted to, given back (Q20).
+  REFUND
+  /// An admin correcting a line; the original stays.
+  REVERSAL
+}
+
+/// A shop's credit, as append-only lines (ai-images/shop-credits D2). The balance is their sum and
+/// is never stored (R1); a line is never edited or deleted (R4). Restrict: money never cascades (ADR-0020).
+model CreditLine {
+  id                String         @id @default(cuid())
+  orgId             String
+  org               Org            @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  kind              CreditLineKind
+  /// Signed integer paise: a credit is positive, a charge negative (Invariant 3).
+  amountPaise       Int
+  /// A charge's provider cost and the margin applied to it, beside what was charged (Q15).
+  providerCostPaise Int?
+  marginBps         Int?
+  /// The run a charge, adjustment or refund belongs to.
+  enhancementId     String?
+  /// One line per kind per run, so a retried settle or refund changes nothing (D5).
+  runKey            String?        @unique
+  /// The org id on its one GRANT line, so a shop is granted once (D3).
+  grantKey          String?        @unique
+  method            PaymentMethod?
+  reference         String?
+  paidOn            DateTime?      @db.Date
+  receiptRef        String?
+  /// The line a REVERSAL undoes; unique, so a line is reversed at most once.
+  reversesId        String?        @unique
+  reverses          CreditLine?    @relation("CreditReversal", fields: [reversesId], references: [id], onDelete: Restrict)
+  reversedBy        CreditLine?    @relation("CreditReversal")
+  note              String?
+  /// Who recorded it; null for a line the platform wrote itself (grant, charge).
+  createdByUserId   String?
+  createdAt         DateTime       @default(now())
+
+  @@index([orgId, createdAt])
+  @@index([enhancementId])
+}
+
+/// The platform's margin on AI pictures, in basis points (Q15). One row, addressed by a constant id.
+model CreditSettings {
+  id        String   @id @default("platform")
+  marginBps Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+/// One shop's margin where it differs from the platform's; no row, or null, means the platform's.
+model OrgCreditPolicy {
+  orgId     String   @id
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  marginBps Int?
+  updatedAt DateTime @updatedAt
+}
+
+/// Where a shop sends a top-up (Q35): the platform's UPI id, QR code and bank account. One row.
+model PlatformPaymentDetails {
+  id              String   @id @default("platform")
+  upiId           String?
+  qrRef           String?
+  accountName     String?
+  accountNumber   String?
+  ifsc            String?
+  bankName        String?
+  updatedByUserId String?
+  updatedAt       DateTime @updatedAt
+}
+
 enum SettlementStatus {
   PENDING
   PAID
@@ -1971,6 +2059,9 @@ model Settlement {
   reference   String?
   paidAt      DateTime?
   note        String?
+  /// How the transfer was made, and a picture of its receipt (ai-images/shop-credits D6, Q18).
+  method      PaymentMethod?
+  receiptRef  String?
 
   /// Restrict, as `AdminLog` already does: removing a person must never erase the
   /// record of what they authorised.

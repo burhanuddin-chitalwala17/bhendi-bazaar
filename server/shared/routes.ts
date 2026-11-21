@@ -103,6 +103,7 @@ export const ROUTES = {
     orgNewProduct: (orgId: Id) => `/admin/orgs/${orgId}/products/new`,
     orgBulkProducts: (orgId: Id) => `/admin/orgs/${orgId}/products/bulk`,
     payouts: "/admin/payouts",
+    paymentDetails: "/admin/payment-details",
     orgPayouts: (orgId: Id) => `/admin/payouts/${orgId}`,
     productTypes: "/admin/product-types",
     newProductType: "/admin/product-types/new",

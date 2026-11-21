@@ -46,6 +46,7 @@
 | Q36 | Largest single top-up (U6) | ₹10,00,000 | Owner | 2026-11-21 | Catches a mistyped zero | decided |
 | Q37 | Tag on a new upload (U7) | None from the library's Upload button; **Product** when an image is put into a product's gallery; **Reference** when added as a reference | Owner | 2026-11-21 | Follows Q22 as revised | decided |
 | Q38 | Free cut-outs past the host's allowance | Priced at the host's overage, about $0.50 per 1,000 (≈₹0.05 each), to be confirmed against the bill; was stated as ≈₹0.17 in chat, which was wrong | Claude · reversible | 2026-11-21 | Correction of a figure given to the owner | decided |
+| Q39 | Which domain keeps the credit ledger? | payouts, beside the shop's earnings ledger; not subscriptions, whose rules keep it free of money | Claude · reversible | 2026-11-21 | `server/subscriptions/CLAUDE.md`: "Nothing here knows about money" | decided |
 | Q30 | How the work runs | End to end without pausing between units; stop only for the owner's UX sign-off and real blockers | Owner | 2026-11-21 | Owner's instruction | decided |
 
 ## Parked (Later)

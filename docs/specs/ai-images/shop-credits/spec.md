@@ -1,8 +1,8 @@
 # Spec — ai-images/shop-credits
 
 - **Summary:** Each shop has a credit balance kept as a ledger: ₹2,500 to start, offline top-ups the admin records with proof, AI pictures charged at exactly what they cost plus the shop's margin (0% today); payouts gain the same proof
-- **Status:** Draft
-- **Domain:** subscriptions (credit), payouts (proof)
+- **Status:** Accepted
+- **Domain:** payouts (credit ledger, payment details, proof)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-21
 - **References:** ux.md, trd.md, [../decisions.md](../decisions.md), [org-payouts](../../org-payouts/), [subscriptions/feature-access](../../subscriptions/feature-access/), [ADR-0004](../../../adr/0004-money-as-integer-paise.md), [ADR-0020](../../../adr/0020-money-bearing-records-never-cascade.md)
@@ -52,7 +52,7 @@ guessing what was spent.
 - **A2** — The admin records ₹1,000 by UPI with reference `UTR123`; the shop's balance rises by
   ₹1,000 and the line shows the method and reference. Recording it without a reference is refused.
 - **A3** — A picture costing the platform ₹2.04 at 0% margin takes ₹2.04; at a shop's 10% it takes
-  ₹2.24 (rounded up to the paisa), and the line shows ₹2.04 cost and 10%.
+  ₹2.25 (₹2.244, rounded up to the paisa), and the line shows ₹2.04 cost and 10%.
 - **A4** — A failed picture leaves the balance where it started, with both lines visible.
 - **A5** — A shop with ₹1.00 left asking for a ₹2.04 picture is refused with its balance shown.
 - **A6** — A settlement cannot be marked paid without a reference; once paid, its proof is shown.

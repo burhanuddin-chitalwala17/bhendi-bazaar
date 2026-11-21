@@ -22,7 +22,7 @@ interface ImageUploadProps {
   onChange: (urls: string[]) => void;
   maxImages?: number;
   required?: boolean;
-  uploadType?: "products" | "categories" | "reviews";
+  uploadType?: "products" | "categories" | "reviews" | "payments";
   /** Upload route — the caller knows whose guard applies (admin vs org member). */
   endpoint?: string;
 }

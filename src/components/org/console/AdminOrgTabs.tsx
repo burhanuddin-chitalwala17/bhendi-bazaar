@@ -14,6 +14,7 @@ const TABS = [
   { key: "earnings", label: ORG_TABS_COPY.earnings },
   { key: "reviews", label: ORG_TABS_COPY.reviews },
   { key: "plan", label: ORG_TABS_COPY.plan },
+  { key: "credits", label: ORG_TABS_COPY.credits },
 ] as const;
 
 interface Props {

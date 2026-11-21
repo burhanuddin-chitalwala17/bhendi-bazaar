@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-11-13
+- **Verified:** 2026-11-21
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -724,6 +724,30 @@ categories and abandoned-carts consoles: their listings are server reads, and th
 still crossing for those screens are the writes.
 
 **One cross-domain call**, not a wire DTO but recorded here for the same reason: `orderService.hasPurchased(userId, productIds)` is how `catalog` asks `checkout` whether to award **Verified purchase**. Catalog never joins `OrderItem` itself.
+
+## ai-images (tags, credit, payment proof)
+
+**`PUT /api/org/[orgId]/media/[assetId]/tags`** (`withOrg`) parses **`mediaTagSchema`**
+(`src/lib/validation/schemas/media-library.schema.ts`): `{ tag: "PRODUCT" | "REFERENCE", on: boolean }`. It answers
+the image's **`MediaAssetDto`**, which carries `tags` (`server/catalog/media-library.types.ts`); a video, a retired
+image or another org's is `404` "Image not found". The library's filters accept `tag` with the same values.
+
+**`GET /api/org/[orgId]/credits?page=`** (`withOrg`, free) answers **`CreditAccountDto`**
+(`server/payouts/credit.types.ts`): `{ balancePaise, lines, hasMore, paymentDetails }`, each line a `CreditLineDto`
+whose `providerCostPaise` and `marginBps` are null on the shop's own view. The admin's
+**`GET`/`POST /api/admin/orgs/[id]/credits`** answer **`AdminCreditAccountDto`** (the same plus `marginOverrideBps`,
+`platformMarginBps`, `spentThisMonthPaise`); the `POST` parses **`topUpSchema`** (`credit.schema.ts`):
+`amountPaise` 1–100,000,000 and a payment proof. **`POST …/credits/[lineId]/reverse`** parses `{ reason }` (3–300
+characters); only a starting credit or a top-up reverses, once (`409` otherwise). **`PUT …/credits/margin`** parses
+`{ marginBps: 0–10,000 | null }`; **`PUT /api/admin/credits/settings`** `{ marginBps: 0–10,000 }`;
+**`PUT /api/admin/payment-details`** parses **`paymentDetailsSchema`** and answers **`PaymentDetailsDto`**. No amount
+in any of these is a price the platform charges: a top-up is money the admin saw arrive (Invariant 1).
+
+**A payment proof** (**`paymentProofSchema`**) is `{ method: "UPI" | "BANK_TRANSFER" | "CASH" | "OTHER", reference
+(1–120, "Add the transaction reference"), paidOn (a date, not in the future), receiptRef (a URL in our own store, or
+null) }`. **`PATCH /api/admin/settlements/[id]`** now parses **`settlementStatusSchema`**: `{ status: "PAID", ...proof }`
+or `{ status: "CANCELLED" }`. **Breaking:** `PAID` without `method` and `reference` is `400`; `paidAt` is replaced by
+`paidOn` (ai-images Q18).
 
 ## Adding a DTO to this file
 Record a shape when it crosses the boundary and either more than one route uses it, or getting it wrong would fail silently. A one-off response shape used by a single route does not need an entry — its Zod schema is its documentation.

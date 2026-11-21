@@ -2,19 +2,14 @@
  * PATCH /api/admin/settlements/[id] — record payment, or cancel.
  *
  * Nothing marks itself paid (spec R21). `PAID` is terminal for the amount and
- * reference; cancelling releases the entries back to unsettled, intact.
+ * reference, and needs its proof — method, reference, date, optional receipt (ai-images Q18);
+ * cancelling releases the entries back to unsettled, intact.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { settlementService } from "@server/payouts/settlement.service";
 import { toErrorResponse } from "@/lib/api-error-response";
-
-const statusSchema = z.object({
-  status: z.enum(["PAID", "CANCELLED"]),
-  reference: z.string().trim().max(120).optional(),
-  paidAt: z.coerce.date().optional(),
-});
+import { settlementStatusSchema } from "@/lib/validation/schemas/credit.schema";
 
 export async function PATCH(
   request: NextRequest,
@@ -23,7 +18,7 @@ export async function PATCH(
   try {
     const session = await requirePlatformAdmin();
     const { id } = await context.params;
-    const body = statusSchema.parse(await request.json());
+    const body = settlementStatusSchema.parse(await request.json());
     return NextResponse.json(
       await settlementService.setSettlementStatus(id, body, session.user.id),
     );
