@@ -2,7 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ENHANCEMENT_STATE, type EnhancementDto, type RequestStyledInput } from "@server/content/enhancement.types";
+import { ApiError } from "@/lib/api-error";
 import { styledShotApiClient } from "./styledShotApiClient";
+
+/**
+ * What a refused request tells the shop. The modal has no fields to highlight, so a validation
+ * refusal shows its first field's own words, not "Please correct the highlighted fields".
+ */
+export function failureMessage(cause: unknown, fallback: string): string {
+  if (cause instanceof ApiError && cause.status === 400 && cause.details[0]?.message) return cause.details[0].message;
+  return cause instanceof Error ? cause.message : fallback;
+}
 
 /**
  * How often a run is asked after (review, 2026-11-21): every 3 s while a fast model might already be
@@ -77,7 +87,7 @@ export function useStyledShotRun(orgId: string, messages: { couldNotStart: strin
         const { enhancement } = await styledShotApiClient.request(orgId, input);
         poll(enhancement.id, startedAt, input);
       } catch (cause) {
-        setRun({ phase: "failed", message: cause instanceof Error ? cause.message : messages.couldNotStart, input });
+        setRun({ phase: "failed", message: failureMessage(cause, messages.couldNotStart), input });
       } finally {
         asking.current = false;
       }

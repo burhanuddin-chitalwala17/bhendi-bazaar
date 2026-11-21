@@ -12,6 +12,14 @@
 
 ## Entries
 
+## 2026-11-21 — Fix: a Styled shot from a page opened before the shape choice was refused
+
+- A page loaded before #89 deployed runs the old modal, which sends no `aspect`; the server required one and answered
+  400, shown as "Please correct the highlighted fields". `requestStyledSchema` now treats a missing shape as square —
+  what that modal always made — while the new modal still will not send without a choice.
+- The modal shows a validation refusal's own field message (`failureMessage` in `useStyledShotRun.ts`): it has no
+  fields to highlight, so the envelope's summary told the shop nothing.
+
 ## 2026-11-21 — Styled shot: the shop chooses the shape, any library picture is a reference, the result fits [CONTRACT] [MIGRATION]
 
 - **Shape (ai-images Q42).** The modal asks Square 1:1, Portrait 4:5, Tall 9:16 or Landscape 4:3 before Generate,
