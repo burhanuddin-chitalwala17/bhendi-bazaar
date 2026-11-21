@@ -7,13 +7,17 @@ import { requirePlatformAdminId } from "@/lib/admin-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { marginSchema } from "@/lib/validation/schemas/credit.schema";
 import { creditService } from "@server/payouts/credit.service";
+import { adminOrgService } from "@server/catalog/org.service";
+import { NotFoundError } from "@server/shared/domain-error";
 
 export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    await requirePlatformAdminId();
+    const adminId = await requirePlatformAdminId();
     const { id } = await context.params;
+    const [org] = await adminOrgService.summariesFor([id]);
+    if (!org) throw new NotFoundError("Shop not found");
     const { marginBps } = marginSchema.parse(await request.json());
-    await creditService.setOrgMargin(id, marginBps);
+    await creditService.setOrgMargin(id, marginBps, adminId);
     return NextResponse.json(await creditService.adminAccount(id));
   } catch (error) {
     return toErrorResponse(error, "Could not change the margin");

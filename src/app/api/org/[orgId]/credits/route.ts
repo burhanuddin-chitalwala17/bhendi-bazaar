@@ -8,8 +8,9 @@
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
 import { creditService } from "@server/payouts/credit.service";
+import { creditPageOf } from "@/lib/validation/schemas/credit.schema";
 
 export const GET = withOrg(async (request, scope) => {
-  const page = Math.max(1, Number(new URL(request.url).searchParams.get("page")) || 1);
+  const page = creditPageOf(new URL(request.url).searchParams);
   return NextResponse.json(await creditService.account(scope.orgId, page));
 });

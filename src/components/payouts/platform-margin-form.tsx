@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,8 +26,13 @@ export function PlatformMarginForm({ initialBps }: { initialBps: number }) {
         className="flex flex-col gap-3 sm:flex-row sm:items-end"
         onSubmit={(event) => {
           event.preventDefault();
+          const typed = percent.trim() || "0";
+          if (!/^\d{1,3}(\.\d{1,2})?$/.test(typed)) {
+            toast.error(PAYMENT_DETAILS_COPY.marginInvalid);
+            return;
+          }
           // Percent with up to two decimals, stored as basis points.
-          save.mutate(Math.round(Number(percent.trim() || "0") * 100)).catch(() => {});
+          save.mutate(Math.round(Number(typed) * 100)).catch(() => {});
         }}
       >
         <div className="space-y-1">

@@ -12,7 +12,7 @@ export const CREDIT_LINE_LABEL: Record<CreditLineKind, string> = {
   GRANT: "Starting credit",
   TOP_UP: "Top-up",
   CHARGE: "AI picture",
-  ADJUSTMENT: "AI picture, another model",
+  ADJUSTMENT: "AI picture, settled",
   REFUND: "Refund — picture not made",
   REVERSAL: "Reversal",
 };
@@ -69,6 +69,8 @@ export const ADMIN_CREDITS_COPY = {
   recordTopUp: "Record top-up",
   topUpTitle: "Record top-up",
   amount: "Amount (₹)",
+  amountInvalid: "Enter an amount in rupees, like 1000 or 1000.50",
+  marginInvalid: "Enter a percentage like 5 or 7.5, or leave it empty",
   record: "Record",
   recorded: (amount: string, shop: string) => `${amount} added to ${shop}`,
   reverse: "Reverse…",
@@ -97,6 +99,7 @@ export const PAYMENT_DETAILS_COPY = {
   marginTitle: "Margin on AI pictures",
   marginDescription: "Added to what each AI picture costs the platform, for every shop without a margin of its own. 0% charges shops exactly the cost.",
   marginLabel: "Margin, %",
+  marginInvalid: "Enter a percentage like 5 or 7.5",
   saveMargin: "Save margin",
   marginSaved: "Margin saved",
 } as const;

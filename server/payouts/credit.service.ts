@@ -1,7 +1,7 @@
 import { CreditLineKind } from "@prisma/client";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 import { prisma } from "@server/shared/prisma";
-import { recordAdminActionIn } from "@server/shared/audit/audit.service";
+import { recordAdminAction, recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { creditRepository, type CreditDb, type CreditLineRow } from "@server/payouts/credit.repository";
 import { paymentDetailsRepository } from "@server/payouts/payment-details.repository";
 import {
@@ -114,7 +114,8 @@ export const creditService = {
 
   /**
    * Undo money recorded by mistake (R4): a new line of the opposite amount naming the original and
-   * why. The original stays; a line is reversed at most once (the unique `reversesId`).
+   * why. The original stays; a line is reversed at most once (the unique `reversesId`). It may take
+   * the balance below zero: correcting money that never arrived cannot wait on what was spent from it.
    */
   async reverse(orgId: string, lineId: string, reason: string, actorId: string): Promise<void> {
     const line = await creditRepository.findLine(orgId, lineId);
@@ -152,24 +153,28 @@ export const creditService = {
     }
   },
 
-  async setOrgMargin(orgId: string, marginBps: number | null): Promise<void> {
+  async setOrgMargin(orgId: string, marginBps: number | null, actorId: string): Promise<void> {
     await creditRepository.setOrgMarginBps(orgId, marginBps);
+    await recordAdminAction({ adminId: actorId, action: "CREDIT_MARGIN_SET", resource: "Org", resourceId: orgId, metadata: { marginBps } });
   },
 
   async platformMargin(): Promise<number> {
     return await creditRepository.platformMarginBps();
   },
 
-  async setPlatformMargin(marginBps: number): Promise<void> {
+  async setPlatformMargin(marginBps: number, actorId: string): Promise<void> {
     await creditRepository.setPlatformMarginBps(marginBps);
+    await recordAdminAction({ adminId: actorId, action: "CREDIT_PLATFORM_MARGIN_SET", resource: "CreditSettings", resourceId: "platform", metadata: { marginBps } });
   },
 
   async paymentDetails(): Promise<PaymentDetailsDto> {
     return await paymentDetailsRepository.read();
   },
 
+  /** Where shops send money: the most sensitive write here, so every save is on the audit trail. */
   async savePaymentDetails(details: PaymentDetailsDto, actorId: string): Promise<void> {
     await paymentDetailsRepository.save(details, actorId);
+    await recordAdminAction({ adminId: actorId, action: "PAYMENT_DETAILS_SAVED", resource: "PlatformPaymentDetails", resourceId: "platform", metadata: { ...details } });
   },
 
   /** The shop's margin as it applies now: its own, else the platform's (D4). */
@@ -184,69 +189,69 @@ export const creditService = {
   },
 
   /**
-   * Charge a run when it is asked for (R5, D5), inside the caller's transaction so the run and its
-   * charge commit together. Locked per shop; refused unless the balance covers the most expensive
-   * model that might answer, so settling afterwards never takes it below zero (R7).
+   * Charge a run when it is asked for (R5, R7; D5), inside the caller's transaction so the run and its
+   * charge commit together. Locked per shop. It **holds the most expensive model that might answer**
+   * (with margin), so concurrent charges can never overdraw, and settling only ever gives some back.
    */
   async charge(
     tx: CreditDb,
-    input: { orgId: string; enhancementId: string; costPaise: number; worstCostPaise: number },
-  ): Promise<{ chargePaise: number; balancePaise: number }> {
-    const marginBps = await this.marginFor(input.orgId);
+    input: { orgId: string; enhancementId: string; costPaise: number; worstCostPaise: number; marginBps: number },
+  ): Promise<{ heldPaise: number; balancePaise: number }> {
     await creditRepository.lockOrg(input.orgId, tx);
     await creditRepository.ensureGrants([input.orgId], tx);
     const balance = await creditRepository.balance(input.orgId, tx);
-    const chargePaise = withMargin(input.costPaise, marginBps);
-    const worst = withMargin(Math.max(input.costPaise, input.worstCostPaise), marginBps);
-    if (balance < worst) throw new InsufficientCreditError(balance, worst);
-    await creditRepository.insertOnce(
+    const worstCost = Math.max(input.costPaise, input.worstCostPaise);
+    const heldPaise = withMargin(worstCost, input.marginBps);
+    if (balance < heldPaise) throw new InsufficientCreditError(balance, heldPaise);
+    const written = await creditRepository.insertOnce(
       {
         orgId: input.orgId,
         kind: CreditLineKind.CHARGE,
-        amountPaise: -chargePaise,
-        providerCostPaise: input.costPaise,
-        marginBps,
+        amountPaise: -heldPaise,
+        providerCostPaise: worstCost,
+        marginBps: input.marginBps,
         enhancementId: input.enhancementId,
         runKey: `charge:${input.enhancementId}`,
         note: "AI picture",
       },
       tx,
     );
-    return { chargePaise, balancePaise: balance - chargePaise };
+    return { heldPaise, balancePaise: written ? balance - heldPaise : balance };
   },
 
   /**
-   * The run made its picture at `actualCostPaise` (D5): when a fallback model answered at another
-   * price, one adjustment makes the run's lines equal cost plus the same margin. Idempotent.
+   * The run made its picture at `actualCostPaise` (D5): what was held beyond cost plus margin comes
+   * back in one line. A run has exactly one closing line — this or a refund, whichever is first —
+   * so a late settle after a refund, or the reverse, changes nothing.
    */
   async settle(enhancementId: string, actualCostPaise: number): Promise<void> {
     const run = await creditRepository.netForRun(enhancementId);
     if (!run.orgId || !run.charge) return;
     const owed = withMargin(actualCostPaise, run.charge.marginBps ?? 0);
-    const difference = run.paise + owed;
-    if (difference === 0) return;
+    // What was held, less what is owed; never a further charge: the hold was the worst case.
+    const back = Math.max(0, -run.paise - owed);
     await creditRepository.insertOnce({
       orgId: run.orgId,
       kind: CreditLineKind.ADJUSTMENT,
-      amountPaise: -difference,
+      amountPaise: back,
       providerCostPaise: actualCostPaise,
       marginBps: run.charge.marginBps,
       enhancementId,
-      runKey: `settle:${enhancementId}`,
-      note: "AI picture, another model answered",
+      runKey: `close:${enhancementId}`,
+      note: "AI picture, settled",
     });
   },
 
-  /** A run that made nothing gives back what it took (Q20). Idempotent. */
+  /** A run that made nothing gives back everything it held (Q20). Its closing line, written once. */
   async refund(enhancementId: string): Promise<void> {
     const run = await creditRepository.netForRun(enhancementId);
-    if (!run.orgId || run.paise >= 0) return;
+    if (!run.orgId || !run.charge) return;
     await creditRepository.insertOnce({
       orgId: run.orgId,
       kind: CreditLineKind.REFUND,
-      amountPaise: -run.paise,
+      amountPaise: Math.max(0, -run.paise),
       enhancementId,
-      runKey: `refund:${enhancementId}`,
+      runKey: `close:${enhancementId}`,
       note: "Picture not made",
     });
   },

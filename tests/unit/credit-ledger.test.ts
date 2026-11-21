@@ -92,47 +92,66 @@ describe("margin (D4, Q15)", () => {
 });
 
 describe("charging a picture (R5, R7)", () => {
-  it("grants the starting credit first, locks the shop, and takes cost plus margin", async () => {
-    orgMargin = 1_000;
-    const { chargePaise } = await creditService.charge(tx, { orgId: "org-1", enhancementId: "e1", costPaise: 204, worstCostPaise: 374 });
-    expect(chargePaise).toBe(225);
+  it("grants the starting credit first, locks the shop, and holds the worst case with margin", async () => {
+    const { heldPaise } = await creditService.charge(tx, { orgId: "org-1", enhancementId: "e1", costPaise: 204, worstCostPaise: 374, marginBps: 1_000 });
+    expect(heldPaise).toBe(412);
     expect(repo.lockOrg).toHaveBeenCalledWith("org-1", tx);
-    await expect(balance()).resolves.toBe(STARTING_CREDIT_PAISE - 225);
-    expect(runLines("e1")[0]).toMatchObject({ kind: "CHARGE", providerCostPaise: 204, marginBps: 1_000 });
+    await expect(balance()).resolves.toBe(STARTING_CREDIT_PAISE - 412);
+    expect(runLines("e1")[0]).toMatchObject({ kind: "CHARGE", providerCostPaise: 374, marginBps: 1_000 });
   });
 
   it("is refused, with the balance, when it could not cover the most expensive model that might answer", async () => {
     lines.push({ id: "g", orgId: "org-1", kind: "GRANT", amountPaise: 300 });
-    const charge = creditService.charge(tx, { orgId: "org-1", enhancementId: "e1", costPaise: 204, worstCostPaise: 374 });
+    const charge = creditService.charge(tx, { orgId: "org-1", enhancementId: "e1", costPaise: 204, worstCostPaise: 374, marginBps: 0 });
     await expect(charge).rejects.toBeInstanceOf(InsufficientCreditError);
     await expect(charge).rejects.toMatchObject({ balancePaise: 300, neededPaise: 374 });
     expect(runLines("e1")).toEqual([]);
+  });
+
+  it("never lets two charges together overdraw (review, 2026-11-21)", async () => {
+    // ₹1.50, two pictures each costing ₹0.40 but possibly ₹1.00: the second is refused, not allowed through.
+    lines.push({ id: "g", orgId: "org-1", kind: "GRANT", amountPaise: 150 });
+    await creditService.charge(tx, { orgId: "org-1", enhancementId: "a", costPaise: 40, worstCostPaise: 100, marginBps: 0 });
+    await expect(creditService.charge(tx, { orgId: "org-1", enhancementId: "b", costPaise: 40, worstCostPaise: 100, marginBps: 0 })).rejects.toBeInstanceOf(InsufficientCreditError);
+    await creditService.settle("a", 100);
+    await expect(balance()).resolves.toBe(50);
   });
 });
 
 describe("after the run (D5)", () => {
   beforeEach(async () => {
-    await creditService.charge(tx, { orgId: "org-1", enhancementId: "e1", costPaise: 13, worstCostPaise: 374 });
+    await creditService.charge(tx, { orgId: "org-1", enhancementId: "e1", costPaise: 13, worstCostPaise: 374, marginBps: 0 });
   });
 
-  it("changes nothing when the first model answered", async () => {
+  it("gives back what was held beyond the price of the model that answered", async () => {
     await creditService.settle("e1", 13);
-    expect(runLines("e1")).toHaveLength(1);
+    expect(runLines("e1").reduce((t, l) => t + l.amountPaise, 0)).toBe(-13);
+    await expect(balance()).resolves.toBe(STARTING_CREDIT_PAISE - 13);
   });
 
-  it("brings the run to the fallback's price when another model answered, once", async () => {
+  it("settles once, whatever retries", async () => {
     await creditService.settle("e1", 374);
-    await creditService.settle("e1", 374);
+    await creditService.settle("e1", 13);
     expect(runLines("e1").reduce((t, l) => t + l.amountPaise, 0)).toBe(-374);
-    expect(runLines("e1")).toHaveLength(2);
-    await expect(balance()).resolves.toBe(STARTING_CREDIT_PAISE - 374);
   });
 
-  it("gives back everything a failed run took, once (Q20)", async () => {
+  it("gives back everything a failed run held, once (Q20)", async () => {
     await creditService.refund("e1");
     await creditService.refund("e1");
     expect(runLines("e1").map((l) => l.kind)).toEqual(["CHARGE", "REFUND"]);
     await expect(balance()).resolves.toBe(STARTING_CREDIT_PAISE);
+  });
+
+  it("does not charge a refunded run again when a late settle arrives (review, 2026-11-21)", async () => {
+    await creditService.refund("e1");
+    await creditService.settle("e1", 13);
+    await expect(balance()).resolves.toBe(STARTING_CREDIT_PAISE);
+  });
+
+  it("does not refund a settled run when a late refund arrives", async () => {
+    await creditService.settle("e1", 13);
+    await creditService.refund("e1");
+    await expect(balance()).resolves.toBe(STARTING_CREDIT_PAISE - 13);
   });
 });
 
@@ -151,7 +170,7 @@ describe("reversing a line (R4)", () => {
   });
 
   it("refuses to reverse a picture's charge, which settles itself", async () => {
-    await creditService.charge(tx, { orgId: "org-1", enhancementId: "e1", costPaise: 13, worstCostPaise: 13 });
+    await creditService.charge(tx, { orgId: "org-1", enhancementId: "e1", costPaise: 13, worstCostPaise: 13, marginBps: 0 });
     const charge = runLines("e1")[0];
     await expect(creditService.reverse("org-1", charge?.id ?? "", "No", "admin-1")).rejects.toThrow(/settles itself/);
   });

@@ -9,6 +9,7 @@ import { requirePlatformAdminId } from "@/lib/admin-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { topUpSchema } from "@/lib/validation/schemas/credit.schema";
 import { creditService } from "@server/payouts/credit.service";
+import { creditPageOf } from "@/lib/validation/schemas/credit.schema";
 import { adminOrgService } from "@server/catalog/org.service";
 import { NotFoundError } from "@server/shared/domain-error";
 
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest, context: Context) {
     await requirePlatformAdminId();
     const { id } = await context.params;
     await requireOrg(id);
-    const page = Math.max(1, Number(new URL(request.url).searchParams.get("page")) || 1);
+    const page = creditPageOf(new URL(request.url).searchParams);
     return NextResponse.json(await creditService.adminAccount(id, page));
   } catch (error) {
     return toErrorResponse(error, "Could not load this shop's credit");

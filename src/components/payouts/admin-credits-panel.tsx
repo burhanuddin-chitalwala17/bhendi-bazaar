@@ -161,6 +161,10 @@ export function AdminCreditsPanel({ orgId, shop, initial }: Props) {
           className="space-y-3"
           onSubmit={(event) => {
             event.preventDefault();
+            if (amountPaise <= 0) {
+              toast.error(ADMIN_CREDITS_COPY.amountInvalid);
+              return;
+            }
             topUp.mutate({ ...proof, reference: proof.reference.trim(), amountPaise }).catch(() => {});
           }}
         >
@@ -204,7 +208,12 @@ export function AdminCreditsPanel({ orgId, shop, initial }: Props) {
           onSubmit={(event) => {
             event.preventDefault();
             const typed = margin.trim();
-            // Percent with up to two decimals, as basis points; empty follows the platform.
+            // Percent with up to two decimals, as basis points; empty follows the platform. A typo is
+            // said, never sent: NaN would travel as null and quietly clear the shop's margin.
+            if (typed !== "" && !/^\d{1,3}(\.\d{1,2})?$/.test(typed)) {
+              toast.error(ADMIN_CREDITS_COPY.marginInvalid);
+              return;
+            }
             saveMargin.mutate(typed === "" ? null : Math.round(Number(typed) * 100)).catch(() => {});
           }}
         >

@@ -10,9 +10,9 @@ import { creditService } from "@server/payouts/credit.service";
 
 export async function PUT(request: NextRequest) {
   try {
-    await requirePlatformAdminId();
+    const adminId = await requirePlatformAdminId();
     const { marginBps } = platformMarginSchema.parse(await request.json());
-    await creditService.setPlatformMargin(marginBps);
+    await creditService.setPlatformMargin(marginBps, adminId);
     return NextResponse.json({ marginBps });
   } catch (error) {
     return toErrorResponse(error, "Could not change the margin");

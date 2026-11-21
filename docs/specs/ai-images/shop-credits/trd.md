@@ -45,12 +45,16 @@ the platform's payment details. Settlements gain the same proof.
 - **D4 — Margin (Q15).** `CreditSettings` (singleton, `marginBps`, default 0) and `OrgCreditPolicy`
   (`marginBps`, nullable means platform's) — the enhancement settings' two-layer shape. A charge is
   cost + ceil(cost × bps / 10,000), integer paise; the line records cost, bps and amount.
-- **D5 — Charging (R5, R7).** `creditService.charge(tx, { orgId, enhancementId, costPaise,
-  worstCostPaise })` inside the request's transaction: advisory lock, ensure grant, sum, refuse with
-  the balance if it is below the worst case with margin, else write `CHARGE`. `settle(enhancementId,
-  actualCostPaise)` writes an `ADJUSTMENT` for any difference; `refund(enhancementId)` writes `REFUND`
-  of whatever that enhancement's lines net to. Both idempotent per enhancement (a unique key per
-  kind and enhancement).
+- **D5 — Charging is a hold, settled down (R5, R7).** `creditService.charge(tx, { orgId, enhancementId,
+  costPaise, worstCostPaise, marginBps })` inside the request's transaction: advisory lock, ensure
+  grant, sum, refuse below the **worst eligible model's price with margin**, else write a `CHARGE` of
+  that worst case. Holding the worst case (not the expected price) is what keeps two concurrent
+  charges from overdrawing. Each run then has **one closing line**, keyed `close:<run>`: `settle`
+  gives back what was held beyond the actual price (`ADJUSTMENT`, never a further charge) and
+  `refund` gives back all of it (`REFUND`); whichever arrives first wins, so a late settle after a
+  refund, or the reverse, changes nothing. Inserts use `skipDuplicates`, never a caught unique
+  violation, which would abort the caller's transaction. (Revised after review, 2026-11-21: was
+  "charge the expected price and adjust either way".)
 - **D6 — Proof (Q17, Q18).** `PaymentMethod` enum (`UPI`, `BANK_TRANSFER`, `CASH`, `OTHER`). One
   `paymentProofSchema` (method, reference 1–120 chars, paid-on date not in the future, optional receipt
   URL of our own store) is used by top-ups and by marking a settlement paid; the settlement route's
@@ -60,10 +64,11 @@ the platform's payment details. Settlements gain the same proof.
   name, number, IFSC, bank. Images (QR, receipts) upload through the admin's existing uploader as
   platform images.
 - **D8 — Top-up limit (Q36).** 1 paisa to ₹10,00,000 per line, in the schema.
-- **D9 — Routes.** Admin: `GET/POST /api/admin/orgs/[id]/credits` (lines + top-up),
+- **D9 — Routes.** A page number is a whole number from 1 (`creditPageOf`); an unknown shop is 404. Admin: `GET/POST /api/admin/orgs/[id]/credits` (lines + top-up),
   `POST …/credits/[lineId]/reverse`, `PUT …/credits/margin`, `PUT /api/admin/credits/settings`,
   `PUT /api/admin/payment-details`. Shop: `GET /api/org/[orgId]/credits` (balance, a page of lines,
-  payment details). Every write audited (`recordAdminActionIn`).
+  payment details). Every admin write is audited: top-ups and reversals in their transaction, margins
+  and payment details after the write. A proof's date may not be after today by India's clock.
 
 ## Packages
 None.
@@ -72,8 +77,11 @@ None.
 Per [ux.md](ux.md). Shop: a **Credits** button in the Photos page header opens a `TaskDialog` (full
 screen on a phone) with the balance, the note, the payment details with copy buttons, and lines via
 `useAsyncData`. Admin: a **Credits** tab in the shop console (balance, margin, Record top-up and
-Reverse in `HandoffSheet`s with `useServerForm`); `/admin/payment-details` as a form page; the
-settlement "Mark as paid" sheet gains method and receipt. Copy in each area's copy module.
+Reverse in `FormDialog`s — a short form's surface under ADR-0040); `/admin/payment-details` as a form
+page; the settlement form gains the proof fields. The forms keep local state with `useMutation`, as
+the payouts forms beside them do, rather than `useServerForm` (Q40): the schemas import the object
+store's own-URL check, which the browser cannot load. A typo is caught before sending; the server's
+envelope message is the toast. Copy in each area's copy module.
 
 ## Gates touched
 - `one-repository`: `credit.repository.ts`, `payment-details.repository.ts`; `ledger.repository.ts`
@@ -95,7 +103,8 @@ not listed there.
 - `credit-ledger.test.ts` — balance is the sum; grant once; margin rounding; charge refused below the
   worst case; settle and refund idempotent; reversal once per line.
 - `payment-proof.test.ts` — the schema; settlement `PAID` without proof refused.
-- Route tests for the admin and org routes' parse and guard.
+- Route guards are the shared `requirePlatformAdminId` and `withOrg`, already covered; no route test of
+  their own (the parse is the schema's, tested in `payment-proof`).
 
 ## Delivery (PRs)
 One unit: schema, service, routes, admin and shop screens.

@@ -1,4 +1,4 @@
-import { CreditLineKind, Prisma, type PaymentMethod } from "@prisma/client";
+import { CreditLineKind, type Prisma, type PaymentMethod } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
 import { STARTING_CREDIT_PAISE } from "@server/payouts/credit.types";
 
@@ -79,17 +79,13 @@ export class CreditRepository {
   }
 
   /**
-   * A line keyed to a run (settle, refund): written once, whatever retries. False when the key was
-   * already taken — the earlier write stands.
+   * A line keyed to a run (its charge, its one closing line): written once, whatever retries. False
+   * when the key was already taken — the earlier write stands. `skipDuplicates` rather than catching
+   * the unique violation, which would abort a caller's transaction in Postgres.
    */
   async insertOnce(line: NewCreditLine & { runKey: string }, db: CreditDb = prisma): Promise<boolean> {
-    try {
-      await db.creditLine.create({ data: line, select: { id: true } });
-      return true;
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return false;
-      throw error;
-    }
+    const { count } = await db.creditLine.createMany({ data: [line], skipDuplicates: true });
+    return count === 1;
   }
 
   /** Newest first, one more than asked so the caller knows there is more. */

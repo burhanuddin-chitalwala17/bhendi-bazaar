@@ -17,8 +17,13 @@ const ownImage = z
   .max(500)
   .refine((url) => isOwnObjectUrl(url), { message: "Upload the picture here rather than linking to it" });
 
+/**
+ * The end of today by India's clock (UTC+5:30), as an instant: a date picked in a browser in India
+ * just after midnight is today there and still yesterday in UTC, and must not read as the future.
+ */
+const IST_OFFSET_MS = 330 * 60 * 1000;
 const today = () => {
-  const end = new Date();
+  const end = new Date(Date.now() + IST_OFFSET_MS);
   end.setUTCHours(23, 59, 59, 999);
   return end;
 };
@@ -39,6 +44,12 @@ export const topUpSchema = paymentProofSchema.extend({
     .max(MAX_TOP_UP_PAISE, "That is more than ₹10,00,000 — check the amount"),
 });
 export type TopUpInput = z.infer<typeof topUpSchema>;
+
+/** A page of credit lines: a whole number from 1, anything else is the first page. */
+export function creditPageOf(params: URLSearchParams): number {
+  const page = z.coerce.number().int().min(1).max(10_000).safeParse(params.get("page") ?? "1");
+  return page.success ? page.data : 1;
+}
 
 export const reverseCreditSchema = z.object({
   reason: z.string().trim().min(3, "Say why, so the shop and the next admin can read it").max(300),
