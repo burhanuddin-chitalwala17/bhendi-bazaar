@@ -12,6 +12,13 @@
 
 ## Entries
 
+## 2026-11-21 — CI drops the restored data cache before the build
+
+- The e2e job restored `.next/cache` on an exact key hit, including `fetch-cache`: the category page's product
+  list from the previous run's database. A commit touching no code (docs, CI) hit it and the smoke journey could
+  not find the product it had just seeded. The job now deletes `.next/cache/fetch-cache` after restoring and keeps
+  the compile cache.
+
 ## 2026-11-21 — The worker is given the AI-picture variables
 
 - The worker generates every AI picture, but neither deploy passed it the keys. `ci.yml` and `staging-worker.yml`
