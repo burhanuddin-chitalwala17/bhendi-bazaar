@@ -173,6 +173,24 @@ async function standing(orgId: string, now: Date): Promise<{ usage: EnhancementU
  * The source is never touched (spec R3), and every refusal is a `DomainError` the sheet shows.
  */
 export const enhancementService = {
+  /**
+   * The refusals every run shares, the AI tool's included (spec R7, trd D5; improve-with-ai R12): the
+   * shop's pause, its month's allowance, and the platform's day. Answers the standing it checked.
+   */
+  async assertMayRun(orgId: string, now: Date = new Date()): Promise<EnhancementUsage> {
+    const { usage, dailyCapPaise } = await standing(orgId, now);
+    if (usage.paused) {
+      throw new DomainError(`Enhancement is paused for your shop: ${usage.pauseReason ?? "ask the platform owner"}`);
+    }
+    if (usage.used >= usage.allowance) {
+      throw new DomainError(`You have used all ${usage.allowance} enhancements for this month`);
+    }
+    if ((await enhancementRepository.sumCostPaise(dayWindow(now))) >= dailyCapPaise) {
+      throw new DomainError("Enhancement has reached today's limit across the platform. Try again tomorrow.");
+    }
+    return usage;
+  },
+
   /** The org's standing this month (spec R7): a count of rows in the states that count, never a counter (trd D5). */
   async usage(orgId: string, now: Date = new Date()): Promise<EnhancementUsage> {
     return (await standing(orgId, now)).usage;
@@ -203,16 +221,7 @@ export const enhancementService = {
     // is refused before a slot is spent.
     const planned = prepareTool(tool, input.preset ?? null).provider;
 
-    const { usage, dailyCapPaise } = await standing(orgId, now);
-    if (usage.paused) {
-      throw new DomainError(`Enhancement is paused for your shop: ${usage.pauseReason ?? "ask the platform owner"}`);
-    }
-    if (usage.used >= usage.allowance) {
-      throw new DomainError(`You have used all ${usage.allowance} enhancements for this month`);
-    }
-    if ((await enhancementRepository.sumCostPaise(dayWindow(now))) >= dailyCapPaise) {
-      throw new DomainError("Enhancement has reached today's limit across the platform. Try again tomorrow.");
-    }
+    const usage = await this.assertMayRun(orgId, now);
 
     // Another org's photo, or one not ready, is "not found" rather than a hint that it exists.
     const source = await mediaAssetService.findReadyImage(orgId, { assetId: input.sourceAssetId, ref: input.sourceRef });

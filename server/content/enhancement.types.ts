@@ -15,6 +15,8 @@ export const ENHANCEMENT_TOOL = {
   SCENE: "SCENE",
   LIGHT: "LIGHT",
   ENLARGE: "ENLARGE",
+  /** An AI picture from the shop's description and references (ai-images/improve-with-ai D1). Not one of the six. */
+  STYLED: "STYLED",
 } as const satisfies Record<PrismaEnhancementTool, PrismaEnhancementTool>;
 export type EnhancementTool = (typeof ENHANCEMENT_TOOL)[keyof typeof ENHANCEMENT_TOOL];
 
@@ -158,6 +160,7 @@ export const TOOL_COPY: Record<EnhancementTool, { label: string; line: string }>
   [ENHANCEMENT_TOOL.SCENE]: { label: "In a scene", line: "Placed in a real-looking setting" },
   [ENHANCEMENT_TOOL.LIGHT]: { label: "Fix the light", line: "Brighter, sharper, nothing else changed" },
   [ENHANCEMENT_TOOL.ENLARGE]: { label: "Make it bigger", line: "Large enough for a marketplace to accept" },
+  [ENHANCEMENT_TOOL.STYLED]: { label: "Improve with AI", line: "Styled from your description" },
 };
 
 /**
@@ -222,6 +225,7 @@ export const TOOL_MIME_TYPE: Record<EnhancementTool, ProposalMimeType> = {
   [ENHANCEMENT_TOOL.SCENE]: PROPOSAL_MIME.WEBP,
   [ENHANCEMENT_TOOL.LIGHT]: PROPOSAL_MIME.WEBP,
   [ENHANCEMENT_TOOL.ENLARGE]: PROPOSAL_MIME.WEBP,
+  [ENHANCEMENT_TOOL.STYLED]: PROPOSAL_MIME.WEBP,
 };
 
 /**
@@ -265,6 +269,44 @@ export interface RequestEnhancementInput {
   slotRole?: string | null;
 }
 
+/** How the person in a styled picture is shown (ai-images Q3): the run's `preset`. */
+export const STYLED_FACE = { NO_FACE: "no-face", WITH_FACE: "with-face" } as const;
+export type StyledFace = (typeof STYLED_FACE)[keyof typeof STYLED_FACE];
+export const STYLED_FACES = Object.values(STYLED_FACE);
+
+/** The longest description a shop may write (improve-with-ai R3). */
+export const STYLED_BRIEF_MAX = 300;
+
+/** Whether a stored image was made by an AI model (improve-with-ai R11): its transform names the styled tool. */
+export function isAiMade(transform: unknown): boolean {
+  return typeof transform === "object" && transform !== null && (transform as { tool?: unknown }).tool === ENHANCEMENT_TOOL.STYLED;
+}
+
+/** What the modal asks for one AI picture (improve-with-ai R3–R5, R9). Photos are named as for the six tools. */
+export interface RequestStyledInput {
+  sourceAssetId?: string | null;
+  sourceRef?: string | null;
+  brief: string;
+  /** Library images to follow, by the URL each carries; the photo itself is always the first reference. */
+  referenceRefs: string[];
+  face: StyledFace;
+  /** The run this one regenerates, if any. */
+  previousId?: string | null;
+  slot?: string | null;
+  slotRole?: string | null;
+}
+
+/** The cost line and the reference limit, from the server (improve-with-ai D4). */
+export interface StyledQuoteDto {
+  /** What the picture is expected to take from credit, margin included. */
+  chargePaise: number;
+  balancePaise: number;
+  /** The most the picture might take: what must be in credit to ask. */
+  heldPaise: number;
+  /** References beyond the photo itself that the first model takes. */
+  maxExtraReferences: number;
+}
+
 /** The ledger row as the repository selects it, with the refs of the two assets it points at. */
 export interface EnhancementRow {
   id: string;
@@ -280,6 +322,9 @@ export interface EnhancementRow {
   resultAssetId: string | null;
   costPaise: number;
   error: string | null;
+  brief: string | null;
+  referenceRefs: string[];
+  previousId: string | null;
   createdAt: Date;
   proposedAt: Date | null;
   decidedAt: Date | null;
@@ -304,6 +349,10 @@ export interface EnhancementDto {
   resultRef: string | null;
   error: string | null;
   costPaise: number;
+  /** A styled run's description, references and the run it regenerates; empty for the six tools. */
+  brief: string | null;
+  referenceRefs: string[];
+  previousId: string | null;
   createdAt: string;
   proposedAt: string | null;
   decidedAt: string | null;
@@ -366,6 +415,9 @@ export function toEnhancementDto(row: EnhancementRow, publicUrl: (key: string) =
     resultRef: row.resultAsset?.ref ?? null,
     error: row.error,
     costPaise: row.costPaise,
+    brief: row.brief,
+    referenceRefs: row.referenceRefs,
+    previousId: row.previousId,
     createdAt: row.createdAt.toISOString(),
     proposedAt: row.proposedAt ? row.proposedAt.toISOString() : null,
     decidedAt: row.decidedAt ? row.decidedAt.toISOString() : null,

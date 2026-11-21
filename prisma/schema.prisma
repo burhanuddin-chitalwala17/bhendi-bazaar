@@ -176,6 +176,13 @@ model Enhancement {
 
   /// The model calls this run made (ai-images/generation-foundation trd D6).
   generations   Generation[]
+  /// A styled run's description in the shop's own words, and its reference pictures (improve-with-ai D1).
+  brief         String?
+  referenceRefs String[]         @default([])
+  /// The run a Regenerate came from (R9).
+  previousId    String?
+  previous      Enhancement?     @relation("EnhancementRegenerate", fields: [previousId], references: [id], onDelete: Restrict)
+  regenerations Enhancement[]    @relation("EnhancementRegenerate")
 
   @@index([orgId, createdAt])
   @@index([orgId, state])
@@ -272,6 +279,8 @@ enum EnhancementTool {
   SCENE
   LIGHT
   ENLARGE
+  /// An AI picture styled from a shop's description and references (ai-images/improve-with-ai D1).
+  STYLED
 }
 
 enum EnhancementState {

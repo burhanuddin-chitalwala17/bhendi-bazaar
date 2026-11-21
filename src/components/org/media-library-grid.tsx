@@ -22,6 +22,9 @@ import { useMutation } from "@/hooks/core/useMutation";
 import { orgMediaApiClient } from "@/components/org/orgMediaApiClient";
 import { CropDialog } from "@/components/product/crop-dialog";
 import { ImproveDialog } from "@/components/product/improve-dialog";
+import { ImproveSplitButton } from "@/components/content/improve-split-button";
+import { StyledShotDialog } from "@/components/content/styled-shot-dialog";
+import type { AvailableTool } from "@server/content/enhancement.types";
 import { LockedAction } from "@/components/subscriptions/locked-action";
 import type { CropTransform } from "@/lib/image/crop-transform";
 import { formatDay, formatDuration } from "@/lib/format";
@@ -39,6 +42,8 @@ import { FEATURE } from "@/components/subscriptions/features";
 
 interface MediaLibraryGridProps {
   orgId: string;
+  /** Names the upload folder for a reference picture from the device (improve-with-ai R4). */
+  orgCode?: string | null;
   /** The first page, rendered on the server so the page paints full; the rest loads on scroll. */
   initial: { assets: MediaAssetDto[]; pagination: Pagination };
   /** The filters as a query string — what every further page is asked with. */
@@ -74,7 +79,7 @@ const isVideoKind = (kind: MediaAssetDto["kind"]) => kind !== "IMAGE";
  * it — a retire action (media-library spec R6, R7). Uses are fetched when the sheet opens, one
  * asset at a time.
  */
-export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProps) {
+export function MediaLibraryGrid({ orgId, orgCode, initial, query }: MediaLibraryGridProps) {
   const router = useRouter();
   const { assets, total, loading, done, error, loadMore, remove } = useMediaLibraryPages({ orgId, query, initial });
   const [open, setOpen] = useState<MediaAssetDto | null>(null);
@@ -82,6 +87,8 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
   const [reframing, setReframing] = useState<MediaAssetDto | null>(null);
   /** The photograph being improved (image-enhancement spec R2). No slot here: the library has none. */
   const [improving, setImproving] = useState<MediaAssetDto | null>(null);
+  const [improveTool, setImproveTool] = useState<AvailableTool | null>(null);
+  const [styling, setStyling] = useState<MediaAssetDto | null>(null);
   const [showUses, setShowUses] = useState(false);
   const [isPosterPickerOpen, setPosterPickerOpen] = useState(false);
 
@@ -403,10 +410,14 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                   {open.kind === "IMAGE" && (
                     <>
                       <LockedAction feature={FEATURE.IMAGE_ENHANCEMENT} label={MEDIA_GRID_COPY.improve} variant="outline">
-                        <Button type="button" variant="outline" onClick={() => setImproving(open)}>
-                          <Icon name="enhance" className="mr-2" />
-                          {MEDIA_GRID_COPY.improve}
-                        </Button>
+                        <ImproveSplitButton
+                          size="default"
+                          onAi={() => setStyling(open)}
+                          onTool={(tool) => {
+                            setImproveTool(tool);
+                            setImproving(open);
+                          }}
+                        />
                       </LockedAction>
                       <Button type="button" variant="outline" onClick={() => setReframing(open)}>
                         <Icon name="crop" className="mr-2" />
@@ -430,12 +441,28 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
       <ImproveDialog
         orgId={orgId}
         target={improving ? { ref: improving.ref, assetId: improving.id } : null}
+        preselect={improveTool}
         onAccepted={() => {
           setImproving(null);
           setOpen(null);
           router.refresh();
         }}
-        onClose={() => setImproving(null)}
+        onClose={() => {
+          setImproving(null);
+          setImproveTool(null);
+        }}
+      />
+
+      {/* Every AI picture is already in the library when it is shown (ai-images Q25): "Use this" closes and re-reads. */}
+      <StyledShotDialog
+        orgId={orgId}
+        orgCode={orgCode}
+        target={styling ? { ref: styling.ref, assetId: styling.id } : null}
+        onUse={() => {
+          setOpen(null);
+          router.refresh();
+        }}
+        onClose={() => setStyling(null)}
       />
 
       <CropDialog

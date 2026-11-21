@@ -1,7 +1,7 @@
 # Spec — ai-images/improve-with-ai
 
 - **Summary:** One Improve button: its main half takes a short description and a few reference pictures and returns an AI-styled image the seller keeps or regenerates with a new instruction; its arrow keeps today's six exact tools
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** content, reading catalog (media) and subscriptions (credit)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-21

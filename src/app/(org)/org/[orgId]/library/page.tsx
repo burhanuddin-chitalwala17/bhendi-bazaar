@@ -75,7 +75,7 @@ export default async function OrgLibraryPage({
 
       <MediaLibraryFilters filters={filters} range={{ from: raw.from, to: raw.to }} kinds={KIND_OPTIONS} sources={SOURCE_OPTIONS} />
 
-      <MediaLibraryGrid key={filterQuery} orgId={scope.orgId} initial={{ assets, pagination }} query={filterQuery} />
+      <MediaLibraryGrid key={filterQuery} orgId={scope.orgId} orgCode={org?.code ?? null} initial={{ assets, pagination }} query={filterQuery} />
     </div>
   );
 }

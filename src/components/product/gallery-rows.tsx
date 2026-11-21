@@ -1,5 +1,6 @@
 "use client";
 
+import { ImproveSplitButton } from "@/components/content/improve-split-button";
 import { useRef, type ChangeEvent, type ReactNode } from "react";
 import { useShopPlan } from "@/components/subscriptions/plan-context";
 import { Icon } from "@/components/ui/icon";
@@ -100,6 +101,8 @@ interface SlotRowProps {
    * the label slot, which is never enhanced (image-enhancement R5).
    */
   onImprove?: (preselect?: AvailableTool) => void;
+  /** Improve with AI (ai-images Q24); when given, the row's Improve becomes the split button. */
+  onImproveAi?: () => void;
 }
 
 export function SlotRow({
@@ -119,6 +122,7 @@ export function SlotRow({
   onRemove,
   onKeepAnyway,
   onImprove,
+  onImproveAi,
 }: SlotRowProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -197,7 +201,8 @@ export function SlotRow({
             <Icon name="rating" /> {MEDIA_COPY.rows.cover}
           </Button>
         )}
-        {onImprove && (
+        {onImprove && onImproveAi && <ImproveSplitButton onAi={onImproveAi} onTool={(tool) => onImprove(tool)} />}
+        {onImprove && !onImproveAi && (
           <Button type="button" variant="outline" size="lg" onClick={() => onImprove()}>
             <ImproveIcon /> {MEDIA_COPY.rows.improveMore}
           </Button>
@@ -239,6 +244,8 @@ interface ExtraRowProps {
   onKeepAnyway: () => void;
   /** Opens the improve sheet, optionally on a tool; a photograph only, since a video has no still to improve. */
   onImprove?: (preselect?: AvailableTool) => void;
+  /** Improve with AI (ai-images Q24); when given, the row's Improve becomes the split button. */
+  onImproveAi?: () => void;
 }
 
 export function ExtraRow({
@@ -255,6 +262,7 @@ export function ExtraRow({
   onRemove,
   onKeepAnyway,
   onImprove,
+  onImproveAi,
 }: ExtraRowProps) {
   const isVideo = item.kind !== "IMAGE";
   const label = `${isVideo ? "video" : "extra photo"} ${index + 1}`;
@@ -331,7 +339,8 @@ export function ExtraRow({
             <Icon name="rating" /> {MEDIA_COPY.rows.cover}
           </Button>
         )}
-        {!isVideo && onImprove && (
+        {!isVideo && onImprove && onImproveAi && <ImproveSplitButton onAi={onImproveAi} onTool={(tool) => onImprove(tool)} />}
+        {!isVideo && onImprove && !onImproveAi && (
           <Button type="button" variant="outline" size="lg" onClick={() => onImprove()}>
             <ImproveIcon /> {MEDIA_COPY.rows.improveMore}
           </Button>

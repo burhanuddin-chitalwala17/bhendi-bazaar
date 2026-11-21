@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ENHANCEMENT_TOOL } from "@server/content/enhancement.types";
+import { ENHANCEMENT_TOOL, STYLED_BRIEF_MAX, STYLED_FACES } from "@server/content/enhancement.types";
 import { SCENE_PRESET_KEYS } from "@server/content/scene-presets";
 import { SHOT_ROLES } from "@server/catalog/shot-list";
 
@@ -51,6 +51,31 @@ export const requestEnhancementSchema = z
   });
 
 export type RequestEnhancementBody = z.infer<typeof requestEnhancementSchema>;
+
+/**
+ * One AI picture (ai-images/improve-with-ai R3–R5, R9; D3): the photo as for the six tools, the
+ * shop's description, pictures to follow by the URL each carries, and the face choice. How many
+ * references a model takes is the server's question, not the schema's — the cap here is sanity.
+ */
+export const requestStyledSchema = z
+  .object({
+    sourceAssetId: id.optional(),
+    sourceRef: z.url().max(1024).optional(),
+    brief: z.string().trim().min(1, "Describe the picture first").max(STYLED_BRIEF_MAX, `Keep it under ${STYLED_BRIEF_MAX} characters`),
+    referenceRefs: z.array(z.url().max(1024)).max(13).default([]),
+    face: z.enum(STYLED_FACES),
+    previousId: id.nullish().transform((value) => value ?? undefined),
+    slot: z.string().trim().min(1).max(40).nullish().transform((value) => value ?? undefined),
+    slotRole: z.enum(SHOT_ROLES).nullish().transform((value) => value ?? undefined),
+  })
+  .refine((request) => (request.sourceAssetId ? 1 : 0) + (request.sourceRef ? 1 : 0) === 1, {
+    message: "Name the photo by its asset id or its URL, not both",
+    path: ["sourceAssetId"],
+  });
+export type RequestStyledBody = z.infer<typeof requestStyledSchema>;
+
+/** How many pictures beyond the photo itself the quote is for. */
+export const styledQuoteQuerySchema = z.object({ references: z.coerce.number().int().min(0).max(13).catch(0) });
 
 /** An allowance is a count of runs; the ceilings are sanity, not policy — the policy is the value. */
 const allowance = z.number().int().positive().max(100_000);

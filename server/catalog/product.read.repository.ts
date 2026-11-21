@@ -186,7 +186,8 @@ export class ProductsRepository {
         media: {
           where: { kind: "IMAGE" },
           orderBy: { position: "asc" },
-          select: { id: true, ref: true, assetId: true, asset: { select: { width: true, height: true, mimeType: true } } },
+          // `transform` says whether a photo is AI-made, which a marketplace never takes as the main image (improve-with-ai R11).
+          select: { id: true, ref: true, assetId: true, asset: { select: { width: true, height: true, mimeType: true, transform: true } } },
         },
       },
     });

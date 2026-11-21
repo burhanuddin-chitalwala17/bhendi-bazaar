@@ -61,6 +61,8 @@ export const ORG_ROUTE_FEATURES: Record<string, Classification> = {
   "POST /api/org/[orgId]/enhancements/[id]/discard": { core: "A proposal already made is the shop's (Q32)." },
   "GET /api/org/[orgId]/enhancements/[id]": { core: "Reading a proposal already made (Q12)." },
   "POST /api/org/[orgId]/enhancements": ENH,
+  "POST /api/org/[orgId]/enhancements/styled": ENH,
+  "GET /api/org/[orgId]/enhancements/styled/quote": ENH,
 
   "POST /api/org/[orgId]/families": { core: FREE },
   "PUT /api/org/[orgId]/listing-defaults": { core: FREE },

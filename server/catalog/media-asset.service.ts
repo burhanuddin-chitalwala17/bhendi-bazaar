@@ -13,6 +13,7 @@ import { videoTranscodeSpec } from "@server/catalog/video.job";
 import {
   MEDIA_LIBRARY_PAGE_SIZE,
   describeUses,
+  MEDIA_TAG,
   toMediaAssetDto,
   type MediaTag,
   type MediaAssetDetailDto,
@@ -237,6 +238,11 @@ export const mediaAssetService = {
     const row = await mediaAssetRepository.findForOrg(orgId, id);
     if (!row) throw new NotFoundError("Image not found");
     return { asset: toMediaAssetDto(row), uses: await mediaAssetRepository.usesOf(id) };
+  },
+
+  /** Mark the org's images as references (media-tags R7): chosen or uploaded to guide an AI picture. */
+  async tagAsReference(orgId: string, ids: string[]): Promise<void> {
+    await mediaAssetRepository.addTag(ids, MEDIA_TAG.REFERENCE, orgId);
   },
 
   /** Switch one tag on one of the org's images (ai-images/media-tags R6); another org's is "not found". */

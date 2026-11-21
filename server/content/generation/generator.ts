@@ -52,6 +52,29 @@ async function asPng(image: Buffer): Promise<Buffer> {
 }
 
 /**
+ * The first model's price and the most any eligible model could cost, both in paise at today's
+ * rate (shop-credits D5: the worst case is what is held). Null when nothing can take the request.
+ */
+export async function quoteRange(
+  purpose: GenerationPurpose,
+  ask: Ask,
+): Promise<{ first: GenerationQuote; worstCostPaise: number } | null> {
+  const models = eligibleModels(purpose, ask);
+  const [model] = models;
+  if (!model) return null;
+  const prices = models.map((candidate) => priceMicroUsd(candidate.price, ask.references, ask.aspect, ask.size));
+  const rate = prices.some((price) => price > 0) ? await rateFor() : null;
+  if (prices.some((price) => price > 0) && !rate) {
+    throw new GenerationFailure(GENERATION_FAILURE.UNAVAILABLE, "no exchange rate stored");
+  }
+  const paise = (microUsd: number) => (rate ? microUsdToPaise(microUsd, rate.paisePerUsd) : 0);
+  return {
+    first: { modelId: model.id, maxReferences: model.maxReferences, costMicroUsd: prices[0] ?? 0, costPaise: paise(prices[0] ?? 0) },
+    worstCostPaise: Math.max(...prices.map(paise)),
+  };
+}
+
+/**
  * What a picture will cost before it is asked for: the first model that could take it, at today's
  * rate. Null when nothing is set up to take it. Throws when a priced model has no rate to price at.
  */

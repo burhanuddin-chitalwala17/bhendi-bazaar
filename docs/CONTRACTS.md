@@ -743,6 +743,14 @@ characters); only a starting credit or a top-up reverses, once (`409` otherwise)
 **`PUT /api/admin/payment-details`** parses **`paymentDetailsSchema`** and answers **`PaymentDetailsDto`**. No amount
 in any of these is a price the platform charges: a top-up is money the admin saw arrive (Invariant 1).
 
+**`POST /api/org/[orgId]/enhancements/styled`** (`withOrg`, Image enhancement) parses **`requestStyledSchema`**
+(`enhancement.schema.ts`): the photo (`sourceAssetId` or `sourceRef`, not both), `brief` 1–300 characters, `referenceRefs`
+(URLs of the shop's own ready images, at most 13 here; the first model's limit is the server's, a refusal otherwise),
+`face` (`no-face` | `with-face`), optional `previousId`, `slot`, `slotRole`. It answers `{ enhancement, usage }` like the six
+tools; a shop short of credit is `409` "Not enough credit for this picture". **`GET …/enhancements/styled/quote?references=n`**
+answers **`StyledQuoteDto`** `{ chargePaise, heldPaise, balancePaise, maxExtraReferences }`. `EnhancementDto` gains `brief`,
+`referenceRefs` and `previousId` (empty for the six tools). No amount crosses from the browser: every price is the server's.
+
 **A payment proof** (**`paymentProofSchema`**) is `{ method: "UPI" | "BANK_TRANSFER" | "CASH" | "OTHER", reference
 (1–120, "Add the transaction reference"), paidOn (a date, not in the future), receiptRef (a URL in our own store, or
 null) }`. **`PATCH /api/admin/settlements/[id]`** now parses **`settlementStatusSchema`**: `{ status: "PAID", ...proof }`

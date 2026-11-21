@@ -49,6 +49,9 @@ const row = (over: Partial<EnhancementRow> = {}): EnhancementRow => ({
   resultAssetId: null,
   costPaise: 0,
   error: null,
+  brief: null,
+  referenceRefs: [],
+  previousId: null,
   createdAt: new Date("2026-09-27T10:00:00Z"),
   proposedAt: null,
   decidedAt: null,
@@ -64,9 +67,10 @@ describe("the closed sets mirror the schema", () => {
   });
 
   it("offers only a tool with a pipeline, and prices every one it offers in whole paise", () => {
-    // All six have one now that `scene` has shipped, so the available set is the whole enum —
-    // which is a statement about today, not a reason to stop checking the two are the same list.
-    expect([...AVAILABLE_TOOLS].sort()).toEqual(Object.values(ENHANCEMENT_TOOL).sort());
+    // The six exact tools are the whole enum but the AI one, which has its own path and its own
+    // price from the credit ledger (improve-with-ai D1) — so the menu lists exactly six.
+    expect([...AVAILABLE_TOOLS].sort()).toEqual(Object.values(ENHANCEMENT_TOOL).filter((tool) => tool !== ENHANCEMENT_TOOL.STYLED).sort());
+    expect(isAvailableTool(ENHANCEMENT_TOOL.STYLED)).toBe(false);
     for (const tool of AVAILABLE_TOOLS) expect(isAvailableTool(tool)).toBe(true);
     expect(Object.keys(TOOL_COST_PAISE).sort()).toEqual([...AVAILABLE_TOOLS].sort());
     for (const byProvider of Object.values(TOOL_COST_PAISE)) {

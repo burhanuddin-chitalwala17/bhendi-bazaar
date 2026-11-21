@@ -12,6 +12,22 @@
 
 ## Entries
 
+## 2026-11-21 — Improve with AI: a description and reference pictures become a styled picture of the product [MIGRATION] [CONTRACT]
+
+- [improve-with-ai](specs/ai-images/improve-with-ai/): one **Improve** split button in the library and on every photo
+  in the product form. The main half opens the AI dialog (description, pictures to follow from the library or the
+  device, no face / with face, the cost and credit from the server); the arrow lists the six exact tools, unchanged.
+- Server: `STYLED`, a seventh enhancement tool with its own path (`server/content/styled.service.ts`): the shared
+  refusals, the shop's credit held in the request's transaction, generation through the port (`listing.v1` prompt),
+  every picture kept straight into the library as an AI-made derived image, then settled or refunded.
+- **[MIGRATION] `20261121120000_styled_enhancement`:** the enum value and `Enhancement.brief`, `referenceRefs`, `previousId`.
+- **[CONTRACT]** two routes and three `EnhancementDto` fields; CONTRACTS.md updated.
+- [ADR-0077](adr/0077-the-pixel-promise-belongs-to-the-backdrop-tools-and-an-ai-picture-is-labelled-and-secondary.md):
+  ADR-0059's pixel promise is the backdrop tools'; an AI picture is labelled, kept, and never a marketplace's main
+  image — `listing-photos-out.ts` moves it behind a real photograph and refuses a listing with none.
+- The library picker can open on one tag; reference pictures are tagged Reference when used.
+- Tests: `styled-shot`, `listing-photos-main`.
+
 ## 2026-11-21 — Shops have credit for AI pictures; offline money is recorded with proof [MIGRATION] [CONTRACT]
 
 - [shop-credits](specs/ai-images/shop-credits/): `CreditLine` (append-only, the balance is the sum), the

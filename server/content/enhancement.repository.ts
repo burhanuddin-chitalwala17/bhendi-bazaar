@@ -19,6 +19,9 @@ const ENHANCEMENT_SELECT = {
   resultAssetId: true,
   costPaise: true,
   error: true,
+  brief: true,
+  referenceRefs: true,
+  previousId: true,
   createdAt: true,
   proposedAt: true,
   decidedAt: true,
@@ -42,6 +45,9 @@ export interface CreateEnhancementInput {
   preset: string | null;
   provider: string;
   slot: string | null;
+  brief?: string | null;
+  referenceRefs?: string[];
+  previousId?: string | null;
 }
 
 /**

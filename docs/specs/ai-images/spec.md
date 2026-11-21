@@ -1,7 +1,7 @@
 # Spec — ai-images (overview)
 
 - **Summary:** A seller describes how a product photo should look, adds a few reference pictures, and gets a styled image made by whichever AI model the platform has chosen, paid from the shop's credit at exactly what it cost
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** content, with catalog (media), subscriptions and payouts
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-21

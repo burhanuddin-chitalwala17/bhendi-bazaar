@@ -1,7 +1,7 @@
 # ADR-0059: An enhancement never changes the product's pixels, proven before encoding
 
 - **Date:** 2026-10-05
-- **Status:** Accepted
+- **Status:** Accepted (scope amended by [ADR-0077](0077-the-pixel-promise-belongs-to-the-backdrop-tools-and-an-ai-picture-is-labelled-and-secondary.md): the backdrop tools)
 
 ## Context
 
