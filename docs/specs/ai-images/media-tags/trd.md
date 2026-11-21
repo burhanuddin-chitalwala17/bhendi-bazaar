@@ -30,20 +30,23 @@ already links refs to library images.
   GIN-indexed.** The closed set is mirrored once in `server/catalog/media-library.types.ts` as
   `MEDIA_TAG` for the browser (the house pattern, `ENHANCEMENT_TOOL`). `SOCIAL` joins with the
   Instagram composer, not now (YAGNI).
-- **D2 — Written only by `media-asset.repository.ts`** (Invariant 5): `addTag(ids, tag, db)` (idempotent,
-  `array_append` only where absent) and `setTag(orgId, id, tag, on)` for the shop's toggle.
+- **D2 — Written only by `media-asset.repository.ts`** (Invariant 5): `addTag(ids, tag, orgId, db)`
+  (one `updateMany` pushing the tag where absent, on that org's images only) and `setTag(orgId, id,
+  tag, on)` for the shop's toggle on its own photographs that are not retired: a compare-and-set
+  against the tags just read, so nothing concurrent is overwritten and `updatedAt` moves.
 - **D3 — Product is applied where galleries link images.** `withAssetIds` in
   `server/catalog/product.repository.ts` already resolves every gallery write's refs to asset ids
   through the media repository (form create and update, copied photos); it calls `addTag` there.
-  `importBulk` writes its rows directly and calls it too. Removing an image from a gallery does not
+  `importBulk` writes its rows directly and tags per shop; the backfill's late `linkMediaAsset` tags too. Removing an image from a gallery does not
   remove the tag: a tag is what the shop said, and the shop can switch it off (spec R6).
 - **D4 — The migration backfills Product** for every shop image a `ProductMedia` row uses; images no
   product uses and platform images (`orgId` null) are untouched (Q22).
-- **D5 — Filter.** `tag` (`product` | `reference`) in `mediaLibraryFilterSchema`; `libraryWhere` adds
+- **D5 — Filter.** `tag` (`PRODUCT` | `REFERENCE`, the enum's own values) in `mediaLibraryFilterSchema`; `libraryWhere` adds
   `tags: { has }`. The library page's `FILTER_KEYS` and `MediaLibraryFilters` gain it.
 - **D6 — Toggle route.** `PUT /api/org/[orgId]/media/[assetId]/tags` with `{ tag, on }`, parsed by a
   schema, `withOrg`-guarded like its siblings, answering the asset's DTO; called from
-  `orgMediaApiClient.ts`. Reference uploads (improve-with-ai) call the same service method.
+  `orgMediaApiClient.ts`. Tagging a reference as it is uploaded or chosen is improve-with-ai's
+  (R7's Reference half), built there on `addTag`.
 
 ## Packages
 None.

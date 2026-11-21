@@ -239,11 +239,6 @@ export const mediaAssetService = {
     return { asset: toMediaAssetDto(row), uses: await mediaAssetRepository.usesOf(id) };
   },
 
-  /**
-   * The photograph that stands in for a hosted video, or null for the worker's own frame
-   * (video-hosting spec R8). The photograph is checked before the write, and another org's — or
-   * one not ready, or not a photograph — is "not found" rather than a hint that it exists.
-   */
   /** Switch one tag on one of the org's images (ai-images/media-tags R6); another org's is "not found". */
   async setTag(orgId: string, id: string, tag: MediaTag, on: boolean): Promise<MediaAssetDto> {
     if (!(await mediaAssetRepository.setTag(orgId, id, tag, on))) throw new NotFoundError("Image not found");
@@ -252,6 +247,11 @@ export const mediaAssetService = {
     return toMediaAssetDto(after);
   },
 
+  /**
+   * The photograph that stands in for a hosted video, or null for the worker's own frame
+   * (video-hosting spec R8). The photograph is checked before the write, and another org's — or
+   * one not ready, or not a photograph — is "not found" rather than a hint that it exists.
+   */
   async replacePoster(orgId: string, videoId: string, posterAssetId: string | null): Promise<MediaAssetDto> {
     if (posterAssetId !== null) {
       const photo = await mediaAssetRepository.findForOrg(orgId, posterAssetId);

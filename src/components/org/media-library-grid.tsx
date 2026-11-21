@@ -191,7 +191,9 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
       <Card>
         <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
           <Icon name="photos" size="xl" tone="muted" />
-          <p className="text-sm text-muted-foreground">{MEDIA_GRID_COPY.empty}</p>
+          <p className="text-sm text-muted-foreground">
+            {new URLSearchParams(query).get("tag") === MEDIA_TAG.REFERENCE ? MEDIA_GRID_COPY.noReferences : MEDIA_GRID_COPY.empty}
+          </p>
         </CardContent>
       </Card>
     );
@@ -221,7 +223,8 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                   {STATE_BADGES[asset.state]?.label}
                 </Badge>
               )}
-              {asset.tags.includes(MEDIA_TAG.REFERENCE) && (
+              {/* Only on a reference that is nothing else (media-tags ux): a product photo also used as a reference is still a product photo. */}
+              {asset.tags.includes(MEDIA_TAG.REFERENCE) && !asset.tags.includes(MEDIA_TAG.PRODUCT) && (
                 <Badge className="absolute bottom-1 left-1" variant="secondary">
                   {MEDIA_GRID_COPY.tagLabel.REFERENCE}
                 </Badge>

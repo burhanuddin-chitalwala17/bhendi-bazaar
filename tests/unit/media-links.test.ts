@@ -69,6 +69,6 @@ describe("the Product tag (ai-images/media-tags D3)", () => {
     repo.idsByRefs.mockResolvedValue(new Map([["https://img.test/a.webp", "a1"]]));
     repo.embedIdsByRefs.mockResolvedValue(new Map());
     await withAssetIds([{ kind: "IMAGE" as const, ref: "https://img.test/a.webp" }], "org-1");
-    expect(repo.addTag).toHaveBeenCalledWith(["a1"], "PRODUCT", expect.anything());
+    expect(repo.addTag).toHaveBeenCalledWith(["a1"], "PRODUCT", "org-1", expect.anything());
   });
 });

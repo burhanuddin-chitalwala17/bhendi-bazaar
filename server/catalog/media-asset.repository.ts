@@ -535,38 +535,44 @@ export class MediaAssetRepository {
   }
 
   /**
-   * The photograph that stands in for a video, or null to go back to the worker's frame (spec R8),
-   * in one conditional statement: the row moves only if it is this org's hosted video. Whether the
-   * photograph may be chosen — this org's, ready, a photograph — is the service's check before this.
+   * Add a tag to the org's images that lack it (media-tags D2, D3): one statement, idempotent, so a
+   * gallery saved twice tags once. Only this org's images: a gallery naming a platform picture or
+   * another shop's leaves that picture alone (R5). A video in a gallery is not a product photograph.
    */
-  /**
-   * Add a tag to images that lack it (media-tags D2, D3): one statement, idempotent, so a gallery
-   * saved twice tags once. Only images; a video in a gallery is not a product photograph.
-   */
-  async addTag(ids: string[], tag: MediaTag, db: MediaDb = prisma): Promise<void> {
+  async addTag(ids: string[], tag: MediaTag, orgId: string, db: MediaDb = prisma): Promise<void> {
     if (ids.length === 0) return;
     await db.mediaAsset.updateMany({
-      where: { id: { in: ids }, kind: MediaAssetKind.IMAGE, NOT: { tags: { has: tag } } },
+      where: { id: { in: ids }, orgId, kind: MediaAssetKind.IMAGE, NOT: { tags: { has: tag } } },
       data: { tags: { push: tag } },
     });
   }
 
-  /** The shop's own toggle (media-tags R6): one conditional statement each way, scoped to its org. */
+  /**
+   * The shop's own toggle (media-tags R6), on one of its photographs that is not retired. Adding is
+   * one conditional statement; removing is a compare-and-set against the tags just read, so a
+   * concurrent change is never overwritten. False means no such photograph for this org.
+   */
   async setTag(orgId: string, id: string, tag: MediaTag, on: boolean): Promise<boolean> {
-    if (on) {
+    const mine = { id, orgId, kind: MediaAssetKind.IMAGE, state: { not: MediaAssetState.RETIRED } };
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const row = await prisma.mediaAsset.findFirst({ where: mine, select: { tags: true } });
+      if (!row) return false;
+      if (row.tags.includes(tag) === on) return true;
+      const next = on ? [...row.tags, tag] : row.tags.filter((held) => held !== tag);
       const { count } = await prisma.mediaAsset.updateMany({
-        where: { id, orgId, NOT: { tags: { has: tag } } },
-        data: { tags: { push: tag } },
+        where: { ...mine, tags: { equals: row.tags } },
+        data: { tags: { set: next } },
       });
       if (count === 1) return true;
-      return (await prisma.mediaAsset.count({ where: { id, orgId } })) === 1;
     }
-    const removed = await prisma.$executeRaw`
-      UPDATE "MediaAsset" SET "tags" = array_remove("tags", ${tag}::"MediaTag")
-      WHERE "id" = ${id} AND "orgId" = ${orgId}`;
-    return removed === 1;
+    throw new Error(`Tags on ${id} kept changing; try again`);
   }
 
+  /**
+   * The photograph that stands in for a video, or null to go back to the worker's frame (spec R8),
+   * in one conditional statement: the row moves only if it is this org's hosted video. Whether the
+   * photograph may be chosen — this org's, ready, a photograph — is the service's check before this.
+   */
   async setPoster(orgId: string, videoId: string, posterAssetId: string | null): Promise<boolean> {
     const result = await prisma.mediaAsset.updateMany({
       where: { id: videoId, orgId, kind: MediaAssetKind.VIDEO, state: { not: MediaAssetState.RETIRED } },

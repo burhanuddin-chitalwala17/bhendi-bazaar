@@ -212,7 +212,7 @@ export async function backfillMediaAssets(options: BackfillOptions): Promise<Bac
       row.kind === "YOUTUBE"
         ? await assetForEmbed(row.ref, row.product.orgId)
         : await assetForImage(row.ref, row.product.orgId);
-    if (options.write) await adminProductsRepository.linkMediaAsset(row.id, assetId);
+    if (options.write) await adminProductsRepository.linkMediaAsset(row.id, assetId, row.product.orgId);
     report.rowsLinked += 1;
   }
 

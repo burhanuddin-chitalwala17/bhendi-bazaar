@@ -9,6 +9,7 @@ export const MEDIA_GRID_COPY = {
   tagAdded: (tag: string) => `Added tag ${tag}`,
   tagRemoved: (tag: string) => `Removed tag ${tag}`,
   tagFailed: "Couldn't change the tag",
+  noReferences: "No reference pictures yet. Add one when you improve a photo with AI.",
   sourceUpload: "Uploaded",
   sourceDerived: "Made from another item",
   sourceEmbed: "Video link",

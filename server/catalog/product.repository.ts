@@ -56,7 +56,7 @@ export async function withAssetIds<T extends { kind: MediaKind; ref: string }>(
         db,
     );
     // An image put in a gallery is a product photograph (ai-images/media-tags D3): every gallery write passes here.
-    await mediaAssetRepository.addTag([...imageIds.values()], MEDIA_TAG.PRODUCT, db);
+    await mediaAssetRepository.addTag([...imageIds.values()], MEDIA_TAG.PRODUCT, orgId, db);
     const videoRefs = [...new Set(rows.filter((row) => row.kind === "YOUTUBE").map((row) => row.ref))];
     const videoIds = await mediaAssetRepository.embedIdsByRefs(orgId, videoRefs, db);
     for (const ref of videoRefs) {
@@ -1021,11 +1021,14 @@ export class AdminProductsRepository {
       const ids = updates.map((row) => row.id as string);
       if (ids.length) await tx.productMedia.deleteMany({ where: { productId: { in: ids } } });
       if (media.length) await tx.productMedia.createMany({ data: media });
-      await mediaAssetRepository.addTag(
-        media.flatMap((row) => (row.kind === "IMAGE" && row.assetId ? [row.assetId] : [])),
-        MEDIA_TAG.PRODUCT,
-        tx,
-      );
+      // Tagged per shop: a row's product names the org whose photographs it may tag (media-tags D3, R5).
+      const orgOf = new Map([...products, ...updates].map((row) => [row.id as string, row.orgId]));
+      const byOrg = new Map<string, string[]>();
+      for (const row of media) {
+        const org = orgOf.get(row.productId);
+        if (row.kind === "IMAGE" && row.assetId && org) byOrg.set(org, [...(byOrg.get(org) ?? []), row.assetId]);
+      }
+      for (const [org, ids] of byOrg) await mediaAssetRepository.addTag(ids, MEDIA_TAG.PRODUCT, org, tx);
       await stockRepository.setForImport(ids, stock, tx);
       // Each product's answers in the value rows, in the sheet's transaction (dynamic-form Q16).
       for (const a of answers) await productValueRepository.writeAnswersIn(tx, a.id, a);
@@ -1049,8 +1052,10 @@ export class AdminProductsRepository {
     });
   }
 
-  async linkMediaAsset(id: string, assetId: string): Promise<void> {
+  /** The backfill's late link (media-library D3), which tags the photograph as every other gallery link does (media-tags D3). */
+  async linkMediaAsset(id: string, assetId: string, orgId: string): Promise<void> {
     await prisma.productMedia.update({ where: { id }, data: { assetId } });
+    await mediaAssetRepository.addTag([assetId], MEDIA_TAG.PRODUCT, orgId);
   }
 
   /**
