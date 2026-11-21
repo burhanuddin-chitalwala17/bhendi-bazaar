@@ -12,6 +12,12 @@
 
 ## Entries
 
+## 2026-11-21 — The worker is given the AI-picture variables
+
+- The worker generates every AI picture, but neither deploy passed it the keys. `ci.yml` and `staging-worker.yml`
+  now pass `WORKER_ENV_IMAGE_GEN_*` / `WORKER_STAGING_ENV_IMAGE_GEN_*` (both Cloudflare values, the Gemini key and
+  the two model orders), and `.env.example` section 3 lists them, which `deploy-safety.test.ts` reads.
+
 ## 2026-11-21 — Cloudflare's image keys are named for Cloudflare
 
 - `IMAGE_GEN_ACCOUNT_ID` / `IMAGE_GEN_API_TOKEN` are now `IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID` /
