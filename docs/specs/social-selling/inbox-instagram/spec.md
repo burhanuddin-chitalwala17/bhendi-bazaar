@@ -21,7 +21,8 @@ answered fast. A shop juggling the app and Bhendi Bazaar misses them. Bringing D
 into the shared inbox, beside the products, closes that gap.
 
 ## Requirements
-- R1 — A DM to the connected account appears as a conversation in the Instagram tab (Q1).
+- R1 — A DM, a story reply or a story mention to the connected account appears as a conversation
+  in the Instagram tab, a story reply showing the story it answers (Q1, parent Q95).
 - R2 — A comment on any of the account's posts or reels appears as a conversation, grouped under its
   post, showing which post (Q1, Q2, Q7).
 - R3 — The shop answers a DM; the reply arrives in the buyer's Instagram as from the shop's account.
@@ -63,7 +64,7 @@ Judged on a phone (~360px) first. Verified on the owner's own account (parent Q8
 ## Scope
 - **Outcome:** a shop answers Instagram DMs and comments from its inbox.
 - **In:** R1–R12, A1–A7.
-- **Later:** story mentions and replies, live comments (Q1); keyword auto-replies are
+- **Later:** live comments (Q1); keyword auto-replies are
   comment-automations.
 
 ## Open questions

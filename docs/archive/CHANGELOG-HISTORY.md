@@ -382,6 +382,13 @@ before then — monthly summaries first, then November 2026's full entries. An o
 - No migration, no contract change. Tests: `tests/unit/image-widths.test.ts`, plus confirm and review cases;
   each new hook mutation-checked (removing it fails its test).
 
+## 2026-11-21 — WhatsApp catalogue is a replica, its cart on; Instagram story replies in the inbox
+
+- Docs only. Owner answered Q95 and Q97. inbox-instagram Q1 takes story replies and mentions (R1).
+  whatsapp-catalogue: the cart is on so a sent cart reaches the inbox as an order card priced by us
+  (Q6, replaced in place), and the nightly push removes items and undoes edits made outside Bhendi
+  Bazaar (Q13, R11, TRD D5a).
+
 ## 2026-11-21 — social-selling re-cut into eight steps; inbox research recorded
 
 - Docs only. The owner's new order (Q78, replaced in place): post generation and connectors side by

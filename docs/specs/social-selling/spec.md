@@ -19,7 +19,7 @@ receives and may do"; do not redo it.
 **Re-cut 2026-11-21 (Q78, Q86–Q100).** The work runs in the eight steps below. Before each step's
 build, bring its subfeature specs in line with these decisions: Q94 into connect-instagram and
 inbox-instagram; Q99 into connect-whatsapp; Q96 into audience, whatsapp-contacts and inbox-whatsapp;
-Q98 into both platform inboxes; Q95 and Q97, once the owner answers, into the two inboxes;
+Q98 into both platform inboxes; Q97 into inbox-whatsapp (Q95 is in inbox-instagram already);
 chat-autoreplies (Q89) needs its own spec; going-live.md takes Q100.
 **Next step:** step 1 (post generation, its own session) and step 2 (connectors) side by side (Q87).
 **Owner's outside step, started separately:** Meta Business Verification and the Meta app (Q14).
@@ -100,5 +100,4 @@ forms in chat (Q25), chat history (Q10), platform sending (Q28), audit screen (Q
 - A4 — A message to a list reaches only its opted-in members, after the shop saw what it costs.
 
 ## Open questions
-Q95 (Instagram story replies in the inbox) and Q97 (a WhatsApp catalogue cart in the inbox), both
-waiting on the owner.
+None at the overview. Each subfeature opens its own.

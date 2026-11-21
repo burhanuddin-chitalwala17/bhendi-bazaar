@@ -32,7 +32,7 @@ nightly full push keep it true. A per-shop item ledger records what Meta last ac
 ## Technical decisions
 - **D1 — Catalogue made on connect** (Q5): a step added to the handler of connect-whatsapp's
   `whatsapp.connected` job (connect-whatsapp D4): `POST /{business_id}/owned_product_catalogs`, connect to the WABA, set commerce settings
-  `is_catalog_visible=true`, `is_cart_enabled=false` (Q6). Ids stored on the connection
+  `is_catalog_visible=true`, `is_cart_enabled=true` (Q6; a sent cart is inbox-whatsapp's order card). Ids stored on the connection
   (`catalogId`). Idempotent: an existing `catalogId` skips creation. Needs `catalog_management`
   (already in the one review, parent Q2).
 - **D2 — One item builder.** Extract from `shopfront-feed.ts` a pure `metaItem(candidate)` returning
@@ -47,6 +47,9 @@ nightly full push keep it true. A per-shop item ledger records what Meta last ac
 - **D5 — Ledger.** `WhatsAppCatalogItem` (connectionId, productId, sentHash, sentAt, status
   `live|refused|removed`, reason ≤300). A push sends only items whose hash of D2's fields differs,
   or a `DELETE` for a ledger row whose product left the set (archived, org withdrawn).
+- **D5a — Replica repair** (Q13). The nightly full push reads the catalogue's items from Meta and
+  deletes any `retailer_id` that is not a ledger row, and re-sends every ledger row in full (not by
+  hash), so an item added or a field edited outside Bhendi Bazaar is undone within a day.
 - **D6 — Triggers.** (a) `channels.stock-changed` already fires per transaction; its handler also
   enqueues `whatsapp.catalog-push` for orgs with a WhatsApp catalogue. (b) A new
   `catalog.product-changed` job (spec in `server/shared/jobs/`) enqueued by catalog's product

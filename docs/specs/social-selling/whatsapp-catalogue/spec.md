@@ -28,8 +28,8 @@ catalogue should simply be the shop's products, with nothing to maintain (parent
 - R3 — Out of stock, or held by a live auction, shows as out of stock; archived is removed (Q3).
 - R4 — A change to price, stock, photos, name or archive reaches WhatsApp within 15 minutes, with
   nobody doing anything; a nightly full send repairs anything missed (Q4).
-- R5 — Connecting WhatsApp makes the catalogue, connects it to the number and shows it in chats;
-  the cart stays off, since buying happens on our product page (Q5, Q6).
+- R5 — Connecting WhatsApp makes the catalogue, connects it to the number and shows it in chats,
+  with the cart on; a sent cart becomes an order card in the inbox, paid on our checkout (Q5, Q6).
 - R6 — An item opens our product page; variants of one family show as one item with options
   (Q7, Q12).
 - R7 — The WhatsApp card says how many products are in the catalogue, when it last updated, how
@@ -39,6 +39,8 @@ catalogue should simply be the shop's products, with nothing to maintain (parent
 - R9 — Disconnecting stops updates and leaves the catalogue in the shop's account; the dialog says
   how to delete it there. Reconnecting the same number resumes it (Q10).
 - R10 — The Meta feed card (Facebook and Instagram) is unchanged and independent (Q11).
+- R11 — The catalogue is a replica: an item that is not one of the shop's live products, or a field
+  edited outside Bhendi Bazaar, is put back by the nightly full send (Q13).
 
 ## Hazards the TRD must answer
 - **A price that differs from the page**: computing it a second way, or caching it.
@@ -56,14 +58,15 @@ Judged on a phone (~360px) first ([ADR-0015](../../../adr/0015-mobile-first-desi
 - A3 — An item held by a live auction shows out of stock.
 - A4 — A product with no photo is absent and counted on the card with why.
 - A5 — A refused item shows Meta's reason on the card; the others stay live.
-- A6 — Sync now and the nightly send leave the catalogue identical to the store page.
+- A6 — Sync now and the nightly send leave the catalogue identical to the store page, removing an
+  item added in the Business app and undoing a price edited there.
 - A7 — Disconnect stops updates; the catalogue remains in the shop's account.
 - A8 — Every state in ux.md's matrix is reachable and reads as written.
 
 ## Scope
 - **Outcome:** the shop's live products in its WhatsApp catalogue, kept in sync.
-- **In:** R1–R10, tested by A1–A8.
-- **Later:** a per-product opt-out; the WhatsApp cart and checkout (parent Q24). Product messages
+- **In:** R1–R11, tested by A1–A8.
+- **Later:** a per-product opt-out; paying inside WhatsApp (parent Q24). Product messages
   in chats are whatsapp-campaigns'.
 
 ## Open questions
