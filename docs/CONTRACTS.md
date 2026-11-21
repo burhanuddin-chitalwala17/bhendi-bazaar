@@ -749,8 +749,8 @@ in any of these is a price the platform charges: a top-up is money the admin saw
 **`POST /api/org/[orgId]/enhancements/styled`** (`withOrg`, Image enhancement) parses **`requestStyledSchema`**
 (`enhancement.schema.ts`): the photo (`sourceAssetId` or `sourceRef`, not both), `brief` 1–300 characters, `referenceRefs`
 (URLs of the shop's own ready images, at most 13 here; the first model's limit is the server's, a refusal otherwise),
-`face` (`no-face` | `with-face`), **`aspect`** (`1:1` | `4:5` | `9:16` | `4:3`, required: "Choose the picture's shape";
-improve-with-ai Q42), optional `previousId`, `slot`, `slotRole`. It answers `{ enhancement, usage }` like the six
+`face` (`no-face` | `with-face`), **`aspect`** (`1:1` | `4:5` | `9:16` | `4:3`; absent is `1:1`, so a page opened before Q42 shipped still works —
+the modal itself will not send without one; any other value is "Choose the picture's shape"), optional `previousId`, `slot`, `slotRole`. It answers `{ enhancement, usage }` like the six
 tools; a shop short of credit is `409` "Not enough credit for this picture". **`GET …/enhancements/styled/quote?references=n&aspect=4:5`**
 (`aspect` defaults to `1:1` when absent or unknown) answers **`StyledQuoteDto`** `{ chargePaise, heldPaise, balancePaise, maxExtraReferences }`. `EnhancementDto` gains `brief`,
 `referenceRefs`, `aspect` (null for the six tools and for styled runs from before Q42, which were square) and `previousId`

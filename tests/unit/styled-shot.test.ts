@@ -239,14 +239,15 @@ describe("the prompt (D5)", () => {
 });
 
 describe("the shape a shop asks in (Q42)", () => {
-  it("is required on a request, from the closed set", async () => {
+  it("is one of the closed set, and square from a page opened before the choice shipped", async () => {
     const { requestStyledSchema } = await import("@/lib/validation/schemas/enhancement.schema");
     const body = { sourceAssetId: "cmt32hxzc000304l3fj9lhaew", brief: "On a café table", face: "no-face" };
-    expect(requestStyledSchema.safeParse({ ...body, aspect: "9:16" }).success).toBe(true);
-    const missing = requestStyledSchema.safeParse(body);
-    expect(missing.success).toBe(false);
-    expect(missing.error?.issues[0]?.message).toBe("Choose the picture's shape");
-    expect(requestStyledSchema.safeParse({ ...body, aspect: "21:9" }).success).toBe(false);
+    expect(requestStyledSchema.parse({ ...body, aspect: "9:16" }).aspect).toBe("9:16");
+    // The old modal sent no shape; refusing it showed "Please correct the highlighted fields" (2026-11-21).
+    expect(requestStyledSchema.parse(body).aspect).toBe("1:1");
+    const wrong = requestStyledSchema.safeParse({ ...body, aspect: "21:9" });
+    expect(wrong.success).toBe(false);
+    expect(wrong.error?.issues[0]?.message).toBe("Choose the picture's shape");
   });
 
   it("falls back to square on a quote that names none or a wrong one", async () => {
@@ -254,5 +255,17 @@ describe("the shape a shop asks in (Q42)", () => {
     expect(styledQuoteQuerySchema.parse({ references: "1" }).aspect).toBe("1:1");
     expect(styledQuoteQuerySchema.parse({ references: "1", aspect: "nope" }).aspect).toBe("1:1");
     expect(styledQuoteQuerySchema.parse({ references: "1", aspect: "4:3" }).aspect).toBe("4:3");
+  });
+});
+
+describe("what a refused request tells the shop", () => {
+  it("is the field's own words for a validation refusal, which the modal has nowhere to highlight", async () => {
+    vi.doUnmock("@/lib/api-error");
+    const { ApiError } = await import("@/lib/api-error");
+    const { failureMessage } = await import("@/components/content/useStyledShotRun");
+    const invalid = new ApiError("Please correct the highlighted fields", 400, [{ path: "brief", message: "Describe the picture first" }]);
+    expect(failureMessage(invalid, "fallback")).toBe("Describe the picture first");
+    expect(failureMessage(new ApiError("Not enough credit for this picture", 409), "fallback")).toBe("Not enough credit for this picture");
+    expect(failureMessage("not an error", "fallback")).toBe("fallback");
   });
 });

@@ -64,7 +64,9 @@ export const requestStyledSchema = z
     brief: z.string().trim().min(1, "Describe the picture first").max(STYLED_BRIEF_MAX, `Keep it under ${STYLED_BRIEF_MAX} characters`),
     referenceRefs: z.array(z.url().max(1024)).max(13).default([]),
     face: z.enum(STYLED_FACES),
-    aspect: z.enum(STYLED_ASPECTS, "Choose the picture's shape"),
+    // The modal will not send without a shape (Q42); a page opened before that shipped sends none,
+    // and gets what it always got: square.
+    aspect: z.enum(STYLED_ASPECTS, "Choose the picture's shape").default(STYLED_ASPECT.SQUARE),
     previousId: id.nullish().transform((value) => value ?? undefined),
     slot: z.string().trim().min(1).max(40).nullish().transform((value) => value ?? undefined),
     slotRole: z.enum(SHOT_ROLES).nullish().transform((value) => value ?? undefined),
