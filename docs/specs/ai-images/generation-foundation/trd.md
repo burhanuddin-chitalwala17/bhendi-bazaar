@@ -79,8 +79,8 @@ pixel check — does not change.
   the run (spec R5). `quote()` and `maxReferencesFor()` give the first eligible model's price and
   reference limit; their caller is improve-with-ai's request path (the scene needs neither: its price
   is settled from the ledger).
-- **D5 — Settings named for what they hold (ADR-0037).** `IMAGE_GEN_ACCOUNT_ID` and
-  `IMAGE_GEN_API_TOKEN` (the multi-model gateway account — Cloudflare today), `IMAGE_GEN_GEMINI_API_KEY`
+- **D5 — Settings named for what they hold (ADR-0037).** `IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID` and
+  `IMAGE_GEN_CLOUDFLARE_API_TOKEN` (the multi-model gateway account — Cloudflare today), `IMAGE_GEN_GEMINI_API_KEY`
   (a key to one maker's own API cannot be named without the maker; the name is the API it opens, not
   the integration that provisioned it, which is what rule 4 forbids), and today's `IMAGE_MODEL_API_KEY`
   / `IMAGE_MODEL_ENDPOINT` for fal, unchanged. Read only in `generation/adapters/*`.

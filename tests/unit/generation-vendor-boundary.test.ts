@@ -4,7 +4,7 @@
  * must change when a provider does — the coupling the port exists to prevent.
  *
  * Mutation-tested 2026-11-21 (ADR-0056): adding `"https://api.cloudflare.com"` to
- * `server/content/generation/router.ts` and `process.env.IMAGE_GEN_API_TOKEN` to
+ * `server/content/generation/router.ts` and `process.env.IMAGE_GEN_CLOUDFLARE_API_TOKEN` to
  * `server/content/providers/scene/generated.ts` each turned this red; reverted, green.
  */
 import { describe, expect, it } from "vitest";
@@ -19,8 +19,8 @@ const VENDOR_MARKS = [
   /api\.cloudflare\.com/,
   /generativelanguage\.googleapis\.com/,
   /\bfal\.run\b/,
-  /IMAGE_GEN_ACCOUNT_ID/,
-  /IMAGE_GEN_API_TOKEN/,
+  /IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID/,
+  /IMAGE_GEN_CLOUDFLARE_API_TOKEN/,
   /IMAGE_GEN_GEMINI_API_KEY/,
 ];
 

@@ -36,7 +36,7 @@ const CASES: Case[] = [
     name: "gateway, third-party model",
     adapter: gatewayAdapter,
     model: "cf/nano-banana-pro",
-    env: { IMAGE_GEN_ACCOUNT_ID: "acct", IMAGE_GEN_API_TOKEN: "tok" },
+    env: { IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID: "acct", IMAGE_GEN_CLOUDFLARE_API_TOKEN: "tok" },
     success: () => json({ state: "Completed", result: { image: linked.url } }),
     viaLink: true,
     refusedInBody: () => json({ state: "Failed", errors: [{ message: "Blocked by safety filter" }] }),
@@ -53,7 +53,7 @@ const CASES: Case[] = [
     name: "gateway, hosted model",
     adapter: gatewayAdapter,
     model: "cf/flux-2-klein-4b",
-    env: { IMAGE_GEN_ACCOUNT_ID: "acct", IMAGE_GEN_API_TOKEN: "tok" },
+    env: { IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID: "acct", IMAGE_GEN_CLOUDFLARE_API_TOKEN: "tok" },
     success: () => json({ result: { image: b64 }, success: true }),
     viaLink: false,
     refusedInBody: () => json({ success: false, errors: [{ message: "NSFW content detected" }] }),
@@ -102,7 +102,7 @@ const CASES: Case[] = [
   },
 ];
 
-const ENV_KEYS = ["IMAGE_GEN_ACCOUNT_ID", "IMAGE_GEN_API_TOKEN", "IMAGE_GEN_GEMINI_API_KEY", "IMAGE_MODEL_API_KEY", "IMAGE_MODEL_ENDPOINT"];
+const ENV_KEYS = ["IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID", "IMAGE_GEN_CLOUDFLARE_API_TOKEN", "IMAGE_GEN_GEMINI_API_KEY", "IMAGE_MODEL_API_KEY", "IMAGE_MODEL_ENDPOINT"];
 const fetchMock = vi.fn();
 const input: AdapterCall = {
   prompt: "a courtyard",
@@ -180,7 +180,7 @@ describe.each(CASES.filter((c) => c.viaLink))("$name, the linked picture", (c) =
 
 describe("what a provider may send back (review, 2026-11-21)", () => {
   const nano = () => modelById("cf/nano-banana-pro") as ModelEntry;
-  beforeEach(() => Object.assign(process.env, { IMAGE_GEN_ACCOUNT_ID: "acct", IMAGE_GEN_API_TOKEN: "tok" }));
+  beforeEach(() => Object.assign(process.env, { IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID: "acct", IMAGE_GEN_CLOUDFLARE_API_TOKEN: "tok" }));
 
   // The picture was made and billed either way: UNCERTAIN, so its cost is recorded and no other model is asked.
   it("follows only an https picture link", async () => {

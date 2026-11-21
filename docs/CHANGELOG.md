@@ -12,6 +12,12 @@
 
 ## Entries
 
+## 2026-11-21 — Cloudflare's image keys are named for Cloudflare
+
+- `IMAGE_GEN_ACCOUNT_ID` / `IMAGE_GEN_API_TOKEN` are now `IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID` /
+  `IMAGE_GEN_CLOUDFLARE_API_TOKEN`, beside `IMAGE_GEN_GEMINI_API_KEY`: one name per provider. The old names are not
+  read; rename them wherever they are set. `.env.example` now lists every AI-picture variable.
+
 ## 2026-11-21 — AI pictures: faster polling, smaller uploads, bounded downloads, a per-shop limit
 
 - The Styled-shot dialog asks after a run every 3 s for the first 15 s, then every 6 s, and gives up at 5 min (was

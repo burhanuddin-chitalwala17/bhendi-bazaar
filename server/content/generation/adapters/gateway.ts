@@ -24,8 +24,8 @@ import {
 const API = "https://api.cloudflare.com/client/v4/accounts";
 
 function credentials(): { account: string; token: string } | null {
-  const account = process.env.IMAGE_GEN_ACCOUNT_ID?.trim();
-  const token = process.env.IMAGE_GEN_API_TOKEN?.trim();
+  const account = process.env.IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID?.trim();
+  const token = process.env.IMAGE_GEN_CLOUDFLARE_API_TOKEN?.trim();
   return account && token ? { account, token } : null;
 }
 
