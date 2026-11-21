@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ENHANCEMENT_TOOL, STYLED_BRIEF_MAX, STYLED_FACES } from "@server/content/enhancement.types";
+import { ENHANCEMENT_TOOL, STYLED_ASPECT, STYLED_ASPECTS, STYLED_BRIEF_MAX, STYLED_FACES } from "@server/content/enhancement.types";
 import { SCENE_PRESET_KEYS } from "@server/content/scene-presets";
 import { SHOT_ROLES } from "@server/catalog/shot-list";
 
@@ -64,6 +64,7 @@ export const requestStyledSchema = z
     brief: z.string().trim().min(1, "Describe the picture first").max(STYLED_BRIEF_MAX, `Keep it under ${STYLED_BRIEF_MAX} characters`),
     referenceRefs: z.array(z.url().max(1024)).max(13).default([]),
     face: z.enum(STYLED_FACES),
+    aspect: z.enum(STYLED_ASPECTS, "Choose the picture's shape"),
     previousId: id.nullish().transform((value) => value ?? undefined),
     slot: z.string().trim().min(1).max(40).nullish().transform((value) => value ?? undefined),
     slotRole: z.enum(SHOT_ROLES).nullish().transform((value) => value ?? undefined),
@@ -75,7 +76,10 @@ export const requestStyledSchema = z
 export type RequestStyledBody = z.infer<typeof requestStyledSchema>;
 
 /** How many pictures beyond the photo itself the quote is for. */
-export const styledQuoteQuerySchema = z.object({ references: z.coerce.number().int().min(0).max(13).catch(0) });
+export const styledQuoteQuerySchema = z.object({
+  references: z.coerce.number().int().min(0).max(13).catch(0),
+  aspect: z.enum(STYLED_ASPECTS).catch(STYLED_ASPECT.SQUARE),
+});
 
 /** An allowance is a count of runs; the ceilings are sanity, not policy — the policy is the value. */
 const allowance = z.number().int().positive().max(100_000);

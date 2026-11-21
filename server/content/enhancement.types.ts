@@ -3,6 +3,7 @@ import type {
   EnhancementTool as PrismaEnhancementTool,
 } from "@prisma/client";
 import { hasAiMark } from "@server/catalog/media-library.types";
+import { GENERATION_ASPECT, type GenerationAspect } from "@server/content/generation/generation.types";
 
 /**
  * The closed sets of image enhancement, declared once for the server, the schema and the sheet
@@ -277,6 +278,12 @@ export const STYLED_FACE = { NO_FACE: "no-face", WITH_FACE: "with-face" } as con
 export type StyledFace = (typeof STYLED_FACE)[keyof typeof STYLED_FACE];
 export const STYLED_FACES = Object.values(STYLED_FACE);
 
+/** The shapes a styled picture can be asked in: the generation module's own set (improve-with-ai Q42). */
+export const STYLED_ASPECT = GENERATION_ASPECT;
+export type StyledAspect = GenerationAspect;
+export const STYLED_ASPECTS = Object.values(STYLED_ASPECT);
+export const isStyledAspect = (value: unknown): value is StyledAspect => (STYLED_ASPECTS as readonly unknown[]).includes(value);
+
 /** The longest description a shop may write (improve-with-ai R3). */
 export const STYLED_BRIEF_MAX = 300;
 
@@ -297,6 +304,8 @@ export interface RequestStyledInput {
   /** Library images to follow, by the URL each carries; the photo itself is always the first reference. */
   referenceRefs: string[];
   face: StyledFace;
+  /** The shape the shop chose before generating (Q42). */
+  aspect: StyledAspect;
   /** The run this one regenerates, if any. */
   previousId?: string | null;
   slot?: string | null;
@@ -331,6 +340,7 @@ export interface EnhancementRow {
   error: string | null;
   brief: string | null;
   referenceRefs: string[];
+  aspect: string | null;
   previousId: string | null;
   createdAt: Date;
   proposedAt: Date | null;
@@ -359,6 +369,8 @@ export interface EnhancementDto {
   /** A styled run's description, references and the run it regenerates; empty for the six tools. */
   brief: string | null;
   referenceRefs: string[];
+  /** A styled run's shape; null for the six tools and for runs from before the choice (square). */
+  aspect: StyledAspect | null;
   previousId: string | null;
   createdAt: string;
   proposedAt: string | null;
@@ -424,6 +436,7 @@ export function toEnhancementDto(row: EnhancementRow, publicUrl: (key: string) =
     costPaise: row.costPaise,
     brief: row.brief,
     referenceRefs: row.referenceRefs,
+    aspect: isStyledAspect(row.aspect) ? row.aspect : null,
     previousId: row.previousId,
     createdAt: row.createdAt.toISOString(),
     proposedAt: row.proposedAt ? row.proposedAt.toISOString() : null,

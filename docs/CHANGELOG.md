@@ -12,6 +12,19 @@
 
 ## Entries
 
+## 2026-11-21 — Styled shot: the shop chooses the shape, any library picture is a reference, the result fits [CONTRACT] [MIGRATION]
+
+- **Shape (ai-images Q42).** The modal asks Square 1:1, Portrait 4:5, Tall 9:16 or Landscape 4:3 before Generate,
+  with nothing preselected. `requestStyledSchema` requires `aspect`; the quote takes `aspect` (default square); the run
+  stores it (migration `20261121130000_styled_aspect`, one nullable column) and the worker asks the model for it.
+  Earlier runs, with no shape stored, stay square. `EnhancementDto` gains `aspect`.
+- **References (Q43, Q44).** The library picker offers every image, not only those tagged Reference; its now-unused
+  `tag` prop is gone. A picture from the device is held in the page until Generate, so one removed first is never
+  uploaded and never reaches the library.
+- **Layout.** The result screen sized its picture as a square the full width of the panel; on a desktop that is
+  taller than the panel, which never scrolls, so Regenerate and Use this were cut off. The picture now takes the
+  height the controls leave, in its own shape; the form scrolls under a fixed cost line and Generate.
+
 ## 2026-11-21 — Fix: every Styled shot failed at the credit lock
 
 - `creditRepository.lockOrg` took the shop's advisory lock with `$queryRaw`. `pg_advisory_xact_lock` returns
