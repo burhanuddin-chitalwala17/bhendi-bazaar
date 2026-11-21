@@ -8,6 +8,7 @@ import { enhancementRepository } from "@server/content/enhancement.repository";
 import { enhancementService } from "@server/content/enhancement.service";
 import { enhancementSpec } from "@server/content/enhancement.job";
 import { generationRepository } from "@server/content/generation.repository";
+import { releaseGenerationOutputs } from "@server/content/generation/outputs";
 import {
   ENHANCEMENT_PROVIDER,
   ENHANCEMENT_STATE,
@@ -52,6 +53,9 @@ const NOT_SET_UP = "AI pictures are not set up yet";
 export const STYLED_GIVE_UP_MS = 20 * 60 * 1000;
 /** A run whose job is lost altogether is closed the next time the shop asks for a picture. */
 export const STYLED_STALE_MS = 2 * 60 * 60 * 1000;
+
+/** At most this many AI pictures a minute per shop (review, 2026-11-21). */
+export const STYLED_PER_MINUTE = 10;
 
 /** Fail a run in the shop's words and give its credit back; both are idempotent. */
 async function failAndRefund(id: string, message: string): Promise<void> {
@@ -98,6 +102,11 @@ export const styledService = {
     input: RequestStyledInput,
     now: Date = new Date(),
   ): Promise<{ enhancement: EnhancementDto; usage: EnhancementUsage }> {
+    // Best-effort (a count, not a lock): it stops a runaway client. Spend is bounded by the credit
+    // hold, which is taken under the org's advisory lock in the create transaction.
+    if ((await enhancementRepository.countRecent(orgId, ENHANCEMENT_TOOL.STYLED, new Date(now.getTime() - 60_000))) >= STYLED_PER_MINUTE) {
+      throw new DomainError("Too many pictures asked for at once. Wait a minute and try again.", { status: 429 });
+    }
     const usage = await enhancementService.assertMayRun(orgId, now);
     // A lazy sweep (D6): any of this shop's runs whose job was lost gives its hold back first.
     for (const stale of await enhancementRepository.findStale(orgId, ENHANCEMENT_TOOL.STYLED, new Date(now.getTime() - STYLED_STALE_MS))) {
@@ -179,14 +188,15 @@ export const styledService = {
     if (!(await enhancementRepository.markRunning(row.id))) return true;
 
     try {
-      const source = await mediaAssetService.readImageBytes(row.sourceAssetId);
-      const references = [{ bytes: source.bytes, mimeType: source.mimeType ?? "image/jpeg", assetId: row.sourceAssetId }];
-      for (const ref of row.referenceRefs) {
-        const found = await mediaAssetService.findReadyImage(row.orgId, { ref });
-        if (!found) continue;
-        const bytes = await mediaAssetService.readImageBytes(found.id);
-        references.push({ bytes: bytes.bytes, mimeType: bytes.mimeType ?? "image/jpeg", assetId: found.id });
-      }
+      // All at once, and at the size a model can use (review, 2026-11-21).
+      const found = await Promise.all(row.referenceRefs.map((ref) => mediaAssetService.findReadyImage(row.orgId, { ref })));
+      const ids = [row.sourceAssetId, ...found.flatMap((image) => (image ? [image.id] : []))];
+      const images = await Promise.all(ids.map((id) => mediaAssetService.readImageForModel(id)));
+      const references = images.map((image, index) => ({
+        bytes: image.bytes,
+        mimeType: image.mimeType ?? "image/jpeg",
+        assetId: ids[index] as string,
+      }));
       const face: StyledFace = row.preset === STYLED_FACE.WITH_FACE ? STYLED_FACE.WITH_FACE : STYLED_FACE.NO_FACE;
       const prompt = listingPrompt(face, row.brief ?? "");
       const result = await generate(
@@ -219,6 +229,8 @@ export const styledService = {
       });
       await enhancementService.accept(row.orgId, row.id, now);
       await creditService.settle(row.id, spent);
+      // The picture is kept; the model's copy is no longer needed by any retry (review, 2026-11-21).
+      await releaseGenerationOutputs(row.id);
       console.log(`[jobs] image.enhance ${jobId}: ${row.id} styled by ${result.modelId}`);
       return true;
     } catch (error) {

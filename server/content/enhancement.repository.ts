@@ -72,7 +72,11 @@ export class EnhancementRepository {
     return await prisma.enhancement.count({ where: { orgId, state: ENHANCEMENT_STATE.PROPOSED } });
   }
 
-  /** For the worker, which is handed an id and no org. */
+  /** How many runs of a tool one shop asked for since `since` — the per-minute limit's count. */
+  async countRecent(orgId: string, tool: EnhancementTool, since: Date): Promise<number> {
+    return await prisma.enhancement.count({ where: { orgId, tool, createdAt: { gte: since } } });
+  }
+
   /** One shop's runs of a tool still asked-for or running since before `before` — a hold left open (improve-with-ai D6). */
   async findStale(orgId: string, tool: EnhancementTool, before: Date): Promise<Array<{ id: string }>> {
     return await prisma.enhancement.findMany({
@@ -82,6 +86,7 @@ export class EnhancementRepository {
     });
   }
 
+  /** For the worker, which is handed an id and no org. */
   async findById(id: string): Promise<EnhancementRow | null> {
     return await prisma.enhancement.findUnique({ where: { id }, select: ENHANCEMENT_SELECT });
   }

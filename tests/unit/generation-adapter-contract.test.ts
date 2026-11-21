@@ -177,3 +177,39 @@ describe.each(CASES.filter((c) => c.viaLink))("$name, the linked picture", (c) =
     });
   });
 });
+
+describe("what a provider may send back (review, 2026-11-21)", () => {
+  const nano = () => modelById("cf/nano-banana-pro") as ModelEntry;
+  beforeEach(() => Object.assign(process.env, { IMAGE_GEN_ACCOUNT_ID: "acct", IMAGE_GEN_API_TOKEN: "tok" }));
+
+  // The picture was made and billed either way: UNCERTAIN, so its cost is recorded and no other model is asked.
+  it("follows only an https picture link", async () => {
+    fetchMock.mockResolvedValueOnce(json({ state: "Completed", result: { image: "http://cdn.test/out.png" } }));
+    await expect(gatewayAdapter.call(nano(), input)).rejects.toMatchObject({ kind: GENERATION_FAILURE.UNCERTAIN });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses a linked picture larger than the cap before reading it", async () => {
+    fetchMock
+      .mockResolvedValueOnce(json({ state: "Completed", result: { image: linked.url } }))
+      .mockResolvedValueOnce(new Response("x", { headers: { "content-length": String(50 * 1024 * 1024) } }));
+    await expect(gatewayAdapter.call(nano(), input)).rejects.toMatchObject({ kind: GENERATION_FAILURE.UNCERTAIN });
+  });
+
+  it("stops reading a linked picture that runs past the cap with no length given", async () => {
+    const chunk = new Uint8Array(1024 * 1024);
+    let sent = 0;
+    const endless = new ReadableStream<Uint8Array>({ pull: (c) => { sent += 1; c.enqueue(chunk); } });
+    fetchMock
+      .mockResolvedValueOnce(json({ state: "Completed", result: { image: linked.url } }))
+      .mockResolvedValueOnce(new Response(endless));
+    await expect(gatewayAdapter.call(nano(), input)).rejects.toMatchObject({ kind: GENERATION_FAILURE.UNCERTAIN });
+    expect(sent).toBeLessThan(30);
+  });
+
+  it("refuses a base64 picture larger than the cap", async () => {
+    const klein = modelById("cf/flux-2-klein-4b") as ModelEntry;
+    fetchMock.mockResolvedValueOnce(json({ result: { image: "A".repeat(28 * 1024 * 1024) } }));
+    await expect(gatewayAdapter.call(klein, input)).rejects.toMatchObject({ kind: GENERATION_FAILURE.BAD_OUTPUT });
+  });
+});

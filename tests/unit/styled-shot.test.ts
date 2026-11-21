@@ -16,10 +16,13 @@ const repo = {
   markProposed: vi.fn(),
   markFailed: vi.fn(),
   findStale: vi.fn(),
+  countRecent: vi.fn(),
 };
 const media = {
   findReadyImage: vi.fn(),
   readImageBytes: vi.fn(),
+  readImageForModel: vi.fn(),
+  deleteLooseObject: vi.fn(),
   putLooseObject: vi.fn(),
   tagAsReference: vi.fn(),
   publicUrlOf: (key: string) => `https://img.test/${key}`,
@@ -29,7 +32,7 @@ const enhancement = { assertMayRun: vi.fn(), accept: vi.fn() };
 const generate = vi.fn();
 const quoteRange = vi.fn();
 const enqueue = vi.fn();
-const generations = { costForEnhancement: vi.fn() };
+const generations = { costForEnhancement: vi.fn(), outputKeysForEnhancement: vi.fn() };
 const tx = { marker: "tx" };
 
 vi.mock("@server/content/enhancement.repository", () => ({ enhancementRepository: repo }));
@@ -72,6 +75,9 @@ beforeEach(() => {
     s.assetId === "a1" || s.ref === photo.ref ? photo : s.ref === mood.ref ? mood : null,
   );
   media.readImageBytes.mockReset().mockResolvedValue({ bytes: png, objectKey: "k", mimeType: "image/png" });
+  media.readImageForModel.mockReset().mockResolvedValue({ bytes: png, mimeType: "image/webp" });
+  media.deleteLooseObject.mockReset().mockResolvedValue(undefined);
+  generations.outputKeysForEnhancement.mockReset().mockResolvedValue(["generations/g1/0.png"]);
   media.putLooseObject.mockReset();
   media.tagAsReference.mockReset().mockResolvedValue(undefined);
   enhancement.assertMayRun.mockResolvedValue(usage);
@@ -81,6 +87,7 @@ beforeEach(() => {
   repo.markRunning.mockResolvedValue(true);
   generations.costForEnhancement.mockResolvedValue(1_273);
   repo.findStale.mockResolvedValue([]);
+  repo.countRecent.mockResolvedValue(0);
 });
 
 describe("asking for an AI picture (D3)", () => {
@@ -101,6 +108,12 @@ describe("asking for an AI picture (D3)", () => {
     expect(repo.markFailed).toHaveBeenCalledWith("old", expect.any(String), 1_273);
     expect(credit.refund).toHaveBeenCalledWith("old");
     expect(credit.refund.mock.invocationCallOrder[0]).toBeLessThan(credit.charge.mock.invocationCallOrder[0] ?? 0);
+  });
+
+  it("stops a runaway client at ten pictures a minute per shop, before anything is held (review)", async () => {
+    repo.countRecent.mockResolvedValue(10);
+    await expect(styledService.request("org-1", "u1", ask)).rejects.toMatchObject({ status: 429 });
+    expect(credit.charge).not.toHaveBeenCalled();
   });
 
   it("quotes for the photo and every reference together (Q10)", async () => {
@@ -142,6 +155,10 @@ describe("the run (D6)", () => {
     expect(repo.markProposed).toHaveBeenCalledWith("e1", expect.objectContaining({ proposalKey: "proposals/e1.webp", costPaise: 1_273 }));
     expect(enhancement.accept).toHaveBeenCalledWith("org-1", "e1", expect.any(Date));
     expect(credit.settle).toHaveBeenCalledWith("e1", 1_273);
+    // Read at the size a model uses, and the model's own copy deleted once the picture is kept (review).
+    expect(media.readImageForModel).toHaveBeenCalledWith("a1");
+    expect(media.readImageForModel).toHaveBeenCalledWith("r1");
+    expect(media.deleteLooseObject).toHaveBeenCalledWith("generations/g1/0.png");
   });
 
   it("settles a run recovered after it was proposed or kept, and refunds a failed one (review)", async () => {

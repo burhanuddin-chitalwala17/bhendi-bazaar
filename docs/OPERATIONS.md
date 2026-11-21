@@ -166,6 +166,8 @@ Every origin that uploads must be listed — add Vercel preview URLs if you uplo
 
 **6. Smoke-test before trusting it.** Upload one image through the admin UI. That exercises the whole path — presign, PUT, public URL, optimizer — and is where a wrong endpoint or a missing CORS rule shows up. Then check the image renders on the storefront, which proves `remotePatterns` too.
 
+**7. Expire the generation scratch.** R2 → bucket → Settings → *Object lifecycle rules* → add one rule: prefix `generations/` deleted after **7 days**. The app deletes these itself once a run is proposed or settled; the rule catches what a crash leaves behind. **Never add one on `proposals/`** — a proposal can wait for a shop's decision indefinitely, and accepting it copies that object.
+
 ### Images left behind on the retired store
 The Vercel Blob store is gone: the package, its migration script, the hostname in
 `next.config.ts` `remotePatterns` and its entry in the CSP's `img-src` were all removed once the

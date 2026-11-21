@@ -117,6 +117,12 @@ export class GenerationRepository {
     return count === 1;
   }
 
+  /** Where one enhancement's model outputs were stored, to delete once the run is kept. */
+  async outputKeysForEnhancement(enhancementId: string): Promise<string[]> {
+    const rows = await prisma.generation.findMany({ where: { enhancementId }, select: { outputKeys: true } });
+    return rows.flatMap((row) => row.outputKeys);
+  }
+
   /** What one enhancement's generations cost, whatever became of them: spend is spend (trd D6). */
   async costForEnhancement(enhancementId: string): Promise<number> {
     const { _sum } = await prisma.generation.aggregate({

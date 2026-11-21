@@ -21,7 +21,7 @@ const rateFor = vi.fn();
 
 vi.mock("@server/content/generation.repository", () => ({ generationRepository: repo }));
 vi.mock("@server/catalog/media-asset.service", () => ({ mediaAssetService: media }));
-vi.mock("@server/content/generation/exchange-rate", () => ({ rateFor: () => rateFor() }));
+vi.mock("@server/content/generation/exchange-rate", () => ({ rateFor: () => rateFor(), storedRateOrFetch: () => rateFor() }));
 vi.mock("@server/content/generation/router", () => ({
   eligibleModels: (...a: unknown[]) => eligibleModels(...a),
   routeCall: (...a: unknown[]) => routeCall(...a),

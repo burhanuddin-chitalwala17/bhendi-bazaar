@@ -1,3 +1,4 @@
+import { hasWidthCopies, widthPathFor } from "@server/catalog/image-widths";
 import sharp from "sharp";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
 import { MediaAssetKind, MediaAssetSource, MediaAssetState, type Prisma } from "@prisma/client";
@@ -243,6 +244,23 @@ export const mediaAssetService = {
     const row = await mediaAssetRepository.findForOrg(orgId, id);
     if (!row) throw new NotFoundError("Image not found");
     return { asset: toMediaAssetDto(row), uses: await mediaAssetRepository.usesOf(id) };
+  },
+
+  /**
+   * A photograph at the size an image model can use (improve-with-ai, review 2026-11-21): its stored
+   * 1200px copy where it has one, else the original. A model is sent at most 1024px, so reading a
+   * 12-megapixel original only to shrink it is wasted transfer.
+   */
+  async readImageForModel(assetId: string): Promise<{ bytes: Buffer; mimeType: string | null }> {
+    const asset = await mediaAssetRepository.findById(assetId);
+    if (!asset || asset.kind !== MediaAssetKind.IMAGE || asset.state !== MediaAssetState.READY || !asset.objectKey) {
+      throw new NotFoundError("Photo not found");
+    }
+    if (hasWidthCopies(asset.objectKey)) {
+      const copy = await getObject(widthPathFor(asset.objectKey, 1200)).catch(() => null);
+      if (copy) return { bytes: copy, mimeType: "image/webp" };
+    }
+    return { bytes: await getObject(asset.objectKey), mimeType: asset.mimeType };
   },
 
   /** Mark the org's images as references (media-tags R7): chosen or uploaded to guide an AI picture. */

@@ -29,6 +29,33 @@ export interface Adapter {
 /** A generation is slower than a transform; still bounded, or a dead socket holds a job slot. */
 export const GENERATION_TIMEOUT_MS = 90_000;
 
+/**
+ * The largest picture we accept from a provider (review, 2026-11-21): a 2K PNG is a few megabytes,
+ * so this is generous, and it stops a broken or hostile answer from filling the worker's memory.
+ */
+export const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+
+/** Read a body, refusing it once it passes the cap rather than after it is all in memory. */
+async function readCapped(response: Response): Promise<Buffer> {
+  const declared = Number(response.headers.get("content-length") ?? 0);
+  if (declared > MAX_IMAGE_BYTES) throw new GenerationFailure(GENERATION_FAILURE.BAD_OUTPUT, `picture of ${declared} bytes`);
+  if (!response.body) return Buffer.from(await response.arrayBuffer());
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_IMAGE_BYTES) {
+      await reader.cancel();
+      throw new GenerationFailure(GENERATION_FAILURE.BAD_OUTPUT, "picture larger than the cap");
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks);
+}
+
 /** Billing words a provider uses when an account is empty, whichever way it phrases it. */
 const NO_CREDIT = /balance|credit|quota exceeded|billing|payment required|insufficient funds/i;
 /** Words a provider uses when its safety check refused the content. */
@@ -63,7 +90,8 @@ export async function boundedFetch(url: string, init: RequestInit): Promise<Resp
 /** The answer's body, or the classified failure if it was not a 2xx. */
 export async function okOrFail(response: Response): Promise<Response> {
   if (response.ok) return response;
-  throw classifyHttp(response.status, await response.text().catch(() => ""));
+  // An error body is read only far enough to classify it.
+  throw classifyHttp(response.status, (await response.text().catch(() => "")).slice(0, 2_000));
 }
 
 /**
@@ -72,8 +100,9 @@ export async function okOrFail(response: Response): Promise<Response> {
  */
 export async function fetchLinked(url: string): Promise<Buffer> {
   try {
-    const picture = await okOrFail(await boundedFetch(url, {}));
-    return Buffer.from(await picture.arrayBuffer());
+    // Only a secure link is followed: a provider's answer is not a reason to call anywhere else.
+    if (!/^https:\/\//i.test(url)) throw new Error("picture link is not https");
+    return await readCapped(await okOrFail(await boundedFetch(url, {})));
   } catch (cause) {
     throw new GenerationFailure(GENERATION_FAILURE.UNCERTAIN, `made but not fetched: ${String(cause)}`);
   }
@@ -83,6 +112,10 @@ export async function fetchLinked(url: string): Promise<Buffer> {
 export function decodeImage(base64: unknown): Buffer {
   if (typeof base64 !== "string" || base64.length === 0) {
     throw new GenerationFailure(GENERATION_FAILURE.BAD_OUTPUT, "no image in the reply");
+  }
+  // Base64 is 4 characters per 3 bytes: the same cap as a linked picture.
+  if (base64.length > Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + 64) {
+    throw new GenerationFailure(GENERATION_FAILURE.BAD_OUTPUT, "picture larger than the cap");
   }
   return Buffer.from(base64.replace(/^data:[^,]+,/, ""), "base64");
 }

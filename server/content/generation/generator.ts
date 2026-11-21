@@ -16,7 +16,7 @@ import { eligibleModels, routeCall, type Answered, type Ask } from "@server/cont
 import type { ModelEntry } from "@server/content/generation/registry";
 import { GENERATION_TIMEOUT_MS } from "@server/content/generation/adapters/adapter";
 import type { DayRate } from "@server/content/exchange-rate.repository";
-import { rateFor } from "@server/content/generation/exchange-rate";
+import { rateFor, storedRateOrFetch } from "@server/content/generation/exchange-rate";
 
 /**
  * The generation port's one implementation (generation-foundation trd D1, D6). Callers say what
@@ -63,7 +63,7 @@ export async function quoteRange(
   const [model] = models;
   if (!model) return null;
   const prices = models.map((candidate) => priceMicroUsd(candidate.price, ask.references, ask.aspect, ask.size));
-  const rate = prices.some((price) => price > 0) ? await rateFor() : null;
+  const rate = prices.some((price) => price > 0) ? await storedRateOrFetch() : null;
   if (prices.some((price) => price > 0) && !rate) {
     throw new GenerationFailure(GENERATION_FAILURE.UNAVAILABLE, "no exchange rate stored");
   }
@@ -82,7 +82,7 @@ export async function quote(purpose: GenerationPurpose, ask: Ask): Promise<Gener
   const [model] = await eligibleModels(purpose, ask);
   if (!model) return null;
   const costMicroUsd = priceMicroUsd(model.price, ask.references, ask.aspect, ask.size);
-  const rate = costMicroUsd > 0 ? await rateFor() : null;
+  const rate = costMicroUsd > 0 ? await storedRateOrFetch() : null;
   if (costMicroUsd > 0 && !rate) {
     throw new GenerationFailure(GENERATION_FAILURE.UNAVAILABLE, "no exchange rate stored");
   }

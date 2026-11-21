@@ -34,6 +34,14 @@ async function fetchToday(now: Date): Promise<DayRate | null> {
   }
 }
 
+/**
+ * For the website (a quote, a request): the latest stored rate, fetching only when none was ever
+ * stored. The daily fetch is the worker's, on its first paid call of the day (review, 2026-11-21).
+ */
+export async function storedRateOrFetch(now: Date = new Date()): Promise<DayRate | null> {
+  return (await exchangeRateRepository.latestOnOrBefore(now)) ?? (await rateFor(now));
+}
+
 /** Today's rate, fetching it if this is the first ask today; else the latest stored; else null. */
 export async function rateFor(now: Date = new Date()): Promise<DayRate | null> {
   const stored = await exchangeRateRepository.latestOnOrBefore(now);

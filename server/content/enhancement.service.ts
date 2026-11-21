@@ -16,6 +16,7 @@ import { enhancementSpec } from "@server/content/enhancement.job";
 import { ENLARGE_TARGET_LONG_EDGE } from "@server/content/channel-rules";
 import { scenePainterFor, segmenterFor } from "@server/content/providers";
 import { generationRepository } from "@server/content/generation.repository";
+import { releaseGenerationOutputs } from "@server/content/generation/outputs";
 import { exchangeRateRepository } from "@server/content/exchange-rate.repository";
 import { microUsdToPaise } from "@server/content/generation/pricing";
 import type { Segmenter } from "@server/content/providers/segment";
@@ -287,6 +288,8 @@ export const enhancementService = {
         costPaise: costPaise + generated,
         proposedAt: now,
       });
+      // A painted backdrop is in the proposal now; the model's own copy can go (review, 2026-11-21).
+      if (generated > 0) await releaseGenerationOutputs(row.id);
       console.log(`[jobs] image.enhance ${jobId}: ${enhancementId} proposed (${row.tool}, ${result.width}x${result.height})`);
     } catch (error) {
       if (error instanceof DomainError) {

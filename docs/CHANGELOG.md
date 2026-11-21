@@ -12,6 +12,21 @@
 
 ## Entries
 
+## 2026-11-21 — AI pictures: faster polling, smaller uploads, bounded downloads, a per-shop limit
+
+- The Styled-shot dialog asks after a run every 3 s for the first 15 s, then every 6 s, and gives up at 5 min (was
+  every 2 s). Most pictures land in 20–40 s; a 30 s interval would add up to 30 s of waiting after one is ready.
+- References are read in parallel from the stored 1200 px copy (`mediaAssetService.readImageForModel`), not the
+  original, before the generator shrinks them for the model.
+- A generation's scratch output under `generations/` is deleted once its run is proposed or settled
+  (`generation/outputs.ts`); OPERATIONS step 7 adds a 7-day R2 lifecycle rule for what a crash leaves.
+- Adapters read a provider's picture at most 20 MB (header and stream), follow https links only, and keep 2,000
+  characters of an error body. A linked picture that cannot be fetched is UNCERTAIN, so its cost is still recorded.
+- A shop can start at most 10 Styled shots a minute; the eleventh is a 429. Best-effort (a count, not a lock);
+  the credit hold is what bounds spend.
+- A quote on the website prices at the latest stored exchange rate and fetches only when none was ever stored; the
+  worker's charge still uses the day's rate.
+
 ## 2026-11-21 — The model order is read through a source, ready for an admin screen
 
 - `server/content/generation/model-order.ts`: a purpose's model order now comes from the first `ModelOrderSource`

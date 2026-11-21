@@ -4,10 +4,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ENHANCEMENT_STATE, type EnhancementDto, type RequestStyledInput } from "@server/content/enhancement.types";
 import { styledShotApiClient } from "./styledShotApiClient";
 
-/** How often a run is asked after, when it is slow enough to say so, and when to stop asking. */
-const POLL_MS = 2_000;
+/**
+ * How often a run is asked after (review, 2026-11-21): every 3 s while a fast model might already be
+ * done, then every 6 s — each ask is a few billed queries. A picture usually takes 30–40 s; the stop is
+ * past the worst real case — two model timeouts, or a redelivered job waiting out IN_FLIGHT_MS (180 s).
+ */
+const FAST_POLL_MS = 3_000;
+const SLOW_POLL_MS = 6_000;
+const FAST_FOR_MS = 15_000;
 const SLOW_MS = 60_000;
-const GIVE_UP_MS = 4 * 60 * 1000;
+const GIVE_UP_MS = 5 * 60 * 1000;
+export const nextPollMs = (elapsed: number) => (elapsed < FAST_FOR_MS ? FAST_POLL_MS : SLOW_POLL_MS);
 
 export type StyledRunPhase =
   | { phase: "idle" }
@@ -49,12 +56,12 @@ export function useStyledShotRun(orgId: string, messages: { couldNotStart: strin
           const elapsed = Date.now() - startedAt;
           if (elapsed > GIVE_UP_MS) return setRun({ phase: "lost", message: messages.couldNotCheck });
           setRun({ phase: "working", startedAt, slow: elapsed > SLOW_MS });
-          timer.current = setTimeout(tick, POLL_MS);
+          timer.current = setTimeout(tick, nextPollMs(elapsed));
         } catch {
           setRun({ phase: "lost", message: messages.couldNotCheck });
         }
       };
-      timer.current = setTimeout(tick, POLL_MS);
+      timer.current = setTimeout(tick, FAST_POLL_MS);
     },
     [messages.couldNotCheck, orgId],
   );
