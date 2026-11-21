@@ -13,7 +13,9 @@ export type StyledRunPhase =
   | { phase: "idle" }
   | { phase: "working"; startedAt: number; slow: boolean }
   | { phase: "done" }
-  | { phase: "failed"; message: string; input: RequestStyledInput };
+  | { phase: "failed"; message: string; input: RequestStyledInput }
+  /** Stopped asking about a run that may still finish: offering a retry would pay twice (review). */
+  | { phase: "lost"; message: string };
 
 /**
  * One AI picture's run (improve-with-ai R7–R9): ask, ask after it until it is kept or has failed, and
@@ -23,6 +25,8 @@ export function useStyledShotRun(orgId: string, messages: { couldNotStart: strin
   const [run, setRun] = useState<StyledRunPhase>({ phase: "idle" });
   const [versions, setVersions] = useState<EnhancementDto[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // A double tap is one request: a second Generate while one is being asked for is ignored.
+  const asking = useRef(false);
 
   const stop = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -43,11 +47,11 @@ export function useStyledShotRun(orgId: string, messages: { couldNotStart: strin
             return setRun({ phase: "failed", message: enhancement.error ?? messages.couldNotCheck, input });
           }
           const elapsed = Date.now() - startedAt;
-          if (elapsed > GIVE_UP_MS) return setRun({ phase: "failed", message: messages.couldNotCheck, input });
+          if (elapsed > GIVE_UP_MS) return setRun({ phase: "lost", message: messages.couldNotCheck });
           setRun({ phase: "working", startedAt, slow: elapsed > SLOW_MS });
           timer.current = setTimeout(tick, POLL_MS);
         } catch {
-          setRun({ phase: "failed", message: messages.couldNotCheck, input });
+          setRun({ phase: "lost", message: messages.couldNotCheck });
         }
       };
       timer.current = setTimeout(tick, POLL_MS);
@@ -57,6 +61,8 @@ export function useStyledShotRun(orgId: string, messages: { couldNotStart: strin
 
   const request = useCallback(
     async (input: RequestStyledInput) => {
+      if (asking.current) return;
+      asking.current = true;
       stop();
       const startedAt = Date.now();
       setRun({ phase: "working", startedAt, slow: false });
@@ -65,6 +71,8 @@ export function useStyledShotRun(orgId: string, messages: { couldNotStart: strin
         poll(enhancement.id, startedAt, input);
       } catch (cause) {
         setRun({ phase: "failed", message: cause instanceof Error ? cause.message : messages.couldNotStart, input });
+      } finally {
+        asking.current = false;
       }
     },
     [messages.couldNotStart, orgId, poll, stop],

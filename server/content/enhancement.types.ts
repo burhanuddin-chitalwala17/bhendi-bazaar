@@ -2,6 +2,7 @@ import type {
   EnhancementState as PrismaEnhancementState,
   EnhancementTool as PrismaEnhancementTool,
 } from "@prisma/client";
+import { hasAiMark } from "@server/catalog/media-library.types";
 
 /**
  * The closed sets of image enhancement, declared once for the server, the schema and the sheet
@@ -256,6 +257,8 @@ export type EnhancementTransform = {
   preset: string | null;
   provider: string;
   enhancementId: string;
+  /** Set on an AI picture, so everything derived from it inherits the mark (ADR-0077). */
+  aiMade?: true;
 };
 
 /** What a sheet or a slot asks for (spec R2, R5). The photo is named by id or by the URL its row carries. */
@@ -277,8 +280,12 @@ export const STYLED_FACES = Object.values(STYLED_FACE);
 /** The longest description a shop may write (improve-with-ai R3). */
 export const STYLED_BRIEF_MAX = 300;
 
-/** Whether a stored image was made by an AI model (improve-with-ai R11): its transform names the styled tool. */
+/**
+ * Whether a stored image is AI-made (improve-with-ai R11; ADR-0077): made by the styled tool, or
+ * derived from such a picture, which catalog marks on every derivative.
+ */
 export function isAiMade(transform: unknown): boolean {
+  if (hasAiMark(transform)) return true;
   return typeof transform === "object" && transform !== null && (transform as { tool?: unknown }).tool === ENHANCEMENT_TOOL.STYLED;
 }
 

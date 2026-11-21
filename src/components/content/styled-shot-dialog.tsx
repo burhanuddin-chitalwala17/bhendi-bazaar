@@ -249,7 +249,9 @@ export function StyledShotDialog({ orgId, orgCode, target, inForm = false, onUse
               <>
                 <p className="text-small text-warning">{C.short}</p>
                 <Button asChild className="w-full">
-                  <Link href={ROUTES.org.library(orgId)}>{C.addCredit}</Link>
+                  <Link href={ROUTES.org.libraryCredits(orgId)} onClick={close}>
+                    {C.addCredit}
+                  </Link>
                 </Button>
               </>
             ) : (
@@ -271,6 +273,15 @@ export function StyledShotDialog({ orgId, orgCode, target, inForm = false, onUse
             </div>
           </div>
           <p className="text-small text-muted-foreground">{run.slow ? C.stillWorking : C.workingHint}</p>
+        </div>
+      )}
+
+      {target && run.phase === "lost" && (
+        <div className="space-y-3">
+          <p className="text-small text-muted-foreground">{run.message}</p>
+          <Button type="button" className="w-full" onClick={close}>
+            {C.close}
+          </Button>
         </div>
       )}
 
@@ -311,11 +322,11 @@ export function StyledShotDialog({ orgId, orgCode, target, inForm = false, onUse
           </div>
           {versions.length > 1 && (
             <div className="flex items-center justify-between">
-              <Button type="button" variant="ghost" size="sm" aria-label={C.previousVersion} onClick={() => setIndex(Math.max(0, Math.min(index, versions.length - 1) - 1))}>
+              <Button type="button" variant="ghost" size="lg" aria-label={C.previousVersion} onClick={() => setIndex(Math.max(0, Math.min(index, versions.length - 1) - 1))}>
                 <Icon name="previous" />
               </Button>
               <span className="text-small">{C.version(Math.min(index, versions.length - 1) + 1, versions.length)}</span>
-              <Button type="button" variant="ghost" size="sm" aria-label={C.nextVersion} onClick={() => setIndex(Math.min(versions.length - 1, index + 1))}>
+              <Button type="button" variant="ghost" size="lg" aria-label={C.nextVersion} onClick={() => setIndex(Math.min(versions.length - 1, index + 1))}>
                 <Icon name="next" />
               </Button>
             </div>

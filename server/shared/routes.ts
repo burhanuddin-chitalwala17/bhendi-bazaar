@@ -64,6 +64,8 @@ export const ROUTES = {
     storefrontLook: (orgId: Id) => `/org/${orgId}/storefront/look`,
     storefrontPreview: (orgId: Id) => `/org/${orgId}/storefront/preview`,
     library: (orgId: Id) => `/org/${orgId}/library`,
+    /** The Photos page with the credit sheet open (ai-images improve-with-ai journey 4). */
+    libraryCredits: (orgId: Id) => `/org/${orgId}/library?credits=1`,
     listing: (orgId: Id) => `/org/${orgId}/listing`,
     locations: (orgId: Id) => `/org/${orgId}/locations`,
     reviews: (orgId: Id) => `/org/${orgId}/reviews`,

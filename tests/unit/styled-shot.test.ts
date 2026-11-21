@@ -15,6 +15,7 @@ const repo = {
   markRunning: vi.fn(),
   markProposed: vi.fn(),
   markFailed: vi.fn(),
+  findStale: vi.fn(),
 };
 const media = {
   findReadyImage: vi.fn(),
@@ -79,6 +80,7 @@ beforeEach(() => {
   repo.create.mockResolvedValue(row());
   repo.markRunning.mockResolvedValue(true);
   generations.costForEnhancement.mockResolvedValue(1_273);
+  repo.findStale.mockResolvedValue([]);
 });
 
 describe("asking for an AI picture (D3)", () => {
@@ -91,6 +93,14 @@ describe("asking for an AI picture (D3)", () => {
     expect(credit.charge).toHaveBeenCalledWith(tx, { orgId: "org-1", enhancementId: "e1", costPaise: 1_273, worstCostPaise: 1_273, marginBps: 0 });
     expect(enqueue).toHaveBeenCalledWith(tx, expect.objectContaining({ type: "image.enhance" }), { enhancementId: "e1", orgId: "org-1" });
     expect(media.tagAsReference).toHaveBeenCalledWith("org-1", ["r1"]);
+  });
+
+  it("closes this shop's runs whose job was lost before holding credit for a new one", async () => {
+    repo.findStale.mockResolvedValue([{ id: "old" }]);
+    await styledService.request("org-1", "u1", ask);
+    expect(repo.markFailed).toHaveBeenCalledWith("old", expect.any(String), 1_273);
+    expect(credit.refund).toHaveBeenCalledWith("old");
+    expect(credit.refund.mock.invocationCallOrder[0]).toBeLessThan(credit.charge.mock.invocationCallOrder[0] ?? 0);
   });
 
   it("quotes for the photo and every reference together (Q10)", async () => {
@@ -134,6 +144,30 @@ describe("the run (D6)", () => {
     expect(credit.settle).toHaveBeenCalledWith("e1", 1_273);
   });
 
+  it("settles a run recovered after it was proposed or kept, and refunds a failed one (review)", async () => {
+    repo.findById.mockResolvedValue(row({ state: "PROPOSED" }));
+    await styledService.run("e1");
+    expect(enhancement.accept).toHaveBeenCalledWith("org-1", "e1", expect.any(Date));
+    expect(credit.settle).toHaveBeenCalledWith("e1", 1_273);
+
+    repo.findById.mockResolvedValue(row({ state: "ACCEPTED" }));
+    await styledService.run("e1");
+    expect(credit.settle).toHaveBeenCalledTimes(2);
+
+    repo.findById.mockResolvedValue(row({ state: "FAILED" }));
+    await styledService.run("e1");
+    expect(credit.refund).toHaveBeenCalledWith("e1");
+    expect(generate).not.toHaveBeenCalled();
+  });
+
+  it("gives up a run still erroring past its deadline and refunds it, rather than holding credit for ever", async () => {
+    repo.findById.mockResolvedValue(row({ createdAt: new Date("2026-11-21T10:00:00Z") }));
+    generate.mockRejectedValue(new Error("store 503"));
+    await expect(styledService.run("e1", "job", new Date("2026-11-21T10:30:00Z"))).resolves.toBe(true);
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", expect.stringContaining("could not be made"), 1_273);
+    expect(credit.refund).toHaveBeenCalledWith("e1");
+  });
+
   it("fails a refused description in the shop's words and gives the credit back (R13)", async () => {
     repo.findById.mockResolvedValue(row());
     generate.mockRejectedValue(new GenerationFailure(GENERATION_FAILURE.REFUSED, "safety"));
@@ -146,7 +180,7 @@ describe("the run (D6)", () => {
   it("lets an unexpected error through for the queue, refunding nothing yet", async () => {
     repo.findById.mockResolvedValue(row());
     generate.mockRejectedValue(new Error("database went away"));
-    await expect(styledService.run("e1")).rejects.toThrow("database went away");
+    await expect(styledService.run("e1", "job", new Date("2026-11-21T10:01:00Z"))).rejects.toThrow("database went away");
     expect(credit.refund).not.toHaveBeenCalled();
   });
 

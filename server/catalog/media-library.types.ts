@@ -14,6 +14,23 @@ export const MEDIA_TAG = { PRODUCT: "PRODUCT", REFERENCE: "REFERENCE" } as const
 export type MediaTag = (typeof MEDIA_TAG)[keyof typeof MEDIA_TAG];
 export const MEDIA_TAGS = Object.values(MEDIA_TAG);
 
+/**
+ * The mark an AI-made picture carries in its transform, and every picture derived from it inherits
+ * (ADR-0077; improve-with-ai R11): a crop, an enlargement or a white backdrop of an AI picture is
+ * still an AI picture, so a marketplace never takes it as the main image.
+ */
+export const AI_MADE_MARK = "aiMade";
+
+export function hasAiMark(transform: unknown): boolean {
+  return typeof transform === "object" && transform !== null && (transform as Record<string, unknown>)[AI_MADE_MARK] === true;
+}
+
+/** A derivative's transform, carrying the mark forward when its source has it. */
+export function inheritAiMark<T>(sourceTransform: unknown, transform: T): T {
+  if (!hasAiMark(sourceTransform) || typeof transform !== "object" || transform === null) return transform;
+  return { ...(transform as object), [AI_MADE_MARK]: true } as T;
+}
+
 /** Tiles per page: eight rows of the 3-up phone grid (ADR-0016). */
 export const MEDIA_LIBRARY_PAGE_SIZE = 24;
 

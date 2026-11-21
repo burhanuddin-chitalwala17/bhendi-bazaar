@@ -48,6 +48,17 @@ export const STYLED_REFUSED_MESSAGE =
 export const STYLED_FAILED_MESSAGE = "The picture could not be made just now. Nothing was charged.";
 const NOT_SET_UP = "AI pictures are not set up yet";
 
+/** A run still failing after this long is given up and refunded, not retried again (D6). */
+export const STYLED_GIVE_UP_MS = 20 * 60 * 1000;
+/** A run whose job is lost altogether is closed the next time the shop asks for a picture. */
+export const STYLED_STALE_MS = 2 * 60 * 60 * 1000;
+
+/** Fail a run in the shop's words and give its credit back; both are idempotent. */
+async function failAndRefund(id: string, message: string): Promise<void> {
+  await enhancementRepository.markFailed(id, message, await generationRepository.costForEnhancement(id));
+  await creditService.refund(id);
+}
+
 const toDto = (row: Parameters<typeof toEnhancementDto>[0]): EnhancementDto =>
   toEnhancementDto(row, mediaAssetService.publicUrlOf);
 
@@ -88,6 +99,10 @@ export const styledService = {
     now: Date = new Date(),
   ): Promise<{ enhancement: EnhancementDto; usage: EnhancementUsage }> {
     const usage = await enhancementService.assertMayRun(orgId, now);
+    // A lazy sweep (D6): any of this shop's runs whose job was lost gives its hold back first.
+    for (const stale of await enhancementRepository.findStale(orgId, ENHANCEMENT_TOOL.STYLED, new Date(now.getTime() - STYLED_STALE_MS))) {
+      await failAndRefund(stale.id, STYLED_FAILED_MESSAGE);
+    }
 
     const source = await mediaAssetService.findReadyImage(orgId, { assetId: input.sourceAssetId, ref: input.sourceRef });
     if (!source) throw new NotFoundError("Photo not found");
@@ -152,8 +167,13 @@ export const styledService = {
     const row = await enhancementRepository.findById(enhancementId);
     if (!row || row.tool !== ENHANCEMENT_TOOL.STYLED) return false;
     if (row.state !== ENHANCEMENT_STATE.REQUESTED && row.state !== ENHANCEMENT_STATE.RUNNING) {
-      // A run already proposed but not kept (a worker died between the two) is kept now.
+      // A redelivered or recovered run finishes what the last one started: keep, then settle; or
+      // refund a failed one. Each step is idempotent, so a run that got further changes nothing.
       if (row.state === ENHANCEMENT_STATE.PROPOSED) await enhancementService.accept(row.orgId, row.id, now);
+      if (row.state === ENHANCEMENT_STATE.PROPOSED || row.state === ENHANCEMENT_STATE.ACCEPTED) {
+        await creditService.settle(row.id, await generationRepository.costForEnhancement(row.id));
+      }
+      if (row.state === ENHANCEMENT_STATE.FAILED) await creditService.refund(row.id);
       return true;
     }
     if (!(await enhancementRepository.markRunning(row.id))) return true;
@@ -198,7 +218,7 @@ export const styledService = {
         proposedAt: now,
       });
       await enhancementService.accept(row.orgId, row.id, now);
-      await creditService.settle(row.id, result.costPaise);
+      await creditService.settle(row.id, spent);
       console.log(`[jobs] image.enhance ${jobId}: ${row.id} styled by ${result.modelId}`);
       return true;
     } catch (error) {
@@ -211,11 +231,16 @@ export const styledService = {
             ? error.message
             : null;
       if (message === null) {
-        console.error(`[jobs] image.enhance ${jobId}: ${row.id} errored, will retry`, error);
-        throw error;
+        // Transient until it has failed for long enough; then given up, so a hold never stays open.
+        if (now.getTime() - row.createdAt.getTime() < STYLED_GIVE_UP_MS) {
+          console.error(`[jobs] image.enhance ${jobId}: ${row.id} errored, will retry`, error);
+          throw error;
+        }
+        console.error(`[jobs] image.enhance ${jobId}: ${row.id} errored past its deadline, giving up`, error);
+        await failAndRefund(row.id, STYLED_FAILED_MESSAGE);
+        return true;
       }
-      await enhancementRepository.markFailed(row.id, message, await generationRepository.costForEnhancement(row.id));
-      await creditService.refund(row.id);
+      await failAndRefund(row.id, message);
       console.log(`[jobs] image.enhance ${jobId}: ${row.id} failed — ${message}`);
       return true;
     }

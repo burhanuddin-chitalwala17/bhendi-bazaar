@@ -51,6 +51,7 @@ export const STYLED_SHOT_COPY = {
   regenerate: "Regenerate",
   editDescription: "Edit description",
   tryAgain: "Try again",
+  close: "Close",
   savedToLibrary: "Saved to your library",
   photoReplaced: "Photo replaced",
   couldNotStart: "The picture could not be asked for just now. Nothing was charged.",

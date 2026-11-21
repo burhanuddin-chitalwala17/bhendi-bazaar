@@ -209,7 +209,7 @@ export class MediaAssetRepository {
   async findReadySource(orgId: string | null, id: string, db: MediaDb = prisma) {
     return await db.mediaAsset.findFirst({
       where: { id, orgId, kind: MediaAssetKind.IMAGE, state: MediaAssetState.READY },
-      select: { id: true, width: true, height: true },
+      select: { id: true, width: true, height: true, transform: true },
     });
   }
 

@@ -275,6 +275,15 @@ describe("get", () => {
 });
 
 describe("accept", () => {
+  it("marks an AI picture's transform, so everything made from it stays AI-made (ADR-0077)", async () => {
+    repo.findForOrg.mockResolvedValueOnce(row({ tool: "STYLED", preset: "no-face", provider: "generation", state: "PROPOSED", proposalKey: "proposals/e1.webp" }));
+    repo.findForOrg.mockResolvedValueOnce(row({ tool: "STYLED", state: "ACCEPTED" }));
+    await enhancementService.accept("org-1", "e1", now);
+    expect(media.registerDerivedObject).toHaveBeenCalledWith(
+      expect.objectContaining({ transform: { tool: "STYLED", preset: "no-face", provider: "generation", enhancementId: "e1", aiMade: true } }),
+    );
+  });
+
   it("registers the proposal as a derived image carrying its making, decides the row, then drops the proposal object", async () => {
     const accepted = row({
       state: "ACCEPTED",

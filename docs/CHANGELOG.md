@@ -12,6 +12,17 @@
 
 ## Entries
 
+## 2026-11-21 — Fix: an AI picture's credit always closes, and its derivatives stay AI-made
+
+- From the improve-with-ai review: a redelivered styled run now settles (or refunds) what the last one left;
+  a run that keeps erroring is given up after 20 minutes and refunded (`image.enhance` gains `retry` 5 with
+  backoff); a run whose job was lost is closed when the shop next asks for a picture. No credit hold stays open.
+- Catalog copies an `aiMade` mark onto every picture derived from an AI picture (crop, enlarge, backdrops), so
+  none of them can become a marketplace's main image (ADR-0077).
+- The dialog stops offering a paid retry once it loses track of a run, ignores a double tap on Generate,
+  sends "Add credit" to the Photos page with the credit sheet open (`ROUTES.org.libraryCredits`), and gives
+  the version arrows full-size targets.
+
 ## 2026-11-21 — Improve with AI: a description and reference pictures become a styled picture of the product [MIGRATION] [CONTRACT]
 
 - [improve-with-ai](specs/ai-images/improve-with-ai/): one **Improve** split button in the library and on every photo

@@ -73,6 +73,15 @@ export class EnhancementRepository {
   }
 
   /** For the worker, which is handed an id and no org. */
+  /** One shop's runs of a tool still asked-for or running since before `before` — a hold left open (improve-with-ai D6). */
+  async findStale(orgId: string, tool: EnhancementTool, before: Date): Promise<Array<{ id: string }>> {
+    return await prisma.enhancement.findMany({
+      where: { orgId, tool, state: { in: [EnhancementState.REQUESTED, EnhancementState.RUNNING] }, createdAt: { lt: before } },
+      select: { id: true },
+      take: 20,
+    });
+  }
+
   async findById(id: string): Promise<EnhancementRow | null> {
     return await prisma.enhancement.findUnique({ where: { id }, select: ENHANCEMENT_SELECT });
   }

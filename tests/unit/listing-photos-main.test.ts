@@ -24,6 +24,11 @@ describe("the main image", () => {
     expect(() => mainImageFirst([ai("a"), ai("b")])).toThrow(AI_ONLY_PHOTOS_MESSAGE);
   });
 
+  it("keeps an AI picture's derivative AI-made — an enlargement cannot become the main image (review)", () => {
+    const enlarged = { ...real("e"), asset: { mimeType: null, transform: { tool: "ENLARGE", aiMade: true } } };
+    expect(() => mainImageFirst([enlarged])).toThrow(AI_ONLY_PHOTOS_MESSAGE);
+  });
+
   it("treats a crop or another tool's result as a real photograph", () => {
     expect(mainImageFirst([{ ...real("a"), asset: { mimeType: null, transform: { tool: "WHITE" } } }]).map((p) => p.ref)).toEqual(["a"]);
   });

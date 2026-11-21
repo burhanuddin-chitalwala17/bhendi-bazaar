@@ -17,4 +17,7 @@ export const enhancementSpec: JobSpec<EnhancementPayload> = {
   type: "image.enhance",
   schema: enhancementPayload,
   group: (payload) => payload.orgId,
+  // Bounded, with backoff: a run that keeps failing is given up within about half an hour, and an
+  // AI picture's credit is then refunded rather than held for ever (improve-with-ai D6).
+  retry: { limit: 5, delaySeconds: 30 },
 };

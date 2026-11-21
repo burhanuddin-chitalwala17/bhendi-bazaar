@@ -85,3 +85,12 @@ describe("the DTO", () => {
     expect(toMediaAssetDto({ ...row({ tags: [MEDIA_TAG.REFERENCE] }), _count: row()._count }).tags).toEqual(["REFERENCE"]);
   });
 });
+
+describe("the AI mark on derivatives (ADR-0077)", () => {
+  it("is carried from an AI-made source onto whatever is made from it, and onto nothing else", async () => {
+    const { inheritAiMark, hasAiMark } = await import("@server/catalog/media-library.types");
+    expect(inheritAiMark({ tool: "STYLED", aiMade: true }, { rotation: 0, crop: {} })).toEqual({ rotation: 0, crop: {}, aiMade: true });
+    expect(hasAiMark(inheritAiMark({ tool: "WHITE" }, { tool: "ENLARGE" }))).toBe(false);
+    expect(hasAiMark(inheritAiMark(null, { tool: "ENLARGE" }))).toBe(false);
+  });
+});

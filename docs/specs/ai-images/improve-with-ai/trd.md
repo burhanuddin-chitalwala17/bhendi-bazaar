@@ -51,11 +51,16 @@ AI-made picture on every marketplace.
   `generate` (purpose `listing`, idempotency key `enhancement:<id>:styled`, `containsPerson` true
   unless the brief and face say otherwise is not inferred: recorded true for every listing picture),
   encodes WebP, stores the proposal and **accepts it in the same run** (Q25): the derived image's
-  transform carries `tool: STYLED`. Then `creditService.settle(id, actual)`; a `DomainError` fails the
-  row and `creditService.refund(id)` (Q20). A model refusal reads "This description could not be made
+  transform carries `tool: STYLED` and the `aiMade` mark. Then `creditService.settle(id, actual)`; a
+  `DomainError` fails the row and `creditService.refund(id)` (Q20). A redelivered run finishes what the
+  last began (keep, settle; or refund a failed one). Any other error is retried (`retry` 5, backoff)
+  until the run is 20 minutes old, then failed and refunded; a run whose job was lost altogether is
+  closed when the shop next asks for a picture. No hold stays open. (Revised after review, 2026-11-21.) A model refusal reads "This description could not be made
   into a picture. Try describing it differently — nothing was charged."
 - **D7 — R11 at the one place marketplace photos are built** (`server/channels/listing-photos-out.ts`):
-  an AI-made photo (its asset's transform names `STYLED`) is never first; the first real photograph is
+  an AI-made photo is never first. AI-made means its transform names `STYLED` **or carries the `aiMade`
+  mark, which catalog copies onto every derivative** (`inheritAiMark` in `registerDerivedBytes` and
+  `beginUpload`), so a crop or an enlargement of an AI picture stays one; the first real photograph is
   moved to the front, and a listing with only AI-made photos is refused with the reason. The product's
   own gallery is untouched.
 - **D8 — Client.** `ImproveSplitButton` (content composites) — main half opens `StyledShotDialog`

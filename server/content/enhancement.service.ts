@@ -313,7 +313,13 @@ export const enhancementService = {
       throw new ConflictError("There is no proposal to accept");
     }
 
-    const transform: EnhancementTransform = { tool: row.tool, preset: row.preset, provider: row.provider, enhancementId: row.id };
+    const transform: EnhancementTransform = {
+      tool: row.tool,
+      preset: row.preset,
+      provider: row.provider,
+      enhancementId: row.id,
+      ...(row.tool === ENHANCEMENT_TOOL.STYLED ? { aiMade: true as const } : {}),
+    };
     const result = await mediaAssetService.registerDerivedObject({
       orgId,
       uploaderId: row.requesterId,

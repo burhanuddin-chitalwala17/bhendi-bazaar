@@ -14,6 +14,7 @@ import {
   MEDIA_LIBRARY_PAGE_SIZE,
   describeUses,
   MEDIA_TAG,
+  inheritAiMark,
   toMediaAssetDto,
   type MediaTag,
   type MediaAssetDetailDto,
@@ -114,7 +115,11 @@ export const mediaAssetService = {
       kind: isVideoContentType(input.contentType) ? MediaAssetKind.VIDEO : MediaAssetKind.IMAGE,
       contentHash,
       ...(source && input.derivedFrom
-        ? { source: MediaAssetSource.DERIVED, derivedFromId: source.id, transform: input.derivedFrom.transform }
+        ? {
+            source: MediaAssetSource.DERIVED,
+            derivedFromId: source.id,
+            transform: inheritAiMark(source.transform, input.derivedFrom.transform),
+          }
         : {}),
     });
     return { ...signed, assetId: asset.id };
@@ -509,7 +514,8 @@ export const mediaAssetService = {
       contentHash,
       source: MediaAssetSource.DERIVED,
       derivedFromId: source.id,
-      transform: input.transform,
+      // An AI picture's derivatives stay AI pictures (ADR-0077).
+      transform: inheritAiMark(source.transform, input.transform),
     });
   },
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import NextImage from "next/image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -91,7 +92,8 @@ function LineRow({ line }: { line: CreditLineDto }) {
  * balance on the button, and a sheet with why credit exists, how to top up, and every line.
  */
 export function ShopCreditsButton({ orgId, shop, balancePaise }: { orgId: string; shop: string; balancePaise: number }) {
-  const [open, setOpen] = useState(false);
+  // Opened from the AI dialog's "Add credit" (improve-with-ai journey 4).
+  const [open, setOpen] = useState(useSearchParams().get("credits") === "1");
   const [extra, setExtra] = useState<{ lines: CreditLineDto[]; page: number; hasMore: boolean } | null>(null);
   const account = useAsyncData<CreditAccountDto>((signal) => creditsApiClient.account(orgId, 1, signal), {
     enabled: open,
