@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MediaAssetKind, MediaAssetSource } from "@prisma/client";
+import { MediaAssetKind, MediaAssetSource, MediaTag } from "@prisma/client";
 
 /**
  * The library's filters (media-library spec R6), arriving as a query string from a plain GET form
@@ -29,6 +29,7 @@ export const mediaLibraryFilterSchema = z.object({
   productId: orBlank(z.string().min(1).max(64)),
   slot: orBlank(z.string().min(1).max(40)),
   retired: orBlank(z.enum(["1"])).transform((value) => value === "1"),
+  tag: orBlank(z.enum(MediaTag)),
   page: orBlank(z.coerce.number().int().positive()).transform((value) => value ?? 1),
 });
 
@@ -57,6 +58,14 @@ export const videoPosterSchema = z.object({
 });
 
 export type VideoPosterInput = z.infer<typeof videoPosterSchema>;
+
+/** A shop switching one tag on or off on one of its images (ai-images/media-tags R6). */
+export const mediaTagSchema = z.object({
+  tag: z.enum(MediaTag),
+  on: z.boolean(),
+});
+
+export type MediaTagInput = z.infer<typeof mediaTagSchema>;
 
 /**
  * Why the platform took an image down (spec R12).

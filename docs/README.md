@@ -1,6 +1,6 @@
 # Documentation
 
-- **Verified:** 2026-11-20
+- **Verified:** 2026-11-21
 - **Covers:** `docs/*.md`, `docs/adr/*.md`, `docs/specs/*/`
 
 A map of this directory. Every link here points at a file that exists — if one does not, that is a defect ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)).
@@ -34,6 +34,7 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 | Domain doc | Covers |
 |---|---|
 | [server/shipping/CLAUDE.md](../server/shipping/CLAUDE.md) + [ARCHITECTURE.md](../server/shipping/ARCHITECTURE.md) + [adr/](../server/shipping/adr/) | Shipping — the one domain with a real provider abstraction, so the one with its own ADR sequence |
+| [server/content/CLAUDE.md](../server/content/CLAUDE.md) | Content — image enhancement and the provider-agnostic generation module ([ADR-0076](adr/0076-image-generation-goes-through-one-port-and-models-are-data.md)) |
 | [server/checkout/CLAUDE.md](../server/checkout/CLAUDE.md) | Checkout — orders and their lifecycle; the orchestrating domain |
 | [server/payments/CLAUDE.md](../server/payments/CLAUDE.md) | Payments — the gateway conversation and the single-writer rule |
 | [server/bidding/CLAUDE.md](../server/bidding/CLAUDE.md) | Bidding — timed auctions, and the sale gate that suspends an item from normal sale |
@@ -42,7 +43,7 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 | [src/components/CLAUDE.md](../src/components/CLAUDE.md) | The front end — its layers, and the gates each rule answers to (not a domain; loads when a component is read) |
 | [src/app/api/CLAUDE.md](../src/app/api/CLAUDE.md) | Route handlers — authorize, parse, delegate, answer (not a domain) |
 
-The remaining domains (`catalog`, `listing`, `cart`, `identity`, `analytics`, `promotions`, `payouts`, `wishlist`, `content`, `shared`) have directories but no `CLAUDE.md` yet — one is added when work first touches the domain, per [ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md) decision 8.
+The remaining domains (`catalog`, `listing`, `cart`, `identity`, `analytics`, `promotions`, `payouts`, `wishlist`, `shared`) have directories but no `CLAUDE.md` yet — one is added when work first touches the domain, per [ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md) decision 8.
 
 ## Where to look
 

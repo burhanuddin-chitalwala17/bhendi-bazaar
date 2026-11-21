@@ -9,7 +9,7 @@ import { PRODUCT_TILE_SIZES } from "@/components/shared/product-card";
 import { YouTubePoster } from "@/components/product/youtube-poster";
 import { LoadMore } from "@/components/shared/load-more";
 import { useMediaLibraryPages } from "@/hooks/product/useMediaLibraryPages";
-import type { MediaAssetDto } from "@server/catalog/media-library.types";
+import type { MediaAssetDto, MediaTag } from "@server/catalog/media-library.types";
 import { LIBRARY_PICKER_COPY } from "@/components/product/media-copy";
 
 interface MediaLibraryPickerProps {
@@ -24,6 +24,8 @@ interface MediaLibraryPickerProps {
   kinds?: readonly Kind[];
   title?: string;
   description?: string;
+  /** Only images carrying this tag — the AI modal opens on references first (ai-images/improve-with-ai ux.md). */
+  tag?: MediaTag;
 }
 
 type Kind = MediaAssetDto["kind"];
@@ -52,6 +54,7 @@ export function MediaLibraryPicker({
   kinds = ALL_KINDS,
   title = LIBRARY_PICKER_COPY.title,
   description = "Tap to add to this gallery; tap again to take it out.",
+  tag,
 }: MediaLibraryPickerProps) {
   const [kind, setKind] = useState<Kind>(kinds[0] ?? "IMAGE");
   return (
@@ -84,9 +87,10 @@ export function MediaLibraryPicker({
       {/* Mounted only while open, so nothing is fetched for a picker nobody has tapped. */}
       {open && (
         <PickerPages
-          key={kind}
+          key={`${kind}-${tag ?? ""}`}
           orgId={orgId}
           kind={kind}
+          tag={tag}
           taken={taken}
           onPick={onPick}
           onUnpick={onUnpick}
@@ -99,19 +103,21 @@ export function MediaLibraryPicker({
 function PickerPages({
   orgId,
   kind,
+  tag,
   taken,
   onPick,
   onUnpick,
 }: {
   orgId: string;
   kind: Kind;
+  tag?: MediaTag;
   taken: ReadonlySet<string>;
   onPick: (asset: MediaAssetDto) => void;
   onUnpick: (asset: MediaAssetDto) => void;
 }) {
   const { assets, loading, done, error, loadMore } = useMediaLibraryPages({
     orgId,
-    query: `kind=${kind}`,
+    query: tag ? `kind=${kind}&tag=${tag}` : `kind=${kind}`,
   });
 
   if (assets.length === 0 && done) {

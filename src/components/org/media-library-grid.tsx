@@ -22,16 +22,28 @@ import { useMutation } from "@/hooks/core/useMutation";
 import { orgMediaApiClient } from "@/components/org/orgMediaApiClient";
 import { CropDialog } from "@/components/product/crop-dialog";
 import { ImproveDialog } from "@/components/product/improve-dialog";
+import { ImproveSplitButton } from "@/components/content/improve-split-button";
+import { StyledShotDialog } from "@/components/content/styled-shot-dialog";
+import type { AvailableTool } from "@server/content/enhancement.types";
 import { LockedAction } from "@/components/subscriptions/locked-action";
 import type { CropTransform } from "@/lib/image/crop-transform";
 import { formatDay, formatDuration } from "@/lib/format";
-import { describeUses, type MediaAssetDto, type MediaUseDto } from "@server/catalog/media-library.types";
+import {
+  MEDIA_TAG,
+  MEDIA_TAGS,
+  describeUses,
+  type MediaAssetDto,
+  type MediaTag,
+  type MediaUseDto,
+} from "@server/catalog/media-library.types";
 import type { Pagination } from "@server/shared/pagination";
 import { MEDIA_GRID_COPY } from "./media-library-copy";
 import { FEATURE } from "@/components/subscriptions/features";
 
 interface MediaLibraryGridProps {
   orgId: string;
+  /** Names the upload folder for a reference picture from the device (improve-with-ai R4). */
+  orgCode?: string | null;
   /** The first page, rendered on the server so the page paints full; the rest loads on scroll. */
   initial: { assets: MediaAssetDto[]; pagination: Pagination };
   /** The filters as a query string — what every further page is asked with. */
@@ -67,7 +79,7 @@ const isVideoKind = (kind: MediaAssetDto["kind"]) => kind !== "IMAGE";
  * it — a retire action (media-library spec R6, R7). Uses are fetched when the sheet opens, one
  * asset at a time.
  */
-export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProps) {
+export function MediaLibraryGrid({ orgId, orgCode, initial, query }: MediaLibraryGridProps) {
   const router = useRouter();
   const { assets, total, loading, done, error, loadMore, remove } = useMediaLibraryPages({ orgId, query, initial });
   const [open, setOpen] = useState<MediaAssetDto | null>(null);
@@ -75,6 +87,8 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
   const [reframing, setReframing] = useState<MediaAssetDto | null>(null);
   /** The photograph being improved (image-enhancement spec R2). No slot here: the library has none. */
   const [improving, setImproving] = useState<MediaAssetDto | null>(null);
+  const [improveTool, setImproveTool] = useState<AvailableTool | null>(null);
+  const [styling, setStyling] = useState<MediaAssetDto | null>(null);
   const [showUses, setShowUses] = useState(false);
   const [isPosterPickerOpen, setPosterPickerOpen] = useState(false);
 
@@ -110,6 +124,26 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
     setOpen(saved);
     setPosterPickerOpen(false);
     toast.success(posterAssetId === null ? MEDIA_GRID_COPY.posterRestored : MEDIA_GRID_COPY.posterChanged);
+    router.refresh();
+  };
+
+  // What the shop says a picture is for (ai-images/media-tags R6). The sheet shows the answer at
+  // once; the page re-reads so a tag filter follows.
+  const tagMutation = useMutation(
+    ({ asset, tag, on }: { asset: MediaAssetDto; tag: MediaTag; on: boolean }) =>
+      orgMediaApiClient.setTag(orgId, asset.id, tag, on),
+    { errorMessage: MEDIA_GRID_COPY.tagFailed },
+  );
+  const toggleTag = async (asset: MediaAssetDto, tag: MediaTag) => {
+    const on = !asset.tags.includes(tag);
+    let saved: MediaAssetDto;
+    try {
+      saved = await tagMutation.mutate({ asset, tag, on });
+    } catch {
+      return;
+    }
+    setOpen(saved);
+    toast.success((on ? MEDIA_GRID_COPY.tagAdded : MEDIA_GRID_COPY.tagRemoved)(MEDIA_GRID_COPY.tagLabel[tag]));
     router.refresh();
   };
 
@@ -164,7 +198,9 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
       <Card>
         <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
           <Icon name="photos" size="xl" tone="muted" />
-          <p className="text-sm text-muted-foreground">{MEDIA_GRID_COPY.empty}</p>
+          <p className="text-sm text-muted-foreground">
+            {new URLSearchParams(query).get("tag") === MEDIA_TAG.REFERENCE ? MEDIA_GRID_COPY.noReferences : MEDIA_GRID_COPY.empty}
+          </p>
         </CardContent>
       </Card>
     );
@@ -192,6 +228,12 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
               {STATE_BADGES[asset.state] && (
                 <Badge className="absolute left-1 top-1" variant={STATE_BADGES[asset.state]?.variant}>
                   {STATE_BADGES[asset.state]?.label}
+                </Badge>
+              )}
+              {/* Only on a reference that is nothing else (media-tags ux): a product photo also used as a reference is still a product photo. */}
+              {asset.tags.includes(MEDIA_TAG.REFERENCE) && !asset.tags.includes(MEDIA_TAG.PRODUCT) && (
+                <Badge className="absolute bottom-1 left-1" variant="secondary">
+                  {MEDIA_GRID_COPY.tagLabel.REFERENCE}
                 </Badge>
               )}
               {asset.durationMs !== null && (
@@ -296,6 +338,30 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                   {open.retiredReason ? `: ${open.retiredReason}` : "."}
                 </p>
               )}
+              {open.kind === "IMAGE" && (
+                <div className="space-y-1">
+                  <h3 className="text-sm font-medium">{MEDIA_GRID_COPY.tags}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {open.state === "RETIRED"
+                      ? // A retired picture's tags are a record, not a choice: shown, not offered.
+                        open.tags.map((tag) => (
+                          <Badge key={tag} variant="secondary">{MEDIA_GRID_COPY.tagLabel[tag]}</Badge>
+                        ))
+                      : MEDIA_TAGS.map((tag) => (
+                          <Button
+                            key={tag}
+                            type="button"
+                            size="sm"
+                            variant={open.tags.includes(tag) ? "default" : "outline"}
+                            aria-pressed={open.tags.includes(tag)}
+                            onClick={() => toggleTag(open, tag)}
+                          >
+                            {MEDIA_GRID_COPY.tagLabel[tag]}
+                          </Button>
+                        ))}
+                  </div>
+                </div>
+              )}
               <div className="space-y-1">
                 <h3 className="text-sm font-medium">{MEDIA_GRID_COPY.usedBy}</h3>
                 {detail === null ? (
@@ -344,10 +410,14 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                   {open.kind === "IMAGE" && (
                     <>
                       <LockedAction feature={FEATURE.IMAGE_ENHANCEMENT} label={MEDIA_GRID_COPY.improve} variant="outline">
-                        <Button type="button" variant="outline" onClick={() => setImproving(open)}>
-                          <Icon name="enhance" className="mr-2" />
-                          {MEDIA_GRID_COPY.improve}
-                        </Button>
+                        <ImproveSplitButton
+                          size="default"
+                          onAi={() => setStyling(open)}
+                          onTool={(tool) => {
+                            setImproveTool(tool);
+                            setImproving(open);
+                          }}
+                        />
                       </LockedAction>
                       <Button type="button" variant="outline" onClick={() => setReframing(open)}>
                         <Icon name="crop" className="mr-2" />
@@ -371,12 +441,28 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
       <ImproveDialog
         orgId={orgId}
         target={improving ? { ref: improving.ref, assetId: improving.id } : null}
+        preselect={improveTool}
         onAccepted={() => {
           setImproving(null);
           setOpen(null);
           router.refresh();
         }}
-        onClose={() => setImproving(null)}
+        onClose={() => {
+          setImproving(null);
+          setImproveTool(null);
+        }}
+      />
+
+      {/* Every AI picture is already in the library when it is shown (ai-images Q25): "Use this" closes and re-reads. */}
+      <StyledShotDialog
+        orgId={orgId}
+        orgCode={orgCode}
+        target={styling ? { ref: styling.ref, assetId: styling.id } : null}
+        onUse={() => {
+          setOpen(null);
+          router.refresh();
+        }}
+        onClose={() => setStyling(null)}
       />
 
       <CropDialog

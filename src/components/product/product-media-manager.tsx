@@ -31,6 +31,7 @@
 
 "use client";
 
+import { StyledShotDialog } from "@/components/content/styled-shot-dialog";
 import { useEffect, useId, useRef, useState } from "react";
 import NextImage from "next/image";
 import { Icon } from "@/components/ui/icon";
@@ -583,6 +584,13 @@ export function ProductMediaManager({
     setPreselect(tool ?? null);
   };
 
+  /** Improve with AI on a photo (ai-images Q24, Q33): the same lock as the six tools. */
+  const [styling, setStyling] = useState<ImproveTarget | null>(null);
+  const openStyled = (target: ImproveTarget) => {
+    if (!plan.features.imageEnhancement) return setPlanSheet(true);
+    setStyling(target);
+  };
+
   const closeImprove = () => {
     setImproving(null);
     setPreselect(null);
@@ -650,6 +658,11 @@ export function ProductMediaManager({
                   ? (tool) => openImprove({ ref: item.ref, slot: slot.key, slotRole: slot.role }, tool)
                   : undefined
               }
+              onImproveAi={
+                item && orgId && slot.role !== SHOT_ROLE.LABEL
+                  ? () => openStyled({ ref: item.ref, slot: slot.key, slotRole: slot.role })
+                  : undefined
+              }
             />
           );
         })}
@@ -687,6 +700,7 @@ export function ProductMediaManager({
                     ? (tool) => openImprove({ ref: item.ref, slot: null, slotRole: null }, tool)
                     : undefined
                 }
+                onImproveAi={orgId && item.kind === "IMAGE" ? () => openStyled({ ref: item.ref, slot: null, slotRole: null }) : undefined}
               />
             ))}
           </ul>
@@ -811,6 +825,19 @@ export function ProductMediaManager({
           preselect={preselect}
           onAccepted={replaceRef}
           onClose={closeImprove}
+        />
+      )}
+      {orgId && (
+        <StyledShotDialog
+          orgId={orgId}
+          orgCode={orgCode}
+          target={styling}
+          inForm
+          onUse={(sourceRef, result) => {
+            setStyling(null);
+            replaceRef(sourceRef, result);
+          }}
+          onClose={() => setStyling(null)}
         />
       )}
       <LockedSheet feature={FEATURE.IMAGE_ENHANCEMENT} shop={plan.shop} open={planSheet} onOpenChange={setPlanSheet} />

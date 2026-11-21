@@ -1,24 +1,23 @@
 /**
- * The scene capability behind its seam (image-enhancement spec R8, R11; trd D3): one painter, its
- * request asserted by URL, header and body, and every way it can refuse turned into a sentence an
- * org member can act on — including the one a shop cannot act on at all, an account with no credit
- * left, which is the platform owner's to fix and says so. `fetch` is stubbed throughout: nothing
- * here goes near a network, and nothing here needs a balance to prove.
+ * The scene painter over the generation port (generation-foundation spec R8, trd D8). Which model
+ * paints is the router's business, so the port is mocked: what is held here is what the painter asks
+ * for — the cut-out as the one reference, the preset's words inside the versioned scene prompt, its
+ * shape, and the run's own idempotency key — and how each kind of failure reaches an org member.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DomainError } from "@server/shared/domain-error";
 import { ENHANCEMENT_PROVIDER } from "@server/content/enhancement.types";
-import { SCENE_PRESET, type ScenePreset } from "@server/content/scene-presets";
-import {
-  SCENE_FAILED_MESSAGE,
-  SCENE_NO_CREDIT_MESSAGE,
-  SCENE_TIMEOUT_MS,
-} from "@server/content/providers/scene";
-import { modelScenePainter } from "@server/content/providers/scene/model";
+import { SCENE_PRESET } from "@server/content/scene-presets";
+import { SCENE_FAILED_MESSAGE, SCENE_NO_CREDIT_MESSAGE } from "@server/content/providers/scene";
+import { GENERATION_FAILURE, GenerationFailure } from "@server/content/generation/generation.types";
 
-const media = { publicBaseUrl: vi.fn(() => "https://images.bhendi-bazaar.com"), publicUrlOf: vi.fn() };
-vi.mock("@server/catalog/media-asset.service", () => ({ mediaAssetService: media }));
+const generate = vi.fn();
+const eligibleModels = vi.fn();
+vi.mock("@server/content/generation/generator", () => ({ generate: (...args: unknown[]) => generate(...args) }));
+vi.mock("@server/content/generation/router", () => ({ eligibleModels: (...args: unknown[]) => eligibleModels(...args) }));
+vi.mock("@server/catalog/media-asset.service", () => ({ mediaAssetService: { publicBaseUrl: () => "", publicUrlOf: vi.fn() } }));
 
+const { generatedScenePainter, SCENE_REFUSED_MESSAGE } = await import("@server/content/providers/scene/generated");
 const { scenePainterFor } = await import("@server/content/providers");
 
 const cutout = Buffer.from("the product on nothing");
@@ -26,144 +25,65 @@ const painted = Buffer.from("the painted scene");
 const table = SCENE_PRESET["wooden-table"];
 const drape = SCENE_PRESET["fabric-drape"];
 
-const ask = (preset: ScenePreset = table) => ({ cutout, prompt: preset.prompt, aspect: preset.aspect });
-const ok = (body: BodyInit) => new Response(body, { status: 200 });
-const link = () => ok(JSON.stringify({ images: [{ url: "https://cdn.test/scene.png" }] }));
-const fetchMock = vi.fn();
-
 beforeEach(() => {
-  vi.stubGlobal("fetch", fetchMock);
-  fetchMock.mockReset();
-  delete process.env.IMAGE_MODEL_API_KEY;
-  delete process.env.IMAGE_MODEL_ENDPOINT;
+  generate.mockReset().mockResolvedValue({ generationId: "g1", images: [painted], modelId: "cf/flux-2-klein-4b", costMicroUsd: 1384, costPaise: 13 });
+  eligibleModels.mockReset().mockReturnValue([{ id: "cf/flux-2-klein-4b" }]);
 });
 
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
-
-describe("the painter's request", () => {
-  beforeEach(() => {
-    process.env.IMAGE_MODEL_API_KEY = "k-123";
+describe("what the painter asks for", () => {
+  it("sends the cut-out as the one reference, the setting inside the scene prompt, and the run as the key", async () => {
+    await expect(generatedScenePainter("e1").paint({ cutout, prompt: table.prompt, aspect: table.aspect })).resolves.toBe(painted);
+    const [request] = generate.mock.calls[0] as [Record<string, unknown>];
+    expect(request).toMatchObject({
+      purpose: "scene",
+      promptVersion: "scene.v1",
+      brief: null,
+      aspect: "1:1",
+      size: "1K",
+      idempotencyKey: "enhancement:e1:scene",
+      enhancementId: "e1",
+      containsPerson: false,
+      references: [{ bytes: cutout, mimeType: "image/png", assetId: null }],
+    });
+    expect(request.prompt).toContain(table.prompt);
   });
 
-  it("posts the cut-out, the preset's own words and its shape, under a bounded timeout", async () => {
-    fetchMock.mockResolvedValueOnce(link()).mockResolvedValueOnce(ok(painted));
-
-    await expect(modelScenePainter().paint(ask())).resolves.toEqual(painted);
-
-    const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe("https://fal.run/fal-ai/bria/product-shot");
-    expect(init.method).toBe("POST");
-    expect(init.headers.authorization).toBe("Key k-123");
-    expect(init.signal).toBeInstanceOf(AbortSignal);
-    expect(SCENE_TIMEOUT_MS).toBe(60_000);
-
-    const body = JSON.parse(init.body);
-    // The cut-out is an intermediate nobody stored, so it travels in the request itself.
-    expect(body.image_url).toBe(`data:image/png;base64,${cutout.toString("base64")}`);
-    expect(body.scene_description).toBe(table.prompt);
-    expect(body.aspect_ratio).toBe("1:1");
-
-    // The answer is a link; the bytes are a second fetch, bounded the same way.
-    expect(fetchMock.mock.calls[1][0]).toBe("https://cdn.test/scene.png");
-    expect(fetchMock.mock.calls[1][1].signal).toBeInstanceOf(AbortSignal);
+  it("asks a tall setting in the tall shape", async () => {
+    await generatedScenePainter("e2").paint({ cutout, prompt: drape.prompt, aspect: drape.aspect });
+    expect(generate.mock.calls[0]?.[0]).toMatchObject({ aspect: "4:5" });
   });
 
-  it("sends a tall preset's shape rather than the square one", async () => {
-    fetchMock.mockResolvedValueOnce(link()).mockResolvedValueOnce(ok(painted));
-    await modelScenePainter().paint(ask(drape));
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).aspect_ratio).toBe("4:5");
-  });
-
-  it("goes where the environment points it, with no trailing slash left doubled", async () => {
-    process.env.IMAGE_MODEL_ENDPOINT = "https://models.internal/v1/";
-    fetchMock.mockResolvedValueOnce(link()).mockResolvedValueOnce(ok(painted));
-    await modelScenePainter().paint(ask());
-    expect(fetchMock.mock.calls[0][0]).toBe("https://models.internal/v1/fal-ai/bria/product-shot");
+  it("is recorded on the enhancement as the generation module, whose own row names the model", () => {
+    expect(generatedScenePainter("e1").key).toBe(ENHANCEMENT_PROVIDER.GENERATION);
   });
 });
 
-describe("what the org member is told when it will not answer", () => {
-  beforeEach(() => {
-    process.env.IMAGE_MODEL_API_KEY = "k-123";
+describe("how a failure reaches the shop", () => {
+  it.each([
+    [GENERATION_FAILURE.NO_CREDIT, SCENE_NO_CREDIT_MESSAGE],
+    [GENERATION_FAILURE.REFUSED, SCENE_REFUSED_MESSAGE],
+    [GENERATION_FAILURE.UNAVAILABLE, SCENE_FAILED_MESSAGE],
+    [GENERATION_FAILURE.BAD_OUTPUT, SCENE_FAILED_MESSAGE],
+  ])("%s becomes one sentence in the shop's language", async (kind, message) => {
+    generate.mockRejectedValue(new GenerationFailure(kind, "vendor words"));
+    const paint = generatedScenePainter("e1").paint({ cutout, prompt: table.prompt, aspect: table.aspect });
+    await expect(paint).rejects.toBeInstanceOf(DomainError);
+    await expect(paint).rejects.toThrow(message);
   });
 
-  it("turns a 500 into one shown sentence rather than the service's words", async () => {
-    fetchMock.mockResolvedValue(new Response("fal.ai: bria worker exploded", { status: 500 }));
-    await expect(modelScenePainter().paint(ask())).rejects.toBeInstanceOf(DomainError);
-    await expect(modelScenePainter().paint(ask())).rejects.toThrow(SCENE_FAILED_MESSAGE);
-  });
-
-  it("says a 402 is money, not weather — the one refusal waiting cannot fix", async () => {
-    fetchMock.mockResolvedValue(new Response("Payment Required", { status: 402 }));
-    await expect(modelScenePainter().paint(ask())).rejects.toThrow(SCENE_NO_CREDIT_MESSAGE);
-    await expect(modelScenePainter().paint(ask())).rejects.toThrow(/out of credit/i);
-  });
-
-  it("reads a quota refusal the same way, whatever status it arrives under", async () => {
-    // The account this was built against had a key and no balance, which is exactly this case.
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ detail: "Exhausted balance" }), { status: 403 }));
-    await expect(modelScenePainter().paint(ask())).rejects.toThrow(SCENE_NO_CREDIT_MESSAGE);
-
-    fetchMock.mockReset().mockResolvedValue(new Response("user quota exceeded", { status: 429 }));
-    await expect(modelScenePainter().paint(ask())).rejects.toThrow(SCENE_NO_CREDIT_MESSAGE);
-  });
-
-  it("does not read an ordinary failure as an empty wallet", async () => {
-    fetchMock.mockResolvedValue(new Response("internal error", { status: 500 }));
-    await expect(modelScenePainter().paint(ask())).rejects.toThrow(SCENE_FAILED_MESSAGE);
-  });
-
-  it("turns a timeout into a refusal rather than letting it escape to the queue", async () => {
-    // What `AbortSignal.timeout` throws when the service stops answering mid-request.
-    fetchMock.mockRejectedValue(Object.assign(new Error("signal timed out"), { name: "TimeoutError" }));
-    await expect(modelScenePainter().paint(ask())).rejects.toBeInstanceOf(DomainError);
-    await expect(modelScenePainter().paint(ask())).rejects.toThrow(SCENE_FAILED_MESSAGE);
-  });
-
-  it("treats an answer it does not recognise, and a dead link, as the same failure", async () => {
-    fetchMock.mockResolvedValue(ok(JSON.stringify({ status: "IN_QUEUE" })));
-    await expect(modelScenePainter().paint(ask())).rejects.toThrow(SCENE_FAILED_MESSAGE);
-
-    fetchMock.mockReset().mockResolvedValueOnce(link()).mockResolvedValueOnce(new Response("gone", { status: 404 }));
-    await expect(modelScenePainter().paint(ask())).rejects.toThrow(SCENE_FAILED_MESSAGE);
-  });
-
-  it("names no vendor in anything a member could read", async () => {
-    const vendors = [/fal/i, /bria/i, /cloudflare/i, /r2\b/i];
-    const messages = [SCENE_FAILED_MESSAGE, SCENE_NO_CREDIT_MESSAGE];
-
-    fetchMock.mockResolvedValue(new Response("fal.ai says bria is out of balance", { status: 402 }));
-    await modelScenePainter().paint(ask()).catch((error: DomainError) => messages.push(error.message));
-    delete process.env.IMAGE_MODEL_API_KEY;
-    try {
-      scenePainterFor();
-    } catch (error) {
-      messages.push((error as DomainError).message);
-    }
-
-    expect(messages).toHaveLength(4);
-    for (const message of messages) {
-      for (const vendor of vendors) expect(message, `"${message}" names a vendor`).not.toMatch(vendor);
-    }
+  it("lets anything else through for the queue to retry", async () => {
+    generate.mockRejectedValue(new Error("database went away"));
+    await expect(generatedScenePainter("e1").paint({ cutout, prompt: table.prompt, aspect: table.aspect })).rejects.not.toBeInstanceOf(DomainError);
   });
 });
 
-describe("which service paints", () => {
-  it("is the hosted model while a key is set, and asks nothing of the network to decide", () => {
-    process.env.IMAGE_MODEL_API_KEY = "k-123";
-    expect(modelScenePainter().isAvailable()).toBe(true);
-    expect(scenePainterFor().key).toBe(ENHANCEMENT_PROVIDER.MODEL);
-    expect(fetchMock).not.toHaveBeenCalled();
+describe("whether a scene can be painted at all", () => {
+  it("is refused before a slot is spent when no model is set up", async () => {
+    eligibleModels.mockReturnValue([]);
+    await expect(scenePainterFor()).rejects.toThrow("Scene backdrops are not set up yet");
   });
 
-  it("refuses in the org member's words with no key, since a scene has no free route", async () => {
-    expect(modelScenePainter().isAvailable()).toBe(false);
-    expect(() => scenePainterFor()).toThrow(DomainError);
-    expect(() => scenePainterFor()).toThrow("Scene backdrops are not set up yet");
-    // And the painter itself refuses rather than posting to a service it cannot authenticate to.
-    await expect(modelScenePainter().paint(ask())).rejects.toBeInstanceOf(DomainError);
-    expect(fetchMock).not.toHaveBeenCalled();
+  it("is a painter bound to the run when one is", async () => {
+    expect((await scenePainterFor("e9")).key).toBe(ENHANCEMENT_PROVIDER.GENERATION);
   });
 });

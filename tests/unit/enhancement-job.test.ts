@@ -25,8 +25,10 @@ const cutOut = vi.fn();
 const inScene = vi.fn();
 const segmenterFor = vi.fn();
 const scenePainterFor = vi.fn();
+const generations = { costForEnhancement: vi.fn() };
 
 vi.mock("@server/content/enhancement.repository", () => ({ enhancementRepository: repo }));
+vi.mock("@server/content/generation.repository", () => ({ generationRepository: generations }));
 vi.mock("@server/content/enhancement-policy.repository", () => ({ enhancementPolicyRepository: {} }));
 vi.mock("@server/catalog/media-asset.service", () => ({ mediaAssetService: media }));
 vi.mock("@server/shared/prisma", () => ({ prisma: {} }));
@@ -60,6 +62,9 @@ const requested: EnhancementRow = {
   resultAssetId: null,
   costPaise: 0,
   error: null,
+  brief: null,
+  referenceRefs: [],
+  previousId: null,
   createdAt: new Date("2026-09-27T10:00:00Z"),
   proposedAt: null,
   decidedAt: null,
@@ -87,7 +92,9 @@ beforeEach(() => {
   cutOut.mockResolvedValue({ output, mimeType: "image/png", width: 900, height: 900 });
   inScene.mockResolvedValue({ output, mimeType: "image/webp", width: 1200, height: 1200 });
   segmenterFor.mockReturnValue({ key: "model", isAvailable: () => true, cutOut: vi.fn() });
-  scenePainterFor.mockReturnValue({ key: "model", isAvailable: () => true, paint: vi.fn() });
+  scenePainterFor.mockReturnValue({ key: "generation", isAvailable: () => true, paint: vi.fn() });
+  // Only a run that called a model has generation rows; their sum is what the model cost (generation-foundation D7).
+  generations.costForEnhancement.mockReset().mockResolvedValue(0);
 });
 
 describe("image.enhance", () => {
@@ -144,7 +151,7 @@ describe("image.enhance", () => {
   it("fails the row with the reason when the source is gone, and stores nothing", async () => {
     media.readImageBytes.mockRejectedValue(new NotFoundError("Photo not found"));
     await run();
-    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Photo not found");
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Photo not found", 0);
     expect(media.putLooseObject).not.toHaveBeenCalled();
     expect(repo.markProposed).not.toHaveBeenCalled();
   });
@@ -154,41 +161,53 @@ describe("image.enhance", () => {
     // withdrawn — which the worker must refuse rather than run with nothing to run.
     repo.findById.mockResolvedValue({ ...requested, tool: "POLISH" as EnhancementRow["tool"] });
     await run();
-    expect(repo.markFailed).toHaveBeenCalledWith("e1", "That improvement is not available yet");
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "That improvement is not available yet", 0);
     expect(media.readImageBytes).not.toHaveBeenCalled();
   });
 
   it("runs a scene through both services and charges the cut-out and the paint together", async () => {
-    // The cut-out came from the paid model here, so this run bought two things (trd D6).
-    repo.findById.mockResolvedValue({ ...requested, tool: "SCENE", preset: "wooden-table", provider: "model" });
+    // The cut-out came from the paid model here, so this run bought two things (trd D6); the paint's
+    // price is its generation row's, at that day's rate (generation-foundation D7).
+    generations.costForEnhancement.mockResolvedValue(13);
+    repo.findById.mockResolvedValue({ ...requested, tool: "SCENE", preset: "wooden-table", provider: "generation" });
     await run();
 
+    expect(scenePainterFor).toHaveBeenCalledWith("e1");
     expect(inScene).toHaveBeenCalledWith(
       { bytes: Buffer.from("source bytes"), objectKey: "products/org-1/a.webp", mimeType: "image/webp" },
       expect.objectContaining({ key: "model" }),
-      expect.objectContaining({ key: "model" }),
+      expect.objectContaining({ key: "generation" }),
       expect.objectContaining({ key: "wooden-table", aspect: "square" }),
     );
     expect(repo.markProposed).toHaveBeenCalledWith("e1", {
       proposalKey: "proposals/e1.webp",
       // The ledger records the service that painted; the cost is everything the run spent.
-      provider: "model",
-      costPaise: 350 + 18,
+      provider: "generation",
+      costPaise: 13 + 18,
       proposedAt: expect.any(Date),
     });
   });
 
-  it("charges a scene for the paint alone where the cut-out came from the free transform", async () => {
-    segmenterFor.mockReturnValue({ key: "zone", isAvailable: () => true, cutOut: vi.fn() });
-    repo.findById.mockResolvedValue({ ...requested, tool: "SCENE", preset: "shop-shelf", provider: "model" });
+  it("keeps a paint the platform paid for on a scene that failed afterwards (generation-foundation D6)", async () => {
+    generations.costForEnhancement.mockResolvedValue(13);
+    inScene.mockRejectedValueOnce(new DomainError("The scene came back as something we could not read"));
+    repo.findById.mockResolvedValue({ ...requested, tool: "SCENE", preset: "wooden-table", provider: "generation" });
     await run();
-    expect(repo.markProposed).toHaveBeenCalledWith("e1", expect.objectContaining({ provider: "model", costPaise: 350 }));
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "The scene came back as something we could not read", 13);
+  });
+
+  it("charges a scene for the paint alone where the cut-out came from the free transform", async () => {
+    generations.costForEnhancement.mockResolvedValue(13);
+    segmenterFor.mockReturnValue({ key: "zone", isAvailable: () => true, cutOut: vi.fn() });
+    repo.findById.mockResolvedValue({ ...requested, tool: "SCENE", preset: "shop-shelf", provider: "generation" });
+    await run();
+    expect(repo.markProposed).toHaveBeenCalledWith("e1", expect.objectContaining({ provider: "generation", costPaise: 13 }));
   });
 
   it("fails a scene whose setting the list no longer has, before any bytes are read", async () => {
     repo.findById.mockResolvedValue({ ...requested, tool: "SCENE", preset: "a beach in goa" });
     await run();
-    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Choose one of the scene settings");
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Choose one of the scene settings", 0);
     expect(media.readImageBytes).not.toHaveBeenCalled();
   });
 
@@ -198,7 +217,7 @@ describe("image.enhance", () => {
     });
     repo.findById.mockResolvedValue({ ...requested, tool: "SCENE", preset: "wooden-table" });
     await run();
-    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Scene backdrops are not set up yet");
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Scene backdrops are not set up yet", 0);
     expect(media.readImageBytes).not.toHaveBeenCalled();
   });
 
@@ -227,14 +246,14 @@ describe("image.enhance", () => {
       throw new DomainError("Background removal is not set up yet");
     });
     await run();
-    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Background removal is not set up yet");
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Background removal is not set up yet", 0);
     expect(media.readImageBytes).not.toHaveBeenCalled();
   });
 
   it("treats a refusal from the tool itself the same way", async () => {
     lightFix.mockRejectedValue(new DomainError("This file is not an image we can read"));
     await run();
-    expect(repo.markFailed).toHaveBeenCalledWith("e1", "This file is not an image we can read");
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "This file is not an image we can read", 0);
   });
 
   it("lets any other failure reach the queue, with the row still taken and nothing proposed or failed", async () => {

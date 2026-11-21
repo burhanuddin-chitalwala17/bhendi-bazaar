@@ -15,6 +15,10 @@ import {
 import { enhancementSpec } from "@server/content/enhancement.job";
 import { ENLARGE_TARGET_LONG_EDGE } from "@server/content/channel-rules";
 import { scenePainterFor, segmenterFor } from "@server/content/providers";
+import { generationRepository } from "@server/content/generation.repository";
+import { releaseGenerationOutputs } from "@server/content/generation/outputs";
+import { exchangeRateRepository } from "@server/content/exchange-rate.repository";
+import { microUsdToPaise } from "@server/content/generation/pricing";
 import type { Segmenter } from "@server/content/providers/segment";
 import type { ScenePainter } from "@server/content/providers/scene";
 import { scenePresetFor, type ScenePreset } from "@server/content/scene-presets";
@@ -26,8 +30,11 @@ import { inScene } from "@server/content/tools/scene";
 import { enlarge } from "@server/content/tools/enlarge";
 import type { ToolInput, ToolResult } from "@server/content/tools/tool";
 import {
+  CUTOUT_OVERAGE_MICRO_USD,
   ENHANCEMENT_PROVIDER,
   ENHANCEMENT_STATE,
+  FREE_CUTOUTS_PER_MONTH,
+  SEGMENTING_TOOLS,
   ENHANCEMENT_TOOL,
   PROPOSAL_EXTENSION,
   TOOL_MIME_TYPE,
@@ -97,14 +104,15 @@ const TOOLS: Record<AvailableTool, ToolPipeline> = {
  * spent and before the store is touched. What the row ends up recording is what actually ran, which
  * may differ from what the request planned if the platform's choice changed in between.
  */
-function prepareTool(
+async function prepareTool(
   tool: AvailableTool,
   preset: string | null,
-): {
+  runId?: string,
+): Promise<{
   provider: EnhancementProvider;
   costPaise: number;
   run: (input: ToolInput) => Promise<ToolResult>;
-} {
+}> {
   const pipeline = TOOLS[tool];
   if (pipeline.needs === NEEDS.NOTHING) {
     const provider = ENHANCEMENT_PROVIDER.SHARP;
@@ -124,7 +132,7 @@ function prepareTool(
   // row records the service that painted, and the cost of everything the run spent (trd D6).
   const setting = scenePresetFor(preset);
   if (!setting) throw new DomainError("Choose one of the scene settings", { field: "preset" });
-  const painter = scenePainterFor();
+  const painter = await scenePainterFor(runId);
   return {
     provider: painter.key,
     costPaise: runCostPaise([
@@ -166,6 +174,24 @@ async function standing(orgId: string, now: Date): Promise<{ usage: EnhancementU
  * The source is never touched (spec R3), and every refusal is a `DomainError` the sheet shows.
  */
 export const enhancementService = {
+  /**
+   * The refusals every run shares, the AI tool's included (spec R7, trd D5; improve-with-ai R12): the
+   * shop's pause, its month's allowance, and the platform's day. Answers the standing it checked.
+   */
+  async assertMayRun(orgId: string, now: Date = new Date()): Promise<EnhancementUsage> {
+    const { usage, dailyCapPaise } = await standing(orgId, now);
+    if (usage.paused) {
+      throw new DomainError(`Enhancement is paused for your shop: ${usage.pauseReason ?? "ask the platform owner"}`);
+    }
+    if (usage.used >= usage.allowance) {
+      throw new DomainError(`You have used all ${usage.allowance} enhancements for this month`);
+    }
+    if ((await enhancementRepository.sumCostPaise(dayWindow(now))) >= dailyCapPaise) {
+      throw new DomainError("Enhancement has reached today's limit across the platform. Try again tomorrow.");
+    }
+    return usage;
+  },
+
   /** The org's standing this month (spec R7): a count of rows in the states that count, never a counter (trd D5). */
   async usage(orgId: string, now: Date = new Date()): Promise<EnhancementUsage> {
     return (await standing(orgId, now)).usage;
@@ -194,18 +220,9 @@ export const enhancementService = {
     }
     // Cheap and local: a tool whose service is not set up, or a setting that is not on the list,
     // is refused before a slot is spent.
-    const planned = prepareTool(tool, input.preset ?? null).provider;
+    const planned = (await prepareTool(tool, input.preset ?? null)).provider;
 
-    const { usage, dailyCapPaise } = await standing(orgId, now);
-    if (usage.paused) {
-      throw new DomainError(`Enhancement is paused for your shop: ${usage.pauseReason ?? "ask the platform owner"}`);
-    }
-    if (usage.used >= usage.allowance) {
-      throw new DomainError(`You have used all ${usage.allowance} enhancements for this month`);
-    }
-    if ((await enhancementRepository.sumCostPaise(dayWindow(now))) >= dailyCapPaise) {
-      throw new DomainError("Enhancement has reached today's limit across the platform. Try again tomorrow.");
-    }
+    const usage = await this.assertMayRun(orgId, now);
 
     // Another org's photo, or one not ready, is "not found" rather than a hint that it exists.
     const source = await mediaAssetService.findReadyImage(orgId, { assetId: input.sourceAssetId, ref: input.sourceRef });
@@ -258,16 +275,26 @@ export const enhancementService = {
 
     try {
       if (!isAvailableTool(row.tool)) throw new DomainError("That improvement is not available yet");
-      const { provider, costPaise, run } = prepareTool(row.tool, row.preset);
+      const { provider, costPaise, run } = await prepareTool(row.tool, row.preset, row.id);
       const source = await mediaAssetService.readImageBytes(row.sourceAssetId);
       const result = await run(source);
       const proposalKey = proposalKeyFor(row.id, row.tool);
       await mediaAssetService.putLooseObject(proposalKey, result.output, result.mimeType);
-      await enhancementRepository.markProposed(row.id, { proposalKey, provider, costPaise, proposedAt: now });
+      // What a model charged is its generation row's, priced at that day's rate (generation-foundation trd D7).
+      const generated = await generationRepository.costForEnhancement(row.id);
+      await enhancementRepository.markProposed(row.id, {
+        proposalKey,
+        provider,
+        costPaise: costPaise + generated,
+        proposedAt: now,
+      });
+      // A painted backdrop is in the proposal now; the model's own copy can go (review, 2026-11-21).
+      if (generated > 0) await releaseGenerationOutputs(row.id);
       console.log(`[jobs] image.enhance ${jobId}: ${enhancementId} proposed (${row.tool}, ${result.width}x${result.height})`);
     } catch (error) {
       if (error instanceof DomainError) {
-        await enhancementRepository.markFailed(row.id, error.message);
+        // The shop is not charged a run that failed; the platform's day still counts a paint it paid for.
+        await enhancementRepository.markFailed(row.id, error.message, await generationRepository.costForEnhancement(row.id));
         console.log(`[jobs] image.enhance ${jobId}: ${enhancementId} failed — ${error.message}`);
         return;
       }
@@ -289,7 +316,13 @@ export const enhancementService = {
       throw new ConflictError("There is no proposal to accept");
     }
 
-    const transform: EnhancementTransform = { tool: row.tool, preset: row.preset, provider: row.provider, enhancementId: row.id };
+    const transform: EnhancementTransform = {
+      tool: row.tool,
+      preset: row.preset,
+      provider: row.provider,
+      enhancementId: row.id,
+      ...(row.tool === ENHANCEMENT_TOOL.STYLED ? { aiMade: true as const } : {}),
+    };
     const result = await mediaAssetService.registerDerivedObject({
       orgId,
       uploaderId: row.requesterId,
@@ -425,5 +458,19 @@ export const enhancementService = {
   /** What every org together has spent today, in paise — the number the cap is read against. */
   async platformSpendToday(now: Date = new Date()): Promise<number> {
     return await enhancementRepository.sumCostPaise(dayWindow(now));
+  },
+
+  /**
+   * What the free tools cost the platform this month past the host's free allowance (ai-images Q16;
+   * generation-foundation trd D11). A query, never a counter. Paise is null when no exchange rate
+   * has ever been stored — the count still shows.
+   */
+  async absorbedThisMonth(now: Date = new Date()): Promise<{ cutouts: number; over: number; paise: number | null }> {
+    const cutouts = await enhancementRepository.countHostCutouts(monthWindow(now), SEGMENTING_TOOLS, ENHANCEMENT_PROVIDER.MODEL);
+    const over = Math.max(0, cutouts - FREE_CUTOUTS_PER_MONTH);
+    // The stored rate only: an admin page render never fetches from outside (review, 2026-11-21).
+    const rate = over > 0 ? await exchangeRateRepository.latestOnOrBefore(now) : null;
+    const paise = over === 0 ? 0 : rate ? microUsdToPaise(over * CUTOUT_OVERAGE_MICRO_USD, rate.paisePerUsd) : null;
+    return { cutouts, over, paise };
   },
 };

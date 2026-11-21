@@ -1,6 +1,7 @@
 import { registerJob } from "@server/shared/jobs";
 import { enhancementSpec } from "@server/content/enhancement.job";
 import { enhancementService } from "@server/content/enhancement.service";
+import { styledService } from "@server/content/styled.service";
 
 /**
  * The run, as the queue performs it (image-enhancement trd D9): grouped by org so one org's batch
@@ -9,5 +10,9 @@ import { enhancementService } from "@server/content/enhancement.service";
  */
 export const imageEnhanceJob = registerJob({
   ...enhancementSpec,
-  handler: ({ jobId, payload }) => enhancementService.run(payload.enhancementId, jobId),
+  // An AI picture takes its own path (improve-with-ai D6); every other run is one of the six tools.
+  handler: async ({ jobId, payload }) => {
+    if (await styledService.run(payload.enhancementId, jobId)) return;
+    await enhancementService.run(payload.enhancementId, jobId);
+  },
 });

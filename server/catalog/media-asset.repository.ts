@@ -7,7 +7,7 @@ import {
   Prisma,
 } from "@prisma/client";
 import type { MediaLibraryFilters } from "@/lib/validation/schemas/media-library.schema";
-import { MEDIA_LIBRARY_PAGE_SIZE, type MediaAssetRow, type MediaUseDto } from "@server/catalog/media-library.types";
+import { MEDIA_LIBRARY_PAGE_SIZE, type MediaAssetRow, type MediaTag, type MediaUseDto } from "@server/catalog/media-library.types";
 import { VIDEO_TRANSFORM } from "@server/catalog/video";
 
 /**
@@ -66,6 +66,7 @@ const LIBRARY_SELECT = {
   retiredAt: true,
   retiredBy: true,
   retiredReason: true,
+  tags: true,
   // A hosted video's poster frame and renditions, so its tile has a picture and its sheet can play
   // it (video-hosting D5, D7). A crop's transform has no `kind`, so a photograph's derivatives never match.
   derivatives: {
@@ -115,6 +116,7 @@ function libraryWhere(
     ...(filters.from || filters.to ? { createdAt: { gte: filters.from, lte: filters.to } } : {}),
     ...(inProduct ? { productMedia: { some: inProduct } } : {}),
     ...(filters.usage === "used" ? USED : filters.usage === "unused" ? UNUSED : {}),
+    ...(filters.tag ? { tags: { has: filters.tag } } : {}),
   };
 }
 
@@ -207,7 +209,7 @@ export class MediaAssetRepository {
   async findReadySource(orgId: string | null, id: string, db: MediaDb = prisma) {
     return await db.mediaAsset.findFirst({
       where: { id, orgId, kind: MediaAssetKind.IMAGE, state: MediaAssetState.READY },
-      select: { id: true, width: true, height: true },
+      select: { id: true, width: true, height: true, transform: true },
     });
   }
 
@@ -530,6 +532,40 @@ export class MediaAssetRepository {
       ...asset.bannerPhones.map((row) => ({ kind: "home-banner" as const, id: row.id, label: `${row.title ?? "Home banner"} (phone)`, slot: null })),
       ...asset.postersFor.map((row) => ({ kind: "video-poster" as const, id: row.id, label: "Video poster", slot: null })),
     ];
+  }
+
+  /**
+   * Add a tag to the org's images that lack it (media-tags D2, D3): one statement, idempotent, so a
+   * gallery saved twice tags once. Only this org's images: a gallery naming a platform picture or
+   * another shop's leaves that picture alone (R5). A video in a gallery is not a product photograph.
+   */
+  async addTag(ids: string[], tag: MediaTag, orgId: string, db: MediaDb = prisma): Promise<void> {
+    if (ids.length === 0) return;
+    await db.mediaAsset.updateMany({
+      where: { id: { in: ids }, orgId, kind: MediaAssetKind.IMAGE, NOT: { tags: { has: tag } } },
+      data: { tags: { push: tag } },
+    });
+  }
+
+  /**
+   * The shop's own toggle (media-tags R6), on one of its photographs that is not retired. Adding is
+   * one conditional statement; removing is a compare-and-set against the tags just read, so a
+   * concurrent change is never overwritten. False means no such photograph for this org.
+   */
+  async setTag(orgId: string, id: string, tag: MediaTag, on: boolean): Promise<boolean> {
+    const mine = { id, orgId, kind: MediaAssetKind.IMAGE, state: { not: MediaAssetState.RETIRED } };
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const row = await prisma.mediaAsset.findFirst({ where: mine, select: { tags: true } });
+      if (!row) return false;
+      if (row.tags.includes(tag) === on) return true;
+      const next = on ? [...row.tags, tag] : row.tags.filter((held) => held !== tag);
+      const { count } = await prisma.mediaAsset.updateMany({
+        where: { ...mine, tags: { equals: row.tags } },
+        data: { tags: { set: next } },
+      });
+      if (count === 1) return true;
+    }
+    throw new Error(`Tags on ${id} kept changing; try again`);
   }
 
   /**

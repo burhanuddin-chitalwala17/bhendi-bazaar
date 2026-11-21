@@ -20,6 +20,8 @@ const UPLOAD_TYPES: Record<string, ImageFolder> = {
   products: "org",
   categories: "categories",
   banners: "banners",
+  // A top-up receipt, a payout's proof, the platform's UPI QR code (ai-images/shop-credits D7).
+  payments: "payments",
 };
 
 export async function POST(request: NextRequest) {

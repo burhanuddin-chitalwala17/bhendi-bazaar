@@ -35,6 +35,7 @@ const NAV: PortalNavGroup[] = [
     items: [
       { title: C.shops, href: ROUTES.admin.orgs, icon: "shop" },
       { title: C.payouts, href: ROUTES.admin.payouts, icon: "payout" },
+      { title: C.paymentDetails, href: ROUTES.admin.paymentDetails, icon: "id-card" },
       { title: C.channels, href: ROUTES.admin.channels, icon: "connect" },
       { title: C.requests, href: ROUTES.admin.requests, icon: "checklist" },
       { title: C.reviews, href: ROUTES.admin.reviews, icon: "rating" },

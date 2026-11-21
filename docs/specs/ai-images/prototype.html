@@ -1,0 +1,361 @@
+<title>AI Improve Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap">
+<style>
+/* Layout: a canvas of phone-width screens (360px), one row per journey, a flow arrow between screens. Tokens mirror the app's own (globals.css). */
+:root {
+  --bg: oklch(0.98 0.01 95); --card: oklch(0.99 0.015 95); --fg: oklch(0.22 0.03 40);
+  --muted: oklch(0.94 0.02 95); --muted-fg: oklch(0.52 0.04 40); --border: oklch(0.9 0.01 95);
+  --primary: oklch(0.55 0.17 150); --primary-fg: oklch(0.99 0.015 95);
+  --destructive: oklch(0.6 0.25 27); --warning: oklch(0.55 0.13 70); --warning-bg: oklch(0.95 0.05 85);
+  --admin: oklch(0.2 0.03 260); --admin-fg: oklch(0.96 0.02 98); --canvas: oklch(0.95 0.015 95);
+  --scrim: oklch(0.2 0.02 40 / 0.45);
+  --cloth-a: oklch(0.86 0.03 20); --cloth-b: oklch(0.8 0.04 20); --flower: oklch(0.45 0.12 310); --leaf: oklch(0.55 0.12 145);
+  --font-head: "Playfair Display", Georgia, serif; --font-body: "DM Sans", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: oklch(0.16 0.03 260); --card: oklch(0.18 0.03 260); --fg: oklch(0.96 0.02 98);
+  --muted: oklch(0.24 0.04 260); --muted-fg: oklch(0.72 0.05 98); --border: oklch(0.32 0.03 260);
+  --primary: oklch(0.7 0.19 150); --primary-fg: oklch(0.16 0.03 260); --destructive: oklch(0.65 0.21 22);
+  --warning: oklch(0.78 0.13 75); --warning-bg: oklch(0.3 0.06 75);
+  --admin: oklch(0.12 0.03 260); --admin-fg: oklch(0.96 0.02 98); --canvas: oklch(0.13 0.02 260);
+  --scrim: oklch(0 0 0 / 0.6); --cloth-a: oklch(0.7 0.03 20); --cloth-b: oklch(0.64 0.04 20); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: oklch(0.16 0.03 260); --card: oklch(0.18 0.03 260); --fg: oklch(0.96 0.02 98);
+  --muted: oklch(0.24 0.04 260); --muted-fg: oklch(0.72 0.05 98); --border: oklch(0.32 0.03 260);
+  --primary: oklch(0.7 0.19 150); --primary-fg: oklch(0.16 0.03 260); --destructive: oklch(0.65 0.21 22);
+  --warning: oklch(0.78 0.13 75); --warning-bg: oklch(0.3 0.06 75);
+  --admin: oklch(0.12 0.03 260); --admin-fg: oklch(0.96 0.02 98); --canvas: oklch(0.13 0.02 260);
+  --scrim: oklch(0 0 0 / 0.6); --cloth-a: oklch(0.7 0.03 20); --cloth-b: oklch(0.64 0.04 20); color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--canvas); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.45; margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 64px }
+h1 { font-family: var(--font-head); font-size: 28px; margin: 0 0 4px; text-wrap: balance }
+.lede { color: var(--muted-fg); max-width: 70ch; margin: 0 0 8px }
+.signoff { max-width: 70ch; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin: 16px 0 8px }
+.signoff b { font-weight: 600 }
+.journey { margin-top: 36px }
+.journey h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted-fg); margin: 0 0 4px; font-weight: 600 }
+.journey p.what { margin: 0 0 12px; max-width: 70ch }
+.row { display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; padding-bottom: 8px }
+.arrow { align-self: center; color: var(--muted-fg); font-size: 22px; flex: none }
+.shot { flex: none; width: 300px; max-width: 100% }
+.cap { font-size: 12px; color: var(--muted-fg); margin-top: 6px }
+.phone { position: relative; width: 300px; max-width: 100%; height: 600px; border-radius: 28px; border: 1px solid var(--border);
+  background: var(--bg); overflow: hidden; display: flex; flex-direction: column }
+.bar { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center }
+.bar .t { font-family: var(--font-head); font-size: 18px; font-weight: 700 }
+.x { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--muted-fg) }
+.body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; overflow: hidden }
+.foot { padding: 12px 16px 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px }
+.muted { color: var(--muted-fg) } .small { font-size: 12px } .label { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted-fg); font-weight: 600 }
+.btn { height: 44px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--fg); font: inherit; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 14px }
+.btn.primary { background: var(--primary); color: var(--primary-fg); border-color: var(--primary) }
+.btn.warn { background: var(--warning); color: var(--bg); border-color: var(--warning) }
+.split { display: flex; height: 44px; border-radius: 10px; overflow: hidden; border: 1px solid var(--primary) }
+.split .main { flex: 1; background: var(--primary); color: var(--primary-fg); display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600 }
+.split .caret { width: 44px; display: grid; place-items: center; background: var(--primary); color: var(--primary-fg); border-left: 1px solid oklch(1 0 0 / .35) }
+.tap { outline: 2px dashed var(--warning); outline-offset: 3px }
+.photo { border-radius: 12px; background: repeating-linear-gradient(90deg, var(--cloth-a) 0 6px, var(--cloth-b) 6px 9px); position: relative; overflow: hidden }
+.photo::after { content: ""; position: absolute; left: 20%; bottom: 8%; width: 60%; height: 45%;
+  background: radial-gradient(circle at 35% 55%, var(--flower) 0 14%, transparent 15%), radial-gradient(circle at 60% 70%, var(--flower) 0 18%, transparent 19%), radial-gradient(circle at 40% 30%, var(--leaf) 0 8%, transparent 9%) }
+.photo.scene { background: linear-gradient(180deg, oklch(0.82 0.06 70) 0 55%, oklch(0.62 0.07 55) 55%) }
+.photo.scene::before { content: ""; position: absolute; left: 32%; top: 12%; width: 36%; height: 80%; border-radius: 40% 40% 8% 8%;
+  background: repeating-linear-gradient(90deg, var(--cloth-a) 0 5px, var(--cloth-b) 5px 8px) }
+.photo.scene::after { left: 34%; width: 32%; height: 30%; bottom: 10% }
+.photo.ref { background: linear-gradient(135deg, oklch(0.75 0.06 60), oklch(0.6 0.08 40)) }
+.photo.ref::after { display: none }
+.photo.dim { filter: saturate(.6) brightness(.8) }
+.tag { display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border); font-size: 13px; font-weight: 500 }
+.tag.on { background: var(--primary); color: var(--primary-fg); border-color: var(--primary) }
+.chips { display: flex; gap: 6px; flex-wrap: wrap }
+.chip { font-size: 12px; padding: 6px 10px; border-radius: 999px; background: var(--muted) }
+.textarea { border: 1px solid var(--border); border-radius: 10px; padding: 10px; min-height: 76px; background: var(--card); font-size: 16px; line-height: 1.35 }
+.textarea .ph { color: var(--muted-fg) }
+.count { text-align: right; font-size: 11px; color: var(--muted-fg) }
+.refs { display: flex; gap: 8px }
+.refs .r { width: 64px; height: 64px; flex: none; position: relative }
+.refs .r .photo { width: 100%; height: 100% }
+.refs .add { width: 64px; height: 64px; border: 1.5px dashed var(--border); border-radius: 12px; display: grid; place-items: center; text-align: center; font-size: 11px; color: var(--muted-fg) }
+.badge { position: absolute; left: 4px; bottom: 4px; font-size: 9px; background: var(--card); color: var(--fg); border-radius: 4px; padding: 1px 4px; font-weight: 600 }
+.seg { display: flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden }
+.seg div { flex: 1; padding: 8px; text-align: center; font-weight: 500 }
+.seg .on { background: var(--muted); font-weight: 700 }
+.cost { font-size: 12px; display: flex; justify-content: space-between; gap: 8px }
+.cost.short { color: var(--warning); font-weight: 600 }
+.note { background: var(--warning-bg); color: var(--fg); border-radius: 10px; padding: 8px 10px; font-size: 12px }
+.err { color: var(--destructive); font-size: 12px }
+.scrim { position: absolute; inset: 0; background: var(--scrim) }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--bg); border-radius: 18px 18px 0 0; padding: 10px 16px 16px; display: flex; flex-direction: column; gap: 2px }
+.grab { width: 36px; height: 4px; border-radius: 2px; background: var(--border); margin: 0 auto 8px }
+.item { padding: 10px 4px; border-bottom: 1px solid var(--border) } .item:last-child { border: 0 }
+.item b { display: block; font-weight: 600 } .item span { font-size: 12px; color: var(--muted-fg) }
+.thumbswap { position: absolute; right: 10px; bottom: 10px; width: 64px; height: 84px; border: 2px solid var(--card); border-radius: 10px; box-shadow: 0 2px 8px oklch(0 0 0 / .25) }
+.thumbswap .photo { width: 100%; height: 100%; border-radius: 8px }
+.spin { width: 28px; height: 28px; border-radius: 50%; border: 3px solid oklch(1 0 0 / .4); border-top-color: var(--primary-fg) }
+@media (prefers-reduced-motion: no-preference) { .spin { animation: s 1s linear infinite } @keyframes s { to { transform: rotate(1turn) } } }
+.line { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums }
+.line .k { font-weight: 600 } .line .d { font-size: 12px; color: var(--muted-fg) }
+.plus { color: var(--primary); font-weight: 600 } .minus { font-weight: 600 }
+.bal { font-family: var(--font-head); font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums }
+.field { display: flex; flex-direction: column; gap: 4px } .field .in { height: 44px; border: 1px solid var(--border); border-radius: 10px; padding: 0 10px; display: flex; align-items: center; background: var(--card); font-size: 16px }
+.admin .bar { background: var(--admin); color: var(--admin-fg); border-color: var(--admin) }
+.admin .bar .x { color: var(--admin-fg) }
+.tabs { display: flex; gap: 14px; font-size: 13px; border-bottom: 1px solid var(--border); padding: 0 16px } .tabs div { padding: 10px 0 } .tabs .on { border-bottom: 2px solid var(--primary); font-weight: 700 }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px } .grid .photo { aspect-ratio: 1 } .grid .cell { position: relative }
+.select { height: 36px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; gap: 6px; background: var(--card) }
+.toast { position: absolute; left: 16px; right: 16px; bottom: 16px; background: var(--fg); color: var(--bg); border-radius: 10px; padding: 10px 12px; font-size: 13px }
+</style>
+
+<h1>Improve with AI — prototype</h1>
+<p class="lede">Phone screens at 300px wide, for the four journeys of improve-with-ai, four of shop-credits and two of media-tags. Dashed outlines mark the tap that leads to the next screen. Wording is the exact copy proposed in each subfeature's ux.md.</p>
+<div class="signoff"><b>To sign off:</b> say "UX signed off", or name the screen to change. Also answer U1–U7 at the end.</div>
+
+<!-- J1 -->
+<section class="journey">
+  <h2>Journey 1 · Style a photo from the library</h2>
+  <p class="what">The split button replaces today's Improve. The main half opens the AI modal.</p>
+  <div class="row">
+    <div class="shot"><div class="phone">
+      <div class="bar"><span class="t">Photo</span><span class="x">✕</span></div>
+      <div class="body">
+        <div class="photo" style="height:260px"></div>
+        <div class="small muted">720 × 1280 · 147 KB · jpeg · Added 15 Nov 2026</div>
+        <div class="label">Tags</div>
+        <div class="chips"><span class="tag on">Product</span><span class="tag">Reference</span></div>
+        <div class="split tap"><div class="main">✨ Improve</div><div class="caret" aria-label="More ways to improve">▾</div></div>
+        <div style="display:flex;gap:8px"><div class="btn" style="flex:1">Crop</div><div class="btn" style="flex:1">Retire</div></div>
+      </div></div><div class="cap">Library detail panel</div></div>
+    <div class="arrow">→</div>
+    <div class="shot"><div class="phone">
+      <div class="bar"><span class="t">Describe the picture you want</span><span class="x">✕</span></div>
+      <div class="body">
+        <div class="small muted">Say where it is, the light, and who wears or holds it. Add a picture of a pose or a place you like — it helps more than words.</div>
+        <div class="chips"><span class="chip">Worn by a woman in a sunlit courtyard</span><span class="chip">On a café table, morning light</span><span class="chip">Folded on a bed with white linen</span></div>
+        <div><div class="textarea">Worn by a woman in a sunlit courtyard, soft shadows, warm stone walls</div><div class="count">68/300</div></div>
+        <div class="label">Pictures to follow</div>
+        <div class="refs"><div class="r"><div class="photo"></div><span class="badge">Your photo</span></div><div class="r"><div class="photo ref"></div></div><div class="add">+ Add picture<br>Up to 1 more</div></div>
+        <div class="seg"><div class="on">No face</div><div>With face</div></div>
+        <div class="small muted">Shown worn, cropped below the chin</div>
+      </div>
+      <div class="foot"><div class="cost"><span>This picture costs about ₹2.10</span><span>Credit left ₹2,497.90</span></div><div class="btn primary tap">Generate</div></div>
+    </div><div class="cap">AI modal, full screen on a phone (U1)</div></div>
+    <div class="arrow">→</div>
+    <div class="shot"><div class="phone">
+      <div class="bar"><span class="t">Describe the picture you want</span><span class="x">✕</span></div>
+      <div class="body" style="padding:0">
+        <div class="photo dim" style="flex:1;border-radius:0;display:grid;place-items:center"><div style="position:relative;z-index:1;display:flex;gap:10px;align-items:center;color:white;font-weight:600"><div class="spin"></div>Making your picture…</div></div>
+      </div>
+      <div class="foot"><div class="small muted">Usually under a minute. You can close this and come back.</div></div>
+    </div><div class="cap">Working · after 60 s: "Still working — you can close this and come back"</div></div>
+    <div class="arrow">→</div>
+    <div class="shot"><div class="phone">
+      <div class="bar"><span class="t">Your new picture</span><span class="x">✕</span></div>
+      <div class="body">
+        <div style="position:relative;flex:1"><div class="photo scene" style="height:100%"></div>
+          <div class="thumbswap" aria-label="See your original photo"><div class="photo"></div></div></div>
+        <div class="note">AI-made picture — check the product looks right before you use it.</div>
+      </div>
+      <div class="foot"><div style="display:flex;gap:8px"><div class="btn" style="flex:1">↻ Regenerate</div><div class="btn primary tap" style="flex:1">✓ Use this</div></div></div>
+    </div><div class="cap">Result · tap the corner thumbnail for the original · toast "Saved to your library"</div></div>
+  </div>
+</section>
+
+<!-- reference picker -->
+<section class="journey">
+  <h2>Adding a reference picture</h2>
+  <p class="what">"+ Add picture" opens a picker: the library opens on Reference, or upload from the device. Uploads are saved to the library tagged Reference.</p>
+  <div class="row">
+    <div class="shot"><div class="phone">
+      <div class="bar"><span class="t">Describe the picture you want</span></div>
+      <div class="body"></div>
+      <div class="scrim"></div>
+      <div class="sheet" style="height:78%">
+        <div class="grab"></div>
+        <div style="display:flex;gap:8px;margin-bottom:8px"><span class="tag on">Library</span><span class="tag">This device</span></div>
+        <div class="select" style="margin-bottom:8px"><span>Tag: Reference</span><span>▾</span></div>
+        <div class="grid"><div class="cell"><div class="photo ref"></div></div><div class="cell"><div class="photo ref" style="filter:hue-rotate(60deg)"></div></div><div class="cell"><div class="photo ref" style="filter:hue-rotate(160deg)"></div></div><div class="cell"><div class="photo scene"></div></div><div class="cell"><div class="photo ref" style="filter:hue-rotate(250deg)"></div></div></div>
+        <div class="small muted" style="margin-top:8px">That's the most this picture can use — shown when the limit is reached</div>
+      </div>
+    </div><div class="cap">Reference picker (bottom sheet on a phone)</div></div>
+  </div>
+</section>
+
+<!-- J2 -->
+<section class="journey">
+  <h2>Journey 2 · Not quite right → Regenerate</h2>
+  <p class="what">Regenerate reopens the form, filled in with the last description and pictures, so the seller says what to change.</p>
+  <div class="row">
+    <div class="shot"><div class="phone">
+      <div class="bar"><span class="t">Describe the picture you want</span><span class="x">✕</span></div>
+      <div class="body">
+        <div class="small muted">Say what to change — e.g. warmer light, longer sleeves.</div>
+        <div><div class="textarea">Worn by a woman in a sunlit courtyard, soft shadows, warm stone walls. <b>Warmer evening light, show the full hem.</b></div><div class="count">112/300</div></div>
+        <div class="label">Pictures to follow</div>
+        <div class="refs"><div class="r"><div class="photo"></div><span class="badge">Your photo</span></div><div class="r"><div class="photo ref"></div></div><div class="add">+ Add picture<br>Up to 1 more</div></div>
+        <div class="seg"><div class="on">No face</div><div>With face</div></div>
+      </div>
+      <div class="foot"><div class="cost"><span>This picture costs about ₹2.10</span><span>Credit left ₹2,495.80</span></div><div class="btn primary tap">Generate again</div></div>
+    </div><div class="cap">Only the newest result is kept (U2)</div></div>
+  </div>
+</section>
+
+<!-- J3 -->
+<section class="journey">
+  <h2>Journey 3 · The six exact tools</h2>
+  <p class="what">The arrow lists today's tools. Each opens today's sheet, with its before/after compare and Accept/Discard unchanged.</p>
+  <div class="row">
+    <div class="shot"><div class="phone">
+      <div class="bar"><span class="t">Photo</span></div><div class="body"><div class="photo" style="height:200px"></div></div>
+      <div class="scrim"></div>
+      <div class="sheet"><div class="grab"></div>
+        <div class="item tap"><b>On plain white</b><span>What Amazon and Flipkart ask for</span></div>
+        <div class="item"><b>Studio</b><span>On a plain backdrop with a soft shadow</span></div>
+        <div class="item"><b>In a scene</b><span>Placed in a real-looking setting</span></div>
+        <div class="item"><b>Cut out</b><span>The product alone, on nothing</span></div>
+        <div class="item"><b>Fix the light</b><span>Brighter, sharper, nothing else changed</span></div>
+        <div class="item"><b>Make it bigger</b><span>Large enough for a marketplace to accept</span></div>
+      </div></div><div class="cap">Tools menu from ▾ (bottom sheet on a phone, a menu from md:)</div></div>
+    <div class="arrow">→</div>
+    <div class="shot"><div class="phone">
+      <div class="bar"><span class="t">Improve this photo</span><span class="x">✕</span></div>
+      <div class="body"><div class="seg"><div>Before</div><div class="on">After</div></div><div class="photo" style="flex:1;background:white;filter:none"></div></div>
+      <div class="foot"><div style="display:flex;gap:8px"><div class="btn" style="flex:1">✕ Discard</div><div class="btn primary" style="flex:1">✓ Accept</div></div><div class="small muted">20 of 300 this month.</div></div>
+    </div><div class="cap">Today's sheet, unchanged</div></div>
+  </div>
+</section>
+
+<!-- J4 + failures -->
+<section class="journey">
+  <h2>Journey 4 · Not enough credit, and when it goes wrong</h2>
+  <p class="what">Checks run before anything is charged. A refused or failed picture is refunded.</p>
+  <div class="row">
+    <div class="shot"><div class="phone">
+      <div class="bar"><span class="t">Describe the picture you want</span><span class="x">✕</span></div>
+      <div class="body"><div class="textarea">On a café table, morning light</div><div class="refs"><div class="r"><div class="photo"></div><span class="badge">Your photo</span></div><div class="add">+ Add picture<br>Up to 2 more</div></div></div>
+      <div class="foot"><div class="cost short"><span>This picture costs about ₹2.10</span><span>Credit left ₹1.00</span></div><div class="small" style="color:var(--warning)">Not enough credit for this picture</div><div class="btn warn tap">Add credit</div></div>
+    </div><div class="cap">Short of credit → the Credits page</div></div>
+    <div class="shot"><div class="phone">
+      <div class="bar"><span class="t">Describe the picture you want</span><span class="x">✕</span></div>
+      <div class="body"><div class="photo dim" style="height:300px"></div><div class="err">This description could not be made into a picture. Try describing it differently — nothing was charged.</div></div>
+      <div class="foot"><div class="btn primary">Edit description</div></div>
+    </div><div class="cap">The model refused: no other model is tried</div></div>
+    <div class="shot"><div class="phone">
+      <div class="bar"><span class="t">Describe the picture you want</span><span class="x">✕</span></div>
+      <div class="body"><div class="photo dim" style="height:300px"></div><div class="err">The picture could not be made just now. Nothing was charged.</div></div>
+      <div class="foot"><div class="btn primary">Try again</div></div>
+    </div><div class="cap">Every model was unavailable</div></div>
+  </div>
+</section>
+
+<!-- J5 -->
+<section class="journey">
+  <h2>Journey 5 · The shop checks its credit</h2>
+  <p class="what">A new sidebar page, Credits (U4). Payment happens outside the platform; the page explains how (U5).</p>
+  <div class="row">
+    <div class="shot"><div class="phone">
+      <div class="bar"><span class="t">Credits</span></div>
+      <div class="body">
+        <div class="small muted">What AI pictures cost, and what is left.</div>
+        <div><div class="bal">₹2,495.80</div><div class="small muted">left</div></div>
+        <div class="small">How to top up: pay Bhendi Bazaar by UPI or bank transfer, then tell us — we add it within a working day.</div>
+        <div class="btn">Talk to us</div>
+        <div>
+          <div class="line"><div><div class="k">AI picture</div><div class="d">21 Nov</div></div><div class="minus">−₹2.10</div></div>
+          <div class="line"><div><div class="k">AI picture</div><div class="d">21 Nov</div></div><div class="minus">−₹2.10</div></div>
+          <div class="line"><div><div class="k">Starting credit</div><div class="d">20 Nov</div></div><div class="plus">+₹2,500.00</div></div>
+        </div>
+      </div></div><div class="cap">Shop · Credits</div></div>
+  </div>
+</section>
+
+<!-- J6 J7 -->
+<section class="journey">
+  <h2>Journeys 6–7 · The admin records a top-up and reverses a mistake</h2>
+  <p class="what">Lines are never edited. A mistake is undone by a reversal that names the line and the reason.</p>
+  <div class="row">
+    <div class="shot"><div class="phone admin">
+      <div class="bar"><span class="t">Niqab Boutique</span></div>
+      <div class="tabs"><div>Dashboard</div><div>Orders</div><div>Earnings</div><div class="on">Credits</div></div>
+      <div class="body">
+        <div><div class="bal">₹2,495.80</div><div class="small muted">AI spend this month ₹4.20 · cost ₹4.20</div></div>
+        <div class="small">Margin on AI pictures: 0% (platform default) · <u>Change</u></div>
+        <div class="btn primary tap">Record top-up</div>
+        <div class="line"><div><div class="k">AI picture</div><div class="d">21 Nov · cost ₹2.10 · margin 0%</div></div><div class="minus">−₹2.10</div></div>
+        <div class="line"><div><div class="k">Starting credit</div><div class="d">20 Nov</div></div><div class="plus">+₹2,500.00</div></div>
+      </div></div><div class="cap">Admin · shop · Credits tab</div></div>
+    <div class="arrow">→</div>
+    <div class="shot"><div class="phone admin">
+      <div class="bar"><span class="t">Niqab Boutique</span></div><div class="body"></div><div class="scrim"></div>
+      <div class="sheet" style="gap:10px"><div class="grab"></div>
+        <div style="font-weight:700;font-size:16px">Record top-up</div>
+        <div class="field"><span class="small">Amount</span><div class="in">₹ 1,000.00</div></div>
+        <div class="field"><span class="small">Method</span><div class="in" style="justify-content:space-between">UPI <span>▾</span></div></div>
+        <div class="field"><span class="small">Transaction reference</span><div class="in">UTR123</div><span class="small muted">UTR, cheque or receipt number</span></div>
+        <div class="field"><span class="small">Paid on</span><div class="in">21 Nov 2026</div></div>
+        <div class="field"><span class="small">Receipt (optional)</span><div class="in muted">+ Add a photo</div></div>
+        <div class="btn primary tap">Record</div>
+      </div></div><div class="cap">Toast "₹1,000.00 added to Niqab Boutique"</div></div>
+    <div class="arrow">→</div>
+    <div class="shot"><div class="phone admin">
+      <div class="bar"><span class="t">Niqab Boutique</span></div><div class="body"></div><div class="scrim"></div>
+      <div class="sheet" style="gap:10px"><div class="grab"></div>
+        <div style="font-weight:700;font-size:16px">Reverse Top-up of 21 Nov?</div>
+        <div class="small muted">₹1,000.00 · UPI · UTR123. The line stays; a reversal is added beside it.</div>
+        <div class="field"><span class="small">Why?</span><div class="in">Entered twice</div></div>
+        <div class="btn primary">Reverse</div>
+      </div></div><div class="cap">The result is a new line: "Reversal of Top-up 21 Nov · −₹1,000.00"</div></div>
+  </div>
+</section>
+
+<!-- J8 -->
+<section class="journey">
+  <h2>Journey 8 · A payout marked paid, with proof</h2>
+  <p class="what">Today's "Mark as paid" sheet now requires the method and reference, and takes a receipt.</p>
+  <div class="row">
+    <div class="shot"><div class="phone admin">
+      <div class="bar"><span class="t">Payouts · Niqab Boutique</span></div><div class="body"></div><div class="scrim"></div>
+      <div class="sheet" style="gap:10px"><div class="grab"></div>
+        <div style="font-weight:700;font-size:16px">Mark as paid</div>
+        <div class="small muted">Recorded against ₹12,480.00. Once saved, the amount and reference are fixed — a correction is a new entry.</div>
+        <div class="field"><span class="small">Method</span><div class="in" style="justify-content:space-between">Bank transfer <span>▾</span></div></div>
+        <div class="field"><span class="small">Transaction reference</span><div class="in">UTR987</div></div>
+        <div class="field"><span class="small">Paid on</span><div class="in">21 Nov 2026</div></div>
+        <div class="field"><span class="small">Receipt (optional)</span><div class="in muted">+ Add a photo</div></div>
+        <div class="btn primary">Record</div>
+      </div></div><div class="cap">Then the settlement reads "Paid 21 Nov · Bank transfer · UTR987 · receipt"</div></div>
+  </div>
+</section>
+
+<!-- J9 J10 -->
+<section class="journey">
+  <h2>Journeys 9–10 · Tags in the library</h2>
+  <p class="what">A Tag filter joins the existing filters. An image can have several tags, set by tapping chips in its panel.</p>
+  <div class="row">
+    <div class="shot"><div class="phone">
+      <div class="bar"><span class="t">Photos</span></div>
+      <div class="body">
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><div class="select tap">Tag: Reference ▾</div><div class="select">Kind ▾</div><div class="select">Usage ▾</div></div>
+        <div class="grid"><div class="cell"><div class="photo ref"></div><span class="badge">Reference</span></div><div class="cell"><div class="photo"></div></div><div class="cell"><div class="photo ref" style="filter:hue-rotate(120deg)"></div><span class="badge">Reference</span></div></div>
+        <div class="small muted">The middle photo is tagged both Product and Reference, so it appears under both.</div>
+      </div></div><div class="cap">Library · Tag: Reference</div></div>
+    <div class="arrow">→</div>
+    <div class="shot"><div class="phone">
+      <div class="bar"><span class="t">Photo</span><span class="x">✕</span></div>
+      <div class="body"><div class="photo" style="height:240px"></div>
+        <div class="label">Tags</div><div class="chips"><span class="tag tap">Product</span><span class="tag on">Reference</span></div>
+      </div>
+      <div class="toast">Removed tag Product</div>
+    </div><div class="cap">Detail panel: tap a chip to toggle it</div></div>
+  </div>
+</section>
+
+<div class="signoff" style="margin-top:36px">
+  <b>Questions on this UX:</b><br>
+  U1 · AI modal full screen on a phone? · U2 · Regenerate keeps only the newest result? · U3 · In the product form, "Use this" replaces that slot's photo?<br>
+  U4 · Credits as its own sidebar page? · U5 · "How to top up" text, with payment details given through Talk to us? · U6 · Cap one top-up at ₹10,00,000?<br>
+  U7 · Uploads from the library's Upload button are tagged Product?
+</div>

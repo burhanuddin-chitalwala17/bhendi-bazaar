@@ -15,6 +15,7 @@ import {
 } from "@server/content/enhancement.types";
 
 const repo = {
+  countHostCutouts: vi.fn(),
   create: vi.fn(),
   findForOrg: vi.fn(),
   findById: vi.fn(),
@@ -43,6 +44,10 @@ const prisma = { $transaction: vi.fn(async (work: (client: typeof tx) => Promise
 const enqueue = vi.fn();
 
 vi.mock("@server/content/enhancement.repository", () => ({ enhancementRepository: repo }));
+const rateFor = vi.fn();
+vi.mock("@server/content/exchange-rate.repository", () => ({
+  exchangeRateRepository: { latestOnOrBefore: (...args: unknown[]) => rateFor(...args) },
+}));
 vi.mock("@server/content/enhancement-policy.repository", () => ({ enhancementPolicyRepository: policies }));
 vi.mock("@server/content/enhancement-settings.repository", () => ({ enhancementSettingsRepository: settings }));
 vi.mock("@server/catalog/org.service", () => ({ adminOrgService: orgs }));
@@ -80,6 +85,9 @@ const row = (over: Partial<EnhancementRow> = {}): EnhancementRow => ({
   resultAssetId: null,
   costPaise: 0,
   error: null,
+  brief: null,
+  referenceRefs: [],
+  previousId: null,
   createdAt: now,
   proposedAt: null,
   decidedAt: null,
@@ -111,7 +119,7 @@ beforeEach(() => {
   repo.markDiscarded.mockResolvedValue(true);
   media.registerDerivedObject.mockResolvedValue({ id: "d1", ref: "https://img.test/products/o/a-light-e1.webp" });
   segmenterFor.mockReturnValue({ key: "zone", isAvailable: () => true, cutOut: vi.fn() });
-  scenePainterFor.mockReturnValue({ key: "model", isAvailable: () => true, paint: vi.fn() });
+  scenePainterFor.mockReturnValue({ key: "generation", isAvailable: () => true, paint: vi.fn() });
 });
 
 describe("usage", () => {
@@ -199,12 +207,12 @@ describe("request", () => {
   });
 
   it("records the service that will paint a scene, and the setting it was asked for", async () => {
-    repo.create.mockResolvedValue(row({ tool: "SCENE", preset: "wooden-table", provider: "model" }));
+    repo.create.mockResolvedValue(row({ tool: "SCENE", preset: "wooden-table", provider: "generation" }));
 
     await request({ tool: "SCENE", preset: "wooden-table", sourceRef: source.ref, slot: "front", slotRole: "product" });
 
     expect(repo.create).toHaveBeenCalledWith(
-      expect.objectContaining({ tool: "SCENE", preset: "wooden-table", provider: "model" }),
+      expect.objectContaining({ tool: "SCENE", preset: "wooden-table", provider: "generation" }),
       tx,
     );
   });
@@ -267,6 +275,15 @@ describe("get", () => {
 });
 
 describe("accept", () => {
+  it("marks an AI picture's transform, so everything made from it stays AI-made (ADR-0077)", async () => {
+    repo.findForOrg.mockResolvedValueOnce(row({ tool: "STYLED", preset: "no-face", provider: "generation", state: "PROPOSED", proposalKey: "proposals/e1.webp" }));
+    repo.findForOrg.mockResolvedValueOnce(row({ tool: "STYLED", state: "ACCEPTED" }));
+    await enhancementService.accept("org-1", "e1", now);
+    expect(media.registerDerivedObject).toHaveBeenCalledWith(
+      expect.objectContaining({ transform: { tool: "STYLED", preset: "no-face", provider: "generation", enhancementId: "e1", aiMade: true } }),
+    );
+  });
+
   it("registers the proposal as a derived image carrying its making, decides the row, then drops the proposal object", async () => {
     const accepted = row({
       state: "ACCEPTED",
@@ -495,5 +512,27 @@ describe("platformSpendToday", () => {
       start: new Date("2026-09-27T00:00:00Z"),
       end: new Date("2026-09-28T00:00:00Z"),
     });
+  });
+});
+
+describe("what the free tools cost the platform (ai-images Q16; generation-foundation D11)", () => {
+  it("is nothing within the host's free allowance, and asks for no rate", async () => {
+    repo.countHostCutouts.mockResolvedValue(4_999);
+    await expect(enhancementService.absorbedThisMonth(now)).resolves.toEqual({ cutouts: 4_999, over: 0, paise: 0 });
+    expect(rateFor).not.toHaveBeenCalled();
+  });
+
+  it("prices each cut-out past it at the overage, at the day's rate, rounded up", async () => {
+    repo.countHostCutouts.mockResolvedValue(5_003);
+    rateFor.mockResolvedValue({ day: now, paisePerUsd: 9_340 });
+    // 3 × $0.0005 at ₹93.40 is 14.01 paise: the platform spent 15.
+    await expect(enhancementService.absorbedThisMonth(now)).resolves.toEqual({ cutouts: 5_003, over: 3, paise: 15 });
+    expect(repo.countHostCutouts).toHaveBeenCalledWith(expect.anything(), ["CUTOUT", "WHITE", "STUDIO", "SCENE"], "model");
+  });
+
+  it("shows the count without a price when no rate was ever stored", async () => {
+    repo.countHostCutouts.mockResolvedValue(6_000);
+    rateFor.mockResolvedValue(null);
+    await expect(enhancementService.absorbedThisMonth(now)).resolves.toEqual({ cutouts: 6_000, over: 1_000, paise: null });
   });
 });

@@ -1,6 +1,6 @@
 import { apiRequest } from "@/lib/api-client";
 import type { CropTransform } from "@/lib/image/crop-transform";
-import type { MediaAssetDetailDto, MediaAssetDto } from "@server/catalog/media-library.types";
+import type { MediaAssetDetailDto, MediaAssetDto, MediaTag } from "@server/catalog/media-library.types";
 import type { Pagination } from "@server/shared/pagination";
 
 export interface MediaLibraryPage {
@@ -26,6 +26,11 @@ export const orgMediaApiClient = {
       method: "PUT",
       body: { posterAssetId },
     });
+  },
+
+  /** Switch one tag on or off (ai-images/media-tags R6). Answers the image's record as it now reads. */
+  setTag(orgId: string, assetId: string, tag: MediaTag, on: boolean): Promise<MediaAssetDto> {
+    return apiRequest<MediaAssetDto>(`/api/org/${orgId}/media/${assetId}/tags`, { method: "PUT", body: { tag, on } });
   },
 
   async crop(orgId: string, assetId: string, transform: CropTransform): Promise<void> {

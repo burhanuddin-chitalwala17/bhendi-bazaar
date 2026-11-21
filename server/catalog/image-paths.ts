@@ -33,7 +33,7 @@ export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
  * Files written under the old `products/` top level keep their keys: a key is opaque, nothing reads
  * meaning from it, and rewriting every stored reference would be risk spent on tidiness.
  */
-export type ImageFolder = "org" | "categories" | "banners";
+export type ImageFolder = "org" | "categories" | "banners" | "payments";
 
 /** A user-attributable reason this file cannot be accepted, or null if it can. */
 export function imageFileProblem(file: {

@@ -1,9 +1,10 @@
 import { apiRequest } from "@/lib/api-client";
 import type { CommercialTermsInput } from "@/lib/validation/schemas/commercial-terms.schema";
+import type { PaymentProofInput } from "./creditsApiClient";
 
-/** What the handler accepts for a status change; `PAID` is terminal (org-payouts D8). */
+/** What the handler accepts for a status change; `PAID` is terminal (org-payouts D8) and carries its proof (ai-images Q18). */
 export type SettlementStatusChange =
-  | { status: "PAID"; reference?: string }
+  | ({ status: "PAID" } & PaymentProofInput)
   | { status: "CANCELLED" };
 
 /** The platform's side of org payouts: commission terms and settlements. */

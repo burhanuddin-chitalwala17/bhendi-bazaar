@@ -19,6 +19,9 @@ const ENHANCEMENT_SELECT = {
   resultAssetId: true,
   costPaise: true,
   error: true,
+  brief: true,
+  referenceRefs: true,
+  previousId: true,
   createdAt: true,
   proposedAt: true,
   decidedAt: true,
@@ -42,6 +45,9 @@ export interface CreateEnhancementInput {
   preset: string | null;
   provider: string;
   slot: string | null;
+  brief?: string | null;
+  referenceRefs?: string[];
+  previousId?: string | null;
 }
 
 /**
@@ -64,6 +70,20 @@ export class EnhancementRepository {
 
   async countAwaitingDecision(orgId: string): Promise<number> {
     return await prisma.enhancement.count({ where: { orgId, state: ENHANCEMENT_STATE.PROPOSED } });
+  }
+
+  /** How many runs of a tool one shop asked for since `since` — the per-minute limit's count. */
+  async countRecent(orgId: string, tool: EnhancementTool, since: Date): Promise<number> {
+    return await prisma.enhancement.count({ where: { orgId, tool, createdAt: { gte: since } } });
+  }
+
+  /** One shop's runs of a tool still asked-for or running since before `before` — a hold left open (improve-with-ai D6). */
+  async findStale(orgId: string, tool: EnhancementTool, before: Date): Promise<Array<{ id: string }>> {
+    return await prisma.enhancement.findMany({
+      where: { orgId, tool, state: { in: [EnhancementState.REQUESTED, EnhancementState.RUNNING] }, createdAt: { lt: before } },
+      select: { id: true },
+      take: 20,
+    });
   }
 
   /** For the worker, which is handed an id and no org. */
@@ -89,6 +109,21 @@ export class EnhancementRepository {
       where: { createdAt: { gte: window.start, lt: window.end } },
     });
     return result._sum.costPaise ?? 0;
+  }
+
+  /**
+   * Cut-outs the free image host made in the window (generation-foundation trd D11): every run of a
+   * tool that segments, except those the paid model cut. A scene's row names its painter, not its
+   * cutter, so a scene counts as the host's — an overcount, never an undercount, of absorbed spend.
+   */
+  async countHostCutouts(window: TimeWindow, tools: readonly EnhancementTool[], paidProvider: string): Promise<number> {
+    return await prisma.enhancement.count({
+      where: {
+        createdAt: { gte: window.start, lt: window.end },
+        tool: { in: [...tools] },
+        provider: { not: paidProvider },
+      },
+    });
   }
 
   /**
@@ -141,10 +176,11 @@ export class EnhancementRepository {
   }
 
   /** A refusal the org member reads (spec R10); anything that might succeed on retry never lands here. */
-  async markFailed(id: string, error: string): Promise<boolean> {
+  /** `costPaise` is what the platform spent before the failure — a paint already paid for (generation-foundation D6). */
+  async markFailed(id: string, error: string, costPaise = 0): Promise<boolean> {
     const result = await prisma.enhancement.updateMany({
       where: { id, state: { in: [EnhancementState.REQUESTED, EnhancementState.RUNNING] } },
-      data: { state: EnhancementState.FAILED, error },
+      data: { state: EnhancementState.FAILED, error, costPaise },
     });
     return result.count === 1;
   }
