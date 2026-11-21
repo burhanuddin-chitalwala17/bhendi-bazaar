@@ -4,7 +4,7 @@
 - **Status:** Draft
 - **Domain:** channels, with new tool domains (inbox, social, audience, campaigns, automations)
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-06
+- **Verified:** 2026-11-21
 - **References:** [decisions.md](decisions.md), [INTEGRATIONS.md](../../INTEGRATIONS.md#acting-for-a-shop-on-meta-catalogue-whatsapp-instagram), [shopfront-feeds](../shopfront-feeds/), [marketplace-integration](../marketplace-integration/), [ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md), [ADR-0061](../../adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)
 
 > The parent of the subfeatures below. Each gets its own spec, decisions, UX and TRD when it is
@@ -14,9 +14,14 @@
 ## Pick up here
 Development continues in another Claude account (Q17). Work on branch `meta-whatsapp-connector`;
 a track may run on its own branch off it and merge back; the whole feature merges to `main` once
-(Q16). The research is in INTEGRATIONS.md under "Acting for a shop on Meta"; do not redo it.
-**Next step:** the owner reviews every subfeature's spec, UX prototype and TRD, and notification-hub's,
-then gives the go-ahead to build; `/bb-build` runs them in the order above.
+(Q16). The research is in INTEGRATIONS.md under "Acting for a shop on Meta" and "What an inbox
+receives and may do"; do not redo it.
+**Re-cut 2026-11-21 (Q78, Q86–Q100).** The work runs in the eight steps below. Before each step's
+build, bring its subfeature specs in line with these decisions: Q94 into connect-instagram and
+inbox-instagram; Q99 into connect-whatsapp; Q96 into audience, whatsapp-contacts and inbox-whatsapp;
+Q98 into both platform inboxes; Q95 and Q97, once the owner answers, into the two inboxes;
+chat-autoreplies (Q89) needs its own spec; going-live.md takes Q100.
+**Next step:** step 1 (post generation, its own session) and step 2 (connectors) side by side (Q87).
 **Owner's outside step, started separately:** Meta Business Verification and the Meta app (Q14).
 
 ## What this is
@@ -50,34 +55,40 @@ Making a post (graphics, captions, AI) is a separate vertical, not part of this 
 - **Promise only what Meta allows in India.** No product tags (Q18), no Status or Channels by API
   (Q19), no group broadcasts (Q20). A WhatsApp Status goes as a one-tap handoff to the phone.
 - **Instagram before paid WhatsApp messaging (Q6).** Comment-to-DM is free; messages cost.
+- **No enquiry waits for the owner (Q89).** Auto-replies answer every comment, DM and chat at
+  once from live data, and hand over to a person; AI wording comes last, in step 8 (Q91).
 
 ## Subfeatures, in order
-Each has its own spec, decisions, UX and TRD in a subfolder. "Needs" is the only ordering; anything
-with its needs met may be built alongside the others. ⏳ marks what the single review gates (Q2).
-Notifications and alerts are not here: they are the sibling feature
-[notification-hub](../notification-hub/spec.md), whose first user this is (Q66).
+Eight steps, each a module finished before the next, except steps 1 and 2, which run side by side
+(Q78, Q87). Each subfeature has its own spec, decisions, UX and TRD in a subfolder; chat-autoreplies
+is yet to be written. ⏳ marks what the single review gates; it is submitted once steps 2–6 work on
+our own accounts (Q2, Q100).
 
-| # | Subfeature | Outcome | Needs | Domain |
+| Step | Module | Subfeature | Outcome | Domain |
 |---|---|---|---|---|
-| 1 | connect-instagram | A shop connects its Instagram and sees it healthy ⏳ | — | channels |
-| 2 | connect-whatsapp | A shop connects its WhatsApp number, keeping its Business app (Q12) ⏳ | — | channels |
-| 3 | inbox-core | One inbox: conversations, replies, unread, from a fake source | — | inbox |
-| 4 | post-scheduling | Schedule a post or story from finished media and a caption, through a fake publisher | — | social |
-| 5 | audience | Contacts, consent and lists; from orders, the store page and attested uploads | — | audience |
-| 6 | instagram-publishing | Posts, carousels, reels and stories published to Instagram ⏳ | 1, 4 | channels |
-| 7 | inbox-instagram | Instagram DMs and comments in the inbox ⏳ | 1, 3 | channels |
-| 8 | comment-automations | A keyword comment gets the shop's DM, the product link suggested ⏳ | 7 | automations |
-| 9 | whatsapp-catalogue | The shop's live products in its WhatsApp catalogue, kept in sync ⏳ | 2 | channels |
-| 10 | inbox-whatsapp | WhatsApp chats in the inbox ⏳ | 2, 3 | channels |
-| 11 | whatsapp-contacts | Contacts synced from the Business app as "Not yet"; opt-in and STOP in chat | 2, 5 | audience |
-| 12 | whatsapp-templates | Starter templates in English and Hindi, and the shop's own, with Meta's status ⏳ | 2 | campaigns |
-| 13 | whatsapp-campaigns | A campaign, products included, sent to an opted-in list, cost and caps shown ⏳ | 5, 12 | campaigns |
-| 14 | whatsapp-status-kit | A Status image and caption handed to the phone in one tap | 4 | social |
-| — | **Going live** | One review once 1, 2, 6–10, 12 and 13 work on our own accounts ([going-live.md](going-live.md)) | ⏳ | — |
+| 1 | Post generation | outside this folder (Q86) | Post images and captions made from a product or the brand, into the media library | content |
+| 2 | Connectors | connect-instagram | A shop connects its Instagram and sees it healthy, message access included (Q94) ⏳ | channels |
+| 2 | Connectors | connect-whatsapp | A shop connects its WhatsApp number, keeping its Business app (Q12) ⏳ | channels |
+| 2 | Connectors | whatsapp-catalogue | The shop's live products in its WhatsApp catalogue, kept in sync (Q88) ⏳ | channels |
+| 3 | Posting | post-scheduling | Schedule a post or story from finished media and a caption, through a fake publisher | social |
+| 3 | Posting | instagram-publishing | Posts, carousels, reels and stories published to Instagram, with hashtags, mentions and collaborators ⏳ | channels |
+| 3 | Posting | whatsapp-status-kit | A Status image and caption handed to the phone in one tap; WhatsApp has no Status API (Q19) | social |
+| 4 | Inbox | inbox-core | The inbox shell: a tab per platform, nothing enabled yet (Q92) | inbox |
+| 5 | Platform inboxes | inbox-instagram | Instagram DMs and comments answered from the inbox ⏳ | channels |
+| 5 | Platform inboxes | inbox-whatsapp | WhatsApp chats answered from the inbox ⏳ | channels |
+| 5 | Platform inboxes | whatsapp-contacts | The Business app's contacts arrive as Not yet; opt-in and STOP in chat | audience |
+| 5 | Platform inboxes | whatsapp-templates | Starter templates in English and Hindi, and the shop's own, for replies past 24 hours ⏳ | campaigns |
+| 6 | Auto-replies | comment-automations | A keyword comment gets the shop's DM, the product link suggested ⏳ | automations |
+| 6 | Auto-replies | chat-autoreplies | Every DM and chat answered at once: greeting, away hours, FAQs, live price and stock, handover (Q89) ⏳ | automations |
+| 7 | Outbound | audience | Contacts, consent and lists; from orders, the store page and attested uploads | audience |
+| 7 | Outbound | whatsapp-campaigns | A campaign, products included, sent to an opted-in list, cost and caps shown | campaigns |
+| 7 | Outbound | [notification-hub](../notification-hub/spec.md) | Order updates and alerts, by WhatsApp and email (Q66) | notifications |
+| 8 | AI auto-replies | not yet specified (Q91) | Answers worded by AI from the same live data, picked up once steps 1–7 are done | automations |
+| — | **Going live** | [going-live.md](going-live.md) | One review once steps 2–6 work on our own accounts (Q100) | — |
 
 Later, each with its Q: ads (Q21), Facebook Page (Q22), Threads (Q23), checkout in WhatsApp (Q24),
-forms in chat (Q25), chat history (Q10), platform sending (Q28), AI replies (Q31), audit screen
-(Q44), insights (Q48). Outside this feature altogether: post generation (Q26) and "Notify me" (Q60).
+forms in chat (Q25), chat history (Q10), platform sending (Q28), audit screen (Q44), insights
+(Q48). Outside this feature: "Notify me" (Q60).
 
 ## Product acceptance
 - A1 — On a phone, a shop with only an Instagram professional account connects it and publishes
@@ -89,4 +100,5 @@ forms in chat (Q25), chat history (Q10), platform sending (Q28), AI replies (Q31
 - A4 — A message to a list reaches only its opted-in members, after the shop saw what it costs.
 
 ## Open questions
-None at the overview. Each subfeature opens its own.
+Q95 (Instagram story replies in the inbox) and Q97 (a WhatsApp catalogue cart in the inbox), both
+waiting on the owner.

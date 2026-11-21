@@ -380,6 +380,46 @@ steps and the review kit built on this are in
 - **WhatsApp in-chat payment (India):** an `order_details` message paid through Razorpay or PayU
   inside WhatsApp, or by UPI intent; confirmation arrives as the gateway's webhook.
 
+**What an inbox receives and may do** — checked 2026-11-21 for social-selling's inbox steps.
+
+- **Instagram sends DMs only if the shop allows it.** In the Instagram app: Settings → Messages and
+  story replies → Message controls → Connected tools → *Allow access to messages*. Off means no DM
+  webhooks and no sends, whatever the token. In development mode a webhook fires only for people
+  with a role on the app.
+- **Instagram's message fields:** `messages` (the shop's own sends arrive here too, as echoes),
+  `messaging_reactions`, `messaging_seen`, `messaging_postbacks`, `messaging_referrals`,
+  `messaging_optins`, and `message_edit` (since September 2025). Story replies and story mentions
+  arrive as ordinary messages; a shared post or reel carries only its URL. GIFs and stickers fire no
+  webhook; disappearing media is not delivered. No unsend event was found.
+- **Instagram's send side:** `sender_action` `typing_on`/`typing_off`/`mark_seen`; quick replies,
+  a generic template (image, text, buttons) and up to four ice breakers. Send limits are per
+  account per second (300 for text, 10 for audio or video). Free within 24 hours of the person's
+  last message; the `HUMAN_AGENT` tag allows a person's reply up to 7 days.
+- **Instagram's Conversations API** (`/me/conversations?platform=instagram`) lists threads and their
+  messages; a Requests-folder thread inactive for 30 days is not returned. Meta's docs disagree on
+  whether all messages or the latest 20 come back. Developers report DMs the API returns but no
+  webhook delivered, so an inbox should reconcile from it rather than trust webhooks alone.
+- **Instagram comments:** `comments` and `live_comments` webhooks; a public reply
+  (`/<comment>/replies`), hide (not the shop's own comments, not Live), and one private reply per
+  comment within 7 days (Live: only during the broadcast). `@mentions` of the shop in others'
+  captions and comments can be read and answered.
+- **WhatsApp inbound types:** text, image, audio (voice notes), video, document, sticker, location,
+  contacts, reaction, interactive (`button_reply`, `list_reply`, `nfm_reply`), template `button`,
+  and **`order`**: a cart the buyer sends from the shop's catalogue, with `catalog_id`, a note and
+  `product_items` (retailer id, quantity, the catalogue's price). Ad clicks carry a `referral`.
+  Statuses (sent, delivered, read, failed) arrive separately and may precede their message.
+- **WhatsApp's send side:** marking a message read (which also reads the earlier ones) and a typing
+  indicator are one call; the indicator clears on a reply or after about 25 seconds. Media arrives
+  as an id to download through the media endpoint, not as a lasting URL.
+- **WhatsApp buyers may have no phone number.** With usernames, Meta withholds the phone number in
+  some cases and identifies the buyer by a business-scoped user id (`user_id`, per buyer and
+  business portfolio) in webhooks since 31 March 2026; sending to it works since July 2026. A
+  change arrives as a `messages` system event `user_changed_user_id`, not as the withdrawn
+  `user_id_update` field. A contact is keyed by that id, with the phone number when given.
+- **Coexistence contacts sync once.** `smb_app_state_sync` is started by our call, once, within 24
+  hours of onboarding, then keeps sending changes. A shop that re-registers its app or changes
+  phone is offboarded automatically (`ACCOUNT_OFFBOARDED` on `account_update`) and must reconnect.
+
 - **Myntra, Ajio and Nykaa** are invite-only partner programmes. Relevant to what this store
   sells, worth a name in the vocabulary, not worth chasing.
 

@@ -382,6 +382,15 @@ before then — monthly summaries first, then November 2026's full entries. An o
 - No migration, no contract change. Tests: `tests/unit/image-widths.test.ts`, plus confirm and review cases;
   each new hook mutation-checked (removing it fails its test).
 
+## 2026-11-21 — social-selling re-cut into eight steps; inbox research recorded
+
+- Docs only. The owner's new order (Q78, replaced in place): post generation and connectors side by
+  side, then posting, the inbox shell, the Instagram and WhatsApp inboxes, auto-replies (comment-to-DM
+  joined by chat-autoreplies), outbound messaging with the notification hub, and AI replies last.
+  Decisions Q86–Q100; Q95 and Q97 open for the owner. INTEGRATIONS gains what each inbox receives
+  and may do: Instagram's message-access toggle, WhatsApp's business-scoped user ids, catalogue
+  carts as `order` messages, the one-time contact sync, and reconciling missed webhooks.
+
 ## 2026-11-14 — /business partner side: packages from ₹899
 
 - "Packages from ₹899" beside the partner side's first ask and in its close; the cost question answers
