@@ -382,6 +382,14 @@ before then — monthly summaries first, then November 2026's full entries. An o
 - No migration, no contract change. Tests: `tests/unit/image-widths.test.ts`, plus confirm and review cases;
   each new hook mutation-checked (removing it fails its test).
 
+## 2026-11-21 — An existing WhatsApp catalogue is settled, not replaced; bulk-publish decided
+
+- Docs only. social-selling Q101–Q106: on connect the shop's own WhatsApp catalogue is read and
+  settled on the Amazon-style Settle flow (new subfeature whatsapp-catalogue-import); the whole range
+  goes out in one bulk push with fixes done in bulk first, built channel-neutral (`bulk-publish`) for
+  WhatsApp, Amazon and Flipkart (marketplace-integration Q44). whatsapp-catalogue Q5 replaced in
+  place. Q104 and Q105 open for the owner; Q106 (reading an app-made catalogue) verified on day one.
+
 ## 2026-11-21 — WhatsApp catalogue is a replica, its cart on; Instagram story replies in the inbox
 
 - Docs only. Owner answered Q95 and Q97. inbox-instagram Q1 takes story replies and mentions (R1).

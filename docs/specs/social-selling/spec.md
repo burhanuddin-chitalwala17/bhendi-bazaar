@@ -20,7 +20,7 @@ receives and may do"; do not redo it.
 build, bring its subfeature specs in line with these decisions: Q94 into connect-instagram and
 inbox-instagram; Q99 into connect-whatsapp; Q96 into audience, whatsapp-contacts and inbox-whatsapp;
 Q98 into both platform inboxes; Q97 into inbox-whatsapp (Q95 is in inbox-instagram already);
-chat-autoreplies (Q89) needs its own spec; going-live.md takes Q100.
+chat-autoreplies (Q89), whatsapp-catalogue-import (Q101) and bulk-publish (Q102) need their own specs; going-live.md takes Q100.
 **Next step:** step 1 (post generation, its own session) and step 2 (connectors) side by side (Q87).
 **Owner's outside step, started separately:** Meta Business Verification and the Meta app (Q14).
 
@@ -69,7 +69,9 @@ our own accounts (Q2, Q100).
 | 1 | Post generation | outside this folder (Q86) | Post images and captions made from a product or the brand, into the media library | content |
 | 2 | Connectors | connect-instagram | A shop connects its Instagram and sees it healthy, message access included (Q94) ⏳ | channels |
 | 2 | Connectors | connect-whatsapp | A shop connects its WhatsApp number, keeping its Business app (Q12) ⏳ | channels |
-| 2 | Connectors | whatsapp-catalogue | The shop's live products in its WhatsApp catalogue, kept in sync (Q88) ⏳ | channels |
+| 2 | Connectors | whatsapp-catalogue-import | The shop's existing WhatsApp catalogue settled on connect: matched, added or left off (Q101) ⏳ | channels |
+| 2 | Connectors | bulk-publish | The whole range pushed in one go, fixes done in bulk first; channel-neutral (Q102) ⏳ | channels |
+| 2 | Connectors | whatsapp-catalogue | The shop's live products in its WhatsApp catalogue, kept in sync as a replica (Q88) ⏳ | channels |
 | 3 | Posting | post-scheduling | Schedule a post or story from finished media and a caption, through a fake publisher | social |
 | 3 | Posting | instagram-publishing | Posts, carousels, reels and stories published to Instagram, with hashtags, mentions and collaborators ⏳ | channels |
 | 3 | Posting | whatsapp-status-kit | A Status image and caption handed to the phone in one tap; WhatsApp has no Status API (Q19) | social |
@@ -100,4 +102,5 @@ forms in chat (Q25), chat history (Q10), platform sending (Q28), audit screen (Q
 - A4 — A message to a list reaches only its opted-in members, after the shop saw what it costs.
 
 ## Open questions
-None at the overview. Each subfeature opens its own.
+Q104 (left-off items removed from WhatsApp) and Q105 (when Amazon and Flipkart get bulk-publish),
+both waiting on the owner.
