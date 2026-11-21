@@ -7,7 +7,7 @@ import { STARTING_CREDIT_PAISE } from "@server/payouts/credit.types";
  * ai-images/shop-credits D1, D2). Lines are only ever inserted: there is no update and no delete,
  * so the ledger is the history (R4). The balance is a sum, never a column (R1).
  */
-export type CreditDb = Pick<typeof prisma, "creditLine" | "$queryRaw">;
+export type CreditDb = Pick<typeof prisma, "creditLine" | "$executeRaw">;
 
 const LINE_SELECT = {
   id: true,
@@ -51,7 +51,7 @@ export class CreditRepository {
    * requests cannot both read the same balance and both spend it. Released at commit.
    */
   async lockOrg(orgId: string, db: CreditDb): Promise<void> {
-    await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`credit:${orgId}`}))`;
+    await db.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`credit:${orgId}`}))`;
   }
 
   /** The one-time starting credit (D3), for any of these shops that has none yet. Idempotent. */
