@@ -25,34 +25,34 @@ token nobody can read; this builds it once.
 - R1 — Any member connects WhatsApp from the Channels page through Meta's own pop-up. We never ask
   for or store a Facebook or WhatsApp password.
 - R2 — A shop keeps using its WhatsApp Business app on the same number (coexistence). The connect
-  screen says, quietly, what changes (Q3, parent Q38): the WhatsApp catalogue is then managed from
+  screen says, quietly, what changes (parent Q12, parent Q12): the WhatsApp catalogue is then managed from
   Bhendi Bazaar; broadcast lists turn read-only; view-once and disappearing messages switch off; the
   app must be opened every couple of weeks. Messages typed in the app stay free.
 - R2a — A number that cannot use coexistence (a blue-tick number, or Meta refuses) may instead move
   fully to Bhendi Bazaar, through Meta's own "new number" path in the same pop-up; the shop is told
-  the Business app then stops working on that number and the Inbox becomes its WhatsApp (parent Q84).
+  the Business app then stops working on that number and the Inbox becomes its WhatsApp (parent Q12).
   No unofficial linked-session tool is ever offered.
-- R3 — The pop-up arrives pre-filled with the shop's name, email and website (Q4).
+- R3 — The pop-up arrives pre-filled with the shop's name, email and website (parent Q12).
 - R4 — A pop-up result that did not begin in this session, or for this shop, connects nothing.
 - R5 — One number per shop and one shop per number; a reconnect with a different number is refused
-  (Q10, Q11).
+  (Q10).
 - R6 — After connecting, the number is ready for Bhendi Bazaar to use: registered and subscribed to
   our events, with nobody doing anything more (Q5); the catalogue and starter templates start then.
 - R6a — Connecting ends with one step: the shop sets its monthly WhatsApp spend cap in rupees, no
   amount pre-filled. It covers every paid WhatsApp send (campaigns, alerts, inbox templates) and is
-  changed or removed later in WhatsApp settings (parent Q32, campaigns Q7).
+  changed or removed later in WhatsApp settings (parent Q8, social-selling Q8).
 - R7 — The card shows in plain words: not connected, connected, needs reconnecting (with the reason),
   full for now, coming soon. When connected: the masked number, its WhatsApp name, its quality, whether
   payments are set up, who connected it and when, and when it was last checked (Q8).
 - R8 — A number with no payment method is still connected, and the card says what that means and
-  where to add one (Q9). The shop pays Meta directly (parent Q8).
+  where to add one (Q8). The shop pays Meta directly (parent Q8).
 - R9 — A daily check keeps the card true: a removed app or lost access turns Needs reconnecting, and
-  a quality drop shows on the card; both appear once on the dashboard (Q7, Q14).
+  a quality drop shows on the card; both appear once on the dashboard (Q8).
 - R10 — A member can disconnect after confirming. The number keeps working in the Business app; our
   access is removed and our credentials deleted (Q13).
 - R11 — Credentials are never shown, logged or returned to anyone, and are stored encrypted.
 - R12 — Where Meta's weekly limit on new shops is reached, the card says so and when to try again
-  (Q12). Where the platform has not opened WhatsApp, it says coming soon.
+  (parent Q2). Where the platform has not opened WhatsApp, it says coming soon.
 
 ## Hazards the TRD must answer
 - **The pop-up's result is reported by the browser.** A forged message could attach another
@@ -61,7 +61,7 @@ token nobody can read; this builds it once.
   neither usable nor clearly broken. It must end connected or not, never in between.
 - **Coexistence events arrive for months** (echoes of messages sent from the app, contact changes)
   and must reach the right shop once each, even when Meta delivers twice.
-- **Coexistence may not be offered in India, or to a given number** (Q16): verified on day one on
+- **Coexistence may not be offered in India, or to a given number** (parent Q12): verified on day one on
   the owner's number; the fallback is R2a.
 - **The cap step skipped** (the shop leaves after Meta succeeded): the number is connected with no
   cap set. What a paid send does then is open (below).
@@ -78,14 +78,14 @@ Judged on a phone (~360px) first.
 - A6 — Removing Bhendi Bazaar in Meta Business Suite shows Needs reconnecting by the next check.
 - A7 — Disconnect leaves the number working in the Business app and no credential stored.
 - A8 — Every state in ux.md's matrix for the WhatsApp card can be reached and reads as written.
-- A9 — Verified on Meta's sandbox account and on the owner's own number before any other shop (Q15).
+- A9 — Verified on Meta's sandbox account and on the owner's own number before any other shop (parent Q2).
 - A10 — Connecting ends at the spend-cap step; the amount chosen shows in WhatsApp settings.
 
 ## Scope
 - **Outcome:** a shop connects its WhatsApp number, keeping its Business app, and sees it healthy.
 - **In:** R1–R12, tested by A1–A10.
 - **Later:** catalogue (whatsapp-catalogue), chats (inbox-whatsapp), contacts (whatsapp-contacts),
-  templates (whatsapp-templates), sending (whatsapp-campaigns); chat history (parent Q10).
+  templates (whatsapp-templates), sending (whatsapp-campaigns); chat history (parent Q12).
 
 ## Open questions
-None. The cap step is answered by parent Q85.
+None. The cap step is answered by parent Q8.

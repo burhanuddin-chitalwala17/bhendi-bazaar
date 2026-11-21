@@ -2,14 +2,14 @@
 
 - **Status:** Draft for owner approval — not legal advice
 - **Verified:** 2026-11-06
-- **References:** [decisions.md](decisions.md) Q9, Q27, Q34, Q42, Q43, Q62, Q77, Q82, Q83; [going-live.md](going-live.md); `src/components/support/support-copy.ts`
+- **References:** [decisions.md](decisions.md) Q9, Q27, Q34, Q14; [going-live.md](going-live.md); `src/components/support/support-copy.ts`
 
 > Additions to the Store policies page (`/policies`), written in its voice. They go live, through
-> the support copy module, only after the owner approves them (Q77). Meta's review needs the privacy
+> the support copy module, only after the owner approves them (Q34). Meta's review needs the privacy
 > policy, terms and data-deletion instructions at public URLs. A lawyer's read is advised.
 
 ## Operator line (footer, privacy, terms)
-> Farida Abbas Chitalwala, proprietor of BHENDI-BAZAAR.COM. (Q83; the name must match the GST legal name exactly, Q42.)
+> Farida Abbas Chitalwala, proprietor of BHENDI-BAZAAR.COM. (Q14: the name must match the GST legal name exactly.)
 
 ## Privacy — additions
 
@@ -65,7 +65,7 @@ Meta requires a public page explaining how to delete data, and a link it can sho
 
 > **Deleting your Instagram or WhatsApp data from Bhendi Bazaar**
 >
-> We act on a deletion request at once and complete it within 30 days (Q82).
+> We act on a deletion request at once and complete it within 30 days (Q34).
 >
 > *If you are a shop:* disconnect Instagram or WhatsApp from Channels in your shop portal. The access
 > Meta gave us is deleted at once; your conversations are deleted 90 days later. You can also remove

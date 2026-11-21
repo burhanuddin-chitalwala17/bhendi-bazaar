@@ -23,18 +23,18 @@ buyers will say yes or no, so the chat must be where consent changes, at once.
 
 ## Requirements
 - R1 — On connect, the Business app's contacts arrive as Not yet, with their phone-book names;
-  later adds, edits and removals follow without the shop doing anything (parent Q13, Q1).
+  later adds, edits and removals follow without the shop doing anything (parent Q9, Q1).
 - R2 — A contact removed on the phone leaves Audience only if it has no consent history and no
-  conversation; otherwise it stays, marked removed from the phone (Q2).
-- R3 — A synced name never replaces one the shop typed or uploaded (Q3).
+  conversation; otherwise it stays, marked removed from the phone (Q1).
+- R3 — A synced name never replaces one the shop typed or uploaded (Q1).
 - R4 — A buyer's YES in a chat with the shop opts them in for that shop on WhatsApp, from any
-  number, known or new; STOP stops it. The words are audience's (Q4, Q7).
+  number, known or new; STOP stops it. The words are audience's (Q5).
 - R5 — Each YES or STOP gets one confirming reply in the chat, free, in the buyer's language;
-  the change never waits on the reply (Q5, Q8).
+  the change never waits on the reply (Q5).
 - R6 — Only the buyer's own message counts: a reply the shop typed in its app never opts anyone
-  in (Q6).
+  in (Q5).
 - R7 — The Audience page says whether the phone's contacts arrived, are still coming, or were not
-  shared, and what to do (Q11).
+  shared, and what to do (Q1).
 - R8 — Nothing here is a marketing message; no synced contact is messaged until it opts in.
 
 ## Hazards the TRD must answer
@@ -56,7 +56,7 @@ Judged on a phone (~360px) first.
 ## Scope
 - **Outcome:** a shop's phone contacts are in its Audience, and chat YES and STOP work.
 - **In:** R1–R8, tested by A1–A5.
-- **Later:** chat history (parent Q10); messaging anyone (whatsapp-campaigns).
+- **Later:** chat history (parent Q12); messaging anyone (whatsapp-campaigns).
 
 ## Open questions
 None.

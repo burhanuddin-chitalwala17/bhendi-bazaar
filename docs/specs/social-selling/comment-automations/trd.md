@@ -11,7 +11,7 @@
 
 ## Approach
 A new platform-free domain, `server/automations/`, consumes the neutral `comment.received` job
-that inbox-instagram's webhook handling enqueues (parent Q80), decides whether a rule matches, and
+that inbox-instagram's webhook handling enqueues (parent Q7), decides whether a rule matches, and
 claims the comment in one insert. A second job sends: the DM and optional public reply leave
 through a `CommentReplyPort` that `channels` implements for Instagram. The claim row is the
 idempotency key and the activity the shop sees. Rules are read from social's post (post-scheduling
@@ -45,7 +45,7 @@ Q6) or the shop-wide rule this domain owns.
 - **D5 — Match** (pure): Unicode NFKD, strip marks, lower-case, split on anything not a letter or
   digit, keyword equal to a token (Q3). Mutation-tested: "shopping" must not match.
 - **D6 — Claim.** Insert `CommentClaim` unique on (platform, commentId) and a second unique on
-  (orgId, postExternalId, authorExternalId) for Q7; a conflict on either is a skip, recorded as
+  (orgId, postExternalId, authorExternalId) for Q6; a conflict on either is a skip, recorded as
   `repeat`. The DM text is frozen into the claim at claim time (spec hazard 4). Then enqueue
   `automations.send` in the same transaction (ADR-0038).
 - **D7 — Send.** The handler reads the claim; if `sent`, returns. Over 7 days → `too_late`. Calls
@@ -55,7 +55,7 @@ Q6) or the shop-wide rule this domain owns.
   and we read that refusal as `sent`. The public reply follows only after the DM is sent.
 - **D8 — Rate.** Jobs carry `group: orgId:postExternalId`, and the handler spaces sends to at most
   12 a minute per post (inside 750/hour) so a viral post drains without tripping Meta (A7).
-- **D9 — Archived products** (Q13): links are built at claim time from catalog's public read; an
+- **D9 — Archived products** (Q4): links are built at claim time from catalog's public read; an
   archived product's line is removed; if the text equals the untouched suggestion and no link is
   left, the claim is `skipped_no_link`.
 - **D10 — Inbox.** A sent DM is handed to inbox's `recordAutomaticReply` (inbox-core D11), marked
@@ -100,7 +100,7 @@ inbox's retention (parent Q34) by the same daily pass.
 - Integration: duplicate event → one claim; same author twice → `repeat`; rate-limited answer
   re-enqueued without consuming a retry; refusal-as-sent; 1,000 recorded payloads through a fake
   port, none twice, spacing held (A7).
-- Live after approval (parent Q81): A1, A4, A5 on the owner's account — listed in going-live.md.
+- Live after approval (parent Q2): A1, A4, A5 on the owner's account — listed in going-live.md.
 
 ## Delivery (PRs)
 1. Domain, tables, pure match, claim, fake port, tests (no behaviour visible).

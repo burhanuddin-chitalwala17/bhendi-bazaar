@@ -16,7 +16,7 @@ chosen WhatsApp account and number ids. The page posts them to our server, which
 until Meta confirms: the code is exchanged server to server, and the ids are checked against what
 the exchanged token can see. Setup (register, subscribe) runs inside that request, and the row is
 written connected only when every step succeeded. One signed webhook route in `channels` receives
-WhatsApp's events for every shop (parent Q80); this subfeature handles `account_update` and lets
+WhatsApp's events for every shop (parent Q7); this subfeature handles `account_update` and lets
 later subfeatures claim the rest.
 
 ## Prior art
@@ -35,7 +35,7 @@ later subfeatures claim the rest.
 - **D1 — `CHANNEL.WHATSAPP`, kind `social`.** `providers/whatsapp/` implements `ConnectionProvider`;
   `consentUrl` is replaced by `consentConfig` (app id, `config_id`, pre-fill, signed `state`)
   because the consent is a pop-up, not a redirect. The other verbs are unchanged in shape.
-- **D2 — Pre-fill** from the org profile (name, email, website = `appUrl` store link) (Q4).
+- **D2 — Pre-fill** from the org profile (name, email, website = `appUrl` store link) (parent Q12).
 - **D3 — `POST /api/org/[orgId]/channels/whatsapp/connect`** (`withOrg`, Zod body: `code`,
   `wabaId`, `phoneNumberId`, `state`). Verifies `state` (shop, user, ten minutes; channel-connectors
   D4); exchanges the code; calls `debug_token` and refuses unless the granted `whatsapp_business_management`
@@ -54,7 +54,7 @@ later subfeatures claim the rest.
   shop's number is refused (`other_shop`), a different one on reconnect refused (`different_account`).
 - **D6 — Limit.** The provider's `connectionCap` is replaced, for WhatsApp, by Meta's own answer:
   a signup refused for the onboarding limit answers `full`, and the card shows Full for now for 72
-  hours after the last such answer for any shop (Q12). No count of ours (channel-connectors Q18).
+  hours after the last such answer for any shop (parent Q2). No count of ours (channel-connectors Q18).
 - **D7 — One webhook route: `GET|POST /api/channels/whatsapp/webhook`.** GET answers Meta's verify
   challenge; POST verifies `X-Hub-Signature-256` with the app secret, writes each change to
   `MetaEvent` (unique per product on Meta's id or a hash of the change), and enqueues one job per new
@@ -62,20 +62,20 @@ later subfeatures claim the rest.
   sets `quality`; campaigns Q20 reads it) here; `whatsapp.messages` (inbound and statuses),
   `whatsapp.smb-echoes`, `whatsapp.contacts-sync`, `whatsapp.template-status`, each with one
   handler in `channels` that later subfeatures extend (inbox-whatsapp D1 owns `whatsapp.messages`;
-  whatsapp-contacts and whatsapp-campaigns add their mappings to it), marked handled until those exist. `history` is dropped (Q6). Answers 200 fast;
+  whatsapp-contacts and whatsapp-campaigns add their mappings to it), marked handled until those exist. `history` is dropped (parent Q12). Answers 200 fast;
   work is on the worker (ADR-0038). Whichever of this and inbox-instagram D1 lands first creates
   `MetaEvent`.
 - **D8 — Daily check** in `channels.maintain`: `GET /<phone_number_id>` (quality, name status) and
-  the WABA's payment method; a 190 or a missing subscription sets `NEEDS_RECONNECT`. No renewal (Q7).
+  the WABA's payment method; a 190 or a missing subscription sets `NEEDS_RECONNECT`. No renewal (Q8).
   Every move to `NEEDS_RECONNECT` (here, D9) enqueues `channels.needs-reconnect`, as connect-instagram D6.
 - **D9 — `account_update`** with `PARTNER_REMOVED` sets `NEEDS_RECONNECT` / `REVOKED` and nulls the
-  token at once (Q9, spec hazard 5).
+  token at once (Q8, spec hazard 5).
 - **D10 — Disconnect** unsubscribes `subscribed_apps`, deregisters nothing (coexistence keeps the
   number on the app), nulls token and PIN (Q13).
-- **D12 — Spend-cap step** (R6a, parent Q32): after a connected answer the button opens the cap
+- **D12 — Spend-cap step** (R6a, parent Q8): after a connected answer the button opens the cap
   sheet, which saves through whatsapp-campaigns' caps command (`WhatsAppCaps.monthlyCapPaise`).
   Until whatsapp-campaigns exists the step is not shown. Rupees convert to paise at the API client.
-- **D13 — Moving a number** (Q16, parent Q84) needs no code path of ours: Meta's pop-up returns the
+- **D13 — Moving a number** (parent Q12, parent Q12) needs no code path of ours: Meta's pop-up returns the
   same session info for its "new number" flow, and the card shows the before-you-move note on
   `featureType` other than coexistence. `smb_*` fields are then simply silent.
 - **D11 — The switch.** `CHANNELS_CONNECT` gains `whatsapp`. Requires `META_APP_ID`,
@@ -117,7 +117,7 @@ matched), received at, handled at, job id. Kept 30 days, then deleted by `channe
 - Integration: setup failure after register leaves no row and unsubscribes; other shop's number and
   different number refused; `PARTNER_REMOVED` turns the card; daily check sets quality and payment;
   disconnect unsubscribes and nulls. `fetch` stubbed.
-- Manual (A9, Q15, Q16): sandbox account, then the owner's coexistence number on dev, at 360px.
+- Manual (A9, parent Q2, Q12): sandbox account, then the owner's coexistence number on dev, at 360px.
 
 ## Delivery (units)
 1. `CHANNEL.WHATSAPP`, WhatsApp provider, connect route with verify and all-or-nothing setup, `whatsapp.connected` — behaviour-changing.

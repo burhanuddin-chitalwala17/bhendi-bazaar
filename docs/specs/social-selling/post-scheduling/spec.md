@@ -20,28 +20,28 @@ Shops post to sell, and today juggle a scheduler beside their stock. Posting fro
 products live means the picture, the caption and the product link come from one place. How the
 picture was made is not this feature's business: an upload, an enhanced photo or a future generator
 all arrive as finished media (parent Q26). The platforms are plugs, so this tool is built and
-proven before any Meta access, against a fake publisher (Q2).
+proven before any Meta access, against a fake publisher (parent Q7).
 
 ## Requirements
-- R1 — Any member creates a post from media already in the shop's library and a caption (Q1,
-  parent Q30). Nothing here edits, generates or captions media for the shop.
+- R1 — Any member creates a post from media already in the shop's library and a caption (parent Q26,
+  parent Q8). Nothing here edits, generates or captions media for the shop.
 - R2 — A post is an image, a carousel of 2–10 images, a reel or a story, within the limits each
-  destination accepts (Q4, Q12); what would be refused says why before scheduling.
-- R3 — A post picks one or more destinations, shown only where they can work (Q3, parent Q64).
+  destination accepts (Q4); what would be refused says why before scheduling.
+- R3 — A post picks one or more destinations, shown only where they can work (Q4, parent Q51).
 - R4 — A post goes now or at a chosen minute up to 60 days ahead, in IST, and publishes within two
   minutes of that time (Q5).
 - R5 — A post may name the product(s) it is about and a comment keyword, with a DM text pre-filled
-  from the product links that the shop may rewrite; comment-automations reads them (Q6, parent Q53).
+  from the product links that the shop may rewrite; comment-automations reads them (Q6, parent Q89).
 - R6 — Each destination of a post has its own state: scheduled, publishing, published (with a link
-  where the platform gives one), failed (with the reason), cancelled (Q9).
+  where the platform gives one), failed (with the reason), cancelled (parent Q51).
 - R7 — A temporary failure is retried three times over about 30 minutes; then the destination is
   failed, offers Publish now, and the shop is told through notifications. A lost connection fails
-  at once and offers Reconnect (Q8, parent Q52, Q66).
+  at once and offers Reconnect (parent Q51, parent Q51, Q66).
 - R8 — A scheduled post can be edited or cancelled until its publish starts; a published one is
-  read-only; any post can be duplicated (Q7, Q10).
-- R9 — The Posts page lists Scheduled, Published and Failed, and works on a phone first (Q11).
+  read-only; any post can be duplicated (Q7).
+- R9 — The Posts page lists Scheduled, Published and Failed, and works on a phone first (Q7).
 - R10 — This tool knows no platform: a destination is a plug, so adding one (Facebook Page,
-  Threads; parent Q22, Q23) changes no screen logic here (parent Q7).
+  Threads; parent Q21) changes no screen logic here (parent Q7).
 
 ## Hazards the TRD must answer
 - **A post published twice** by two workers, or by a retry after a publish that did succeed.
@@ -69,8 +69,8 @@ Judged on a phone (~360px) first ([ADR-0015](../../../adr/0015-mobile-first-desi
 ## Scope
 - **Outcome:** a shop schedules a post from finished media and sees each destination's state.
 - **In:** R1–R10, tested by A1–A7.
-- **Later:** calendar view (Q11); insights (parent Q48); Facebook Page and Threads plugs (parent
-  Q22, Q23). Outside: making media or captions (parent Q26).
+- **Later:** calendar view (Q7); insights (parent Q21); Facebook Page and Threads plugs (parent
+  Q21). Outside: making media or captions (parent Q26).
 
 ## Open questions
 None.

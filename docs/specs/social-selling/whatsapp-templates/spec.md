@@ -19,23 +19,23 @@ Meta approved it, why it did not, and what one message costs.
 WhatsApp lets a business start a conversation only with a template Meta has approved (parent Q37).
 Without templates a shop that connected WhatsApp can send nothing. Writing one that passes Meta's
 review is unfamiliar to most sellers, so a set that is ready on day one, in the languages its buyers
-read (parent Q65), is what makes campaigns and alerts possible at all.
+read (parent Q37), is what makes campaigns and alerts possible at all.
 
 ## Requirements
 - R1 — On connecting WhatsApp, the starter set is submitted to the shop's own WhatsApp account in
-  English and Hindi, with nobody doing anything (Q1, Q2). The Hindi is read by a native reader
+  English and Hindi, with nobody doing anything (parent Q37, Q3). The Hindi is read by a native reader
   before it is first submitted (Q3).
 - R2 — A shop writes its own template: category, language, header, body with placeholders from a
   closed list, footer, buttons (Q5). Every marketing template carries a way to stop (parent Q9).
-- R3 — A starter template is never edited in place; the shop copies it and edits the copy (Q4).
+- R3 — A starter template is never edited in place; the shop copies it and edits the copy (Q5).
 - R4 — Each template shows Meta's state in plain words: in review, approved, rejected with Meta's
   reason and what to change, paused with when it resumes, disabled (Q7).
 - R5 — Each template shows Meta's category and its price per delivered message, in rupees, with the
-  date that price was checked (Q6, Q10, Q11).
+  date that price was checked (Q5, Q10).
 - R6 — A campaign scheduled on a template that is no longer approved does not send and is not
-  charged; it says why and offers another approved template (Q8).
-- R7 — A template can be archived; it disappears from choices, stays readable in past campaigns (Q9).
-- R8 — Any member may write, copy or archive a template (parent Q30); who did is recorded.
+  charged; it says why and offers another approved template (Q7).
+- R7 — A template can be archived; it disappears from choices, stays readable in past campaigns (Q7).
+- R8 — Any member may write, copy or archive a template (parent Q8); who did is recorded.
 - R9 — A shop without WhatsApp connected sees what templates are for and how to connect.
 
 ## Hazards the TRD must answer

@@ -4,13 +4,13 @@
 - **Domain:** channels (the Instagram plug for inbox)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-06
-- **References:** [spec.md](spec.md), [ux.md](ux.md), [decisions.md](decisions.md), parent [decisions](../decisions.md) (Q7, Q36, Q80, Q81), [inbox-core TRD](../inbox-core/trd.md), [connect-instagram TRD](../connect-instagram/trd.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md#acting-for-a-shop-on-meta-catalogue-whatsapp-instagram), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0063](../../../adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md)
+- **References:** [spec.md](spec.md), [ux.md](ux.md), [decisions.md](decisions.md), parent [decisions](../decisions.md) (Q7, Q36, Q2), [inbox-core TRD](../inbox-core/trd.md), [connect-instagram TRD](../connect-instagram/trd.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md#acting-for-a-shop-on-meta-catalogue-whatsapp-instagram), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0063](../../../adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
 > Screens, states and copy are ux.md's (the inbox's own screens are inbox-core's).
 
 ## Approach
-`channels` gains the Instagram webhook route (parent Q80) and an Instagram `InboxSource`. The route
+`channels` gains the Instagram webhook route (parent Q7) and an Instagram `InboxSource`. The route
 verifies Meta's signature, stores each event once, and enqueues neutral jobs: `inbox.message-received`
 for every DM and comment, and `comment.received` for every new comment, which comment-automations
 consumes (its D3). The
@@ -39,8 +39,8 @@ defines; whichever subfeature lands first creates it.
 - **D2 — Dispatch.** `channels.instagram-event`'s handler finds the connected `ChannelConnection` by the
   entry's Instagram account id (unknown → marked ignored, R9), parses the change with a Zod schema
   per field, and enqueues `inbox.message-received` with neutral fields (inbox-core D3). Echoes of
-  the shop's own messages (`is_echo`) go as direction out-echo (Q8). Unsupported attachments become
-  a kind label (inbox-core Q6). A new top-level comment also enqueues `comment.received`
+  the shop's own messages (`is_echo`) go as direction out-echo (Q2). Unsupported attachments become
+  a kind label (inbox-core Q5). A new top-level comment also enqueues `comment.received`
   (comment-automations D3). The raw payload is deleted once dispatched; only ids stay.
 - **D3 — The Instagram `InboxSource`** (`providers/instagram/inbox.ts`), registered with the inbox
   port at the composition root (`server/channels/channels.jobs.ts` for the worker, the route layer
@@ -49,7 +49,7 @@ defines; whichever subfeature lands first creates it.
   `privateReply` → `POST /<IG_ID>/messages` with `recipient.comment_id`. `hide` → `POST /<comment-id>`
   `hide=true|false`. Capabilities: `canHide`, `canSendImage`, `canPrivateReply`.
 - **D4 — Windows.** Computed from the conversation's last inbound time, which inbox stores and passes
-  in: < 24 h open; 24 h–7 d human-agent; else shut (Q4). For a comment thread the private-reply
+  in: < 24 h open; 24 h–7 d human-agent; else shut (parent Q36). For a comment thread the private-reply
   window is 7 days from the comment.
 - **D5 — One private reply per comment.** The inbox and comment-automations both call the same
   `privateReply` verb (comment-automations D2). Meta refuses a second private reply to one comment;
@@ -71,7 +71,7 @@ defines; whichever subfeature lands first creates it.
   `inbox.person-deleted` for the person's Instagram-scoped id (R10).
 - **D10 — Recorded payloads.** Real webhook bodies from Meta's dashboard "Test" button and our own
   account are stored under `tests/fixtures/meta/instagram/` with ids replaced, and replayed through
-  the route with a valid signature in the integration suite (parent Q81, A7).
+  the route with a valid signature in the integration suite (parent Q2, A7).
 
 ## Packages
 None.

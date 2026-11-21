@@ -23,7 +23,7 @@ WhatsApp channel applies its frequency and spend caps.
 - **Abandoned-cart flows** (Klaviyo, Shopify) wait a delay after last activity, exit if the buyer
   ordered, and send only to identifiable consented buyers. We follow it with one step (social-selling Q54).
 - **Quiet hours** delaying rather than dropping marketing (Braze, Iterable "quiet hours"); a
-  time-bound message past its moment is dropped. We follow it (Q5).
+  time-bound message past its moment is dropped. We follow it (Q7).
 
 ## Technical decisions
 - **D1 — Facts as shared jobs** in `server/shared/jobs/`: `price.changed` (productId, old and new
@@ -37,7 +37,7 @@ WhatsApp channel applies its frequency and spend caps.
 - **D3 — Switches and window** in `OrgNotifySettings`: `alerts` (JSON parsed by zod: per alert
   on/off), `windowStart`, `windowEnd` (minutes from IST midnight, default 540 and 1260). The hub
   computes `runAt` = now, or the next window opening; `auction.ending` outside the window is skipped
-  `outside_window` (Q5).
+  `outside_window` (Q7).
 - **D4 — Re-check at send** (Q7): each marketing row's handler calls the alert's `stillTrue(facts)`
   — price still at or below the alerted price, product in stock and not archived, cart not ordered,
   auction open — before handing to the channel; false → `SKIPPED` with the reason.
@@ -46,12 +46,12 @@ WhatsApp channel applies its frequency and spend caps.
 - **D6 — Abandoned cart**: `cart.idle` is scheduled by cart's service with `runAt` +1 hour on each
   cart write (replacing the previous by key `cart:<cartId>`); the handler exits if an order exists
   since, if the user is a guest, or not opted in. Never more than one per cart idle period.
-- **D7 — Spend cap** (Q4) belongs to the WhatsApp channel (social-selling Q68): the plug's `canReach`
+- **D7 — Spend cap** (Q7) belongs to the WhatsApp channel (social-selling Q40): the plug's `canReach`
   calls campaigns' `whatsAppCanSend` (whatsapp-campaigns D9), which answers no when month-to-date
   spend on every paid send plus this message's price would pass the cap; the hub falls to email. The first refusal in a month emits the shop event `spend_cap_reached`.
 - **D8 — Estimated cost** on each switch: last 30 days' count of the alert's trigger events ×
   opted-in audience × marketing price (paise) from whatsapp-templates' rates module, shown as "about ₹X a month".
-- **D9 — Outbid stays transactional for bidders** (Q9): `bid.outbid` emits a transactional
+- **D9 — Outbid stays transactional for bidders** (parent Q6): `bid.outbid` emits a transactional
   `outbid` (email, as today) and, if the switch is on, a marketing `auction_outbid`; the bidder gets
   the marketing one by WhatsApp instead of the email when reachable, never both (one key).
 

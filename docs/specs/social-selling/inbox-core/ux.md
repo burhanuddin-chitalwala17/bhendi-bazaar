@@ -27,10 +27,10 @@ connect-whatsapp); without one the Inbox shows first use.
 ## Screens
 | Screen | Route / place | New or changed | Serves |
 |---|---|---|---|
-| Inbox list | `/org/[orgId]/inbox`, shop menu under Channels (Q13) | New | R1–R3, R11 |
+| Inbox list | `/org/[orgId]/inbox`, shop menu under Channels | New | R1–R3, R11 |
 | Conversation thread | `/org/[orgId]/inbox/[conversationId]` | New | R2, R4–R8 |
 | Reply box | Docked at the thread's foot | New | R4, R5, R8 |
-| Template picker | Sheet over the thread | New | R5 (parent Q76) |
+| Template picker | Sheet over the thread | New | R5 (parent Q37) |
 | Shop menu | Sidebar / phone menu | Changed: "Inbox" with count | R3 |
 
 ## State matrix — Inbox list

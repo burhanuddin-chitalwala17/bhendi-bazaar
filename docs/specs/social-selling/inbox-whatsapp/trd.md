@@ -4,7 +4,7 @@
 - **Domain:** channels (the WhatsApp plug for inbox)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-06
-- **References:** [spec.md](spec.md), [ux.md](ux.md), [decisions.md](decisions.md), parent [decisions](../decisions.md) (Q7, Q8, Q76, Q80, Q81), [inbox-core TRD](../inbox-core/trd.md), [connect-whatsapp TRD](../connect-whatsapp/trd.md) (D7 webhook), [whatsapp-templates TRD](../whatsapp-templates/trd.md) (D7 rates), [whatsapp-contacts TRD](../whatsapp-contacts/trd.md) (D2), [ADR-0004](../../../adr/0004-money-as-integer-paise.md)
+- **References:** [spec.md](spec.md), [ux.md](ux.md), [decisions.md](decisions.md), parent [decisions](../decisions.md) (Q7, Q8, Q37, Q2), [inbox-core TRD](../inbox-core/trd.md), [connect-whatsapp TRD](../connect-whatsapp/trd.md) (D7 webhook), [whatsapp-templates TRD](../whatsapp-templates/trd.md) (D7 rates), [whatsapp-contacts TRD](../whatsapp-contacts/trd.md) (D2), [ADR-0004](../../../adr/0004-money-as-integer-paise.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
 > Screens, states and copy are ux.md's (the inbox's own screens are inbox-core's).
@@ -53,8 +53,8 @@ whatsapp-campaigns (its D4) add their own mappings to it.
 - **D7 — Cost and spend cap.** A template send writes, on the inbox message, the template id,
   category and `costPaise` read from the rates module (ADR-0004). Before calling Meta, the source
   calls campaigns' public `reserveSpend(shop, key = inbox:<messageId>, cost, INBOX_REPLY)`
-  (whatsapp-campaigns D9a), idempotent on the key; no room → failure `SPEND_CAP`, nothing sent (Q5,
-  parent Q32). Meta's pricing on the status settles it through `settleSpend`; a failed send releases
+  (whatsapp-campaigns D9a), idempotent on the key; no room → failure `SPEND_CAP`, nothing sent (parent Q8,
+  parent Q8). Meta's pricing on the status settles it through `settleSpend`; a failed send releases
   it. Frequency caps are not applied: a reply answers the person.
 - **D8 — Rate.** Send jobs are grouped per connection; coexistence's 20 messages a second is far above
   a shop's typing speed; a 130429 retries with backoff.
@@ -62,7 +62,7 @@ whatsapp-campaigns (its D4) add their own mappings to it.
   `inbox.source-disconnected`; a reconnect of the same number clears it. A person's deletion reaches
   the inbox as `inbox.person-deleted`, enqueued by audience's `forget` for that phone (audience D12).
 - **D10 — Recorded payloads.** Dashboard "Test" payloads and our own number's real events stored
-  under `tests/fixtures/meta/whatsapp/`, ids replaced, replayed through the real route (parent Q81).
+  under `tests/fixtures/meta/whatsapp/`, ids replaced, replayed through the real route (parent Q2).
 
 ## Packages
 None.

@@ -25,17 +25,17 @@ subfeatures need to tell buyers about orders and offers. Doing it once means con
   or sends anything itself (hub Q1).
 - R2 — A notification is delivered once: a repeated event or retried job tells no one twice (hub Q3).
 - R3 — Shop events (conversation waiting, post failed, connection needs you, Status post due) show
-  on the unread badge in the shop menu at once (Q1, Q2).
+  on the unread badge in the shop menu at once (Q2).
 - R4 — Each member gets one daily email at 9am IST listing what is still waiting; nothing waiting,
-  no email. A member can turn it off; the badge always shows (Q2, Q3).
+  no email. A member can turn it off; the badge always shows (Q2).
 - R5 — A marketing message reaches a buyer once: by WhatsApp when it can, otherwise by email when
-  the buyer opted in to email (social-selling Q73).
+  the buyer opted in to email (social-selling Q66).
 - R6 — No buyer gets more marketing messages from one shop in a day than the shop's global cap,
-  default 3, whatever any channel allows; a skipped send is recorded with why (Q6, social-selling Q74).
+  default 3, whatever any channel allows; a skipped send is recorded with why (Q6, social-selling Q40).
 - R7 — Every marketing email carries an unsubscribe link that, in one tap and without signing in,
   stops email from that sender only (Q5).
 - R8 — A shop sets its global cap on its Notifications settings page and sees which channels it
-  has (Q4).
+  has (Q6).
 - R9 — What was sent, to whom, by which channel and with what outcome is recorded without the
   message text, and kept 13 months (Q7).
 - R10 — A failed delivery is retried when temporary; a lasting failure is recorded and, for
@@ -47,7 +47,7 @@ subfeatures need to tell buyers about orders and offers. Doing it once means con
 - **A digest that lists something already answered** because it was read stale.
 - **A module importing a channel** to skip the hub; the boundary test must catch it.
 - **WhatsApp's own cap and the global cap disagreeing**; the stricter applies per channel and the
-  global wins overall (social-selling Q74).
+  global wins overall (social-selling Q40).
 
 ## Product acceptance
 Judged on a phone (~360px) first ([ADR-0015](../../../adr/0015-mobile-first-design.md)).
@@ -64,7 +64,7 @@ Judged on a phone (~360px) first ([ADR-0015](../../../adr/0015-mobile-first-desi
 ## Scope
 - **Outcome:** any module's event reaches the right person once, by the right channel, within caps.
 - **In:** R1–R10, tested by A1–A7.
-- **Later:** admin delivery screen (Q8); in-app bell and push (hub parked); a buyer's preferences
+- **Later:** admin delivery screen (Q7); in-app bell and push (hub parked); a buyer's preferences
   page (hub parked).
 
 ## Open questions

@@ -382,6 +382,20 @@ before then — monthly summaries first, then November 2026's full entries. An o
 - No migration, no contract change. Tests: `tests/unit/image-widths.test.ts`, plus confirm and review cases;
   each new hook mutation-checked (removing it fails its test).
 
+## 2026-11-21 — Decision logs audited: 332 rows to 106, one row per lasting question
+
+- Docs only, by the owner's request; nothing is built, so every change is in place (ADR-0062).
+  social-selling 106 → 29, its fourteen subfeatures 194 → 64, notification-hub and its three 32 → 13.
+  Fragments of one question were merged into one row with a connected answer; rows that only
+  restated a parent decision were removed in favour of the parent's; branching and session notes
+  left the log for spec.md's "Pick up here". Each log ends with its merged ids (old → new) so the
+  CHANGELOG and ADRs, which are not edited, still resolve. Every live citation in specs, UX, TRDs,
+  prototypes, BACKLOG and INTEGRATIONS was rewritten to the surviving id.
+- Corrected while merging: audience contacts are keyed by Meta's business-scoped id (parent Q96);
+  instagram-publishing offers everything Instagram's API allows (tags, collaborators, location) at
+  the owner's request; inbox-whatsapp shows a username when Meta withholds the number. Q104 and
+  Q105 answered yes (now within Q47 and Q102).
+
 ## 2026-11-21 — An existing WhatsApp catalogue is settled, not replaced; bulk-publish decided
 
 - Docs only. social-selling Q101–Q106: on connect the shop's own WhatsApp catalogue is read and

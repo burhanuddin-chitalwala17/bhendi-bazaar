@@ -64,9 +64,9 @@
 | Link expired or altered | Warning note | "That link has expired. Start again from here." | Connect Instagram |
 | Started by someone else | Warning note | "This connection was started from another sign-in. Start again from here." | Connect Instagram |
 | Account in another shop (Q4) | Error note | "This Instagram account is already connected to another shop. An account can belong to one shop only; disconnect it there first." | — |
-| Different account on reconnect (Q5) | Warning note | "That's a different Instagram account from the one connected here. To switch accounts, disconnect this one first, then connect the new one." | Disconnect |
+| Different account on reconnect (Q4) | Warning note | "That's a different Instagram account from the one connected here. To switch accounts, disconnect this one first, then connect the new one." | Disconnect |
 | Instagram did not answer | Error note | "Instagram didn't respond. Nothing was connected. Try again in a minute." | Try again |
-| Not open (Q11) | Neutral note | "Connecting Instagram isn't open yet." | — |
+| Not open (parent Q2) | Neutral note | "Connecting Instagram isn't open yet." | — |
 
 ## State matrix — Disconnect dialog (Instagram)
 | State | What the person sees | Action |

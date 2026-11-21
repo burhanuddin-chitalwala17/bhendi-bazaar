@@ -1,29 +1,28 @@
 # Decisions — social-selling/connect-instagram
 
-- **Verified:** 2026-11-06
+- **Verified:** 2026-11-21
 
-> Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented ones ([ADR-0062](../../../adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)).
-> Owner decides money, policy, irreversible data, external commitments, taste.
-> Claude decides the rest, marked `Claude · reversible`. Ids here are this subfeature's own; "parent Qn"
-> means [../decisions.md](../decisions.md). Binding here from the parent: Q1, Q2, Q3, Q7, Q11, Q14–Q18, Q29, Q30, Q34, Q36, Q41, Q42, Q46, Q77, Q79–Q81.
+> Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented
+> ones
+> ([ADR-0062](../../../adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)).
+> Owner decides money, policy, irreversible data, external commitments, taste. Claude decides the
+> rest, marked `Claude · reversible`. Ids here are this subfeature's own; "parent Qn" means
+> [../decisions.md](../decisions.md). Binding here from the parent: Q1, Q2, Q3, Q7, Q8, Q14, Q18, Q34,
+> Q36, Q66.
 
 | Q | Question | Answer | Decided by | Date | Why | State |
 |---|---|---|---|---|---|---|
-| Q1 | Does connecting also publish, read comments or read DMs? | No. This subfeature ends at a healthy connection; publishing is instagram-publishing, comments and DMs are inbox-instagram | Claude · reversible | 2026-11-06 | One outcome per feature (ADR-0061); mirrors channel-connectors Q1 | decided |
-| Q2 | Which permissions does the connect ask for? | Every Instagram permission the single review covers: `instagram_business_basic`, `_content_publish`, `_manage_comments`, `_manage_messages`, plus the human-agent feature (parent Q36). Nothing else; insights are Later (parent Q48) | Claude · reversible | 2026-11-06 | One review (parent Q2) means all are in use by submission time; asking now spares every shop a reconnect. Unused extras are a rejection reason | decided |
-| Q3 | What may connect? | A professional account, business or creator (parent Q11). A personal account connects nothing and is shown the steps to switch for free in the Instagram app, then a way to try again | Claude · reversible | 2026-11-06 | Instagram's API serves only professional accounts | decided |
-| Q4 | Can one Instagram account serve two shops? | No: one shop per account. An account already connected to another shop is refused at once, with the reason | Claude · reversible | 2026-11-06 | The Instagram id arrives with the token, so it is checkable at once; mirrors marketplace-integration Q8 | decided |
-| Q5 | What if a reconnect consents with a different Instagram account? | Refused; to switch, disconnect then connect the new one | Claude · reversible | 2026-11-06 | Same single path the owner chose for marketplaces (channel-connectors Q8) | decided |
+| Q2 | What does connecting ask for, and where does it stop? | Every Instagram permission the single review covers, and nothing else: `instagram_business_basic`, `_content_publish`, `_manage_comments`, `_manage_messages`, plus the human-agent feature (parent Q36); insights are Later (parent Q21). Connecting ends at a healthy connection: publishing is instagram-publishing's, comments and DMs inbox-instagram's | Claude · reversible | 2026-11-06 | One review (parent Q2) means all are in use by submission time; asking now spares every shop a reconnect. Unused extras are a rejection reason | decided |
+| Q4 | Can an account serve two shops, or be swapped on reconnect? | No: one shop per account. An account already connected to another shop is refused at once, with the reason, and a reconnect that consents with a different account is refused too; to switch, the shop disconnects and connects the new one | Claude · reversible | 2026-11-06 | The Instagram id arrives with the token, so it is checkable at once; mirrors marketplace-integration Q8 | decided |
 | Q6 | Does the connection need renewing? | Yes. Instagram's long-lived token lasts 60 days; we renew it with nobody acting, from the daily pass, once it is older than 7 days. If renewal fails or the shop removed our app, the card says Needs reconnecting | Claude · reversible | 2026-11-06 | Instagram's own login expires, unlike WhatsApp's system-user token; Meta's business-login page, 2026-11-06 | decided |
-| Q7 | What does a healthy card show? | Connected, `@username`, Business or Creator, who connected it and when, and when we last checked it | Claude · reversible | 2026-11-06 | Enough to trust it is the right account. No profile photo: Instagram's image links expire | decided |
-| Q8 | What happens on disconnect? | Confirmed in a dialog. Credentials deleted; the record kept as disconnected with who connected it and when; the dialog says how to remove Bhendi Bazaar in Instagram's settings too. Inbox messages follow parent Q34 (deleted 90 days later) | Claude · reversible | 2026-11-06 | Records people authored are retired (ADR-0032); mirrors channel-connectors Q4, Q9 | decided |
-| Q9 | What if the shop removes our app inside Instagram? | The connection turns Needs reconnecting when Meta's deauthorize call arrives, or at the next daily check if it never does, and the dashboard says so once | Claude · reversible | 2026-11-06 | A state of what is In; the daily check covers a lost callback | decided |
+| Q8 | What does the card show, and how does a connection end? | A healthy card shows Connected, `@username`, Business or Creator, who connected it and when, and when we last checked. Disconnecting is confirmed in a dialog that also says how to remove Bhendi Bazaar in Instagram's settings; credentials are deleted and the record kept as disconnected, inbox messages following parent Q34. If the shop removes our app inside Instagram, the connection turns Needs reconnecting when Meta's deauthorize call arrives, or at the next daily check if it never does, and the dashboard says so once | Claude · reversible | 2026-11-06 | Records people authored are retired (ADR-0032); mirrors channel-connectors Q4, Q9 | decided |
 | Q10 | What if a person asks Meta to delete the data we hold about them? | We delete that connection's credentials and Instagram details, and answer Meta with a status link and confirmation code the person can check | Claude · reversible | 2026-11-06 | Meta requires a data-deletion callback before review (parent Q14) | decided |
-| Q11 | Who can connect, and when is it open? | Any member (parent Q30). The card is Coming soon wherever `CHANNELS_CONNECT` does not list Instagram; before the review only accounts with a role on our Meta app can finish, so the switch stays off in production until approval (parent Q46) | Claude · reversible | 2026-11-06 | One switch, no new flags (channel-connectors Q10) | decided |
-| Q12 | Where is A10 verified? | On the owner's own Instagram professional account, on dev, with that account given a role on the Meta app | Claude · reversible | 2026-11-06 | App roles get every permission without review (research 2026-11-06); parent Q81 | decided |
 | Q13 | How does the Instagram card sit beside the "Meta (Facebook & Instagram)" feed card? | The feed card is renamed "Meta catalogue" with the line "Your products in Facebook and Instagram shops, from your catalogue feed." The new card is "Instagram" with "Post, reply to comments and answer DMs from here." The Instagram card sits in Where you sell, directly after Meta catalogue | Claude · reversible | 2026-11-06 | The feed shows products; the connection acts for the account. Two names for two jobs | decided |
-| Q14 | Is Instagram a new channel in the closed set, or part of Meta? | A new key `instagram` in `CHANNEL`, of a new kind `social` (ADR-0068): connected, published to, no order or stock. `meta` stays the shopfront feed | Claude · reversible | 2026-11-06 | Its own connection, token and card (parent Q1); a social channel is not where a product is listed | decided |
-| Q15 | What does the Meta app's redirect URI use? | `appUrl()` + `/api/channels/instagram/callback`, registered for www production and dev, as the marketplaces' are | Claude · reversible | 2026-11-06 | Exact match required (channel-connectors Q19) | decided |
+| Q14 | Where does Instagram sit in the channel set? | A new key `instagram` in `CHANNEL`, of a new kind `social` (ADR-0068): connected, published to, with no order or stock; `meta` stays the shopfront feed. Its callback is `appUrl()` + `/api/channels/instagram/callback`, registered for www production and dev, as the marketplaces' are | Claude · reversible | 2026-11-06 | Its own connection, token and card (parent Q1); a social channel is not where a product is listed | decided |
 
 ## Parked (Later)
 None. Publishing, comments, DMs and insights are other parent subfeatures or parent Qs, not parked here.
+
+## Merged ids
+Absorbed in the 2026-11-21 audit; read the id on the right.
+Q1 → Q2 · Q3 → parent Q1 · Q5 → Q4 · Q7 → Q8 · Q9 → Q8 · Q11 → parent Q2 · Q12 → parent Q2 · Q15 → Q14

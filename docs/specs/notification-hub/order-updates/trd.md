@@ -37,7 +37,7 @@ row only if that row is still not `DELIVERED`.
 - **D4 — Consent checked at deliver time too.** `canReach` runs at emit and again in the worker; a
   STOP between them makes the WhatsApp row `SKIPPED` and writes the email row.
 - **D5 — Exempt from caps.** These kinds are `transactional`; the hub's cap count (hub-core D5)
-  and the WhatsApp channel's frequency cap ignore them (social-selling Q70).
+  and the WhatsApp channel's frequency cap ignore them (social-selling Q40).
 - **D6 — Cost.** The card reads campaigns' `whatsAppMonthToDate(orgId, utility)` (whatsapp-campaigns
   D9) → count and paise; rendered with the portal's paise formatter.
 - **D7 — Templates.** The three utility templates are in whatsapp-templates' starter set (social-selling

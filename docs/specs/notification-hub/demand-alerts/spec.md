@@ -23,23 +23,23 @@ so each alert is the shop's choice, inside caps it sets.
 
 ## Requirements
 - R1 — Each alert is off until the shop turns it on; turning it on shows its estimated monthly cost
-  from the shop's own numbers (Q3).
+  from the shop's own numbers (social-selling Q8).
 - R2 — Price drop: any fall in a product's effective price, offers included, alerts its opted-in
-  wishlisters, at most once a day per product per buyer (Q2, Q8).
+  wishlisters, at most once a day per product per buyer (social-selling Q54, Q8).
 - R3 — Back in stock: a product returning to stock alerts its opted-in wishlisters, once per
-  restock (Q2, Q8).
+  restock (social-selling Q54, Q8).
 - R4 — Abandoned cart: an opted-in signed-in buyer whose cart is left an hour gets one message,
-  never if they ordered meanwhile (Q2).
+  never if they ordered meanwhile (social-selling Q54).
 - R5 — Auction: opted-in bidders hear when they are outbid and when the auction ends in an hour;
-  who hears is a rule that can widen to all opted-in followers later (Q2, Q6).
+  who hears is a rule that can widen to all opted-in followers later (Q6; social-selling Q54).
 - R6 — Each alert reaches a buyer once, by WhatsApp when it can, else by email when they opted in
-  to email; inside the shop's global cap and WhatsApp's frequency cap (social-selling Q73, Q74).
+  to email; inside the shop's global cap and WhatsApp's frequency cap (social-selling Q66, Q40).
 - R7 — Alerts go only inside the shop's daily window, default 9am–9pm IST; outside it they wait,
-  except "ending in an hour", which is dropped (Q5).
+  except "ending in an hour", which is dropped (Q7).
 - R8 — A monthly WhatsApp spend cap, set by the shop in rupees; at the cap WhatsApp alerts stop
-  for the month, fall to email where allowed, and the shop is told once (Q4).
+  for the month, fall to email where allowed, and the shop is told once (Q7).
 - R9 — An alert is true when it arrives: re-checked before sending, else skipped with why (Q7).
-- R10 — A bidder still gets the outbid email they get today, whatever their marketing consent (Q9).
+- R10 — A bidder still gets the outbid email they get today, whatever their marketing consent (parent Q6).
 
 ## Hazards the TRD must answer
 - **A price edited in a burst** (down, up, down) alerting several times. R2's daily limit, D-level.

@@ -16,7 +16,7 @@
 2. **No business account.** Same, but in the pop-up "Create a business portfolio" first.
 2a. **Cannot coexist** (blue-tick number, or Meta refuses the app number). Pop-up says so → the
    shop picks Meta's "new number" path for the same number → card's "Before you move your number"
-   note → Continue → journey 1 from setting up. The Inbox is then its WhatsApp (parent Q84).
+   note → Continue → journey 1 from setting up. The Inbox is then its WhatsApp (parent Q12).
 3. **No payment method.** Journey 1 ends Connected with "Add a payment method in Meta to send
    messages." → Add payment method opens Meta's billing page in a new tab.
 4. **Cancel or fail.** The shop closes the pop-up, or setup fails → note on Channels, Connect again.
@@ -40,14 +40,14 @@
 | State | Chip | Body | Primary action |
 |---|---|---|---|
 | First use (not connected) | Not connected | "Show your catalogue in chats and message customers who asked for it. Keep using the WhatsApp Business app on the same number." Small line: "Your WhatsApp catalogue will then be managed from Bhendi Bazaar. Chats, broadcasts and Status stay in your app." Expandable "What else changes": "Broadcast lists become read-only. View-once and disappearing messages turn off. Open the app at least every two weeks to stay linked. Messages you type in the app stay free." | Connect WhatsApp |
-| Moving the number (Q84 fallback) | — | "Before you move your number: the WhatsApp Business app stops working on it. You'll chat with customers from Inbox here, on your phone or computer." | Continue · Back |
+| Moving the number (parent Q12 fallback) | — | "Before you move your number: the WhatsApp Business app stops working on it. You'll chat with customers from Inbox here, on your phone or computer." | Continue · Back |
 | Pop-up open | — | Button spinner, "Finish in the Meta window…" | — |
 | Setting up | — | "Setting up your number…" (exchange, register, subscribe) | — |
 | Connected | ● Connected | "+91 98•••• 4321 · Bhendi Bazaar" · "Quality: High" · "Payments set up" · "Connected by Farida · 6 Nov 2026" · "Last checked 2 min ago" | Disconnect (secondary) |
 | Connected, no payment method | ● Connected | Same, with "Add a payment method in Meta to send messages. Replies within 24 hours are free." | Add payment method · Disconnect (secondary) |
 | Quality Medium / Low | Quality: Medium (amber) / Low (red) | "WhatsApp rates your number Low. Sending marketing may be limited." | Why? (explains) |
 | Needs reconnecting | Needs reconnecting | One of: "WhatsApp stopped accepting our access." · "Bhendi Bazaar was removed in Meta Business Suite." | Reconnect · Disconnect (secondary) |
-| Full for now (Q12) | Full for now | "WhatsApp lets us add a limited number of new shops each week. Try again in a few days." | Why? |
+| Full for now (parent Q2) | Full for now | "WhatsApp lets us add a limited number of new shops each week. Try again in a few days." | Why? |
 | Coming soon | Coming soon | "Connecting WhatsApp isn't open yet. We'll show it here when it is." | Why? |
 | Disconnected (before) | Not connected | "Disconnected by Farida · 6 Nov 2026." | Connect WhatsApp |
 | Empty / Partial / Many items | n/a — one number per shop (Q10) | — | — |
@@ -74,7 +74,7 @@
 | Setup failed after Meta | Error note | "Meta connected your number but we couldn't finish setting it up. Nothing is half-done; try again." | Try again |
 | Started by someone else / expired | Warning note | "This connection was started from another sign-in. Start again from here." | Connect WhatsApp |
 | Number in another shop (Q10) | Error note | "This WhatsApp number is already connected to another shop. A number can belong to one shop only; disconnect it there first." | — |
-| Different number on reconnect (Q11) | Warning note | "That's a different number from the one connected here. To switch numbers, disconnect this one first, then connect the new one." | Disconnect |
+| Different number on reconnect (Q10) | Warning note | "That's a different number from the one connected here. To switch numbers, disconnect this one first, then connect the new one." | Disconnect |
 | Full for now | Warning note | "WhatsApp is full for now. Try again in a few days." | — |
 | Meta did not answer | Error note | "WhatsApp didn't respond. Nothing was connected. Try again in a minute." | Try again |
 

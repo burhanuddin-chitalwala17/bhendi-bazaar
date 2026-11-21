@@ -9,7 +9,7 @@
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
 
 ## Approach
-Channels' WhatsApp webhook (parent Q80, built in connect-whatsapp) already verifies Meta's signature
+Channels' WhatsApp webhook (parent Q7, built in connect-whatsapp) already verifies Meta's signature
 and stores each event once. This subfeature adds two translations there: contact-sync events become
 `audience.contacts-synced` jobs, and inbound messages become `audience.message-received` jobs. Audience
 (already built) upserts contacts and applies its opt-in and stop words. The confirming reply goes back
@@ -30,20 +30,20 @@ through a neutral `channels.whatsapp-confirm` job. Nothing outside `channels` se
   name, removed}], metaEventId }`, batched at 500 per job. Phones normalised in audience (audience D2).
 - **D2 — Message translation.** inbox-whatsapp's `whatsapp.messages` handler (its D1) gains a second
   mapping: an inbound message also maps to `audience.message-received
-  { shopId, phone, text, messageId, at }`. Echoes (`smb_message_echoes`) are never mapped (Q6).
+  { shopId, phone, text, messageId, at }`. Echoes (`smb_message_echoes`) are never mapped (Q5).
   The two enqueued jobs are independent; whichever subfeature lands first creates the handler.
-- **D3 — Contact upsert.** Audience upserts on (shop, phone); a name fills only an empty name (Q3);
+- **D3 — Contact upsert.** Audience upserts on (shop, phone); a name fills only an empty name (Q1);
   `removed` deletes a contact with no events and no conversation (asked through inbox's public
-  `hasConversation(shop, WHATSAPP, phone)`, inbox-core D11), else sets removed-from-phone (Q2). Out-of-order events: each
+  `hasConversation(shop, WHATSAPP, phone)`, inbox-core D11), else sets removed-from-phone (Q1). Out-of-order events: each
   carries Meta's timestamp; an older event never overwrites a newer one (Hazard).
 - **D4 — Idempotence.** The webhook store dedupes Meta's event id; audience's consent unique key
   (audience D3) dedupes the opt-in itself; contact upsert is naturally idempotent (A4).
 - **D5 — Confirming reply.** Audience enqueues `channels.whatsapp-confirm { shopId, phone, kind:
   opt-in | stop, language }`; channels sends a free-form text inside the 24-hour window (no template,
   no cost), wording from `audience`'s copy passed as a key, not text. A failure is logged and not
-  retried past the window (Q5, Q8).
+  retried past the window (Q5).
 - **D6 — Sync status.** `ChannelConnection` (connect-whatsapp) records `contactsSyncedAt`; Audience
-  shows waiting for 24 hours after connect, then Not shared if null (Q11). Read through channels'
+  shows waiting for 24 hours after connect, then Not shared if null (Q1). Read through channels'
   public service.
 - **D7 — Large first sync.** Jobs of 500, one transaction each with one `createMany … skipDuplicates`
   and one update statement for names; the Audience page reads what has landed so far (Hazard).

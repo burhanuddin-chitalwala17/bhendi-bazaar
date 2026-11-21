@@ -5,21 +5,21 @@
 
 > How Bhendi Bazaar gets Meta's permission to act for other shops, what can be proven before that,
 > and the switch-on checklist. One document covers before and after approval; nothing else is needed
-> to start building, because every subfeature is built and tested on our own accounts first (Q81).
+> to start building, because every subfeature is built and tested on our own accounts first (Q2).
 
 ## Is it possible?
 Yes. Meta lets a business act for other businesses' Instagram and WhatsApp once it passes two
 checks: **Business Verification** (who we are) and **App Review** (what each permission is for).
 Access Verification, a third step, was retired by Meta on 9 October 2026. A sole proprietorship
-registered for GST qualifies (Q35); an unregistered individual would not.
+registered for GST qualifies (Q14); an unregistered individual would not.
 
 The conditions:
 - The legal name on the GST appears on the website in the footer, privacy policy and terms as
-  "Farida Abbas Chitalwala, proprietor of BHENDI-BAZAAR.COM" (Q42, Q83). Names must match exactly.
-- The data-deletion page promises deletion within 30 days of a request (Q82).
+  "Farida Abbas Chitalwala, proprietor of BHENDI-BAZAAR.COM" (Q14). Names must match exactly.
+- The data-deletion page promises deletion within 30 days of a request (Q34).
 - The website is live on HTTPS on our own domain, with an email address on that domain.
 - Each shop pays Meta for its own WhatsApp messages from its own account (Q8); we hold no credit line.
-- New WhatsApp shops are limited to 10 a rolling week until review passes, then 200 (Q46).
+- New WhatsApp shops are limited to 10 a rolling week until review passes, then 200 (Q2).
 
 ## The owner's steps, in order
 | # | Step | Where | Takes | Done when |
@@ -46,7 +46,7 @@ Ask only for what the app uses; an unused permission is a common rejection.
 |---|---|---|
 | `instagram_business_basic` | Account name and type; renewing the token | connect-instagram |
 | `instagram_business_content_publish` | Posts, carousels, reels, stories | instagram-publishing |
-| `instagram_business_manage_comments` | Reading comments, private replies, hiding (Q49) | inbox-instagram, comment-automations |
+| `instagram_business_manage_comments` | Reading comments, private replies, hiding (Q36) | inbox-instagram, comment-automations |
 | `instagram_business_manage_messages` | DMs in the inbox | inbox-instagram |
 | Human Agent (feature) | Replying to a DM up to 7 days later (Q36) | inbox-instagram |
 | `whatsapp_business_management` | Number, templates, webhooks subscription | connect-whatsapp, whatsapp-templates |
@@ -74,7 +74,7 @@ test shop login (never a personal account) and these steps on a page of their ow
 
 ## What is proven before approval, and what only after
 App roles grant every permission on our own accounts without review, so each subfeature is built
-and accepted on those (Q81). Some things cannot be seen until approval:
+and accepted on those (Q2). Some things cannot be seen until approval:
 
 | Cannot be proven before approval | How it is covered meanwhile | Checked after approval by |
 |---|---|---|
@@ -83,7 +83,7 @@ and accepted on those (Q81). Some things cannot be seen until approval:
 | Some WhatsApp webhooks Meta withholds in development | Recorded payloads | Each listed field arriving live |
 | The human-agent reply after 24 hours | A unit test of the window rule | One 2-day-old DM answered |
 | Real per-message billing on a shop's account | Cost estimate tests against Meta's published rates | The shop's Meta invoice matching our recorded cost |
-| Contact sync for a third-party shop under coexistence (no history is imported, Q10) | Coexistence verified on day one on the owner's number (Q84); a number that cannot use it moves fully to Bhendi Bazaar | A second shop's number |
+| Contact sync for a third-party shop under coexistence (no history is imported, Q12) | Coexistence verified on day one on the owner's number (Q12); a number that cannot use it moves fully to Bhendi Bazaar | A second shop's number |
 | The 200-a-week onboarding limit | The limit read from Meta; "Full for now" tested at 10 | Meta showing the higher limit |
 
 ## Switch-on checklist
@@ -96,5 +96,5 @@ Done once review passes, in this order; each line is checkable.
 | 3 | A test event of each field reaches production and appears once |
 | 4 | Data-deletion and deauthorize callbacks answer a signed test request |
 | 5 | The owner's shop connects both in production and every after-approval check above passes |
-| 6 | `CHANNELS_CONNECT` gains `instagram` and `whatsapp` (Q11, Q46) |
+| 6 | `CHANNELS_CONNECT` gains `instagram` and `whatsapp` (Q1, Q2) |
 | 7 | CHANGELOG entry; this document's Verified date bumped |

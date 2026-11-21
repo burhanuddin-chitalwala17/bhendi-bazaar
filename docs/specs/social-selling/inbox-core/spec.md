@@ -25,22 +25,22 @@ tested before Meta's review, and that adding a platform never touches it.
 - R1 — Conversations from every plugged-in source appear in one Inbox, a tab per platform that is
   connected, newest activity first (parent Q63).
 - R2 — Every member sees every conversation; each reply shows which member sent it, to members only
-  (parent Q50, Q4).
+  (parent Q63, Q4).
 - R3 — A conversation is unread for the shop until a member opens it; the menu shows the shop's
-  unread count (Q3, Q13).
+  unread count (Q3).
 - R4 — A member replies with text and, optionally, one image from the media library (Q5).
 - R5 — The reply box always says what is possible now: reply freely, reply within the extended
-  window (parent Q36), send an approved template with its cost (parent Q76), or no reply allowed
+  window (parent Q36), send an approved template with its cost (parent Q37), or no reply allowed
   until the person writes again. It is never disabled (Q7).
-- R6 — A message the inbox cannot show still appears, named for what it was (Q6).
+- R6 — A message the inbox cannot show still appears, named for what it was (Q5).
 - R7 — Where the platform allows, a comment can be hidden and unhidden from the inbox, on the
-  platform itself (parent Q49, Q8).
+  platform itself (parent Q36, Q8).
 - R8 — A failed send shows Not sent, the reason and Try again (Q9).
 - R9 — Messages are kept while the channel is connected and deleted 90 days after a disconnect; a
   person's deletion request removes their conversations at once (parent Q34).
 - R10 — The inbox emits neutral events (a conversation waiting 4 hours, a send failed) and sends no
-  email or alert itself (parent Q41, Q66).
-- R11 — Search by the person's name or handle; an Unread filter on each tab (Q12).
+  email or alert itself (parent Q66).
+- R11 — Search by the person's name or handle; an Unread filter on each tab (Q3).
 - R12 — A source that delivers the same message twice shows it once.
 - R13 — Each shop sees only its own conversations.
 
@@ -67,8 +67,8 @@ Judged on a phone (~360px) first ([ADR-0015](../../../adr/0015-mobile-first-desi
 ## Scope
 - **Outcome:** a shop reads and answers its conversations in one shared inbox.
 - **In:** R1–R13, A1–A8.
-- **Later:** assignment (parent Q50), AI replies (parent Q31), full-text search (Q12), the audited
-  admin read (parent Q44). Real platforms are inbox-instagram and inbox-whatsapp (Q1).
+- **Later:** assignment (parent Q63), AI replies (parent Q89), full-text search (Q3), the audited
+  admin read (parent Q34). Real platforms are inbox-instagram and inbox-whatsapp (parent Q63).
 
 ## Open questions
 None.

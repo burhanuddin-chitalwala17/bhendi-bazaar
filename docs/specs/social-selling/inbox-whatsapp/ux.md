@@ -59,7 +59,7 @@ Step before each: the shop connected WhatsApp on Channels (connect-whatsapp).
 | Refused (window shut) | Box: "This chat is older than 24 hours. WhatsApp only allows an approved template now." | Send a template |
 | Template picker empty | "No approved templates yet. Write one in Templates." | Go to Templates |
 | Template preview | Filled message, "Costs about ₹0.86, paid from your WhatsApp account." | Send |
-| Refused (past spend cap, Q5) | Bubble: "Not sent · This would pass your monthly WhatsApp limit (₹{spent} of ₹{limit})" | Raise limit |
+| Refused (past spend cap, parent Q8) | Bubble: "Not sent · This would pass your monthly WhatsApp limit (₹{spent} of ₹{limit})" | Raise limit |
 | Stale | New messages within 20 s | — |
 | Long content | Long messages wrap | — |
 | Many items | inbox-core's "Earlier messages" | — |

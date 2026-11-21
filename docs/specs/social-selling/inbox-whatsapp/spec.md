@@ -22,18 +22,18 @@ beside the product and its live stock, without giving up the app.
 
 ## Requirements
 - R1 — A WhatsApp message to the connected number appears as a conversation in the WhatsApp tab,
-  from the day of connecting (Q1, parent Q10).
+  from the day of connecting (Q1, parent Q12).
 - R2 — A member replies; the reply reaches the buyer from the shop's number and also appears in the
-  shop's Business app (Q7, parent Q12).
+  shop's Business app (parent Q12, parent Q12).
 - R3 — Replies the shop sends from the Business app appear in the thread, marked as from the app.
 - R4 — Within 24 hours of the buyer's last message the reply is free and free-form; after that the
-  reply box offers the shop's approved templates, each with its cost, never disabled (Q3, parent Q76).
+  reply box offers the shop's approved templates, each with its cost, never disabled (parent Q37, parent Q37).
 - R5 — A template sent from the inbox is paid by the shop's WhatsApp account; its cost is shown
-  before Send and recorded with who sent it, in paise (Q4, parent Q8, Q30). It counts against the
+  before Send and recorded with who sent it, in paise (parent Q8, parent Q8). It counts against the
   shop's monthly WhatsApp spend cap; past the cap it is refused with the reason and a way to raise
-  the cap, and it is recorded as an inbox reply (Q5, parent Q32).
-- R6 — The shop's messages show Sent, Delivered, Read or Failed (Q6).
-- R7 — A refused send says why in plain words and what to do, including a missing payment method (Q11).
+  the cap, and it is recorded as an inbox reply (parent Q8, parent Q8).
+- R6 — The shop's messages show Sent, Delivered, Read or Failed (Q1).
+- R7 — A refused send says why in plain words and what to do, including a missing payment method (parent Q8).
 - R8 — An event Meta sends twice appears once; events for a number no shop has connected are ignored.
 - R9 — A disconnected or removed connection keeps the history readable and asks to reconnect;
   retention follows parent Q34.
@@ -49,7 +49,7 @@ beside the product and its live stock, without giving up the app.
 - **A coexistence echo duplicating** a message sent from the inbox.
 
 ## Product acceptance
-Judged on a phone (~360px) first. Verified on the owner's own number (parent Q81).
+Judged on a phone (~360px) first. Verified on the owner's own number (parent Q2).
 - A1 — A WhatsApp message to the owner's connected number appears in the WhatsApp tab within a
   minute; a reply from the inbox arrives on the buyer's phone and shows in the Business app.
 - A2 — A reply typed in the Business app appears in the inbox thread as from the app, once.
@@ -62,7 +62,7 @@ Judged on a phone (~360px) first. Verified on the owner's own number (parent Q81
 ## Scope
 - **Outcome:** a shop answers its WhatsApp chats from its inbox.
 - **In:** R1–R10, A1–A6.
-- **Later:** chat history on connect (parent Q10). Contacts and opt-in words are whatsapp-contacts;
+- **Later:** chat history on connect (parent Q12). Contacts and opt-in words are whatsapp-contacts;
   campaigns are whatsapp-campaigns.
 
 ## Open questions

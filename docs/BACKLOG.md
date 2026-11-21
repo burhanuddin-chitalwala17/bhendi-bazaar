@@ -262,7 +262,7 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [social-selling/whatsapp-templates](specs/social-selling/whatsapp-templates/) | Starter templates in English and Hindi from day one, the shop's own, Meta's verdict and each one's cost | 📝 Draft — 2026-11-06 |
 | [social-selling/whatsapp-campaigns](specs/social-selling/whatsapp-campaigns/) | A campaign, products included, to an opted-in list with cost shown first; the one WhatsApp send every caller uses, with consent and caps | 📝 Draft — 2026-11-06 |
 | [social-selling/whatsapp-status-kit](specs/social-selling/whatsapp-status-kit/) | At a post's time its picture and caption are ready on the phone; one tap hands them to WhatsApp Status | 📝 Draft — 2026-11-06 |
-| social-selling: notify-me *(later)* | "Notify me" on a product: its own multi-channel vertical (email, WhatsApp, later push), sending WhatsApp through whatsapp-campaigns' send (social-selling Q60) | parked |
+| social-selling: notify-me *(later)* | "Notify me" on a product: its own multi-channel vertical (email, WhatsApp, later push), sending WhatsApp through whatsapp-campaigns' send (social-selling Q54) | parked |
 | social-selling: platform sending *(later)* | Bhendi Bazaar messaging buyers from its own WhatsApp number, on the platform consent already recorded (Q28) | parked |
 | social-selling: AI replies *(later)* | AI replies in the inbox or to comments, its own vertical like post generation (Q31) | parked |
 | social-selling: audit screen *(later)* | An admin opening one conversation with a written reason, the shop told, every view logged (Q43, Q44) | parked |

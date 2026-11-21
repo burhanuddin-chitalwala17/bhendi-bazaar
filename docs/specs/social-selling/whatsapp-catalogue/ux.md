@@ -57,7 +57,7 @@
 | Terminal error | n/a | — |
 | Refused | n/a — any member may view | — |
 | Stale | "As of {time}" at the top | — |
-| Long content | Meta's reason cut at 300 characters (decisions Q9) | — |
+| Long content | Meta's reason cut at 300 characters (decisions Q8) | — |
 | Many items | First 50, then "Show more" | Show more |
 | Slow | Skeleton; "Still loading…" after 3 s | — |
 | Phone / tablet / desktop | Full-height panel / inline below the card at `md:` / inline at `lg:` | — |

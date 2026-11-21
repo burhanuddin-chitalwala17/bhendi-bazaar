@@ -23,7 +23,7 @@
 ## Screens
 | Screen | Route / place | New or changed | Serves |
 |---|---|---|---|
-| Posts list | `/org/[orgId]/posts`, menu item "Posts" under Channels (Q13) | New | R6, R9 |
+| Posts list | `/org/[orgId]/posts`, menu item "Posts" under Channels | New | R6, R9 |
 | Media picker | Sheet over the composer (library's existing picker) | Reused | R1 |
 | Composer | `/org/[orgId]/posts/new`, `/posts/[postId]/edit` | New | R1–R5 |
 | Post detail | `/org/[orgId]/posts/[postId]` | New | R6–R8 |

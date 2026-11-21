@@ -41,7 +41,7 @@ Each starts on the screen the person was on just before.
 | Success | n/a — a list has no success state; journeys end on the campaign page | — |
 | Retryable error | "Couldn't load your campaigns. Check your connection and try again." | Try again |
 | Terminal error | WhatsApp needs reconnecting: "WhatsApp needs reconnecting. Scheduled campaigns are held until then." | Reconnect |
-| Refused | n/a — any member may open campaigns (parent Q30) | — |
+| Refused | n/a — any member may open campaigns (parent Q8) | — |
 | Stale | Sending rows refresh every 10 s while open | — |
 | Long content | Name truncates to one line | — |
 | Many items | Newest first, 20 per page, filter Scheduled · Sent · Held | — |
@@ -96,7 +96,7 @@ Each starts on the screen the person was on just before.
 - Stop dialog: "Stop sending?" · "57 people haven't got it yet. They won't, and you won't be charged for them." · Stop sending · Keep sending
 - Review footnote: "Counted again at send; never more than <n> people. You pay Meta from your WhatsApp account."
 - Language note: "Each customer gets their language; English if theirs isn't approved."
-- No default spend limit (Q7): the shop sets it while connecting WhatsApp. Settings line under the field: "Covers campaigns, alerts and template replies from Inbox." 
+- No default spend limit (parent Q8): the shop sets it while connecting WhatsApp. Settings line under the field: "Covers campaigns, alerts and template replies from Inbox." 
 
 ## Sign-off
 Waiting for the owner's review.

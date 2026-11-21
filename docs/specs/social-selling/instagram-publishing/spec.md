@@ -18,17 +18,17 @@ with a link, or failed with Instagram's reason in plain words.
 ## Why
 Post-scheduling is built against a fake publisher so it can be proven without Meta. This plug is
 what makes it reach the shop's followers, from the shop's own account (parent Q3). Instagram has no
-scheduling of its own, so we hold the time and publish at it (Q1).
+scheduling of its own, so we hold the time and publish at it (Q2).
 
 ## Requirements
 - R1 — A post with an Instagram destination publishes to the shop's connected account within two
   minutes of its time, as the shape it was scheduled as: image, carousel, reel or story (parent Q51).
-- R2 — It is published once, never twice, however often the work is retried (Q7).
+- R2 — It is published once, never twice, however often the work is retried (Q2).
 - R3 — Pictures reach Instagram in the size and format it accepts for each destination; a video it
-  refuses fails with the reason (Q3, Q4).
-- R4 — A published destination shows when and a link to the post on Instagram (Q8).
+  refuses fails with the reason (Q2).
+- R4 — A published destination shows when and a link to the post on Instagram (parent Q51).
 - R5 — A temporary failure is retried as post-scheduling says; a refusal fails at once with
-  Instagram's reason in plain words; a revoked connection fails at once and offers Reconnect (Q6).
+  Instagram's reason in plain words; a revoked connection fails at once and offers Reconnect (Q5).
 - R6 — When the account's daily publishing limit is reached, the destination says so, with when it
   can be tried again, and is not retried by itself (Q5).
 - R7 — Captions may @mention accounts; nothing claims a product tag (parent Q18) or a sticker (Q9).
@@ -37,14 +37,14 @@ scheduling of its own, so we hold the time and publish at it (Q1).
 
 ## Hazards the TRD must answer
 - **A container made too early expires** (24 hours) before a far-off post's time (Q2).
-- **The answer is lost after a successful publish**, so a retry posts again (Q7).
+- **The answer is lost after a successful publish**, so a retry posts again (Q2).
 - **A carousel half made**: some items uploaded, one refused.
 - **A container still processing** (video) when publish is called.
 - **The daily limit reached** mid-way through a busy day of scheduled posts (Q5).
 - **The token expires or is revoked** between scheduling and publishing.
 
 ## Product acceptance
-On the owner's account on dev, before review (Q10).
+On the owner's account on dev, before review (parent Q2).
 - A1 — A single-image post scheduled for 7pm appears on the owner's Instagram feed by 7:02pm, and
   the Posts page shows Published with a working "View on Instagram".
 - A2 — A carousel of three, a reel from the library, and an image story each publish as that shape.
@@ -58,7 +58,7 @@ On the owner's account on dev, before review (Q10).
 - **Outcome:** scheduled posts reach the shop's Instagram, once, or say why not.
 - **In:** R1–R8, tested by A1–A6. No UI of its own beyond post-scheduling's states (ux.md lists the
   Instagram-specific reasons and links).
-- **Later:** insights (parent Q48); user tags, collaborators, location (Q9).
+- **Later:** insights (parent Q21); user tags, collaborators, location (Q9).
 
 ## Open questions
 None.

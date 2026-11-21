@@ -22,17 +22,17 @@ per event, so a later channel reaches every order message at once.
 
 ## Requirements
 - R1 — Off until the shop turns it on; the switch shows the cost per message and this month's count
-  and cost (social-selling Q33, Q5).
+  and cost (social-selling Q61, Q5).
 - R2 — With it on, a buyer opted in to WhatsApp gets order confirmed, shipped (with tracking) and
-  delivered on WhatsApp, in their language (Q1, Q2).
+  delivered on WhatsApp, in their language (social-selling Q61).
 - R3 — If WhatsApp cannot reach the buyer, or a message is not delivered within 15 minutes, the same
-  update goes by email. A buyer never gets both for one update (Q3).
-- R4 — The order receipt always goes by email, whatever the switch (Q3, Q6).
-- R5 — Order updates never count against the global cap or WhatsApp's frequency cap (Q7).
+  update goes by email. A buyer never gets both for one update (social-selling Q61).
+- R4 — The order receipt always goes by email, whatever the switch (social-selling Q61, Q4).
+- R5 — Order updates never count against the global cap or WhatsApp's frequency cap (social-selling Q40).
 - R6 — Every existing parcel and order email (shop, admin and buyer) is sent through the hub with
   the same words, once, exactly as today (Q4).
 - R7 — With WhatsApp not connected, the card explains and links to connecting it; it is never a
-  disabled switch (Q8).
+  disabled switch (Q5).
 
 ## Hazards the TRD must answer
 - **The move changes a working path.** Parcel notices today are rows unique per (parcel, kind,

@@ -16,7 +16,7 @@ pass. What differs is the provider. Marketplaces sit behind `MarketplaceProvider
 listings and stock; a social account has none of those. So the connection verbs (consent URL,
 exchange, renew, identify, check) move to a small `ConnectionProvider` that both extend, and
 Instagram implements only it. Later subfeatures add a `SocialProvider` plug (publish, inbox) in
-`providers/instagram/`; the tools reach it through ports (parent Q7, Q79).
+`providers/instagram/`; the tools reach it through ports (parent Q7).
 
 ## Prior art
 - **Instagram API with Instagram Login** (Meta's business-login page, 2026-11-06): authorization
@@ -42,7 +42,7 @@ Instagram implements only it. Later subfeatures add a `SocialProvider` plug (pub
   for the long-lived token; `identify` reads `/me?fields=user_id,username,account_type`. Plain
   `fetch`, 10-second timeout, response bodies never logged.
 - **D4 — Account type is checked at the callback.** `account_type` other than `BUSINESS` or
-  `MEDIA_CREATOR` stores nothing and answers `CONNECT_RESULT.PERSONAL_ACCOUNT` (Q3).
+  `MEDIA_CREATOR` stores nothing and answers `CONNECT_RESULT.PERSONAL_ACCOUNT` (parent Q1).
 - **D5 — Identity.** The Instagram-scoped `user_id` is `externalAccountId`: another shop's is
   refused (`other_shop`), a different one on reconnect is refused (`different_account`), as Amazon's
   is (channel-connectors D9). `username` and account type are stored as display fields, refreshed
@@ -52,7 +52,7 @@ Instagram implements only it. Later subfeatures add a `SocialProvider` plug (pub
   7 days old, writes token and expiry in one update. An `OAuthException` code 190 sets
   `NEEDS_RECONNECT` with `CONNECTION_ERROR.REJECTED`; a 5xx or timeout is left for the next pass.
   Every move to `NEEDS_RECONNECT` (here, D7) enqueues `channels.needs-reconnect` (orgId, channel,
-  reason) in the same transaction, for notification-hub (parent Q41); a reconnect enqueues its
+  reason) in the same transaction, for notification-hub (parent Q66); a reconnect enqueues its
   `resolved` twin.
 - **D7 — Deauthorize: `POST /api/channels/instagram/deauthorize`.** Verifies `signed_request`,
   finds connected rows with that `user_id`, sets `NEEDS_RECONNECT` / `REVOKED`, nulls the token.
@@ -64,7 +64,7 @@ Instagram implements only it. Later subfeatures add a `SocialProvider` plug (pub
   This handler enqueues `channels.person-deleted` (platform, person's platform id); inbox-instagram
   D9 and audience D12 handle it (parent Q34). Meta's callback is per app, so it serves WhatsApp too.
 - **D9 — The switch.** `CHANNELS_CONNECT` gains `instagram`; `isOpen` takes a `ConnectableChannel`
-  (marketplace or social). Off in production until approval (Q11); on in dev with app roles (Q12).
+  (marketplace or social). Off in production until approval (parent Q2); on in dev with app roles (parent Q2).
 - **D10 — Outcomes.** `CONNECT_RESULT` gains `personal_account`. `CARD_STATE` is unchanged.
 - **D11 — Connected is not "selling".** Connect and disconnect do not write `OrgChannel`: a social
   account is not a place a product is listed (ADR-0068 D3).
@@ -108,7 +108,7 @@ in the same change.
 - Integration: other shop's account refused; different account on reconnect refused; two concurrent
   renewals leave one token; deauthorize turns the card; data deletion nulls fields, writes the row,
   answers a code whose page shows it; Amazon and Flipkart connect unchanged after D2. `fetch` stubbed.
-- Manual (A10, Q12): owner's professional account on dev at 360px, every reachable ux.md state.
+- Manual (A10, parent Q2): owner's professional account on dev at 360px, every reachable ux.md state.
 
 ## Delivery (units)
 1. `ConnectionProvider` extracted; `CHANNEL.INSTAGRAM` and `social` kind; ADR-0068 — no behaviour change.

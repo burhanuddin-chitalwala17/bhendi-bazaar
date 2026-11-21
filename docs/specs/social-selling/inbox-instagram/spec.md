@@ -22,33 +22,33 @@ into the shared inbox, beside the products, closes that gap.
 
 ## Requirements
 - R1 — A DM, a story reply or a story mention to the connected account appears as a conversation
-  in the Instagram tab, a story reply showing the story it answers (Q1, parent Q95).
+  in the Instagram tab, a story reply showing the story it answers (parent Q36, parent Q36).
 - R2 — A comment on any of the account's posts or reels appears as a conversation, grouped under its
-  post, showing which post (Q1, Q2, Q7).
+  post, showing which post (parent Q36, Q2).
 - R3 — The shop answers a DM; the reply arrives in the buyer's Instagram as from the shop's account.
 - R4 — DM reply windows follow Meta: free within 24 hours, by human agent up to 7 days, then none
-  until the buyer writes again; the reply box says which (Q4, parent Q36).
-- R5 — The shop replies to a comment publicly, and is told that it is public (Q5).
+  until the buyer writes again; the reply box says which (parent Q36, parent Q36).
+- R5 — The shop replies to a comment publicly, and is told that it is public (parent Q36).
 - R6 — The shop replies to a comment privately by DM, once per comment, within 7 days of the comment;
-  later, the reply box explains why not (Q3).
-- R7 — The shop hides or unhides a comment on Instagram from the inbox (parent Q49).
-- R8 — Replies the shop makes in the Instagram app appear in the thread (Q8).
+  later, the reply box explains why not (parent Q36).
+- R7 — The shop hides or unhides a comment on Instagram from the inbox (parent Q36).
+- R8 — Replies the shop makes in the Instagram app appear in the thread (Q2).
 - R9 — An event Meta sends twice appears once; events for an account no shop has connected are
   ignored.
 - R10 — A disconnected or removed connection keeps the history readable and asks to reconnect;
   retention follows parent Q34 (Q9).
-- R11 — A private account is told that comments arrive only for a public account (Q10).
+- R11 — A private account is told that comments arrive only for a public account (Q2).
 - R12 — Nothing from Meta (a payload, a token, an error body) reaches a log or a person.
 
 ## Hazards the TRD must answer
 - **A forged webhook** injecting messages into a shop's inbox: the signature must be checked.
 - **Meta retries and reorders** events; one message, in time order (inbox-core R12).
 - **Two private replies to one comment** (inbox and comment-automations at once): Meta allows one.
-- **Webhooks may not reach us before review** (parent Q81): acceptance on recorded payloads.
+- **Webhooks may not reach us before review** (parent Q2): acceptance on recorded payloads.
 - **Rate limits**: Send API and private replies have hourly caps; a burst must queue, not fail.
 
 ## Product acceptance
-Judged on a phone (~360px) first. Verified on the owner's own account (parent Q81).
+Judged on a phone (~360px) first. Verified on the owner's own account (parent Q2).
 - A1 — A DM sent to the owner's account appears in the Instagram tab within a minute; a reply from
   the inbox arrives in Instagram.
 - A2 — A comment on the owner's post appears under that post; a public reply shows under the comment
@@ -64,7 +64,7 @@ Judged on a phone (~360px) first. Verified on the owner's own account (parent Q8
 ## Scope
 - **Outcome:** a shop answers Instagram DMs and comments from its inbox.
 - **In:** R1–R12, A1–A7.
-- **Later:** live comments (Q1); keyword auto-replies are
+- **Later:** live comments (parent Q36); keyword auto-replies are
   comment-automations.
 
 ## Open questions

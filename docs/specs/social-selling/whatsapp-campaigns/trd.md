@@ -4,19 +4,19 @@
 - **Domain:** campaigns, channels (WhatsApp plug)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-06
-- **References:** [spec.md](spec.md), [ux.md](ux.md) (Draft), [decisions.md](decisions.md), parent [decisions](../decisions.md) Q7, Q66, Q68, Q70, Q74, Q79, Q80, [whatsapp-templates TRD](../whatsapp-templates/trd.md), [audience](../audience/), [notification-hub](../../notification-hub/), [ADR-0004](../../../adr/0004-money-as-integer-paise.md), [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)
+- **References:** [spec.md](spec.md), [ux.md](ux.md) (Draft), [decisions.md](decisions.md), parent [decisions](../decisions.md) (Q7, Q66, Q40), [whatsapp-templates TRD](../whatsapp-templates/trd.md), [audience](../audience/), [notification-hub](../../notification-hub/), [ADR-0004](../../../adr/0004-money-as-integer-paise.md), [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
 
 ## Approach
 `server/campaigns/` holds two things: the `Campaign` aggregate (a send the shop composes) and the
 **WhatsApp send** every caller uses. The send is one function behind campaigns' public surface,
-`deliverByWhatsApp` (Q9), which takes a shop, a recipient contact, a template, its values, a purpose
+`deliverByWhatsApp` (Q8), which takes a shop, a recipient contact, a template, its values, a purpose
 (marketing or utility) and the caller's idempotency key. Inside one transaction it claims a
 `WhatsAppMessage` row, checks consent through audience, takes the shop's spend and frequency
 budget with guarded updates, and only then enqueues the Meta call. `channels` implements the
 `MessagePublisher` port and owns the token (parent Q7). A campaign is a list of such sends,
-expanded in batches on the worker. Meta's status webhook (parent Q80) updates each row.
+expanded in batches on the worker. Meta's status webhook (parent Q7) updates each row.
 
 ## Prior art
 - **Budgets taken by conditional update**, as our stock is (ADR-0007): a `WhatsAppSpend` row per
@@ -40,7 +40,7 @@ expanded in batches on the worker. Meta's status webhook (parent Q80) updates ea
   the row. Answers `SENT`/`SKIPPED`/`HELD` with a closed reason set (`SEND_OUTCOME`, `SKIP_REASON`).
 - **D3 — The Meta call** runs in the job, outside any transaction, through `MessagePublisher`;
   the answer writes Meta's message id. Temporary errors retry three times; permanent ones release
-  the reserved spend and record the mapped reason (Q11).
+  the reserved spend and record the mapped reason (Q14).
 - **D4 — Settling**: channels' `whatsapp.messages` handler (inbox-whatsapp D2) also enqueues
   `campaigns.message-status` for every status; its handler ignores ids it does not hold, and sets delivered/read/failed and, on Meta's pricing
   object, replaces the estimate with the actual on the row and adjusts `WhatsAppSpend` by the
@@ -48,8 +48,8 @@ expanded in batches on the worker. Meta's status webhook (parent Q80) updates ea
 - **D5 — Campaigns**: composing writes `Campaign` (template, values, products as ids, list id,
   scheduled-at, confirmed-count, estimate in paise, created/scheduled/sent-by). Send expands the
   list through audience's surface in pages of 500 into `CampaignRecipient` rows and calls `deliver`
-  for each with key `campaign:<id>:<contact>`, stopping at the confirmed count (Q4).
-- **D6 — Holding**: a template not `APPROVED`, a start more than six hours late (Q12), or the spend
+  for each with key `campaign:<id>:<contact>`, stopping at the confirmed count (Q3).
+- **D6 — Holding**: a template not `APPROVED`, a start more than six hours late (Q13), or the spend
   cap reached marks the campaign `HELD` with a reason; Stop marks remaining recipients `CANCELLED`
   and releases nothing (nothing was reserved for them yet).
 - **D7 — Scheduling**: no per-minute schedule (the jobs-schedule floor and idle budget forbid it).
@@ -57,19 +57,19 @@ expanded in batches on the worker. Meta's status webhook (parent Q80) updates ea
   version; an edit bumps the version, so the old job finds a stale version and exits (Q13).
 - **D8 — Products**: one product sends a single-product message, 2–30 a multi-product one, by
   catalogue retailer id from whatsapp-catalogue; archived or unpublished products are dropped at
-  send with a note. Prices are WhatsApp's catalogue's, kept in step by whatsapp-catalogue (Q16).
-- **D9 — Reads for the hub** (Q9): `whatsAppCounts(shop, contact)` returns marketing messages today
-  and this week, summed by hub-core's global cap (parent Q70, Q74); `whatsAppCanSend(shop, contact,
+  send with a note. Prices are WhatsApp's catalogue's, kept in step by whatsapp-catalogue (parent Q47).
+- **D9 — Reads for the hub** (Q8): `whatsAppCounts(shop, contact)` returns marketing messages today
+  and this week, summed by hub-core's global cap (parent Q40); `whatsAppCanSend(shop, contact,
   purpose)` answers the same consent, cap and spend checks as `deliver` without claiming, for the
   hub plug's `canReach`; `whatsAppMonthToDate(shop, purpose?)` returns count and paise for cost cards.
-- **D9a — One budget for every paid send** (parent Q32, inbox-whatsapp Q5): public `reserveSpend(shop,
+- **D9a — One budget for every paid send** (parent Q8, social-selling Q8): public `reserveSpend(shop,
   key, estimatePaise, source)` and `settleSpend(key, actualPaise)`, used by `deliver` and the inbox's
   template reply; `source` (`SPEND_SOURCE`: campaign, alert, order update, inbox reply) is recorded.
 - **D10 — Caps**: `WhatsAppCaps` per shop: per-day and per-week (defaults 1 and 4, any positive
   value, parent Q40), monthly spend cap in paise with no default, first written by connect-whatsapp's
-  cap step through the public `setSpendCap` command (Q7). The alert window is notification-hub's
+  cap step through the public `setSpendCap` command (parent Q8). The alert window is notification-hub's
   (demand-alerts D3), not stored here. Quality is read from channels' connection (connect-whatsapp D8).
-- **D11 — Language**: the recipient's stored language; English if that version is not approved (Q17).
+- **D11 — Language**: the recipient's stored language; English if that version is not approved (parent Q37).
 
 ## Packages
 None.
@@ -127,4 +127,4 @@ the `deliverByWhatsApp`, `whatsAppCounts`, `whatsAppCanSend`, `whatsAppMonthToDa
 5. WhatsApp settings page (caps, spend, quality).
 
 ## Open questions
-None. Q7 decided by the owner 2026-11-06.
+None. parent Q8 decided by the owner 2026-11-06.

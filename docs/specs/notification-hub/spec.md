@@ -5,7 +5,7 @@
 - **Domain:** notifications
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-06
-- **References:** [decisions.md](decisions.md), [social-selling](../social-selling/spec.md) and its [decisions](../social-selling/decisions.md) (Q41, Q66–Q74), [ADR-0069](../../adr/0069-notifications-are-one-hub-every-module-plugs-into.md), [server/notifications/CLAUDE.md](../../../server/notifications/CLAUDE.md)
+- **References:** [decisions.md](decisions.md), [social-selling](../social-selling/spec.md) and its [decisions](../social-selling/decisions.md) (Q18, Q40, Q61, Q66), [ADR-0069](../../adr/0069-notifications-are-one-hub-every-module-plugs-into.md), [server/notifications/CLAUDE.md](../../../server/notifications/CLAUDE.md)
 
 > The parent of the subfeatures below. Each has its own spec, decisions, UX and TRD. This file
 > holds only the model they share and their order. Built alongside social-selling, whose first
@@ -25,17 +25,17 @@ plug, and a new module is one event, without either knowing about the other.
 ## The model every subfeature follows
 - **A module emits an event; it never picks a channel (Q1).** An event names its kind, its
   audience (shop, buyer, admin), the shop it concerns and its facts. Social-selling emits
-  conversation waiting, post failed, connection needs you and post due (social-selling Q41, Q67).
-- **A channel is a plug (Q2).** Email (existing), WhatsApp (social-selling's campaigns send port,
-  which owns WhatsApp consent, STOP, spend cap and WhatsApp's frequency cap — social-selling Q68)
-  and the unread badge. In-app bell and push are later plugs (social-selling Q69).
+  conversation waiting, post failed, connection needs you and post due (social-selling Q66, Q18).
+- **A channel is a plug (Q1).** Email (existing), WhatsApp (social-selling's campaigns send port,
+  which owns WhatsApp consent, STOP, spend cap and WhatsApp's frequency cap — social-selling Q40)
+  and the unread badge. In-app bell and push are later plugs (social-selling Q66).
 - **Every delivery is a row first (Q3)**, unique per event and recipient, so a repeated event or a
   redelivered job tells no one twice — the rule `Notice` already follows for parcels.
-- **Marketing reaches a buyer once (social-selling Q73):** by WhatsApp when it can, else by email
+- **Marketing reaches a buyer once (social-selling Q66):** by WhatsApp when it can, else by email
   when the buyer opted in to email. Every marketing email carries an unsubscribe link.
-- **A global cap sits over every channel (social-selling Q70, Q74):** marketing messages per buyer
+- **A global cap sits over every channel (social-selling Q40):** marketing messages per buyer
   per shop per day, default 3, set by the shop; the global cap wins. Order updates are exempt.
-- **The shop decides what costs it money (social-selling Q32, Q33):** order updates on WhatsApp
+- **The shop decides what costs it money (social-selling Q8, Q61):** order updates on WhatsApp
   and each demand alert are off until the shop turns them on, with a monthly spend cap.
 
 ## Subfeatures, in order
@@ -45,8 +45,8 @@ plug, and a new module is one event, without either knowing about the other.
 | 2 | order-updates | Confirmed, shipped and delivered reach the buyer by WhatsApp or email; parcel notices move onto the hub | 1, social-selling 13 | notifications |
 | 3 | demand-alerts | Price drop, back in stock, abandoned cart and auction alerts, each switched on by the shop, within its window and caps | 1, social-selling 5, 13 | notifications |
 
-Future users, not built here: "Notify me" (social-selling Q60) sends through the hub as its own
-vertical; in-app and push are plugs (Q2).
+Future users, not built here: "Notify me" (social-selling Q54) sends through the hub as its own
+vertical; in-app and push are plugs (Q1).
 
 ## Product acceptance
 - A1 — A buyer DM unanswered for four hours appears in the shop's next daily email and on the

@@ -23,7 +23,7 @@ nightly full push keep it true. A per-shop item ledger records what Meta last ac
   WooCommerce's Meta plugin both use the batch API for updates, with a full sync as repair. We
   follow them: R4's 15 minutes rules out the hourly feed.
 - **Our shopfront feed** is a pull of one shared file of every opted-in shop; Meta fetches it into
-  *our* catalogue. The WhatsApp catalogue lives in the *shop's* account (Q11), so a shared file
+  *our* catalogue. The WhatsApp catalogue lives in the *shop's* account (Q5), so a shared file
   cannot fill it. We reuse the item builder, not the file.
 - **Inventory-sync** sends what is true when it runs, never a delta, and skips what was already
   sent (server/channels/CLAUDE.md). Followed: each push is the item's full current state, so a
@@ -32,7 +32,7 @@ nightly full push keep it true. A per-shop item ledger records what Meta last ac
 ## Technical decisions
 - **D1 — Catalogue made on connect** (Q5): a step added to the handler of connect-whatsapp's
   `whatsapp.connected` job (connect-whatsapp D4): `POST /{business_id}/owned_product_catalogs`, connect to the WABA, set commerce settings
-  `is_catalog_visible=true`, `is_cart_enabled=true` (Q6; a sent cart is inbox-whatsapp's order card). Ids stored on the connection
+  `is_catalog_visible=true`, `is_cart_enabled=true` (Q5; a sent cart is inbox-whatsapp's order card). Ids stored on the connection
   (`catalogId`). Idempotent: an existing `catalogId` skips creation. Needs `catalog_management`
   (already in the one review, parent Q2).
 - **D2 — One item builder.** Extract from `shopfront-feed.ts` a pure `metaItem(candidate)` returning
@@ -40,14 +40,14 @@ nightly full push keep it true. A per-shop item ledger records what Meta last ac
   additional_image_link, brand, condition, item_group_id) used by both the XML serialiser and the
   batch body. Candidates come from the same DAL read (`src/data-access-layer/shopfront-feed.dal.ts`)
   filtered to one org, mapped by `mapProduct`, so price is ADR-0018's and availability the buy
-  button's, bidding hold included (Q2, Q3).
+  button's, bidding hold included (parent Q47, Q4).
 - **D3 — `item_group_id`** is the product's family id when it has one (Q12, ADR-0043).
 - **D4 — Image format.** Photos go as `marketplacePhotoUrls` with Meta's accepted formats (JPEG,
   PNG), so WebP goes as the existing `marketplaceJpeg` rendition.
 - **D5 — Ledger.** `WhatsAppCatalogItem` (connectionId, productId, sentHash, sentAt, status
   `live|refused|removed`, reason ≤300). A push sends only items whose hash of D2's fields differs,
   or a `DELETE` for a ledger row whose product left the set (archived, org withdrawn).
-- **D5a — Replica repair** (Q13). The nightly full push reads the catalogue's items from Meta and
+- **D5a — Replica repair** (Q4). The nightly full push reads the catalogue's items from Meta and
   deletes any `retailer_id` that is not a ledger row, and re-sends every ledger row in full (not by
   hash), so an item added or a field edited outside Bhendi Bazaar is undone within a day.
 - **D6 — Triggers.** (a) `channels.stock-changed` already fires per transaction; its handler also
@@ -62,7 +62,7 @@ nightly full push keep it true. A per-shop item ledger records what Meta last ac
   hazard 2). Hash-skip makes repeats cheap.
 - **D8 — Results.** The batch answers a handle; the handler polls `check_batch_request_status`
   (re-enqueued after 30s, at most 10 times) and writes each item's status and Meta's reason to the
-  ledger (Q9). A whole-call failure retries with back-off; `connection_lost` stops and leaves the
+  ledger (Q8). A whole-call failure retries with back-off; `connection_lost` stops and leaves the
   connection's state to connect-whatsapp's check.
 - **D9 — Disconnect** (Q10) stops pushes and keeps `catalogId` and the ledger, so the same number
   reconnecting resumes; a different number starts afresh.

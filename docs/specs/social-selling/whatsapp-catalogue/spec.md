@@ -21,26 +21,26 @@ catalogue should simply be the shop's products, with nothing to maintain (parent
 
 ## Requirements
 - R1 — Every product live on the shop's store page is in its WhatsApp catalogue; nothing to pick
-  (Q1, parent Q47). A product WhatsApp would reject (no photo or description) is left out and
+  (parent Q47, parent Q47). A product WhatsApp would reject (no photo or description) is left out and
   counted, with why.
 - R2 — Each item shows the price the product page shows at that moment, offer included, with the
-  list price beside it when an offer is on (Q2).
-- R3 — Out of stock, or held by a live auction, shows as out of stock; archived is removed (Q3).
+  list price beside it when an offer is on (parent Q47).
+- R3 — Out of stock, or held by a live auction, shows as out of stock; archived is removed (Q4).
 - R4 — A change to price, stock, photos, name or archive reaches WhatsApp within 15 minutes, with
   nobody doing anything; a nightly full send repairs anything missed (Q4).
 - R5 — Connecting WhatsApp makes the catalogue, connects it to the number and shows it in chats,
-  with the cart on; a sent cart becomes an order card in the inbox, paid on our checkout (Q5, Q6).
+  with the cart on; a sent cart becomes an order card in the inbox, paid on our checkout (Q5).
 - R6 — An item opens our product page; variants of one family show as one item with options
-  (Q7, Q12).
+  (Q12).
 - R7 — The WhatsApp card says how many products are in the catalogue, when it last updated, how
   many were left out and why, and offers Sync now (Q8).
 - R8 — An item Meta refuses is listed with Meta's reason and a link to fix the product; the rest
-  stay live (Q9).
+  stay live (Q8).
 - R9 — Disconnecting stops updates and leaves the catalogue in the shop's account; the dialog says
   how to delete it there. Reconnecting the same number resumes it (Q10).
-- R10 — The Meta feed card (Facebook and Instagram) is unchanged and independent (Q11).
+- R10 — The Meta feed card (Facebook and Instagram) is unchanged and independent (Q5).
 - R11 — The catalogue is a replica: an item that is not one of the shop's live products, or a field
-  edited outside Bhendi Bazaar, is put back by the nightly full send (Q13).
+  edited outside Bhendi Bazaar, is put back by the nightly full send (Q4).
 
 ## Hazards the TRD must answer
 - **A price that differs from the page**: computing it a second way, or caching it.
@@ -66,7 +66,7 @@ Judged on a phone (~360px) first ([ADR-0015](../../../adr/0015-mobile-first-desi
 ## Scope
 - **Outcome:** the shop's live products in its WhatsApp catalogue, kept in sync.
 - **In:** R1–R11, tested by A1–A8.
-- **Later:** a per-product opt-out; paying inside WhatsApp (parent Q24). Product messages
+- **Later:** a per-product opt-out; paying inside WhatsApp (parent Q21). Product messages
   in chats are whatsapp-campaigns'.
 
 ## Open questions

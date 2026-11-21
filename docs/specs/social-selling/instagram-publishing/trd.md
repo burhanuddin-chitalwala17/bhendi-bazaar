@@ -22,9 +22,9 @@ reason code.
   exactly; there is no other route.
 - **Idempotency by remembered external id**, as Stripe's idempotency keys and our marketplace publish
   (marketplace-publish D4: claimed state, call outside the transaction, answer written only while
-  still claimed). Instagram has no idempotency key, so the container id is ours (Q7).
+  still claimed). Instagram has no idempotency key, so the container id is ours (Q2).
 - **Buffer and Later** generate the public media URL at publish time from their own storage and
-  check `content_publishing_limit` before publishing. Followed (Q3, Q5).
+  check `content_publishing_limit` before publishing. Followed (Q2, Q5).
 
 ## Technical decisions
 - **D1 — The plug.** `instagram.publish.ts` implements `Publisher`; registered from
@@ -79,7 +79,7 @@ None beyond post-scheduling's `PostDestination` (external id, container ids, per
 - Integration (fetch stubbed): single image publishes once; answer dropped after `media_publish` then
   retried → one publish, status read; carousel with one child refused → failed, no parent made;
   limit zero → failed without containers; 190 → `NEEDS_RECONNECT` and the connection updated.
-- Manual (Q10): the owner's account on dev — image, carousel, reel, story; the screencast for review.
+- Manual (parent Q2): the owner's account on dev — image, carousel, reel, story; the screencast for review.
 
 ## Delivery (units)
 1. Rendition surfaces and the error table — no behaviour.

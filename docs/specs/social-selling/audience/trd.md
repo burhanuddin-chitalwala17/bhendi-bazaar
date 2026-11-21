@@ -9,12 +9,12 @@
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
 
 ## Approach
-A new platform-free domain, `server/audience/`, owns contacts, consent and lists (parent Q79). It
+A new platform-free domain, `server/audience/`, owns contacts, consent and lists (parent Q7). It
 answers one question for every sender and channel, `consentFor(sender, phone, channel)`, and records
 consent from neutral jobs: checkout's opt-in at payment, and channels' "message received" and
 "contacts synced". It imports neither checkout nor channels; both reach it only through the queue.
 Lists are saved filters evaluated at read time, so a stop is honoured by every list the instant it
-is written. Audience counts no sends: caps are the WhatsApp send's and notification-hub's (parent Q68).
+is written. Audience counts no sends: caps are the WhatsApp send's and notification-hub's (parent Q40).
 
 ## Prior art
 - **Consent as an append-only ledger.** Twilio's and Braze's subscription models, and the
@@ -22,7 +22,7 @@ is written. Audience counts no sends: caps are the WhatsApp send's and notificat
   as an event with source and proof, and derive current state. We follow: `ConsentEvent` rows are
   never updated; the current state is the latest event per (sender, channel, contact).
 - **Suppression lists** (Mailchimp, SendGrid, Meta's own opt-out guidance): a stop outlives the
-  contact so a re-import cannot undo it. We follow with a hashed-phone suppression row (Q22).
+  contact so a re-import cannot undo it. We follow with a hashed-phone suppression row (Q21).
 - **Segments as saved queries** (Klaviyo, Braze) rather than static copies, re-evaluated at send.
   We follow (Q17). Static lists exist only as an upload's membership.
 
@@ -42,11 +42,11 @@ is written. Audience counts no sends: caps are the WhatsApp send's and notificat
   the same unit of work that claims the send; a STOP committed earlier is always seen (Hazard: race).
 - **D5 — Suppression.** `ConsentSuppression`: sender, channel, SHA-256 of the E.164 phone with a
   server pepper, at. Written by every stop and every deletion; checked by upload and by `consentFor`.
-  An upload row matching it is imported Stopped (Q14, Q22).
+  An upload row matching it is imported Stopped (Q13, Q21).
 - **D6 — Checkout's box.** Checkout gains a boolean on the order and the wording version; the order
   schema accepts `marketingOptIn: boolean` (Zod, Invariant 4). `payment-confirmed.ts` enqueues
   `audience.checkout-opt-in` with order id, shop ids, phone, email, wording version and the
-  confirmation time, in the same transaction (Q5, Q6). The box component lives in
+  confirmation time, in the same transaction (Q5, Q8). The box component lives in
   `src/components/checkout/` and takes its words from `checkout-copy.ts`; it knows nothing of audience.
 - **D7 — Inbound words.** `audience.message-received` (from channels, whatsapp-contacts D2) is
   matched against `OPT_IN_WORDS` and `STOP_WORDS` (closed sets in `audience.types`): whole-message,
@@ -58,11 +58,11 @@ is written. Audience counts no sends: caps are the WhatsApp send's and notificat
 - **D9 — Lists.** `AudienceList`: shop, name, filter (Zod-parsed JSON: category ids, wishlisted,
   last-order days, upload id), created by. Membership is computed: opted-in WhatsApp contacts of the
   shop, intersected with checkout's `buyersOf(shop, {categoryIds, sinceDays})` and wishlist's
-  `wishlistersOf(shop, {productIds?})` reads, which return phones only (Q18). Counts are live; no member table.
+  `wishlistersOf(shop, {productIds?})` reads, which return phones only (Q5). Counts are live; no member table.
 - **D10 — Upload.** `POST /api/org/[orgId]/audience/uploads` (`withOrg`) accepts the parsed rows
   from the client (the bulk-sheet reader in the browser), validated with Zod (≤5,000 rows); the
   attestation is a row (`AudienceUpload`: file name, row counts, attested, by, at) and the consent
-  events cite it as evidence (parent Q45).
+  events cite it as evidence (parent Q9).
 - **D11 — Phone masking and reveal.** Reads return the last four digits; `POST …/contacts/[id]/reveal`
   returns the full phone and records it with `recordAdminActionIn` (audit never fails the action, ADR-0021) (Q19).
 - **D12 — Deletion and retention.** `audience.forget(phone)`, run by the handler of
@@ -71,7 +71,7 @@ is written. Audience counts no sends: caps are the WhatsApp send's and notificat
   `inbox.person-deleted` for it. A daily slot
   in the existing schedule deletes contacts of shops whose last messaging channel disconnected 90
   days ago, and consent events three years after their contact's last consent change (Q21).
-- **D13 — Hindi preference** is a column on the contact, so per shop (Q16), matched like opt-in words.
+- **D13 — Hindi preference** is a column on the contact, so per shop (parent Q37), matched like opt-in words.
 
 ## Packages
 None. Spreadsheet reading reuses the bulk-sheet's existing reader.
@@ -127,4 +127,4 @@ D10. `Order` gains `marketingOptIn` and `marketingOptInWording`. Nothing cascade
 6. Inbound words job, unsubscribe route, deletion and retention slot.
 
 ## Open questions
-None. Q8, Q16 and Q21 decided by the owner 2026-11-06.
+None. Q8, Q21, parent Q37 decided by the owner 2026-11-06.

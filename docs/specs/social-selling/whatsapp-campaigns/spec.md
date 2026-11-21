@@ -9,7 +9,7 @@
 
 > Requirements and product approach only. Technical approach lives in trd.md. Subfeature 13 of
 > social-selling. It also owns the one WhatsApp send that notification-hub and a future "Notify me"
-> call (parent Q60, Q66).
+> call (parent Q54, Q66).
 
 ## What this feature is
 A Campaigns page under the shop's WhatsApp. The shop picks an approved template, fills it, adds
@@ -24,28 +24,28 @@ who did not opt in, and never let any caller, ours included, skip those rules.
 
 ## Requirements
 - R1 — A member creates a campaign: an approved template, its placeholders filled, optionally one
-  product or up to 30 products, one named list, now or at a chosen time (Q1, parent Q55, Q75).
+  product or up to 30 products, one named list, now or at a chosen time (Q1, parent Q40, Q75).
 - R2 — Before confirming, the shop sees how many will receive it, how many are skipped and why,
   the price per message, and the estimated total in rupees (Q3).
 - R3 — Only contacts who consented to this shop on WhatsApp, and have not stopped, ever receive a
-  message; checked at the moment of sending (Q2, parent Q9, Q62).
-- R4 — A campaign never sends to more people than the shop confirmed (Q4).
+  message; checked at the moment of sending (parent Q9, parent Q9).
+- R4 — A campaign never sends to more people than the shop confirmed (Q3).
 - R5 — The shop's WhatsApp frequency cap (default once a day, four a week; any value the shop sets)
-  and notification-hub's global cap are both applied, the global one winning (parent Q40, Q74).
+  and notification-hub's global cap are both applied, the global one winning (parent Q40).
 - R6 — The shop's monthly spend cap holds: a send that would cross it sends to as many as fit,
-  holds the rest and tells the shop (Q6, parent Q32). The cap has no default: the shop sets it while
-  connecting WhatsApp (connect-whatsapp) and changes or removes it here (Q7). It covers every paid
+  holds the rest and tells the shop (Q5, parent Q8). The cap has no default: the shop sets it while
+  connecting WhatsApp (connect-whatsapp) and changes or removes it here (parent Q8). It covers every paid
   WhatsApp send, inbox templates included.
 - R7 — Cost is recorded in paise: estimated at review, actual as Meta reports delivery (Q5).
 - R8 — A scheduled campaign can be edited or cancelled until it starts, and stopped while sending;
   unsent messages are not charged (Q13). One held by a paused template, an outage over six hours
-  or the spend cap says so and offers the next step (Q12).
+  or the spend cap says so and offers the next step (Q13).
 - R9 — The report shows sent, delivered, read, failed and skipped with reasons, and actual cost (Q14).
-- R10 — Every campaign records who created, scheduled and sent it; every member sees it (Q19).
-- R11 — Each buyer gets the template in their chosen language, English when theirs is missing (Q17).
+- R10 — Every campaign records who created, scheduled and sent it; every member sees it (parent Q8).
+- R11 — Each buyer gets the template in their chosen language, English when theirs is missing (parent Q37).
 - R12 — One WhatsApp send serves every caller: campaigns here, order updates and alerts from
   notification-hub, Notify me later. It applies R3, R5 and R6 itself and answers sent, skipped with
-  a reason, or held; and it reports each buyer's WhatsApp counts for the global cap (Q8–Q10).
+  a reason, or held; and it reports each buyer's WhatsApp counts for the global cap (Q8).
 - R13 — The WhatsApp settings page shows the caps, this month's spend against the cap, and Meta's
   quality rating for the number, with what each means (Q20).
 
@@ -76,4 +76,4 @@ Judged on a phone (~360px) first.
   updates themselves (notification-hub).
 
 ## Open questions
-None. Q7 decided by the owner 2026-11-06.
+None. parent Q8 decided by the owner 2026-11-06.

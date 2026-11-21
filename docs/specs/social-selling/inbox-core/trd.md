@@ -4,7 +4,7 @@
 - **Domain:** inbox (new)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-06
-- **References:** [spec.md](spec.md), [ux.md](ux.md), [decisions.md](decisions.md), parent [decisions](../decisions.md) (Q7, Q34, Q41, Q66, Q79, Q80), [ADR-0012](../../../adr/0012-modules-are-vertical-slices-by-domain.md), [ADR-0033](../../../adr/0033-a-domain-is-reached-through-its-public-surface.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0048](../../../adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)
+- **References:** [spec.md](spec.md), [ux.md](ux.md), [decisions.md](decisions.md), parent [decisions](../decisions.md) (Q7, Q34, Q66), [ADR-0012](../../../adr/0012-modules-are-vertical-slices-by-domain.md), [ADR-0033](../../../adr/0033-a-domain-is-reached-through-its-public-surface.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0048](../../../adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
 > Screens, states and copy are ux.md's; this says how they are built.

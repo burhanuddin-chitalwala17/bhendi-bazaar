@@ -42,20 +42,20 @@ The existing `Notice` path keeps working until order-updates moves it (hub Q5).
   (writes the projection), `whatsapp`: `canReach` → campaigns' `whatsAppCanSend`, `deliver` →
   `deliverByWhatsApp` keyed on the row id, `status` from its outcome (whatsapp-campaigns D2, D9;
   social-selling subfeature 13). Until it exists the plug answers "cannot reach" and email takes over.
-- **D4 — Channel order for marketing**: WhatsApp, then email (social-selling Q73). The hub asks
+- **D4 — Channel order for marketing**: WhatsApp, then email (social-selling Q66). The hub asks
   `canReach` in order and writes a row for the first that says yes. A lasting WhatsApp failure
   marks the row `FAILED` and writes the email row (R10). Shop and transactional kinds name their
   channels in `NOTIFY_ROUTES`, declared once.
 - **D5 — Global cap** read at emit: today's (IST, `server/shared/india-time.ts`) marketing count for
   (org, recipient) — `SENT`/`PENDING` non-WhatsApp `Delivery` rows plus campaigns' `whatsAppCounts`,
-  which also counts campaigns the hub never saw (social-selling Q68, Q74) — against
+  which also counts campaigns the hub never saw (social-selling Q40) — against
   `OrgNotifySettings.dailyCap` (default 3). Over it → `SKIPPED` with `cap_reached`. The same check is
   hub-core's implementation of campaigns' `GlobalCapPort`, registered at start-up, so a campaign obeys
   it too. Unlocked: a race passes by one (ADR-0069).
 - **D6 — Unread projection** `NotifyUnread` (org, member, kind, ref, openedAt, clearedAt): a shop
   event inserts; the source module emits a matching `…_resolved` event (answered, republished,
   reconnected) which clears it. Home's badge is a count of uncleared rows, read with the portal
-  layout; the Inbox item's count is inbox's public `unreadCount(shop)` (inbox-core D11, Q11).
+  layout; the Inbox item's count is inbox's public `unreadCount(shop)` (inbox-core D11; social-selling Q66).
 - **D7 — Digest**: a scheduled `notify.digest` at 09:00 IST reads uncleared rows older than their
   kind's threshold (4 hours for conversations, at once for the others) per member with the email on,
   and sends one email through the layout's blocks. Read at send time, so answered items are gone.

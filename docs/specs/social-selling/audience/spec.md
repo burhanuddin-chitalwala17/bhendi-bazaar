@@ -29,27 +29,27 @@ answer once, for every sender and channel, so no caller can skip it.
 - R2 — Consent is held per sender (each shop, and Bhendi Bazaar) and per channel (WhatsApp, email),
   with its source, time and evidence; every change is kept as history (parent Q27, Q3).
 - R3 — Checkout shows one unticked box naming the shops in the order, Bhendi Bazaar, WhatsApp and
-  email. Ticked on a paid order, it opts the buyer in for each named sender on both channels (Q5–Q9).
+  email. Ticked on a paid order, it opts the buyer in for each named sender on both channels (Q5, Q8).
 - R4 — A shop with WhatsApp connected shows "Get offers on WhatsApp" on its store page. It opens
-  WhatsApp with YES pre-filled to the shop's number; sending it opts that person in (parent Q59, Q10).
+  WhatsApp with YES pre-filled to the shop's number; sending it opts that person in (parent Q9, Q12).
 - R5 — YES (or HAAN, हाँ) in any chat with the shop opts in; STOP (or UNSUBSCRIBE, बंद, रोको)
   stops that shop's WhatsApp consent at once, with one confirming reply. The email link stops
-  that sender's email. Nothing else is touched (parent Q62, Q13).
+  that sender's email. Nothing else is touched (parent Q9).
 - R6 — A shop uploads a CSV or spreadsheet; ticking "These people agreed to get WhatsApp messages
   from <shop>" makes them opted in, recorded with who, when and which file. Without the tick they
-  are Not yet. An upload never re-opts-in someone who stopped (parent Q45, Q14, Q15).
+  are Not yet. An upload never re-opts-in someone who stopped (parent Q9, Q14, Q7).
 - R7 — Buyers from before this feature, and contacts synced from the shop's phone, are Not yet
-  and are never messaged for marketing until they opt in (parent Q58, Q13).
+  and are never messaged for marketing until they opt in (parent Q9).
 - R8 — A shop saves named lists: opted-in contacts narrowed by category bought, wishlisted, last
   order within N days, or uploaded list. Counts are live; a contact who stops leaves every list at
-  once (parent Q75, Q17).
-- R9 — A buyer may reply HINDI to get Hindi from that shop (parent Q65, Q16).
+  once (parent Q75).
+- R9 — A buyer may reply HINDI to get Hindi from that shop (parent Q37).
 - R10 — Phones are masked to the last four digits; the full number shows on tap, recorded (Q19).
 - R11 — A person's deletion request removes them from every shop, keeping only a marker that they
-  stopped, so no upload can bring them back (Q22). Contacts go 90 days after a shop's last
+  stopped, so no upload can bring them back (Q21). Contacts go 90 days after a shop's last
   messaging channel disconnects; consent history is kept three years after its last change (Q21).
 - R12 — Other features ask one question, "may sender S message this phone on channel C?", and get
-  yes or no with the reason. Audience counts no sends and holds no caps (parent Q68, Q23).
+  yes or no with the reason. Audience counts no sends and holds no caps (parent Q40, Q21).
 
 ## Hazards the TRD must answer
 - **A STOP racing a send.** A campaign that checked consent a second before STOP arrived must not
@@ -79,8 +79,8 @@ Judged on a phone (~360px) first ([ADR-0015](../../../adr/0015-mobile-first-desi
 - **Outcome:** a shop knows who it may message and keeps lists of them.
 - **In:** R1–R12, tested by A1–A8. The checkout box and the store-page button are In: R3 and R4
   need them.
-- **Later:** contact export (Q20); a platform contact screen (parent Q28); syncing the phone's
+- **Later:** contact export (Q19); a platform contact screen (parent Q27); syncing the phone's
   contacts (whatsapp-contacts); sending anything (whatsapp-campaigns, notification-hub).
 
 ## Open questions
-None. Q8, Q16 and Q21 decided by the owner 2026-11-06.
+None. Q8, Q21, parent Q37 decided by the owner 2026-11-06.

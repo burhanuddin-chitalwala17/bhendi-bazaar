@@ -4,7 +4,7 @@
 - **Domain:** campaigns (new), channels (WhatsApp plug)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-06
-- **References:** [spec.md](spec.md), [ux.md](ux.md) (Draft), [decisions.md](decisions.md), parent [decisions](../decisions.md) Q7, Q79, Q80, Q81, [connect-whatsapp](../connect-whatsapp/), [INTEGRATIONS.md](../../../INTEGRATIONS.md#acting-for-a-shop-on-meta-catalogue-whatsapp-instagram), [ADR-0004](../../../adr/0004-money-as-integer-paise.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0054](../../../adr/0054-a-channel-mapping-carries-a-checked-date-and-source-and-required-ness-is-data.md)
+- **References:** [spec.md](spec.md), [ux.md](ux.md) (Draft), [decisions.md](decisions.md), parent [decisions](../decisions.md) (Q7, Q2), [connect-whatsapp](../connect-whatsapp/), [INTEGRATIONS.md](../../../INTEGRATIONS.md#acting-for-a-shop-on-meta-catalogue-whatsapp-instagram), [ADR-0004](../../../adr/0004-money-as-integer-paise.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0054](../../../adr/0054-a-channel-mapping-carries-a-checked-date-and-source-and-required-ness-is-data.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
 
@@ -13,7 +13,7 @@ Templates are a `campaigns` concept with a WhatsApp shape. `server/campaigns/` o
 `MessageTemplate` aggregate: what the shop wrote, its language, category, state and Meta's id.
 It declares a `TemplatePublisher` port (submit, delete, read status); `channels` implements it for
 WhatsApp with the shop's token, which never leaves `channels` (parent Q7). Meta's template-status
-webhook arrives at `channels`' signed WhatsApp webhook (parent Q80) and reaches campaigns as a
+webhook arrives at `channels`' signed WhatsApp webhook (parent Q7) and reaches campaigns as a
 neutral `campaigns.template-status` job, which channels' `whatsapp.template-status` handler
 (connect-whatsapp D7) enqueues; that mapping is built here. The starter set is declared in code.
 
@@ -24,7 +24,7 @@ neutral `campaigns.template-status` job, which channels' `whatsapp.template-stat
   "already exists" and is treated as success (D3).
 - **Interakt, AiSensy, Wati** (Indian WhatsApp tools) all offer a starter library copied into the
   shop's account and show Meta's state per template; we follow them. They let shops edit starter
-  templates in place; we do not (Q4), so a fix to ours reaches every shop.
+  templates in place; we do not (Q5), so a fix to ours reaches every shop.
 - **Prices as dated data**: our own channel mappings (ADR-0054) carry a source and checked date;
   the rate table follows the same rule. Meta publishes no price API.
 
@@ -41,7 +41,7 @@ neutral `campaigns.template-status` job, which channels' `whatsapp.template-stat
 - **D3 — Submission is a job**, `campaigns.template-submit`, one per template, keyed on the
   template id. A step added to channels' `whatsapp.connected` handler (connect-whatsapp D4)
   enqueues `campaigns.starter-set` for the shop,
-  which writes the missing starter rows and their submit jobs in one transaction (Q2). A 409 or
+  which writes the missing starter rows and their submit jobs in one transaction (Q3). A 409 or
   "name exists" from Meta reads the existing template's state instead of failing.
 - **D4 — Placeholders are a closed set** (`TEMPLATE_VARIABLE`: first name, shop name, product
   name, product price, product link) mapped to Meta's positional `{{1}}`. A missing first name is
@@ -54,7 +54,7 @@ neutral `campaigns.template-status` job, which channels' `whatsapp.template-stat
   like listing-problems) catches any missed webhook (hazard 1).
 - **D7 — Rates**: one rates module in campaigns holds India rates per category in paise
   (marketing 86 paise, rounded from ₹0.8631; utility 12 paise, rounded from about ₹0.115) with
-  source and checked date. A re-categorised template shows Meta's category's rate (hazard 3, Q6).
+  source and checked date. A re-categorised template shows Meta's category's rate (hazard 3, Q5).
   Rounding up to the paisa is documented beside the table (ADR-0004 D2).
 - **D8 — Held campaigns**: campaigns reads the template's state at send; anything but `APPROVED`
   holds the campaign (whatsapp-campaigns D6).

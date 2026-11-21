@@ -324,7 +324,7 @@ steps and the review kit built on this are in
   turning read-only. **The app's own catalogue, orders and status tools stop working under
   coexistence**, so the catalogue must be driven by API. India's eligibility for coexistence was
   not confirmed on Meta's page (no country exclusion listed; an Indian provider reports India live,
-  2026-11-06); verified on day one with our own number (social-selling Q84).
+  2026-11-06); verified on day one with our own number (social-selling Q12).
 - **What a coexistence shop gives up** (Meta's page and partners, 2026-11-06): broadcast lists turn
   read-only; view-once and disappearing messages are switched off; the app must be opened at least
   every ~13 days or the link lapses; a blue-tick (Official Business Account) number cannot use it.

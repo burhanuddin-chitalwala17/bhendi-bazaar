@@ -18,7 +18,7 @@ The shop's "I've posted it" closes the destination.
 ## Prior art
 - **Later and Planoly's "notification publishing"** for what an API cannot post (Instagram personal
   accounts, TikTok drafts): at the time, a push with media ready and a one-tap share; the user
-  confirms it was posted. Followed, with notifications instead of push (parent Q41, Q67).
+  confirms it was posted. Followed, with notifications instead of push (parent Q66, Q18).
 - **Web Share API Level 2** (`navigator.canShare({ files })`, W3C) is the only standard way a web
   page hands a file to WhatsApp; supported on Android Chrome and iOS Safari 15+. Fallback is a
   download link and clipboard, as MDN recommends.

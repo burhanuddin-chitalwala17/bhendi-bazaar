@@ -29,7 +29,7 @@
 ## State matrix — Alerts, window and spend cards
 | State | What the person sees | Action |
 |---|---|---|
-| First use | Four alerts off with cost estimates; window 9:00 am–9:00 pm; spend limit as set while connecting WhatsApp (social-selling Q32), the same figure as WhatsApp settings | Turn on |
+| First use | Four alerts off with cost estimates; window 9:00 am–9:00 pm; spend limit as set while connecting WhatsApp (social-selling Q8), the same figure as WhatsApp settings | Turn on |
 | Empty | No history: "about ₹0 a month (no history yet)" | Turn on |
 | Loading | Card skeletons | — |
 | Partial | Some alerts on, some off; each row states itself | Each switch |
@@ -64,7 +64,7 @@
 - Window: "Sending window" · "From" · "to" · "Alerts outside these hours wait until it opens." · "The window must end after it starts."
 - Spend: "Monthly WhatsApp spend" · "₹{spent} of ₹{limit}" · "resets {date}" · "At the limit, alerts go by email to buyers who allowed it." · "Limit reached. Alerts go by email until {date}." · "Raise limit" · badge/digest line "WhatsApp spend limit reached"
 - WhatsApp (EN): "Good news, {name}: the {product} on your wishlist is now ₹{new} (was ₹{old})." · "{product} is back in stock. Only a few are in stock, and they're not held for you." · "You left {product} in your cart. It's still available." · "You've been outbid on \"{product}\". Current bid ₹{bid}." · "\"{product}\" ends in 1 hour. Current bid ₹{bid}." · buttons "View product" / "Bid again" / "View cart" · footer "Reply STOP to stop offers from {shop}."
-- Hindi versions of each, from whatsapp-templates' starter set (social-selling Q37, Q65).
+- Hindi versions of each, from whatsapp-templates' starter set (social-selling Q37).
 - Email: same sentences; subject = first sentence; footer unsubscribe (hub-core copy).
 
 ## Sign-off

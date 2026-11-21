@@ -20,7 +20,7 @@ destinations and publishes each as its own job.
 ## Prior art
 - **Schedulers** (Buffer, Later, Meta Business Suite) keep one post with a row per network
   ("profile"), each with its own status and error; a failed network never fails the others. We
-  follow that (Q9). Buffer retries transient errors a few times then emails; we do the same (Q8).
+  follow that (parent Q51). Buffer retries transient errors a few times then emails; we do the same (parent Q51).
 - **Due-work claiming** is the transactional outbox/claim pattern: `UPDATE … SET state = publishing
   WHERE state = scheduled AND due ≤ now RETURNING`, so two workers never take one row. Our worker
   already claims this way (`listing-publish.service.ts`, marketplace-publish D3); followed.
@@ -45,13 +45,13 @@ destinations and publishes each as its own job.
 - **D4 — Edits compare on version.** A save sends the version it read; a row past `SCHEDULED`
   refuses with `POST_LOCKED`. The claim bumps the version, so a save racing the tick loses cleanly.
 - **D5 — Retries are ours, not the queue's.** A `retry` answer sets the row back to `SCHEDULED` at
-  now + 5, 10, 15 minutes (three tries, ~30 minutes, parent Q52); a fourth `retry` or any `failed`
+  now + 5, 10, 15 minutes (three tries, ~30 minutes, parent Q51); a fourth `retry` or any `failed`
   sets `FAILED` with the reason code and emits `social.post-failed` to notifications in the same
   transaction. A `NEEDS_RECONNECT` reason is never retried.
 - **D6 — Time is UTC in the database, IST at the edges.** Pickers send a local IST time;
   `india-time.ts` converts both ways. Due is `scheduledAt ≤ now()` in Postgres, never JS clocks.
 - **D7 — A missing asset fails the destination** with `MEDIA_GONE` at publish; scheduling checks the
-  assets are live and the shapes valid (Q4, Q12) through a pure `post-rules.ts`.
+  assets are live and the shapes valid (Q4) through a pure `post-rules.ts`.
 - **D8 — Events, not imports, to notifications.** `social.post-failed` (orgId, postId, destination,
   reason) is a job spec in `server/shared/jobs/`, handled by hub-core (parent Q66); whatsapp-status-kit
   D3 adds `social.post-due` the same way. Social never imports notifications.
