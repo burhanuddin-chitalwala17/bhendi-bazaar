@@ -92,6 +92,21 @@ export class EnhancementRepository {
   }
 
   /**
+   * Cut-outs the free image host made in the window (generation-foundation trd D11): every run of a
+   * tool that segments, except those the paid model cut. A scene's row names its painter, not its
+   * cutter, so a scene counts as the host's — an overcount, never an undercount, of absorbed spend.
+   */
+  async countHostCutouts(window: TimeWindow, tools: readonly EnhancementTool[], paidProvider: string): Promise<number> {
+    return await prisma.enhancement.count({
+      where: {
+        createdAt: { gte: window.start, lt: window.end },
+        tool: { in: [...tools] },
+        provider: { not: paidProvider },
+      },
+    });
+  }
+
+  /**
    * Every org's use and spend in one window, in one grouped query (spec R7) — the platform owner's
    * table is never a query per org. Grouped by state as well as by org because the two numbers
    * count different rows: the month's use is the states that hold a slot, while the spend is every

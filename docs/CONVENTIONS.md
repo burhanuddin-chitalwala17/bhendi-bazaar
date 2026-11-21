@@ -1,6 +1,6 @@
 # Conventions index
 
-- **Verified:** 2026-11-20
+- **Verified:** 2026-11-21
 - **Covers:** `docs/adr/*.md`, `docs/specs/*/`
 
 The canonical index of *how we work*, moved out of the root `CLAUDE.md` on 2026-11-01 so it is read when
@@ -68,6 +68,7 @@ nothing more; detail lives in the ADR so it has one wording ([ADR-0009](adr/0009
 - **Shared hooks live in `src/hooks/core`; every other hook travels with its component.** [ADR-0057](adr/0057-shared-hooks-live-in-one-core-folder-and-every-other-hook-travels-with-its-component.md)
 - **Media is one aggregate; a derivative is lineage, not a use; usage is a query, never a counter.** [ADR-0058](adr/0058-media-is-one-aggregate-a-derivative-is-lineage-not-a-use-and-usage-is-derived.md)
 - **An enhancement never changes the product's pixels, proven before encoding.** [ADR-0059](adr/0059-an-enhancement-never-changes-the-products-pixels-proven-before-encoding.md)
+- **Every AI picture goes through one generation port; models are data; a refusal is never routed around** — only `server/content/generation/adapters/` names a provider; `tests/unit/generation-vendor-boundary.test.ts`. [ADR-0076](adr/0076-image-generation-goes-through-one-port-and-models-are-data.md)
 - **Mutations stay on route handlers, and a mutating request must come from our origin** — `src/middleware.ts` refuses cross-site `POST`/`PUT`/`PATCH`/`DELETE` to `/api/**`; signed webhooks and `/api/auth` are the named exemptions. [ADR-0060](adr/0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md)
 - **Every public route is classified for rate limiting** — one registry: a named policy or an exemption with its reason; an unclassified route fails the suite. [ADR-0063](adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md)
 - **A storefront read shared across requests goes through `cachedRead` and declares every table it reads** — a write clears by table, the clock stays per request, and money is never read from it. `tests/integration/read-cache-tables.test.ts` [ADR-0065](adr/0065-storefront-reads-are-shared-across-requests-and-cleared-by-the-tables-a-write-touches.md)

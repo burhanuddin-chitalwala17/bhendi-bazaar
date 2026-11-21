@@ -25,8 +25,10 @@ const cutOut = vi.fn();
 const inScene = vi.fn();
 const segmenterFor = vi.fn();
 const scenePainterFor = vi.fn();
+const generations = { costForEnhancement: vi.fn() };
 
 vi.mock("@server/content/enhancement.repository", () => ({ enhancementRepository: repo }));
+vi.mock("@server/content/generation.repository", () => ({ generationRepository: generations }));
 vi.mock("@server/content/enhancement-policy.repository", () => ({ enhancementPolicyRepository: {} }));
 vi.mock("@server/catalog/media-asset.service", () => ({ mediaAssetService: media }));
 vi.mock("@server/shared/prisma", () => ({ prisma: {} }));
@@ -87,7 +89,9 @@ beforeEach(() => {
   cutOut.mockResolvedValue({ output, mimeType: "image/png", width: 900, height: 900 });
   inScene.mockResolvedValue({ output, mimeType: "image/webp", width: 1200, height: 1200 });
   segmenterFor.mockReturnValue({ key: "model", isAvailable: () => true, cutOut: vi.fn() });
-  scenePainterFor.mockReturnValue({ key: "model", isAvailable: () => true, paint: vi.fn() });
+  scenePainterFor.mockReturnValue({ key: "generation", isAvailable: () => true, paint: vi.fn() });
+  // Only a run that called a model has generation rows; their sum is what the model cost (generation-foundation D7).
+  generations.costForEnhancement.mockReset().mockResolvedValue(0);
 });
 
 describe("image.enhance", () => {
@@ -159,30 +163,34 @@ describe("image.enhance", () => {
   });
 
   it("runs a scene through both services and charges the cut-out and the paint together", async () => {
-    // The cut-out came from the paid model here, so this run bought two things (trd D6).
-    repo.findById.mockResolvedValue({ ...requested, tool: "SCENE", preset: "wooden-table", provider: "model" });
+    // The cut-out came from the paid model here, so this run bought two things (trd D6); the paint's
+    // price is its generation row's, at that day's rate (generation-foundation D7).
+    generations.costForEnhancement.mockResolvedValue(13);
+    repo.findById.mockResolvedValue({ ...requested, tool: "SCENE", preset: "wooden-table", provider: "generation" });
     await run();
 
+    expect(scenePainterFor).toHaveBeenCalledWith("e1");
     expect(inScene).toHaveBeenCalledWith(
       { bytes: Buffer.from("source bytes"), objectKey: "products/org-1/a.webp", mimeType: "image/webp" },
       expect.objectContaining({ key: "model" }),
-      expect.objectContaining({ key: "model" }),
+      expect.objectContaining({ key: "generation" }),
       expect.objectContaining({ key: "wooden-table", aspect: "square" }),
     );
     expect(repo.markProposed).toHaveBeenCalledWith("e1", {
       proposalKey: "proposals/e1.webp",
       // The ledger records the service that painted; the cost is everything the run spent.
-      provider: "model",
-      costPaise: 350 + 18,
+      provider: "generation",
+      costPaise: 13 + 18,
       proposedAt: expect.any(Date),
     });
   });
 
   it("charges a scene for the paint alone where the cut-out came from the free transform", async () => {
+    generations.costForEnhancement.mockResolvedValue(13);
     segmenterFor.mockReturnValue({ key: "zone", isAvailable: () => true, cutOut: vi.fn() });
-    repo.findById.mockResolvedValue({ ...requested, tool: "SCENE", preset: "shop-shelf", provider: "model" });
+    repo.findById.mockResolvedValue({ ...requested, tool: "SCENE", preset: "shop-shelf", provider: "generation" });
     await run();
-    expect(repo.markProposed).toHaveBeenCalledWith("e1", expect.objectContaining({ provider: "model", costPaise: 350 }));
+    expect(repo.markProposed).toHaveBeenCalledWith("e1", expect.objectContaining({ provider: "generation", costPaise: 13 }));
   });
 
   it("fails a scene whose setting the list no longer has, before any bytes are read", async () => {

@@ -403,6 +403,21 @@ module is [image-generation-foundation](specs/image-generation-foundation/). Che
 - **Unified billing** passes provider prices through with no markup and adds a **5% fee on credits bought**.
   It accepts a non-prepaid card only (no PayPal, Apple Pay or Google Pay). An Indian card's forex markup is extra.
 
+**Gemini API directly (`IMAGE_GEN_GEMINI_API_KEY`).** Checked 2026-11-21; the docs moved from
+ai.google.dev to aistudio.google.com, and the pricing table was read as a summary, so **recheck prices**.
+- **The image docs now show the Interactions API**, `POST https://generativelanguage.googleapis.com/v1beta/interactions`
+  with `x-goog-api-key`, not `generateContent`. Body: `{"model", "input": [{type:"text"}, {type:"image",
+  mime_type, data:<base64>}…], "response_format": {type:"image", aspect_ratio, image_size}}`. Sizes are
+  uppercase (`1K`, `2K`, `4K`); lowercase is rejected. The reply carries base64, at `output_image.data` or
+  in a `steps[].content[]` block of `type: "image"`. Synchronous; a Batch API halves the price.
+- **Model ids:** Nano Banana Pro `gemini-3-pro-image`, Nano Banana 2 `gemini-3.1-flash-image`, Nano Banana
+  2.1 `gemini-nano-banana-2.1` (newest), 2 Lite `gemini-3.1-flash-lite-image`.
+- **Up to 14 references** for Pro, 2 and 2.1 (Pro: 6 objects, 5 characters, 3 style). The gateway's route
+  to Pro takes 3.
+- **Prices (per 1K image):** Pro $0.134 (+$0.0011 per input image), Nano Banana 2 $0.067, 2.1 $0.0336.
+- **No usage or cost in the reply**, and the shape of a safety refusal is not documented, so the adapter
+  reads refusal words from whatever comes back. Every output carries a SynthID watermark; C2PA not stated.
+
 **fal (the current scene painter, `IMAGE_MODEL_*`).** `POST {endpoint}/fal-ai/bria/product-shot`,
 `Authorization: Key …`. It takes a data URL and answers with an image URL. List prices, unverified since the
 spike: Bria product-shot ≈$0.04, Nano Banana Pro $0.15, Nano Banana 2 $0.08, Seedream 5 Pro $0.0675

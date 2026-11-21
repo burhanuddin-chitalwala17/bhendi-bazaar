@@ -413,6 +413,11 @@ export const mediaAssetService = {
     return await putObject(key, bytes, contentType);
   },
 
+  /** A loose object's bytes, for a retried run replaying what it already paid for (generation-foundation trd D6). */
+  async readLooseObject(key: string): Promise<Buffer> {
+    return await getObject(key);
+  },
+
   async deleteLooseObject(key: string): Promise<void> {
     await deleteObject(publicUrlFor(key));
   },

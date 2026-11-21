@@ -16,7 +16,6 @@ import {
   FALLBACK_DAILY_CAP_PAISE,
   FALLBACK_MONTHLY_ALLOWANCE,
   MODEL_SEGMENT_PAISE,
-  SCENE_PAINT_PAISE,
   TOOL_COPY,
   TOOL_COST_PAISE,
   TOOL_MIME_TYPE,
@@ -89,10 +88,11 @@ describe("the closed sets mirror the schema", () => {
     expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.CUTOUT][ENHANCEMENT_PROVIDER.MODEL]).toBe(MODEL_SEGMENT_PAISE);
     expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.WHITE][ENHANCEMENT_PROVIDER.MODEL]).toBe(MODEL_SEGMENT_PAISE);
     expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.STUDIO][ENHANCEMENT_PROVIDER.MODEL]).toBe(MODEL_SEGMENT_PAISE);
-    // A scene is priced per paint; what a whole scene run costs is that plus its cut-out, which
-    // `runCostPaise` sums and `tests/unit/enhancement-scene.test.ts` holds to each combination.
-    expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.SCENE][ENHANCEMENT_PROVIDER.MODEL]).toBe(SCENE_PAINT_PAISE);
-    expect(SCENE_PAINT_PAISE).toBe(350);
+    // A painted scene's price is its generation row's, at that day's rate, never a paise constant
+    // typed here (generation-foundation D7): every provider prices a scene step at nothing.
+    for (const provider of Object.values(ENHANCEMENT_PROVIDER)) {
+      expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.SCENE][provider]).toBe(0);
+    }
     // `light` never asks a service for anything, so no service can make it cost. Nor does
     // `enlarge`: a plain resize runs on our own CPU, and an upscaler that would cost something
     // is refused because it redraws the product, not because of the bill (trd D2).
@@ -102,7 +102,7 @@ describe("the closed sets mirror the schema", () => {
   });
 
   it("names a service for what it is to us, never for the company behind it", () => {
-    expect(Object.values(ENHANCEMENT_PROVIDER).sort()).toEqual(["model", "sharp", "zone"]);
+    expect(Object.values(ENHANCEMENT_PROVIDER).sort()).toEqual(["generation", "model", "sharp", "zone"]);
   });
 
   it("has a line for all six tools, so the sheet can list any that becomes available", () => {

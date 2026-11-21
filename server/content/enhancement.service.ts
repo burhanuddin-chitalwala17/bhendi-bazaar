@@ -15,6 +15,9 @@ import {
 import { enhancementSpec } from "@server/content/enhancement.job";
 import { ENLARGE_TARGET_LONG_EDGE } from "@server/content/channel-rules";
 import { scenePainterFor, segmenterFor } from "@server/content/providers";
+import { generationRepository } from "@server/content/generation.repository";
+import { rateFor } from "@server/content/generation/exchange-rate";
+import { microUsdToPaise } from "@server/content/generation/pricing";
 import type { Segmenter } from "@server/content/providers/segment";
 import type { ScenePainter } from "@server/content/providers/scene";
 import { scenePresetFor, type ScenePreset } from "@server/content/scene-presets";
@@ -26,8 +29,11 @@ import { inScene } from "@server/content/tools/scene";
 import { enlarge } from "@server/content/tools/enlarge";
 import type { ToolInput, ToolResult } from "@server/content/tools/tool";
 import {
+  CUTOUT_OVERAGE_MICRO_USD,
   ENHANCEMENT_PROVIDER,
   ENHANCEMENT_STATE,
+  FREE_CUTOUTS_PER_MONTH,
+  SEGMENTING_TOOLS,
   ENHANCEMENT_TOOL,
   PROPOSAL_EXTENSION,
   TOOL_MIME_TYPE,
@@ -100,6 +106,7 @@ const TOOLS: Record<AvailableTool, ToolPipeline> = {
 function prepareTool(
   tool: AvailableTool,
   preset: string | null,
+  runId?: string,
 ): {
   provider: EnhancementProvider;
   costPaise: number;
@@ -124,7 +131,7 @@ function prepareTool(
   // row records the service that painted, and the cost of everything the run spent (trd D6).
   const setting = scenePresetFor(preset);
   if (!setting) throw new DomainError("Choose one of the scene settings", { field: "preset" });
-  const painter = scenePainterFor();
+  const painter = scenePainterFor(runId);
   return {
     provider: painter.key,
     costPaise: runCostPaise([
@@ -258,12 +265,19 @@ export const enhancementService = {
 
     try {
       if (!isAvailableTool(row.tool)) throw new DomainError("That improvement is not available yet");
-      const { provider, costPaise, run } = prepareTool(row.tool, row.preset);
+      const { provider, costPaise, run } = prepareTool(row.tool, row.preset, row.id);
       const source = await mediaAssetService.readImageBytes(row.sourceAssetId);
       const result = await run(source);
       const proposalKey = proposalKeyFor(row.id, row.tool);
       await mediaAssetService.putLooseObject(proposalKey, result.output, result.mimeType);
-      await enhancementRepository.markProposed(row.id, { proposalKey, provider, costPaise, proposedAt: now });
+      // What a model charged is its generation row's, priced at that day's rate (generation-foundation trd D7).
+      const generated = await generationRepository.costForEnhancement(row.id);
+      await enhancementRepository.markProposed(row.id, {
+        proposalKey,
+        provider,
+        costPaise: costPaise + generated,
+        proposedAt: now,
+      });
       console.log(`[jobs] image.enhance ${jobId}: ${enhancementId} proposed (${row.tool}, ${result.width}x${result.height})`);
     } catch (error) {
       if (error instanceof DomainError) {
@@ -425,5 +439,18 @@ export const enhancementService = {
   /** What every org together has spent today, in paise — the number the cap is read against. */
   async platformSpendToday(now: Date = new Date()): Promise<number> {
     return await enhancementRepository.sumCostPaise(dayWindow(now));
+  },
+
+  /**
+   * What the free tools cost the platform this month past the host's free allowance (ai-images Q16;
+   * generation-foundation trd D11). A query, never a counter. Paise is null when no exchange rate
+   * has ever been stored — the count still shows.
+   */
+  async absorbedThisMonth(now: Date = new Date()): Promise<{ cutouts: number; over: number; paise: number | null }> {
+    const cutouts = await enhancementRepository.countHostCutouts(monthWindow(now), SEGMENTING_TOOLS, ENHANCEMENT_PROVIDER.MODEL);
+    const over = Math.max(0, cutouts - FREE_CUTOUTS_PER_MONTH);
+    const rate = over > 0 ? await rateFor(now) : null;
+    const paise = over === 0 ? 0 : rate ? microUsdToPaise(over * CUTOUT_OVERAGE_MICRO_USD, rate.paisePerUsd) : null;
+    return { cutouts, over, paise };
   },
 };

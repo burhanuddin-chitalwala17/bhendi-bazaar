@@ -3,7 +3,7 @@ import { mediaAssetService } from "@server/catalog/media-asset.service";
 import { ENHANCEMENT_PROVIDER, type EnhancementProvider } from "@server/content/enhancement.types";
 import { zoneSegmenter } from "@server/content/providers/segment/zone";
 import { modelSegmenter } from "@server/content/providers/segment/model";
-import { modelScenePainter } from "@server/content/providers/scene/model";
+import { generatedScenePainter } from "@server/content/providers/scene/generated";
 import type { Segmenter, StoreUrls } from "@server/content/providers/segment";
 import type { ScenePainter } from "@server/content/providers/scene";
 
@@ -49,13 +49,12 @@ export function availableSegmenters(): Segmenter[] {
 }
 
 /**
- * The service that paints a setting, or a refusal the org member can read (trd D3). There is no
- * preference to read: a scene has no free route, so there is one painter and the list it is found
- * in is what a second one joins. Asked at the moment of use, like the segmenters, so a key added
- * to the environment takes effect on the next run rather than on the next deploy.
+ * The painter for one run, or a refusal the org member can read (generation-foundation trd D8).
+ * Which model paints is the generation router's setting, not this file's; the run id makes the
+ * paint idempotent. Called without one at request time, only to ask whether anything can paint.
  */
-export function scenePainterFor(): ScenePainter {
-  const chosen = [modelScenePainter()].find((candidate) => candidate.isAvailable());
-  if (!chosen) throw new DomainError("Scene backdrops are not set up yet");
-  return chosen;
+export function scenePainterFor(runId = "availability-check"): ScenePainter {
+  const painter = generatedScenePainter(runId);
+  if (!painter.isAvailable()) throw new DomainError("Scene backdrops are not set up yet");
+  return painter;
 }

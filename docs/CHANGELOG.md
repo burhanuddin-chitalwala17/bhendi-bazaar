@@ -12,6 +12,28 @@
 
 ## Entries
 
+## 2026-11-21 — Image generation goes through one provider-agnostic module; scenes are painted on Cloudflare [MIGRATION]
+
+- **New module `server/content/generation/`** ([generation-foundation](specs/ai-images/generation-foundation/),
+  [ADR-0076](adr/0076-image-generation-goes-through-one-port-and-models-are-data.md)): one port, adapters for
+  Cloudflare's AI gateway (hosted and third-party models), Gemini directly and fal, a model registry as
+  data with dated prices, a router (ordered list per purpose from `IMAGE_GEN_MODELS_<PURPOSE>`, capability
+  filter, fallback only when a model is unavailable), versioned prompts, and a cost in integer paise at
+  the day's ECB rate.
+- **[MIGRATION] `20261121090000_generation_ledger`:** `Generation` (one row per model call, written before
+  the call so a retry replays rather than pays twice) and `ExchangeRate` (one row per day). Additive only.
+- **Behaviour change — "In a scene"** is painted by Cloudflare's klein-4b first (≈₹0.13), Bria on fal as the
+  fallback. The paste-back and the pixel check are unchanged. The scene's cost is now its generation
+  row's, not the typed `SCENE_PAINT_PAISE` (removed); `Enhancement.provider` reads `generation`.
+- `/admin/enhancements` shows the free-tool cut-outs the platform absorbs past the host's 5,000 a month.
+- `npm run generate:bakeoff` compares models on a shop's photographs, side by side with cost and time,
+  writing no rows. Shared bake-off helpers moved to `scripts/bakeoff-shared.ts`.
+- **Deploy:** set `IMAGE_GEN_ACCOUNT_ID` and `IMAGE_GEN_API_TOKEN` (and optionally `IMAGE_GEN_GEMINI_API_KEY`).
+  Without them scenes keep working on fal. The worker must reach `api.frankfurter.app` for the rate.
+  The hosted model's multipart field names are not documented; verify one live call before relying on it.
+- Tests: `generation-router`, `generation-adapter-contract`, `generation-cost`, `generation-idempotency`,
+  `generation-vendor-boundary` (mutation-tested), the scene painter rewritten; no contract change.
+
 ## 2026-11-20 — Fix: CI's production audit blocked on a new advisory in Prisma's `effect`
 
 - `scripts/audit-prod.mjs` failed on GHSA-7589-6fvf-x4pw (high, ReDoS in `Schema.TemplateLiteral`) in `effect@3.20.0`,

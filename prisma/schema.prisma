@@ -163,6 +163,9 @@ model Enhancement {
   proposedAt    DateTime?
   decidedAt     DateTime?
 
+  /// The model calls this run made (ai-images/generation-foundation trd D6).
+  generations   Generation[]
+
   @@index([orgId, createdAt])
   @@index([orgId, state])
   @@index([sourceAssetId])
@@ -195,6 +198,60 @@ model EnhancementSettings {
   dailyCapPaise           Int
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
+}
+
+/// One call to an image model (ai-images/generation-foundation trd D6), written before the call so a
+/// retried job replays the stored result instead of paying again. Cost is what the platform spent:
+/// micro-dollars from the model's price rule and paise at the recorded day's rate (Invariant 3).
+model Generation {
+  id                  String          @id @default(cuid())
+  /// Ours, unique: a retry with the same key never makes a second call that succeeded.
+  idempotencyKey      String          @unique
+  purpose             String
+  /// The registry id (`cf/flux-2-klein-4b`), never the provider's own spelling.
+  modelId             String?
+  state               GenerationState @default(SUBMITTED)
+  promptVersion       String
+  platformPrompt      String
+  /// The seller's own words, kept apart from the platform's; null where there were none.
+  brief               String?
+  referenceAssetIds   String[]
+  aspect              String
+  size                String
+  costMicroUsd        Int             @default(0)
+  costPaise           Int             @default(0)
+  /// The day whose rate priced this call; null for a free model.
+  rateDay             DateTime?       @db.Date
+  outputKeys          String[]
+  synthetic           Boolean         @default(true)
+  containsPerson      Boolean         @default(false)
+  /// A worker died mid-call and the call was made again: the provider may have billed twice (trd D6).
+  retriedAfterUnknown Boolean         @default(false)
+  error               String?
+  /// The enhancement run this served, if any. Restrict: a record of money spent never cascades (ADR-0020).
+  enhancementId       String?
+  enhancement         Enhancement?    @relation(fields: [enhancementId], references: [id], onDelete: Restrict)
+  createdAt           DateTime        @default(now())
+  finishedAt          DateTime?
+
+  @@index([enhancementId])
+  @@index([createdAt])
+}
+
+enum GenerationState {
+  SUBMITTED
+  SUCCEEDED
+  FAILED
+  REFUSED
+}
+
+/// What one US dollar cost in paise on a day (generation-foundation trd D7): fetched by the worker,
+/// one row a day, never typed into code. An integer, because money is integer paise (Invariant 3).
+model ExchangeRate {
+  day         DateTime @id @db.Date
+  paisePerUsd Int
+  source      String
+  fetchedAt   DateTime @default(now())
 }
 
 enum EnhancementTool {

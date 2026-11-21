@@ -14,7 +14,6 @@ import {
   ENHANCEMENT_PROVIDER,
   ENHANCEMENT_TOOL,
   MODEL_SEGMENT_PAISE,
-  SCENE_PAINT_PAISE,
   runCostPaise,
 } from "@server/content/enhancement.types";
 import {
@@ -285,27 +284,21 @@ describe("the canvas a preset asks for", () => {
 });
 
 describe("what a scene run costs", () => {
-  it("is ≈$0.04 a paint, as a whole number of paise", () => {
-    expect(SCENE_PAINT_PAISE).toBe(350);
-    expect(Number.isInteger(SCENE_PAINT_PAISE)).toBe(true);
-  });
-
-  it("is the sum of everything the run bought, per combination of services", () => {
-    // The cut-out from the image host's free transform: only the paint is billed.
+  it("prices the paint at nothing in the table: its cost is the generation row's (generation-foundation D7)", () => {
     expect(
       runCostPaise([
         { tool: ENHANCEMENT_TOOL.CUTOUT, provider: ENHANCEMENT_PROVIDER.ZONE },
-        { tool: ENHANCEMENT_TOOL.SCENE, provider: ENHANCEMENT_PROVIDER.MODEL },
+        { tool: ENHANCEMENT_TOOL.SCENE, provider: ENHANCEMENT_PROVIDER.GENERATION },
       ]),
-    ).toBe(SCENE_PAINT_PAISE);
+    ).toBe(0);
 
-    // The cut-out from the paid model: a scene costs a cut-out *and* a paint.
+    // The cut-out from the paid model is still the table's: a scene costs a cut-out *and* a paint.
     expect(
       runCostPaise([
         { tool: ENHANCEMENT_TOOL.CUTOUT, provider: ENHANCEMENT_PROVIDER.MODEL },
-        { tool: ENHANCEMENT_TOOL.SCENE, provider: ENHANCEMENT_PROVIDER.MODEL },
+        { tool: ENHANCEMENT_TOOL.SCENE, provider: ENHANCEMENT_PROVIDER.GENERATION },
       ]),
-    ).toBe(SCENE_PAINT_PAISE + MODEL_SEGMENT_PAISE);
+    ).toBe(MODEL_SEGMENT_PAISE);
   });
 
   it("still prices a one-step run as that one step", () => {
