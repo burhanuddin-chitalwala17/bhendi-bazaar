@@ -160,15 +160,20 @@ describe.each(CASES)("$name", (c) => {
     await failsWith(kind);
   });
 
-  it.runIf(c.viaLink)("treats a made picture it could not fetch as uncertain, never unavailable", async () => {
-    configure();
-    fetchMock.mockResolvedValueOnce(c.success()).mockResolvedValueOnce(new Response("gone", { status: 503 }));
-    await expect(c.adapter.call(model, input)).rejects.toMatchObject({ kind: GENERATION_FAILURE.UNCERTAIN });
-  });
-
   it("classifies the provider's own refusal as refused", async () => {
     configure();
     fetchMock.mockResolvedValueOnce(c.refusedInBody());
     await expect(c.adapter.call(model, input)).rejects.toMatchObject({ kind: GENERATION_FAILURE.REFUSED });
+  });
+});
+
+// Only an adapter whose provider answers with a link has a second fetch to lose.
+describe.each(CASES.filter((c) => c.viaLink))("$name, the linked picture", (c) => {
+  it("treats a made picture it could not fetch as uncertain, never unavailable (D6)", async () => {
+    Object.assign(process.env, c.env);
+    fetchMock.mockResolvedValueOnce(c.success()).mockResolvedValueOnce(new Response("gone", { status: 503 }));
+    await expect(c.adapter.call(modelById(c.model) as ModelEntry, input)).rejects.toMatchObject({
+      kind: GENERATION_FAILURE.UNCERTAIN,
+    });
   });
 });

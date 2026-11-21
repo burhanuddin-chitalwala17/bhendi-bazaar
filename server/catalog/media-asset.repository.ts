@@ -7,7 +7,7 @@ import {
   Prisma,
 } from "@prisma/client";
 import type { MediaLibraryFilters } from "@/lib/validation/schemas/media-library.schema";
-import { MEDIA_LIBRARY_PAGE_SIZE, type MediaAssetRow, type MediaUseDto } from "@server/catalog/media-library.types";
+import { MEDIA_LIBRARY_PAGE_SIZE, type MediaAssetRow, type MediaTag, type MediaUseDto } from "@server/catalog/media-library.types";
 import { VIDEO_TRANSFORM } from "@server/catalog/video";
 
 /**
@@ -66,6 +66,7 @@ const LIBRARY_SELECT = {
   retiredAt: true,
   retiredBy: true,
   retiredReason: true,
+  tags: true,
   // A hosted video's poster frame and renditions, so its tile has a picture and its sheet can play
   // it (video-hosting D5, D7). A crop's transform has no `kind`, so a photograph's derivatives never match.
   derivatives: {
@@ -115,6 +116,7 @@ function libraryWhere(
     ...(filters.from || filters.to ? { createdAt: { gte: filters.from, lte: filters.to } } : {}),
     ...(inProduct ? { productMedia: { some: inProduct } } : {}),
     ...(filters.usage === "used" ? USED : filters.usage === "unused" ? UNUSED : {}),
+    ...(filters.tag ? { tags: { has: filters.tag } } : {}),
   };
 }
 
@@ -537,6 +539,34 @@ export class MediaAssetRepository {
    * in one conditional statement: the row moves only if it is this org's hosted video. Whether the
    * photograph may be chosen — this org's, ready, a photograph — is the service's check before this.
    */
+  /**
+   * Add a tag to images that lack it (media-tags D2, D3): one statement, idempotent, so a gallery
+   * saved twice tags once. Only images; a video in a gallery is not a product photograph.
+   */
+  async addTag(ids: string[], tag: MediaTag, db: MediaDb = prisma): Promise<void> {
+    if (ids.length === 0) return;
+    await db.mediaAsset.updateMany({
+      where: { id: { in: ids }, kind: MediaAssetKind.IMAGE, NOT: { tags: { has: tag } } },
+      data: { tags: { push: tag } },
+    });
+  }
+
+  /** The shop's own toggle (media-tags R6): one conditional statement each way, scoped to its org. */
+  async setTag(orgId: string, id: string, tag: MediaTag, on: boolean): Promise<boolean> {
+    if (on) {
+      const { count } = await prisma.mediaAsset.updateMany({
+        where: { id, orgId, NOT: { tags: { has: tag } } },
+        data: { tags: { push: tag } },
+      });
+      if (count === 1) return true;
+      return (await prisma.mediaAsset.count({ where: { id, orgId } })) === 1;
+    }
+    const removed = await prisma.$executeRaw`
+      UPDATE "MediaAsset" SET "tags" = array_remove("tags", ${tag}::"MediaTag")
+      WHERE "id" = ${id} AND "orgId" = ${orgId}`;
+    return removed === 1;
+  }
+
   async setPoster(orgId: string, videoId: string, posterAssetId: string | null): Promise<boolean> {
     const result = await prisma.mediaAsset.updateMany({
       where: { id: videoId, orgId, kind: MediaAssetKind.VIDEO, state: { not: MediaAssetState.RETIRED } },

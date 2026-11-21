@@ -29,7 +29,7 @@ const SOURCE_OPTIONS: FilterOption[] = [
 ];
 
 /** The filter keys, read by name: the awaited `searchParams` does not enumerate, so a spread sees nothing. */
-const FILTER_KEYS = ["kind", "usage", "source", "from", "to", "productId", "slot", "retired"] as const;
+const FILTER_KEYS = ["tag", "kind", "usage", "source", "from", "to", "productId", "slot", "retired"] as const;
 
 /** The org's images and videos in one place, filtered from the URL (media-library spec R6). */
 export default async function OrgLibraryPage({

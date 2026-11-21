@@ -14,6 +14,7 @@ import {
   MEDIA_LIBRARY_PAGE_SIZE,
   describeUses,
   toMediaAssetDto,
+  type MediaTag,
   type MediaAssetDetailDto,
   type MediaAssetDto,
 } from "@server/catalog/media-library.types";
@@ -243,6 +244,14 @@ export const mediaAssetService = {
    * (video-hosting spec R8). The photograph is checked before the write, and another org's — or
    * one not ready, or not a photograph — is "not found" rather than a hint that it exists.
    */
+  /** Switch one tag on one of the org's images (ai-images/media-tags R6); another org's is "not found". */
+  async setTag(orgId: string, id: string, tag: MediaTag, on: boolean): Promise<MediaAssetDto> {
+    if (!(await mediaAssetRepository.setTag(orgId, id, tag, on))) throw new NotFoundError("Image not found");
+    const after = await mediaAssetRepository.findForOrg(orgId, id);
+    if (!after) throw new NotFoundError("Image not found");
+    return toMediaAssetDto(after);
+  },
+
   async replacePoster(orgId: string, videoId: string, posterAssetId: string | null): Promise<MediaAssetDto> {
     if (posterAssetId !== null) {
       const photo = await mediaAssetRepository.findForOrg(orgId, posterAssetId);

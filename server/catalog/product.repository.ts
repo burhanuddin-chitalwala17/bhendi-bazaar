@@ -26,6 +26,7 @@ import { pushStockSpec } from "@server/shared/jobs/push-stock.job";
 import { recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { coverOf, type MediaKind, type ProductMediaInput } from "@server/catalog/media";
 import { mediaAssetRepository, type MediaDb } from "@server/catalog/media-asset.repository";
+import { MEDIA_TAG } from "@server/catalog/media-library.types";
 import { VERSION_FIELD, versionConflictMessage } from "@server/catalog/product-edit";
 import { BULK_PRICE_MODE, MAX_PRICE_PAISE, PRODUCT_AUDIT_ACTION, type BulkPriceChange } from "@server/catalog/product-bulk.types";
 
@@ -54,6 +55,8 @@ export async function withAssetIds<T extends { kind: MediaKind; ref: string }>(
         rows.filter((row) => row.kind !== "YOUTUBE").map((row) => row.ref),
         db,
     );
+    // An image put in a gallery is a product photograph (ai-images/media-tags D3): every gallery write passes here.
+    await mediaAssetRepository.addTag([...imageIds.values()], MEDIA_TAG.PRODUCT, db);
     const videoRefs = [...new Set(rows.filter((row) => row.kind === "YOUTUBE").map((row) => row.ref))];
     const videoIds = await mediaAssetRepository.embedIdsByRefs(orgId, videoRefs, db);
     for (const ref of videoRefs) {
@@ -1018,6 +1021,11 @@ export class AdminProductsRepository {
       const ids = updates.map((row) => row.id as string);
       if (ids.length) await tx.productMedia.deleteMany({ where: { productId: { in: ids } } });
       if (media.length) await tx.productMedia.createMany({ data: media });
+      await mediaAssetRepository.addTag(
+        media.flatMap((row) => (row.kind === "IMAGE" && row.assetId ? [row.assetId] : [])),
+        MEDIA_TAG.PRODUCT,
+        tx,
+      );
       await stockRepository.setForImport(ids, stock, tx);
       // Each product's answers in the value rows, in the sheet's transaction (dynamic-form Q16).
       for (const a of answers) await productValueRepository.writeAnswersIn(tx, a.id, a);

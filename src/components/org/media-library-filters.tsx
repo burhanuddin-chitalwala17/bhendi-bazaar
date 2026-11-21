@@ -7,7 +7,8 @@ import { DateRangeField } from "@/components/shared/forms/date-range-field";
 import type { DayRange } from "@/lib/date-range";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MEDIA_USAGE, type MediaLibraryFilters as Filters } from "@/lib/validation/schemas/media-library.schema";
-import { MEDIA_FILTERS_COPY } from "./media-library-copy";
+import { MEDIA_TAGS } from "@server/catalog/media-library.types";
+import { MEDIA_FILTERS_COPY, MEDIA_GRID_COPY } from "./media-library-copy";
 
 export interface FilterOption {
   value: string;
@@ -70,6 +71,16 @@ export function MediaLibraryFilters({ filters, range, kinds, sources }: MediaLib
       aria-busy={isPending}
       className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
     >
+      {/* First in the row (media-tags ux): what a picture is for is the usual question. */}
+      <label className="flex-1 text-sm sm:max-w-40">
+        <span className="mb-1 block text-muted-foreground">{MEDIA_FILTERS_COPY.tag}</span>
+        <Select name="tag" defaultValue={filters.tag ?? ""}>
+          <option value="">{MEDIA_FILTERS_COPY.allTags}</option>
+          {MEDIA_TAGS.map((tag) => (
+            <option key={tag} value={tag}>{MEDIA_GRID_COPY.tagLabel[tag]}</option>
+          ))}
+        </Select>
+      </label>
       <label className="flex-1 text-sm sm:max-w-40">
         <span className="mb-1 block text-muted-foreground">{MEDIA_FILTERS_COPY.kind}</span>
         <Select name="kind" defaultValue={filters.kind ?? ""}>

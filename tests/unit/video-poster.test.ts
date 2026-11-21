@@ -4,6 +4,7 @@
  * ready photograph as "not found", null goes back to the frame, and the body accepts an id or
  * null and nothing else.
  */
+import type { MediaTag } from "@server/catalog/media-library.types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ZodError } from "zod";
 import { VIDEO_TRANSFORM } from "@server/catalog/video";
@@ -47,6 +48,7 @@ const libraryRow = (overrides: Record<string, unknown> = {}) => ({
   retiredAt: null,
   retiredBy: null,
   retiredReason: null,
+  tags: [] as MediaTag[],
   derivatives,
   posterAsset: null,
   _count: counts,

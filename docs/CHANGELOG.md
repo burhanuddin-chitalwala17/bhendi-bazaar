@@ -12,6 +12,17 @@
 
 ## Entries
 
+## 2026-11-21 — Library images carry tags: Product and Reference [MIGRATION]
+
+- [media-tags](specs/ai-images/media-tags/): `MediaAsset.tags`, a GIN-indexed array of the closed `MediaTag`
+  enum, written only by `media-asset.repository.ts`. A Tag filter leads the library's filter row; the
+  photo panel toggles tags; a reference picture's tile carries a badge.
+- **[MIGRATION] `20261121100000_media_tags`** tags every shop image a product's gallery uses as Product;
+  images no product uses, and platform images, stay untagged (ai-images Q22, as revised by the owner).
+- Product is added wherever a gallery links an image (`withAssetIds`, and bulk import); Reference arrives
+  with improve-with-ai. `PUT /api/org/[orgId]/media/[assetId]/tags` (free, `core`).
+- `MediaAssetDto` gains `tags` (catalog-internal; no `[CONTRACT]`).
+
 ## 2026-11-21 — Image generation goes through one provider-agnostic module; scenes are painted on Cloudflare [MIGRATION]
 
 - **New module `server/content/generation/`** ([generation-foundation](specs/ai-images/generation-foundation/),

@@ -98,7 +98,12 @@ model MediaAsset {
   @@index([orgId, contentHash])
   @@index([ref])
   @@index([derivedFromId])
+  /// What the shop says this image is for (ai-images/media-tags D1); several at once. Product is added
+  /// where a gallery links the image, Reference where it is chosen as one; "in use" stays derived.
+  tags          MediaTag[]      @default([])
+
   @@index([posterAssetId])
+  @@index([tags], type: Gin)
 }
 
 enum MediaAssetKind {
@@ -106,6 +111,12 @@ enum MediaAssetKind {
   VIDEO_EMBED
   /// A video file we host: the upload is the source, its renditions and poster are DERIVED from it (video-hosting D1).
   VIDEO
+}
+
+/// The closed set of library tags (ai-images Q21); mirrored as MEDIA_TAG in media-library.types.ts.
+enum MediaTag {
+  PRODUCT
+  REFERENCE
 }
 
 enum MediaAssetSource {

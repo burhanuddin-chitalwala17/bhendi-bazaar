@@ -1,6 +1,6 @@
 # TRD — ai-images/generation-foundation
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** content (new `server/content/generation/`), worker jobs
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-21

@@ -25,7 +25,14 @@ import { ImproveDialog } from "@/components/product/improve-dialog";
 import { LockedAction } from "@/components/subscriptions/locked-action";
 import type { CropTransform } from "@/lib/image/crop-transform";
 import { formatDay, formatDuration } from "@/lib/format";
-import { describeUses, type MediaAssetDto, type MediaUseDto } from "@server/catalog/media-library.types";
+import {
+  MEDIA_TAG,
+  MEDIA_TAGS,
+  describeUses,
+  type MediaAssetDto,
+  type MediaTag,
+  type MediaUseDto,
+} from "@server/catalog/media-library.types";
 import type { Pagination } from "@server/shared/pagination";
 import { MEDIA_GRID_COPY } from "./media-library-copy";
 import { FEATURE } from "@/components/subscriptions/features";
@@ -113,6 +120,26 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
     router.refresh();
   };
 
+  // What the shop says a picture is for (ai-images/media-tags R6). The sheet shows the answer at
+  // once; the page re-reads so a tag filter follows.
+  const tagMutation = useMutation(
+    ({ asset, tag, on }: { asset: MediaAssetDto; tag: MediaTag; on: boolean }) =>
+      orgMediaApiClient.setTag(orgId, asset.id, tag, on),
+    { errorMessage: MEDIA_GRID_COPY.tagFailed },
+  );
+  const toggleTag = async (asset: MediaAssetDto, tag: MediaTag) => {
+    const on = !asset.tags.includes(tag);
+    let saved: MediaAssetDto;
+    try {
+      saved = await tagMutation.mutate({ asset, tag, on });
+    } catch {
+      return;
+    }
+    setOpen(saved);
+    toast.success((on ? MEDIA_GRID_COPY.tagAdded : MEDIA_GRID_COPY.tagRemoved)(MEDIA_GRID_COPY.tagLabel[tag]));
+    router.refresh();
+  };
+
   // A refusal is said, not greyed out: a disabled button with no reason is a dead end (spec R7, A3).
   // A crop of something already stored is cut where its bytes already are, and arrives as its own
   // picture beside the one it came from (trd D6a).
@@ -192,6 +219,11 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
               {STATE_BADGES[asset.state] && (
                 <Badge className="absolute left-1 top-1" variant={STATE_BADGES[asset.state]?.variant}>
                   {STATE_BADGES[asset.state]?.label}
+                </Badge>
+              )}
+              {asset.tags.includes(MEDIA_TAG.REFERENCE) && (
+                <Badge className="absolute bottom-1 left-1" variant="secondary">
+                  {MEDIA_GRID_COPY.tagLabel.REFERENCE}
                 </Badge>
               )}
               {asset.durationMs !== null && (
@@ -295,6 +327,30 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                   {MEDIA_GRID_COPY.takenDown}
                   {open.retiredReason ? `: ${open.retiredReason}` : "."}
                 </p>
+              )}
+              {open.kind === "IMAGE" && (
+                <div className="space-y-1">
+                  <h3 className="text-sm font-medium">{MEDIA_GRID_COPY.tags}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {open.state === "RETIRED"
+                      ? // A retired picture's tags are a record, not a choice: shown, not offered.
+                        open.tags.map((tag) => (
+                          <Badge key={tag} variant="secondary">{MEDIA_GRID_COPY.tagLabel[tag]}</Badge>
+                        ))
+                      : MEDIA_TAGS.map((tag) => (
+                          <Button
+                            key={tag}
+                            type="button"
+                            size="sm"
+                            variant={open.tags.includes(tag) ? "default" : "outline"}
+                            aria-pressed={open.tags.includes(tag)}
+                            onClick={() => toggleTag(open, tag)}
+                          >
+                            {MEDIA_GRID_COPY.tagLabel[tag]}
+                          </Button>
+                        ))}
+                  </div>
+                </div>
               )}
               <div className="space-y-1">
                 <h3 className="text-sm font-medium">{MEDIA_GRID_COPY.usedBy}</h3>

@@ -1,10 +1,18 @@
-import type { MediaAssetKind, MediaAssetSource, MediaAssetState, MediaRetiredBy } from "@prisma/client";
+import type { MediaAssetKind, MediaAssetSource, MediaAssetState, MediaRetiredBy, MediaTag as PrismaMediaTag } from "@prisma/client";
 import {
   resolveVideoDerivatives,
   youtubePosterUrl,
   type ProductMediaRendition,
   type VideoDerivativeRow,
 } from "@server/catalog/media";
+
+/**
+ * What a shop says an image is for (ai-images/media-tags D1), mirrored from the Prisma enum so the
+ * browser can load it; `satisfies` keeps the mirror complete.
+ */
+export const MEDIA_TAG = { PRODUCT: "PRODUCT", REFERENCE: "REFERENCE" } as const satisfies Record<PrismaMediaTag, PrismaMediaTag>;
+export type MediaTag = (typeof MEDIA_TAG)[keyof typeof MEDIA_TAG];
+export const MEDIA_TAGS = Object.values(MEDIA_TAG);
 
 /** Tiles per page: eight rows of the 3-up phone grid (ADR-0016). */
 export const MEDIA_LIBRARY_PAGE_SIZE = 24;
@@ -31,6 +39,8 @@ export interface MediaAssetDto {
    * them stops working when this one leaves the library, but its bytes are kept while they exist.
    */
   derivedCount: number;
+  /** What the shop says it is for; several at once (media-tags D1). */
+  tags: MediaTag[];
   createdAt: string;
   /** Whose library this is; null is the platform's own collection (spec R12). */
   orgId: string | null;
@@ -116,6 +126,7 @@ export interface MediaAssetRow {
   retiredAt: Date | null;
   retiredBy: MediaRetiredBy | null;
   retiredReason: string | null;
+  tags: MediaTag[];
   /** A video's ready poster frame and renditions, as the library select joins them; empty for a photograph. */
   derivatives: VideoDerivativeRow[];
   posterAsset: { ref: string } | null;
@@ -136,6 +147,7 @@ export function toMediaAssetDto(row: MediaAssetRow): MediaAssetDto {
     state: row.state,
     uses: totalUses(row._count),
     derivedCount: row._count.derivatives,
+    tags: row.tags,
     createdAt: row.createdAt.toISOString(),
     orgId: row.orgId,
     retiredAt: row.retiredAt ? row.retiredAt.toISOString() : null,

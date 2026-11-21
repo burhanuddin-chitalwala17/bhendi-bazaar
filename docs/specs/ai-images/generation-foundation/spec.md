@@ -1,7 +1,7 @@
 # Spec — ai-images/generation-foundation
 
 - **Summary:** One pipeline makes every AI picture through whichever provider and model the platform has chosen; Cloudflare and Gemini are the first two, a side-by-side comparison picks between models, and "In a scene" is painted through it
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** content
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-21

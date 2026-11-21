@@ -1,7 +1,7 @@
 # Spec — ai-images/media-tags
 
 - **Summary:** A library image carries one or more tags — product, reference — and the library filters by tag, by whether it is in use, and by where it came from
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** catalog (media)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-21

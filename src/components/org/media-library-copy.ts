@@ -1,7 +1,14 @@
+import type { MediaTag } from "@server/catalog/media-library.types";
+
 /** The media library's words: the grid and its sheet, the filters, the upload button, the takedown (ADR-0067). */
 const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
 
 export const MEDIA_GRID_COPY = {
+  tags: "Tags",
+  tagLabel: { PRODUCT: "Product", REFERENCE: "Reference" } as Record<MediaTag, string>,
+  tagAdded: (tag: string) => `Added tag ${tag}`,
+  tagRemoved: (tag: string) => `Removed tag ${tag}`,
+  tagFailed: "Couldn't change the tag",
   sourceUpload: "Uploaded",
   sourceDerived: "Made from another item",
   sourceEmbed: "Video link",
@@ -54,6 +61,8 @@ export const MEDIA_GRID_COPY = {
 } as const;
 
 export const MEDIA_FILTERS_COPY = {
+  tag: "Tag",
+  allTags: "All tags",
   kind: "Kind",
   allKinds: "Photos and videos",
   usage: "Usage",
