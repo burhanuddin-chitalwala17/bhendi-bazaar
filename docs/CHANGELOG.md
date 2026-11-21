@@ -12,6 +12,14 @@
 
 ## Entries
 
+## 2026-11-21 — Fix: every Styled shot failed at the credit lock
+
+- `creditRepository.lockOrg` took the shop's advisory lock with `$queryRaw`. `pg_advisory_xact_lock` returns
+  `void`, which the production driver adapter cannot read, so every charge failed with "Something went wrong"
+  before any model was called; nothing was charged. It now uses `$executeRaw`, as every other lock does.
+- `tests/integration/credit-charge.test.ts` charges against the real database and driver (the unit suite mocks
+  the client, which is how this shipped). It fails on the old code with the production error.
+
 ## 2026-11-21 — CI drops the restored data cache before the build
 
 - The e2e job restored `.next/cache` on an exact key hit, including `fetch-cache`: the category page's product
