@@ -17,20 +17,26 @@ may run on its own branch off it and merge back; the whole feature merges to `ma
 research is in INTEGRATIONS.md under "Acting for a shop on Meta" and "What an inbox receives and
 may do"; do not redo it. Specs here are committed as written, by the owner's instruction, so the
 other account's session can read them.
-**Re-cut and audited 2026-11-21.** The work runs in the eight steps below (Q5); decisions.md was
+**Re-cut and audited 2026-11-21.** The work runs in the eight steps below (Q107); decisions.md was
 merged to one row per lasting question, its absorbed ids listed at its end. Before each step's
 build, bring its subfeature specs in line: Q1 (message access) into connect-instagram and
 inbox-instagram; Q12 (contact sync, offboarding) into connect-whatsapp; Q96 into audience,
 whatsapp-contacts and inbox-whatsapp; Q7 (reconciling missed webhooks) into both platform inboxes;
 Q97 into inbox-whatsapp. chat-autoreplies (Q89), whatsapp-catalogue-import (Q47) and bulk-publish
 (Q102) need their own specs; going-live.md takes Q2's timing.
-**Next step:** step 1 (post generation, its own session) and step 2 (connectors) side by side (Q5).
+**Next step:** step 1 (post generation, its own session) and step 2 (connectors) side by side (Q107).
 **Owner's outside step, started separately:** Meta Business Verification and the Meta app (Q14).
 
 ## What this is
-A shop's Instagram and WhatsApp, worked from Bhendi Bazaar for selling: its products in its
-WhatsApp catalogue, its posts and stories scheduled and published, the conversations they start answered
-in one place, and messages to customers who asked for them. The shop never leaves the platform.
+A shop sells through its own Instagram and WhatsApp without leaving Bhendi Bazaar (Q5). It connects
+its accounts once; its products appear in its WhatsApp catalogue, always matching the store; it
+publishes posts and stories; it answers every message and comment from one inbox, with automatic
+replies so no enquiry is lost; and it messages customers who asked to hear from it. Shop owners and
+members run it; buyers meet it on Instagram and WhatsApp.
+
+Five modules make it up: **Connect**, **Catalogue**, **Post**, **Converse** (the inbox and automatic
+replies) and **Reach out** (consent, and messages to opted-in customers). Siblings it uses, outside
+it: post generation, notification-hub, bulk-publish and checkout links.
 
 ## Why
 Indian sellers sell through Instagram and WhatsApp, and today pay three or four separate tools for
@@ -57,13 +63,13 @@ Making a post (graphics, captions, AI) is a separate vertical, not part of this 
 - **The shop pays Meta for its own messages (Q8)** and sees the cost before a send. Money in paise.
 - **Promise only what Meta allows in India (Q18).** No product tags, no Status or Channels by API,
   no group broadcasts. A WhatsApp Status goes as a one-tap handoff to the phone.
-- **Instagram before paid WhatsApp messaging (Q5).** Comment-to-DM is free; messages cost.
+- **Instagram before paid WhatsApp messaging (Q107).** Comment-to-DM is free; messages cost.
 - **No enquiry waits for the owner (Q89).** Auto-replies answer every comment, DM and chat at
-  once from live data, and hand over to a person; AI wording comes last, in step 8 (Q5).
+  once from live data, and hand over to a person; AI wording comes last, in step 8 (Q107).
 
 ## Subfeatures, in order
 Eight steps, each a module finished before the next, except steps 1 and 2, which run side by side
-(Q5). Each subfeature has its own spec, decisions, UX and TRD in a subfolder; chat-autoreplies
+(Q107). Each subfeature has its own spec, decisions, UX and TRD in a subfolder; chat-autoreplies
 is yet to be written. ⏳ marks what the single review gates; it is submitted once steps 2–6 work on
 our own accounts (Q2).
 
@@ -74,7 +80,7 @@ our own accounts (Q2).
 | 2 | Connectors | connect-whatsapp | A shop connects its WhatsApp number, keeping its Business app (Q12) ⏳ | channels |
 | 2 | Connectors | whatsapp-catalogue-import | The shop's existing WhatsApp catalogue settled on connect: matched, added or left off (Q47) ⏳ | channels |
 | 2 | Connectors | bulk-publish | The whole range pushed in one go, fixes done in bulk first; channel-neutral (Q102) ⏳ | channels |
-| 2 | Connectors | whatsapp-catalogue | The shop's live products in its WhatsApp catalogue, kept in sync as a replica (Q5) ⏳ | channels |
+| 2 | Connectors | whatsapp-catalogue | The shop's live products in its WhatsApp catalogue, kept in sync as a replica (Q107) ⏳ | channels |
 | 3 | Posting | post-scheduling | Schedule a post or story from finished media and a caption, through a fake publisher | social |
 | 3 | Posting | instagram-publishing | Posts, carousels, reels and stories published to Instagram, with hashtags, mentions and collaborators ⏳ | channels |
 | 3 | Posting | whatsapp-status-kit | A Status image and caption handed to the phone in one tap; WhatsApp has no Status API (Q18) | social |
@@ -88,7 +94,7 @@ our own accounts (Q2).
 | 7 | Outbound | audience | Contacts, consent and lists; from orders, the store page and attested uploads | audience |
 | 7 | Outbound | whatsapp-campaigns | A campaign, products included, sent to an opted-in list, cost and caps shown | campaigns |
 | 7 | Outbound | [notification-hub](../notification-hub/spec.md) | Order updates and alerts, by WhatsApp and email (Q66) | notifications |
-| 8 | AI auto-replies | not yet specified (Q5) | Answers worded by AI from the same live data, picked up once steps 1–7 are done | automations |
+| 8 | AI auto-replies | not yet specified (Q107) | Answers worded by AI from the same live data, picked up once steps 1–7 are done | automations |
 | — | **Going live** | [going-live.md](going-live.md) | One review once steps 2–6 work on our own accounts (Q2) | — |
 
 Later: ads, Facebook Page, Threads, checkout in WhatsApp, forms in chat and insights (Q21); platform

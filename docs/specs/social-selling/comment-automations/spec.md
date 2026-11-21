@@ -18,7 +18,7 @@ a shop-wide rule covers posts made anywhere else.
 ## Why
 An Instagram caption cannot hold a clickable link (parent Q89). Comment-to-DM is how Indian shops
 turn a post into a sale today, through paid tools that know nothing of their stock. It costs the
-shop nothing with Meta (parent Q5), and the link lands the buyer on the product page here.
+shop nothing with Meta (parent Q107), and the link lands the buyer on the product page here.
 
 ## Requirements
 - R1 — A post's rule is its products, keyword and DM text, set when scheduling (post-scheduling);

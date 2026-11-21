@@ -382,6 +382,14 @@ before then — monthly summaries first, then November 2026's full entries. An o
 - No migration, no contract change. Tests: `tests/unit/image-widths.test.ts`, plus confirm and review cases;
   each new hook mutation-checked (removing it fails its test).
 
+## 2026-11-21 — social-selling's base feature restated and confirmed by the owner
+
+- Docs only. Q5 now states the base feature (a shop sells through its own Instagram and WhatsApp
+  without leaving Bhendi Bazaar), its five modules (Connect, Catalogue, Post, Converse, Reach out)
+  and its sibling features (post generation, notification-hub, bulk-publish, checkout links). The
+  build order moved to Q107 and its citations with it; the subfeature tree is being re-cut from
+  the modules.
+
 ## 2026-11-21 — Decision logs audited: 332 rows to 106, one row per lasting question
 
 - Docs only, by the owner's request; nothing is built, so every change is in place (ADR-0062).
