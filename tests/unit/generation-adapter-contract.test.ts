@@ -146,7 +146,9 @@ describe.each(CASES)("$name", (c) => {
   });
 
   it.each([
-    ["a timeout", () => Promise.reject(Object.assign(new Error("timed out"), { name: "TimeoutError" })), GENERATION_FAILURE.UNAVAILABLE],
+    // A timeout may have been billed: never passed on to another model (generation-foundation D6).
+    ["a timeout", () => Promise.reject(Object.assign(new Error("timed out"), { name: "TimeoutError" })), GENERATION_FAILURE.UNCERTAIN],
+    ["a connection that never opened", () => Promise.reject(new TypeError("fetch failed")), GENERATION_FAILURE.UNAVAILABLE],
     ["a 503", () => Promise.resolve(new Response("down", { status: 503 })), GENERATION_FAILURE.UNAVAILABLE],
     ["a 429", () => Promise.resolve(new Response("slow down", { status: 429 })), GENERATION_FAILURE.UNAVAILABLE],
     ["a 402", () => Promise.resolve(new Response("", { status: 402 })), GENERATION_FAILURE.NO_CREDIT],
@@ -156,6 +158,12 @@ describe.each(CASES)("$name", (c) => {
     configure();
     fetchMock.mockImplementationOnce(reply);
     await failsWith(kind);
+  });
+
+  it.runIf(c.viaLink)("treats a made picture it could not fetch as uncertain, never unavailable", async () => {
+    configure();
+    fetchMock.mockResolvedValueOnce(c.success()).mockResolvedValueOnce(new Response("gone", { status: 503 }));
+    await expect(c.adapter.call(model, input)).rejects.toMatchObject({ kind: GENERATION_FAILURE.UNCERTAIN });
   });
 
   it("classifies the provider's own refusal as refused", async () => {

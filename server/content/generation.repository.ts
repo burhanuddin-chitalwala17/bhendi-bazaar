@@ -15,6 +15,7 @@ export interface GenerationRow {
   costMicroUsd: number;
   costPaise: number;
   error: string | null;
+  createdAt: Date;
 }
 
 const SELECT = {
@@ -26,6 +27,7 @@ const SELECT = {
   costMicroUsd: true,
   costPaise: true,
   error: true,
+  createdAt: true,
 } satisfies Prisma.GenerationSelect;
 
 export interface OpenGenerationInput {
@@ -41,9 +43,8 @@ export interface OpenGenerationInput {
   enhancementId: string | null;
 }
 
-export interface SucceedInput {
+export interface PaidInput {
   modelId: string;
-  outputKeys: string[];
   costMicroUsd: number;
   costPaise: number;
   rateDay: Date | null;
@@ -79,10 +80,26 @@ export class GenerationRepository {
     });
   }
 
-  async succeed(id: string, input: SucceedInput): Promise<boolean> {
+  /**
+   * A model answered, or may have (trd D6): the spend is recorded the moment it is known, before
+   * anything else can fail. Added, never set, so a call repeated after a crash shows both.
+   */
+  async recordPaid(id: string, input: PaidInput): Promise<void> {
+    await prisma.generation.updateMany({
+      where: { id, state: GenerationState.SUBMITTED },
+      data: {
+        modelId: input.modelId,
+        rateDay: input.rateDay,
+        costMicroUsd: { increment: input.costMicroUsd },
+        costPaise: { increment: input.costPaise },
+      },
+    });
+  }
+
+  async succeed(id: string, outputKeys: string[]): Promise<boolean> {
     const { count } = await prisma.generation.updateMany({
       where: { id, state: GenerationState.SUBMITTED },
-      data: { ...input, state: GenerationState.SUCCEEDED, finishedAt: new Date() },
+      data: { outputKeys, state: GenerationState.SUCCEEDED, finishedAt: new Date() },
     });
     return count === 1;
   }
@@ -100,10 +117,10 @@ export class GenerationRepository {
     return count === 1;
   }
 
-  /** What one enhancement's generations cost, for the run's own row. */
+  /** What one enhancement's generations cost, whatever became of them: spend is spend (trd D6). */
   async costForEnhancement(enhancementId: string): Promise<number> {
     const { _sum } = await prisma.generation.aggregate({
-      where: { enhancementId, state: GenerationState.SUCCEEDED },
+      where: { enhancementId },
       _sum: { costPaise: true },
     });
     return _sum.costPaise ?? 0;

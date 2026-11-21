@@ -70,8 +70,8 @@ export async function routeCall(models: readonly ModelEntry[], call: AdapterCall
     try {
       return { model, image: await ADAPTERS[model.adapter].call(model, call) };
     } catch (cause) {
-      const failure =
-        cause instanceof GenerationFailure ? cause : new GenerationFailure(GENERATION_FAILURE.BAD_OUTPUT, String(cause));
+      const kind = cause instanceof GenerationFailure ? cause.kind : GENERATION_FAILURE.BAD_OUTPUT;
+      const failure = new GenerationFailure(kind, cause instanceof GenerationFailure ? cause.detail : String(cause), model.id);
       console.warn(`[generation] ${model.id}: ${failure.kind} ${failure.detail}`);
       if (!FALLS_THROUGH.includes(failure.kind)) throw failure;
       last = failure;

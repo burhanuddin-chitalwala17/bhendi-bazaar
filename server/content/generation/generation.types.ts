@@ -53,6 +53,12 @@ export const GENERATION_FAILURE = {
   REFUSED: "REFUSED",
   /** Something came back that is not a picture. */
   BAD_OUTPUT: "BAD_OUTPUT",
+  /**
+   * The request may have been accepted and billed but no picture reached us: a timeout after the
+   * request was sent, or a made picture we could not fetch. Never passed on, because the next model
+   * would be paid as well; the model's price is recorded as spent (trd D6).
+   */
+  UNCERTAIN: "UNCERTAIN",
 } as const;
 export type GenerationFailureKind = (typeof GENERATION_FAILURE)[keyof typeof GENERATION_FAILURE];
 
@@ -64,6 +70,8 @@ export class GenerationFailure extends Error {
   constructor(
     readonly kind: GenerationFailureKind,
     readonly detail: string,
+    /** The model that failed this way, set by the router, so the ledger can name it and price it. */
+    readonly modelId: string | null = null,
   ) {
     super(`${kind}: ${detail}`);
     this.name = "GenerationFailure";

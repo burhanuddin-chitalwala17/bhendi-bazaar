@@ -89,9 +89,9 @@ describe("fallback", () => {
     expect(calls).toEqual(["cf/flux-2-klein-4b", "fal/bria-product-shot"]);
   });
 
-  it.each([GENERATION_FAILURE.REFUSED, GENERATION_FAILURE.BAD_OUTPUT])("stops at %s and tries nothing else (spec R5)", async (kind) => {
+  it.each([GENERATION_FAILURE.REFUSED, GENERATION_FAILURE.BAD_OUTPUT, GENERATION_FAILURE.UNCERTAIN])("stops at %s and tries nothing else (spec R5, D6)", async (kind) => {
     outcome["cf/flux-2-klein-4b"] = new GenerationFailure(kind, "x");
-    await expect(routeCall(models(), call)).rejects.toMatchObject({ kind });
+    await expect(routeCall(models(), call)).rejects.toMatchObject({ kind, modelId: "cf/flux-2-klein-4b" });
     expect(calls).toEqual(["cf/flux-2-klein-4b"]);
   });
 

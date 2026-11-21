@@ -52,5 +52,7 @@ or supports an idempotency key.
 - ✅ Cost is known before the call (a quote) and recorded after it, in paise, at a dated rate.
 - ⚠️ Prices in the registry are ours to keep current; each carries its source and date so staleness
   is visible, but nothing updates them.
+- ⚠️ The one float in the money path is the ECB rate as it arrives (`Math.round(inr * 100)` in
+  `generation/exchange-rate.ts`), turned into integer paise per dollar at the boundary; everything after is integers.
 - ⚠️ A worker that dies mid-call cannot know whether the provider billed; the retry calls again and the
   row says so (`retriedAfterUnknown`).

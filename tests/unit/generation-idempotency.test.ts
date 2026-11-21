@@ -9,6 +9,7 @@ import { GENERATION_FAILURE, GenerationFailure, type GenerationRequest } from "@
 
 const repo = {
   open: vi.fn(),
+  recordPaid: vi.fn(),
   succeed: vi.fn(),
   fail: vi.fn(),
   markRetriedAfterUnknown: vi.fn(),
@@ -52,8 +53,11 @@ const row = (over: Record<string, unknown> = {}) => ({
   costMicroUsd: 0,
   costPaise: 0,
   error: null,
+  // Older than any call could still be in flight, unless a test says otherwise.
+  createdAt: new Date("2026-11-21T09:00:00Z"),
   ...over,
 });
+const later = new Date("2026-11-21T10:00:00Z");
 
 beforeEach(() => {
   for (const fn of [...Object.values(repo), ...Object.values(media), routeCall, eligibleModels, rateFor]) fn.mockReset();
@@ -64,24 +68,40 @@ beforeEach(() => {
 });
 
 describe("a first call", () => {
-  it("opens the row before calling, stores the picture, then records model, cost and rate", async () => {
-    const result = await generate(request);
+  it("opens the row before calling, records the spend before storing, then the picture", async () => {
+    const result = await generate(request, later);
     expect(repo.open.mock.invocationCallOrder[0]).toBeLessThan(routeCall.mock.invocationCallOrder[0] ?? 0);
-    expect(media.putLooseObject).toHaveBeenCalledWith("generations/g1/0.png", expect.any(Buffer), "image/png");
-    expect(repo.succeed).toHaveBeenCalledWith("g1", {
+    expect(repo.recordPaid).toHaveBeenCalledWith("g1", {
       modelId: "cf/flux-2-klein-4b",
-      outputKeys: ["generations/g1/0.png"],
       costMicroUsd: 1_384,
       costPaise: 13,
       rateDay: new Date("2026-11-21"),
     });
+    expect(repo.recordPaid.mock.invocationCallOrder[0]).toBeLessThan(media.putLooseObject.mock.invocationCallOrder[0] ?? 0);
+    expect(media.putLooseObject).toHaveBeenCalledWith("generations/g1/0.png", expect.any(Buffer), "image/png");
+    expect(repo.succeed).toHaveBeenCalledWith("g1", ["generations/g1/0.png"]);
     expect(result).toMatchObject({ generationId: "g1", modelId: "cf/flux-2-klein-4b", costPaise: 13 });
+  });
+
+  it("keeps the spend and lets a storage error through for the queue, never marking the row failed", async () => {
+    media.putLooseObject.mockRejectedValue(new Error("store 503"));
+    await expect(generate(request, later)).rejects.toThrow("store 503");
+    expect(repo.recordPaid).toHaveBeenCalledTimes(1);
+    expect(repo.fail).not.toHaveBeenCalled();
+  });
+
+  it("records a model's price as spent when it may have billed without answering (UNCERTAIN)", async () => {
+    routeCall.mockRejectedValue(new GenerationFailure(GENERATION_FAILURE.UNCERTAIN, "timeout", "cf/flux-2-klein-4b"));
+    await expect(generate(request, later)).rejects.toMatchObject({ kind: GENERATION_FAILURE.UNCERTAIN });
+    expect(repo.recordPaid).toHaveBeenCalledWith("g1", expect.objectContaining({ modelId: "cf/flux-2-klein-4b", costPaise: 13 }));
+    expect(repo.fail).toHaveBeenCalledWith("g1", false, expect.stringContaining("UNCERTAIN"), "cf/flux-2-klein-4b");
   });
 
   it("records a refusal as refused and passes it on", async () => {
     routeCall.mockRejectedValue(new GenerationFailure(GENERATION_FAILURE.REFUSED, "safety"));
-    await expect(generate(request)).rejects.toMatchObject({ kind: GENERATION_FAILURE.REFUSED });
+    await expect(generate(request, later)).rejects.toMatchObject({ kind: GENERATION_FAILURE.REFUSED });
     expect(repo.fail).toHaveBeenCalledWith("g1", true, expect.stringContaining("REFUSED"), null);
+    expect(repo.recordPaid).not.toHaveBeenCalled();
   });
 
   it("refuses a priced model before calling it when no rate was ever stored (Q13)", async () => {
@@ -108,9 +128,15 @@ describe("a retry with the same key", () => {
     expect(routeCall).not.toHaveBeenCalled();
   });
 
+  it("waits for the queue when the other call may still be in flight, calling nothing", async () => {
+    repo.open.mockResolvedValue({ row: row({ createdAt: new Date(later.getTime() - 30_000) }), created: false });
+    await expect(generate(request, later)).rejects.toThrow(/in flight/);
+    expect(routeCall).not.toHaveBeenCalled();
+  });
+
   it("calls again after a worker died mid-call, and says so on the row", async () => {
     repo.open.mockResolvedValue({ row: row(), created: false });
-    await generate(request);
+    await generate(request, later);
     expect(repo.markRetriedAfterUnknown).toHaveBeenCalledWith("g1");
     expect(routeCall).toHaveBeenCalledTimes(1);
   });

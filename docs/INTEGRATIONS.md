@@ -375,7 +375,7 @@ plans should be confirmed with `api-partner-support@flipkart.com` before relying
 ## Image generation (Cloudflare AI, fal)
 
 The services that paint pixels for us. Reached from `server/content/providers/` today; the provider-neutral
-module is [image-generation-foundation](specs/image-generation-foundation/). Checked against Cloudflare's docs
+module is [generation-foundation](specs/ai-images/generation-foundation/). Checked against Cloudflare's docs
 2026-11-20 (pricing page dated 2026-11-18). **Prices move; recheck before relying on one.**
 
 **Cloudflare: one account, two kinds of model.**

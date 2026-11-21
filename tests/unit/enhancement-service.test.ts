@@ -45,7 +45,9 @@ const enqueue = vi.fn();
 
 vi.mock("@server/content/enhancement.repository", () => ({ enhancementRepository: repo }));
 const rateFor = vi.fn();
-vi.mock("@server/content/generation/exchange-rate", () => ({ rateFor: (...args: unknown[]) => rateFor(...args) }));
+vi.mock("@server/content/exchange-rate.repository", () => ({
+  exchangeRateRepository: { latestOnOrBefore: (...args: unknown[]) => rateFor(...args) },
+}));
 vi.mock("@server/content/enhancement-policy.repository", () => ({ enhancementPolicyRepository: policies }));
 vi.mock("@server/content/enhancement-settings.repository", () => ({ enhancementSettingsRepository: settings }));
 vi.mock("@server/catalog/org.service", () => ({ adminOrgService: orgs }));

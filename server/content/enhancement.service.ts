@@ -16,7 +16,7 @@ import { enhancementSpec } from "@server/content/enhancement.job";
 import { ENLARGE_TARGET_LONG_EDGE } from "@server/content/channel-rules";
 import { scenePainterFor, segmenterFor } from "@server/content/providers";
 import { generationRepository } from "@server/content/generation.repository";
-import { rateFor } from "@server/content/generation/exchange-rate";
+import { exchangeRateRepository } from "@server/content/exchange-rate.repository";
 import { microUsdToPaise } from "@server/content/generation/pricing";
 import type { Segmenter } from "@server/content/providers/segment";
 import type { ScenePainter } from "@server/content/providers/scene";
@@ -281,7 +281,8 @@ export const enhancementService = {
       console.log(`[jobs] image.enhance ${jobId}: ${enhancementId} proposed (${row.tool}, ${result.width}x${result.height})`);
     } catch (error) {
       if (error instanceof DomainError) {
-        await enhancementRepository.markFailed(row.id, error.message);
+        // The shop is not charged a run that failed; the platform's day still counts a paint it paid for.
+        await enhancementRepository.markFailed(row.id, error.message, await generationRepository.costForEnhancement(row.id));
         console.log(`[jobs] image.enhance ${jobId}: ${enhancementId} failed — ${error.message}`);
         return;
       }
@@ -449,7 +450,8 @@ export const enhancementService = {
   async absorbedThisMonth(now: Date = new Date()): Promise<{ cutouts: number; over: number; paise: number | null }> {
     const cutouts = await enhancementRepository.countHostCutouts(monthWindow(now), SEGMENTING_TOOLS, ENHANCEMENT_PROVIDER.MODEL);
     const over = Math.max(0, cutouts - FREE_CUTOUTS_PER_MONTH);
-    const rate = over > 0 ? await rateFor(now) : null;
+    // The stored rate only: an admin page render never fetches from outside (review, 2026-11-21).
+    const rate = over > 0 ? await exchangeRateRepository.latestOnOrBefore(now) : null;
     const paise = over === 0 ? 0 : rate ? microUsdToPaise(over * CUTOUT_OVERAGE_MICRO_USD, rate.paisePerUsd) : null;
     return { cutouts, over, paise };
   },

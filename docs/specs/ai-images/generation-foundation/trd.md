@@ -57,8 +57,10 @@ pixel check — does not change.
   `{type:"image"}` inputs; fal: a data URL), reads the picture back (a URL fetched once more, or
   base64), and **classifies every failure** into `UNAVAILABLE` (network, timeout, 5xx, 429),
   `NO_CREDIT` (402 or billing text), `REFUSED` (the provider's safety block) or `BAD_OUTPUT`
-  (nothing readable came back). Only `generation/adapters/` may name a vendor's host, path or field;
-  `tests/unit/generation-vendor-boundary.test.ts` scans the source for it.
+  (nothing readable came back), plus `UNCERTAIN` (a timeout after sending, or a made picture we could
+  not fetch: possibly billed, so never passed on, and the model's price is recorded as spent). Only
+  `generation/adapters/` may name a provider's **host or credential** — the registry holds each
+  provider's model path as data — and `tests/unit/generation-vendor-boundary.test.ts` scans for both.
 - **D3 — Models are data.** `generation/registry.ts` is a typed table, one entry per model route:
   id (ours, stable, e.g. `cf/flux-2-klein-4b`, `gemini/nano-banana-pro`), adapter key, the
   provider's model path, `maxReferences`, the aspects and sizes it makes, and a **price rule**
@@ -70,9 +72,10 @@ pixel check — does not change.
   `IMAGE_GEN_MODELS_<PURPOSE>` (comma-separated ids) or the default list in code; unknown ids are
   skipped with a log line, never a crash. It drops entries whose adapter is not configured, whose
   `maxReferences` is below the request's count, or which cannot make the aspect, then tries each in
-  order. `UNAVAILABLE` and `NO_CREDIT` move to the next; `REFUSED` and `BAD_OUTPUT` end the run
-  (spec R5). `quote(purpose, referenceCount, aspect, size)` returns the first eligible entry and its
-  price, which the request path uses before anything is enqueued.
+  order. `UNAVAILABLE` and `NO_CREDIT` move to the next; `REFUSED`, `BAD_OUTPUT` and `UNCERTAIN` end
+  the run (spec R5). `quote()` and `maxReferencesFor()` give the first eligible model's price and
+  reference limit; their caller is improve-with-ai's request path (the scene needs neither: its price
+  is settled from the ledger).
 - **D5 — Settings named for what they hold (ADR-0037).** `IMAGE_GEN_ACCOUNT_ID` and
   `IMAGE_GEN_API_TOKEN` (the multi-model gateway account — Cloudflare today), `IMAGE_GEN_GEMINI_API_KEY`
   (a key to one maker's own API cannot be named without the maker; the name is the API it opens, not
@@ -82,10 +85,13 @@ pixel check — does not change.
   key (unique), model id, state (`SUBMITTED`, `SUCCEEDED`, `FAILED`, `REFUSED`), prompt version,
   platform prompt, brief, reference asset ids, aspect, size, cost (micro-dollars and paise), rate day,
   output object keys, synthetic, contains-person, error, timestamps, and the enhancement it served.
-  On a retry with the same key: `SUCCEEDED` returns the stored objects with no call; `FAILED`/`REFUSED`
-  return the same failure; `SUBMITTED` means a worker died mid-call — **we cannot know whether the
-  provider billed**, so the call is made again and the row records `retriedAfterUnknown`. That is
-  the one way a picture is paid twice, and it is visible. Written only by
+  **The spend is recorded the moment a model answers** (or may have: `UNCERTAIN`), before the picture
+  is converted or stored, and added rather than set. A storage error after that escapes unwrapped for
+  the queue to retry. On a retry with the same key: `SUCCEEDED` returns the stored objects with no
+  call; `REFUSED` returns a refusal and `FAILED` an unavailable failure, with no call; `SUBMITTED`
+  younger than twice the call timeout may still be in flight on another worker, so the retry waits for
+  the queue; older, the worker died mid-call — **we cannot know whether the provider billed** — so the
+  call is made again, the row records `retriedAfterUnknown`, and both spends are on it. Written only by
   `server/content/generation.repository.ts` (Invariant 5).
 - **D7 — Cost is integer arithmetic from a daily rate.** `ExchangeRate` (day, paise per USD as an
   integer, source, fetched at). Cost in paise = ceil(micro-dollars × paise-per-USD / 1,000,000), in
@@ -102,8 +108,8 @@ pixel check — does not change.
   enhancement row's `provider` records `generation` (a new `ENHANCEMENT_PROVIDER` value; the column is
   a string) and the `Generation` row names the model. `providers/scene/model.ts` becomes the fal
   adapter's Bria entry and is deleted. `tools/scene.ts` and `pixel-identity.ts` are untouched.
-- **D9 — Prompts are versioned files.** `generation/prompts/<purpose>.v<n>.ts` export the platform
-  text; a seller's brief, when there is one, is appended inside a marked section the platform text
+- **D9 — Prompts are versioned.** `generation/prompts.ts` exports each purpose's platform text with
+  its version string (`scene.v1`); a change adds a version, never edits one; a seller's brief, when there is one, is appended inside a marked section the platform text
   tells the model to treat as a description, never as instructions. The version string is stored on
   the row. Product facts (colour, material) join in improve-with-ai.
 - **D10 — The comparison is a script (spec R9).** `scripts/generation-bakeoff.ts`
@@ -153,6 +159,8 @@ None. `EnhancementDto` is unchanged; CONTRACTS.md checked — no cross-domain sh
 - `generation-cost.test.ts` also holds the rate's parse; `enhancement-service.test.ts` the absorbed figure.
 
 ## Delivery (PRs)
+Landed as one commit on the working branch (2026-11-21), the review's fixes as a second; the split
+below is how it reads.
 1. Port, registry, router, cost, prompts, `Generation` + `ExchangeRate` schema and repositories, the
    fx job; adapters for Cloudflare, Gemini and fal with the contract test. No behaviour change.
 2. Scene moves onto the port (behaviour change: klein-4b paints, cost from the quote).

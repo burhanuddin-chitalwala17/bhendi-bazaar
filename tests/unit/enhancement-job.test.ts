@@ -148,7 +148,7 @@ describe("image.enhance", () => {
   it("fails the row with the reason when the source is gone, and stores nothing", async () => {
     media.readImageBytes.mockRejectedValue(new NotFoundError("Photo not found"));
     await run();
-    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Photo not found");
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Photo not found", 0);
     expect(media.putLooseObject).not.toHaveBeenCalled();
     expect(repo.markProposed).not.toHaveBeenCalled();
   });
@@ -158,7 +158,7 @@ describe("image.enhance", () => {
     // withdrawn — which the worker must refuse rather than run with nothing to run.
     repo.findById.mockResolvedValue({ ...requested, tool: "POLISH" as EnhancementRow["tool"] });
     await run();
-    expect(repo.markFailed).toHaveBeenCalledWith("e1", "That improvement is not available yet");
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "That improvement is not available yet", 0);
     expect(media.readImageBytes).not.toHaveBeenCalled();
   });
 
@@ -185,6 +185,14 @@ describe("image.enhance", () => {
     });
   });
 
+  it("keeps a paint the platform paid for on a scene that failed afterwards (generation-foundation D6)", async () => {
+    generations.costForEnhancement.mockResolvedValue(13);
+    inScene.mockRejectedValueOnce(new DomainError("The scene came back as something we could not read"));
+    repo.findById.mockResolvedValue({ ...requested, tool: "SCENE", preset: "wooden-table", provider: "generation" });
+    await run();
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "The scene came back as something we could not read", 13);
+  });
+
   it("charges a scene for the paint alone where the cut-out came from the free transform", async () => {
     generations.costForEnhancement.mockResolvedValue(13);
     segmenterFor.mockReturnValue({ key: "zone", isAvailable: () => true, cutOut: vi.fn() });
@@ -196,7 +204,7 @@ describe("image.enhance", () => {
   it("fails a scene whose setting the list no longer has, before any bytes are read", async () => {
     repo.findById.mockResolvedValue({ ...requested, tool: "SCENE", preset: "a beach in goa" });
     await run();
-    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Choose one of the scene settings");
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Choose one of the scene settings", 0);
     expect(media.readImageBytes).not.toHaveBeenCalled();
   });
 
@@ -206,7 +214,7 @@ describe("image.enhance", () => {
     });
     repo.findById.mockResolvedValue({ ...requested, tool: "SCENE", preset: "wooden-table" });
     await run();
-    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Scene backdrops are not set up yet");
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Scene backdrops are not set up yet", 0);
     expect(media.readImageBytes).not.toHaveBeenCalled();
   });
 
@@ -235,14 +243,14 @@ describe("image.enhance", () => {
       throw new DomainError("Background removal is not set up yet");
     });
     await run();
-    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Background removal is not set up yet");
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Background removal is not set up yet", 0);
     expect(media.readImageBytes).not.toHaveBeenCalled();
   });
 
   it("treats a refusal from the tool itself the same way", async () => {
     lightFix.mockRejectedValue(new DomainError("This file is not an image we can read"));
     await run();
-    expect(repo.markFailed).toHaveBeenCalledWith("e1", "This file is not an image we can read");
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "This file is not an image we can read", 0);
   });
 
   it("lets any other failure reach the queue, with the row still taken and nothing proposed or failed", async () => {

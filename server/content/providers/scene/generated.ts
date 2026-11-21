@@ -21,8 +21,8 @@ import {
 
 /**
  * The scene painter over the generation port (generation-foundation spec R8, trd D8; ai-images Q11).
- * Which model paints is the router's choice — klein-4b first, Bria as the fallback — and this file
- * names neither. What comes back is still only a backdrop: `tools/scene.ts` pastes the cut-out over
+ * Which model paints is the router's choice (the order is the registry's default or the
+ * `IMAGE_GEN_MODELS_SCENE` setting); this file depends on no model or provider. What comes back is still only a backdrop: `tools/scene.ts` pastes the cut-out over
  * it and checks every product pixel, so a model that redrew the product is covered or refused.
  */
 const ASPECT: Record<SceneAspect, GenerationAspect> = {

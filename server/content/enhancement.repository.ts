@@ -156,10 +156,11 @@ export class EnhancementRepository {
   }
 
   /** A refusal the org member reads (spec R10); anything that might succeed on retry never lands here. */
-  async markFailed(id: string, error: string): Promise<boolean> {
+  /** `costPaise` is what the platform spent before the failure — a paint already paid for (generation-foundation D6). */
+  async markFailed(id: string, error: string, costPaise = 0): Promise<boolean> {
     const result = await prisma.enhancement.updateMany({
       where: { id, state: { in: [EnhancementState.REQUESTED, EnhancementState.RUNNING] } },
-      data: { state: EnhancementState.FAILED, error },
+      data: { state: EnhancementState.FAILED, error, costPaise },
     });
     return result.count === 1;
   }

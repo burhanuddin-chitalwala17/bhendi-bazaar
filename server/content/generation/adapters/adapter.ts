@@ -48,10 +48,15 @@ export function looksRefused(text: string): boolean {
   return REFUSAL.test(text);
 }
 
-/** `fetch` bounded by the generation timeout, with a network error or abort as UNAVAILABLE. */
+/**
+ * `fetch` bounded by the generation timeout. A connection that never opened is UNAVAILABLE; a
+ * timeout is UNCERTAIN, because the provider may already be painting — and billing — the picture.
+ */
 export async function boundedFetch(url: string, init: RequestInit): Promise<Response> {
   return await fetch(url, { ...init, signal: AbortSignal.timeout(GENERATION_TIMEOUT_MS) }).catch((cause: unknown) => {
-    throw new GenerationFailure(GENERATION_FAILURE.UNAVAILABLE, cause instanceof Error ? cause.name : "network");
+    const name = cause instanceof Error ? cause.name : "network";
+    const timedOut = name === "TimeoutError" || name === "AbortError";
+    throw new GenerationFailure(timedOut ? GENERATION_FAILURE.UNCERTAIN : GENERATION_FAILURE.UNAVAILABLE, name);
   });
 }
 
@@ -61,10 +66,17 @@ export async function okOrFail(response: Response): Promise<Response> {
   throw classifyHttp(response.status, await response.text().catch(() => ""));
 }
 
-/** A picture a provider linked to rather than sent: one more bounded fetch. */
+/**
+ * A picture a provider linked to rather than sent: one more bounded fetch. The picture exists and
+ * was paid for, so any failure here is UNCERTAIN, never a reason to ask another model (trd D6).
+ */
 export async function fetchLinked(url: string): Promise<Buffer> {
-  const picture = await okOrFail(await boundedFetch(url, {}));
-  return Buffer.from(await picture.arrayBuffer());
+  try {
+    const picture = await okOrFail(await boundedFetch(url, {}));
+    return Buffer.from(await picture.arrayBuffer());
+  } catch (cause) {
+    throw new GenerationFailure(GENERATION_FAILURE.UNCERTAIN, `made but not fetched: ${String(cause)}`);
+  }
 }
 
 /** Base64 to bytes, or BAD_OUTPUT when there is nothing to decode. */

@@ -12,7 +12,10 @@ import {
   type GenerationResult,
 } from "@server/content/generation/generation.types";
 import { microUsdToPaise, priceMicroUsd, REFERENCE_LONG_EDGE } from "@server/content/generation/pricing";
-import { eligibleModels, routeCall, type Ask } from "@server/content/generation/router";
+import { eligibleModels, routeCall, type Answered, type Ask } from "@server/content/generation/router";
+import type { ModelEntry } from "@server/content/generation/registry";
+import { GENERATION_TIMEOUT_MS } from "@server/content/generation/adapters/adapter";
+import type { DayRate } from "@server/content/exchange-rate.repository";
 import { rateFor } from "@server/content/generation/exchange-rate";
 
 /**
@@ -68,7 +71,21 @@ export async function quote(purpose: GenerationPurpose, ask: Ask): Promise<Gener
   };
 }
 
-export async function generate(request: GenerationRequest): Promise<GenerationResult> {
+/**
+ * A `SUBMITTED` row younger than this may still have a call in flight on another worker (a
+ * redelivered job): calling again would pay twice, so the retry waits for the queue's next attempt.
+ */
+export const IN_FLIGHT_MS = 2 * GENERATION_TIMEOUT_MS;
+
+/** The model's price, recorded as spent: a picture it made, or one it may have (UNCERTAIN). */
+async function recordSpend(rowId: string, model: ModelEntry, ask: Ask, rate: DayRate | null): Promise<number> {
+  const costMicroUsd = priceMicroUsd(model.price, ask.references, ask.aspect, ask.size);
+  const costPaise = rate ? microUsdToPaise(costMicroUsd, rate.paisePerUsd) : 0;
+  await generationRepository.recordPaid(rowId, { modelId: model.id, costMicroUsd, costPaise, rateDay: rate?.day ?? null });
+  return costPaise;
+}
+
+export async function generate(request: GenerationRequest, now: Date = new Date()): Promise<GenerationResult> {
   const ask: Ask = { references: request.references.length, aspect: request.aspect, size: request.size };
   const { row, created } = await generationRepository.open({
     idempotencyKey: request.idempotencyKey,
@@ -90,49 +107,51 @@ export async function generate(request: GenerationRequest): Promise<GenerationRe
     }
     if (row.state === GenerationState.REFUSED) throw new GenerationFailure(GENERATION_FAILURE.REFUSED, row.error ?? "refused");
     if (row.state === GenerationState.FAILED) throw new GenerationFailure(GENERATION_FAILURE.UNAVAILABLE, row.error ?? "failed");
+    if (now.getTime() - row.createdAt.getTime() < IN_FLIGHT_MS) {
+      // Not a GenerationFailure: the queue retries it later, by which time the other call has ended.
+      throw new Error(`generation ${row.id} may still be in flight; retry later`);
+    }
     // SUBMITTED by a worker that died mid-call: the provider may have billed; call again, visibly.
     await generationRepository.markRetriedAfterUnknown(row.id);
   }
 
-  let modelId: string | null = null;
+  const models = eligibleModels(request.purpose, ask);
+  const rate = await rateFor(now);
+  let costPaise = 0;
+  let answered: Answered;
   try {
-    const models = eligibleModels(request.purpose, ask);
     if (models.length === 0) {
       throw new GenerationFailure(GENERATION_FAILURE.UNAVAILABLE, "no model can take this request");
     }
-    const rate = await rateFor();
-    const priced = models.some((model) => priceMicroUsd(model.price, ask.references, ask.aspect, ask.size) > 0);
-    if (priced && !rate) {
+    if (!rate && models.some((model) => priceMicroUsd(model.price, ask.references, ask.aspect, ask.size) > 0)) {
       // Refused before the call: a picture we cannot price in rupees is not one we pay for (Q13).
       throw new GenerationFailure(GENERATION_FAILURE.UNAVAILABLE, "no exchange rate stored");
     }
     const references = await Promise.all(request.references.map(normalise));
-    const answered = await routeCall(models, {
-      prompt: request.prompt,
-      references,
-      aspect: request.aspect,
-      size: request.size,
-    });
-    modelId = answered.model.id;
-
-    const costMicroUsd = priceMicroUsd(answered.model.price, ask.references, ask.aspect, ask.size);
-    const costPaise = rate ? microUsdToPaise(costMicroUsd, rate.paisePerUsd) : 0;
-
-    const image = await asPng(answered.image);
-    const key = outputKey(row.id, 0);
-    await mediaAssetService.putLooseObject(key, image, "image/png");
-    await generationRepository.succeed(row.id, {
-      modelId: answered.model.id,
-      outputKeys: [key],
-      costMicroUsd,
-      costPaise,
-      rateDay: rate?.day ?? null,
-    });
-    return { generationId: row.id, images: [image], modelId: answered.model.id, costMicroUsd, costPaise };
+    answered = await routeCall(models, { prompt: request.prompt, references, aspect: request.aspect, size: request.size });
   } catch (cause) {
-    const failure =
-      cause instanceof GenerationFailure ? cause : new GenerationFailure(GENERATION_FAILURE.UNAVAILABLE, String(cause));
-    await generationRepository.fail(row.id, failure.kind === GENERATION_FAILURE.REFUSED, failure.message, modelId);
+    if (!(cause instanceof GenerationFailure)) throw cause;
+    const model = cause.modelId ? models.find((candidate) => candidate.id === cause.modelId) : undefined;
+    if (cause.kind === GENERATION_FAILURE.UNCERTAIN && model) await recordSpend(row.id, model, ask, rate);
+    await generationRepository.fail(row.id, cause.kind === GENERATION_FAILURE.REFUSED, cause.message, cause.modelId);
+    throw cause;
+  }
+
+  // Paid: recorded before anything else can fail, so a storage error loses no money (trd D6).
+  costPaise = await recordSpend(row.id, answered.model, ask, rate);
+  const costMicroUsd = priceMicroUsd(answered.model.price, ask.references, ask.aspect, ask.size);
+
+  let image: Buffer;
+  try {
+    image = await asPng(answered.image);
+  } catch (cause) {
+    const failure = cause instanceof GenerationFailure ? cause : new GenerationFailure(GENERATION_FAILURE.BAD_OUTPUT, String(cause));
+    await generationRepository.fail(row.id, false, failure.message, answered.model.id);
     throw failure;
   }
+  // A storage error is not the model's failure: it escapes unwrapped for the queue to retry.
+  const key = outputKey(row.id, 0);
+  await mediaAssetService.putLooseObject(key, image, "image/png");
+  await generationRepository.succeed(row.id, [key]);
+  return { generationId: row.id, images: [image], modelId: answered.model.id, costMicroUsd, costPaise };
 }
