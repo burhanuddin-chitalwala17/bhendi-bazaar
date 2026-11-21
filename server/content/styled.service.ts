@@ -15,6 +15,7 @@ import {
   ENHANCEMENT_TOOL,
   PROPOSAL_MIME,
   STYLED_FACE,
+  isStyledAspect,
   proposalKeyFor,
   toEnhancementDto,
   type EnhancementDto,
@@ -25,6 +26,7 @@ import {
 } from "@server/content/enhancement.types";
 import {
   GENERATION_ASPECT,
+  type GenerationAspect,
   GENERATION_FAILURE,
   GENERATION_PURPOSE,
   GENERATION_SIZE,
@@ -40,8 +42,9 @@ import { WEBP_QUALITY } from "@server/content/tools/tool";
  * service gains no reason to know about credit (ADR-0036).
  */
 
-/** A listing picture is square: what every marketplace's gallery takes. */
-const ASPECT = GENERATION_ASPECT.SQUARE;
+/** The shape of a run from before the shop chose one (Q42): square, what every marketplace's gallery takes. */
+const DEFAULT_ASPECT: GenerationAspect = GENERATION_ASPECT.SQUARE;
+const asAspect = (value: string | null): GenerationAspect => (isStyledAspect(value) ? value : DEFAULT_ASPECT);
 const SIZE = GENERATION_SIZE.S1K;
 
 export const STYLED_REFUSED_MESSAGE =
@@ -67,8 +70,8 @@ const toDto = (row: Parameters<typeof toEnhancementDto>[0]): EnhancementDto =>
   toEnhancementDto(row, mediaAssetService.publicUrlOf);
 
 /** The quote for this many pictures to follow, the photo itself counted, or a refusal the modal can show. */
-async function range(references: number) {
-  const quoted = await quoteRange(GENERATION_PURPOSE.LISTING, { references, aspect: ASPECT, size: SIZE }).catch((cause: unknown) => {
+async function range(references: number, aspect: GenerationAspect) {
+  const quoted = await quoteRange(GENERATION_PURPOSE.LISTING, { references, aspect, size: SIZE }).catch((cause: unknown) => {
     throw new DomainError(NOT_SET_UP, { cause });
   });
   if (!quoted) throw new DomainError(NOT_SET_UP);
@@ -77,8 +80,8 @@ async function range(references: number) {
 
 export const styledService = {
   /** The cost line and the reference limit (D4): the server's numbers, never the browser's. */
-  async quote(orgId: string, extraReferences: number): Promise<StyledQuoteDto> {
-    const quoted = await range(1 + extraReferences);
+  async quote(orgId: string, extraReferences: number, aspect: GenerationAspect = DEFAULT_ASPECT): Promise<StyledQuoteDto> {
+    const quoted = await range(1 + extraReferences, aspect);
     const [{ chargePaise }, { chargePaise: heldPaise }, account] = await Promise.all([
       creditService.priceFor(orgId, quoted.first.costPaise),
       creditService.priceFor(orgId, quoted.worstCostPaise),
@@ -126,7 +129,7 @@ export const styledService = {
       if (!previous || previous.tool !== ENHANCEMENT_TOOL.STYLED) throw new NotFoundError("Earlier picture not found");
     }
 
-    const quoted = await range(1 + references.length);
+    const quoted = await range(1 + references.length, input.aspect);
     if (references.length > quoted.first.maxReferences - 1) {
       throw new DomainError(`This picture can follow at most ${quoted.first.maxReferences - 1} more pictures`, {
         field: "referenceRefs",
@@ -146,6 +149,7 @@ export const styledService = {
           slot: input.slot ?? null,
           brief: input.brief,
           referenceRefs: references.map((reference) => reference.ref),
+          aspect: input.aspect,
           previousId: input.previousId ?? null,
         },
         tx,
@@ -206,7 +210,7 @@ export const styledService = {
           promptVersion: prompt.version,
           brief: row.brief,
           references,
-          aspect: ASPECT,
+          aspect: asAspect(row.aspect),
           size: SIZE,
           idempotencyKey: `enhancement:${row.id}:styled`,
           // A listing picture may show a person; recorded so publishing can tag it (handoff, compliance).

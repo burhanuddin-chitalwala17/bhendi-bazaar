@@ -16,14 +16,14 @@
 | Tools menu | Anchored to the arrow; on a phone a bottom sheet | Tap ▾ | R1, A3 |
 | Today's six-tool sheet | Unchanged, opened at the chosen tool | Pick a tool | R1 |
 | Describe it (AI modal) | `TaskDialog`: full screen on a phone, centred dialog from `md:` | Tap Improve | R2–R6 |
-| Reference picker | `ResponsivePicker` over the modal: **Library** (Tag: Reference first, toggle to all photos) · **This device** | "+ Add picture" | R4 |
+| Reference picker | `ResponsivePicker` over the modal: **Library** (every image; Q44) · **This device** (held in the page until Generate; Q43) | "+ Add picture" | R4 |
 | Working | Inside the modal | Generate | R7 |
 | Result | Inside the modal | The picture is ready | R8–R10 |
 
 ## Journeys
 1. **Style a photo from the library (A1).** Library → photo → detail panel → **Improve** → Describe it:
    two-line help, examples as tappable chips, text box (0/300), "Your photo" thumbnail fixed first,
-   "+ Add picture · up to 2 more", face choice **No face** (selected) / **With face**, cost line
+   "+ Add picture · up to 2 more", shape **Square · Portrait · Tall · Landscape** (none preselected; Q42), face choice **No face** (selected) / **With face**, cost line
    "This picture costs about ₹2.10 · Credit left ₹2,497.90" → **Generate** → Working ("Making your
    picture… usually under a minute. You can close this and come back.") → Result → **Use this** → toast
    "Saved to your library" → the detail panel shows the new picture.
@@ -52,6 +52,7 @@
 - Box placeholder: "e.g. worn by a woman walking through a market at dusk" · counter "{n}/300"
 - References label: "Pictures to follow" · "Your photo" · "+ Add picture" · "Up to {n} more" · at the
   limit "That's the most this picture can use"
+- Shape: "Square · 1:1" ("Listings and catalogues") · "Portrait · 4:5" ("Instagram posts") · "Tall · 9:16" ("Status, Stories and Reels") · "Landscape · 4:3" ("Banners and your shop page"); unchosen at Generate: "Choose a shape first" (Q42)
 - Face: "No face" (hint "Shown worn, cropped below the chin") · "With face" (hint "Faces can come out
   strange — check closely")
 - Cost: "This picture costs about {₹x} · Credit left {₹y}" · when short: "Not enough credit for this

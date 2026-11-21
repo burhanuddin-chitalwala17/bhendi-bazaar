@@ -52,6 +52,11 @@ const ALLOWLIST: Record<string, { rules: readonly string[]; reason: string }> = 
     reason:
       "Same local blob: preview as image-upload.tsx; the bypass is conditional on a YouTube poster, whose host is not ours to optimize.",
   },
+  "src/components/content/styled-shot-dialog.tsx": {
+    rules: ["raw <img> elements"],
+    reason:
+      "A picture from the device is held in the page as a blob: URL until Generate, so one removed before then is never uploaded (improve-with-ai Q43). next/image cannot take a blob: URL; uploaded references go through next/image.",
+  },
   "src/components/profile/profile-pic-upload.tsx": {
     rules: ["raw <img> elements"],
     reason:

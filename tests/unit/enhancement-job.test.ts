@@ -64,6 +64,7 @@ const requested: EnhancementRow = {
   error: null,
   brief: null,
   referenceRefs: [],
+  aspect: null,
   previousId: null,
   createdAt: new Date("2026-09-27T10:00:00Z"),
   proposedAt: null,

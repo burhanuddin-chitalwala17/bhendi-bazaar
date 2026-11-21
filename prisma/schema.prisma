@@ -179,6 +179,8 @@ model Enhancement {
   /// A styled run's description in the shop's own words, and its reference pictures (improve-with-ai D1).
   brief         String?
   referenceRefs String[]         @default([])
+  /// The shape a styled run was asked in (`1:1`, `4:5`, `9:16`, `4:3`); null is square (improve-with-ai Q42).
+  aspect        String?
   /// The run a Regenerate came from (R9).
   previousId    String?
   previous      Enhancement?     @relation("EnhancementRegenerate", fields: [previousId], references: [id], onDelete: Restrict)
