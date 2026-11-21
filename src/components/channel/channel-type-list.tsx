@@ -1,3 +1,5 @@
+"use client";
+
 import { ResourceList, type ResourceColumn } from "@/components/shared/resource-list";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import type { AdminChannelTypeDTO } from "@server/listing/admin.field-map.types";

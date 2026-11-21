@@ -70,6 +70,8 @@ const PUBLIC_SURFACE: Record<string, string[]> = {
     "admin.product-type.types",
     "product-readiness.repository",
     "org-channel.repository",
+    // field-maps Q23: which fields of a channel type are in parts — read by the admin's maps here and by a provider shaping a create.
+    "schema-parts",
     // listing-model/dynamic-form D3: a product save and a channel's new rules ask completeness to be recomputed.
     "completeness.queue",
     // listing-model/dynamic-form Q16: a product's answers live in listing's value rows; catalog's product and

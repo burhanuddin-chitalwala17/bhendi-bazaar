@@ -461,11 +461,14 @@ export const channelMapRepository = {
     return rows.flatMap((r) => (r.theirCategory ? [r.theirCategory] : []));
   },
 
-  /** The publishing type of each of some types and kinds, for the category check (setup-requests D9). */
+  /**
+   * The publishing type of each of some types and kinds, for the category check (setup-requests D9). A not-sold
+   * row comes back too, with no category, so a kind marked not sold is not read as its type's catch-all.
+   */
   async publishingFor(channel: Channel, productTypes: readonly string[]): Promise<Array<{ productType: string; kind: string | null; theirCategory: string | null }>> {
     if (productTypes.length === 0) return [];
     return await prisma.channelCategoryMap.findMany({
-      where: { channel, productType: { in: [...productTypes] }, publishes: true, notSold: false },
+      where: { channel, productType: { in: [...productTypes] }, OR: [{ publishes: true }, { notSold: true }] },
       select: { productType: true, kind: true, theirCategory: true },
     });
   },

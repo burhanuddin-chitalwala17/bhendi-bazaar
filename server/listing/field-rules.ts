@@ -69,11 +69,14 @@ export const FIELD_RULES = {
     return value(BABY.has(a) ? "infant" : CHILD.has(a) ? "kids" : "adult");
   },
   size_label: sizeLabel,
-  /** "30 x 12 x 25 cm" from length, width and height; else the size label (Amazon `size_info`). */
+  /** "30 x 12 x 25 cm" from length, width and height, or "60 x 40 cm" without a height; else the size label (Amazon `size_info`, `size`). */
   size_display_from_measures: (ctx): RuleValue | null => {
     const dims = [MEASURE.LENGTH, MEASURE.WIDTH, MEASURE.HEIGHT].map((k) => ctx.measure(k));
-    if (dims.every((d) => d !== null) && new Set(dims.map((d) => d!.unit)).size === 1) {
-      return value(`${dims.map((d) => d!.value).join(" x ")} ${dims[0]!.unit}`);
+    // A flat thing (a rug, a prayer mat) has no height and no size label: its size is length x width.
+    if (dims[2] === null && ctx.sizeLabel) return sizeLabel(ctx);
+    const known = dims[2] === null ? dims.slice(0, 2) : dims;
+    if (known.every((d) => d !== null) && new Set(known.map((d) => d!.unit)).size === 1) {
+      return value(`${known.map((d) => d!.value).join(" x ")} ${known[0]!.unit}`);
     }
     return sizeLabel(ctx);
   },

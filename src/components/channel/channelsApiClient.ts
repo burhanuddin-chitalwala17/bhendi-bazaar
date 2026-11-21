@@ -1,6 +1,6 @@
 import { apiRequest } from "@/lib/api-client";
 import type { ChannelValueMappingInput } from "@/lib/validation/schemas/channel-mapping.schema";
-import type { FieldMapSaveInput } from "@/lib/validation/schemas/field-map.schema";
+import type { FieldMapRemoveInput, FieldMapSaveInput } from "@/lib/validation/schemas/field-map.schema";
 import type { OrgChannelsParsed } from "@/lib/validation/schemas/org-channels.schema";
 import type { ChannelListingDTO, LeftOffReason, SettlePickerProductDTO, SettleResultDTO } from "@server/channels/channel-connection.types";
 import type { SettleListingFormValues } from "@/lib/validation/schemas/settle-listing.schema";
@@ -16,6 +16,11 @@ export const channelsApiClient = {
   /** Where one channel field's value comes from (listing-model/field-maps R6). */
   saveFieldMap(map: FieldMapSaveInput) {
     return apiRequest("/api/admin/field-maps", { method: "PUT", body: map });
+  },
+
+  /** Removes one field map (field-maps Q24). */
+  removeFieldMap(key: FieldMapRemoveInput) {
+    return apiRequest("/api/admin/field-maps", { method: "DELETE", body: key });
   },
 
   /** Records what a channel calls one of our values (ADR-0045). */

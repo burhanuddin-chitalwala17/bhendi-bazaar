@@ -87,6 +87,107 @@
   The hosted model's multipart field names are not documented; verify one live call before relying on it.
 - Tests: `generation-router`, `generation-adapter-contract`, `generation-cost`, `generation-idempotency`,
   `generation-vendor-boundary` (mutation-tested), the scene painter rewritten; no contract change.
+## 2026-11-20 — Listing drafts say where a create stands; a field map can be removed; size from length x width [CONTRACT]
+
+- **Wording** (`platform-listing-copy.ts`): a listing not yet on Amazon reads "Not on Amazon yet · ready to create"
+  in its save bar instead of "6 changes waiting" (every field differs from a page that does not exist), and its draft
+  panel says "Sending to Amazon…" or "Accepted by Amazon · waiting for it to go on sale." instead of "Nothing was
+  created on Amazon" while the create is out (`CREATE.draftNoteFor`, `saveBarStatus`).
+- **"Amazon is showing other content"** no longer fires when Amazon only recased the title (its style rules rewrite an
+  all-capital one): titles are compared ignoring case and spacing (`lookAt`, `listing-publish.service.ts`).
+- **Remove a field map** (field-maps Q24): `DELETE /api/admin/field-maps` (`fieldMapRemoveSchema`: channel,
+  channelType, fieldPath, bbType; audited `channel.field-map.remove`; 404 when already gone), `fieldMapService.remove`,
+  a Remove button beside each map. No confirm step, as a change has none (Q4).
+- **Size from the measurements:** the rule `size_display_from_measures` sends "60 x 40 cm" for a product with length
+  and width, no height and no size label (a rug, a prayer mat); it fell back to "Free Size" before. A product with all
+  three measures, or with a size label ("M"), is unchanged. Only Amazon `size_info.display_name` maps it by default.
+- A draft Amazon refused or has not answered shows its own status in the save bar, not "ready to create"; an
+  unanswered create reads "Amazon hasn't answered yet; the page may still appear there."
+- Tests: `tests/unit/listing-draft-wording.test.ts`, `listing-builder.test.ts` (the rule), `field-map-parts.test.tsx`
+  (Remove), `tests/integration/listing-build.test.ts` (remove), `marketplace-publish.test.ts` (a recased title).
+
+## 2026-11-20 — A field made of parts is mapped part by part on the admin's field maps [CONTRACT]
+
+- **Why:** the field-map screen mapped a whole channel field to one answer only, so Amazon RUG's Item Dimensions
+  L x W (length and width) was mapped to a size word and needed a migration (field-maps Q23, ux signed off).
+- **Screen** (`field-map-list.tsx`): a field in parts says "In parts: length, width" and lists each part,
+  "{Field} · {part}", with its own map or "Not mapped" and "Map {part}". It offers no whole-field Map; a whole-field
+  map made before is marked "Can't fill a field in parts. Map each part instead."
+- **Server:** parts are read off the type's stored schema (`server/listing/schema-parts.ts`, now also what the Amazon
+  provider uses). `fieldMapService.save` refuses a whole-field map on a field in parts and a part the type does not
+  declare; a part's map removes every whole-field map on that field, for any type of ours
+  (`fieldMapRepository.removeWhole`). A field the create fills itself (Amazon's offer, stock, parentage) stays
+  "Filled by the system" and is never listed in parts.
+- **Requests:** a field in parts in an Amazon fields plan is `map_parts` ("In parts: map each part on its field
+  maps", with a link to the type's maps) instead of "Needs a developer"; Apply skips it.
+- `schema-parts` joins listing's public surface (`tests/unit/module-boundaries.test.ts`).
+- Tests: `tests/unit/field-map-parts.test.tsx` (the screen), `tests/integration/listing-build.test.ts` (view and
+  save rules), `tests/unit/setup-requests.test.ts` (`map_parts`).
+
+## 2026-11-20 — [MIGRATION] Amazon RUG's Item Dimensions L x W mapped to length and width
+
+- `20261120090000_amazon_rug_length_width`: RUG's `item_length_width` is one attribute of two measures, and the admin
+  screen can map a whole field to one answer only, so it had been mapped to a size word. The migration removes that
+  whole-field map and maps `item_length_width.length` / `.width` to the product's length and width in centimetres,
+  as the default maps do `item_dimensions`. Reference data only.
+
+## 2026-11-20 — Fix: an Amazon create leaves out attributes its type does not have
+
+- **Incident:** the masalla bag's first create under RUG stopped at our own schema check with "Amazon won't take This
+  listing as it is (must NOT have additional properties)". Amazon's type schemas are closed at the top
+  (`additionalProperties: false`), and the create body always adds our compliance and plumbing attributes (HSN line,
+  contact information, dangerous-goods declaration…) plus whatever the field maps build, whether or not that type
+  declares them. One undeclared attribute fails the whole listing, and the message named none.
+- **Fix:** `conformToSchema` (`amazon.shape.ts`) drops a top-level attribute a closed schema does not declare, as it
+  already trimmed undeclared keys inside an item; an open schema keeps it. A mapped answer dropped this way is a
+  warning on the listing (`leftOutWarnings`, `amazon.publish.ts`: "Amazon's RUG has no "x" field, so it was left
+  out"), so nothing is left out unseen (field-maps Q6). `checkAgainstSchema` names an undeclared attribute instead of
+  "This listing", should one still reach it. Which attribute RUG refused is not known: the check's message named none.
+- Tests: `tests/unit/listing-builder.test.ts` — an undeclared attribute is left out of a closed type and kept by an
+  open one, a mapped one is warned of, and one reaching the check is named.
+
+## 2026-11-20 — Fix: a new Amazon page follows its type's category; the admin channel page loads again
+
+- **Incident 1:** a draft started before its product type had an Amazon category kept "no category" for ever, and
+  was sent as Amazon's placeholder `PRODUCT`, which Amazon refuses for a new page. The ticket raised from it was
+  filed under the type's later category (RUG), pointing the admin at a mapping with nothing wrong in it.
+- **Fix:** a new page's category is the type's mapping as it is now, read when the draft is started, shown and
+  sent (`categoryOf` in `listing-create.service.ts`, through `channelSetupService.publishing`, whether or not the
+  shop has the channel switched on) and recorded on the draft (`platformListingRepository.setMarketplaceType`).
+  An offer keeps the page's own type. A new page with no category is refused locally as `no_category`, with no
+  call to Amazon and no ticket: the admin's Channels worklist already lists a type with nowhere to go.
+- `publishingFor` now returns a kind's not-sold row, and `publishingOf` stops there, as readiness's `categoryFor`
+  does: a kind marked not sold is no longer read as its type's catch-all category (this also corrects the category
+  a marketplace ticket is filed under).
+- **Incident 2:** `/admin/channels/[channel]` failed to load: `ChannelTypeList` handed `ResourceList` its
+  `cell`/`rowKey`/`rowHref` functions from a server component. It is now a client component, and
+  `tests/unit/rendering-strategy.test.ts` fails any table reached from server code without `"use client"`.
+- Tests: `tests/integration/marketplace-publish.test.ts`, on a test-owned type and mapping — a draft made before its
+  type was mapped is sent under the mapping as it is now; one with no category, or a kind marked not sold, is
+  refused without asking Amazon.
+
+## 2026-11-20 — Publishing says why a listing was not sent, and does not offer one still being sent [CONTRACT]
+
+- **Symptom:** every refusal read "This listing changed while you were reviewing", including a listing whose
+  last send was still waiting on Amazon, which the review kept offering because its fields stay waiting until confirmed.
+- **Review:** a listing in `sent` or `checking` is left off the review and counted in `ReviewDTO.sending`, which
+  the page says in words; the Listings bar no longer counts it. The listing editor shows its Pending status
+  (Q25's one word for sent and checking) in place of Review and publish.
+- **Publish:** `PublishResultDTO.refused` is now `{ id, reason }[]` (`PUBLISH_REFUSAL`: changed, sending, nothing),
+  and the page shows one message per reason. The claim's version guard is unchanged.
+- Tests: `tests/integration/marketplace-publish.test.ts` — a listing still out is off the review and refused as sending;
+  one with nothing kept to send is refused as nothing and stays unclaimed.
+
+## 2026-11-20 — Fix: the worker skipped every publish for the home-brand shop
+
+- **Incident:** Niqab Boutique's Amazon publishes sat at "Pending" and never reached Amazon; publishing again
+  read "This listing changed while you were reviewing". Each `channels.publish-listing` job completed in ~140 ms
+  having called nothing, leaving the listing `sent`.
+- **Cause:** the home brand holds every paid feature through `HOME_BRAND_ORG_ID` (`server/shared/home-brand.ts`),
+  not an `OrgFeature` row. Vercel has the variable; the worker's deploy never passed it, so `lockedSkip` read
+  Channels as off on the worker while the site let the publish through.
+- **Fix:** `HOME_BRAND_ORG_ID` joins the worker's env list in `ci.yml` and `staging-worker.yml`
+  (`WORKER_ENV_HOME_BRAND_ORG_ID`, `WORKER_STAGING_ENV_HOME_BRAND_ORG_ID`). Needs the secret set and a worker redeploy.
 
 ## 2026-11-20 — Fix: CI's production audit blocked on a new advisory in Prisma's `effect`
 

@@ -5,8 +5,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { amazonAttributes, checkAgainstSchema } from "@server/channels/providers/amazon/amazon.shape";
-import { amazonCreateBody } from "@server/channels/providers/amazon/amazon.publish";
+import { amazonAttributes, checkAgainstSchema, conformToSchema } from "@server/channels/providers/amazon/amazon.shape";
+import { amazonCreateBody, leftOutWarnings } from "@server/channels/providers/amazon/amazon.publish";
 import { buildChannelListing, mapsFor, type BuildProduct } from "@server/listing/listing-builder";
 import { ANY_BB_TYPE, FIELD_SOURCE, GAP_REASON, type FieldMapRow } from "@server/listing/field-map.types";
 import type { CatalogueFieldRow } from "@server/listing/channel-catalogue.repository";
@@ -44,6 +44,15 @@ describe("rules fill what the shop never answers (spec A2)", () => {
     ]);
     expect(sent(r)).toEqual({ department: "Womens", age_range_description: "Adult" });
     expect(r.gaps).toEqual([]);
+  });
+
+  it("a size in words from the measurements uses length x width where there is no height, as a rug's is (2026-11-20)", () => {
+    const sizeMap = [map("size", { source: FIELD_SOURCE.RULE, ruleKey: "size_display_from_measures" })];
+    expect(sent(build([field("size")], sizeMap))).toEqual({ size: "40 x 12 x 35 cm" });
+    expect(sent(build([field("size")], sizeMap, product({ measurements: { length: { value: 60, unit: "cm" }, width: { value: 40, unit: "cm" } } })))).toEqual({ size: "60 x 40 cm" });
+    expect(sent(build([field("size")], sizeMap, product({ measurements: { length: { value: 60, unit: "cm" } } })))).toEqual({ size: "Free Size" });
+    // A garment with a size label keeps it: length x width stands in only where nothing names the size.
+    expect(sent(build([field("size")], sizeMap, product({ sizeLabel: "M", measurements: { length: { value: 100, unit: "cm" }, width: { value: 50, unit: "cm" } } })))).toEqual({ size: "M" });
   });
 
   it("gender reaches Amazon in Amazon's case, from the same rule Google reads", () => {
@@ -207,6 +216,28 @@ describe("Amazon's shape comes from the type's own schema (Q9, D6)", () => {
       const problems = checkAgainstSchema(schema, amazonCreateBody(variant).attributes);
       expect(problems.filter((p) => !p.missing)).toEqual([]);
     }
+  });
+
+  it("leaves out an attribute the type does not declare, which Amazon would refuse the whole listing for (2026-11-20)", () => {
+    const shaped = conformToSchema(schema, { ...amazonAttributes(schema, fields), not_a_handbag_field: [{ value: "x" }] });
+    expect(shaped).not.toHaveProperty("not_a_handbag_field");
+    expect(shaped).toHaveProperty("outer");
+  });
+
+  it("keeps an undeclared attribute where the schema is open, since only a closed type refuses one", () => {
+    expect(conformToSchema({ ...schema, additionalProperties: true }, { not_a_handbag_field: [{ value: "x" }] })).toHaveProperty("not_a_handbag_field");
+  });
+
+  it("warns the shop of a mapped answer left out because the type has no such attribute", () => {
+    const warnings = leftOutWarnings({ typeSchema: schema, marketplaceType: "HANDBAG", fields: [...fields, { path: "not_a_handbag_field.part", value: "x" }] });
+    expect(warnings.map((w) => [w.severity, w.attribute])).toEqual([["warning", "not_a_handbag_field"]]);
+    expect(warnings[0].message).toBe('Amazon\'s HANDBAG has no "not_a_handbag_field" field, so it was left out.');
+  });
+
+  it("names the attribute the type does not declare, rather than 'This listing'", () => {
+    const problems = checkAgainstSchema(schema, { not_a_handbag_field: [{ value: "x" }] }).filter((p) => !p.missing);
+    expect(problems.map((p) => p.attribute)).toEqual(["not_a_handbag_field"]);
+    expect(problems[0].message).toMatch(/not_a_handbag_field/);
   });
 
   it("a schema that cannot be compiled skips the local check rather than refusing every create", () => {

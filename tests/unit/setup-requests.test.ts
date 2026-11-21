@@ -81,14 +81,14 @@ describe("matching a marketplace field to our vocabulary (D6, Q32)", () => {
     expect(propose({ name: "item_form", label: "Item Form", allowed: [] }, [form], [])).toMatchObject({ solution: FIELD_SOLUTION.REUSE, fact: "itemForm" });
   });
 
-  it("never maps one answer onto a field made of parts: Amazon ignored it and the weight was overwritten (2026-11-09)", () => {
+  it("never maps one answer onto a field made of parts, and sends the admin to map each part (2026-11-09, Q23)", () => {
     const form = { key: "itemForm", label: "Form", answers: [] };
     const contents = { key: "contents", label: "What is in the set", answers: [] };
     // Even a fact whose name matches it word for word: one answer cannot fill a group.
     const dims = { key: "dimensions", label: "Dimensions", answers: [] };
-    expect(propose({ name: "item_dimensions", label: "Item Dimensions", allowed: [], parts: ["length", "width", "height"] }, [dims], [dims])).toMatchObject({ solution: FIELD_SOLUTION.NOT_POSSIBLE });
+    expect(propose({ name: "item_dimensions", label: "Item Dimensions", allowed: [], parts: ["length", "width", "height"] }, [dims], [dims])).toMatchObject({ solution: FIELD_SOLUTION.MAP_PARTS });
     for (const [name, parts] of [["inner", ["material"]], ["item_dimensions", ["length", "width", "height"]], ["size_info", ["display_name"]]] as const) {
-      expect(propose({ name, label: name, allowed: [], parts: [...parts] }, [form, contents], [form, contents])).toMatchObject({ solution: FIELD_SOLUTION.NOT_POSSIBLE, fact: null });
+      expect(propose({ name, label: name, allowed: [], parts: [...parts] }, [form, contents], [form, contents])).toMatchObject({ solution: FIELD_SOLUTION.MAP_PARTS, fact: null });
     }
   });
 

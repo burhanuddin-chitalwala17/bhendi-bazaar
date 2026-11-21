@@ -11,7 +11,7 @@ import { LockedAction } from "@/components/subscriptions/locked-action";
 import { ActionBar } from "@/components/shared/action-bar";
 import { useMutation } from "@/hooks/core/useMutation";
 import { cn } from "@/lib/utils";
-import { LISTING_FIELD, type ListingField, type ReviewChangeDTO, type ReviewDTO, type ReviewValue } from "@server/channels/platform-listing.types";
+import { LISTING_FIELD, PUBLISH_REFUSAL, type ListingField, type PublishRefusal, type ReviewChangeDTO, type ReviewDTO, type ReviewValue } from "@server/channels/platform-listing.types";
 
 import type { ListingPublishInput } from "@/lib/validation/schemas/platform-listing.schema";
 import { listingsApiClient } from "./listingsApiClient";
@@ -24,7 +24,7 @@ const key = (listingId: string, field: ListingField) => `${listingId}:${field}`;
 
 /**
  * Review and publish (marketplace-publish ux.md): each change old above new, each undoable; Publish
- * sends what is left, at the versions shown (D3). A listing that moved meanwhile comes back refused.
+ * sends what is left, at the versions shown (D3). One that moved, or is still out, comes back refused with why.
  */
 export function ReviewPublish({ orgId, review, single }: { orgId: string; review: ReviewDTO; single: string | null }) {
   const router = useRouter();
@@ -47,7 +47,13 @@ export function ReviewPublish({ orgId, review, single }: { orgId: string; review
   const publish = useMutation((body: ListingPublishInput) => listingsApiClient.publish(orgId, review.channel, body), {
     showToast: false,
     onSuccess: (result) => {
-      if (result.refused.length > 0) toast.error(PUBLISH.refused);
+      const count = (reason: PublishRefusal) => result.refused.filter((r) => r.reason === reason).length;
+      const sending = count(PUBLISH_REFUSAL.SENDING);
+      const changed = count(PUBLISH_REFUSAL.CHANGED);
+      const nothing = count(PUBLISH_REFUSAL.NOTHING);
+      if (sending > 0) toast.info(PUBLISH.refused.sending(sending, review.label));
+      if (changed > 0) toast.error(PUBLISH.refused.changed(changed));
+      if (nothing > 0) toast.info(PUBLISH.refused.nothing(nothing, review.label));
       if (result.sent > 0) toast.success(PUBLISH.sentToast(review.label));
       router.push(back);
       router.refresh();
@@ -58,7 +64,7 @@ export function ReviewPublish({ orgId, review, single }: { orgId: string; review
   if (review.listings.length === 0) {
     return (
       <div className="flex flex-col items-start gap-3 rounded-card border bg-card p-4 text-sm">
-        <p>{PUBLISH.empty(review.label)}</p>
+        <p>{review.sending > 0 ? PUBLISH.sending(review.sending, review.label) : PUBLISH.empty(review.label)}</p>
         <Button asChild variant="outline" size="sm" className="min-h-10">
           <Link href={ROUTES.org.channelListings(orgId, review.channel)}>{PUBLISH.backToListings}</Link>
         </Button>
@@ -69,6 +75,7 @@ export function ReviewPublish({ orgId, review, single }: { orgId: string; review
   return (
     <div className="flex flex-col gap-4 pb-24 md:pb-4">
       {review.listings.length > 1 && <p className="text-sm text-muted-foreground">{PUBLISH.listingsCount(review.listings.length, review.totalChanges)}</p>}
+      {review.sending > 0 && <p className="text-sm text-muted-foreground">{PUBLISH.sending(review.sending, review.label)}</p>}
       <ul className="flex flex-col gap-3 lg:grid lg:grid-cols-2">
         {review.listings.slice(0, shown).map((listing) => (
           <li key={listing.id} className="flex min-w-0 flex-col gap-2 rounded-card border bg-card p-4">

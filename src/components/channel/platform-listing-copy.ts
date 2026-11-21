@@ -69,7 +69,13 @@ export const PUBLISH = {
   bigChange: (from: string, to: string) => `Big change: ${from} → ${to}. Check before publishing.`,
   sentToast: (label: string) => `Sent to ${label}. Pending until it answers; we'll tell you here.`,
   failed: "Couldn't reach Bhendi Bazaar. Nothing was sent.",
-  refused: "This listing changed while you were reviewing. Review it again.",
+  /** One line per reason a reviewed listing was not sent (marketplace-publish D3). */
+  refused: {
+    changed: (n: number) => `${n === 1 ? "This listing" : `${n} listings`} changed while you were reviewing. Review again.`,
+    sending: (n: number, label: string) => `${n === 1 ? "This listing is" : `${n} listings are`} still pending, waiting for ${label}'s answer. Publish again once it answers.`,
+    nothing: (n: number, label: string) => `${n === 1 ? "This listing has" : `${n} listings have`} nothing new for ${label}.`,
+  },
+  sending: (n: number, label: string) => `${n} listing${n === 1 ? " is" : "s are"} pending, waiting for ${label}'s answer. ${n === 1 ? "It shows" : "They show"} here again once ${label} answers.`,
   reviewAgain: "Review again",
   summary: (sent: number, attention: number) => `${sent} sent · ${attention} need attention`,
   bar: (n: number) => `${n} listing${n === 1 ? " has" : "s have"} changes`,
@@ -144,7 +150,12 @@ export const CREATE = {
   noCategory: "No Amazon category matches this product's type yet.",
   noBarcode: "None · we'll ask Amazon for the brand's exemption",
   reviewAndCreate: "Review and create",
-  draftNote: "Nothing was created on Amazon; the draft waits here.",
+  /** Where a create stands: waiting here, being sent, or accepted and waiting to go on sale (2026-11-20). */
+  draftNoteFor: (status: ListingStatusDTO["status"], label: string) =>
+    status === LISTING_STATUS.SENT ? `Sending to ${label}…`
+    : status === LISTING_STATUS.CHECKING ? `Accepted by ${label} · waiting for it to go on sale.`
+    : status === LISTING_STATUS.UNANSWERED ? `${label} hasn't answered yet; the page may still appear there.`
+    : `Nothing was created on ${label}; the draft waits here.`,
   familyOf: (n: number, axis: string) => `One page with ${n} ${axis}`,
   flipkartHow: "New products are made in Flipkart Seller Hub. Once it's there, Read again links it here.",
   unreachable: (label: string) => `Couldn't reach ${label}. Try again.`,
@@ -196,3 +207,11 @@ export function statusTone(status: ListingStatusDTO["status"]): "success" | "inf
 }
 
 export const rupees = (paise: number) => formatCurrency(paise);
+
+/** The listing editor's save bar when nothing is being edited: a draft is ready to create, not "6 changes waiting". */
+export function saveBarStatus({ draft, sending, waiting, label, status }: { draft: boolean; sending: boolean; waiting: number; label: string; status: ListingStatusDTO["status"] }): string | null {
+  // Out, refused or unanswered: the listing's own status says where it stands.
+  if (sending || status === LISTING_STATUS.ATTENTION || status === LISTING_STATUS.UNANSWERED) return null;
+  if (draft) return `Not on ${label} yet · ready to create`;
+  return waiting > 0 ? LISTING.waiting(waiting) : LISTING.nothingWaiting;
+}

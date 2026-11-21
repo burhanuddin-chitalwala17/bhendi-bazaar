@@ -10,12 +10,12 @@ import { ActionBar } from "@/components/shared/action-bar";
 import { FormInput, FormTextarea } from "@/components/shared/forms/FormField";
 import { paiseToRupees, rupeesToPaise } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { LISTING_FIELD, type ListingField, type ListingIssue, type ListingScreenDTO } from "@server/channels/platform-listing.types";
+import { LISTING_FIELD, LISTING_STATUS, type ListingField, type ListingIssue, type ListingScreenDTO } from "@server/channels/platform-listing.types";
 
 import { ago } from "./listing-copy";
 import { FieldIssues, FieldLine, FieldShell, OwnerChip } from "./listing-field";
 import { ListingPhotosField } from "./listing-photos-field";
-import { FIELD_NAME, LISTING, rupees } from "./platform-listing-copy";
+import { FIELD_NAME, LISTING, rupees, saveBarStatus, statusText } from "./platform-listing-copy";
 import { useListingForm } from "./useListingForm";
 import { ROUTES } from "@server/shared/routes";
 
@@ -246,12 +246,15 @@ function FeaturesInput({ features, max, label, errors, onChange }: { features: s
 /** Save while there are edits; once saved, what waits and the way to publish it (Q15, publish R1). */
 function SaveBar({ orgId, screen, dirty, pending }: { orgId: string; screen: ListingScreenDTO; dirty: boolean; pending: boolean }) {
   const waiting = screen.waitingFields.length;
+  // A send still out is refused by publish, so it is not offered until the marketplace answers.
+  const sending = screen.status.status === LISTING_STATUS.SENT || screen.status.status === LISTING_STATUS.CHECKING;
+  const status = saveBarStatus({ draft: screen.draft !== null, sending, waiting, label: screen.label, status: screen.status.status }) ?? statusText(screen.status, screen.label, (iso) => ago(iso, now()));
   return (
     <ActionBar
       className="-mx-4 md:mx-0"
-      status={dirty ? null : <span className={cn(waiting > 0 && "font-semibold")}>{waiting > 0 ? LISTING.waiting(waiting) : LISTING.nothingWaiting}</span>}
+      status={dirty ? null : <span className={cn(waiting > 0 && !sending && "font-semibold")}>{status}</span>}
     >
-      {dirty || waiting === 0 ? (
+      {dirty || waiting === 0 || sending ? (
         <Button type="submit" size="sm" className="min-h-10" pending={pending}>
           {LISTING.save}
         </Button>

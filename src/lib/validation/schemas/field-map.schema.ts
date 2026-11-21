@@ -45,3 +45,12 @@ export const fieldMapSaveSchema = z
   });
 
 export type FieldMapSaveInput = z.output<typeof fieldMapSaveSchema>;
+
+/** One map the admin removes (field-maps Q24): the field reads unmapped again. */
+export const fieldMapRemoveSchema = z.object({
+  channel: z.enum(PUBLISHABLE_CHANNELS as unknown as [Channel, ...Channel[]]),
+  channelType: z.string().trim().min(1).max(120),
+  fieldPath: z.string().trim().min(1).max(200),
+  bbType: z.string().trim().max(60),
+});
+export type FieldMapRemoveInput = z.infer<typeof fieldMapRemoveSchema>;

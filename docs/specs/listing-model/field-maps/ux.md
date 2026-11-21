@@ -1,7 +1,7 @@
 # UX — listing-model / field-maps
 
-- **Status:** Signed off
-- **Verified:** 2026-11-07
+- **Status:** Signed off (2026-11-07); change for parts signed off 2026-11-20 (decisions Q23)
+- **Verified:** 2026-11-20
 - **Prototype:** none (parent Q34); this document is the reference
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md)
 
@@ -16,6 +16,9 @@
    bag uses it from now on."
 3. **A channel added a field.** Home or the type page shows "Amazon added 2 fields to TOTE_BAG" → each
    is unmapped until mapped; a field nothing can fill shows "Needs a developer · requested".
+4. **A field made of parts.** Admin → Channels → Amazon → RUG → "Item Dimensions L x W" shows "In parts: length,
+   width" and one line per part, each "Not mapped" until mapped → Map a part → choose Length (a measure) and its
+   unit → Save → "Saved. Every RUG uses it from now on." The whole field offers no Map of its own (decisions Q23).
 
 ## Screens
 | Screen | Route | Reached from | Serves |
@@ -31,6 +34,8 @@
 | Needs a developer | "Needs a developer · requested" | — |
 | Unpaired answers | "3 answers have no Amazon match" under the row; each pair chosen from the channel's list, or "No match" | Pair them |
 | Waiting on a question | "Waiting on a new question; fills nothing yet" under a map naming a question not built yet (decisions Q17, 2026-11-08) | Change |
+| A field in parts | Under the field's label, "In parts: {part}, {part}"; then one line per part: "{Field} · {part}" with its source, or "Not mapped" in amber. No whole-field Map. A whole-field map made before this shows "Can't fill a field in parts. Map each part instead." in amber, with no Change: mapping any part removes it, for every type of ours; a field the create fills itself stays "Filled by the system" (2026-11-20, built; was: with Change, which the server's refusal of a whole-field save would only fail) | Map each part |
+| Removing a map | "Remove" beside each map's Change (and alone on a whole-field map on a field in parts); no confirm step (Q4). Toast "Removed. Every {type} stops sending it."; the field reads "Not mapped" again (Q24, 2026-11-20, asked for by the owner) | Remove |
 | Changed by the channel | A row marked "New · added 7 Nov" | Map it |
 | Saved | Toast "Saved. Every {type} uses it from now on." | — |
 | Loading / slow | Skeleton rows | — |
@@ -42,7 +47,11 @@
 ## Copy deck
 "From product: {attribute}" · "Rule: {rule}" · "Fixed: {value}" · "{core field}" · "Filled by the system" ·
 "Not mapped" · "Needs a developer · requested" · "{n} answers have no {channel} match" · "Pair them" ·
-"Checked against {source}, {date}" · "Waiting on a new question; fills nothing yet" · "No match" · "Saved. Every {type} uses it from now on." · "Couldn't save that. Nothing was changed."
+"Checked against {source}, {date}" · "In parts: {parts}" · "{Field} · {part}" · "Map {part}" ·
+"Can't fill a field in parts. Map each part instead." · "Remove" · "Removed. Every {type} stops sending it." ·
+"Couldn't remove that. Nothing was changed." · "Waiting on a new question; fills nothing yet" · "No match" · "Saved. Every {type} uses it from now on." · "Couldn't save that. Nothing was changed."
 
 ## Sign-off
 Signed off by the owner, 2026-11-07 ("signed off"), as documents in place of prototypes (parent Q34).
+
+The change for fields in parts (journey 4, "A field in parts", its copy) signed off by the owner, 2026-11-20 ("signed off").

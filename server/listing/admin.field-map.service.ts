@@ -8,6 +8,7 @@ import { CORE_KEYS, FIELD_SOURCE, PLANNED_ATTRIBUTES, SHOP_KEYS, fieldsOf, fills
 import { RULE_KEYS } from "./field-rules";
 import { FACTS, FACT_DECLARATIONS, MEASURES, type FactKey } from "./listing-facts";
 import { listingValueRepository } from "./listing-value.repository";
+import { partsByField } from "./schema-parts";
 
 const ALERT_DAYS = 14;
 const TODAY = new Set<string>([...FACTS, ...MEASURES]);
@@ -34,11 +35,13 @@ export const adminFieldMapService = {
   /** One channel type: every field with its maps, newest requirements marked, unpaired answers counted. Null when unknown. */
   async view(channel: string, typeKey: string, now = new Date()): Promise<AdminFieldMapsDTO | null> {
     if (!isChannel(channel)) return null;
-    const [catalogue, maps, changes] = await Promise.all([
+    const [catalogue, maps, changes, schemas] = await Promise.all([
       channelCatalogueRepository.fieldsFor([{ channel, key: typeKey }]),
       fieldMapRepository.forTypes([{ channel, channelType: typeKey }]),
       channelCatalogueRepository.changesSince(new Date(now.getTime() - ALERT_DAYS * DAY_MS)),
+      channelCatalogueRepository.schemas([{ channel, key: typeKey }]),
     ]);
+    const parts = partsByField(schemas.get(`${channel}:${typeKey}`));
     const type = catalogue.get(`${channel}:${typeKey}`);
     if (!type && maps.length === 0) return null;
     const lists = [...new Set(maps.flatMap((m) => (m.attributeKey && FACT_DECLARATIONS[m.attributeKey as FactKey]?.list ? [FACT_DECLARATIONS[m.attributeKey as FactKey].list!] : [])))];
@@ -61,7 +64,7 @@ export const adminFieldMapService = {
       return {
         fieldPath: m.fieldPath, bbType: m.bbType, source: m.source, key: keyOf(m), constant: m.constant, unitTarget: m.unitTarget,
         reason: m.reason, checkedSource: m.checkedSource, checkedOn: m.checkedOn.toISOString(), values: m.values, unpaired,
-        allowed: closed ? allowed : [], waiting,
+        allowed: closed ? allowed : [], waiting, wholeOnParts: (parts.get(m.fieldPath)?.length ?? 0) > 0,
       };
     };
 
@@ -71,11 +74,13 @@ export const adminFieldMapService = {
         const allowed = Array.isArray(f.allowedValues) ? (f.allowedValues as unknown[]).map(String) : [];
         return {
           field: f.key, label: f.label, requirement: f.requirement, adapterFills: f.adapterFills, addedOn: addedOn.get(f.key) ?? null,
+          // What the create fills itself stays "Filled by the system", never parts to map.
+          parts: f.adapterFills ? [] : (parts.get(f.key) ?? []),
           maps: maps.filter((m) => fieldOfMap(m) === f.key).map((m) => toDTO(m, allowed, f.kind === FIELD_KIND.CHOICE)),
         };
       })
       // A map whose field the channel no longer lists still shows, so it can be seen and changed.
-      .concat(maps.filter((m) => !fieldKeys.has(fieldOfMap(m))).map((m) => ({ field: fieldOfMap(m), label: fieldOfMap(m), requirement: FIELD_REQUIREMENT.OPTIONAL, adapterFills: false, addedOn: null, maps: [toDTO(m, [], false)] })))
+      .concat(maps.filter((m) => !fieldKeys.has(fieldOfMap(m))).map((m) => ({ field: fieldOfMap(m), label: fieldOfMap(m), requirement: FIELD_REQUIREMENT.OPTIONAL, adapterFills: false, addedOn: null, parts: [] as string[], maps: [toDTO(m, [], false)] })))
       .sort((a, b) => order.indexOf(a.requirement) - order.indexOf(b.requirement) || a.label.localeCompare(b.label));
 
     return {

@@ -26,12 +26,14 @@ import { platformListingRepository, type PlatformListingRow } from "./platform-l
 import { connectionFor, ensure, statusOf } from "./platform-listing.service";
 import {
   LISTING_FIELD,
+  PUBLISH_REFUSAL,
   PUBLISH_STATE,
   type ListingField,
   type ListingIssue,
   type ListingOverrides,
   type ListingRules,
   type ListingValues,
+  type PublishRefusal,
   type PublishResultDTO,
   type ReviewChangeDTO,
   type ReviewDTO,
@@ -160,7 +162,9 @@ async function lookAt(row: PlatformListingRow, connection: OrdersCheckRow | null
   const pending = parseOverrides(row.pending);
   const sent = parseSent(row.sent) ?? {};
   const title = pending.title ?? sent.title;
-  const showing = answer.found && answer.showing.title && title && answer.showing.title !== title ? { title: answer.showing.title, mainImageUrl: null } : null;
+  // Amazon recases an all-capital title by its own style rules; only different words are other content.
+  const words = (t: string) => t.replace(/\s+/g, " ").trim().toLowerCase();
+  const showing = answer.found && answer.showing.title && title && words(answer.showing.title) !== words(title) ? { title: answer.showing.title, mainImageUrl: null } : null;
   // A page we created is found minutes before Amazon makes it buyable; checked on, not called done while not yet on sale (2026-11-09).
   const waitingToSell = row.createMode !== null && answer.found && answer.live === false && checkAt(count, row.publishedAt ?? now) !== null;
   const done = errors.length > 0 || (answer.found && count >= 2 && !waitingToSell);
@@ -185,7 +189,10 @@ export const listingPublishService = {
     const { connection, channel } = await connectionFor(orgId, channelName);
     const rules = providerFor(channel).listingRules;
     const all = listingId ? [await platformListingRepository.find(listingId, orgId)].filter((r): r is PlatformListingRow => r !== null && r.connectionId === connection.id) : await platformListingRepository.onConnection(connection.id);
-    const rows = all.filter((r) => r.productId !== null || r.familyId !== null);
+    // A listing whose send is still out has nothing to publish until the marketplace answers.
+    const placed = all.filter((r) => r.productId !== null || r.familyId !== null);
+    const rows = placed.filter((r) => SENDABLE.has(r.publishState));
+    const sending = placed.length - rows.length;
     const productIds = rows.map((r) => r.productId).filter((id): id is string => id !== null);
     const [products, mirrors] = await Promise.all([productService.forListing(orgId, productIds), channelListingRepository.mirrorsFor(connection.id, productIds)]);
     // Fields the daily look found a complaint on wait for a send, edited or not (Q23).
@@ -204,7 +211,7 @@ export const listingPublishService = {
       if (waiting.length === 0) continue;
       listings.push({ id: row.id, version: row.version, productId: product.id, name: product.name, status, creating, changes: changesOf(row, product, waiting, values) });
     }
-    return { channel, label: CHANNEL_LABELS[channel], listings, totalChanges: listings.reduce((n, l) => n + l.changes.length, 0) };
+    return { channel, label: CHANNEL_LABELS[channel], listings, totalChanges: listings.reduce((n, l) => n + l.changes.length, 0), sending };
   },
 
   /**
@@ -215,29 +222,32 @@ export const listingPublishService = {
     await channelPlan.assert(orgId);
     const { connection, channel } = await connectionFor(orgId, channelName);
     const rules = providerFor(channel).listingRules;
-    const refused: string[] = [];
+    const refused: PublishResultDTO["refused"] = [];
     let sent = 0;
     for (const item of items) {
-      const ok = await prisma.$transaction(async (tx) => {
+      const refusal = await prisma.$transaction(async (tx): Promise<PublishRefusal | null> => {
         const row = await platformListingRepository.find(item.id, orgId, tx);
-        if (!row || row.connectionId !== connection.id) return false;
+        if (!row || row.connectionId !== connection.id) return PUBLISH_REFUSAL.CHANGED;
+        if (!SENDABLE.has(row.publishState)) return PUBLISH_REFUSAL.SENDING;
+        if (row.version !== item.version) return PUBLISH_REFUSAL.CHANGED;
         let pending: ListingOverrides = {};
         if (row.productId) {
           const [product] = await productService.forListing(orgId, [row.productId], tx);
-          if (!product) return false;
+          if (!product) return PUBLISH_REFUSAL.CHANGED;
           const values = computeListing(masterValues(product), parseOverrides(row.overrides, product.media));
           pending = pick(snapshot(values, rules.writable), item.fields.filter((f) => rules.writable.includes(f)));
           // What a whole-rupee marketplace will hold, so what is recorded as sent is what it shows (channel-listings Q13).
           if (rules.wholeRupees && pending.price !== undefined) pending.price = toWholeRupees(pending.price);
-          if (Object.keys(pending).length === 0 && row.channelListingId !== null) return false;
+          if (Object.keys(pending).length === 0 && row.channelListingId !== null) return PUBLISH_REFUSAL.NOTHING;
         }
+        // The claim stays the guard: a save or a send landing after the reads above still loses here.
         const claimed = await platformListingRepository.claimPublish(row.id, orgId, item.version, pending, new Date(), tx);
-        if (!claimed) return false;
+        if (!claimed) return PUBLISH_REFUSAL.CHANGED;
         await enqueue(tx, publishListingSpec, { listingId: row.id, orgId });
-        return true;
+        return null;
       });
-      if (ok) sent++;
-      else refused.push(item.id);
+      if (refusal === null) sent++;
+      else refused.push({ id: item.id, reason: refusal });
     }
     return { sent, refused };
   },

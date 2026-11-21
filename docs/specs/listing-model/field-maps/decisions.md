@@ -1,6 +1,6 @@
 # Decisions — listing-model / field-maps
 
-- **Verified:** 2026-11-08
+- **Verified:** 2026-11-20
 
 > Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented ones ([ADR-0062](../../../adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)).
 > Binding here: parent [decisions](../decisions.md) Q5, Q7, Q20, Q23, Q24, Q32; [ADR-0070](../../../adr/0070-a-products-attributes-are-rows-mapped-to-each-channels-own-catalogue.md).
@@ -29,6 +29,8 @@
 | Q20 | What may the local schema check refuse before Amazon is asked? | Only a value Amazon's schema refuses (a unit, a word, an unknown attribute); what is required is Amazon's to judge in its check-only answer | Claude · reversible | 2026-11-08 | Proof run on a production copy: JSON Schema read Amazon's conditions more strictly than Amazon (material, shipping group), which would have refused creates Amazon accepts. Was: D6, every schema problem refused | implemented (proof fixes) |
 | Q21 | An Amazon type never read when a create needs it? | Read then, through the home brand, before the listing is built | Claude · reversible | 2026-11-08 | Proof run: production had no Amazon types yet (the daily read runs only once deployed), so the first creates would go out unshaped | implemented (proof fixes) |
 | Q22 | A yes/no answer on a channel? | "Yes" / "No" by default (Flipkart, Meesho); Amazon's water resistance paired to its own words; Amazon receives its code for any display name | Claude · reversible | 2026-11-08 | Proof run: Amazon refused "false" and wants `not_water_resistant` | implemented (proof fixes) |
+| Q23 | How does an admin map a field made of parts (Amazon RUG's `item_length_width`)? | On the type's screen, a field in parts lists its parts, each mapped on its own (Q8's path `field.part`); the whole field offers no single map, and a save is refused for a part the type does not declare. A whole-field map made before shows as one that cannot fill the field, and goes when a part is mapped | Owner | 2026-11-20 | The screen mapped only a whole field to one answer; RUG's dimensions were mapped to a size word and needed a migration (2026-11-20). Parts are known from the type's schema (`partsOf`) | implemented |
+| Q24 | Can an admin remove a map? | Yes: Remove beside each map, no confirm step (as Q4); the map and its pairs go, the field reads unmapped, completeness is asked again; audited `channel.field-map.remove` | Owner | 2026-11-20 | A map added by mistake (RUG's height) could only be changed into another value, never undone | implemented |
 
 ## Parked (Later)
 - None.

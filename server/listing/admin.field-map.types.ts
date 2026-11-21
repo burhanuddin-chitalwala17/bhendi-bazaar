@@ -23,6 +23,8 @@ export interface AdminFieldMapDTO {
   allowed: string[];
   /** It reads a question the attributes subfeature has not added yet, so it fills nothing today (Q17). */
   waiting: boolean;
+  /** A whole-field map on a field in parts, which one answer cannot fill (Q23). */
+  wholeOnParts: boolean;
 }
 
 export interface AdminFieldRowDTO {
@@ -30,6 +32,8 @@ export interface AdminFieldRowDTO {
   label: string;
   requirement: string;
   adapterFills: boolean;
+  /** The field's parts, each mapped on its own; empty for a one-answer field (Q23). */
+  parts: string[];
   /** When a re-read found the channel newly requiring it, inside the last 14 days (ux "Changed by the channel"). */
   addedOn: string | null;
   maps: AdminFieldMapDTO[];

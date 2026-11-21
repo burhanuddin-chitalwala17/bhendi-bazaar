@@ -208,10 +208,23 @@ export interface ReviewDTO {
   label: string;
   listings: ReviewListingDTO[];
   totalChanges: number;
+  /** Listings left out because their last send is still waiting on the marketplace. */
+  sending: number;
 }
 
-/** What a publish did: sent, or refused because the listing moved since the review (D3). */
+/** Why a reviewed listing was not sent (D3). */
+export const PUBLISH_REFUSAL = {
+  /** Edited, removed or claimed since the review. */
+  CHANGED: "changed",
+  /** Its last send has no answer yet. */
+  SENDING: "sending",
+  /** Nothing the marketplace takes differs from what it has. */
+  NOTHING: "nothing",
+} as const;
+export type PublishRefusal = (typeof PUBLISH_REFUSAL)[keyof typeof PUBLISH_REFUSAL];
+
+/** What a publish did: how many were sent, and each refused listing with its reason (D3). */
 export interface PublishResultDTO {
   sent: number;
-  refused: string[];
+  refused: Array<{ id: string; reason: PublishRefusal }>;
 }
