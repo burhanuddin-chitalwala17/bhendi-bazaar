@@ -12,6 +12,13 @@
 
 ## Entries
 
+## 2026-11-21 — The model order is read through a source, ready for an admin screen
+
+- `server/content/generation/model-order.ts`: a purpose's model order now comes from the first `ModelOrderSource`
+  that has one — today only the environment's `IMAGE_GEN_MODELS_<PURPOSE>` — else the registry's default. The
+  lookup is async through the router, generator, scene painter and enhancement service, so the admin screen
+  parked in ai-images Q12 is one new source reading a table, with no other change. No behaviour change.
+
 ## 2026-11-21 — Fix: an AI picture's credit always closes, and its derivatives stay AI-made
 
 - From the improve-with-ai review: a redelivered styled run now settles (or refunds) what the last one left;

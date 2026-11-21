@@ -53,8 +53,8 @@ export function availableSegmenters(): Segmenter[] {
  * Which model paints is the generation router's setting, not this file's; the run id makes the
  * paint idempotent. Called without one at request time, only to ask whether anything can paint.
  */
-export function scenePainterFor(runId = "availability-check"): ScenePainter {
+export async function scenePainterFor(runId = "availability-check"): Promise<ScenePainter> {
   const painter = generatedScenePainter(runId);
-  if (!painter.isAvailable()) throw new DomainError("Scene backdrops are not set up yet");
+  if (!(await painter.isAvailable())) throw new DomainError("Scene backdrops are not set up yet");
   return painter;
 }

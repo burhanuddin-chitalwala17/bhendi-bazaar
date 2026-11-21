@@ -59,7 +59,7 @@ export async function quoteRange(
   purpose: GenerationPurpose,
   ask: Ask,
 ): Promise<{ first: GenerationQuote; worstCostPaise: number } | null> {
-  const models = eligibleModels(purpose, ask);
+  const models = await eligibleModels(purpose, ask);
   const [model] = models;
   if (!model) return null;
   const prices = models.map((candidate) => priceMicroUsd(candidate.price, ask.references, ask.aspect, ask.size));
@@ -79,7 +79,7 @@ export async function quoteRange(
  * rate. Null when nothing is set up to take it. Throws when a priced model has no rate to price at.
  */
 export async function quote(purpose: GenerationPurpose, ask: Ask): Promise<GenerationQuote | null> {
-  const [model] = eligibleModels(purpose, ask);
+  const [model] = await eligibleModels(purpose, ask);
   if (!model) return null;
   const costMicroUsd = priceMicroUsd(model.price, ask.references, ask.aspect, ask.size);
   const rate = costMicroUsd > 0 ? await rateFor() : null;
@@ -138,7 +138,7 @@ export async function generate(request: GenerationRequest, now: Date = new Date(
     await generationRepository.markRetriedAfterUnknown(row.id);
   }
 
-  const models = eligibleModels(request.purpose, ask);
+  const models = await eligibleModels(request.purpose, ask);
   const rate = await rateFor(now);
   let costPaise = 0;
   let answered: Answered;

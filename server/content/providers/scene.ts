@@ -23,7 +23,7 @@ export interface ScenePainter {
   /** What the ledger records as having performed the paint (spec R9). */
   key: EnhancementProvider;
   /** Whether this service is configured at all — asked before it is chosen, never after. */
-  isAvailable(): boolean;
+  isAvailable(): Promise<boolean>;
   /** The painted scene's bytes. Any picture format sharp can read; the tool re-encodes. */
   paint(input: ScenePaintInput): Promise<Buffer>;
 }

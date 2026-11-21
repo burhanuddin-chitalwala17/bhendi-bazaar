@@ -47,13 +47,13 @@ export function generatedScenePainter(runId: string): ScenePainter {
   return {
     key: ENHANCEMENT_PROVIDER.GENERATION,
 
-    isAvailable() {
+    async isAvailable() {
       return (
-        eligibleModels(GENERATION_PURPOSE.SCENE, {
+        (await eligibleModels(GENERATION_PURPOSE.SCENE, {
           references: 1,
           aspect: GENERATION_ASPECT.SQUARE,
           size: GENERATION_SIZE.S1K,
-        }).length > 0
+        })).length > 0
       );
     },
 

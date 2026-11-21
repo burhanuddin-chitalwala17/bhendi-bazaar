@@ -103,15 +103,15 @@ const TOOLS: Record<AvailableTool, ToolPipeline> = {
  * spent and before the store is touched. What the row ends up recording is what actually ran, which
  * may differ from what the request planned if the platform's choice changed in between.
  */
-function prepareTool(
+async function prepareTool(
   tool: AvailableTool,
   preset: string | null,
   runId?: string,
-): {
+): Promise<{
   provider: EnhancementProvider;
   costPaise: number;
   run: (input: ToolInput) => Promise<ToolResult>;
-} {
+}> {
   const pipeline = TOOLS[tool];
   if (pipeline.needs === NEEDS.NOTHING) {
     const provider = ENHANCEMENT_PROVIDER.SHARP;
@@ -131,7 +131,7 @@ function prepareTool(
   // row records the service that painted, and the cost of everything the run spent (trd D6).
   const setting = scenePresetFor(preset);
   if (!setting) throw new DomainError("Choose one of the scene settings", { field: "preset" });
-  const painter = scenePainterFor(runId);
+  const painter = await scenePainterFor(runId);
   return {
     provider: painter.key,
     costPaise: runCostPaise([
@@ -219,7 +219,7 @@ export const enhancementService = {
     }
     // Cheap and local: a tool whose service is not set up, or a setting that is not on the list,
     // is refused before a slot is spent.
-    const planned = prepareTool(tool, input.preset ?? null).provider;
+    const planned = (await prepareTool(tool, input.preset ?? null)).provider;
 
     const usage = await this.assertMayRun(orgId, now);
 
@@ -274,7 +274,7 @@ export const enhancementService = {
 
     try {
       if (!isAvailableTool(row.tool)) throw new DomainError("That improvement is not available yet");
-      const { provider, costPaise, run } = prepareTool(row.tool, row.preset, row.id);
+      const { provider, costPaise, run } = await prepareTool(row.tool, row.preset, row.id);
       const source = await mediaAssetService.readImageBytes(row.sourceAssetId);
       const result = await run(source);
       const proposalKey = proposalKeyFor(row.id, row.tool);

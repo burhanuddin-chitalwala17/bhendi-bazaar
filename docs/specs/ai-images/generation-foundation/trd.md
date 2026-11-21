@@ -68,8 +68,11 @@ pixel check — does not change.
   carrying the date and source it was checked against. The same model through two providers is two
   entries. In code rather than a table: changing it is a reviewed deploy, the set is small, and
   prices need their source beside them (Q12 parks an admin screen).
-- **D4 — The router.** `generation/router.ts`: for a purpose, the ordered list comes from
-  `IMAGE_GEN_MODELS_<PURPOSE>` (comma-separated ids) or the default list in code; unknown ids are
+- **D4 — The router.** `generation/router.ts`: for a purpose, the ordered list comes from the first
+  **model-order source** that has one (`generation/model-order.ts`; today only the environment's
+  `IMAGE_GEN_MODELS_<PURPOSE>`, comma-separated ids), else the default list in code. Sources are async
+  so the admin screen parked in Q12 plugs in as one source reading a table, placed first, with no
+  change to the router or its callers; unknown ids are
   skipped with a log line, never a crash. It drops entries whose adapter is not configured, whose
   `maxReferences` is below the request's count, or which cannot make the aspect, then tries each in
   order. `UNAVAILABLE` and `NO_CREDIT` move to the next; `REFUSED`, `BAD_OUTPUT` and `UNCERTAIN` end

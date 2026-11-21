@@ -83,7 +83,7 @@ function stubSegmenter(bytes: Buffer): Segmenter {
 }
 
 function stubPainter(bytes: Buffer): ScenePainter {
-  return { key: ENHANCEMENT_PROVIDER.MODEL, isAvailable: () => true, paint: vi.fn().mockResolvedValue(bytes) };
+  return { key: ENHANCEMENT_PROVIDER.MODEL, isAvailable: async () => true, paint: vi.fn().mockResolvedValue(bytes) };
 }
 
 async function pixels(bytes: Buffer) {

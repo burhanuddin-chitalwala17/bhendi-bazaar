@@ -78,12 +78,12 @@ describe("how a failure reaches the shop", () => {
 });
 
 describe("whether a scene can be painted at all", () => {
-  it("is refused before a slot is spent when no model is set up", () => {
+  it("is refused before a slot is spent when no model is set up", async () => {
     eligibleModels.mockReturnValue([]);
-    expect(() => scenePainterFor()).toThrow("Scene backdrops are not set up yet");
+    await expect(scenePainterFor()).rejects.toThrow("Scene backdrops are not set up yet");
   });
 
-  it("is a painter bound to the run when one is", () => {
-    expect(scenePainterFor("e9").key).toBe(ENHANCEMENT_PROVIDER.GENERATION);
+  it("is a painter bound to the run when one is", async () => {
+    expect((await scenePainterFor("e9")).key).toBe(ENHANCEMENT_PROVIDER.GENERATION);
   });
 });

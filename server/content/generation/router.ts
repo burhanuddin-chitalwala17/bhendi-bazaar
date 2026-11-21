@@ -9,15 +9,25 @@ import {
 import { DEFAULT_MODELS, modelById, type ModelEntry } from "@server/content/generation/registry";
 import { ADAPTERS } from "@server/content/generation/adapters";
 import type { AdapterCall } from "@server/content/generation/adapters/adapter";
+import { MODEL_ORDER_SOURCES, type ModelOrderSource } from "@server/content/generation/model-order";
 
 /**
  * Which model answers (generation-foundation trd D4; ai-images Q10, Q12). The list for a purpose is
- * the setting `IMAGE_GEN_MODELS_<PURPOSE>` if set, else the default in the registry; an id the
- * registry does not know is skipped with a log line rather than crashing a run over a typo.
+ * the first model-order source that has one (`model-order.ts`), else the default in the registry;
+ * an id the registry does not know is skipped with a log line rather than crashing a run over a typo.
  */
-export function orderedModels(purpose: GenerationPurpose): ModelEntry[] {
-  const setting = process.env[`IMAGE_GEN_MODELS_${purpose.toUpperCase()}`]?.trim();
-  const ids = setting ? setting.split(",").map((id) => id.trim()).filter(Boolean) : DEFAULT_MODELS[purpose];
+export async function orderedModels(
+  purpose: GenerationPurpose,
+  sources: readonly ModelOrderSource[] = MODEL_ORDER_SOURCES,
+): Promise<ModelEntry[]> {
+  let ids: readonly string[] = DEFAULT_MODELS[purpose];
+  for (const source of sources) {
+    const order = await source.orderFor(purpose);
+    if (order) {
+      ids = order;
+      break;
+    }
+  }
   const models: ModelEntry[] = [];
   for (const id of ids) {
     const model = modelById(id);
@@ -44,13 +54,13 @@ export function canTake(model: ModelEntry, ask: Ask): boolean {
 }
 
 /** The models that could answer, in order. Empty means nothing is set up for this request. */
-export function eligibleModels(purpose: GenerationPurpose, ask: Ask): ModelEntry[] {
-  return orderedModels(purpose).filter((model) => canTake(model, ask));
+export async function eligibleModels(purpose: GenerationPurpose, ask: Ask): Promise<ModelEntry[]> {
+  return (await orderedModels(purpose)).filter((model) => canTake(model, ask));
 }
 
-/** The most references any configured model for this purpose takes — what a form says "up to N". */
-export function maxReferencesFor(purpose: GenerationPurpose): number {
-  const configured = orderedModels(purpose).filter((model) => ADAPTERS[model.adapter].isConfigured());
+/** The most references the first configured model for this purpose takes — what a form says "up to N". */
+export async function maxReferencesFor(purpose: GenerationPurpose): Promise<number> {
+  const configured = (await orderedModels(purpose)).filter((model) => ADAPTERS[model.adapter].isConfigured());
   return configured[0]?.maxReferences ?? 0;
 }
 
