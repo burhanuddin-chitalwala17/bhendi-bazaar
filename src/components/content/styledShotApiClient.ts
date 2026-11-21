@@ -1,0 +1,25 @@
+import { apiRequest } from "@/lib/api-client";
+import type {
+  EnhancementDto,
+  EnhancementUsage,
+  RequestStyledInput,
+  StyledQuoteDto,
+} from "@server/content/enhancement.types";
+
+/** One AI picture's requests (ai-images/improve-with-ai D3, D4): its price, asking for it, and asking after it. */
+export const styledShotApiClient = {
+  quote(orgId: string, extraReferences: number, signal?: AbortSignal) {
+    return apiRequest<StyledQuoteDto>(`/api/org/${orgId}/enhancements/styled/quote?references=${extraReferences}`, { signal });
+  },
+
+  request(orgId: string, input: RequestStyledInput) {
+    return apiRequest<{ enhancement: EnhancementDto; usage: EnhancementUsage }>(`/api/org/${orgId}/enhancements/styled`, {
+      method: "POST",
+      body: input,
+    });
+  },
+
+  get(orgId: string, id: string) {
+    return apiRequest<{ enhancement: EnhancementDto }>(`/api/org/${orgId}/enhancements/${id}`);
+  },
+};

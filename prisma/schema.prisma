@@ -98,7 +98,12 @@ model MediaAsset {
   @@index([orgId, contentHash])
   @@index([ref])
   @@index([derivedFromId])
+  /// What the shop says this image is for (ai-images/media-tags D1); several at once. Product is added
+  /// where a gallery links the image, Reference where it is chosen as one; "in use" stays derived.
+  tags          MediaTag[]      @default([])
+
   @@index([posterAssetId])
+  @@index([tags], type: Gin)
 }
 
 enum MediaAssetKind {
@@ -106,6 +111,12 @@ enum MediaAssetKind {
   VIDEO_EMBED
   /// A video file we host: the upload is the source, its renditions and poster are DERIVED from it (video-hosting D1).
   VIDEO
+}
+
+/// The closed set of library tags (ai-images Q21); mirrored as MEDIA_TAG in media-library.types.ts.
+enum MediaTag {
+  PRODUCT
+  REFERENCE
 }
 
 enum MediaAssetSource {
@@ -163,6 +174,16 @@ model Enhancement {
   proposedAt    DateTime?
   decidedAt     DateTime?
 
+  /// The model calls this run made (ai-images/generation-foundation trd D6).
+  generations   Generation[]
+  /// A styled run's description in the shop's own words, and its reference pictures (improve-with-ai D1).
+  brief         String?
+  referenceRefs String[]         @default([])
+  /// The run a Regenerate came from (R9).
+  previousId    String?
+  previous      Enhancement?     @relation("EnhancementRegenerate", fields: [previousId], references: [id], onDelete: Restrict)
+  regenerations Enhancement[]    @relation("EnhancementRegenerate")
+
   @@index([orgId, createdAt])
   @@index([orgId, state])
   @@index([sourceAssetId])
@@ -197,6 +218,60 @@ model EnhancementSettings {
   updatedAt               DateTime @updatedAt
 }
 
+/// One call to an image model (ai-images/generation-foundation trd D6), written before the call so a
+/// retried job replays the stored result instead of paying again. Cost is what the platform spent:
+/// micro-dollars from the model's price rule and paise at the recorded day's rate (Invariant 3).
+model Generation {
+  id                  String          @id @default(cuid())
+  /// Ours, unique: a retry with the same key never makes a second call that succeeded.
+  idempotencyKey      String          @unique
+  purpose             String
+  /// The registry id (`cf/flux-2-klein-4b`), never the provider's own spelling.
+  modelId             String?
+  state               GenerationState @default(SUBMITTED)
+  promptVersion       String
+  platformPrompt      String
+  /// The seller's own words, kept apart from the platform's; null where there were none.
+  brief               String?
+  referenceAssetIds   String[]
+  aspect              String
+  size                String
+  costMicroUsd        Int             @default(0)
+  costPaise           Int             @default(0)
+  /// The day whose rate priced this call; null for a free model.
+  rateDay             DateTime?       @db.Date
+  outputKeys          String[]
+  synthetic           Boolean         @default(true)
+  containsPerson      Boolean         @default(false)
+  /// A worker died mid-call and the call was made again: the provider may have billed twice (trd D6).
+  retriedAfterUnknown Boolean         @default(false)
+  error               String?
+  /// The enhancement run this served, if any. Restrict: a record of money spent never cascades (ADR-0020).
+  enhancementId       String?
+  enhancement         Enhancement?    @relation(fields: [enhancementId], references: [id], onDelete: Restrict)
+  createdAt           DateTime        @default(now())
+  finishedAt          DateTime?
+
+  @@index([enhancementId])
+  @@index([createdAt])
+}
+
+enum GenerationState {
+  SUBMITTED
+  SUCCEEDED
+  FAILED
+  REFUSED
+}
+
+/// What one US dollar cost in paise on a day (generation-foundation trd D7): fetched by the worker,
+/// one row a day, never typed into code. An integer, because money is integer paise (Invariant 3).
+model ExchangeRate {
+  day         DateTime @id @db.Date
+  paisePerUsd Int
+  source      String
+  fetchedAt   DateTime @default(now())
+}
+
 enum EnhancementTool {
   CUTOUT
   WHITE
@@ -204,6 +279,8 @@ enum EnhancementTool {
   SCENE
   LIGHT
   ENLARGE
+  /// An AI picture styled from a shop's description and references (ai-images/improve-with-ai D1).
+  STYLED
 }
 
 enum EnhancementState {
@@ -718,6 +795,8 @@ model Org {
   commissionRules    OrgCommissionRule[]
   ledgerEntries      OrgLedgerEntry[]
   settlements        Settlement[]
+  creditLines        CreditLine[]
+  creditPolicy       OrgCreditPolicy?
   biddingEvents      BiddingEvent[]
   listingValues      ListingValue[]
   productFamilies    ProductFamily[]
@@ -1768,6 +1847,92 @@ enum LedgerEntryState {
   REVERSED
 }
 
+/// How money moved outside the platform (shop-credits D6): a top-up in, a payout out.
+enum PaymentMethod {
+  UPI
+  BANK_TRANSFER
+  CASH
+  OTHER
+}
+
+enum CreditLineKind {
+  /// The one-time starting credit (ai-images Q14).
+  GRANT
+  /// Money the shop paid the platform offline, recorded by the admin with proof (Q17).
+  TOP_UP
+  /// An AI picture, charged when asked for (shop-credits D5).
+  CHARGE
+  /// The difference when a fallback model answered at another price.
+  ADJUSTMENT
+  /// A picture that was not made: what its charge and adjustment netted to, given back (Q20).
+  REFUND
+  /// An admin correcting a line; the original stays.
+  REVERSAL
+}
+
+/// A shop's credit, as append-only lines (ai-images/shop-credits D2). The balance is their sum and
+/// is never stored (R1); a line is never edited or deleted (R4). Restrict: money never cascades (ADR-0020).
+model CreditLine {
+  id                String         @id @default(cuid())
+  orgId             String
+  org               Org            @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  kind              CreditLineKind
+  /// Signed integer paise: a credit is positive, a charge negative (Invariant 3).
+  amountPaise       Int
+  /// A charge's provider cost and the margin applied to it, beside what was charged (Q15).
+  providerCostPaise Int?
+  marginBps         Int?
+  /// The run a charge, adjustment or refund belongs to.
+  enhancementId     String?
+  /// One line per kind per run, so a retried settle or refund changes nothing (D5).
+  runKey            String?        @unique
+  /// The org id on its one GRANT line, so a shop is granted once (D3).
+  grantKey          String?        @unique
+  method            PaymentMethod?
+  reference         String?
+  paidOn            DateTime?      @db.Date
+  receiptRef        String?
+  /// The line a REVERSAL undoes; unique, so a line is reversed at most once.
+  reversesId        String?        @unique
+  reverses          CreditLine?    @relation("CreditReversal", fields: [reversesId], references: [id], onDelete: Restrict)
+  reversedBy        CreditLine?    @relation("CreditReversal")
+  note              String?
+  /// Who recorded it; null for a line the platform wrote itself (grant, charge).
+  createdByUserId   String?
+  createdAt         DateTime       @default(now())
+
+  @@index([orgId, createdAt])
+  @@index([enhancementId])
+}
+
+/// The platform's margin on AI pictures, in basis points (Q15). One row, addressed by a constant id.
+model CreditSettings {
+  id        String   @id @default("platform")
+  marginBps Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+/// One shop's margin where it differs from the platform's; no row, or null, means the platform's.
+model OrgCreditPolicy {
+  orgId     String   @id
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  marginBps Int?
+  updatedAt DateTime @updatedAt
+}
+
+/// Where a shop sends a top-up (Q35): the platform's UPI id, QR code and bank account. One row.
+model PlatformPaymentDetails {
+  id              String   @id @default("platform")
+  upiId           String?
+  qrRef           String?
+  accountName     String?
+  accountNumber   String?
+  ifsc            String?
+  bankName        String?
+  updatedByUserId String?
+  updatedAt       DateTime @updatedAt
+}
+
 enum SettlementStatus {
   PENDING
   PAID
@@ -1903,6 +2068,9 @@ model Settlement {
   reference   String?
   paidAt      DateTime?
   note        String?
+  /// How the transfer was made, and a picture of its receipt (ai-images/shop-credits D6, Q18).
+  method      PaymentMethod?
+  receiptRef  String?
 
   /// Restrict, as `AdminLog` already does: removing a person must never erase the
   /// record of what they authorised.

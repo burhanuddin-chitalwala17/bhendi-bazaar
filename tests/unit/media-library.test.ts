@@ -4,6 +4,7 @@
  * rather than storing one, the refusal that names what still uses an image, and the sweep that
  * deletes a retired object only after the grace period and only when no URL still shows it.
  */
+import type { MediaTag } from "@server/catalog/media-library.types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ZodError } from "zod";
 
@@ -78,6 +79,7 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   retiredAt: null,
   retiredBy: null,
   retiredReason: null,
+  tags: [] as MediaTag[],
   derivatives: [],
   posterAsset: null,
   _count: counts(),

@@ -274,12 +274,19 @@ jobs:
       # Next's compile cache, reused only for the exact same code and schema. No fallback key: `.next/cache`
       # also holds Next's stored page data, and an older cache restored onto new code served the category
       # page from data built for the old schema, so the journeys could not find the product they had just
-      # seeded (twice, 2026-11; both times fixed only by deleting the cache). A miss costs a full build.
+      # seeded (twice, 2026-11; both times fixed only by deleting the cache). A miss costs a full build, and
+      # the next step drops the data half of a hit, which was the stale part.
       - name: Cache the Next.js build
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .next/cache
           key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'server/**', 'prisma/**', 'next.config.*') }}
+
+      # The compile cache is kept; the data cache is not. `fetch-cache` holds the category page's product
+      # list from the run that wrote it, against that run's database, and an exact key hit (a docs- or
+      # CI-only commit) restored it onto this run's freshly seeded one (PR #86, 2026-11-21).
+      - name: Drop the restored data cache
+        run: rm -rf .next/cache/fetch-cache
 
       - name: Build application
         run: npm run build
@@ -442,6 +449,11 @@ jobs:
           WORKER_ENV_IMAGE_SEGMENT_PROVIDER: ${{ secrets.WORKER_ENV_IMAGE_SEGMENT_PROVIDER }}
           WORKER_ENV_IMAGE_MODEL_API_KEY: ${{ secrets.WORKER_ENV_IMAGE_MODEL_API_KEY }}
           WORKER_ENV_IMAGE_MODEL_ENDPOINT: ${{ secrets.WORKER_ENV_IMAGE_MODEL_ENDPOINT }}
+          WORKER_ENV_IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.WORKER_ENV_IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID }}
+          WORKER_ENV_IMAGE_GEN_CLOUDFLARE_API_TOKEN: ${{ secrets.WORKER_ENV_IMAGE_GEN_CLOUDFLARE_API_TOKEN }}
+          WORKER_ENV_IMAGE_GEN_GEMINI_API_KEY: ${{ secrets.WORKER_ENV_IMAGE_GEN_GEMINI_API_KEY }}
+          WORKER_ENV_IMAGE_GEN_MODELS_SCENE: ${{ secrets.WORKER_ENV_IMAGE_GEN_MODELS_SCENE }}
+          WORKER_ENV_IMAGE_GEN_MODELS_LISTING: ${{ secrets.WORKER_ENV_IMAGE_GEN_MODELS_LISTING }}
           WORKER_ENV_CREDENTIAL_KEYS: ${{ secrets.WORKER_ENV_CREDENTIAL_KEYS }}
           WORKER_ENV_AMAZON_APP_ID: ${{ secrets.WORKER_ENV_AMAZON_APP_ID }}
           WORKER_ENV_AMAZON_APP_SECRET: ${{ secrets.WORKER_ENV_AMAZON_APP_SECRET }}

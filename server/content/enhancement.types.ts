@@ -2,6 +2,7 @@ import type {
   EnhancementState as PrismaEnhancementState,
   EnhancementTool as PrismaEnhancementTool,
 } from "@prisma/client";
+import { hasAiMark } from "@server/catalog/media-library.types";
 
 /**
  * The closed sets of image enhancement, declared once for the server, the schema and the sheet
@@ -15,6 +16,8 @@ export const ENHANCEMENT_TOOL = {
   SCENE: "SCENE",
   LIGHT: "LIGHT",
   ENLARGE: "ENLARGE",
+  /** An AI picture from the shop's description and references (ai-images/improve-with-ai D1). Not one of the six. */
+  STYLED: "STYLED",
 } as const satisfies Record<PrismaEnhancementTool, PrismaEnhancementTool>;
 export type EnhancementTool = (typeof ENHANCEMENT_TOOL)[keyof typeof ENHANCEMENT_TOOL];
 
@@ -31,9 +34,10 @@ export type EnhancementState = (typeof ENHANCEMENT_STATE)[keyof typeof ENHANCEME
 /**
  * Which service performed a run (spec R8, trd D3), named for what it is to us rather than for the
  * company behind it (ADR-0037): `sharp` is our own CPU, `zone` the image host our pictures are
- * already served from, `model` a hosted vision model. Nothing outside `providers/` knows more.
+ * already served from, `model` a hosted vision model, `generation` the generation module, whose own
+ * row names the model (generation-foundation trd D8). Nothing outside `providers/` knows more.
  */
-export const ENHANCEMENT_PROVIDER = { SHARP: "sharp", ZONE: "zone", MODEL: "model" } as const;
+export const ENHANCEMENT_PROVIDER = { SHARP: "sharp", ZONE: "zone", MODEL: "model", GENERATION: "generation" } as const;
 export type EnhancementProvider = (typeof ENHANCEMENT_PROVIDER)[keyof typeof ENHANCEMENT_PROVIDER];
 
 /** The one row the platform's numbers live in, addressed by this id rather than by a search. */
@@ -80,42 +84,45 @@ export function isAvailableTool(tool: EnhancementTool): tool is AvailableTool {
 /** ≈$0.002 an image at the hosted model's price (trd D3), rounded up to the whole paisa. */
 export const MODEL_SEGMENT_PAISE = 18;
 
-/** ≈$0.04 a painted scene at the hosted model's price (trd D3), rounded up to the whole paisa. */
-export const SCENE_PAINT_PAISE = 350;
-
 /**
  * What one run costs the platform, in paise, by the tool and the service that performed it
  * (spec R9, trd D6). Read at the moment the run is recorded, so changing which service performs a
  * tool changes what the ledger says and nothing else moves. Our own CPU is free, and so are the
- * image host's first 5,000 cut-outs a month; only the hosted model is billed.
+ * image host's first 5,000 cut-outs a month; only the hosted model is billed. A generated step is
+ * priced at 0 here because its cost is the `Generation` row's, added when the run is proposed
+ * (generation-foundation trd D7) — a table typed in paise is the hard-coded rate Q13 forbids.
  */
 export const TOOL_COST_PAISE: Record<AvailableTool, Record<EnhancementProvider, number>> = {
   [ENHANCEMENT_TOOL.WHITE]: {
     [ENHANCEMENT_PROVIDER.SHARP]: 0,
     [ENHANCEMENT_PROVIDER.ZONE]: 0,
     [ENHANCEMENT_PROVIDER.MODEL]: MODEL_SEGMENT_PAISE,
+    [ENHANCEMENT_PROVIDER.GENERATION]: 0,
   },
   [ENHANCEMENT_TOOL.STUDIO]: {
     [ENHANCEMENT_PROVIDER.SHARP]: 0,
     [ENHANCEMENT_PROVIDER.ZONE]: 0,
     [ENHANCEMENT_PROVIDER.MODEL]: MODEL_SEGMENT_PAISE,
+    [ENHANCEMENT_PROVIDER.GENERATION]: 0,
   },
   [ENHANCEMENT_TOOL.CUTOUT]: {
     [ENHANCEMENT_PROVIDER.SHARP]: 0,
     [ENHANCEMENT_PROVIDER.ZONE]: 0,
     [ENHANCEMENT_PROVIDER.MODEL]: MODEL_SEGMENT_PAISE,
+    [ENHANCEMENT_PROVIDER.GENERATION]: 0,
   },
-  // Only the hosted model paints; the other two are priced at nothing because they cannot do it
-  // at all, which `scenePainterFor` refuses before a run rather than charging zero for.
+  // Only the generation module paints, and its cost is its own row's; the others cannot paint at all.
   [ENHANCEMENT_TOOL.SCENE]: {
     [ENHANCEMENT_PROVIDER.SHARP]: 0,
     [ENHANCEMENT_PROVIDER.ZONE]: 0,
-    [ENHANCEMENT_PROVIDER.MODEL]: SCENE_PAINT_PAISE,
+    [ENHANCEMENT_PROVIDER.MODEL]: 0,
+    [ENHANCEMENT_PROVIDER.GENERATION]: 0,
   },
   [ENHANCEMENT_TOOL.LIGHT]: {
     [ENHANCEMENT_PROVIDER.SHARP]: 0,
     [ENHANCEMENT_PROVIDER.ZONE]: 0,
     [ENHANCEMENT_PROVIDER.MODEL]: 0,
+    [ENHANCEMENT_PROVIDER.GENERATION]: 0,
   },
   // A plain resize on our own CPU, never a service: an upscaler that reconstructs detail would
   // change the product's own pixels, which is refused on fidelity rather than on price (trd D2).
@@ -123,6 +130,7 @@ export const TOOL_COST_PAISE: Record<AvailableTool, Record<EnhancementProvider, 
     [ENHANCEMENT_PROVIDER.SHARP]: 0,
     [ENHANCEMENT_PROVIDER.ZONE]: 0,
     [ENHANCEMENT_PROVIDER.MODEL]: 0,
+    [ENHANCEMENT_PROVIDER.GENERATION]: 0,
   },
 };
 
@@ -153,6 +161,7 @@ export const TOOL_COPY: Record<EnhancementTool, { label: string; line: string }>
   [ENHANCEMENT_TOOL.SCENE]: { label: "In a scene", line: "Placed in a real-looking setting" },
   [ENHANCEMENT_TOOL.LIGHT]: { label: "Fix the light", line: "Brighter, sharper, nothing else changed" },
   [ENHANCEMENT_TOOL.ENLARGE]: { label: "Make it bigger", line: "Large enough for a marketplace to accept" },
+  [ENHANCEMENT_TOOL.STYLED]: { label: "Improve with AI", line: "Styled from your description" },
 };
 
 /**
@@ -217,7 +226,25 @@ export const TOOL_MIME_TYPE: Record<EnhancementTool, ProposalMimeType> = {
   [ENHANCEMENT_TOOL.SCENE]: PROPOSAL_MIME.WEBP,
   [ENHANCEMENT_TOOL.LIGHT]: PROPOSAL_MIME.WEBP,
   [ENHANCEMENT_TOOL.ENLARGE]: PROPOSAL_MIME.WEBP,
+  [ENHANCEMENT_TOOL.STYLED]: PROPOSAL_MIME.WEBP,
 };
+
+/**
+ * What the free tools cost the platform once the image host's free allowance is used (ai-images Q16,
+ * Q38; generation-foundation trd D11). Shops are never charged for these; the platform absorbs it,
+ * and the admin sees how much. The overage is micro-dollars so it is priced at the day's rate like
+ * every other model cost. **Unverified against a bill** (INTEGRATIONS): recheck on the first invoice.
+ */
+export const FREE_CUTOUTS_PER_MONTH = 5_000;
+export const CUTOUT_OVERAGE_MICRO_USD = 500;
+
+/** The tools that cut the product out first, and so call the segmenter once a run. */
+export const SEGMENTING_TOOLS = [
+  ENHANCEMENT_TOOL.CUTOUT,
+  ENHANCEMENT_TOOL.WHITE,
+  ENHANCEMENT_TOOL.STUDIO,
+  ENHANCEMENT_TOOL.SCENE,
+] as const;
 
 /** One run, one key, fixed by the tool — which is what lets a resumed run write the same object. */
 export function proposalKeyFor(enhancementId: string, tool: EnhancementTool): string {
@@ -230,6 +257,8 @@ export type EnhancementTransform = {
   preset: string | null;
   provider: string;
   enhancementId: string;
+  /** Set on an AI picture, so everything derived from it inherits the mark (ADR-0077). */
+  aiMade?: true;
 };
 
 /** What a sheet or a slot asks for (spec R2, R5). The photo is named by id or by the URL its row carries. */
@@ -241,6 +270,48 @@ export interface RequestEnhancementInput {
   slot?: string | null;
   /** The slot's role as the editor resolved it; `label` is refused (spec R5, trd D8). */
   slotRole?: string | null;
+}
+
+/** How the person in a styled picture is shown (ai-images Q3): the run's `preset`. */
+export const STYLED_FACE = { NO_FACE: "no-face", WITH_FACE: "with-face" } as const;
+export type StyledFace = (typeof STYLED_FACE)[keyof typeof STYLED_FACE];
+export const STYLED_FACES = Object.values(STYLED_FACE);
+
+/** The longest description a shop may write (improve-with-ai R3). */
+export const STYLED_BRIEF_MAX = 300;
+
+/**
+ * Whether a stored image is AI-made (improve-with-ai R11; ADR-0077): made by the styled tool, or
+ * derived from such a picture, which catalog marks on every derivative.
+ */
+export function isAiMade(transform: unknown): boolean {
+  if (hasAiMark(transform)) return true;
+  return typeof transform === "object" && transform !== null && (transform as { tool?: unknown }).tool === ENHANCEMENT_TOOL.STYLED;
+}
+
+/** What the modal asks for one AI picture (improve-with-ai R3–R5, R9). Photos are named as for the six tools. */
+export interface RequestStyledInput {
+  sourceAssetId?: string | null;
+  sourceRef?: string | null;
+  brief: string;
+  /** Library images to follow, by the URL each carries; the photo itself is always the first reference. */
+  referenceRefs: string[];
+  face: StyledFace;
+  /** The run this one regenerates, if any. */
+  previousId?: string | null;
+  slot?: string | null;
+  slotRole?: string | null;
+}
+
+/** The cost line and the reference limit, from the server (improve-with-ai D4). */
+export interface StyledQuoteDto {
+  /** What the picture is expected to take from credit, margin included. */
+  chargePaise: number;
+  balancePaise: number;
+  /** The most the picture might take: what must be in credit to ask. */
+  heldPaise: number;
+  /** References beyond the photo itself that the first model takes. */
+  maxExtraReferences: number;
 }
 
 /** The ledger row as the repository selects it, with the refs of the two assets it points at. */
@@ -258,6 +329,9 @@ export interface EnhancementRow {
   resultAssetId: string | null;
   costPaise: number;
   error: string | null;
+  brief: string | null;
+  referenceRefs: string[];
+  previousId: string | null;
   createdAt: Date;
   proposedAt: Date | null;
   decidedAt: Date | null;
@@ -282,6 +356,10 @@ export interface EnhancementDto {
   resultRef: string | null;
   error: string | null;
   costPaise: number;
+  /** A styled run's description, references and the run it regenerates; empty for the six tools. */
+  brief: string | null;
+  referenceRefs: string[];
+  previousId: string | null;
   createdAt: string;
   proposedAt: string | null;
   decidedAt: string | null;
@@ -344,6 +422,9 @@ export function toEnhancementDto(row: EnhancementRow, publicUrl: (key: string) =
     resultRef: row.resultAsset?.ref ?? null,
     error: row.error,
     costPaise: row.costPaise,
+    brief: row.brief,
+    referenceRefs: row.referenceRefs,
+    previousId: row.previousId,
     createdAt: row.createdAt.toISOString(),
     proposedAt: row.proposedAt ? row.proposedAt.toISOString() : null,
     decidedAt: row.decidedAt ? row.decidedAt.toISOString() : null,

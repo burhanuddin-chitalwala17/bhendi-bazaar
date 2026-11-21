@@ -40,8 +40,11 @@ npm run dev                 # http://localhost:3000
 | `R2_BUCKET` | ✅ | Bucket name |
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | ✅ | R2 API token with read+write on that bucket |
 | `IMAGE_SEGMENT_PROVIDER` | ○ | Which service cuts a product out of its background for the `cut out`, `on white` and `studio` improvements: `zone` — the image host's own delivery transform on the custom images domain, free to 5,000 a month — or `model`, the hosted vision model. **Defaults to `zone`**, and whichever is asked for, the other runs when it is not set up. An unrecognised value is the default rather than an error: it is a preference, not a credential |
-| `IMAGE_MODEL_API_KEY` | ○ | The key for that hosted vision model. Setting it is the whole of what makes `model` available; without it only the image host's transform can run, which means **on an `r2.dev` base nothing can**, since that host serves objects and transforms none. Set it locally, or background removal is unavailable in development. The same key buys the **scene** improvement, which has no free route at all — no key, no scenes anywhere, and the account behind it needs a *balance* as well as a key (see [A scene costs money](#a-scene-costs-money)) |
+| `IMAGE_MODEL_API_KEY` | ○ | The key for that hosted vision model. Setting it is the whole of what makes `model` available; without it only the image host's transform can run, which means **on an `r2.dev` base nothing can**, since that host serves objects and transforms none. Set it locally, or background removal is unavailable in development. The same key buys the **scene** improvement's fallback painter; its first choice is the gateway (`IMAGE_GEN_*`). With neither set there are no scenes anywhere, and whichever account paints needs a *balance* as well as a key (see [A scene costs money](#a-scene-costs-money)) |
 | `IMAGE_MODEL_ENDPOINT` | ○ | Where those model requests go. Unset, the code uses the service's public host; set it to point at a proxy or a staging host without a release |
+| `IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID` / `IMAGE_GEN_CLOUDFLARE_API_TOKEN` | ○ | The multi-model image gateway account (Cloudflare AI today) and an API token with Workers AI access. Both set makes every `cf/…` model in `server/content/generation/registry.ts` available; read only in `server/content/generation/adapters/` ([generation-foundation](specs/ai-images/generation-foundation/) D5). The scene's first-choice model is here, so without it scenes fall back to `IMAGE_MODEL_API_KEY` |
+| `IMAGE_GEN_GEMINI_API_KEY` | ○ | A Gemini API key (Google AI Studio). Makes every `gemini/…` model available — the direct route to Nano Banana, which takes up to 14 reference pictures where the gateway's takes 3 |
+| `IMAGE_GEN_MODELS_SCENE` / `IMAGE_GEN_MODELS_LISTING` | ○ | The ordered model list for a purpose, comma-separated registry ids (`cf/flux-2-klein-4b,fal/bria-product-shot`). Unset is the default in the registry. The first configured model that can take a request runs; the next is tried only when one is unavailable or out of credit, never after a refusal. Changing it needs no code change, only a redeploy for the variable |
 | `RATE_LIMIT_STORE_URL` / `RATE_LIMIT_STORE_TOKEN` | ✅ preview, production | The shared rate-limit store's REST URL and token (Upstash). **Required when `APP_ENV` is `preview` or `production`** — without them the build and the boot refuse. Unset locally, where limits are in-process. `KV_REST_API_URL` / `KV_REST_API_TOKEN` are read as a fallback for one release, so the Vercel integration's values work unrenamed; see [Rate limiting](#rate-limiting) |
 | `RATE_LIMIT_CLIENT_IP_HEADER` | ✅ preview, production | The header the edge sets with the caller's address: `x-vercel-forwarded-for` on Vercel. **Required when deployed**; never `x-forwarded-for` unless the edge overwrites it, because a caller can send that one. Unset locally |
 | `ENCRYPTION_KEY` | ○ | Decrypts shipping credentials stored before 2026-10-20 only (`server/shared/crypto.ts`). Keep it set while any such row exists; new values use `CREDENTIAL_KEYS` |
@@ -162,6 +165,8 @@ Every origin that uploads must be listed — add Vercel preview URLs if you uplo
 **5. Set the five variables** locally and in Vercel (see the table above), then redeploy. `R2_PUBLIC_BASE_URL` is read by `next.config.ts` **at build time** for the image loader, so a change to it needs a new build, not just a restart.
 
 **6. Smoke-test before trusting it.** Upload one image through the admin UI. That exercises the whole path — presign, PUT, public URL, optimizer — and is where a wrong endpoint or a missing CORS rule shows up. Then check the image renders on the storefront, which proves `remotePatterns` too.
+
+**7. Expire the generation scratch.** R2 → bucket → Settings → *Object lifecycle rules* → add one rule: prefix `generations/` deleted after **7 days**. The app deletes these itself once a run is proposed or settled; the rule catches what a crash leaves behind. **Never add one on `proposals/`** — a proposal can wait for a shop's decision indefinitely, and accepting it copies that object.
 
 ### Images left behind on the retired store
 The Vercel Blob store is gone: the package, its migration script, the hostname in
@@ -298,13 +303,16 @@ real money on any service that bills per image, which is what `--limit` is for. 
 ### A scene costs money
 
 Every other improvement is free or nearly so: `light` and `enlarge` run on our own CPU, and a
-cut-out is free to 5,000 a month on the image host. **A scene is not.** One run pays a hosted model
-about **₹3.50** to paint the setting (`SCENE_PAINT_PAISE`), plus about ₹0.18 for the cut-out when
-that came from the paid model rather than the image host's transform — so a scene run is roughly
-₹3.50 and the ledger records the two together, which is also what the platform's daily cap counts.
-At the default cap of ₹500 a day that is about 140 scenes across every shop.
+cut-out is free to 5,000 a month on the image host (past that the platform absorbs the overage, shown
+on `/admin/enhancements`). **A scene is not free.** It is painted through the generation module
+([generation-foundation](specs/ai-images/generation-foundation/)): klein-4b on the gateway first, about
+**₹0.13** a paint, then Bria on fal, about **₹3.75**, when the gateway is unavailable. What was paid is the
+`Generation` row's, priced at that day's stored exchange rate, plus about ₹0.18 for the cut-out when the
+paid model made it; the ledger records the total, which is what the platform's daily cap counts. A paint
+paid for on a run that then failed still counts against the day. Which model paints is
+`IMAGE_GEN_MODELS_SCENE`.
 
-That money is a **balance on the image-model account**, and a key alone does not make one. With a
+That money is a **balance on the painting account**, and a key alone does not make one. With a
 key and no balance the request is accepted, the worker runs, the service refuses, and the run is
 marked failed — which costs the shop nothing (a failed run is the one state that does not count
 against its month) and shows the member one line in the improve sheet:

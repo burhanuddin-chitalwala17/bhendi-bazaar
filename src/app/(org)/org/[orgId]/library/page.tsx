@@ -1,5 +1,7 @@
 import { requireOrgMember } from "@/lib/org-auth";
 import { mediaAssetService } from "@server/catalog/media-asset.service";
+import { creditService } from "@server/payouts/credit.service";
+import { ShopCreditsButton } from "@/components/payouts/shop-credits-button";
 import { parseMediaLibraryFilters } from "@/lib/validation/schemas/media-library.schema";
 import { MediaAssetKind, MediaAssetSource } from "@prisma/client";
 import { MediaLibraryFilters, type FilterOption } from "@/components/org/media-library-filters";
@@ -29,7 +31,7 @@ const SOURCE_OPTIONS: FilterOption[] = [
 ];
 
 /** The filter keys, read by name: the awaited `searchParams` does not enumerate, so a spread sees nothing. */
-const FILTER_KEYS = ["kind", "usage", "source", "from", "to", "productId", "slot", "retired"] as const;
+const FILTER_KEYS = ["tag", "kind", "usage", "source", "from", "to", "productId", "slot", "retired"] as const;
 
 /** The org's images and videos in one place, filtered from the URL (media-library spec R6). */
 export default async function OrgLibraryPage({
@@ -48,9 +50,10 @@ export default async function OrgLibraryPage({
   }
   const scope = await requireOrgMember(orgId);
   const filters = parseMediaLibraryFilters(raw);
-  const [{ assets, pagination }, org] = await Promise.all([
+  const [{ assets, pagination }, org, credit] = await Promise.all([
     mediaAssetService.listLibrary(scope.orgId, { ...filters, page: 1 }),
     orgsDAL.getOrgSummary(scope.orgId),
+    creditService.account(scope.orgId),
   ]);
 
   // The filters, minus the page, are what the grid asks for more with — and its key, so a
@@ -63,12 +66,16 @@ export default async function OrgLibraryPage({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <PageHeader help="library" title={ORG_PAGES_COPY.libraryTitle} description={ORG_PAGES_COPY.libraryDescription} />
-        {org && <MediaLibraryUpload orgId={scope.orgId} orgCode={org.code} />}
+        <div className="flex flex-wrap gap-2">
+          {/* Credit is only spent on photos, so it is kept beside them rather than in the sidebar (ai-images Q34). */}
+          {org && <ShopCreditsButton orgId={scope.orgId} shop={org.name} balancePaise={credit.balancePaise} />}
+          {org && <MediaLibraryUpload orgId={scope.orgId} orgCode={org.code} />}
+        </div>
       </div>
 
       <MediaLibraryFilters filters={filters} range={{ from: raw.from, to: raw.to }} kinds={KIND_OPTIONS} sources={SOURCE_OPTIONS} />
 
-      <MediaLibraryGrid key={filterQuery} orgId={scope.orgId} initial={{ assets, pagination }} query={filterQuery} />
+      <MediaLibraryGrid key={filterQuery} orgId={scope.orgId} orgCode={org?.code ?? null} initial={{ assets, pagination }} query={filterQuery} />
     </div>
   );
 }

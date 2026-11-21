@@ -18,6 +18,7 @@ import { recordAdminAction, recordAdminActionIn } from "@server/shared/audit/aud
 import { ledgerRepository } from "@server/payouts/ledger.repository";
 import { prisma } from "@server/shared/prisma";
 import { adminOrgService } from "@server/catalog/org.service";
+import type { SettlementStatusChange } from "@server/payouts/credit.types";
 
 /** What may be corrected on an entry. Figures only — never its order or organisation. */
 export interface EntryEdit {
@@ -178,11 +179,7 @@ export class SettlementService {
    * `PAID` fixes the amount and reference (R24) — the transfer really happened at that
    * figure. Cancelling releases the entries back to unsettled, intact.
    */
-  async setSettlementStatus(
-    id: string,
-    input: { status: "PAID" | "CANCELLED"; reference?: string; paidAt?: Date },
-    actorId: string
-  ) {
+  async setSettlementStatus(id: string, input: SettlementStatusChange, actorId: string) {
     const result = await prisma.$transaction(async (tx) => {
       const settlement = await ledgerRepository.findSettlement(id, tx);
       if (!settlement) throw new NotFoundError("Settlement not found");
@@ -197,10 +194,13 @@ export class SettlementService {
           id,
           {
             status: "PAID",
+            // The transfer's proof (ai-images/shop-credits D6, Q18): how, its reference, when, and a receipt.
+            method: input.method,
             reference: input.reference,
+            receiptRef: input.receiptRef,
             // A paid settlement records a transfer, so it has a date — the database
             // asserts this too.
-            paidAt: input.paidAt ?? new Date(),
+            paidAt: input.paidOn,
             updatedByUserId: actorId,
           },
           tx
@@ -210,7 +210,7 @@ export class SettlementService {
           action: "SETTLEMENT_PAID",
           resource: "Settlement",
           resourceId: id,
-          metadata: { amountPaise: updated.amountPaise, reference: updated.reference ?? null },
+          metadata: { amountPaise: updated.amountPaise, reference: updated.reference ?? null, method: input.method },
         });
         return updated;
       }

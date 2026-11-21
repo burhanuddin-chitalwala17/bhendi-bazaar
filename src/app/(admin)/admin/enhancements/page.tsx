@@ -13,6 +13,7 @@ import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { EnhancementSettingsForm } from "@/components/content/enhancement-settings-form";
 import { OrgEnhancementPolicyForm } from "@/components/content/org-enhancement-policy-form";
 import { formatCurrency } from "@/lib/format";
+import { FREE_CUTOUTS_PER_MONTH } from "@server/content/enhancement.types";
 import { ADMIN_ENHANCEMENTS_COPY } from "./enhancements-copy";
 import { featureAccessService } from "@server/subscriptions/feature-access.service";
 import { FEATURE } from "@/components/subscriptions/features";
@@ -22,10 +23,11 @@ export const metadata = { robots: { index: false, follow: false } };
 
 export default async function AdminEnhancementsPage() {
   await requirePlatformAdmin();
-  const [settings, spentTodayPaise, orgs] = await Promise.all([
+  const [settings, spentTodayPaise, orgs, absorbed] = await Promise.all([
     enhancementService.settings(),
     enhancementService.platformSpendToday(),
     enhancementService.listOrgUsage(),
+    enhancementService.absorbedThisMonth(),
   ]);
   // A shop without Image enhancement keeps its policy, shown paused by the plan (feature-access Q33).
   const enhancing = await featureAccessService.allowedOrgs(FEATURE.IMAGE_ENHANCEMENT, orgs.map((org) => org.orgId));
@@ -54,6 +56,18 @@ export default async function AdminEnhancementsPage() {
           {ADMIN_ENHANCEMENTS_COPY.spentToday} <strong>{formatCurrency(spentTodayPaise)}</strong> {ADMIN_ENHANCEMENTS_COPY.of}{" "}
           {formatCurrency(settings.dailyCapPaise)}
           {capReached && ADMIN_ENHANCEMENTS_COPY.capReached}
+        </p>
+
+        {/* What the free tools cost us past the host's allowance (ai-images Q16): tracked, never charged. */}
+        <p className="text-small text-muted-foreground">
+          {ADMIN_ENHANCEMENTS_COPY.absorbed(absorbed.cutouts, absorbed.over, FREE_CUTOUTS_PER_MONTH)}{" "}
+          {absorbed.paise === null ? (
+            ADMIN_ENHANCEMENTS_COPY.absorbedNoRate
+          ) : (
+            <>
+              {ADMIN_ENHANCEMENTS_COPY.absorbedCost} <strong>{formatCurrency(absorbed.paise)}</strong>
+            </>
+          )}
         </p>
       </Card>
 

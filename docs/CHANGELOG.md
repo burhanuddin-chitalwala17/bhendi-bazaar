@@ -12,6 +12,122 @@
 
 ## Entries
 
+## 2026-11-21 — CI drops the restored data cache before the build
+
+- The e2e job restored `.next/cache` on an exact key hit, including `fetch-cache`: the category page's product
+  list from the previous run's database. A commit touching no code (docs, CI) hit it and the smoke journey could
+  not find the product it had just seeded. The job now deletes `.next/cache/fetch-cache` after restoring and keeps
+  the compile cache.
+
+## 2026-11-21 — The worker is given the AI-picture variables
+
+- The worker generates every AI picture, but neither deploy passed it the keys. `ci.yml` and `staging-worker.yml`
+  now pass `WORKER_ENV_IMAGE_GEN_*` / `WORKER_STAGING_ENV_IMAGE_GEN_*` (both Cloudflare values, the Gemini key and
+  the two model orders), and `.env.example` section 3 lists them, which `deploy-safety.test.ts` reads.
+
+## 2026-11-21 — Cloudflare's image keys are named for Cloudflare
+
+- `IMAGE_GEN_ACCOUNT_ID` / `IMAGE_GEN_API_TOKEN` are now `IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID` /
+  `IMAGE_GEN_CLOUDFLARE_API_TOKEN`, beside `IMAGE_GEN_GEMINI_API_KEY`: one name per provider. The old names are not
+  read; rename them wherever they are set. `.env.example` now lists every AI-picture variable.
+
+## 2026-11-21 — AI pictures: faster polling, smaller uploads, bounded downloads, a per-shop limit
+
+- The Styled-shot dialog asks after a run every 3 s for the first 15 s, then every 6 s, and gives up at 5 min (was
+  every 2 s). Most pictures land in 20–40 s; a 30 s interval would add up to 30 s of waiting after one is ready.
+- References are read in parallel from the stored 1200 px copy (`mediaAssetService.readImageForModel`), not the
+  original, before the generator shrinks them for the model.
+- A generation's scratch output under `generations/` is deleted once its run is proposed or settled
+  (`generation/outputs.ts`); OPERATIONS step 7 adds a 7-day R2 lifecycle rule for what a crash leaves.
+- Adapters read a provider's picture at most 20 MB (header and stream), follow https links only, and keep 2,000
+  characters of an error body. A linked picture that cannot be fetched is UNCERTAIN, so its cost is still recorded.
+- A shop can start at most 10 Styled shots a minute; the eleventh is a 429. Best-effort (a count, not a lock);
+  the credit hold is what bounds spend.
+- A quote on the website prices at the latest stored exchange rate and fetches only when none was ever stored; the
+  worker's charge still uses the day's rate.
+
+## 2026-11-21 — The model order is read through a source, ready for an admin screen
+
+- `server/content/generation/model-order.ts`: a purpose's model order now comes from the first `ModelOrderSource`
+  that has one — today only the environment's `IMAGE_GEN_MODELS_<PURPOSE>` — else the registry's default. The
+  lookup is async through the router, generator, scene painter and enhancement service, so the admin screen
+  parked in ai-images Q12 is one new source reading a table, with no other change. No behaviour change.
+
+## 2026-11-21 — Fix: an AI picture's credit always closes, and its derivatives stay AI-made
+
+- From the improve-with-ai review: a redelivered styled run now settles (or refunds) what the last one left;
+  a run that keeps erroring is given up after 20 minutes and refunded (`image.enhance` gains `retry` 5 with
+  backoff); a run whose job was lost is closed when the shop next asks for a picture. No credit hold stays open.
+- Catalog copies an `aiMade` mark onto every picture derived from an AI picture (crop, enlarge, backdrops), so
+  none of them can become a marketplace's main image (ADR-0077).
+- The dialog stops offering a paid retry once it loses track of a run, ignores a double tap on Generate,
+  sends "Add credit" to the Photos page with the credit sheet open (`ROUTES.org.libraryCredits`), and gives
+  the version arrows full-size targets.
+
+## 2026-11-21 — Improve with AI: a description and reference pictures become a styled picture of the product [MIGRATION] [CONTRACT]
+
+- [improve-with-ai](specs/ai-images/improve-with-ai/): one **Improve** split button in the library and on every photo
+  in the product form. The main half opens the AI dialog (description, pictures to follow from the library or the
+  device, no face / with face, the cost and credit from the server); the arrow lists the six exact tools, unchanged.
+- Server: `STYLED`, a seventh enhancement tool with its own path (`server/content/styled.service.ts`): the shared
+  refusals, the shop's credit held in the request's transaction, generation through the port (`listing.v1` prompt),
+  every picture kept straight into the library as an AI-made derived image, then settled or refunded.
+- **[MIGRATION] `20261121120000_styled_enhancement`:** the enum value and `Enhancement.brief`, `referenceRefs`, `previousId`.
+- **[CONTRACT]** two routes and three `EnhancementDto` fields; CONTRACTS.md updated.
+- [ADR-0077](adr/0077-the-pixel-promise-belongs-to-the-backdrop-tools-and-an-ai-picture-is-labelled-and-secondary.md):
+  ADR-0059's pixel promise is the backdrop tools'; an AI picture is labelled, kept, and never a marketplace's main
+  image — `listing-photos-out.ts` moves it behind a real photograph and refuses a listing with none.
+- The library picker can open on one tag; reference pictures are tagged Reference when used.
+- Tests: `styled-shot`, `listing-photos-main`.
+
+## 2026-11-21 — Shops have credit for AI pictures; offline money is recorded with proof [MIGRATION] [CONTRACT]
+
+- [shop-credits](specs/ai-images/shop-credits/): `CreditLine` (append-only, the balance is the sum), the
+  platform's and each shop's margin, and the platform's payment details, all in the payouts domain
+  (`server/payouts/credit.*`, ai-images Q39). Charging, settling and refunding a picture are
+  `creditService.charge/settle/refund`, for improve-with-ai; a charge is refused unless the balance covers
+  the most expensive model that might answer, under a per-shop advisory lock.
+- **[MIGRATION] `20261121110000_shop_credits`** gives every existing shop its ₹2,500 starting credit; a shop
+  made later is granted on first read. Adds `Settlement.method` and `Settlement.receiptRef`.
+- **[CONTRACT]** `PATCH /api/admin/settlements/[id]` with `PAID` now needs `method` and `reference`, and takes
+  `paidOn` (was `paidAt`) — the payouts sheet records them, with an optional receipt. CONTRACTS.md updated.
+- Admin: a **Credits** tab in the shop console (balance, margin, record a top-up with proof, reverse a line),
+  `/admin/payment-details` (UPI id, QR code, bank account, the platform margin), and the `payments` upload
+  folder for receipts and the QR. Shop: a **Credits** button on the Photos page opens the credit sheet.
+- Tests: `credit-ledger`, `payment-proof`.
+
+## 2026-11-21 — Library images carry tags: Product and Reference [MIGRATION]
+
+- [media-tags](specs/ai-images/media-tags/): `MediaAsset.tags`, a GIN-indexed array of the closed `MediaTag`
+  enum, written only by `media-asset.repository.ts`. A Tag filter leads the library's filter row; the
+  photo panel toggles tags; a reference picture's tile carries a badge.
+- **[MIGRATION] `20261121100000_media_tags`** tags every shop image a product's gallery uses as Product;
+  images no product uses, and platform images, stay untagged (ai-images Q22, as revised by the owner).
+- Product is added wherever a gallery links an image (`withAssetIds`, and bulk import); Reference arrives
+  with improve-with-ai. `PUT /api/org/[orgId]/media/[assetId]/tags` (free, `core`).
+- `MediaAssetDto` gains `tags` (catalog-internal; no `[CONTRACT]`).
+
+## 2026-11-21 — Image generation goes through one provider-agnostic module; scenes are painted on Cloudflare [MIGRATION]
+
+- **New module `server/content/generation/`** ([generation-foundation](specs/ai-images/generation-foundation/),
+  [ADR-0076](adr/0076-image-generation-goes-through-one-port-and-models-are-data.md)): one port, adapters for
+  Cloudflare's AI gateway (hosted and third-party models), Gemini directly and fal, a model registry as
+  data with dated prices, a router (ordered list per purpose from `IMAGE_GEN_MODELS_<PURPOSE>`, capability
+  filter, fallback only when a model is unavailable), versioned prompts, and a cost in integer paise at
+  the day's ECB rate.
+- **[MIGRATION] `20261121090000_generation_ledger`:** `Generation` (one row per model call, written before
+  the call so a retry replays rather than pays twice) and `ExchangeRate` (one row per day). Additive only.
+- **Behaviour change — "In a scene"** is painted by Cloudflare's klein-4b first (≈₹0.13), Bria on fal as the
+  fallback. The paste-back and the pixel check are unchanged. The scene's cost is now its generation
+  row's, not the typed `SCENE_PAINT_PAISE` (removed); `Enhancement.provider` reads `generation`.
+- `/admin/enhancements` shows the free-tool cut-outs the platform absorbs past the host's 5,000 a month.
+- `npm run generate:bakeoff` compares models on a shop's photographs, side by side with cost and time,
+  writing no rows. Shared bake-off helpers moved to `scripts/bakeoff-shared.ts`.
+- **Deploy:** set `IMAGE_GEN_ACCOUNT_ID` and `IMAGE_GEN_API_TOKEN` (and optionally `IMAGE_GEN_GEMINI_API_KEY`).
+  Without them scenes keep working on fal. The worker must reach `api.frankfurter.app` for the rate.
+  The hosted model's multipart field names are not documented; verify one live call before relying on it.
+- Tests: `generation-router`, `generation-adapter-contract`, `generation-cost`, `generation-idempotency`,
+  `generation-vendor-boundary` (mutation-tested), the scene painter rewritten; no contract change.
 ## 2026-11-20 — Listing drafts say where a create stands; a field map can be removed; size from length x width [CONTRACT]
 
 - **Wording** (`platform-listing-copy.ts`): a listing not yet on Amazon reads "Not on Amazon yet · ready to create"

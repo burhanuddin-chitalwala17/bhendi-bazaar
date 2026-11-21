@@ -5,7 +5,7 @@
 // used by two products read as unused in the library.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const repo = { idsByRefs: vi.fn(), embedIdsByRefs: vi.fn(), createEmbed: vi.fn() };
+const repo = { idsByRefs: vi.fn(), embedIdsByRefs: vi.fn(), createEmbed: vi.fn(), addTag: vi.fn() };
 vi.mock("@server/catalog/media-asset.repository", () => ({ mediaAssetRepository: repo }));
 vi.mock("@server/shared/prisma", () => ({ prisma: {} }));
 
@@ -61,5 +61,14 @@ describe("withAssetIds", () => {
     expect(repo.createEmbed).toHaveBeenCalledTimes(1);
     expect(repo.createEmbed).toHaveBeenCalledWith({ orgId: "org-1", ref: "vid-9" }, expect.anything());
     expect(rows.map((row) => row.assetId)).toEqual(["embed-new", "embed-new"]);
+  });
+});
+
+describe("the Product tag (ai-images/media-tags D3)", () => {
+  it("is added to every photograph a gallery write links, and only to those", async () => {
+    repo.idsByRefs.mockResolvedValue(new Map([["https://img.test/a.webp", "a1"]]));
+    repo.embedIdsByRefs.mockResolvedValue(new Map());
+    await withAssetIds([{ kind: "IMAGE" as const, ref: "https://img.test/a.webp" }], "org-1");
+    expect(repo.addTag).toHaveBeenCalledWith(["a1"], "PRODUCT", "org-1", expect.anything());
   });
 });

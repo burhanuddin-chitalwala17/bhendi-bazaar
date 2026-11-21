@@ -1,3 +1,4 @@
+import { hasWidthCopies, widthPathFor } from "@server/catalog/image-widths";
 import sharp from "sharp";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
 import { MediaAssetKind, MediaAssetSource, MediaAssetState, type Prisma } from "@prisma/client";
@@ -13,7 +14,10 @@ import { videoTranscodeSpec } from "@server/catalog/video.job";
 import {
   MEDIA_LIBRARY_PAGE_SIZE,
   describeUses,
+  MEDIA_TAG,
+  inheritAiMark,
   toMediaAssetDto,
+  type MediaTag,
   type MediaAssetDetailDto,
   type MediaAssetDto,
 } from "@server/catalog/media-library.types";
@@ -112,7 +116,11 @@ export const mediaAssetService = {
       kind: isVideoContentType(input.contentType) ? MediaAssetKind.VIDEO : MediaAssetKind.IMAGE,
       contentHash,
       ...(source && input.derivedFrom
-        ? { source: MediaAssetSource.DERIVED, derivedFromId: source.id, transform: input.derivedFrom.transform }
+        ? {
+            source: MediaAssetSource.DERIVED,
+            derivedFromId: source.id,
+            transform: inheritAiMark(source.transform, input.derivedFrom.transform),
+          }
         : {}),
     });
     return { ...signed, assetId: asset.id };
@@ -236,6 +244,36 @@ export const mediaAssetService = {
     const row = await mediaAssetRepository.findForOrg(orgId, id);
     if (!row) throw new NotFoundError("Image not found");
     return { asset: toMediaAssetDto(row), uses: await mediaAssetRepository.usesOf(id) };
+  },
+
+  /**
+   * A photograph at the size an image model can use (improve-with-ai, review 2026-11-21): its stored
+   * 1200px copy where it has one, else the original. A model is sent at most 1024px, so reading a
+   * 12-megapixel original only to shrink it is wasted transfer.
+   */
+  async readImageForModel(assetId: string): Promise<{ bytes: Buffer; mimeType: string | null }> {
+    const asset = await mediaAssetRepository.findById(assetId);
+    if (!asset || asset.kind !== MediaAssetKind.IMAGE || asset.state !== MediaAssetState.READY || !asset.objectKey) {
+      throw new NotFoundError("Photo not found");
+    }
+    if (hasWidthCopies(asset.objectKey)) {
+      const copy = await getObject(widthPathFor(asset.objectKey, 1200)).catch(() => null);
+      if (copy) return { bytes: copy, mimeType: "image/webp" };
+    }
+    return { bytes: await getObject(asset.objectKey), mimeType: asset.mimeType };
+  },
+
+  /** Mark the org's images as references (media-tags R7): chosen or uploaded to guide an AI picture. */
+  async tagAsReference(orgId: string, ids: string[]): Promise<void> {
+    await mediaAssetRepository.addTag(ids, MEDIA_TAG.REFERENCE, orgId);
+  },
+
+  /** Switch one tag on one of the org's images (ai-images/media-tags R6); another org's is "not found". */
+  async setTag(orgId: string, id: string, tag: MediaTag, on: boolean): Promise<MediaAssetDto> {
+    if (!(await mediaAssetRepository.setTag(orgId, id, tag, on))) throw new NotFoundError("Image not found");
+    const after = await mediaAssetRepository.findForOrg(orgId, id);
+    if (!after) throw new NotFoundError("Image not found");
+    return toMediaAssetDto(after);
   },
 
   /**
@@ -413,6 +451,11 @@ export const mediaAssetService = {
     return await putObject(key, bytes, contentType);
   },
 
+  /** A loose object's bytes, for a retried run replaying what it already paid for (generation-foundation trd D6). */
+  async readLooseObject(key: string): Promise<Buffer> {
+    return await getObject(key);
+  },
+
   async deleteLooseObject(key: string): Promise<void> {
     await deleteObject(publicUrlFor(key));
   },
@@ -489,7 +532,8 @@ export const mediaAssetService = {
       contentHash,
       source: MediaAssetSource.DERIVED,
       derivedFromId: source.id,
-      transform: input.transform,
+      // An AI picture's derivatives stay AI pictures (ADR-0077).
+      transform: inheritAiMark(source.transform, input.transform),
     });
   },
 

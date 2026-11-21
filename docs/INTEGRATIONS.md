@@ -372,6 +372,61 @@ Flipkart's [listings v3](https://seller.flipkart.com/api-docs/listing-api-docs/L
 nothing public marks listings, inventory or shipments as paid, and the partner dashboard's metered
 plans should be confirmed with `api-partner-support@flipkart.com` before relying on them.
 
+## Image generation (Cloudflare AI, fal)
+
+The services that paint pixels for us. Reached from `server/content/providers/` today; the provider-neutral
+module is [generation-foundation](specs/ai-images/generation-foundation/). Checked against Cloudflare's docs
+2026-11-20 (pricing page dated 2026-11-18). **Prices move; recheck before relying on one.**
+
+**Cloudflare: one account, two kinds of model.**
+- **Third-party models** (Google, OpenAI, ByteDance, BFL, Bria, others) go through
+  `POST https://api.cloudflare.com/client/v4/accounts/{account}/ai/run` with `Authorization: Bearer {token}` and
+  a JSON body `{"model": "google/nano-banana-pro", "input": {…}}`. The documented reply is
+  `{"state": "Completed", "result": {"image": "<url>"}, "gatewayMetadata": {…}}`: **a link to fetch, not bytes**.
+  Every documented example is synchronous. No other `state` values and no polling endpoint are documented, so
+  async behaviour is **unverified**.
+- **Nano Banana Pro's input:** `prompt`, `image_input[]` (**at most 3 references**, where fal allows 14),
+  `aspect_ratio` (1:1, 3:2, 2:3, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9), `image_size` (1K, 2K, 4K) and
+  `output_format` (jpg, png, webp). Whether a reference is a URL or base64 is **not stated**. Price: $2 per 1M
+  input tokens and $120 per 1M output tokens.
+- **Hosted `@cf/` models** (`@cf/black-forest-labs/flux-2-klein-4b`, `-9b`, `flux-2-dev`) take a **multipart**
+  input (`{"multipart": {"body", "contentType"}}`) and answer with **base64 in JSON** (`image`). Their field
+  names (prompt, reference images, width, height, steps), the REST path, and klein-9b's reference limit are
+  **not documented**. Read them from a live call before writing the adapter. Zero data retention for both.
+- **Hosted prices (neurons).** 10,000 neurons a day are free (resetting 00:00 UTC), then $0.011 per 1k.
+  klein-4b costs $0.000059 per input 512² tile and $0.000287 per output tile (≈$0.002 an image).
+  klein-9b costs $0.015 for the first MP, $0.002 per extra MP and $0.002 per input MP (≈$0.02).
+  flux-2-dev is billed **per step** ($0.00021 per input tile and $0.00041 per output tile, per step), and its
+  default step count is **not published**.
+- **Neither reply reports cost or usage** in what is documented. Cost therefore has to be computed from a
+  declared price rule, not read back.
+- **Unified billing** passes provider prices through with no markup and adds a **5% fee on credits bought**.
+  It accepts a non-prepaid card only (no PayPal, Apple Pay or Google Pay). An Indian card's forex markup is extra.
+
+**Gemini API directly (`IMAGE_GEN_GEMINI_API_KEY`).** Checked 2026-11-21; the docs moved from
+ai.google.dev to aistudio.google.com, and the pricing table was read as a summary, so **recheck prices**.
+- **The image docs now show the Interactions API**, `POST https://generativelanguage.googleapis.com/v1beta/interactions`
+  with `x-goog-api-key`, not `generateContent`. Body: `{"model", "input": [{type:"text"}, {type:"image",
+  mime_type, data:<base64>}…], "response_format": {type:"image", aspect_ratio, image_size}}`. Sizes are
+  uppercase (`1K`, `2K`, `4K`); lowercase is rejected. The reply carries base64, at `output_image.data` or
+  in a `steps[].content[]` block of `type: "image"`. Synchronous; a Batch API halves the price.
+- **Model ids:** Nano Banana Pro `gemini-3-pro-image`, Nano Banana 2 `gemini-3.1-flash-image`, Nano Banana
+  2.1 `gemini-nano-banana-2.1` (newest), 2 Lite `gemini-3.1-flash-lite-image`.
+- **Up to 14 references** for Pro, 2 and 2.1 (Pro: 6 objects, 5 characters, 3 style). The gateway's route
+  to Pro takes 3.
+- **Prices (per 1K image):** Pro $0.134 (+$0.0011 per input image), Nano Banana 2 $0.067, 2.1 $0.0336.
+- **No usage or cost in the reply**, and the shape of a safety refusal is not documented, so the adapter
+  reads refusal words from whatever comes back. Every output carries a SynthID watermark; C2PA not stated.
+
+**fal (the current scene painter, `IMAGE_MODEL_*`).** `POST {endpoint}/fal-ai/bria/product-shot`,
+`Authorization: Key …`. It takes a data URL and answers with an image URL. List prices, unverified since the
+spike: Bria product-shot ≈$0.04, Nano Banana Pro $0.15, Nano Banana 2 $0.08, Seedream 5 Pro $0.0675
+(≤1536²), Seedream 5 Lite $0.035, FLUX.2 [pro] edit $0.03/MP.
+
+**Fidelity is the risk, not price.** In Photoroom's July 2026 benchmark (850 products, on-model, vendor-run, so
+indicative only) no model kept every product detail more than 29% of the time. The failures were logos and
+text, missing elements, pattern and colour. A generated image needs our own checks around it.
+
 ## YouTube (product video)
 
 Embedding only — nothing is uploaded and no video file is ever served by us ([ADR-0017](adr/0017-video-is-embedded-not-hosted.md)).

@@ -15,6 +15,7 @@ import { AdminOrgOrders } from "@/components/org/console/tabs/AdminOrgOrders";
 import { AdminOrgEarnings } from "@/components/org/console/tabs/AdminOrgEarnings";
 import { AdminOrgReviews } from "@/components/org/console/tabs/AdminOrgReviews";
 import { AdminOrgPlan } from "@/components/subscriptions/admin-org-plan";
+import { AdminOrgCredits } from "@/components/payouts/admin-org-credits";
 import { ADMIN_ORGS_COPY } from "../orgs-copy";
 import { ROUTES } from "@server/shared/routes";
 
@@ -66,7 +67,8 @@ export default async function AdminOrgDetailPage({
         {activeTab === "earnings" && <AdminOrgEarnings orgId={orgId} />}
         {activeTab === "reviews" && <AdminOrgReviews orgId={orgId} searchParams={searchParams} />}
         {activeTab === "plan" && <AdminOrgPlan orgId={orgId} shop={org.name} />}
-        {!["dashboard", "products", "orders", "earnings", "reviews", "plan"].includes(activeTab) && <AdminOrgDashboard orgId={orgId} />}
+        {activeTab === "credits" && <AdminOrgCredits orgId={orgId} shop={org.name} />}
+        {!["dashboard", "products", "orders", "earnings", "reviews", "plan", "credits"].includes(activeTab) && <AdminOrgDashboard orgId={orgId} />}
       </Suspense>
     </PageShell>
   );

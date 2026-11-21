@@ -14,10 +14,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { SETTLEMENT_STATUS_BADGE, type SettlementStatus } from "@/components/payouts/settlement-status";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { formatCurrency, formatShortDate } from "@/lib/format";
 import { useMutation } from "@/hooks/core/useMutation";
+import { PaymentProofFields, emptyProof } from "./payment-proof-fields";
+import type { PaymentProofInput } from "./creditsApiClient";
 import {
   payoutsApiClient,
   type SettlementStatusChange,
@@ -40,7 +40,7 @@ export function SettlementList({
 }) {
   const router = useRouter();
   const [recording, setRecording] = useState<string | null>(null);
-  const [reference, setReference] = useState("");
+  const [proof, setProof] = useState<PaymentProofInput>(emptyProof);
 
   // One mutation for both changes. Each says something different on success, so the
   // message rides with the request rather than living in the options.
@@ -53,7 +53,7 @@ export function SettlementList({
       onSuccess: (done) => {
         toast.success(done);
         setRecording(null);
-        setReference("");
+        setProof(emptyProof());
         router.refresh();
       },
     },
@@ -118,23 +118,12 @@ export function SettlementList({
 
             {recording === settlement.id && (
               <div className="mt-3 space-y-2 border-t border-border pt-3">
-                <div>
-                  <Label htmlFor={`ref-${settlement.id}`} className="text-caption">
-                    {SETTLEMENT_LIST_COPY.bankReference}
-                  </Label>
-                  <Input
-                    id={`ref-${settlement.id}`}
-                    value={reference}
-                    onChange={(event) => setReference(event.target.value)}
-                    placeholder={SETTLEMENT_LIST_COPY.referencePlaceholder}
-                    className="mt-1"
-                  />
-                  {/* The reference is what makes the ledger checkable against a bank
-                      statement, which is the whole point of recording the transfer. */}
-                  <p className="mt-1 text-caption text-muted-foreground">
-                    {SETTLEMENT_LIST_COPY.recordedAgainst(formatCurrency(settlement.amountPaise))}
-                  </p>
-                </div>
+                {/* The proof is what makes the ledger checkable against a bank statement, which is
+                    the whole point of recording the transfer (ai-images Q18). */}
+                <PaymentProofFields value={proof} onChange={setProof} />
+                <p className="text-caption text-muted-foreground">
+                  {SETTLEMENT_LIST_COPY.recordedAgainst(formatCurrency(settlement.amountPaise))}
+                </p>
                 <div className="flex gap-2">
                   <Button
                     size="sm"
@@ -142,10 +131,7 @@ export function SettlementList({
                     onClick={() =>
                       send(
                         settlement.id,
-                        {
-                          status: "PAID",
-                          reference: reference.trim() || undefined,
-                        },
+                        { status: "PAID", ...proof, reference: proof.reference.trim() },
                         SETTLEMENT_LIST_COPY.recordedPaid(settlement.code),
                       )
                     }

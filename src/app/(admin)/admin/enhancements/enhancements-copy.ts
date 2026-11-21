@@ -15,4 +15,8 @@ export const ADMIN_ENHANCEMENTS_COPY = {
   usedOf: (used: number, allowance: number) => `${used} of ${allowance}`,
   ownRule: " · its own",
   cost: "Cost",
+  absorbed: (cutouts: number, over: number, free: number) =>
+    `Free-tool cut-outs this month: ${cutouts} (the image host includes ${free}; ${over} past it).`,
+  absorbedCost: "Absorbed by the platform:",
+  absorbedNoRate: "Absorbed by the platform: no exchange rate stored yet, so not priced.",
 } as const;
