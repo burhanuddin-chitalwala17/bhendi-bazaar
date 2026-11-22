@@ -5,7 +5,7 @@
 
 import { prisma } from "@server/shared/prisma";
 import { AVAILABLE } from "@server/catalog/product.visibility";
-import { ORDER_STATUS, VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
+import { REVENUE_ORDER_WHERE, VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
 import type {
   DashboardStats,
   RecentActivity,
@@ -32,10 +32,8 @@ export class AdminDashboardRepository {
     // counts for what one GROUP BY answers (billed-operations work, PR-72).
     const revenueWindow = (gte: Date) =>
       prisma.order.aggregate({
-        // Abandoned checkouts are not business and are not counted here
-        // (checkout-abandonment R4).
-        // A wholly cancelled order is not revenue either (order-fulfilment D4).
-        where: { ...VISIBLE_ORDER_WHERE, NOT: { status: ORDER_STATUS.CANCELLED }, createdAt: { gte } },
+        // Paid only: not abandoned (checkout-abandonment R4), cancelled (order-fulfilment D4) or unpaid.
+        where: { AND: [REVENUE_ORDER_WHERE, { createdAt: { gte } }] },
         _sum: { grandTotal: true },
         _count: true,
       });

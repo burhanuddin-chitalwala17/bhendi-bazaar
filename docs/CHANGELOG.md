@@ -12,6 +12,16 @@
 
 ## Entries
 
+## 2026-11-22 — Fix: revenue counted an unpaid or failed checkout; main's unit gate is green again
+
+- The admin order stats and the dashboard's revenue windows left out expired and cancelled orders but still summed an
+  order awaiting payment or whose payment failed, until the sweep expired it. One predicate, `REVENUE_ORDER_WHERE`
+  (paid, not cancelled, not abandoned), now feeds both and the user console's spend. The average order value divides
+  by the paid orders it came from, in whole paise (Invariant 3). `tests/integration/admin-revenue.test.ts`; against
+  the old code it reads ₹650.72 where ₹100 is true.
+- The two previous merges failed CI's unit job on `docs-integrity`: `src/components/CLAUDE.md` (re-read; nothing in it
+  named the removed banner) moves to Verified 2026-11-22, and `docs/ARCHITECTURE.md` counts 411 test files.
+
 ## 2026-11-22 — Fix: an abandoned checkout showed in the admin as money a buyer spent
 
 - The user console summed `grandTotal` over every order a buyer had, so a payment that never arrived showed as spent

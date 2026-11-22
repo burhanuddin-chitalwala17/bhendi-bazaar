@@ -11,7 +11,7 @@ import {
   withWireItems,
 } from "@server/checkout/order.repository";
 import { Prisma } from "@prisma/client";
-import { ORDER_STATUS, PAYMENT_STATUS, VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
+import { ORDER_STATUS, PAYMENT_STATUS, REVENUE_ORDER_WHERE, VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
 import type {
   AdminOrderDetail,
   AdminOrderExportRow,
@@ -273,19 +273,13 @@ export class AdminOrderRepository {
       prisma.order.count({ where: { status: ORDER_STATUS.PACKED } }),
       prisma.order.count({ where: { status: ORDER_STATUS.SHIPPED } }),
       prisma.order.count({ where: { status: ORDER_STATUS.DELIVERED } }),
-      // Revenue leaves out wholly cancelled orders (order-fulfilment D4).
+      // Revenue is money that arrived: not an unpaid or failed checkout, nor a cancelled order (D4).
       prisma.order.findMany({
-        where: { ...VISIBLE_ORDER_WHERE, NOT: { status: ORDER_STATUS.CANCELLED } },
+        where: REVENUE_ORDER_WHERE,
         select: { grandTotal: true },
       }),
       prisma.order.findMany({
-        where: {
-          ...VISIBLE_ORDER_WHERE,
-          NOT: { status: ORDER_STATUS.CANCELLED },
-          createdAt: {
-            gte: startOfMonth,
-          },
-        },
+        where: { AND: [REVENUE_ORDER_WHERE, { createdAt: { gte: startOfMonth } }] },
         select: { grandTotal: true },
       }),
     ]);
@@ -298,7 +292,8 @@ export class AdminOrderRepository {
       return sum + (order.grandTotal || 0);
     }, 0);
 
-    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    // Over the orders the revenue came from, in whole paise (Invariant 3).
+    const averageOrderValue = allOrders.length > 0 ? Math.round(totalRevenue / allOrders.length) : 0;
 
     return {
       totalOrders,

@@ -116,6 +116,9 @@ export const VISIBLE_ORDER_WHERE = {
   status: { not: ORDER_STATUS.EXPIRED },
 } as const;
 
+/** Money that arrived and stands: paid, not cancelled, not abandoned. Both set `status`, hence `AND`. */
+export const REVENUE_ORDER_WHERE = { AND: [PAID_ORDER_WHERE, VISIBLE_ORDER_WHERE] };
+
 export interface OrderItem {
   productId: string;
   productName: string;

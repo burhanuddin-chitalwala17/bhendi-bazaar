@@ -5,7 +5,7 @@
 
 import { prisma } from "@server/shared/prisma";
 import type { Prisma } from "@prisma/client";
-import { PAID_ORDER_WHERE, VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
+import { REVENUE_ORDER_WHERE, VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
 import type {
   AdminUser,
   UserListFilters,
@@ -19,7 +19,7 @@ export const ADMIN_USER_INCLUDE = {
     select: { orders: { where: VISIBLE_ORDER_WHERE } },
   },
   orders: {
-    where: { AND: [PAID_ORDER_WHERE, VISIBLE_ORDER_WHERE] },
+    where: REVENUE_ORDER_WHERE,
     select: {
       grandTotal: true,
     },
