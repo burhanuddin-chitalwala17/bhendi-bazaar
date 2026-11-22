@@ -1,4 +1,4 @@
-# Decisions — notification-hub/hub-core
+# Decisions — notification-hub/notifications-core
 
 - **Verified:** 2026-11-21
 

@@ -39,14 +39,17 @@ plug, and a new module is one event, without either knowing about the other.
   and each demand alert are off until the shop turns them on, with a monthly spend cap.
 
 ## Subfeatures, in order
-| # | Subfeature | Outcome | Needs | Domain |
-|---|---|---|---|---|
-| 1 | hub-core | Events in, channels as plugs, delivery rows, consent and the global cap, the badge and the daily digest | — | notifications |
-| 2 | order-updates | Confirmed, shipped and delivered reach the buyer by WhatsApp or email; parcel notices move onto the hub | 1, social-selling 13 | notifications |
-| 3 | demand-alerts | Price drop, back in stock, abandoned cart and auction alerts, each switched on by the shop, within its window and caps | 1, social-selling 5, 13 | notifications |
+Re-cut 2026-11-22 (Q7, social-selling Q108); each spec is being rewritten.
 
-Future users, not built here: "Notify me" (social-selling Q54) sends through the hub as its own
-vertical; in-app and push are plugs (Q1).
+| # | Subfeature | Outcome | Built in | Domain |
+|---|---|---|---|---|
+| 1 | notifications-core | Events in, channels as plugs, delivered once; shop alerts by the unread badge and a daily email | social-selling step 2 | notifications |
+| 2 | hub-marketing | A buyer reached once, by WhatsApp else email; the global cap; one-tap unsubscribe | social-selling step 7 | notifications |
+| 3 | order-updates | Confirmed, shipped and delivered reach the buyer by WhatsApp or email; parcel notices move onto the hub | step 7 | notifications |
+| 4 | demand-alerts | Price drop, back in stock, abandoned cart and auction alerts, each switched on by the shop | step 7 | notifications |
+
+Future users, not built here: "Notify me" (social-selling Q54); in-app and push are plugs (Q1), the
+unmerged `inappnotification` branch a source for the bell's UI only (social-selling Q109).
 
 ## Product acceptance
 - A1 — A buyer DM unanswered for four hours appears in the shop's next daily email and on the

@@ -1,4 +1,4 @@
-# Decisions — social-selling/whatsapp-contacts
+# Decisions — social-selling/consent-core
 
 - **Verified:** 2026-11-21
 

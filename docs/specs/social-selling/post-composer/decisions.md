@@ -1,4 +1,4 @@
-# Decisions — social-selling/post-scheduling
+# Decisions — social-selling/post-composer
 
 - **Verified:** 2026-11-21
 

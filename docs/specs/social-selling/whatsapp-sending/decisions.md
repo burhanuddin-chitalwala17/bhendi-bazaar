@@ -1,4 +1,4 @@
-# Decisions — social-selling/whatsapp-templates
+# Decisions — social-selling/whatsapp-sending
 
 - **Verified:** 2026-11-21
 

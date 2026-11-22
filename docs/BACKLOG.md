@@ -247,30 +247,34 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [channel-registry](specs/channel-registry/) | Channels classed by where the sale completes; category, attribute and value mappings as versioned data; readiness answered before publishing rather than after a rejection, advising and never gating | ✅ Implemented — PR-255…PR-267 (2026-10-04) |
 | [channel-registry/readiness-fix](specs/channel-registry/readiness-fix/) | The products card names each channel's missing facts; one page per fact answers it for many products, saved as picked | 🔨 Built 2026-11-03, uncommitted; waiting for the owner's check on a phone |
 | [shopfront-feeds](specs/shopfront-feeds/) | One feed file at a URL that Google Shopping and Meta both fetch. First real publishing, and it needs approval from nobody | ✅ Implemented — 2026-10-14 |
-| [social-selling](specs/social-selling/) | Overview: a shop runs its Instagram and WhatsApp from here — catalogue, posts and stories, one inbox, messages to opted-in customers. Fourteen subfeatures below, in dependency order, plus going-live.md and policy-drafts.md; decisions Q1–Q85; posting only, never post generation; notifications live in notification-hub; work on branch `meta-whatsapp-connector` | 📝 Draft — 2026-11-06, next: owner reviews every subfeature, then `/bb-build` |
-| [social-selling/connect-instagram](specs/social-selling/connect-instagram/) | Connect an Instagram professional account by Instagram's own login and see it healthy; token renewed every 60 days | 📝 Draft — 2026-11-06 |
-| [social-selling/connect-whatsapp](specs/social-selling/connect-whatsapp/) | Connect a WhatsApp number by Meta's pop-up, keeping the Business app (coexistence; else the number moves fully here), set the monthly WhatsApp spend cap, see it healthy | 📝 Draft — 2026-11-06 |
-| [social-selling/inbox-core](specs/social-selling/inbox-core/) | One shared inbox, a tab per platform, unread and replies, built against a fake source | 📝 Draft — 2026-11-06 |
-| [social-selling/post-scheduling](specs/social-selling/post-scheduling/) | Schedule a post, carousel, reel or story from finished library media and a caption, to several destinations; each scheduled, published or failed | 📝 Draft — 2026-11-06 |
-| [social-selling/audience](specs/social-selling/audience/) | Contacts and consent per sender and channel, from checkout, the store page, chat and attested uploads; STOP at once; saved lists | 📝 Draft — 2026-11-06 |
-| [social-selling/instagram-publishing](specs/social-selling/instagram-publishing/) | Scheduled posts published to the shop's Instagram as feed, carousel, reel or story, with a link or Instagram's reason | 📝 Draft — 2026-11-06 |
-| [social-selling/inbox-instagram](specs/social-selling/inbox-instagram/) | Instagram DMs and comments in the inbox, answered within Meta's windows, publicly or by private DM | 📝 Draft — 2026-11-06 |
-| [social-selling/comment-automations](specs/social-selling/comment-automations/) | A keyword comment gets one DM the shop wrote, the product link suggested, and an optional public reply | 📝 Draft — 2026-11-06 |
-| [social-selling/whatsapp-catalogue](specs/social-selling/whatsapp-catalogue/) | Every live product in the shop's WhatsApp catalogue at the product page's price, kept in sync | 📝 Draft — 2026-11-06 |
-| [social-selling/inbox-whatsapp](specs/social-selling/inbox-whatsapp/) | WhatsApp chats in the inbox: free within 24 hours, a paid template after, cost shown and inside the spend cap | 📝 Draft — 2026-11-06 |
-| [social-selling/whatsapp-contacts](specs/social-selling/whatsapp-contacts/) | Business-app contacts arrive as Not yet; YES and STOP in chat change consent, confirmed in the chat | 📝 Draft — 2026-11-06 |
-| [social-selling/whatsapp-templates](specs/social-selling/whatsapp-templates/) | Starter templates in English and Hindi from day one, the shop's own, Meta's verdict and each one's cost | 📝 Draft — 2026-11-06 |
-| [social-selling/whatsapp-campaigns](specs/social-selling/whatsapp-campaigns/) | A campaign, products included, to an opted-in list with cost shown first; the one WhatsApp send every caller uses, with consent and caps | 📝 Draft — 2026-11-06 |
-| [social-selling/whatsapp-status-kit](specs/social-selling/whatsapp-status-kit/) | At a post's time its picture and caption are ready on the phone; one tap hands them to WhatsApp Status | 📝 Draft — 2026-11-06 |
-| social-selling: notify-me *(later)* | "Notify me" on a product: its own multi-channel vertical (email, WhatsApp, later push), sending WhatsApp through whatsapp-campaigns' send (social-selling Q54) | parked |
-| social-selling: platform sending *(later)* | Bhendi Bazaar messaging buyers from its own WhatsApp number, on the platform consent already recorded (Q28) | parked |
-| social-selling: AI replies *(later)* | AI replies in the inbox or to comments, its own vertical like post generation (Q31) | parked |
-| social-selling: audit screen *(later)* | An admin opening one conversation with a written reason, the shop told, every view logged (Q43, Q44) | parked |
-| social-selling: insights *(later)* | Instagram post likes, reach and saves, its own plug and review (Q48) | parked |
-| [notification-hub](specs/notification-hub/) | Overview: one hub every module plugs into — a module emits an event, the hub picks email, WhatsApp or the unread badge, within consent, the shop's window and caps (ADR-0069). Three subfeatures below; decisions Q1–Q6 | 📝 Draft — 2026-11-06 |
-| [notification-hub/hub-core](specs/notification-hub/hub-core/) | emit, one delivery row per recipient and channel, the badge, a 9am digest, the global marketing cap, one-tap unsubscribe | 📝 Draft — 2026-11-06 |
-| [notification-hub/order-updates](specs/notification-hub/order-updates/) | Order confirmed, shipped and delivered on WhatsApp when the shop turns it on, email after 15 minutes undelivered; every order email through the hub | 📝 Draft — 2026-11-06 |
-| [notification-hub/demand-alerts](specs/notification-hub/demand-alerts/) | Price-drop, back-in-stock, abandoned-cart and auction alerts, each off until turned on, inside the shop's window, caps and spend | 📝 Draft — 2026-11-06 |
+| [social-selling](specs/social-selling/) | Overview: a shop sells through its own Instagram and WhatsApp without leaving Bhendi Bazaar. Five modules (Connect, Catalogue, Post, Converse, Reach out), 19 subfeatures; base Q5, tree Q108, order Q107; branch `meta-whatsapp-connector` | 📝 Draft — specs rewritten module by module from 2026-11-22 |
+| social-selling/meta-foundation | Connect: Meta's app plumbing both connections share | 📝 To write |
+| [social-selling/connect-instagram](specs/social-selling/connect-instagram/) | Connect: an Instagram professional account, message access included | 📝 Being rewritten — 2026-11-22 |
+| [social-selling/connect-whatsapp](specs/social-selling/connect-whatsapp/) | Connect: a WhatsApp number by Meta's pop-up, keeping the Business app | 📝 Being rewritten — 2026-11-22 |
+| social-selling/whatsapp-catalogue-import | Catalogue: an existing WhatsApp catalogue settled, matched, added or left off | 📝 To write |
+| [social-selling/whatsapp-catalogue](specs/social-selling/whatsapp-catalogue/) | Catalogue: live products as an exact copy, cart on | 📝 Being rewritten — 2026-11-22 |
+| [social-selling/post-composer](specs/social-selling/post-composer/) | Post: compose and schedule from the library to any destination (was post-scheduling) | 📝 Being rewritten — 2026-11-22 |
+| [social-selling/instagram-publishing](specs/social-selling/instagram-publishing/) | Post: feed, carousel, reel and story on Instagram | 📝 Being rewritten — 2026-11-22 |
+| [social-selling/whatsapp-status-kit](specs/social-selling/whatsapp-status-kit/) | Post: a Status ready on time, one tap from the phone | 📝 Being rewritten — 2026-11-22 |
+| [social-selling/inbox-core](specs/social-selling/inbox-core/) | Converse: the inbox shell, a tab per platform | 📝 Being rewritten — 2026-11-22 |
+| [social-selling/inbox-instagram](specs/social-selling/inbox-instagram/) | Converse: DMs, story replies and comments | 📝 Being rewritten — 2026-11-22 |
+| [social-selling/inbox-whatsapp](specs/social-selling/inbox-whatsapp/) | Converse: chats, templates after 24 hours, a sent cart as an order card | 📝 Being rewritten — 2026-11-22 |
+| [social-selling/comment-automations](specs/social-selling/comment-automations/) | Converse: a keyword comment gets the shop's DM | 📝 Being rewritten — 2026-11-22 |
+| social-selling/enquiry-autoreplies | Converse: greeting, away message, FAQs, buttons, handover | 📝 To write |
+| social-selling/product-answers | Converse: live price, stock and sizes with a Buy link; missed enquiries | 📝 To write |
+| social-selling: ai-autoreplies *(later)* | Converse: AI wording over the same live data, step 8 (Q89) | parked |
+| [social-selling/consent-core](specs/social-selling/consent-core/) | Reach out: consent, YES and STOP in chat, phone contacts (takes whatsapp-contacts) | 📝 Being rewritten — 2026-11-22 |
+| [social-selling/whatsapp-sending](specs/social-selling/whatsapp-sending/) | Reach out: the one WhatsApp send, spend cap, templates (takes whatsapp-templates) | 📝 Being rewritten — 2026-11-22 |
+| [social-selling/audience](specs/social-selling/audience/) | Reach out: the Audience page, lists, uploads, checkout box | 📝 Being rewritten — 2026-11-22 |
+| [social-selling/whatsapp-campaigns](specs/social-selling/whatsapp-campaigns/) | Reach out: compose, review cost, schedule, report | 📝 Being rewritten — 2026-11-22 |
+| social-selling: later | Ads, Facebook Page, Threads, checkout in WhatsApp, forms in chat, insights (Q21); platform sending (Q27); audit screen (Q34); assigning conversations (Q63); sales per post (Q108) | parked |
+| [notification-hub](specs/notification-hub/) | Overview: one hub every module plugs into; a sibling of social-selling | 📝 Draft |
+| [notification-hub/notifications-core](specs/notification-hub/notifications-core/) | Shop alerts once, badge and daily email; built in social-selling's step 2 (was hub-core) | 📝 Being rewritten — 2026-11-22 |
+| notification-hub/hub-marketing | A buyer reached once by WhatsApp else email, the global cap, unsubscribe | 📝 To write |
+| [notification-hub/order-updates](specs/notification-hub/order-updates/) | Order confirmed, shipped and delivered on WhatsApp or email | 📝 Being rewritten — 2026-11-22 |
+| [notification-hub/demand-alerts](specs/notification-hub/demand-alerts/) | Price drop, back in stock, abandoned cart, auction alerts | 📝 Being rewritten — 2026-11-22 |
+| bulk-publish | A shop's whole range pushed to WhatsApp, Amazon or Flipkart in one go, fixes in bulk first (social-selling Q102) | 📝 To write |
+| checkout-links | A link that opens checkout with given items at the live price (social-selling Q108) | 📝 To write |
 | [marketplace-integration](specs/marketplace-integration/) | Overview: one master product per item, one stock figure, Flipkart and Amazon run from here. Eight subfeatures below, in order; decisions in its decisions.md | 📝 Draft — 2026-10-20 |
 | [marketplace-integration/channel-connectors](specs/marketplace-integration/channel-connectors/) | Connect an Amazon or Flipkart account by consent and see its health. The trial of ADR-0061 | ✅ Implemented — 2026-10-21, both connected on the owner's accounts |
 | [marketplace-integration/channel-import](specs/marketplace-integration/channel-import/) | Every listing on a connected marketplace arrives in an inbox; exact-SKU matches link themselves | ✅ Implemented — 2026-10-21, Amazon and Flipkart listings read on the owner's accounts |
