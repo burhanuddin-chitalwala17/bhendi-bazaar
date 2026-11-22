@@ -5,6 +5,7 @@
 
 import { prisma } from "@server/shared/prisma";
 import type { Prisma } from "@prisma/client";
+import { PAID_ORDER_WHERE, VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
 import type {
   AdminUser,
   UserListFilters,
@@ -13,10 +14,12 @@ import type {
 
 /** One projection for every console read and write, so a row cannot differ by path (ADR-0003 D3). */
 export const ADMIN_USER_INCLUDE = {
+  // An abandoned checkout is neither an order nor money spent (checkout-abandonment R4).
   _count: {
-    select: { orders: true },
+    select: { orders: { where: VISIBLE_ORDER_WHERE } },
   },
   orders: {
+    where: { AND: [PAID_ORDER_WHERE, VISIBLE_ORDER_WHERE] },
     select: {
       grandTotal: true,
     },
