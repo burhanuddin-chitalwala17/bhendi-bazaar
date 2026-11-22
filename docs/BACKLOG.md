@@ -248,11 +248,11 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [channel-registry/readiness-fix](specs/channel-registry/readiness-fix/) | The products card names each channel's missing facts; one page per fact answers it for many products, saved as picked | 🔨 Built 2026-11-03, uncommitted; waiting for the owner's check on a phone |
 | [shopfront-feeds](specs/shopfront-feeds/) | One feed file at a URL that Google Shopping and Meta both fetch. First real publishing, and it needs approval from nobody | ✅ Implemented — 2026-10-14 |
 | [social-selling](specs/social-selling/) | Overview: a shop sells through its own Instagram and WhatsApp without leaving Bhendi Bazaar. Five modules (Connect, Catalogue, Post, Converse, Reach out), 19 subfeatures; base Q5, tree Q108, order Q107; branch `meta-whatsapp-connector` | 📝 Draft — specs rewritten module by module from 2026-11-22 |
-| social-selling/meta-foundation | Connect: Meta's app plumbing both connections share | 📝 To write |
-| [social-selling/connect-instagram](specs/social-selling/connect-instagram/) | Connect: an Instagram professional account, message access included | 📝 Being rewritten — 2026-11-22 |
-| [social-selling/connect-whatsapp](specs/social-selling/connect-whatsapp/) | Connect: a WhatsApp number by Meta's pop-up, keeping the Business app | 📝 Being rewritten — 2026-11-22 |
-| social-selling/whatsapp-catalogue-import | Catalogue: an existing WhatsApp catalogue settled, matched, added or left off | 📝 To write |
-| [social-selling/whatsapp-catalogue](specs/social-selling/whatsapp-catalogue/) | Catalogue: live products as an exact copy, cart on | 📝 Being rewritten — 2026-11-22 |
+| [social-selling/meta-foundation](specs/social-selling/meta-foundation/) | Connect: Meta's app plumbing both connections share | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/connect-instagram](specs/social-selling/connect-instagram/) | Connect: an Instagram professional account, message access included | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/connect-whatsapp](specs/social-selling/connect-whatsapp/) | Connect: a WhatsApp number by Meta's pop-up, keeping the Business app | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/whatsapp-catalogue-import](specs/social-selling/whatsapp-catalogue-import/) | Catalogue: an existing WhatsApp catalogue settled, matched, added or left off | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/whatsapp-catalogue](specs/social-selling/whatsapp-catalogue/) | Catalogue: live products as an exact copy, cart on | 📝 Spec rewritten 2026-11-22; UX next |
 | [social-selling/post-composer](specs/social-selling/post-composer/) | Post: compose and schedule from the library to any destination (was post-scheduling) | 📝 Being rewritten — 2026-11-22 |
 | [social-selling/instagram-publishing](specs/social-selling/instagram-publishing/) | Post: feed, carousel, reel and story on Instagram | 📝 Being rewritten — 2026-11-22 |
 | [social-selling/whatsapp-status-kit](specs/social-selling/whatsapp-status-kit/) | Post: a Status ready on time, one tap from the phone | 📝 Being rewritten — 2026-11-22 |

@@ -1,6 +1,6 @@
 # Decisions — social-selling/whatsapp-catalogue
 
-- **Verified:** 2026-11-21
+- **Verified:** 2026-11-22
 
 > Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented
 > ones
@@ -16,6 +16,7 @@
 | Q8 | What does the shop see, including rejected items? | A line on the WhatsApp card: "142 products in your WhatsApp catalogue · updated 3 min ago", how many were left out and why ("6 need a photo or description"), and Sync now. Each item Meta rejects is listed beneath with Meta's reason (cut to 300 characters) and a link to fix the product; the rest of the catalogue is unaffected | Claude · reversible | 2026-11-06 | Enough to trust it; ADR-0053 advises, never gates | decided |
 | Q10 | What happens on disconnect? | The catalogue stays in the shop's account but stops updating; the dialog says so and how to delete it in Commerce Manager. Reconnecting the same number resumes the same catalogue | Claude · reversible | 2026-11-06 | We never delete a shop's asset on Meta; mirrors channel-connectors Q9 | decided |
 | Q12 | What is one item? | Each product is its own item; a family's members share an item group id, so WhatsApp shows them as one item with options. An item links to our product page (WhatsApp's "View on website") and carries our product id, so a message can name it (whatsapp-campaigns) | Claude · reversible | 2026-11-06 | ADR-0043: a variant is a product in a family; Meta's `item_group_id` is the same shape | decided |
+| Q14 | May an AI-made picture be an item's image? | Never the main image: it may follow a real photograph. A product whose pictures are all AI-made is left out, counted with why | Claude · reversible | 2026-11-22 | ADR-0077: an AI picture is labelled and secondary on every channel; a WhatsApp item is a listing | decided |
 
 ## Parked (Later)
 - A per-product "not on WhatsApp" switch — parent Q47 chose all live products.

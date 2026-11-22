@@ -75,11 +75,11 @@ folder is merged, split or renamed into it; **new** means it is still to be writ
 
 | Module | Subfeature | Outcome | Folder | Domain |
 |---|---|---|---|---|
-| Connect | meta-foundation | Meta's app plumbing both connections share: signed webhooks, events stored once, data-deletion and app-removed callbacks, the Coming soon switch | new | channels |
-| Connect | connect-instagram | A shop connects its Instagram professional account and sees it healthy, message access included (Q1) | exists | channels |
-| Connect | connect-whatsapp | A shop connects its WhatsApp number, keeping its Business app, and sees it healthy (Q12) | exists | channels |
-| Catalogue | whatsapp-catalogue-import | A catalogue the shop already has is settled: matched, added or left off (Q47) | new | channels |
-| Catalogue | whatsapp-catalogue | The shop's live products in its WhatsApp catalogue, an exact copy kept in sync, cart on (Q47) | exists | channels |
+| Connect | meta-foundation | Meta's app plumbing both connections share: signed webhooks, events stored once, data-deletion and app-removed callbacks, the Coming soon switch | rewritten 2026-11-22 | channels |
+| Connect | connect-instagram | A shop connects its Instagram professional account and sees it healthy, message access included (Q1) | rewritten 2026-11-22 | channels |
+| Connect | connect-whatsapp | A shop connects its WhatsApp number, keeping its Business app, and sees it healthy (Q12) | rewritten 2026-11-22 | channels |
+| Catalogue | whatsapp-catalogue-import | A catalogue the shop already has is settled: matched, added or left off (Q47) | rewritten 2026-11-22 | channels |
+| Catalogue | whatsapp-catalogue | The shop's live products in its WhatsApp catalogue, an exact copy kept in sync, cart on (Q47) | rewritten 2026-11-22 | channels |
 | Post | post-composer | Compose and schedule a post or story from the library to any destination; other modules add panels to it | re-cut from post-scheduling | social |
 | Post | instagram-publishing | Feed, carousel, reel and story published to Instagram, with everything its API allows | exists | channels |
 | Post | whatsapp-status-kit | A Status ready on time, one tap from the phone (Q18) | exists | social |
