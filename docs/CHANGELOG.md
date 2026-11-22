@@ -12,6 +12,13 @@
 
 ## Entries
 
+## 2026-11-22 — Fix: an abandoned checkout showed in the admin as money a buyer spent
+
+- The user console summed `grandTotal` over every order a buyer had, so a payment that never arrived showed as spent
+  and an expired checkout as an order. `ADMIN_USER_INCLUDE` now counts `VISIBLE_ORDER_WHERE` orders and sums only
+  `PAID_ORDER_WHERE` ones that are visible (checkout-abandonment R4). `tests/integration/admin-user-spend.test.ts`;
+  against the old projection it reads ₹440.72 over four orders where ₹100 over three is true.
+
 ## 2026-11-22 — The dead channel banner goes; e2e signs in and walks the phone Account page
 
 - `ChannelAttentionBanner`, its `BANNER` copy and its two tests are removed: the dashboard stopped rendering it on
