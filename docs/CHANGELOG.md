@@ -12,6 +12,12 @@
 
 ## Entries
 
+## 2026-11-22 — Fix: a phone had no way to reach Your shop or sign out
+
+- The navbar hides its profile menu below `md`, and that menu was the only place with Your shop and Sign out; the
+  phone's Account tab lands on `/profile`, which had neither. The Account page (`profile/layout.tsx`) now lists Your
+  shop beside Orders, Saved and Policies, and ends with Sign out — both for a signed-in viewer only.
+
 ## 2026-11-21 — Fix: a Styled shot from a page opened before the shape choice was refused
 
 - A page loaded before #89 deployed runs the old modal, which sends no `aspect`; the server required one and answered

@@ -5,6 +5,7 @@ export const PROFILE_PAGE_COPY = {
   nav: "Account",
   yourOrders: "Your orders",
   saved: "Saved",
+  yourShop: "Your shop",
   policies: "Returns, shipping and grievances",
   contactUs: "Contact us",
   loading: "Loading your account",
