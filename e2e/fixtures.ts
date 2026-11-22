@@ -6,3 +6,10 @@ export const E2E_PRODUCT = {
   pricePaise: 49_900,
   stock: 1_000,
 } as const;
+
+/** A signed-in buyer for the account journeys. A throwaway password on a throwaway database. */
+export const E2E_BUYER = {
+  email: "e2e-buyer@example.invalid",
+  password: "E2e-Buyer-Passw0rd!",
+  name: "E2E Buyer",
+} as const;

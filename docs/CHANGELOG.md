@@ -12,6 +12,13 @@
 
 ## Entries
 
+## 2026-11-22 — The dead channel banner goes; e2e signs in and walks the phone Account page
+
+- `ChannelAttentionBanner`, its `BANNER` copy and its two tests are removed: the dashboard stopped rendering it on
+  2026-11-01, when "Needs you now" took its place (seller-onboarding U3). Nothing else read them.
+- e2e seeds one buyer with a password (`E2E_BUYER`) and `e2e/account.e2e.ts` signs in, reaches Your shop from the
+  Account page and signs out, on phone and desktop. Against the Account page before the fix above, both fail.
+
 ## 2026-11-22 — Fix: a phone payment retried after a failed attempt was refused
 
 - A buyer's first PhonePe attempt failed; the browser asked to release the order; the gateway reported nothing in
