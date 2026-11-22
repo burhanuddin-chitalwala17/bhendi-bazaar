@@ -12,6 +12,16 @@
 
 ## Entries
 
+## 2026-11-22 — Fix: a phone payment retried after a failed attempt was refused
+
+- A buyer's first PhonePe attempt failed; the browser asked to release the order; the gateway reported nothing in
+  flight, so the order expired and its stock went back on sale. Minutes later the buyer paid again on the same gateway
+  order — which still accepts attempts — and confirmation refused it because the order had expired.
+- `releaseIfUnpaid` now answers `still-payable` and keeps the hold while an order with a gateway order is younger than
+  `ABANDONED_HOLD_MINUTES` (15); after that the sweep and a blocked checkout release it as before (R1, R2).
+- Checkout no longer releases on `pagehide`: a phone hides the page to open the UPI or wallet app, so it fired
+  mid-payment. A dismissal or a failure in the payment window still asks.
+
 ## 2026-11-22 — Fix: a phone had no way to reach Your shop or sign out
 
 - The navbar hides its profile menu below `md`, and that menu was the only place with Your shop and Sign out; the

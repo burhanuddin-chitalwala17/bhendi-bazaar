@@ -50,7 +50,11 @@ const unpaidOrder = {
   paymentId: null,
   gatewayOrderId: "gw-1",
   grandTotal: 250_00,
+  // Past the hold window, so only the gateway's answer decides.
+  createdAt: new Date(Date.now() - 60 * 60_000),
 };
+
+const freshOrder = () => ({ ...unpaidOrder, createdAt: new Date(Date.now() - 2 * 60_000) });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -128,6 +132,36 @@ describe("releaseIfUnpaid", () => {
     await expect(
       paymentService.releaseIfUnpaid("order-1", { userId: null })
     ).rejects.toThrow(/not found/i);
+  });
+
+  it("holds a fresh order whose failed attempt can still be retried on the same gateway order", async () => {
+    // The phone case: a PhonePe attempt failed, the browser asked to release, and the buyer
+    // paid again on the same gateway order minutes later. Releasing then refused that payment.
+    getOrderById.mockResolvedValue(freshOrder());
+    fetchOrderPaymentState.mockResolvedValue({ kind: "none" });
+
+    const result = await paymentService.releaseIfUnpaid("order-1");
+
+    expect(result.outcome).toBe("still-payable");
+    expect(expireAndRestock).not.toHaveBeenCalled();
+  });
+
+  it("still confirms a fresh order the gateway reports captured", async () => {
+    getOrderById.mockResolvedValue(freshOrder());
+    fetchOrderPaymentState.mockResolvedValue({ kind: "captured", paymentId: "pay-9", amount: 250_00 });
+    confirmPaid.mockResolvedValue(true);
+
+    const result = await paymentService.releaseIfUnpaid("order-1");
+
+    expect(result.outcome).toBe("confirmed");
+  });
+
+  it("releases a fresh order that never got a gateway order — nothing can be paid on it", async () => {
+    getOrderById.mockResolvedValue({ ...freshOrder(), gatewayOrderId: null });
+
+    const result = await paymentService.releaseIfUnpaid("order-1");
+
+    expect(result.outcome).toBe("released");
   });
 
   it("lets a guest order be released by whoever holds its id", async () => {
