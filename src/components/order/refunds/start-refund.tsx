@@ -7,8 +7,18 @@ import { useStartRefund } from "./useStartRefund";
 import { START_REFUND_COPY } from "./refunds-copy";
 
 /** "Refund ₹{x}" or "Try again", then the confirm sheet (ux.md copy deck). Never disabled (R15). */
-export function StartRefund({ refundId, amountPaise, retry = false }: { refundId: string; amountPaise: number; retry?: boolean }) {
-  const refund = useStartRefund(refundId, amountPaise);
+export function StartRefund({
+  refundId,
+  amountPaise,
+  retry = false,
+  buyerEmailed = true,
+}: {
+  refundId: string;
+  amountPaise: number;
+  retry?: boolean;
+  buyerEmailed?: boolean;
+}) {
+  const refund = useStartRefund(refundId, amountPaise, buyerEmailed);
   return (
     <>
       <Button size="sm" variant={retry ? "outline" : "default"} onClick={() => refund.setOpen(true)}>

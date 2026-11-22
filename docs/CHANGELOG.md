@@ -12,6 +12,17 @@
 
 ## Entries
 
+## 2026-11-22 — Money captured for a released order is owed back and refunded from the admin [MIGRATION]
+
+- [payment-confirmation/unmatched-payments](specs/payment-confirmation/unmatched-payments/). A `payment.captured` webhook for an
+  order already expired used to be refused and retried into nothing; it is now written as a `Refund` owed for the captured amount,
+  cause `paid_after_release`, and answered 2xx (Q4). The browser's return records nothing (D1).
+- Migration `20261122210000_refund_unmatched_payment`: `Refund.shipmentId` nullable, `Refund.gatewayPaymentId` unique. No backfill.
+- `refundService.start` refunds the row's own payment when it names one (D5); `owedSoFar`, the buyer's refund view and the parcel
+  notice skip a parcel-less row (D6). The admin's Refunds list shows it with "—" for parcel and "paid after release".
+- Tests: `tests/integration/unmatched-payments.test.ts` (A1–A5), four cases in `checkout-abandonment.test.ts` (D1, D2, A6),
+  `tests/unit/refund-list-unmatched.test.tsx`; the recording and payment guards mutation-checked.
+
 ## 2026-11-22 — Fix: revenue counted an unpaid or failed checkout; main's unit gate is green again
 
 - The admin order stats and the dashboard's revenue windows left out expired and cancelled orders but still summed an

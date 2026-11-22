@@ -50,6 +50,9 @@ The five specs below implement the Invariants in [../CLAUDE.md](../CLAUDE.md). T
 | [inventory-reservation](specs/inventory-reservation/) | Stock is reserved atomically at placement and released on failure | [0007](adr/0007-conditional-stock-decrement.md) | ✅ Implemented — PR-40 |
 | [money-as-paise](specs/money-as-paise/) | Monetary values are exact from catalogue to gateway to report | [0004](adr/0004-money-as-integer-paise.md) | ✅ Implemented — PR-37 |
 | [checkout-abandonment](specs/checkout-abandonment/) | An unpaid checkout releases its goods within minutes and is shown to nobody | [0025](adr/0025-order-codes-are-random-not-sequential.md) | ✅ Implemented — PR-104 |
+| [payment-confirmation/unmatched-payments](specs/payment-confirmation/unmatched-payments/) | Money that arrives for an order the store already released is recorded and refunded, never lost | [0005](adr/0005-payment-state-server-only.md) | ✅ Implemented — PR #95 |
+
+Parked from [unmatched-payments](specs/payment-confirmation/unmatched-payments/decisions.md): a buyer email when a late payment's refund starts (Q8); the buyer checkout's wording when its confirm is refused for a released order (Q9); a capture whose amount differs from the order's total, still refused loudly (Q11). A gateway sweep for a late capture whose webhook never arrived (Q10) is Phase 5.
 
 Also in this phase, no spec required (they are corrections with an ADR already stating the rule): request-body parsing across the remaining handlers ([Invariant 4](../CLAUDE.md)), the seed guard ([Invariant 7](../CLAUDE.md)), and the `next-auth` / `next` upgrades.
 

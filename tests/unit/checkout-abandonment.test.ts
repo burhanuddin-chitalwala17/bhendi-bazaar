@@ -12,6 +12,11 @@ const confirmPaid = vi.fn();
 const fetchOrderPaymentState = vi.fn();
 const findAbandonableHoldsForProducts = vi.fn();
 const onPaymentConfirmed = vi.fn();
+const recordUnmatched = vi.fn();
+
+vi.mock("@server/payments/refund.service", () => ({
+  refundService: { recordUnmatched: (row: unknown) => recordUnmatched(row) },
+}));
 
 vi.mock("@server/checkout/order.service", () => ({
   orderService: {
@@ -233,5 +238,71 @@ describe("order codes (ADR-0025)", () => {
     }
     expect(orderLookupSchema.safeParse({ code: "BB-1001" }).success).toBe(true);
     expect(orderLookupSchema.safeParse({ code: "BB-IL0U1234" }).success).toBe(false);
+  });
+});
+
+describe("a payment captured after its order was released (unmatched-payments)", () => {
+  const capture = { localOrderId: "order-1", gatewayOrderId: "gw-1", paymentId: "pay-late", amount: 250_00 };
+
+  beforeEach(() => {
+    confirmPaid.mockResolvedValue(false);
+    getOrderById
+      .mockResolvedValueOnce({ ...unpaidOrder })
+      .mockResolvedValueOnce({ ...unpaidOrder, status: "expired" });
+    recordUnmatched.mockResolvedValue(true);
+  });
+
+  it("records the webhook's capture as owed back, for the amount captured, and answers rather than throws (R1, D1, D4)", async () => {
+    const result = await paymentService.confirmPayment(capture);
+
+    expect(recordUnmatched).toHaveBeenCalledWith({ orderId: "order-1", gatewayPaymentId: "pay-late", amountPaise: 250_00 });
+    expect(result).toMatchObject({ recordedUnmatched: true });
+    expect(onPaymentConfirmed).not.toHaveBeenCalled();
+  });
+
+  it("records nothing from the browser's return, which cannot tell authorised from captured (D1)", async () => {
+    const { amount: _amount, ...browser } = capture;
+    void _amount;
+    await expect(paymentService.confirmPayment(browser)).rejects.toThrow(/released before this payment/i);
+    expect(recordUnmatched).not.toHaveBeenCalled();
+  });
+
+  it("records nothing when the order lost to another payment rather than to the release (D2)", async () => {
+    getOrderById.mockReset();
+    getOrderById
+      .mockResolvedValueOnce({ ...unpaidOrder })
+      .mockResolvedValueOnce({ ...unpaidOrder, paymentStatus: "paid", paymentId: "pay-other" });
+
+    await expect(paymentService.confirmPayment(capture)).rejects.toThrow(/different payment/i);
+    expect(recordUnmatched).not.toHaveBeenCalled();
+  });
+
+  it("still confirms a capture for an order that was not released (A6)", async () => {
+    getOrderById.mockReset();
+    getOrderById.mockResolvedValue({ ...unpaidOrder });
+    confirmPaid.mockResolvedValue(true);
+
+    const result = await paymentService.confirmPayment(capture);
+
+    expect(result).toMatchObject({ paymentStatus: "paid", alreadyConfirmed: false });
+    expect(recordUnmatched).not.toHaveBeenCalled();
+  });
+});
+
+describe("a gateway lookup that races the release (unmatched-payments D2)", () => {
+  it("reports the order released, not confirmed, when the capture is recorded as owed back", async () => {
+    fetchOrderPaymentState.mockResolvedValue({ kind: "captured", paymentId: "pay-race", amount: 250_00 });
+    confirmPaid.mockResolvedValue(false);
+    recordUnmatched.mockResolvedValue(true);
+    getOrderById
+      .mockResolvedValueOnce({ ...unpaidOrder })
+      .mockResolvedValueOnce({ ...unpaidOrder })
+      .mockResolvedValueOnce({ ...unpaidOrder, status: "expired" });
+
+    const result = await paymentService.releaseIfUnpaid("order-1");
+
+    expect(result.outcome).toBe("already-released");
+    expect(recordUnmatched).toHaveBeenCalledOnce();
+    expect(expireAndRestock).not.toHaveBeenCalled();
   });
 });

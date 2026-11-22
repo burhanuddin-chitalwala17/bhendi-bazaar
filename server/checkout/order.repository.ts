@@ -470,10 +470,11 @@ export class OrderRepository {
   }
 
   /** Each order's gateway payment, for the admin's "Open in Razorpay". */
-  async gatewayPaymentsOf(orderIds: string[]): Promise<Map<string, string | null>> {
+  /** Each order's confirmed payment, and its code for a refund with no parcel to name it (unmatched-payments). */
+  async refundContextsOf(orderIds: string[]): Promise<Map<string, { paymentId: string | null; code: string }>> {
     if (orderIds.length === 0) return new Map();
-    const rows = await prisma.order.findMany({ where: { id: { in: orderIds } }, select: { id: true, paymentId: true } });
-    return new Map(rows.map((r) => [r.id, r.paymentId]));
+    const rows = await prisma.order.findMany({ where: { id: { in: orderIds } }, select: { id: true, paymentId: true, code: true } });
+    return new Map(rows.map((r) => [r.id, { paymentId: r.paymentId, code: r.code }]));
   }
 
   /** The order row itself, inside the order transaction. Totals arrive computed; none come from a request. */

@@ -30,7 +30,10 @@ export async function startRefund(
     paymentOf: (orderId) => orderRepository.gatewayPaymentOf(orderId),
     onClaimed: () =>
       recordAdminAction({ adminId: admin.id, action: REFUND_START_ACTION, resource: "Refund", resourceId: refundId, metadata: { by: admin.name ?? "staff" } }),
-    onStarted: (row, tx) => onRefundStarted({ ...row, at: new Date() }, tx),
+    // A late payment's refund has no parcel to write the buyer's notice for (unmatched-payments Q8).
+    onStarted: async (row, tx) => {
+      if (row.shipmentId) await onRefundStarted({ shipmentId: row.shipmentId, amountPaise: row.amountPaise, at: new Date() }, tx);
+    },
   });
   if (outcome.kind === "already") throw new ConflictError(alreadyStartedMessage(await whoStarted(refundId)));
   return outcome;

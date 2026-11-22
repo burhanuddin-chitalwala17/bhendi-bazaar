@@ -78,6 +78,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 <!-- generated:subfeatures-index:start -->
 | Feature | Summary | Phase | Domain | Status |
 |---|---|---|---|---|
+| [payment-confirmation/unmatched-payments](payment-confirmation/unmatched-payments/) | Money that arrives for an order the store already released is recorded and refunded, never lost | 2 | payments, checkout | ✅ Implemented — PR #95 |
 | [multi-vendor-marketplace/addresses-as-entities](multi-vendor-marketplace/addresses-as-entities/) | An address is a record with columns, not a field inside a JSON blob | 3 | identity, catalog | ✅ Implemented — PR-41; requirements below were held to (R5's no-preselection per the 2026-08-08 decision) |
 | [multi-vendor-marketplace/category-tree](multi-vendor-marketplace/category-tree/) | Categories nest to any depth, and the taxonomy belongs to the platform | 3 | catalog | ✅ Implemented (PR-42) |
 | [multi-vendor-marketplace/dashboard-widgets](multi-vendor-marketplace/dashboard-widgets/) | One dashboard assembled from widgets, each declaring which audience it is for | 3 | analytics, cross-domain | ✅ Implemented (PR-50) |

@@ -2111,7 +2111,7 @@ enum RefundState {
   FAILED
 }
 
-/// The refund one parcel is owed (order-fulfilment D16, Q11, Q25), one per parcel. The amount is
+/// The refund one parcel is owed (order-fulfilment D16, Q11, Q25), one per parcel, or one late payment (unmatched-payments). The amount is
 /// the server's — the parcel's lines less their discount share, plus its shipping — capped so an
 /// order's rows never pass what was captured. Money-bearing, so nothing cascades (ADR-0020), and
 /// `Order.paymentStatus` is never touched by it.
@@ -2119,8 +2119,11 @@ model Refund {
   id              String      @id @default(cuid())
   orderId         String
   order           Order       @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  shipmentId      String      @unique
-  shipment        Shipment    @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  /// Null for a payment captured after its order was released (unmatched-payments D3).
+  shipmentId      String?     @unique
+  shipment        Shipment?   @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  /// The payment refunded when it is not the order's own; unique, so a repeated capture records once.
+  gatewayPaymentId String?    @unique
   amountPaise     Int
   /// The parcel state that made it owed: one of REFUND_CAUSE (server/payments/refund.types.ts).
   cause           String

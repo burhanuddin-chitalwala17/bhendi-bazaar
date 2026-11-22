@@ -43,7 +43,7 @@ function Actions({ row }: { row: RefundRow }) {
           </a>
         </Button>
       )}
-      <StartRefund refundId={row.id} amountPaise={row.amountPaise} retry={checkFirst} />
+      <StartRefund refundId={row.id} amountPaise={row.amountPaise} retry={checkFirst} buyerEmailed={row.parcelCode !== null} />
     </div>
   );
 }
@@ -60,7 +60,7 @@ export function RefundList({ rows }: { rows: RefundRow[] }) {
       empty={{ title: REFUNDS_COPY.empty, description: REFUND_LIST_COPY.refundAppearsHereWhen }}
       columns={[
         { key: "refund", label: REFUND_LIST_COPY.refund, cell: (row) => REFUNDS_COPY.owed(row.amountPaise), phone: "title" },
-        { key: "parcel", label: REFUND_LIST_COPY.parcel, cell: (row) => <span className="font-mono">{row.parcelCode}</span>, phone: "meta" },
+        { key: "parcel", label: REFUND_LIST_COPY.parcel, cell: (row) => <span className="font-mono">{row.parcelCode ?? REFUND_LIST_COPY.noParcel}</span>, phone: "meta" },
         { key: "cause", label: REFUND_LIST_COPY.why, cell: (row) => causeLabel(row.cause, row.cancelledBy), phone: "meta" },
         { key: "order", label: REFUND_LIST_COPY.order, cell: (row) => <span className="font-mono">{row.orderCode}</span>, phone: "meta" },
         {
