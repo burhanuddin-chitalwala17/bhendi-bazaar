@@ -240,6 +240,13 @@ export class PaymentService {
         // and a customer.
         return { orderId: order.id, outcome: "in-flight" };
       }
+
+      // A gateway order takes a fresh attempt after a failed one, so "nothing yet" is not
+      // "abandoned" until the hold window has passed — a retry paid then was being refused.
+      const heldSince = Date.now() - ABANDONED_HOLD_MINUTES * 60_000;
+      if (order.createdAt.getTime() > heldSince) {
+        return { orderId: order.id, outcome: "still-payable" };
+      }
     }
 
     const released = await orderRepository.expireAndRestock(order.id);

@@ -87,6 +87,7 @@ export type ReleaseOutcome =
   | "released"
   | "confirmed"
   | "in-flight"
+  | "still-payable"
   | "already-paid"
   | "already-released"
   | "not-released";

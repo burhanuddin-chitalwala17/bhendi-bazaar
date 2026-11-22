@@ -129,19 +129,10 @@ export function useCheckoutPayment() {
         },
       });
 
-      // A tab closed mid-payment is the same event as a dismissal, and the only one
-      // the modal's own callbacks cannot see. `pagehide` fires where `beforeunload`
-      // does not on mobile Safari, which is most of our buyers (ADR-0015).
-      const releaseOnLeave = () => {
-        void paymentGatewayApiClient.abandon(order.id);
-      };
-      window.addEventListener("pagehide", releaseOnLeave);
-      const stopListening = () =>
-        window.removeEventListener("pagehide", releaseOnLeave);
-
+      // No release on `pagehide`: a phone hides the page to open the UPI or wallet app, so it
+      // fired mid-payment. A tab really closed is released by the sweep (checkout-abandonment R1).
       await openRazorpayCheckout(paymentOrder, {
         onSuccess: async (response) => {
-          stopListening();
           try {
             // The server verifies the signature against the persisted order and
             // writes the paid state — the browser reports, it does not decide
@@ -166,7 +157,6 @@ export function useCheckoutPayment() {
           }
         },
         onFailure: async (error) => {
-          stopListening();
           console.error("Payment failed:", error);
           // The gateway records the failure itself; this releases what the order is
           // holding, and only after the gateway confirms nothing was captured
@@ -181,7 +171,6 @@ export function useCheckoutPayment() {
           setIsProcessing(false);
         },
         onDismiss: () => {
-          stopListening();
           // The common case, not the exception: most people who open a payment window
           // close it. The goods go back on sale now rather than at the next sweep
           // (checkout-abandonment R1).
