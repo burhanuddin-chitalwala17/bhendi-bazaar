@@ -40,6 +40,12 @@ class RefundService {
     return await refundRepository.recordOwed(row, tx);
   }
 
+  /** Owe back a payment captured after its order was released, once per payment (unmatched-payments R1, R5). */
+  async recordUnmatched(row: { orderId: string; gatewayPaymentId: string; amountPaise: number }): Promise<boolean> {
+    if (row.amountPaise <= 0) return false;
+    return await refundRepository.recordUnmatched(row);
+  }
+
   /**
    * Start a refund at the gateway (order-fulfilment D17, A9). One press claims the row; a row that
    * was ever sent is first looked up by its receipt, so a retry after a timeout adopts the refund
@@ -53,13 +59,14 @@ class RefundService {
       paymentOf: (orderId: string) => Promise<string | null>;
       /** This press won the row: who pressed is recorded before the gateway is asked. */
       onClaimed?: () => Promise<void>;
-      onStarted: (row: { shipmentId: string; amountPaise: number }, tx: Prisma.TransactionClient) => Promise<void>;
+      onStarted: (row: { shipmentId: string | null; amountPaise: number }, tx: Prisma.TransactionClient) => Promise<void>;
     },
     now: Date = new Date(),
   ): Promise<RefundStartOutcome> {
     const row = await refundRepository.findById(refundId);
     if (!row) throw new NotFoundError(REFUND_NOT_FOUND);
-    const paymentId = await checkout.paymentOf(row.orderId);
+    // A late payment's row names its own payment; a parcel's refunds the order's (unmatched-payments D5).
+    const paymentId = row.gatewayPaymentId ?? (await checkout.paymentOf(row.orderId));
     const sentBefore = row.state !== REFUND_STATE.OWED;
     // Refused before the claim: the row stays as it was, and the reason is ours, not the gateway's (Q38).
     if (!paymentId) throw new ConflictError(NO_GATEWAY_PAYMENT);
@@ -115,12 +122,12 @@ class RefundService {
 
   /** Each parcel's refund on an order, for its buyer. */
   async forOrder(orderId: string): Promise<BuyerRefundView[]> {
-    return (await refundRepository.forOrder(orderId)).map((r) => ({
+    return (await refundRepository.forOrder(orderId)).flatMap((r) => r.shipmentId === null ? [] : [{
       shipmentId: r.shipmentId,
       amountPaise: r.amountPaise,
       state: r.state as RefundState,
       startedDay: r.startedAt ? indiaDay(r.startedAt) : null,
-    }));
+    }]);
   }
 }
 

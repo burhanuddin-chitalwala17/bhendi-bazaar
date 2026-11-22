@@ -1,6 +1,6 @@
 # CLAUDE.md — payments domain
 
-- **Verified:** 2026-11-01
+- **Verified:** 2026-11-22
 - **Covers:** `server/payments/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md) covers the SDLC and the seven Project Invariants. This file covers **payments** only.
@@ -10,7 +10,7 @@ Payments owns the conversation with the gateway and the single fact that follows
 
 ## Boundaries
 
-**Owns:** `server/payments/**` — `payment.service.ts`, `payment.types.ts`, and `providers/razorpay/` as the gateway adapter; and the `Refund` table — `refund.service.ts`, `refund.repository.ts`, `refund.types.ts` — the refund one parcel is owed ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/) D16).
+**Owns:** `server/payments/**` — `payment.service.ts`, `payment.types.ts`, and `providers/razorpay/` as the gateway adapter; and the `Refund` table — `refund.service.ts`, `refund.repository.ts`, `refund.types.ts` — the refund one parcel is owed ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/) D16), or one payment captured after its order was released ([unmatched-payments](../../docs/specs/payment-confirmation/unmatched-payments/)).
 
 **Does not own:** what the amount should be. That is computed by `checkout` from catalogue prices ([ADR-0002](../../docs/adr/0002-server-holds-pricing-authority.md)); payments reads the persisted order and charges that.
 
@@ -21,11 +21,11 @@ Payments owns the conversation with the gateway and the single fact that follows
 - **A signature proves a payment happened, not that it was for the right amount.** The amount check is separate and mandatory — the signature attests to the gateway's own order, which says nothing about ours.
 - **Compare signatures with `crypto.timingSafeEqual`**, never `===`.
 - **The transition is idempotent**, keyed on the gateway payment id, so a retry does not resend a confirmation email.
-- **Fail loudly.** A webhook whose payload cannot be matched to an order logs an error and returns non-2xx, so the gateway retries and the failure is visible. **A silent 2xx is how a dead payment path stayed hidden for months** — this rule exists because of that, and it is the one most easily undone by someone "cleaning up" error handling.
+- **Fail loudly.** A webhook whose payload cannot be matched to an order logs an error and returns non-2xx, so the gateway retries and the failure is visible. A capture that *is* matched, to an order already released, is recorded as a refund owed and answered 2xx: the owed row on the admin's list is the loud part ([unmatched-payments](../../docs/specs/payment-confirmation/unmatched-payments/) Q4). **A silent 2xx is how a dead payment path stayed hidden for months** — this rule exists because of that, and it is the one most easily undone by someone "cleaning up" error handling.
 - **A reservation is released only after the gateway is asked, and never while a payment is in flight.** `releaseIfUnpaid` is the single routine; the browser, a blocked checkout and the worker's hourly sweep are triggers that decide nothing. `confirmPaid` refuses an expired order, so an early release turns a real payment into a manual refund ([checkout-abandonment](../../docs/specs/checkout-abandonment/)).
 - **Never accept `paymentStatus` from a request body**, at creation or update ([`/CLAUDE.md`](../../CLAUDE.md) Invariant 4).
 - **Throw `DomainError` for anything a user should see**, `NotFoundError` / `ConflictError` as appropriate. A bare `throw new Error(...)` is treated as an internal fault and reported generically — correct for a config or code failure, wrong for "insufficient stock" ([ADR-0013](../../docs/adr/0013-one-error-envelope-and-useserverform.md)).
-- **A refund owed is an entitlement, not a payment undone.** One `Refund` row per parcel (unique `shipmentId`), written on the cancel's transaction; checkout computes the amount and caps it at what was captured (Q11). Nothing here writes `paymentStatus`, and nothing cascades onto a refund ([ADR-0020](../../docs/adr/0020-money-bearing-records-never-cascade.md)).
+- **A refund owed is an entitlement, not a payment undone.** One `Refund` row per parcel (unique `shipmentId`), written on the cancel's transaction, or one per late payment (no parcel, unique `gatewayPaymentId`, its own payment refunded; parcel-only reads skip it); checkout computes the amount and caps it at what was captured (Q11). Nothing here writes `paymentStatus`, and nothing cascades onto a refund ([ADR-0020](../../docs/adr/0020-money-bearing-records-never-cascade.md)).
 - **A refund is asked for once, and a retry looks before it asks.** `refundService.start` claims the row conditionally, sends Razorpay `receipt` = the row id, and treats a timeout or a 5xx as *unconfirmed*, never as "nothing refunded". A row ever sent is first looked up by its receipt; a failed lookup stays unconfirmed. The answer is recorded only against the claim that asked ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/) D17, A9).
 - **No `any` in this tree.**
 

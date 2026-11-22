@@ -1,11 +1,14 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
-import { REFUND_STATE, REFUND_STARTABLE, type RefundCause } from "@server/payments/refund.types";
+import { REFUND_CAUSE, REFUND_STATE, REFUND_STARTABLE, type RefundCause } from "@server/payments/refund.types";
 
 const ADMIN_ROW = {
-  id: true, orderId: true, shipmentId: true, amountPaise: true, cause: true, state: true,
+  id: true, orderId: true, shipmentId: true, gatewayPaymentId: true, amountPaise: true, cause: true, state: true,
   gatewayRefundId: true, failureReason: true, requestedAt: true, createdAt: true, startedAt: true,
 } as const;
+
+/** A parcel's refund; a late payment's has none (unmatched-payments D6). */
+const PARCEL_REFUND = { shipmentId: { not: null } } as const;
 
 /** Not yet started at the gateway: what the admin still has to act on. */
 const NOT_STARTED = { state: { not: REFUND_STATE.STARTED } } as const;
@@ -26,9 +29,21 @@ export class RefundRepository {
     return written.count === 1;
   }
 
-  /** What the order's refunds already add up to, in every state: the cap's other half (Q11). */
+  /**
+   * Owe back a payment captured after its order was released (unmatched-payments D3). Its unique
+   * `gatewayPaymentId` makes a repeated capture write nothing. Answers whether this call wrote it.
+   */
+  async recordUnmatched(row: { orderId: string; gatewayPaymentId: string; amountPaise: number }): Promise<boolean> {
+    const written = await prisma.refund.createMany({
+      data: [{ ...row, cause: REFUND_CAUSE.PAID_AFTER_RELEASE }],
+      skipDuplicates: true,
+    });
+    return written.count === 1;
+  }
+
+  /** What the order's parcel refunds already add up to, in every state: the cap's other half (Q11). */
   async owedSoFar(orderId: string, tx: RefundDb): Promise<number> {
-    const sum = await tx.refund.aggregate({ where: { orderId }, _sum: { amountPaise: true } });
+    const sum = await tx.refund.aggregate({ where: { orderId, ...PARCEL_REFUND }, _sum: { amountPaise: true } });
     return sum._sum.amountPaise ?? 0;
   }
 
@@ -90,7 +105,7 @@ export class RefundRepository {
 
   async forOrder(orderId: string, db: RefundDb = prisma) {
     return await db.refund.findMany({
-      where: { orderId },
+      where: { orderId, ...PARCEL_REFUND },
       orderBy: { createdAt: "asc" },
       select: { shipmentId: true, amountPaise: true, state: true, startedAt: true },
     });

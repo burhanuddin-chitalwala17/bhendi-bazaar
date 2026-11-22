@@ -12,6 +12,27 @@
 
 ## Entries
 
+## 2026-11-22 — Money captured for a released order is owed back and refunded from the admin [MIGRATION]
+
+- [payment-confirmation/unmatched-payments](specs/payment-confirmation/unmatched-payments/). A `payment.captured` webhook for an
+  order already expired used to be refused and retried into nothing; it is now written as a `Refund` owed for the captured amount,
+  cause `paid_after_release`, and answered 2xx (Q4). The browser's return records nothing (D1).
+- Migration `20261122210000_refund_unmatched_payment`: `Refund.shipmentId` nullable, `Refund.gatewayPaymentId` unique. No backfill.
+- `refundService.start` refunds the row's own payment when it names one (D5); `owedSoFar`, the buyer's refund view and the parcel
+  notice skip a parcel-less row (D6). The admin's Refunds list shows it with "—" for parcel and "paid after release".
+- Tests: `tests/integration/unmatched-payments.test.ts` (A1–A5), four cases in `checkout-abandonment.test.ts` (D1, D2, A6),
+  `tests/unit/refund-list-unmatched.test.tsx`; the recording and payment guards mutation-checked.
+
+## 2026-11-22 — Fix: revenue counted an unpaid or failed checkout; main's unit gate is green again
+
+- The admin order stats and the dashboard's revenue windows left out expired and cancelled orders but still summed an
+  order awaiting payment or whose payment failed, until the sweep expired it. One predicate, `REVENUE_ORDER_WHERE`
+  (paid, not cancelled, not abandoned), now feeds both and the user console's spend. The average order value divides
+  by the paid orders it came from, in whole paise (Invariant 3). `tests/integration/admin-revenue.test.ts`; against
+  the old code it reads ₹650.72 where ₹100 is true.
+- The two previous merges failed CI's unit job on `docs-integrity`: `src/components/CLAUDE.md` (re-read; nothing in it
+  named the removed banner) moves to Verified 2026-11-22, and `docs/ARCHITECTURE.md` counts 411 test files.
+
 ## 2026-11-22 — Fix: an abandoned checkout showed in the admin as money a buyer spent
 
 - The user console summed `grandTotal` over every order a buyer had, so a payment that never arrived showed as spent

@@ -20,6 +20,7 @@ import { orderService } from "@server/checkout/order.service";
 import { orderRepository } from "@server/checkout/order.repository";
 import { decideConfirmation } from "@server/payments/confirmation";
 import { RAZORPAY_NOTES_ORDER_KEY } from "@server/payments/notes";
+import { refundService } from "@server/payments/refund.service";
 
 /**
  * How long an unpaid order keeps its reservation before any sweep will release it.
@@ -118,7 +119,15 @@ export class PaymentService {
       if (now.paymentStatus === PAYMENT_STATUS.PAID && now.paymentId === input.paymentId) {
         return { orderId: order.id, paymentStatus: PAYMENT_STATUS.PAID, alreadyConfirmed: true };
       }
-      throw new ConflictError("Order is already paid by a different payment");
+      // Captured after the order was released: owed back, recorded where the admin refunds it
+      // (unmatched-payments D1, D2). Only the webhook carries an amount, so only it records.
+      if (now.status === ORDER_STATUS.EXPIRED && now.paymentStatus !== PAYMENT_STATUS.PAID && input.amount !== undefined) {
+        await refundService.recordUnmatched({ orderId: order.id, gatewayPaymentId: input.paymentId, amountPaise: input.amount });
+        return { orderId: order.id, paymentStatus: now.paymentStatus, alreadyConfirmed: false, recordedUnmatched: true };
+      }
+      throw new ConflictError(
+        now.status === ORDER_STATUS.EXPIRED ? "Order was released before this payment arrived" : "Order is already paid by a different payment",
+      );
     }
 
     // Side effects belong to the transition, so they inherit its idempotency (D3):
@@ -225,13 +234,14 @@ export class PaymentService {
       if (state.kind === "captured") {
         // They did pay, they just did not tell us. Confirm through the same routine
         // every other trigger uses rather than a second transition here.
-        await this.confirmPayment({
+        const confirmed = await this.confirmPayment({
           localOrderId: order.id,
           gatewayOrderId: order.gatewayOrderId,
           paymentId: state.paymentId,
           amount: state.amount,
         });
-        return { orderId: order.id, outcome: "confirmed" };
+        // The sweep released it while we asked: the capture is owed back, not confirmed (unmatched-payments D2).
+        return { orderId: order.id, outcome: "recordedUnmatched" in confirmed ? "already-released" : "confirmed" };
       }
 
       if (state.kind === "in-flight") {

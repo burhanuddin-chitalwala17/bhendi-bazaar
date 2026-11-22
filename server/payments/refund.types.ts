@@ -6,6 +6,8 @@ export const REFUND_CAUSE = {
   RTO_DELIVERED: SHIPMENT_STATUS.RTO_DELIVERED,
   LOST: SHIPMENT_STATUS.LOST,
   DAMAGED: SHIPMENT_STATUS.DAMAGED,
+  /** A payment captured after its order was released: no parcel (unmatched-payments Q6). */
+  PAID_AFTER_RELEASE: "paid_after_release",
 } as const;
 export type RefundCause = (typeof REFUND_CAUSE)[keyof typeof REFUND_CAUSE];
 
@@ -52,7 +54,9 @@ export type RefundStartOutcome =
 export interface AdminRefundRecord {
   id: string;
   orderId: string;
-  shipmentId: string;
+  /** Null for a late payment's refund, which names its own payment instead (unmatched-payments D3). */
+  shipmentId: string | null;
+  gatewayPaymentId: string | null;
   amountPaise: number;
   cause: RefundCause;
   state: RefundState;

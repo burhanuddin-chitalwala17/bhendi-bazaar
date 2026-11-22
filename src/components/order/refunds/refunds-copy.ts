@@ -1,6 +1,6 @@
 import { formatCurrency as rupees } from "@/lib/format";
 import { PARCEL_ACTOR, SHIPMENT_STATUS, type ParcelActor } from "@server/shipping/domain/shipping.types";
-import type { RefundCause } from "@server/payments/refund.types";
+import { REFUND_CAUSE, type RefundCause } from "@server/payments/refund.types";
 
 /** order-fulfilment ux.md "admin refunds" and the copy deck; the build-time changes are Q38, awaiting the owner's re-sign. */
 export const REFUNDS_COPY = {
@@ -15,7 +15,8 @@ export const REFUNDS_COPY = {
   confirm: (paise: number) => `Refund ${rupees(paise)}`,
   keep: "Not now",
   refunding: "Refunding…",
-  success: (paise: number) => `Refund of ${rupees(paise)} started. Buyer emailed.`,
+  // A late payment's refund has no parcel notice to send (unmatched-payments Q8).
+  success: (paise: number, buyerEmailed = true) => `Refund of ${rupees(paise)} started.${buyerEmailed ? " Buyer emailed." : ""}`,
   unconfirmed: "We couldn't confirm the refund. Check Razorpay before trying again.",
   refused: (reason: string) => `Razorpay says: ${reason.replace(/\.$/, "")}. Check the payment in Razorpay before trying again.`,
   openRazorpay: "Open in Razorpay",
@@ -32,8 +33,9 @@ const CANCELLED_BY: Record<ParcelActor, string> = {
   [PARCEL_ACTOR.SYSTEM]: "cancelled",
 };
 
-/** Why it is owed (Q25): "cancelled by shop", "lost", "damaged", "returned". */
+/** Why it is owed (Q25): "cancelled by shop", "lost", "damaged", "returned", "paid after release". */
 export function causeLabel(cause: RefundCause, cancelledBy: ParcelActor | null): string {
+  if (cause === REFUND_CAUSE.PAID_AFTER_RELEASE) return "paid after release";
   if (cause === SHIPMENT_STATUS.CANCELLED) return cancelledBy ? CANCELLED_BY[cancelledBy] : "cancelled";
   if (cause === SHIPMENT_STATUS.RTO_DELIVERED) return "returned";
   return cause === SHIPMENT_STATUS.LOST ? "lost" : "damaged";
@@ -49,7 +51,9 @@ export const REFUND_LIST_COPY = {
   unconfirmed: "Unconfirmed",
   refused: "Refused",
   owed: "Owed",
-  refundAppearsHereWhen: "A refund appears here when a paid parcel is cancelled, lost, damaged or returned.",
+  refundAppearsHereWhen:
+    "A refund appears here when a paid parcel is cancelled, lost, damaged or returned, or a payment arrives after its order was released.",
+  noParcel: "—",
   refund: "Refund",
   parcel: "Parcel",
   why: "Why",
