@@ -154,14 +154,6 @@ export const RESULT_NOTE: Record<ConnectResult, { tone: NoteTone; text: (label: 
   unavailable: { tone: "warning", text: (label) => `Connecting ${label} isn't open yet. We'll show it here when it is.`, retry: false },
 };
 
-export const BANNER = {
-  renewalDue: (label: string, iso: string) =>
-    `${label} needs a quick re-approval by ${shortDate(iso)} to keep selling there.`,
-  needsReconnect: (label: string) => `${label} needs reconnecting. Stock and orders aren't updating there.`,
-  several: (count: number) => `${count} channels need attention.`,
-  openChannels: "Open Channels",
-} as const;
-
 /** The admin's per-marketplace product types (channel-types-editor). */
 export const TYPES_EDITOR = {
   saved: (label: string, typeName: string) => `Saved. ${label} types for ${typeName} updated.`,

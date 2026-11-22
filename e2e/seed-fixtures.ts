@@ -1,5 +1,6 @@
 import { ensureFixtures, isDisposableDb } from "../tests/helpers/test-db";
-import { E2E_PRODUCT } from "./fixtures";
+import { hash } from "bcryptjs";
+import { E2E_BUYER, E2E_PRODUCT } from "./fixtures";
 
 /**
  * Builds the journeys' world on the throwaway database, through the same fixtures the
@@ -41,6 +42,9 @@ async function seedFixtures() {
     update: { quantity: E2E_PRODUCT.stock },
     create: { productId: product.id, orgAddressId: fixtures.orgAddressId, quantity: E2E_PRODUCT.stock },
   });
+
+  const buyer = { name: E2E_BUYER.name, passwordHash: await hash(E2E_BUYER.password, 10), isEmailVerified: true, isBlocked: false };
+  await prisma.user.upsert({ where: { email: E2E_BUYER.email }, update: buyer, create: { email: E2E_BUYER.email, ...buyer } });
 
   await prisma.$disconnect();
 }

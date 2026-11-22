@@ -7,7 +7,6 @@ import { render, screen, within } from "@testing-library/react";
 
 import { MarketplaceCard } from "@/components/channel/marketplace-card";
 import { ChannelCardList } from "@/components/channel/channel-card-list";
-import { ChannelAttentionBanner } from "@/components/channel/channel-attention-banner";
 import { RESULT_NOTE } from "@/components/channel/channel-copy";
 import { orgChannelsSchema } from "@/lib/validation/schemas/org-channels.schema";
 import { CARD_STATE, CONNECT_RESULT, type ChannelCardDTO } from "@server/channels/channel-connection.types";
@@ -140,32 +139,5 @@ describe("the return note", () => {
     expect(RESULT_NOTE.other_shop.text("Amazon")).toBe(
       "This Amazon account is already connected to another shop. An account can belong to one shop only; disconnect it there first.",
     );
-  });
-});
-
-describe("the dashboard banner (spec R9)", () => {
-  it("shows nothing when no connection needs the shop", () => {
-    const { container } = render(<ChannelAttentionBanner orgId="org_1" attention={[]} />);
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it("names one problem with its fix, and summarises two", () => {
-    const { rerender } = render(
-      <ChannelAttentionBanner orgId="org_1" attention={[{ channel: "flipkart", label: "Flipkart", state: "needs_reconnect", reapproveBy: null }]} />,
-    );
-    expect(screen.getByText("Flipkart needs reconnecting. Stock and orders aren't updating there.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Reconnect" })).toBeInTheDocument();
-
-    rerender(
-      <ChannelAttentionBanner
-        orgId="org_1"
-        attention={[
-          { channel: "flipkart", label: "Flipkart", state: "needs_reconnect", reapproveBy: null },
-          { channel: "amazon", label: "Amazon", state: "renewal_due", reapproveBy: "2026-11-12T00:00:00.000Z" },
-        ]}
-      />,
-    );
-    expect(screen.getByText("2 channels need attention.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open Channels" })).toHaveAttribute("href", "/org/org_1/channels");
   });
 });
