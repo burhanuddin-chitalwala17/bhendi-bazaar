@@ -25,9 +25,9 @@ outbox, envelope encryption. Specific here:
   page by code is what Meta's review checks.
 
 ## Technical decisions
-- **D1 — Settings (R1).** `META_APP_ID`, `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`,
-  `META_SIGNUP_CONFIG_ID`, read only by `providers/meta/settings.ts` in channels, validated with Zod
-  at first use; production refuses to start without them once `SOCIAL_CONNECT` opens a platform
+- **D1 — Settings (R1, Q5).** `META_APP_ID`, `META_APP_SECRET`, `META_INSTAGRAM_APP_ID`,
+  `META_INSTAGRAM_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`, `META_SIGNUP_CONFIG_ID`, read only by
+  `providers/meta/settings.ts` in channels, each validated with Zod on its own at first use; production refuses to start without them once `SOCIAL_CONNECT` opens a platform
   (A-D18). Named for what they hold, not the vendor's product (ADR-0037).
 - **D2 — Graph client and limits (A-D4).** `providers/meta/graph-client.ts` and `meta-limits.ts` as
   the architecture describes; `providers/meta/errors.ts` maps Meta's numeric codes (190 expired
@@ -73,6 +73,11 @@ outbox, envelope encryption. Specific here:
 - **D11 — No Meta text reaches a log or person (R9).** `graph-client` logs the structured line of
   A-D20 only; a unit test runs A1–A4 with a spy on `console.*` and fails on any payload field,
   token prefix (`EAA`, `IGAA`) or Graph error message.
+
+- **D12 — Secret rotation (hazard).** `META_APP_SECRET_PREVIOUS`, optional, is set while Meta's
+  app secret is being rotated: a signature (webhook or signed request) is accepted under either
+  secret, checked in constant time, and the intake counts which one matched, so the operator removes
+  the previous one when its count reaches zero. `appsecret_proof` always uses the current secret.
 
 ## Packages
 None.
@@ -124,9 +129,10 @@ client code, `noindex`; phone first, one centred card at `md:` and `lg:`.
 - Load: the webhook route at 200 deliveries a second, p95 under 300 ms (A-D17).
 
 ## Delivery
-1. Settings, Graph client, errors, limits, fake adapters (no behaviour).
+1. Settings, Graph client, errors, limits (no behaviour).
 2. Intake routes, `MetaEvent`, unrouted counts (behaviour: events stored).
-3. Drain, translators, sinks registry, lanes (behaviour: facts handed on).
+3. Drain, translators, sinks registry, lanes, and the fake adapters with the ports they implement
+   (behaviour: facts handed on).
 4. Deauthorize, data deletion and its page; availability and Coming soon (behaviour).
 5. Seal, retention, sweep.
 

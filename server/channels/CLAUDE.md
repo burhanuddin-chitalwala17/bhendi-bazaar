@@ -1,12 +1,12 @@
 # CLAUDE.md — channels domain
 
-- **Verified:** 2026-11-12
+- **Verified:** 2026-11-23
 - **Covers:** `server/channels/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md). This file covers **channels** only. Requirements are in [docs/specs/marketplace-integration/](../../docs/specs/marketplace-integration/); every decision, with who made it, is in each spec's `decisions.md`.
 
 ## Purpose
-Channels owns a shop's authorised connection to a marketplace: the consent round trip, the encrypted tokens, their renewal, and a daily health check. Later subfeatures of marketplace-integration (import, merge, listings, stock sync, publish) act on a marketplace through this domain and never hold a credential themselves.
+Channels owns a shop's authorised connection to a marketplace, and to its own social accounts on Meta (Instagram, WhatsApp; ADR-0068, social-selling): the consent round trip, the encrypted tokens, their renewal, and a daily health check. Later subfeatures of marketplace-integration (import, merge, listings, stock sync, publish) act on a marketplace through this domain and never hold a credential themselves.
 
 ## Boundaries
 
@@ -31,6 +31,7 @@ Channels owns a shop's authorised connection to a marketplace: the consent round
 - **A pass over every shop reads once and writes once.** Its marketplace calls are per account (each has its own token and limit); its statements are not per shop: one read of what it needs, one write of every answer (marketplace-publish Q22, Q23; inventory-sync Q26).
 - **A marketplace's issue message may reach the shop** (marketplace-publish Q6): the issue's own sentence, plain text, cut to 300 characters. Never a response body.
 - **Never call a live marketplace from a test.** Stub `fetch`.
+- **Every Meta call goes through the one Graph client** (`providers/meta/graph-client.ts`; social-selling TRD A-D4): the pinned Graph version, `appsecret_proof`, a ten-second timeout, the answer parsed with the caller's schema, failures as `MetaError` carrying our `SOCIAL_ERROR` code (`social/types.ts`), one log line with no body, token or Meta text. A call that changes something passes `mayHaveTakenEffect`, so a timeout is `UNCERTAIN`, never retried blind (ADR-0080). Meta's published limits live in `meta-limits.ts` with their source and date; the app's settings are read only in `providers/meta/settings.ts`.
 
 ## Structure
 
@@ -68,4 +69,6 @@ Channels owns a shop's authorised connection to a marketplace: the consent round
 | `channel-catalogue.service.ts` | Reads each marketplace's own types into listing's channel catalogue, through the home brand, once a day from `maintain`; a marketplace with no definitions reads nothing (listing-model/channel-catalogue D2) |
 | `channel-types.service.ts` | A marketplace's type definitions and type search, read through one org's connection (the home brand's) for requests; the token stays here (setup-requests D7, D10) |
 | `listing-complaints.ts` | Hands a send's, create's or look's errors to requests as one job per batch, in the caller's transaction; a failed hand-over is logged, never thrown (setup-requests D5, ADR-0053) |
+| `social/types.ts` | Our words for the social platforms: `SOCIAL_PLATFORM`, `SOCIAL_ERROR` (social-selling TRD A-D3) |
+| `providers/meta/` | The Meta platform layer: `graph-client.ts` (the one client), `errors.ts` (Meta's codes in ours), `meta-limits.ts` (dated limits and lane pace), `settings.ts` (the app's settings, the secret under rotation) |
 | `providers/` | `MarketplaceProvider`, one folder per marketplace (`*.listings.ts` reads its listings, `*.stock.ts` its locations, counts and orders, `*.publish.ts` its listing rules, publish, status and create; `stock.ts` and `publish.ts` the shared shapes), and `listing-read.ts`'s shared sink, retry and paise helpers |

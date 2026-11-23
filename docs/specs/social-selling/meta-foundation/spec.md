@@ -48,11 +48,13 @@ connection, it would be built twice and drift; built here, the tools above never
   (Q2).
 
 ## Hazards the TRD must answer
-- **A forged event** naming a real shop's account: only a valid signature makes it real.
-- **Meta retries for hours** when we answer slowly or fail: acknowledge first, work after.
-- **A burst** (a viral post's comments) must queue, not drop and not overwhelm the database.
-- **Our app's secret is rotated**: events signed with the old one during the change.
+- **A forged event** naming a real shop's account: only a valid signature makes it real. Answered by D3.
+- **Meta retries for hours** when we answer slowly or fail: acknowledge first, work after. Answered by D3, D4.
+- **A burst** (a viral post's comments) must queue, not drop and not overwhelm the database. Answered
+  by D3, D4, D5.
+- **Our app's secret is rotated**: events signed with the old one during the change. Answered by D12.
 - **A deletion request names a person, not a shop**: it must find every connection they touch.
+  Answered by D7.
 
 ## Product acceptance
 - A1 — A correctly signed event is stored once and becomes one neutral job; the same event sent

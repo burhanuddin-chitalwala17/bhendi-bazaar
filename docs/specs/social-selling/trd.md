@@ -100,10 +100,9 @@ shop down. The answer is a small set of mechanisms, each written once and used b
   pinned as one constant (an upgrade is a reviewed change with its changelog read); every call
   carries `appsecret_proof` (HMAC-SHA256 of the token with the app secret), which Meta recommends
   and which makes a leaked token useless without our secret; a 10 s timeout; JSON parsed with Zod
-  at the edge; failures classified into `MetaAuthError` (reconnect), `MetaRateLimitError`
-  (with retry-after), `MetaUnavailableError` (try later), `MetaRefusedError` (Meta's code mapped
-  to our `SOCIAL_ERROR` code and a 300-character message where ux.md shows Meta's reason) and
-  `MetaUncertainError` (sent, no answer). It reads `X-Business-Use-Case-Usage` and
+  at the edge; failures classified into one `MetaError` carrying our `SOCIAL_ERROR` code: auth (reconnect),
+  rate limited (with retry-after), unavailable (try later), refused (with Meta's reason, 300
+  characters, only where ux.md shows it) and uncertain (sent, no answer) (meta-foundation Q6). It reads `X-Business-Use-Case-Usage` and
   `X-App-Usage` on every response and reports pressure to the lane (D9). Bodies are never
   logged (channels CLAUDE.md). Limits Meta publishes (100 API posts a day per Instagram account,
   80 messages a second per WhatsApp number, 5,000 items per catalogue batch, private reply once

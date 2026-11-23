@@ -54,6 +54,14 @@ npm run dev                 # http://localhost:3000
 | `AMAZON_SOLUTION_ID` | ○ | The Amazon app's own id, `amzn1.sp.solution…`, used in the consent link |
 | `FLIPKART_APP_ID` / `FLIPKART_APP_SECRET` | ○ | Flipkart third-party app (Partner portal → Manage API Access). Unset means Flipkart shows as unavailable |
 | `CREDENTIAL_KEYS` | ✅ | Encrypts secrets at rest (carrier passwords, marketplace tokens): comma-separated `version:64-hex` pairs; the highest version encrypts, every listed one decrypts. Generate with `openssl rand -hex 32`. Same value on the site and the worker; losing it means every shop reconnects. To rotate, add a higher version and keep the old until the daily job has re-encrypted |
+| `META_APP_ID` | ○ | The one Meta app every Instagram and WhatsApp connection runs through (social-selling meta-foundation D1). Needed once a platform opens in `SOCIAL_CONNECT`; read only in `server/channels/providers/meta/settings.ts` |
+| `META_APP_SECRET` | ○ | The Meta app's secret: verifies Meta's webhook and signed-request signatures and signs every Graph call (`appsecret_proof`). Same value on the site and the worker |
+| `META_APP_SECRET_PREVIOUS` | ○ | Only while Meta's app secret is being rotated: signatures under the previous secret are still accepted (meta-foundation D12). Remove once its matches stop |
+| `META_INSTAGRAM_APP_ID` | ○ | Instagram API with Instagram Login's own app id, from the Meta app's Instagram › API setup (meta-foundation Q5) |
+| `META_INSTAGRAM_APP_SECRET` | ○ | Its secret: exchanges Instagram login codes and verifies Instagram webhook signatures |
+| `META_INSTAGRAM_APP_SECRET_PREVIOUS` | ○ | Only while the Instagram app secret is being rotated (D12) |
+| `META_WEBHOOK_VERIFY_TOKEN` | ○ | Any long random string, also entered in Meta's webhook settings; Meta echoes it when it verifies our webhook routes |
+| `META_SIGNUP_CONFIG_ID` | ○ | The configuration id of the WhatsApp Embedded Signup flow, from the Meta app's Facebook Login for Business settings |
 | `RESEND_API_KEY` / `EMAIL_FROM` | ✅ | Transactional email |
 | `NEXT_PUBLIC_APP_URL` | ✅ | The app's public origin. **Every outbound link is built from it** — verification, password reset, order tracking (`server/shared/app-url.ts`, `appUrl()`). Unset and email sends throw rather than mailing `undefined/...` |
 | `DATABASE_POOL_MAX` | ○ | Connections each server instance may hold (`server/shared/prisma.ts`). Unset keeps 10 in production. Set 3–5 once `DATABASE_URL` is the **pooled** string, so many instances cannot exhaust the database's connections. Never below 3 (refused, with an error in the log): a transaction holding one connection can need a second, and two checkouts at once would wait out the pool. Web only; leave it unset for the worker, whose four concurrent jobs need the default |
