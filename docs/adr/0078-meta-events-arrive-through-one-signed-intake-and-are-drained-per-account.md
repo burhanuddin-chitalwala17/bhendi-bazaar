@@ -14,12 +14,12 @@ two events of one conversation in parallel.
 
 ## Decision
 
-1. **One route verifies, stores and acknowledges.** The Meta webhook route checks
+1. **One intake verifies, stores and acknowledges.** Each Meta product's webhook route checks
    `X-Hub-Signature-256` with the app secret in constant time, writes one `MetaEvent` row per change
    with a dedupe key per event kind (`ON CONFLICT DO NOTHING`), and answers 200. It does no other
    work. A storage failure answers 500 so Meta retries.
-2. **Events for accounts we do not hold are kept as unrouted and acknowledged**, counted on the
-   admin overview, never answered non-2xx: late events after a disconnect are normal, and
+2. **Events for accounts we do not hold are dropped and acknowledged**: no payload is kept, a daily
+   count is, shown on the admin overview; never answered non-2xx: late events after a disconnect are normal, and
    repeated failures would disable the app's webhooks.
 3. **A drain job per connection** turns stored events into neutral facts, in occurrence order, under
    a lease that keeps one drain per account at a time. A poison event is retried five times, then

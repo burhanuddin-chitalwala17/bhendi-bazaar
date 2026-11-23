@@ -28,9 +28,9 @@ connection, it would be built twice and drift; built here, the tools above never
 - R3 — Every event is stored once, keyed by Meta's own id, before anything acts on it; Meta
   sending it again changes nothing. We answer Meta at once and do the work afterwards, so Meta
   never retries because we were slow.
-- R4 — Events reach the rest of the platform only as neutral jobs on the queue: a message
-  received, a comment received, a status changed, a contact changed. No tool sees a Meta payload
-  (parent Q7).
+- R4 — Events reach the rest of the platform only as neutral facts handed on by a queue job: a
+  message received, a comment received, a status changed, a contact changed. No tool sees a Meta
+  payload (parent Q7, Q3).
 - R5 — An event for an account no shop has connected is dropped, recorded only as a count.
 - R6 — When an account removes our app inside Instagram or Meta, Meta's notice turns that
   connection to Needs reconnecting at once (Q1).

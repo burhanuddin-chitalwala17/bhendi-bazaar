@@ -109,8 +109,8 @@ shop down. The answer is a small set of mechanisms, each written once and used b
   80 messages a second per WhatsApp number, 5,000 items per catalogue batch, private reply once
   per comment within 7 days) live in `meta-limits.ts` as data, each with its source and checked
   date, because Meta's own pages disagree and change (INTEGRATIONS).
-- **D5 — One webhook intake (ADR-0078).** `app/api/webhooks/meta/route.ts` serves both
-  products (one app, `object` = `instagram` or `whatsapp_business_account`):
+- **D5 — One webhook intake, two routes (ADR-0078, meta-foundation R2).** `app/api/webhooks/meta/instagram/route.ts`
+  and `…/meta/whatsapp/route.ts`, thin handlers over one intake service in `channels` (one Meta app):
   - `GET` answers Meta's verification with `hub.challenge` when `hub.verify_token` matches
     `META_WEBHOOK_VERIFY_TOKEN`, compared in constant time.
   - `POST` reads the raw body (capped at 3 MB, Meta's limit), verifies `X-Hub-Signature-256`
@@ -123,9 +123,10 @@ shop down. The answer is a small set of mechanisms, each written once and used b
     30 days only, meta-foundation Q2). One `INSERT … ON CONFLICT (dedupeKey) DO NOTHING` per
     delivery, then one `enqueueLater` per connection touched (D6). Answers 200 in well under a
     second; a database failure answers 500 so Meta retries, keeping at-least-once intact.
-  - An event for an account we do not hold (disconnected, or never ours) is stored as `UNROUTED`
-    and answered 200: Meta delivers late events after a disconnect by design, and repeated
-    non-2xx answers get an app's webhooks disabled. This departs from the Razorpay rule ("an
+  - An event for an account we do not hold (disconnected, or never ours) is dropped: its payload
+    is never stored, a per-day `UNROUTED` count is incremented (meta-foundation R5), and it is
+    answered 200: Meta delivers late events after a disconnect by design, and repeated non-2xx
+    answers get an app's webhooks disabled. This departs from the Razorpay rule ("an
     unmatched payload answers non-2xx", `src/app/api/CLAUDE.md`) for that reason, and the
     count of `UNROUTED` and failed events is on the admin overview so it is never invisible.
   - Rate limiting: classified `exempt` in `src/lib/rate-limit/registry.ts` with the reason
@@ -141,7 +142,8 @@ shop down. The answer is a small set of mechanisms, each written once and used b
   never blocks a shop's inbox. More pending → it re-enqueues itself. Ordering holds per account,
   which is the order Meta guarantees nothing about but a reader expects; across accounts, drains
   run in parallel up to the worker's concurrency.
-- **D7 — Neutral facts and sinks.** `shared/social-events/` declares the facts as Zod
+- **D7 — Neutral facts and sinks (meta-foundation R4).** The drain is the queue job that hands
+  events on; no tool sees a Meta payload. `shared/social-events/` declares the facts as Zod
   schemas: `InboundMessage`, `OutboundEcho` (sent from the shop's app), `MessageStatus`,
   `Reaction`, `MessageEdit`, `CommentEvent`, `CartOrder`, `ContactChange`, `TemplateStatus`,
   `AccountUpdate`, `Deauthorized`, `DeletionRequest`. A sink is `{ fact, handle(batch) }`; several
