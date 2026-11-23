@@ -23,8 +23,8 @@
    answer this" with **Add** (opens the setting, returns here). Tap a question to edit its words.
 4. **Shop hours and away.** Line "Shop hours: Mon–Sat 10 am–9 pm · Edit in Messaging" and the away
    line preview "We're closed now and reply from 10 am."
-5. **When you step in.** Chips **30 min · 2 h · 12 h**: "After you reply, automatic replies wait
-   this long in that chat."
+5. **When you step in.** Chips **30 min · 2 h · 12 h** (12 h selected, the default of Q5): "After
+   you reply, automatic replies wait this long in that chat."
 6. **Instagram starter questions.** With Instagram connected: "Show on your Instagram profile" with
    up to four of the questions picked → appears on the profile's message screen.
 7. **One switch, parts inside.** The top switch turns every automatic reply on or off. Inside,
