@@ -52,7 +52,7 @@
 | Many items | Last 20, "See all" | — |
 
 ## Copy deck
-- "Comment-to-DM", "Keyword", "One word, like SHOP or PRICE.", "Edit message", "Also reply publicly", "Sent you a DM 📩".
+- "Comment-to-DM", "Keyword", "One word, like SHOP or PRICE.", "For this post only; posts without their own use your shop-wide rule.", "Edit message", "Also reply publicly", "Sent you a DM 📩".
 - Default DM "Here's the <product> you asked about 👇" + card, buttons "Buy now", "See details".
 - Activity "<n> DMs today · <n> in total", outcomes "DM sent", "Already sent to them", "Too late · over 7 days", "Nothing sent · the products in this DM are no longer sold".
 - "Pause" → "Paused · new comments won't get a DM"; "Resume".
