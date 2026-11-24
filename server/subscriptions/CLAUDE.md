@@ -1,12 +1,12 @@
 # CLAUDE.md — subscriptions domain
 
-- **Verified:** 2026-11-12
+- **Verified:** 2026-11-24
 - **Covers:** `server/subscriptions/**`
 
 > Read the project-wide rules first: [`/CLAUDE.md`](../../CLAUDE.md). Requirements are in [docs/specs/subscriptions/feature-access/](../../docs/specs/subscriptions/feature-access/); every decision is in its `decisions.md`.
 
 ## Purpose
-What a shop may use of the paid features (Channels, Storefront, Image enhancement), and the one question every other domain asks: *may this org use this feature now?* Billing will later flip the same switches; it does not exist yet (feature-access Q21).
+What a shop may use of the paid features (Channels, Storefront, Image enhancement, Social selling), and the one question every other domain asks: *may this org use this feature now?* Billing will later flip the same switches; it does not exist yet (feature-access Q21).
 
 ## Boundaries
 **Owns:** `OrgFeature` (one row per shop and feature, written only by `org-feature.repository.ts`), the closed set `FEATURE`, and `FeatureLockedError`'s meaning. **Does not own:** what a feature does. Each domain refuses its own actions by asking `featureAccessService.assert`; public reads are filtered in `src/data-access-layer/`, so catalog and listing never learn about plans.

@@ -163,6 +163,12 @@ export const RESULT_NOTE: Record<ConnectResult, { tone: NoteTone; text: (label: 
   unreachable: { tone: "error", text: (label) => `${label} didn't respond. Nothing was connected. Try again in a minute.`, retry: true },
   full: { tone: "warning", text: (label) => `${label} is full for now. We'll tell you here when it opens.`, retry: false },
   unavailable: { tone: "warning", text: (label) => `Connecting ${label} isn't open yet. We'll show it here when it is.`, retry: false },
+  personal: {
+    tone: "warning",
+    text: () =>
+      "That's a personal Instagram account. Bhendi Bazaar works with business and creator accounts, which are free. In Instagram: Profile → ☰ → Account type and tools → Switch to professional account.",
+    retry: true,
+  },
 };
 
 /** The admin's per-marketplace product types (channel-types-editor). */

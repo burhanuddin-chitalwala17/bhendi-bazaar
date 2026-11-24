@@ -28,6 +28,7 @@ export const ORG_ROUTE_FEATURES: Record<string, Classification> = {
   "POST /api/org/[orgId]/brands": { core: FREE },
 
   "GET /api/org/[orgId]/channels/[channel]/connect": CH,
+  "GET /api/org/[orgId]/channels/instagram/connect": { feature: FEATURE.SOCIAL_SELLING },
   "POST /api/org/[orgId]/channels/[channel]/connection/check": CH,
   "DELETE /api/org/[orgId]/channels/[channel]/connection": {
     core: "Disconnecting is always allowed: a lock never traps a shop's marketplace credential.",

@@ -6,10 +6,12 @@ import {
   READ_ERROR,
   READ_STALL_MS,
   READ_STATE,
+  type ConnectionChannel,
   type ConnectionError,
   type MarketplaceChannel,
   type ReadError,
 } from "./channel-connection.types";
+import type { SocialPlatform } from "./social/types";
 import { STOCK_SYNC, type StockProblem, type StockSyncState } from "./channel-stock.types";
 
 /**
@@ -133,7 +135,7 @@ export const channelConnectionRepository = {
     return await prisma.channelConnection.findUnique({ where: { id }, select: ROW });
   },
 
-  async find(orgId: string, channel: MarketplaceChannel, db: ConnectionDb = prisma): Promise<ConnectionRow | null> {
+  async find(orgId: string, channel: ConnectionChannel, db: ConnectionDb = prisma): Promise<ConnectionRow | null> {
     return await db.channelConnection.findUnique({
       where: { orgId_channel: { orgId, channel } },
       select: ROW,
@@ -142,7 +144,7 @@ export const channelConnectionRepository = {
 
   /** Another shop's live connection to this marketplace account, if any (D9). */
   async liveElsewhere(
-    channel: MarketplaceChannel,
+    channel: ConnectionChannel,
     externalAccountId: string,
     orgId: string,
     db: ConnectionDb = prisma,
@@ -190,6 +192,41 @@ export const channelConnectionRepository = {
       update: data,
       select: { id: true },
     });
+  },
+
+  /**
+   * A social connection (connect-instagram D1): one sealed long-lived token, no refresh token. The
+   * caller holds the row lock and has checked the account; the unique index refuses a second shop.
+   */
+  async connectSocial(
+    db: ConnectionDb,
+    input: { orgId: string; channel: SocialPlatform; externalAccountId: string; accessToken: string; accessTokenExpiresAt: Date | null; userId: string; now: Date },
+  ): Promise<{ id: string }> {
+    const data = {
+      state: CONNECTION_STATE.CONNECTED,
+      externalAccountId: input.externalAccountId,
+      accessToken: input.accessToken,
+      accessTokenExpiresAt: input.accessTokenExpiresAt,
+      refreshToken: null,
+      refreshTokenExpiresAt: null,
+      authorizedAt: input.now,
+      connectedById: input.userId,
+      connectedAt: input.now,
+      lastCheckedAt: input.now,
+      lastErrorCode: null,
+      lastErrorAt: null,
+    };
+    return await db.channelConnection.upsert({
+      where: { orgId_channel: { orgId: input.orgId, channel: input.channel } },
+      create: { orgId: input.orgId, channel: input.channel, ...data },
+      update: data,
+      select: { id: true },
+    });
+  },
+
+  /** Takes the shop's row for this channel under `FOR UPDATE`, if it exists, for the rest of the transaction. */
+  async lockFor(db: ConnectionDb, orgId: string, channel: ConnectionChannel): Promise<void> {
+    await (db as typeof prisma).$queryRaw`SELECT "id" FROM "ChannelConnection" WHERE "orgId" = ${orgId} AND "channel" = ${channel} FOR UPDATE`;
   },
 
   /** Retire the connection: tokens gone, who and when kept (Q4). */

@@ -11,3 +11,10 @@ export const channelPlan = {
   /** The orgs among these that hold Channels: one read for a pass over many shops (D8). */
   allowed: (orgIds: readonly string[]) => featureAccessService.allowedOrgs(FEATURE.CHANNELS, orgIds),
 };
+
+/** Instagram and WhatsApp sit behind their own lock, Social selling (social-selling A-D21). */
+export const socialPlan = {
+  assert: (orgId: string) => featureAccessService.assert(orgId, FEATURE.SOCIAL_SELLING),
+  can: (orgId: string) => featureAccessService.can(orgId, FEATURE.SOCIAL_SELLING),
+  allowed: (orgIds: readonly string[]) => featureAccessService.allowedOrgs(FEATURE.SOCIAL_SELLING, orgIds),
+};

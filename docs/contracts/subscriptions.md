@@ -9,7 +9,7 @@ The subscriptions shapes that cross the browser/server boundary. Rules, the erro
 ## subscriptions/feature-access
 
 What a shop may use of the paid features (`server/subscriptions/feature-access.types.ts`, D2–D4, D12).
-**`FeatureAccessDTO`** (`channels`, `storefront`, `imageEnhancement`: booleans) is what a page hands
+**`FeatureAccessDTO`** (`channels`, `storefront`, `imageEnhancement`, `socialSelling`: booleans; `socialSelling` added by social-selling connect-instagram) is what a page hands
 the leaves that draw paid actions; the home brand's is all true. **`OrgPlanDTO`** (`homeBrand`,
 `switches`) is the admin's Plan tab; each **`FeatureSwitchDTO`** is `feature`, `enabled`, `changedAt`
 (null when never switched, which is off) and `changedBy` (`name`, `email`, or null).

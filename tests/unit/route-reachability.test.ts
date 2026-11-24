@@ -35,6 +35,7 @@ const EXTERNALLY_CALLED: Record<string, string> = {
   "/feeds/google.xml": "Google Merchant Center fetches it on the schedule its data source sets.",
   "/feeds/meta.xml": "Meta Commerce Manager fetches it on the schedule its data feed sets.",
   "/api/health": "The uptime monitor (UptimeRobot) probes it; ?deep=1 also checks the database.",
+  "/api/channels/instagram/callback": "Instagram redirects the shop here after sign-in; the signed state authenticates it (connect-instagram D1).",
   "/api/channels/[channel]/callback": "Amazon and Flipkart redirect the shop here after consent; the signed state authenticates it (channel-connectors D4).",
 };
 

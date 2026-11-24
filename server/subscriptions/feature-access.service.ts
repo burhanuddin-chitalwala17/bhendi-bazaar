@@ -28,6 +28,7 @@ function toAccess(enabled: readonly string[]): FeatureAccessDTO {
     channels: has.has(FEATURE.CHANNELS),
     storefront: has.has(FEATURE.STOREFRONT),
     imageEnhancement: has.has(FEATURE.IMAGE_ENHANCEMENT),
+    socialSelling: has.has(FEATURE.SOCIAL_SELLING),
   };
 }
 

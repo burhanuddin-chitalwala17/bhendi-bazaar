@@ -43,13 +43,13 @@ describe.skipIf(!isDisposableDb)("feature access (local db)", () => {
   });
 
   it("locks every feature of a shop no admin has switched (spec A6, Q15)", async () => {
-    expect(await access.forOrg(lockedOrg)).toEqual({ channels: false, storefront: false, imageEnhancement: false });
+    expect(await access.forOrg(lockedOrg)).toEqual({ channels: false, storefront: false, imageEnhancement: false, socialSelling: false });
     await expect(access.assert(lockedOrg, FEATURE.CHANNELS)).rejects.toBeInstanceOf(FeatureLockedError);
   });
 
   it("holds every feature for the home brand with no row at all (spec A6, Q13)", async () => {
     expect(await prisma.orgFeature.count({ where: { orgId: homeOrg } })).toBe(0);
-    expect(await access.forOrg(homeOrg)).toEqual({ channels: true, storefront: true, imageEnhancement: true });
+    expect(await access.forOrg(homeOrg)).toEqual({ channels: true, storefront: true, imageEnhancement: true, socialSelling: true });
     expect((await access.allowedOrgs(FEATURE.STOREFRONT, [homeOrg, lockedOrg])).has(homeOrg)).toBe(true);
     await expect(access.set(adminId, homeOrg, FEATURE.CHANNELS, false)).rejects.toThrow(/home brand/);
   });

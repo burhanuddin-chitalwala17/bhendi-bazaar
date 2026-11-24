@@ -1,6 +1,6 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-import type { MarketplaceChannel } from "./channel-connection.types";
+import type { ConnectionChannel } from "./channel-connection.types";
 
 /**
  * The OAuth `state` a connect attempt carries to the marketplace and back (TRD D4): who started
@@ -16,7 +16,7 @@ export type ConnectPurpose = (typeof CONNECT_PURPOSE)[keyof typeof CONNECT_PURPO
 export interface ConnectState {
   orgId: string;
   userId: string;
-  channel: MarketplaceChannel;
+  channel: ConnectionChannel;
   purpose: ConnectPurpose;
   nonce: string;
   expiresAt: number;

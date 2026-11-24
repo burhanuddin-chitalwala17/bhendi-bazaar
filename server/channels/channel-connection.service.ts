@@ -235,7 +235,10 @@ export const channelConnectionService = {
     consent: { code: string | null; state: string | null; declined: boolean; externalAccountId: string | null },
     now = new Date(),
   ): Promise<ConnectResult> {
-    const { orgId, userId, channel, purpose } = state;
+    const { orgId, userId, purpose } = state;
+    // A state signed for a social platform is never spent on a marketplace's exchange.
+    if (!isMarketplaceChannel(state.channel)) return CONNECT_RESULT.EXPIRED;
+    const channel = state.channel;
     if (consent.declined || !consent.code) return CONNECT_RESULT.CANCELLED;
     await channelPlan.assert(orgId);
     const provider = providerFor(channel);

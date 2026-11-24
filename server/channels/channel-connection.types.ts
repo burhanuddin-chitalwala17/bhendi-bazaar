@@ -1,5 +1,6 @@
 import { CHANNEL, type Channel } from "@server/shared/channels";
 import type { StockSyncState } from "./channel-stock.types";
+import type { SocialPlatform } from "./social/types";
 import type { SettleFactsDTO, SettleTypeDTO } from "./channel-facts.types";
 
 /**
@@ -13,6 +14,9 @@ export type MarketplaceChannel = (typeof MARKETPLACE_CHANNELS)[number];
 
 export const isMarketplaceChannel = (value: string): value is MarketplaceChannel =>
   (MARKETPLACE_CHANNELS as readonly string[]).includes(value);
+
+/** What a `ChannelConnection` may be to: a marketplace, or a social platform (ADR-0068). */
+export type ConnectionChannel = MarketplaceChannel | SocialPlatform;
 
 /** What a `ChannelConnection` row stores (D2). The rest of a card's state is derived on read. */
 export const CONNECTION_STATE = {
@@ -64,6 +68,8 @@ export const CONNECT_RESULT = {
   UNREACHABLE: "unreachable",
   FULL: "full",
   UNAVAILABLE: "unavailable",
+  /** An Instagram personal account: nothing stored (connect-instagram R3). */
+  PERSONAL: "personal",
 } as const;
 export type ConnectResult = (typeof CONNECT_RESULT)[keyof typeof CONNECT_RESULT];
 

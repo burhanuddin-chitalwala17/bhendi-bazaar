@@ -44,6 +44,9 @@ export const ROUTE_RATE_LIMITS = {
   "DELETE /api/cart": { policy: P.CART },
   "POST /api/cart/sync": { policy: P.CART },
 
+  "GET /api/channels/instagram/callback": {
+    exempt: "Instagram's sign-in redirect, once per connection; its signed state authenticates it.",
+  },
   "GET /api/channels/[channel]/callback": {
     exempt: "The marketplace's consent redirect, once per connection; its signed state authenticates it.",
   },

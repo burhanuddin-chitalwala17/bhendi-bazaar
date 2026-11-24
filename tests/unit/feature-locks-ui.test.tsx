@@ -16,7 +16,7 @@ import { lockedFeatureOf } from "@/components/subscriptions/lock-refusal";
 import { ApiError } from "@/lib/api-error";
 import { ALL_ON } from "@server/subscriptions/feature-access.types";
 
-const NONE = { channels: false, storefront: false, imageEnhancement: false };
+const NONE = { channels: false, storefront: false, imageEnhancement: false, socialSelling: false };
 
 function inShop(features: typeof NONE, node: React.ReactNode) {
   return render(<ShopPlanProvider shop="Zara Hijab House" features={features}>{node}</ShopPlanProvider>);
