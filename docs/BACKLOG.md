@@ -236,6 +236,13 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [seller-profile/brand-page](specs/seller-profile/brand-page/) | The about page becomes a brand landing page: hero, derived proof, story with a real person, category tiles, newest goods, terms, one call to shop; finished when the seller has written one line | ✅ Implemented — PR-182, PR-184, PR-208 (2026-09-28) |
 | [media-library/renditions](specs/media-library/renditions/) | Surfaces declared once; a rendition made on demand from the source or the seller's crop, kept as a derived image | ✅ Implemented — PR-211 (2026-09-29) |
 | [media-library/video-hosting](specs/media-library/video-hosting/) | A short video uploads from the phone like a photograph; the worker makes the sizes that play, and it is an image's peer in the library | ✅ Implemented — 2026-09-27 (PR-180, PR-181, PR-183) |
+| [media-library/viewer](specs/media-library/viewer/) | Any library item full screen, swiping through the rest; the original saved to the device | 📝 Accepted — 2026-11-24; ready to build |
+| [media-library/bulk-actions](specs/media-library/bulk-actions/) | Select many library items; download as one zip, retire, or tag them together | 📝 Accepted — 2026-11-24; ready to build |
+| [media-library/picker-filters](specs/media-library/picker-filters/) | The library picker filters by tag, usage, source and date, as the Library page does | 📝 Accepted — 2026-11-24; ready to build |
+| viewer Q6 *(later)* | The full-screen viewer on surfaces other than the Library | parked |
+| bulk-actions Q8 *(later)* | Selecting library items beyond what is loaded | parked |
+| bulk-actions Q9 *(later)* | Bulk crop or improve | parked |
+| picker-filters Q4 *(later)* | Search the picker by product name | parked |
 | [image-enhancement](specs/image-enhancement/) | A phone photo becomes a marketplace-grade image on demand — cut out, on white, in a studio, in a scene, brightened, enlarged — each a tool applied alone, each result accepted or discarded | ✅ Implemented — PR-185, PR-190, PR-191, PR-193, PR-198 (2026-09-28) |
 | [listing-vocabulary](specs/listing-vocabulary/) | One description of a product that every surface and every channel reads — split into three subfeatures below | ✅ Implemented — PR-236…PR-253 (2026-10-04) |
 | [listing-vocabulary/categories](specs/listing-vocabulary/categories/) | Nine categories, each naming the kinds it holds and the few questions it asks; measurements stored, size labels derived | ✅ Implemented — PR-236…PR-246 (2026-10-03) |
