@@ -9,6 +9,8 @@ The owner writes specifications; this skill is what makes the code that follows 
 
 ## 0. Refuse what cannot be built yet
 
+**First, the session.** If this conversation wrote or discussed the feature's spec, ux or TRD, do not build here: print the handoff (`/bb-build <feature> unit <n>` per unit, `after U<k>` or `independent`, from the TRD's Delivery list) and stop. Planning context is carried by every build step and pays for nothing the TRD does not already hold ([ADR-0080](../../../docs/adr/0080-planning-and-building-never-share-a-session.md)). A build session builds one unit, or one run of `after` units, then ends.
+
 Read `docs/specs/<feature>/spec.md`, `decisions.md`, `ux.md` and `trd.md`. Stop and say why if:
 - `decisions.md` has an entry still **open** that a unit depends on, or the spec, ux or TRD cites a Q whose State is `superseded` (follow the chain to the binding Q and fix the citation first). Read every Q's State before building on it; `decided` and `implemented` bind, `parked` is not built ([ADR-0061](../../../docs/adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md));
 - the feature has UI and `ux.md` is missing, has a blank state-matrix row, or lacks the owner's dated sign-off;

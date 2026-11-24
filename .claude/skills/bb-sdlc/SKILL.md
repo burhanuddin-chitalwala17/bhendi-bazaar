@@ -7,11 +7,13 @@ description: Operational SDLC flows for bhendi-bazaar. Four subcommands — spec
 
 Four subcommands. Pick the one matching the invocation. The cycle they serve is spike → spec → UX → TRD → build → review ([ADR-0061](../../../docs/adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)).
 
-## Two rules that run through every subcommand
+## Rules that run through every subcommand
 
 **Stop the feature growing.** A feature is one outcome a person can see, shippable alone in about six units. You draw the cut; do not ask the owner where it goes. Something is *In* only if an acceptance criterion needs it. A new capability, screen, persona or external dependency is *Later*. Anything waiting on an outside party (an approval, a ticket, a contract) is its own feature. Edge cases and states of what is In are never scope creep: they are required. When a conversation proposes something new mid-feature, say "parked as Q<n>", log it, and carry on. Do not redesign the feature around it.
 
 **Log every decision, and decide the small ones yourself.** Every question goes in the feature's `decisions.md` the moment it comes up, and every answer the moment it is given, including answers given in chat. You decide anything reversible that sits within an existing ADR, marked `Claude · reversible`, with one line of why. The owner decides money, marketplace or legal policy, irreversible data, external commitments and matters of taste. Ask those in batches of at most five, each with your recommendation first. Before ending any planning turn, check that nothing said in the conversation is missing from the log.
+
+**Planning ends in a handoff, never in code** ([ADR-0080](../../../docs/adr/0080-planning-and-building-never-share-a-session.md)). When the TRD is Accepted, this session's last output is the handoff, and then it stops: one line per Delivery unit, each a ready-to-paste prompt (`/bb-build <feature> unit <n>`), marked `after U<k>` or `independent`. The owner starts each in a new session; or, when asked, this session starts them — one new session per unit, sequential units one after another, independent units in parallel only if no two touch the same files, each on its own branch. It does not watch them; each reports when done. Asked to "just start building" here, give the handoff instead and say why.
 
 **Read a decision's State before relying on it**, every time, in planning, writing a TRD, building or reviewing:
 - `decided` — binding; act on it. Not yet built.
@@ -162,7 +164,7 @@ Touches docs/CONTRACTS.md? If so the PR carries [CONTRACT] and CONTRACTS.md move
 The tests that will exist when done, cross-referenced to TESTING.md.
 
 ## Delivery (PRs)
-Small PRs, each independently verifiable. Say which one changes behaviour.
+Small PRs, each independently verifiable. Say which one changes behaviour, and for each whether it is `after U<k>` or `independent` — the handoff is read from this list.
 
 ## Open questions
 Q ids from decisions.md. All must be decided or parked before Draft → Accepted.
