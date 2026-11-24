@@ -2572,6 +2572,7 @@ model ChannelConnection {
   locations ChannelLocation[]
   platformListings PlatformListing[]
   metaEvents MetaEvent[]
+  lanes      ConnectionLane[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2592,17 +2593,35 @@ model MetaEvent {
   connection        ChannelConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
   externalAccountId String
   dedupeKey         String            @unique
+  /// Arrival order, so events in one second keep the order Meta sent them (WhatsApp times are whole seconds).
+  seq               BigInt            @default(autoincrement())
   occurredAt        DateTime
   receivedAt        DateTime          @default(now())
   /// `META_EVENT_STATE`: PENDING, DONE, DEAD.
   state             String            @default("PENDING")
+  /// Failures that say the event itself is bad; the fifth makes it dead.
   attempts          Int               @default(0)
+  /// Failures of a sink that was down; they delay the event, never kill it.
+  retries           Int               @default(0)
   lastErrorCode     String?
   sealedPayload     String
   processedAt       DateTime?
 
   // The drain's read is a partial index in the migration: (connectionId, occurredAt, id) WHERE PENDING.
   @@index([receivedAt])
+}
+
+/// One worker at a time per (connection, lane): serial per account, parallel across accounts
+/// (social-selling TRD A-D9). Claimed and renewed by a conditional write; an expired lease is taken over.
+model ConnectionLane {
+  connectionId String
+  connection   ChannelConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  /// `LANE`: events, messages, publish, catalogue, campaign.
+  lane         String
+  holder       String
+  leaseUntil   DateTime
+
+  @@id([connectionId, lane])
 }
 
 /// Events dropped at the intake, counted per day and product, never stored (meta-foundation R2, R5, D12).

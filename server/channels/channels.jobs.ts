@@ -29,6 +29,8 @@ import { checkOrdersSpec, checkStockSpec, ORDERS_CHECK_EVERY_SECONDS } from "./s
 import { enqueue, enqueueLater } from "@server/shared/jobs/jobs.enqueue";
 import { prisma } from "@server/shared/prisma";
 import { channelPlan } from "./channel-plan";
+import { drainEventsSpec } from "./meta-drain.job";
+import { metaDrainService } from "./meta-drain.service";
 
 /**
  * A shop without Channels: the job ends succeeded with a skip, never failed or retried, since a lock
@@ -206,5 +208,16 @@ export const checkListingProblemsJob = registerJob({
   handler: async ({ jobId }) => {
     const outcome = await listingProblemsService.checkAll();
     console.log(`[jobs] channels.check-listing-problems ${jobId}: ${JSON.stringify(outcome)}`);
+  },
+});
+
+/** Meta's stored events for one connection, handed on in order (ADR-0078); asks again while events remain. */
+export const drainEventsJob = registerJob({
+  ...drainEventsSpec,
+  handler: async ({ payload }) => {
+    const result = await metaDrainService.drain(payload.connectionId);
+    if (result.retryAfterSeconds !== null) {
+      await metaDrainService.request(payload.connectionId, payload.orgId, result.retryAfterSeconds);
+    }
   },
 });

@@ -142,6 +142,9 @@ export const JOB_FEATURES: Record<string, { readonly feature: Feature; readonly 
   "channels.check-listings": { ...CH, how: "A locked shop's due look is recorded missed, never asked (D8)." },
   "channels.check-listing-problems": { ...CH, how: PASS },
   "channels.maintain": { ...CH, how: "Renews and re-seals every shop's tokens (Q11); health-checks only holders (D5)." },
+  "channels.drain-events": {
+    core: "Hands on what Meta already sent for a connection that exists; the Social selling lock (Q36) is asserted where a shop connects and acts.",
+  },
   "image.enhance": { core: "Work already queued finishes after a lock (Q12); new work is refused at request." },
   "requests.listing-complaints": { core: "Raised only for holders: channels refuses the listing work that would complain (D5)." },
   "requests.daily": { core: "Its marketplace needs come from channelTypesService.connectedOrgs, which keeps holders only (D5)." },

@@ -461,7 +461,7 @@ export const channelConnectionRepository = {
   async socialRoutes(
     channel: string,
     ids: readonly string[],
-  ): Promise<Array<{ id: string; externalAccountId: string | null; externalPhoneId: string | null; externalBusinessId: string | null }>> {
+  ): Promise<Array<{ id: string; orgId: string; externalAccountId: string | null; externalPhoneId: string | null; externalBusinessId: string | null }>> {
     if (ids.length === 0) return [];
     const list = [...ids];
     return await prisma.channelConnection.findMany({
@@ -470,7 +470,7 @@ export const channelConnectionRepository = {
         state: { not: CONNECTION_STATE.DISCONNECTED },
         OR: [{ externalAccountId: { in: list } }, { externalPhoneId: { in: list } }, { externalBusinessId: { in: list } }],
       },
-      select: { id: true, externalAccountId: true, externalPhoneId: true, externalBusinessId: true },
+      select: { id: true, orgId: true, externalAccountId: true, externalPhoneId: true, externalBusinessId: true },
     });
   },
 

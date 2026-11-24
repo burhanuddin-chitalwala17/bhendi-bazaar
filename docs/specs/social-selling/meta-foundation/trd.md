@@ -131,8 +131,9 @@ client code, `noindex`; phone first, one centred card at `md:` and `lg:`.
 ## Delivery
 1. Settings, Graph client, errors, limits (no behaviour).
 2. Intake routes, `MetaEvent`, unrouted counts (behaviour: events stored).
-3. Drain, translators, sinks registry, lanes, and the fake adapters with the ports they implement
-   (behaviour: facts handed on).
+3. Drain, translators, sinks registry, lanes (behaviour: facts handed on). The ports and their fake
+   adapters land with their first caller (connect-instagram, connect-whatsapp), where each verb is
+   defined by the call that needs it.
 4. Deauthorize, data deletion and its page; availability and Coming soon (behaviour).
 5. Seal, retention, sweep.
 

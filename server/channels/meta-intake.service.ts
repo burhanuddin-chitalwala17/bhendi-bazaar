@@ -2,6 +2,7 @@ import { encryptSecret } from "@server/shared/crypto";
 import type { SocialPlatform } from "./social/types";
 import { channelConnectionRepository } from "./channel-connection.repository";
 import { metaEventRepository, type NewMetaEvent } from "./meta-event.repository";
+import { metaDrainService } from "./meta-drain.service";
 import { metaUnroutedRepository } from "./meta-unrouted.repository";
 import type { IntakeResult } from "./meta-event.types";
 import { sameToken, verifyMetaSignature } from "./providers/meta/signature";
@@ -55,7 +56,7 @@ export function resetForgedCounts(): void {
 
 /** Each id to the one live connection holding it; an id two connections hold routes nowhere. */
 function routeTable(
-  connections: Array<{ id: string; externalAccountId: string | null; externalPhoneId: string | null; externalBusinessId: string | null }>,
+  connections: ReadonlyArray<{ id: string; externalAccountId: string | null; externalPhoneId: string | null; externalBusinessId: string | null }>,
 ): (kind: RouteKind, id: string) => string | null {
   const tables: Record<RouteKind, Map<string, string | null>> = { account: new Map(), phone: new Map(), business: new Map() };
   const put = (kind: RouteKind, id: string | null, connectionId: string) => {
@@ -105,7 +106,9 @@ export const metaIntakeService = {
     }
 
     const routeIds = [...new Set(items.map((item) => item.route.id))];
-    const route = routeTable(await channelConnectionRepository.socialRoutes(product, routeIds));
+    const connections = await channelConnectionRepository.socialRoutes(product, routeIds);
+    const route = routeTable(connections);
+    const orgOf = new Map(connections.map((connection) => [connection.id, connection.orgId]));
 
     const rows: NewMetaEvent[] = [];
     let unrouted = 0;
@@ -128,6 +131,9 @@ export const metaIntakeService = {
 
     const stored = await metaEventRepository.storeOnce(rows);
     await metaUnroutedRepository.add(day, product, "unrouted", unrouted);
+    // A redelivery asks too: the drain it once asked for may have been lost. If asking fails after
+    // the store, the route answers 5xx and Meta's redelivery asks again; the stored rows dedupe.
+    await Promise.all([...new Set(rows.map((row) => row.connectionId))].map((id) => metaDrainService.request(id, orgOf.get(id)!)));
     const result = { stored, duplicates: rows.length - stored, unrouted };
     log(product, { outcome: "accepted", ...result });
     return { kind: "accepted", result };
