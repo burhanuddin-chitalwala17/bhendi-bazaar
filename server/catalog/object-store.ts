@@ -257,3 +257,21 @@ export async function presignUpload(
   );
   return { uploadUrl: signed.url, publicUrl: publicUrlFor(pathname) };
 }
+
+/** How long a download link works once the route has checked who is asking (viewer trd D1). */
+const DOWNLOAD_TTL_SECONDS = 300;
+
+/**
+ * A presigned GET that saves the original under `filename`, which goes into the header unquoted:
+ * pass a header-safe name (`downloadFilename` makes one). The disposition is signed, so it cannot be swapped.
+ */
+export async function presignDownload(pathname: string, filename: string): Promise<string> {
+  const query = new URLSearchParams({
+    "X-Amz-Expires": String(DOWNLOAD_TTL_SECONDS),
+    "response-content-disposition": `attachment; filename="${filename}"`,
+  });
+  const signed = await client().client.sign(new Request(`${objectUrl(pathname)}?${query}`, { method: "GET" }), {
+    aws: { signQuery: true },
+  });
+  return signed.url;
+}

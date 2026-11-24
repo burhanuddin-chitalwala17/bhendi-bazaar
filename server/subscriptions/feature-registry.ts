@@ -76,6 +76,8 @@ export const ORG_ROUTE_FEATURES: Record<string, Classification> = {
   "PUT /api/org/[orgId]/media/[assetId]/tags": { core: FREE },
   "GET /api/org/[orgId]/credits": { core: FREE },
   "POST /api/org/[orgId]/media/[assetId]/retire": { core: FREE },
+  "GET /api/org/[orgId]/media/[assetId]/download": { core: FREE },
+  "HEAD /api/org/[orgId]/media/[assetId]/download": { core: FREE },
   "GET /api/org/[orgId]/media/[assetId]": { core: FREE },
   "GET /api/org/[orgId]/media": { core: FREE },
   "PATCH /api/org/[orgId]/products/[id]/archive": { core: FREE },
