@@ -43,6 +43,8 @@
 | Many items | Paged as today | — | — |
 | Slow | Existing load-more spinner | — | — |
 | Tab without tags | On Videos and YouTube the Tag filter is hidden, and a tag already chosen is ignored there (and not counted) | — | — |
+| Tab with one source | On Videos, Came from offers Uploaded and Cropped or made; on YouTube it is hidden, and a source chosen elsewhere is ignored there (Q7) | — | — |
+| Filters kept on an empty tab | A filter chosen on another tab, then a tab whose library is empty: "Nothing matches these filters." until Clear filters shows the library's own empty line | (as Empty (filtered)) | Clear filters |
 | Phone / tablet / desktop | Phone: **Filters** opens a panel above the grid. `md`: four selects inline beside the tabs | — | — |
 
 ## Copy deck
