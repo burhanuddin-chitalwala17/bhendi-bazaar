@@ -1,4 +1,11 @@
 {
+  "permissions": {
+    "deny": [
+      "Read(./package-lock.json)",
+      "Read(./.next/**)",
+      "Read(./docs/archive/**)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {
