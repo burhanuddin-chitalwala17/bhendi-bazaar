@@ -1,7 +1,7 @@
 # Spec — social-selling/connect-instagram
 
 - **Summary:** A shop connects its Instagram professional account by signing in on Instagram, is shown how to let Bhendi Bazaar see its messages, and sees on the Channels page that the connection is healthy and kept alive
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

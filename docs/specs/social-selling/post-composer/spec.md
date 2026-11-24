@@ -1,7 +1,7 @@
 # Spec — social-selling/post-composer
 
 - **Summary:** A shop composes a post, carousel, reel or story from pictures in its library, a caption and the products it is about, sends it now or at a chosen minute to any of its destinations, and sees each destination scheduled, published or failed
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** social
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

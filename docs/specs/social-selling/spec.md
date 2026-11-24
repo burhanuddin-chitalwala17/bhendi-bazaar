@@ -1,7 +1,7 @@
 # Spec — social-selling (overview)
 
 - **Summary:** A shop runs its Instagram and WhatsApp from Bhendi Bazaar: connect each once, its catalogue on WhatsApp, its posts and stories scheduled and published, one inbox for DMs and comments, and messages to customers who opted in
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels, with new tool domains (inbox, social, audience, campaigns, automations)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-21
@@ -24,8 +24,9 @@ items (Q110), a setup checklist per channel (Q111), one settings page (Q112), on
 **UX drafted (2026-11-22).** A ux.md beside every subfeature's spec, shared rules in
 [ux-patterns.md](ux-patterns.md), eight linked prototypes ([published](https://claude.ai/artifact/6Yqg4xgjp3mDRXYDVsVtwU), source in
 `prototypes/`), and a senior UX review with its fixes in [ux-review.md](ux-review.md).
-**UX signed off (2026-11-23)** after the final cross-feature check (ux-review.md). **Next step:** TRDs in
-build order (Q107), starting with step 1, then /bb-build unit by unit.
+**UX signed off (2026-11-23)** after the final cross-feature check (ux-review.md). **TRDs accepted (2026-11-23)**:
+the architecture in [trd.md](trd.md) (A-D ids) and one per subfeature. **Next step:** /bb-build in
+Q107's order, starting with meta-foundation's units.
 **Review standard (owner).** Every flow obvious to the shop, no needless tap or screen, states kept
 across a refresh and a return, and every button showing its progress while a request is in flight
 and its outcome after.

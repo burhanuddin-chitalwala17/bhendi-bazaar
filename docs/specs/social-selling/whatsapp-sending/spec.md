@@ -1,7 +1,7 @@
 # Spec — social-selling/whatsapp-sending
 
 - **Summary:** Every WhatsApp message Bhendi Bazaar sends for a shop goes through one door that checks consent and the shop's caps, shows and records what it costs, and uses the shop's approved templates: a starter set in English and Hindi from day one, and its own
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** campaigns
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

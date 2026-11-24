@@ -1,7 +1,7 @@
 # Spec — social-selling/meta-foundation
 
 - **Summary:** Meta's events and requests reach Bhendi Bazaar safely and exactly once, through one Meta app both connections share, and each platform stays Coming soon until it is opened
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

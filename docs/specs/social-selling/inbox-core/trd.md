@@ -1,6 +1,6 @@
 # TRD — social-selling/inbox-core
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** inbox (new)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-23

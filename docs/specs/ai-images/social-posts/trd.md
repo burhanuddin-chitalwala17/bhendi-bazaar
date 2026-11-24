@@ -1,6 +1,6 @@
 # TRD — ai-images/social-posts
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** content, reading catalog (media, products), promotions (effective price) and subscriptions (credit)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-23

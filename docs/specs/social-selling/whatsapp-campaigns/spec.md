@@ -1,7 +1,7 @@
 # Spec — social-selling/whatsapp-campaigns
 
 - **Summary:** A shop sends a WhatsApp message, with products if it likes, to a list of its opted-in customers, seeing who will get it and what it costs before it goes, and how it went after
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** campaigns
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

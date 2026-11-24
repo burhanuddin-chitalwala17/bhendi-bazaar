@@ -1,6 +1,6 @@
 # TRD — social-selling/post-composer
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** social (new), reading catalog (media, products) through its public surface
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-23

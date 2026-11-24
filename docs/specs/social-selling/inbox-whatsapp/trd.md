@@ -1,6 +1,6 @@
 # TRD — social-selling/inbox-whatsapp
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels (WhatsApp's `ConversationSource` and translator), with inbox, campaigns (templates, send port) and cart (checkout links)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-23

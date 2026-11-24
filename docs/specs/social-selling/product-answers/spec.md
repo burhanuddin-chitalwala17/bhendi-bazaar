@@ -1,7 +1,7 @@
 # Spec — social-selling/product-answers
 
 - **Summary:** A buyer asking about a product on Instagram or WhatsApp is answered at once from that product's live price, offer, stock and sizes, with a link to buy it, and the shop sees how many such enquiries came in and how many still need it
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** automations
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

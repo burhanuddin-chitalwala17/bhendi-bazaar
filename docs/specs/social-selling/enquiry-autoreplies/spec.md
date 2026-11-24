@@ -1,7 +1,7 @@
 # Spec — social-selling/enquiry-autoreplies
 
 - **Summary:** Every Instagram DM and WhatsApp chat gets an answer at once, whether or not anyone is at the shop: a greeting, an away message outside business hours, answers to the questions every shop gets, buttons to choose from, and a person whenever the buyer asks
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** automations
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

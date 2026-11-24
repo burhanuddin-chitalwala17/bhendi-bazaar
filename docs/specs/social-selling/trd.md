@@ -1,6 +1,6 @@
 # TRD — social-selling (architecture)
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels (Meta platform layer), and five new tool domains: social, inbox, automations, audience, campaigns; with notifications, content, cart and analytics
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-23
@@ -339,6 +339,24 @@ this architecture lands as the first units of meta-foundation (D4–D7, D9, D12)
 3. Webhook intake, `MetaEvent`, drain, sinks registry, lanes (behaviour: events stored and drained).
 4. `OrgDataKey` and the seal (behaviour: nothing sealed yet).
 5. Retention and sweep jobs.
+
+## Architecture review (2026-11-23)
+Every subfeature TRD was read against this one, the seven invariants, the ADRs and each feature's
+decisions before acceptance. Found and fixed in the same change:
+- meta-foundation's spec asked for one webhook route per Meta product, events as neutral jobs and
+  unrouted events dropped; D5 now has two routes over one intake, D5 drops unrouted payloads and
+  counts them, and R4's wording names facts handed on by the drain (meta-foundation Q3).
+- Two decisions still described superseded behaviour and were replaced in place: inbox-core Q5
+  (voice notes play) and hub-marketing Q2 (the one how-often rule, not a global cap).
+- The bot pause showed 2 hours in the UX against enquiry-autoreplies Q5's 12; aligned.
+- checkout-links could not open "the shop's page" for an edited link with a bare token; the URL
+  now carries the shop.
+- Invariants: money is integer paise throughout (A-D13, whatsapp-sending D3, campaigns D5); prices a
+  buyer pays are computed by checkout only (inbox-whatsapp D4, checkout-links D4, catalogue D1 via
+  the one resolver); every body is parsed with Zod (A-D18); one repository per new table, listed per
+  TRD; no stock moves outside catalog's commands (checkout-links only adds to a cart).
+**Accepted by the owner's standing instruction of 2026-11-23** ("if nothing major arises in the
+architecture and TRD review, go ahead and build"): nothing major arose.
 
 ## Open questions
 None. Facts confirmed by spike during the first units, none of which changes a decision here:

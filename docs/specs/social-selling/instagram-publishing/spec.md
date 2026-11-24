@@ -1,7 +1,7 @@
 # Spec — social-selling/instagram-publishing
 
 - **Summary:** A post's Instagram destinations reach the shop's connected account at their time, as a feed image, carousel, reel or story with everything Instagram's publishing allows, once, with a link when published or Instagram's reason in plain words when not
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

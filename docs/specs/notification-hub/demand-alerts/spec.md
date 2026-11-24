@@ -1,7 +1,7 @@
 # Spec — notification-hub/demand-alerts
 
 - **Summary:** A shop turns on alerts for price drops, items back in stock, carts left behind and auctions, and each reaches the opted-in buyers who showed interest, once, by WhatsApp or email, inside the shop's hours, caps and budget
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** notifications
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

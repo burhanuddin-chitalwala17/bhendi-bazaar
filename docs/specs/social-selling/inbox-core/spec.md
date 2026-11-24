@@ -1,7 +1,7 @@
 # Spec — social-selling/inbox-core
 
 - **Summary:** One shared Inbox where a shop reads and answers every conversation, a tab per connected platform, knowing nothing of any platform: each platform plugs in its conversations and its rules, and automatic replies plug in on top
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** inbox
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

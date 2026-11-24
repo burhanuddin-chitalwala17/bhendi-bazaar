@@ -1,7 +1,7 @@
 # Spec — social-selling/connect-whatsapp
 
 - **Summary:** A shop connects its WhatsApp number from Meta's signup pop-up, keeping its WhatsApp Business app, and sees on the Channels page that the number is healthy and able to send
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

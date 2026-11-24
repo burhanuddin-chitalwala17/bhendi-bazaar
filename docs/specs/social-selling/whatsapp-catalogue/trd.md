@@ -1,6 +1,6 @@
 # TRD — social-selling/whatsapp-catalogue
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels, reading catalog, promotions (effective price) and media through their public surfaces
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-23

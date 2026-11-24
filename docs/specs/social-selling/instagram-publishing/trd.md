@@ -1,6 +1,6 @@
 # TRD — social-selling/instagram-publishing
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels (the Instagram plug), with social's plug contract
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-23

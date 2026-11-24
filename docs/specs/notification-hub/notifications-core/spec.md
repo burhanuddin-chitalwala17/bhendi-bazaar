@@ -1,7 +1,7 @@
 # Spec — notification-hub/notifications-core
 
 - **Summary:** Any part of the platform tells a shop something by handing the hub an event; the hub delivers it once, by the unread badge and a daily email, or at once by email when it cannot wait, and every module uses this one place from the start
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** notifications
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

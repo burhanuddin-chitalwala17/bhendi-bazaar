@@ -1,7 +1,7 @@
 # Spec — notification-hub/hub-marketing
 
 - **Summary:** A message meant to sell reaches a buyer once, by WhatsApp when it can and by email otherwise, never more often in a day than the shop allows across every channel, and every email carries a one-tap way out
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** notifications
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

@@ -1,6 +1,6 @@
 # TRD — social-selling/comment-automations
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** automations (new)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-23

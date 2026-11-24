@@ -1,7 +1,7 @@
 # Spec — checkout-links
 
 - **Summary:** A link that opens checkout holding chosen products and sizes, priced and stock-checked at the moment it is opened, so a chat or a message can turn into an order in one tap
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** cart, with checkout
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

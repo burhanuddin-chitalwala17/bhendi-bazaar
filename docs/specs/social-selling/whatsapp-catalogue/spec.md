@@ -1,7 +1,7 @@
 # Spec — social-selling/whatsapp-catalogue
 
 - **Summary:** A shop's WhatsApp catalogue is an exact copy of its live products on Bhendi Bazaar, at the price its product page shows, kept in step within minutes with nobody doing anything, its cart turned on
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

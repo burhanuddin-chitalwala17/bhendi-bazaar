@@ -1,7 +1,7 @@
 # Spec — social-selling/inbox-instagram
 
 - **Summary:** A connected Instagram account's DMs, story replies, story mentions and comments arrive in the Instagram tab of the shop's Inbox and are answered from it, within Instagram's reply windows, publicly or by a private DM
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

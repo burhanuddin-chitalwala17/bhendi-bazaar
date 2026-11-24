@@ -1,7 +1,7 @@
 # Spec — social-selling/comment-automations
 
 - **Summary:** A buyer who comments the shop's keyword on its Instagram post gets one DM with what the shop chose to send, the product links suggested, and optionally a public reply saying a DM was sent
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** automations
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

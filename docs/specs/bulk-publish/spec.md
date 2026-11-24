@@ -1,7 +1,7 @@
 # Spec — bulk-publish
 
 - **Summary:** A shop puts its whole range on a channel in one sitting: one screen shows what is ready and what needs a fix, grouped by problem, fixes are made many products at a time, and one tap sends everything ready, with each product's result where it always shows
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels, with listing (readiness)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

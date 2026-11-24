@@ -1,6 +1,6 @@
 # TRD — social-selling/inbox-instagram
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels (Instagram's `ConversationSource` and translator)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-23

@@ -1,7 +1,7 @@
 # Spec — social-selling/consent-core
 
 - **Summary:** Bhendi Bazaar knows, for every shop and buyer, whether that shop may send them marketing on WhatsApp or email, from a consent it can prove; buyers opt in and stop in a chat, and a shop's phone contacts arrive as people not yet asked
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** audience
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

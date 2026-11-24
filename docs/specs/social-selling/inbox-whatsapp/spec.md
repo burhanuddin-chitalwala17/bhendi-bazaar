@@ -1,7 +1,7 @@
 # Spec — social-selling/inbox-whatsapp
 
 - **Summary:** A connected WhatsApp number's chats arrive in the WhatsApp tab of the shop's Inbox and are answered from it, free within 24 hours and by a paid template after, with the cost shown first; a cart a buyer sends from the catalogue arrives as an order the shop turns into a checkout link
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

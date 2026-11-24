@@ -1,7 +1,7 @@
 # Spec — notification-hub/order-updates
 
 - **Summary:** A buyer hears their order was confirmed, shipped and delivered on WhatsApp when the shop turns it on and the buyer opted in, by email otherwise, the receipt always by email; every existing order and parcel email goes through the hub
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** notifications
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

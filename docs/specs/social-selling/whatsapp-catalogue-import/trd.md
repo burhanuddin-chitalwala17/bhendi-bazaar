@@ -1,6 +1,6 @@
 # TRD — social-selling/whatsapp-catalogue-import
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-23

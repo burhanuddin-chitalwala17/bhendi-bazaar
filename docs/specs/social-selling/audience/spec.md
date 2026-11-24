@@ -1,7 +1,7 @@
 # Spec — social-selling/audience
 
 - **Summary:** A shop sees who it may message and grows that list: an Audience page of its contacts and their consent, named lists to send to, picked or by filter, a first offer to its synced contacts, a checkout box and a store-page button that let buyers opt in
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** audience
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

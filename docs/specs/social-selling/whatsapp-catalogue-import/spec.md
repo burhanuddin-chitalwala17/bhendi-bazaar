@@ -1,7 +1,7 @@
 # Spec — social-selling/whatsapp-catalogue-import
 
 - **Summary:** A shop that already has a WhatsApp catalogue settles it when it connects: each item is matched to one of its products, added as a new product, or left off, before Bhendi Bazaar takes the catalogue over
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

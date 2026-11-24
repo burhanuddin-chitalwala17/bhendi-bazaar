@@ -1,7 +1,7 @@
 # Spec — ai-images/social-posts
 
 - **Summary:** From the post composer, a shop makes a post picture from its product photos or its brand, styled the way it describes and shaped for Instagram or Status, and a caption with hashtags drafted from the product's own facts, paid from its credit and kept in its library as AI-made
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** content, reading catalog (media, products) and subscriptions (credit)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

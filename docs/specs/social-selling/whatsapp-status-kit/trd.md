@@ -1,6 +1,6 @@
 # TRD — social-selling/whatsapp-status-kit
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** social
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-23

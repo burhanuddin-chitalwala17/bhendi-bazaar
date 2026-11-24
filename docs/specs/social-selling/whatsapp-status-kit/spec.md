@@ -1,7 +1,7 @@
 # Spec — social-selling/whatsapp-status-kit
 
 - **Summary:** At a post's time its picture and caption are ready on the shop's phone, and one tap hands them to WhatsApp to post as a Status, since WhatsApp lets no app post a Status itself
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** social
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22

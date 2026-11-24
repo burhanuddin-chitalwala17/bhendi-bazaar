@@ -1,7 +1,7 @@
 # Spec — social-selling/social-home
 
 - **Summary:** A shop sees on its Home, in one card, how selling on Instagram and WhatsApp is going and what needs it; the platform owner sees, on the admin channels page, which shops are connected and where something is going wrong
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** social, reading inbox, channels, campaigns and audience through their public surfaces; the admin view in analytics
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-22
