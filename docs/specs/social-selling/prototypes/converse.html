@@ -131,7 +131,7 @@ tr:last-child td{border-bottom:0}
 </header>
 <p class="demo-hint">Buttons with a dotted underline are live: tap one to see what it does while it works and when it finishes (ux-patterns §3). Every string is the one that ships; dashed boxes are Meta's or WhatsApp's own screens.</p>
 <nav class="tabs" aria-label="Sections">
-  <a href="#inbox">Inbox</a><a href="#thread">A conversation</a><a href="#box">The reply box</a><a href="#ig">Instagram</a><a href="#wa">WhatsApp</a><a href="#order">An order in chat</a><a href="#c2dm">Comment-to-DM</a><a href="#auto">Auto-replies</a><a href="#buyer">What a buyer sees</a>
+  <a href="#inbox">Inbox</a><a href="#privacy">Private to your shop</a><a href="#thread">A conversation</a><a href="#box">The reply box</a><a href="#ig">Instagram</a><a href="#wa">WhatsApp</a><a href="#order">An order in chat</a><a href="#c2dm">Comment-to-DM</a><a href="#auto">Auto-replies</a><a href="#buyer">What a buyer sees</a>
 </nav>
 
 <section id="inbox">
@@ -141,11 +141,12 @@ tr:last-child td{border-bottom:0}
     <div class="step"><div class="cap"><b>Nothing connected</b></div>
       <div class="phone"><div class="ph"><h3>Inbox</h3></div>
         <div class="card" style="text-align:center"><div class="ttl" style="font-family:var(--serif);font-size:17px">Messages from Instagram and WhatsApp will appear here</div>
-          <div class="body">Connect a platform to answer every message from here.</div><button class="btn" type="button">Connect</button></div>
+          <div class="body">Connect a platform to answer every message from here, like WhatsApp Web: your chats, on one more screen.</div><button class="btn" type="button">Connect</button></div>
         <div class="tabbar"><span>Home</span><span>Products</span><span>Orders</span><span class="on">Inbox</span><span>More</span></div></div></div>
     <div class="arrow" aria-hidden="true">·</div>
     <div class="step"><div class="cap"><b>The list</b>: Needs you first</div>
       <div class="phone"><div class="ph"><h3>Inbox</h3><span>🔍 ⚙</span></div>
+        <div class="small">🔒 Private to your shop</div>
         <div class="chips"><span class="chip on">WhatsApp · 2</span><span class="chip">Instagram · 1</span></div>
         <div class="note info" style="font-size:12px">Yesterday · 18 product questions · 15 answered · <b>3 need you</b></div>
         <div class="chips"><span class="chip on">Needs you</span><span class="chip">Unread</span><span class="chip">Answered automatically</span></div>
@@ -162,6 +163,30 @@ tr:last-child td{border-bottom:0}
         <div class="card" style="text-align:center"><div class="body">Nothing needs you. 🎉</div><button class="btn ghost" type="button">Show all</button></div>
         <div style="text-align:center"><span class="badge solid">↑ 3 new</span></div>
         <div class="small">New messages never jump rows under your thumb; the pill shows them.</div></div></div>
+  </div>
+</section>
+
+<section id="privacy">
+  <h2>Private to your shop</h2>
+  <p class="lede">inbox-core R14, parent Q116. Said quietly where it matters, never as a banner. True by construction: per-shop encryption, no staff screen with message text, support only when the shop shares one chat.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>The 🔒 line</b> opens three plain facts</div>
+      <div class="phone"><div class="sheet"><span class="t">How your chats stay private</span>
+        <div class="body">Only people you add to your shop can open your chats.</div>
+        <div class="body">No one at Bhendi Bazaar reads them. If you ever ask support for help with a chat, you choose to share it, just that once.</div>
+        <div class="body">Disconnect any time, and your chats leave Bhendi Bazaar after 90 days. They stay in your app as always.</div>
+        <div class="li"><div class="main"><div class="ttl">Who has opened your chats</div><div class="sub">Only your team</div></div><span>›</span></div>
+        <button class="btn sec" type="button">Got it</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Share one chat</b> with support, if the shop asks for help</div>
+      <div class="phone"><div class="sheet"><span class="t">Share this chat with support?</span>
+        <div class="body">Support can open this one chat for 48 hours, for your request "Order not showing".</div>
+        <button class="btn" type="button" data-demo="pending:Sharing…|toast:Shared with support until Tue 4 pm.">Share</button><button class="btn sec" type="button">Not now</button></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>In the thread</b>, and in the log</div>
+      <div class="phone"><div class="window">Shared with support until Tue 4 pm · <u>Stop sharing</u></div>
+        <div class="lbl">Who has opened your chats</div>
+        <div class="small">Support (Imran) · this chat · Mon 4:12 pm, for "Order not showing"</div></div></div>
   </div>
 </section>
 

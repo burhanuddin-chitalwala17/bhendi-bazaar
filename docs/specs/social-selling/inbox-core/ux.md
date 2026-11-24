@@ -29,13 +29,25 @@
 7. **Nothing connected yet.** Inbox → `EmptyState` "Messages from Instagram and WhatsApp will
    appear here" → **Connect** → Channels → back.
 
+8. **Is this private?** A small "🔒 Private to your shop" line under the Inbox title (and on the
+   first-use screen: "Only you and your team see these chats.") → tap → sheet **How your chats stay
+   private**: "Only people you add to your shop can open your chats." · "No one at Bhendi Bazaar
+   reads them. If you ever ask support for help with a chat, you choose to share it, just that
+   once." · "Disconnect any time, and your chats leave Bhendi Bazaar after 90 days. They stay in
+   your app as always." · **Who has opened your chats** (normally "Only your team").
+9. **Share one chat with support.** Thread ⋯ → **Share with support** → pick the request → sheet
+   "Support can open this one chat for 48 hours." **Share** → the thread shows "Shared with support
+   until Tue 4 pm · Stop sharing"; the open is listed under Who has opened your chats.
+
 ## Screens
 | Screen | Route / place | New or changed | Serves |
 |---|---|---|---|
 | Inbox list | `/org/[orgId]/inbox?tab=<platform>&filter=needs-you\|unread\|auto` | New | R1, R2, R4, R4a, R11 |
 | Thread | `/org/[orgId]/inbox/[conversationId]`: full page on a phone; right pane from `lg:` | New | R2, R3, R5–R9 |
 | Details panel | Thread's ⓘ: person, platform, products tied, recent orders; a sheet on a phone, third pane from `xl:` | New | R2 |
-| Inbox settings | `/org/[orgId]/inbox/settings`, tabs Auto-replies (enquiry-autoreplies) | New | R11 |
+| Inbox settings | `/org/[orgId]/inbox/settings`, tabs Auto-replies (enquiry-autoreplies) · Privacy ("Who has opened your chats") | New | R11, R14 |
+| Privacy sheet | `HandoffSheet` from the 🔒 line | New | R14 |
+| Share with support | `HandoffSheet` from the thread ⋯ | New | R14 |
 | Menu item | "Inbox" with the Needs you count; a tab-bar slot on a phone | Changed | R4 |
 
 ## The list row
@@ -66,8 +78,8 @@ sending it is pending and a second tap is ignored.
 ## State matrix — Inbox list
 | State | What the shop sees | Action |
 |---|---|---|
-| First use, nothing connected | `EmptyState` "Messages from Instagram and WhatsApp will appear here" · "Connect a platform to answer every message from here." | Connect |
-| First use, connected | "No messages yet. When someone messages @niqab.boutique, it appears here." | — |
+| First use, nothing connected | `EmptyState` "Messages from Instagram and WhatsApp will appear here" · "Connect a platform to answer every message from here, like WhatsApp Web: your chats, on one more screen." | Connect |
+| First use, connected | "No messages yet. When someone messages @niqab.boutique, it appears here. Only you and your team see these chats." | — |
 | Empty filter | Needs you: "Nothing needs you. 🎉" · Unread: "All read." · Auto: "No automatic answers yet." | Clear filter |
 | Loading | Row skeletons; filters and tabs drawn at once | — |
 | Partial | One platform failing to load: its tab shows `ErrorState`, the other works | Try again |
@@ -100,6 +112,7 @@ sending it is pending and a second tap is ignored.
 - Handover lines "Handed to you · buyer tapped Talk to the shop", "Handed to you · a question we couldn't answer".
 - Reply states as in the table; "Reply…", "Send", "Not sent", "Try again", "<n> new".
 - Empty states as in the matrix.
+- Privacy: "🔒 Private to your shop", "How your chats stay private" and its three lines, "Who has opened your chats", "Only your team", "Share with support", "Support can open this one chat for 48 hours.", "Shared with support until <time> · Stop sharing".
 
 ## Sign-off
 Not yet signed off. Awaiting the owner's review with the senior UX review.

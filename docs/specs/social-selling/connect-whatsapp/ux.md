@@ -42,8 +42,8 @@
 ## State matrix — WhatsApp card
 | State | Badge | Body | Main action |
 |---|---|---|---|
-| First use | Not connected | "Your catalogue in WhatsApp chats, every chat answered from here, and messages to customers who asked for them. Keep using the WhatsApp Business app on the same number." + quiet line "Your WhatsApp catalogue will then be managed from Bhendi Bazaar. Chats, broadcasts and Status stay in your app." | Connect WhatsApp |
-| Opening Meta | Not connected | Button pending "Opening Meta…"; card line "Finish in the Meta window…" | — |
+| First use | Not connected | "Your catalogue in WhatsApp chats, every chat answered from here, and messages to customers who asked for them. Works like WhatsApp Web: your chats, on one more screen. Keep using the WhatsApp Business app on the same number." + "🔒 Private to your shop" + quiet line "Your WhatsApp catalogue will then be managed from Bhendi Bazaar. Chats, broadcasts and Status stay in your app." | Connect WhatsApp |
+| Opening Meta | Not connected | Button pending "Opening Meta…"; card line "Finish in the Meta window…"; before it opens, once: "Meta will ask to let Bhendi Bazaar manage your WhatsApp messages. That's what lets you reply from here. Your chats stay between you and your buyers." | — |
 | Setting up | — | "Setting up your number…"; past 3 s "This can take up to a minute." | — |
 | Connected, setup open | ● Connected | "+91 98•••• 4321 · Niqab Boutique" + checklist: Connect ✓ · Spending limit ✓ · **Catalogue · 40 items to settle** · Templates · Auto-replies | Settle catalogue |
 | Templates waiting | ● Connected | Checklist "Templates · 12 in review" (dashed tick, no tap needed) | Next step |

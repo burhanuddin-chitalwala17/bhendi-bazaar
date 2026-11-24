@@ -9,10 +9,13 @@
 > disconnect dialog. New here: the setup checklist (parent Q111) and the message-access step (Q16).
 
 ## Journeys
+0. **Before Instagram's page.** Under **Connect Instagram** one calm line: "Instagram will ask to
+   let Bhendi Bazaar manage messages. That's what lets you reply from here. Your chats stay between
+   you and your buyers." Shown once, before the shop meets Meta's own wording.
 1. **Connect.** Channels → Instagram card → **Connect Instagram** (pending: "Opening Instagram…") →
    Instagram's own page: sign in, Allow → back on Channels: the return note "Instagram connected."
-   and the card Connected, its checklist showing **Allow messages** as the next step.
-2. **Allow messages.** Card → **Allow messages** → a `HandoffSheet` with the three taps and
+   and the card Connected, its checklist showing **Turn on replies** as the next step.
+2. **Turn on replies.** Card → **Turn on replies** → a `HandoffSheet` with the three taps and
    **Open Instagram** (opens the app's settings page where the phone allows it) → the shop allows
    it in Instagram → back on the card the step stays "Waiting for your first message" until one
    arrives, then ticks itself (Q16). A line under the step helps it along: "To check it now, send
@@ -34,7 +37,7 @@
 |---|---|---|---|
 | Instagram card | Channels, "Where you sell", after Meta catalogue | New (replaces the Coming soon card once open) | R1, R3, R6, R7, R12 |
 | Return note | Top of Channels | Changed: Instagram outcomes | R2–R4 |
-| Allow messages sheet | `HandoffSheet` over Channels | New | R6 |
+| Turn on replies sheet | `HandoffSheet` over Channels | New | R6 |
 | Disconnect dialog | Over Channels | Changed: Instagram wording | R10 |
 | Home attention line | Home | Changed: Instagram counted | R9 |
 
@@ -43,9 +46,9 @@
 |---|---|---|---|
 | First use (not connected) | Not connected | "Post, answer comments and DMs, and turn comments into sales. Needs an Instagram business or creator account (free to switch)." | Connect Instagram |
 | Connecting | Not connected | Button pending "Opening Instagram…"; past 3 s "Still working…" | — |
-| Connected, setup open | ● Connected | "@niqab.boutique · Business" + checklist: Connect ✓ · **Allow messages** · First post · Comment-to-DM | Allow messages |
-| Waiting for a message | ● Connected | Checklist step "Allow messages · waiting for your first message" (dashed tick) | First post (next) |
-| Message access off (Meta said so) | Needs you | "Instagram isn't sharing your messages with us. Turn on Allow access to messages." | Show me how |
+| Connected, setup open | ● Connected | "@niqab.boutique · Business" + checklist: Connect ✓ · **Turn on replies** · First post · Comment-to-DM | Turn on replies |
+| Waiting for a message | ● Connected | Checklist step "Turn on replies · waiting for your first message" (dashed tick) | First post (next) |
+| Message access off (Meta said so) | Needs you | "Replies from here are off in Instagram. Switch them back on to answer DMs here." | Show me how |
 | Setup done | ● Connected | "@niqab.boutique · Business" · "Connected by Farida · 22 Nov 2026" · "Last checked 2 min ago"; "Setup done" | Disconnect (secondary, red) |
 | Needs reconnecting | Needs reconnecting | "Instagram stopped accepting our access." or "Bhendi Bazaar was removed in Instagram's settings." | Reconnect · Disconnect (secondary) |
 | Empty | n/a — the card is the empty state | — | — |
@@ -63,7 +66,7 @@
 ## State matrix — Return note (Instagram)
 | Outcome | Tone | Text | Action |
 |---|---|---|---|
-| Connected | success | "Instagram connected. Next: let us see your messages." | Allow messages |
+| Connected | success | "Instagram connected. Next: turn on replies, so you can answer DMs from here." | Turn on replies |
 | Personal account | warning | "That's a personal Instagram account. Bhendi Bazaar works with business and creator accounts, which are free. In Instagram: Profile → ☰ → Account type and tools → Switch to professional account." | Try again |
 | Cancelled | neutral | "Nothing was connected. You can connect Instagram any time." | Connect Instagram |
 | Link expired or altered | warning | "That link has expired. Start again from here." | Connect Instagram |
@@ -73,8 +76,8 @@
 
 ## Copy deck
 - Card title "Instagram"; purpose line "Post, answer comments and DMs, and turn comments into sales."
-- Checklist: "Connect" · "Allow messages" · "First post" · "Comment-to-DM"; waiting line "waiting for your first message"; folded "Setup done".
-- Allow messages sheet: title "Let Bhendi Bazaar see your messages"; body "Instagram asks you to allow this once, in the app:"; steps "1. Settings → Messages and story replies", "2. Message controls → Connected tools", "3. Turn on Allow access to messages"; actions "Open Instagram", "Done".
+- Checklist: "Connect" · "Turn on replies" · "First post" · "Comment-to-DM"; waiting line "waiting for your first message"; folded "Setup done".
+- Turn on replies sheet: title "Turn on replies from Bhendi Bazaar"; body "So you can answer your DMs here, Instagram asks you to switch this on once, in the app:"; foot "🔒 Private to your shop · No one at Bhendi Bazaar reads your chats." (opens the privacy sheet, inbox-core); steps "1. Settings → Messages and story replies", "2. Message controls → Connected tools", "3. Turn on Allow access to messages"; actions "Open Instagram", "Done".
 - Disconnect dialog: title "Disconnect Instagram?"; "Stops: scheduled posts won't publish, and new comments and DMs stop arriving here." "Stays: your posts on Instagram stay as they are. Your conversations stay here for 90 days, then are deleted." "To remove us completely, also remove Bhendi Bazaar in Instagram: Settings → Website permissions → Apps and websites." Buttons "Disconnect", "Keep connected"; toast "Instagram disconnected."
 - Home line: "Instagram needs reconnecting. Posts won't publish until it is." · Reconnect.
 

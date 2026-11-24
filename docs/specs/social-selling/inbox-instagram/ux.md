@@ -21,8 +21,8 @@
    opens the new DM conversation.
 4. **Hide a rude comment.** Comment thread ⋯ → **Hide on Instagram** (pending "Hiding…") → the
    comment greys with "Hidden on Instagram" and **Unhide**.
-5. **Message access off.** Tab shows a note "Instagram isn't sharing your messages with us" with
-   **Show me how** (the connect-instagram sheet); comments still arrive.
+5. **Message access off.** Tab shows a note "Replies from here are off in Instagram" with
+   **Show me how** (the connect-instagram "Turn on replies" sheet); comments still arrive.
 6. **Private account.** Tab note "Your account is private, so Instagram doesn't send us comments.
    DMs still arrive."
 

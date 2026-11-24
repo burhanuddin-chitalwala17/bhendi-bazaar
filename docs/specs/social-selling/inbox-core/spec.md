@@ -50,6 +50,9 @@ works (parent Q63).
 - R12 — Each shop sees only its own conversations; the same message delivered twice shows once.
 - R13 — Messages are kept while the platform is connected and deleted 90 days after it is
   disconnected (parent Q34); the person's name and handle are kept, never a profile photo (Q15).
+- R14 — Only the shop's members read its chats: message bodies are encrypted at rest with a key per
+  shop, no staff screen shows one, and support sees a chat only when the shop shares it for one
+  request, for 48 hours, shown to the shop under "Who has opened your chats" (parent Q116).
 
 ## Hazards the TRD must answer
 - **Two members replying at once** to the same conversation.
@@ -66,9 +69,12 @@ Judged on a phone (~360px) first.
 - A5 — A failed send shows its reason and Try again, and succeeds on retry.
 - A6 — A conversation unanswered for four hours produces one "waiting" event.
 
+- A7 — No admin page or read model returns a message body; a chat shared with support for a request
+  opens for 48 hours only and appears in the shop's "Who has opened your chats".
+
 ## Scope
 - **Outcome:** a shop reads and answers its conversations in one shared inbox.
-- **In:** R1–R13, tested by A1–A6.
+- **In:** R1–R14, tested by A1–A7.
 - **Later:** assigning conversations (parent Q63); search of message text (Q3).
 
 ## Open questions

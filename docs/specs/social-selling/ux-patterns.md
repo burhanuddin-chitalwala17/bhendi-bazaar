@@ -74,6 +74,8 @@ lock on each paid action that opens the plan sheet (`LockedAction`, feature-acce
 ## 9. Words
 Plain words a shop owner uses: *connected*, *needs reconnecting*, *spending limit*, *how often*,
 *Needs you*, *answered automatically*. Never Meta's terms (WABA, template category, BSUID, webhook).
+About chats, never *access*, *see* or *read*: say what the shop gains ("answer from here"), and keep
+privacy as the small 🔒 "Private to your shop" line and its sheet, never a banner (parent Q116).
 Buttons are verbs; toasts are past tense; errors say what to do next. Every string ships from the
 area's copy module (ADR-0067). Shop-facing words are English; buyer-facing messages come in English
 and Hindi (parent Q37).
