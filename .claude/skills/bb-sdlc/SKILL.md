@@ -28,8 +28,8 @@ A document that cites a Q id (spec, ux, TRD, code comment) inherits that Q's Sta
 
 ## Where docs live
 
-- **Project-wide:** `docs/` — `ARCHITECTURE.md`, `CONTRACTS.md`, `BACKLOG.md`, `CHANGELOG.md`, `DEPENDENCIES.md`, `TESTING.md`, `OPERATIONS.md`, `INTEGRATIONS.md`, `adr/`, `specs/`.
-- **Domain-internal:** co-located with the code — `<domain>/CLAUDE.md`, `<domain>/ARCHITECTURE.md`, `<domain>/adr/`. One changelog for everything: `docs/CHANGELOG.md`.
+- **Project-wide:** `docs/` — `ARCHITECTURE.md`, `CONTRACTS.md`, `BACKLOG.md`, `DEPENDENCIES.md`, `TESTING.md`, `OPERATIONS.md`, `INTEGRATIONS.md`, `adr/`, `specs/`.
+- **Domain-internal:** co-located with the code — `<domain>/CLAUDE.md`, `<domain>/ARCHITECTURE.md`, `<domain>/adr/`. No changelog: history is `git log` ([ADR-0078](../../../docs/adr/0078-the-changelog-is-retired-and-the-commit-subject-is-the-record.md)).
 - **Directory rules:** `src/components/CLAUDE.md` (front end), `src/app/api/CLAUDE.md` (route handlers).
 
 When something below says "the relevant `ARCHITECTURE.md`", choose by scope: one domain → that domain's; crossing domains → `docs/`.
@@ -260,12 +260,12 @@ Walks the pre-merge gate. Report each item as pass, fail, or not-applicable — 
 2. **Tests exist** for changed logic, and pass. `npm run test:run`.
 3. **Typecheck passes.** `npx tsc --noEmit`.
 4. **Lint.** `npm run lint:boundary` passes; it is the blocking lint in CI. `npm run lint` introduces no new errors (advisory). `npm run docs:check` passes.
-5. **CHANGELOG entry** added — newest at top, one per PR, append-only. `[CONTRACT]` if a DTO changed, `[MIGRATION]` if a migration was added.
+5. **Commit subjects** read as history — `<area>: <what changed>`, `[CONTRACT]` if a DTO changed, `[MIGRATION]` if a migration was added.
 6. **A TRD exists** if the PR changes architecture or data flow, adds a package, starts a feature, or changes a contract.
 7. **Docs updated** where they are now wrong: the relevant `ARCHITECTURE.md` if structure changed, `CONTRACTS.md` if a DTO changed, `DEPENDENCIES.md` if a package was added, `OPERATIONS.md` if setup or deploy changed. Bump each touched doc's `Verified:` date.
 8. **UX and decisions honoured.** A screen this PR adds or changes appears in `ux.md` with its states and copy. No decision the PR depends on is still open in `decisions.md`.
 9. **Spec status moved** if this PR completed one — `Draft` → `Implemented` in the spec and in `docs/specs/README.md`, and the row in `BACKLOG.md`.
-10. **No findings written into docs.** Defects fixed in this PR should leave no trace as documentation; the CHANGELOG records what changed, and that is enough.
+10. **No findings written into docs.** Defects fixed in this PR should leave no trace as documentation; the commit records what changed, and that is enough.
 11. **Branch is not `main`.** Commit each PR-sized unit on `develop` (or the branch the user named). Never push or open a PR unless the user asks in this conversation.
 
 Report the checklist with its verdicts, then state plainly whether the PR is ready.
