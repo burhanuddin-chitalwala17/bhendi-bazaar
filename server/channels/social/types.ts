@@ -11,6 +11,12 @@ export const SOCIAL_PLATFORM = {
 } as const;
 export type SocialPlatform = (typeof SOCIAL_PLATFORM)[keyof typeof SOCIAL_PLATFORM];
 
+/** The platforms' own names, as `CHANNEL_LABELS` holds the marketplaces'. */
+export const SOCIAL_PLATFORM_LABELS: Record<SocialPlatform, string> = {
+  [SOCIAL_PLATFORM.INSTAGRAM]: "Instagram",
+  [SOCIAL_PLATFORM.WHATSAPP]: "WhatsApp",
+};
+
 /**
  * Why a call to a platform did not do what we asked: our code, never the platform's text
  * (meta-foundation R9). The UI maps each to ux.md's sentence.

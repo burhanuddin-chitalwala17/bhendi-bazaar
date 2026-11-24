@@ -37,7 +37,8 @@ import { providerFor } from "./providers";
 import { channelListingRepository } from "./channel-listing.repository";
 import { listingReadSpec } from "./listing-read.job";
 import type { StockSyncState } from "./channel-stock.types";
-import { channelPlan } from "./channel-plan";
+import { channelPlan, socialPlan } from "./channel-plan";
+import { SOCIAL_PLATFORM, SOCIAL_PLATFORM_LABELS } from "./social/types";
 
 /**
  * A shop's connections to the marketplaces (channel-connectors). The only public surface of the
@@ -141,6 +142,12 @@ function marketplaceCard(
   };
 }
 
+async function socialAttention(orgId: string, row: ConnectionRow | undefined): Promise<ChannelAttentionDTO[]> {
+  if (row?.state !== CONNECTION_STATE.NEEDS_RECONNECT || !(await socialPlan.can(orgId))) return [];
+  const channel = SOCIAL_PLATFORM.INSTAGRAM;
+  return [{ channel, label: SOCIAL_PLATFORM_LABELS[channel], state: CARD_STATE.NEEDS_RECONNECT, reapproveBy: null }];
+}
+
 function plainCard(channel: Channel, state: CardState): ChannelCardDTO {
   return {
     channel,
@@ -187,12 +194,23 @@ export const channelConnectionService = {
       ...marketplaces,
       ...FEEDS.map((channel) => plainCard(channel, enabled.has(channel) ? CARD_STATE.FEED_ON : CARD_STATE.FEED_OFF)),
     ];
-    const attention: ChannelAttentionDTO[] = marketplaces.flatMap((card) =>
-      card.state === CARD_STATE.RENEWAL_DUE || card.state === CARD_STATE.NEEDS_RECONNECT
-        ? [{ channel: card.channel as MarketplaceChannel, label: card.label, state: card.state, reapproveBy: card.reapproveBy }]
-        : [],
-    );
+    const attention: ChannelAttentionDTO[] = [
+      ...marketplaces.flatMap((card) =>
+        card.state === CARD_STATE.RENEWAL_DUE || card.state === CARD_STATE.NEEDS_RECONNECT
+          ? [{ channel: card.channel as MarketplaceChannel, label: card.label, state: card.state, reapproveBy: card.reapproveBy }]
+          : [],
+      ),
+      ...(await socialAttention(orgId, byChannel.get(SOCIAL_PLATFORM.INSTAGRAM))),
+    ];
     return { cards, attention };
+  },
+
+  /**
+   * Instagram needing the shop, for Home (connect-instagram R9, A6). Read apart from `overview` so a
+   * shop holding Social selling but not Channels still sees it; one that holds neither could not act on it.
+   */
+  async socialAttention(orgId: string): Promise<ChannelAttentionDTO | null> {
+    return (await socialAttention(orgId, (await channelConnectionRepository.find(orgId, SOCIAL_PLATFORM.INSTAGRAM)) ?? undefined))[0] ?? null;
   },
 
   /** Begin a connect, reconnect or renewal: off to the marketplace, or straight back (D5). */

@@ -5,6 +5,7 @@ import { orgChannelService } from "@server/listing/org-channel.service";
 import { registerSchedule } from "@server/shared/jobs/jobs.schedule";
 import { adminOrgService } from "@server/catalog/org.service";
 
+import { instagramConnection } from "./instagram-connection.service";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelImportService } from "./channel-import.service";
 import { listingReadSpec } from "./listing-read.job";
@@ -82,13 +83,20 @@ export const channelsMaintainJob = registerJob({
   type: "channels.maintain",
   schema: z.object({}),
   handler: async ({ jobId }) => {
-    const summary = await channelConnectionService.maintain(async (orgId) => {
+    const isSuspended = async (orgId: string) => {
       try {
         return (await adminOrgService.getOrg(orgId)).isBlocked === true;
       } catch {
         return true;
       }
+    };
+    const summary = await channelConnectionService.maintain(isSuspended);
+    // Instagram's 60-day tokens renewed and accounts checked; the marketplace pass skips social rows (connect-instagram D2, Q17).
+    const instagram = await instagramConnection.maintain(isSuspended).catch((error: unknown) => {
+      console.error(`[channels] instagram pass failed: ${error instanceof Error ? error.name : "error"}`);
+      return null;
     });
+    if (instagram) console.log(`[jobs] channels.maintain ${jobId}: instagram ${JSON.stringify(instagram)}`);
     // Stock sync's daily check, and a restart of the order check if its chain stopped (inventory-sync Q23).
     await enqueue(prisma, checkStockSpec, {});
     await enqueueLater(prisma, checkOrdersSpec, {}, { afterSeconds: 0, onePerSeconds: ORDERS_CHECK_EVERY_SECONDS });

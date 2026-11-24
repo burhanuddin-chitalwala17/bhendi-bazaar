@@ -81,7 +81,8 @@ export const homeDAL = {
       settle("setup", () => orgOnboardingService.status(orgId)),
       settle("to pack", () => toPack(orgId)),
       settle("low stock", () => sellingLowStock(orgId, now)),
-      settle("channel", channels ? async () => (await channelConnectionService.overview(orgId)).attention[0] ?? null : none),
+      // Instagram's own line stands without Channels: it sits behind Social selling (connect-instagram R9).
+      settle("channel", channels ? async () => (await channelConnectionService.overview(orgId)).attention[0] ?? null : () => channelConnectionService.socialAttention(orgId)),
       settle("stock", channels ? () => channelStockService.attention(orgId) : none),
       settle("listing problems", channels ? () => listingProblemsService.attention(orgId) : none),
       settle("channel asks", channels ? () => channelCatalogueService.attention(orgId, now) : none),

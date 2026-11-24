@@ -99,7 +99,7 @@ export interface ChannelCardDTO {
 }
 
 export interface ChannelAttentionDTO {
-  channel: MarketplaceChannel;
+  channel: MarketplaceChannel | SocialPlatform;
   label: string;
   state: typeof CARD_STATE.RENEWAL_DUE | typeof CARD_STATE.NEEDS_RECONNECT;
   reapproveBy: string | null;

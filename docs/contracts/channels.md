@@ -52,6 +52,14 @@ Four routes, none with a request body:
   when there is nothing to disconnect.
 - `POST /api/org/[orgId]/channels/[channel]/connection/check` — `{ result: "ok" | "needs_reconnect" | "unreachable" }`.
 
+Instagram (connect-instagram) has its own static routes beside these, none with a body:
+`GET /api/org/[orgId]/channels/instagram/connect` (as the marketplaces' connect),
+`GET /api/channels/instagram/callback`, `DELETE /api/org/[orgId]/channels/instagram/connection`
+(`{ ok: true }`, 404 when there is nothing to disconnect) and
+`POST /api/org/[orgId]/channels/instagram/connection/check` (`{ result }` as above). Since
+connect-instagram unit 2 an `attention` entry's `channel` may also be a `SocialPlatform`
+(`instagram`), labelled `Instagram`.
+
 `CONNECT_RESULT` is a closed set (connected, cancelled, expired, other_session, other_shop,
 different_account, unreachable, full, unavailable); a client renders each with ux.md's copy and
 nothing else. Google and Meta still turn on and off through `PUT /api/org/[orgId]/channels` above; since channel-connectors that schema accepts only `google` and `meta`, because a marketplace is on only by connecting it (D11).

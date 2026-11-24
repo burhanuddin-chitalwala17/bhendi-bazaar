@@ -19,6 +19,9 @@ export const INSTAGRAM_SCOPES = [
 /** The webhook fields the inbox and automations read (connect-instagram D1). */
 export const INSTAGRAM_FIELDS = ["comments", "messages", "messaging_postbacks", "message_edit", "messaging_seen", "message_reactions"] as const;
 
+/** A long-lived Instagram Login token's life; Meta's "Long-lived access tokens" page, 2026-11-06 (Q6). */
+export const INSTAGRAM_TOKEN_DAYS = 60;
+
 export const INSTAGRAM_ACCOUNT = { BUSINESS: "business", CREATOR: "creator", PERSONAL: "personal" } as const;
 export type InstagramAccountType = (typeof INSTAGRAM_ACCOUNT)[keyof typeof INSTAGRAM_ACCOUNT];
 

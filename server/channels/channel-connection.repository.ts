@@ -240,7 +240,7 @@ export const channelConnectionRepository = {
   async disconnect(
     db: ConnectionDb,
     orgId: string,
-    channel: MarketplaceChannel,
+    channel: ConnectionChannel,
     userId: string,
     now: Date,
   ): Promise<{ id: string } | null> {
@@ -273,7 +273,7 @@ export const channelConnectionRepository = {
     return await db.channelConnection.findUnique({ where: { id }, select: SECRETS });
   },
 
-  async secretsFor(orgId: string, channel: MarketplaceChannel): Promise<SecretRow | null> {
+  async secretsFor(orgId: string, channel: ConnectionChannel): Promise<SecretRow | null> {
     return await prisma.channelConnection.findUnique({
       where: { orgId_channel: { orgId, channel } },
       select: SECRETS,
@@ -288,6 +288,11 @@ export const channelConnectionRepository = {
       data: refreshTokenExpiresAt ? { ...rest, refreshTokenExpiresAt } : rest,
       select: { id: true },
     });
+  },
+
+  /** A social connection's renewed or re-sealed token and its expiry, in one update. Call under `lockSecrets`. */
+  async saveSocialToken(db: ConnectionDb, id: string, sealed: { accessToken: string; accessTokenExpiresAt: Date | null }): Promise<void> {
+    await db.channelConnection.update({ where: { id }, data: sealed, select: { id: true } });
   },
 
   /** Re-seal stored tokens under the current key (D3), without renewing them. Call under `lockSecrets`. */
@@ -528,6 +533,11 @@ export const channelConnectionRepository = {
       },
       select: { id: true, orgId: true, externalAccountId: true, externalPhoneId: true, externalBusinessId: true },
     });
+  },
+
+  /** Every connected account on one social platform with its sealed token: that platform's daily pass (connect-instagram D2). */
+  async liveSocial(channel: SocialPlatform): Promise<SecretRow[]> {
+    return await prisma.channelConnection.findMany({ where: { channel, state: CONNECTION_STATE.CONNECTED }, select: SECRETS });
   },
 
   /** Every marketplace connection that still holds tokens, for the daily job (D7); social ones have their own pass. */
