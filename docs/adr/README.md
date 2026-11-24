@@ -118,4 +118,5 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0080](0080-planning-and-building-never-share-a-session.md) | Planning and building never share a session | Accepted | 2026-11-24 |
 | [0081](0081-the-mechanical-steps-of-the-cycle-are-scripts.md) | The mechanical steps of the cycle are scripts | Accepted | 2026-11-24 |
 | [0082](0082-the-contracts-are-split-by-domain.md) | The contracts are split by domain | Accepted | 2026-11-24 |
+| [0083](0083-a-source-file-stays-under-25-kb-and-larger-ones-only-shrink.md) | A source file stays under 25 KB, and larger ones only shrink | Accepted | 2026-11-24 |
 <!-- generated:adr-index:end -->

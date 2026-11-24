@@ -202,7 +202,7 @@ git diff $RANGE | grep -nE 'useForm\(|NextResponse\.json\(\s*\{\s*error|error\.(
 
 **Portal guards** — `/api/admin/**` calls `requirePlatformAdmin`, `/api/org/**` goes through `withOrg`, and a portal layout owns its guard. `portal-boundary.test.ts` and `portal-guards.test.ts` block the mechanical cases; judge any new exception.
 
-**An allowlist edit is a finding to judge, never a formality.** Every gate here keeps an exception list. An entry added, or a reason that no longer matches its file, needs an argument in the diff. That covers `PUBLIC_SURFACE`, `ALLOWED_VIOLATIONS`, `RECORDED`, `MAY_USE_SHEET`, `SHAPE_LEGACY`, `EXTERNALLY_CALLED`, `DATA_DEPENDENT`, `NEVER_ASKS`, `REQUEST_MODULES`, and the design-token allowlists.
+**An allowlist edit is a finding to judge, never a formality.** Every gate here keeps an exception list. An entry added, or a reason that no longer matches its file, needs an argument in the diff. That covers `PUBLIC_SURFACE`, `ALLOWED_VIOLATIONS`, `RECORDED`, `MAY_USE_SHEET`, `SHAPE_LEGACY`, `EXTERNALLY_CALLED`, `DATA_DEPENDENT`, `NEVER_ASKS`, `REQUEST_MODULES`, `PINNED` (file size: a raised ceiling is a finding; a pinned file should shrink along its named split), and the design-token allowlists.
 
 **A new guard is mutation-tested.** A new test that scans source must have been seen to fail: break the rule once in the source and watch it go red ([TESTING.md](../../../docs/TESTING.md)). Ask how it was checked. "It passes" is not evidence that it guards anything.
 
