@@ -72,4 +72,4 @@ connection, it would be built twice and drift; built here, the tools above never
 - **Later:** an admin view of event health (parent Q34's audit screen is separate).
 
 ## Open questions
-Q2 (how long raw events are kept).
+None.

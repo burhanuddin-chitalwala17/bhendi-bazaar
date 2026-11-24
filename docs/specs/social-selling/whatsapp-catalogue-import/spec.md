@@ -64,4 +64,4 @@ Judged on a phone (~360px) first.
 - **Later:** grouping settled items into a family here (Q3).
 
 ## Open questions
-Q1, Q2, Q3.
+None.

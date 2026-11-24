@@ -253,9 +253,9 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [social-selling/connect-whatsapp](specs/social-selling/connect-whatsapp/) | Connect: a WhatsApp number by Meta's pop-up, keeping the Business app | 📝 Spec rewritten 2026-11-22; UX next |
 | [social-selling/whatsapp-catalogue-import](specs/social-selling/whatsapp-catalogue-import/) | Catalogue: an existing WhatsApp catalogue settled, matched, added or left off | 📝 Spec rewritten 2026-11-22; UX next |
 | [social-selling/whatsapp-catalogue](specs/social-selling/whatsapp-catalogue/) | Catalogue: live products as an exact copy, cart on | 📝 Spec rewritten 2026-11-22; UX next |
-| [social-selling/post-composer](specs/social-selling/post-composer/) | Post: compose and schedule from the library to any destination (was post-scheduling) | 📝 Being rewritten — 2026-11-22 |
-| [social-selling/instagram-publishing](specs/social-selling/instagram-publishing/) | Post: feed, carousel, reel and story on Instagram | 📝 Being rewritten — 2026-11-22 |
-| [social-selling/whatsapp-status-kit](specs/social-selling/whatsapp-status-kit/) | Post: a Status ready on time, one tap from the phone | 📝 Being rewritten — 2026-11-22 |
+| [social-selling/post-composer](specs/social-selling/post-composer/) | Post: compose and schedule from the library to any destination (was post-scheduling) | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/instagram-publishing](specs/social-selling/instagram-publishing/) | Post: feed, carousel, reel and story on Instagram | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/whatsapp-status-kit](specs/social-selling/whatsapp-status-kit/) | Post: a Status ready on time, one tap from the phone | 📝 Spec rewritten 2026-11-22; UX next |
 | [social-selling/inbox-core](specs/social-selling/inbox-core/) | Converse: the inbox shell, a tab per platform | 📝 Being rewritten — 2026-11-22 |
 | [social-selling/inbox-instagram](specs/social-selling/inbox-instagram/) | Converse: DMs, story replies and comments | 📝 Being rewritten — 2026-11-22 |
 | [social-selling/inbox-whatsapp](specs/social-selling/inbox-whatsapp/) | Converse: chats, templates after 24 hours, a sent cart as an order card | 📝 Being rewritten — 2026-11-22 |

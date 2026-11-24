@@ -41,10 +41,12 @@ result, and must charge exactly what it spent.
    per-shop margin, and proof on payouts.
 4. **improve-with-ai** — the split Improve button, the description-and-references modal, the result
    with Use this and Regenerate, on the library and the product form.
+5. **social-posts** — post pictures and captions for social-selling's composer, through the same
+   window, with a social purpose (Q46). Draft, 2026-11-22.
 
 ## Scope
 - **In:** the four subfeatures above.
-- **Later:** Instagram and WhatsApp composers (Q27), OpenAI and Anthropic adapters (Q9), an
+- **Later:** Instagram and WhatsApp composers are social-posts (Q46); OpenAI and Anthropic adapters (Q9), an
   automatic fidelity check, an admin screen for the model order (Q12).
 
 ## Open questions

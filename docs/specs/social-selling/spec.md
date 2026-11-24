@@ -80,9 +80,9 @@ folder is merged, split or renamed into it; **new** means it is still to be writ
 | Connect | connect-whatsapp | A shop connects its WhatsApp number, keeping its Business app, and sees it healthy (Q12) | rewritten 2026-11-22 | channels |
 | Catalogue | whatsapp-catalogue-import | A catalogue the shop already has is settled: matched, added or left off (Q47) | rewritten 2026-11-22 | channels |
 | Catalogue | whatsapp-catalogue | The shop's live products in its WhatsApp catalogue, an exact copy kept in sync, cart on (Q47) | rewritten 2026-11-22 | channels |
-| Post | post-composer | Compose and schedule a post or story from the library to any destination; other modules add panels to it | re-cut from post-scheduling | social |
-| Post | instagram-publishing | Feed, carousel, reel and story published to Instagram, with everything its API allows | exists | channels |
-| Post | whatsapp-status-kit | A Status ready on time, one tap from the phone (Q18) | exists | social |
+| Post | post-composer | Compose and schedule a post or story from the library to any destination; other modules add panels to it | rewritten 2026-11-22 | social |
+| Post | instagram-publishing | Feed, carousel, reel and story published to Instagram, with everything its API allows | rewritten 2026-11-22 | channels |
+| Post | whatsapp-status-kit | A Status ready on time, one tap from the phone (Q18) | rewritten 2026-11-22 | social |
 | Converse | inbox-core | The inbox shell: a tab per platform, reply box, reply windows, unread (Q63) | exists | inbox |
 | Converse | inbox-instagram | DMs, story replies and comments answered from the inbox (Q36) | exists | channels |
 | Converse | inbox-whatsapp | Chats answered from the inbox, templates after 24 hours, a sent cart as an order card (Q97) | exists | channels |
