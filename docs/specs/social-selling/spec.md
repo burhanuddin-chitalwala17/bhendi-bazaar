@@ -94,10 +94,10 @@ folder is merged, split or renamed into it; **new** means it is still to be writ
 | Converse | enquiry-autoreplies | Every DM and chat answered at once: greeting, away message by business hours, FAQs, starter questions, buttons, handover (Q89) | rewritten 2026-11-22 | automations |
 | Converse | product-answers | A question about a product answered from live price, stock and sizes, with a Buy link; a missed-enquiry count (Q89) | rewritten 2026-11-22 | automations |
 | Converse | ai-autoreplies | AI wording over the same live data | parked (Q89) | automations |
-| Reach out | consent-core | Consent per sender and channel, the one "may I message?" answer, YES, STOP and HINDI in chat, contacts synced from the phone (Q9) | re-cut from audience and whatsapp-contacts | audience |
-| Reach out | whatsapp-sending | The one WhatsApp send every caller uses: consent and caps checked, spend cap, cost in paise, starter and own templates (Q8, Q37) | re-cut from whatsapp-campaigns and whatsapp-templates | campaigns |
-| Reach out | audience | The Audience page: lists, uploads with attestation, the checkout box, the store page's button (Q75) | re-cut | audience |
-| Reach out | whatsapp-campaigns | A campaign composed, its cost reviewed, scheduled and reported (Q40) | re-cut | campaigns |
+| Reach out | consent-core | Consent per sender and channel, the one "may I message?" answer, YES, STOP and HINDI in chat, contacts synced from the phone (Q9) | rewritten 2026-11-22 | audience |
+| Reach out | whatsapp-sending | The one WhatsApp send every caller uses: consent and caps checked, spend cap, cost in paise, starter and own templates (Q8, Q37) | rewritten 2026-11-22 | campaigns |
+| Reach out | audience | The Audience page: lists, uploads with attestation, the checkout box, the store page's button (Q75) | rewritten 2026-11-22 | audience |
+| Reach out | whatsapp-campaigns | A campaign composed, its cost reviewed, scheduled and reported (Q40) | rewritten 2026-11-22 | campaigns |
 
 **Siblings, outside the base:** post-generation (the released ai-images feature, given a social
 purpose, Q26), notification-hub (notifications-core re-cut from hub-core, then hub-marketing,

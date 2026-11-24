@@ -263,10 +263,10 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [social-selling/enquiry-autoreplies](specs/social-selling/enquiry-autoreplies/) | Converse: greeting, away message, FAQs, buttons, handover | 📝 Spec rewritten 2026-11-22; UX next |
 | [social-selling/product-answers](specs/social-selling/product-answers/) | Converse: live price, stock and sizes with a Buy link; missed enquiries | 📝 Spec rewritten 2026-11-22; UX next |
 | social-selling: ai-autoreplies *(later)* | Converse: AI wording over the same live data, step 8 (Q89) | parked |
-| [social-selling/consent-core](specs/social-selling/consent-core/) | Reach out: consent, YES and STOP in chat, phone contacts (takes whatsapp-contacts) | 📝 Being rewritten — 2026-11-22 |
-| [social-selling/whatsapp-sending](specs/social-selling/whatsapp-sending/) | Reach out: the one WhatsApp send, spend cap, templates (takes whatsapp-templates) | 📝 Being rewritten — 2026-11-22 |
-| [social-selling/audience](specs/social-selling/audience/) | Reach out: the Audience page, lists, uploads, checkout box | 📝 Being rewritten — 2026-11-22 |
-| [social-selling/whatsapp-campaigns](specs/social-selling/whatsapp-campaigns/) | Reach out: compose, review cost, schedule, report | 📝 Being rewritten — 2026-11-22 |
+| [social-selling/consent-core](specs/social-selling/consent-core/) | Reach out: consent, YES and STOP in chat, phone contacts (takes whatsapp-contacts) | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/whatsapp-sending](specs/social-selling/whatsapp-sending/) | Reach out: the one WhatsApp send, spend cap, templates (takes whatsapp-templates) | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/audience](specs/social-selling/audience/) | Reach out: the Audience page, lists, uploads, checkout box | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/whatsapp-campaigns](specs/social-selling/whatsapp-campaigns/) | Reach out: compose, review cost, schedule, report | 📝 Spec rewritten 2026-11-22; UX next |
 | social-selling: later | Ads, Facebook Page, Threads, checkout in WhatsApp, forms in chat, insights (Q21); platform sending (Q27); audit screen (Q34); assigning conversations (Q63); sales per post (Q108) | parked |
 | [notification-hub](specs/notification-hub/) | Overview: one hub every module plugs into; a sibling of social-selling | 📝 Draft |
 | [notification-hub/notifications-core](specs/notification-hub/notifications-core/) | Shop alerts once, badge and daily email; built in social-selling's step 2 (was hub-core) | 📝 Being rewritten — 2026-11-22 |
