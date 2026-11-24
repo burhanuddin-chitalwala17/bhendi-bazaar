@@ -202,7 +202,7 @@ git diff $RANGE | grep -nE 'useForm\(|NextResponse\.json\(\s*\{\s*error|error\.(
 
 **Portal guards** — `/api/admin/**` calls `requirePlatformAdmin`, `/api/org/**` goes through `withOrg`, and a portal layout owns its guard. `portal-boundary.test.ts` and `portal-guards.test.ts` block the mechanical cases; judge any new exception.
 
-**An allowlist edit is a finding to judge, never a formality.** Every gate here keeps an exception list. An entry added, or a reason that no longer matches its file, needs an argument in the diff. That covers `PUBLIC_SURFACE`, `ALLOWED_VIOLATIONS`, `RECORDED`, `MAY_USE_SHEET`, `SHAPE_LEGACY`, `EXTERNALLY_CALLED`, `DATA_DEPENDENT`, `NEVER_ASKS`, `REQUEST_MODULES`, and the design-token allowlists.
+**An allowlist edit is a finding to judge, never a formality.** Every gate here keeps an exception list. An entry added, or a reason that no longer matches its file, needs an argument in the diff. That covers `PUBLIC_SURFACE`, `ALLOWED_VIOLATIONS`, `RECORDED`, `MAY_USE_SHEET`, `SHAPE_LEGACY`, `EXTERNALLY_CALLED`, `DATA_DEPENDENT`, `NEVER_ASKS`, `REQUEST_MODULES`, `PINNED` (file size: a raised ceiling is a finding; a pinned file should shrink along its named split), and the design-token allowlists.
 
 **A new guard is mutation-tested.** A new test that scans source must have been seen to fail: break the rule once in the source and watch it go red ([TESTING.md](../../../docs/TESTING.md)). Ask how it was checked. "It passes" is not evidence that it guards anything.
 
@@ -211,7 +211,7 @@ git diff $RANGE | grep -nE 'useForm\(|NextResponse\.json\(\s*\{\s*error|error\.(
 ## Part 2 — Process
 
 - **Commit subject a reader can use?** `<area>: <what changed>`, `[CONTRACT]`/`[MIGRATION]` where they apply ([ADR-0078](../../../docs/adr/0078-the-changelog-is-retired-and-the-commit-subject-is-the-record.md)). There is no changelog to update.
-- **`[CONTRACT]` flag** if a DTO in [CONTRACTS.md](../../../docs/CONTRACTS.md) changed — and `CONTRACTS.md` updated in the same PR. Check especially for a field whose *unit or meaning* changed without its type changing; nothing fails to compile, so nothing else will catch it.
+- **`[CONTRACT]` flag** if a DTO in [CONTRACTS.md](../../../docs/CONTRACTS.md) changed — and that domain's `docs/contracts/<domain>.md` updated in the same PR (read only that file and [CONTRACTS.md](../../../docs/CONTRACTS.md)'s rules). Check especially for a field whose *unit or meaning* changed without its type changing; nothing fails to compile, so nothing else will catch it.
 - **`[MIGRATION]` flag** if `prisma/migrations/` gained a file.
 - **Tests for changed logic.** No exception. If the change touches an Invariant, the test is the deliverable — see [TESTING.md](../../../docs/TESTING.md) for the 100% targets.
 - **A TRD** if the PR changes architecture or data flow, adds a package, starts a feature, or changes a contract.

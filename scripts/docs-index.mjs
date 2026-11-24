@@ -1,5 +1,6 @@
 // The index tables in docs/adr/README.md and docs/specs/README.md, generated from the
-// files they index. A hand-typed copy of a header is a copy that drifts (ADR-0009);
+// files they index, and the counts in ARCHITECTURE.md (scripts/docs-counts.mjs). A hand-typed copy of a header
+// is a copy that drifts (ADR-0009);
 // `docs:check` fails when the committed tables differ from what this renders.
 //
 //   node scripts/docs-index.mjs          rewrite the tables in place
@@ -7,6 +8,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { applyCounts } from "./docs-counts.mjs";
 
 const start = (name) => `<!-- generated:${name}:start -->`;
 const end = (name) => `<!-- generated:${name}:end -->`;
@@ -110,7 +112,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     }
     console.log("Index tables are current.");
   } else {
-    const changed = applyIndexes(root);
+    const changed = [...applyIndexes(root), ...applyCounts(root)];
     console.log(changed.length ? `Rewrote:\n${changed.map((c) => `  ${c}`).join("\n")}` : "Index tables already current.");
   }
 }

@@ -116,4 +116,7 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0078](0078-the-changelog-is-retired-and-the-commit-subject-is-the-record.md) | The changelog is retired, and the commit subject is the record | Accepted. Supersedes [ADR-0072](0072-the-changelog-holds-the-running-month-and-a-closed-month-becomes-a-summary.md); amends [ADR-0001](0001-monorepo-doc-structure.md) D1 (history lives in git) and [ADR-0056](0056-a-gate-against-existing-debt-is-a-ratchet.md) D4 (where a mutation is recorded) | 2026-11-24 |
 | [0079](0079-agent-sessions-are-kept-cheap-without-removing-a-check.md) | Agent sessions are kept cheap without removing a check | Accepted | 2026-11-24 |
 | [0080](0080-planning-and-building-never-share-a-session.md) | Planning and building never share a session | Accepted | 2026-11-24 |
+| [0081](0081-the-mechanical-steps-of-the-cycle-are-scripts.md) | The mechanical steps of the cycle are scripts | Accepted | 2026-11-24 |
+| [0082](0082-the-contracts-are-split-by-domain.md) | The contracts are split by domain | Accepted | 2026-11-24 |
+| [0083](0083-a-source-file-stays-under-25-kb-and-larger-ones-only-shrink.md) | A source file stays under 25 KB, and larger ones only shrink | Accepted | 2026-11-24 |
 <!-- generated:adr-index:end -->

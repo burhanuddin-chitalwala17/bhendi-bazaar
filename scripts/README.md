@@ -12,6 +12,10 @@
 - **`dynamic-form-migration.ts`** — dynamic-form unit 1's questions migration (new facts' lists, each type's questions, capacity on bags).
 - **`gate.sh`** — `npm run gate`: typecheck, unit tests (with `docs:check`) and boundary lint, a line per check and only the failing lines ([ADR-0079](../docs/adr/0079-agent-sessions-are-kept-cheap-without-removing-a-check.md)).
 - **`adr-new.mjs`** — `npm run adr:new -- "Title" [--dir server/<domain>/adr]`: the next ADR from the template, numbered and indexed.
+- **`spec.mjs`** — `npm run spec:new -- <feature> [--domain d] [--phase p]` scaffolds a spec folder from `templates/spec/`; `npm run spec:status -- <feature> <Status>` flips spec and TRD together, and at Implemented deletes `trd.md`/`ux.md` and pins links to them ([ADR-0081](../docs/adr/0081-the-mechanical-steps-of-the-cycle-are-scripts.md)).
+- **`mutate.mjs`** — `npm run mutate -- <file> <find> <replace> <test>…`: one mutation, the guard's tests, always restored; prints the commit-body line, exits 1 if the tests stayed green.
+- **`commit-msg.mjs`** — run by `.githooks/commit-msg` (set by `npm install`'s `prepare`): subject shape and the `[MIGRATION]`/`[CONTRACT]` flags.
+- **`docs-counts.mjs`** — the counts `docs/ARCHITECTURE.md` states, measured; `docs:index` rewrites them, `docs:check` fails on drift.
 - **`docs-index.mjs`** — renders the index tables in `docs/adr/README.md` and `docs/specs/README.md` from the files they index; `npm run docs:index` rewrites, `--check` reports. `tests/unit/docs-integrity.test.ts` runs the check as a gate, so a hand-edited row cannot survive CI.
 
 ## Exporting pg-boss's schema
