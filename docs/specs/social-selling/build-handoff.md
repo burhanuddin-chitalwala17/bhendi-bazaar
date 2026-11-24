@@ -35,14 +35,14 @@ Do not start the next unit.
 |---|---|
 | meta-foundation U1–U5 | `meta-foundation unit 1` … `unit 5` — Graph client, signed intake, drain and lanes, deauthorize and data deletion, seal, retention and sweep. Implemented |
 | connect-instagram U1 | `connect-instagram unit 1: connect and callback` and its review fixes |
+| connect-instagram U2 | `connect-instagram unit 2: renewal, health, disconnect [CONTRACT]` (d2fcd2b9) |
 | Process | ADRs renumbered 0084–0087; rebased on main; next units' dependencies marked in their TRDs |
 
 ## Queue (in order; one at a time)
 
 | # | Unit | Depends on | State |
 |---|---|---|---|
-| 1 | connect-instagram U2 — renewal, health, deauthorize wiring, disconnect | U1 | building (started 2026-11-24 18:40 UTC) |
-| 2 | connect-instagram U3 — card, checklist, Turn on replies, return notes | U2 | queued |
+| 2 | connect-instagram U3 — card, checklist, Turn on replies, return notes | U2 | building |
 | 3 | connect-whatsapp U1 — CSP, SDK leaf, state, signup route | — | queued |
 | 4 | connect-whatsapp U2 — setup job and health | U1 | queued |
 | 5 | connect-whatsapp U3 — card states, checklist, disconnect | U2, connect-instagram U3 | queued |
@@ -66,7 +66,6 @@ the four subfeatures above only.
 - Meta app: Business Verification; register `<domain>/api/channels/instagram/callback` (Instagram Login redirect),
   `/api/channels/instagram/deauthorize` (deauthorize) and `/api/channels/meta/data-deletion` (data deletion).
 - Set `SOCIAL_CONNECT=instagram` (later `,whatsapp`) with the `META_*` settings (docs/OPERATIONS.md) when opening.
-- Do not open Instagram to shops until connect-instagram U2 (token renewal) has shipped.
 - To verify on dev with the owner's account: Instagram's token answer shape and Bearer-header acceptance; that the
   deauthorize `user_id` equals the `/me` `user_id`; Meta's "message access off" error code; contact re-sync on
   WhatsApp reconnect; Instagram unsend API.
@@ -74,4 +73,6 @@ the four subfeatures above only.
 
 ## Blockers raised by build sessions
 
-None yet.
+- (Not this feature.) The U2 session holds two local commits for `main` (push settings, CLAUDE.md); the repo's
+  deny rule refuses a push to `main`, so the owner pushes those or merges them by PR. Both are already on this
+  branch as 111f5652 and 0c696196.
