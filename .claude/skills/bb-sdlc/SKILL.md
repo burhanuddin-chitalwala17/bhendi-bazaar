@@ -44,134 +44,25 @@ Scaffolds a feature folder under `docs/specs/`. Convention: [ADR-0010](../../../
 
 ### Steps
 
-1. **Name it.** `kebab-case`, descriptive, **no number**. One feature per folder.
+1. **Name it.** `kebab-case`, descriptive, **no number**. One feature per folder. Once steps 2–4 pass, scaffold it: `npm run spec:new -- <feature>[/<sub>] --domain <d> --phase <p>` writes `spec.md`, `decisions.md` and `trd.md` from the templates and regenerates the specs index ([ADR-0081](../../../docs/adr/0081-the-mechanical-steps-of-the-cycle-are-scripts.md)).
 2. **Check for overlap.** Scan `docs/specs/` for an existing or obviously adjacent folder. If the work belongs to an existing feature, add a **subfeature subfolder** rather than a second top-level folder.
 3. **Confirm it is a requirement, not a defect.** A spec states what must be true. If the rule is already stated in an ADR and the work is simply making the code obey it, **no spec is needed** — that is a PR. Push back rather than scaffolding a spec whose content would be a bug report; a spec should still read correctly after the work lands.
 4. **Cut the scope** by the rule above, before writing anything. Write the outcome as one sentence. If it needs "and" to join two outcomes, it is two features; scaffold the first and park the second.
-5. **Open `decisions.md`** with every question already raised, including in the conversation that led here:
+5. **Fill `decisions.md`** with every question already raised, including in the conversation that led here:
 
-```markdown
-# Decisions — <feature>
-
-- **Verified:** YYYY-MM-DD
-
-> Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented ones (ADR-0062).
-> Owner decides money, policy, irreversible data, external commitments, taste.
-> Claude decides the rest, marked `Claude · reversible`. Other documents cite Q ids.
-
-| Q | Question | Answer | Decided by | Date | Why | State |
-|---|---|---|---|---|---|---|
-| Q1 | … | … | Owner / Claude · reversible | YYYY-MM-DD | one line | open / decided / implemented / superseded by Qn / parked |
-
-## Parked (Later)
-- Q<n> — what was cut, why, and where it now lives (a BACKLOG row or a future feature).
-```
+Template: `scripts/templates/spec/decisions.md` — already in the folder `spec:new` made; fill it, don't re-type it.
 
 6. **Write `spec.md` — requirements and product approach only.** No technical approach, package choices, data-model or algorithm decisions. Those go in the TRD. Frame requirements as properties of the product, in language that survives the implementation.
 
-```markdown
-# Spec — <feature>
-
-- **Summary:** <one line, in product terms — this is the row in the specs index>
-- **Status:** Draft
-- **Domain:** <bounded context from CLAUDE.md, or cross-domain>
-- **Phase:** <phase from BACKLOG.md>
-- **Verified:** YYYY-MM-DD
-- **References:** trd.md, relevant ADRs, related features
-
-> Requirements and product approach only. Technical approach lives in trd.md.
-
-## What this feature is
-One or two lines, in product terms.
-
-## Why
-The product or user reason it exists. Not "X is broken" — what should be true and why it matters.
-
-## Requirements
-- R1 — …
-
-## Product acceptance
-- A1 — how we know it works, from the outside. If the feature has UI, acceptance
-  is judged on a phone first (~360px) — most buyers are mobile ([ADR-0015](../../adr/0015-mobile-first-design.md)).
-
-## Scope
-- **Outcome:** one sentence.
-- **In:** each item tied to an R or A id.
-- **Later:** each item with its Q id in decisions.md. This replaces an "out of scope" list.
-
-## Open questions
-Q ids from decisions.md that are still open. Never restate them here.
-```
+Template: `scripts/templates/spec/spec.md` — already in the folder `spec:new` made; fill it, don't re-type it.
 
 7. **If the feature has UI, run `ux-start` next.** The TRD waits for the owner's UX sign-off.
 8. **Confirm a spike exists before the TRD.** A TRD captures technical decisions and should rest on something — a `/bb-brainstorm`, an existing ADR, or a genuine constraint. If the feature is non-trivial and nothing has been investigated, offer `/bb-brainstorm` first.
 
-```markdown
-# TRD — <feature>
-
-- **Status:** Draft
-- **Domain:** …
-- **Phase:** …
-- **Verified:** YYYY-MM-DD
-- **References:** spec.md, the spike, ADRs
-
-> Technical approach and decisions. No code — references to existing code only, to justify a decision.
-
-## Approach
-The chosen approach, and what makes it the right shape.
-
-## Prior art
-Required when this introduces a new persistence shape, data model, integration pattern, or
-concurrency or caching strategy; "None — no new model" otherwise. Name what the field does, with
-a source, and say whether we follow it. A departure is allowed and is argued here. **An existing
-pattern in this repository is evidence, not authority** — consistency is a reason to match and
-never a reason not to check ([ADR-0046](../../../docs/adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md)).
-If the check finds a pattern already in our code that is wrong, say so here, and either fix it in
-this change or record why it stays.
-
-## Technical decisions
-- D1 — decision + rationale (+ reference).
-
-## Packages
-New dependencies, cross-referenced to DEPENDENCIES.md. "None" if none.
-
-## UI approach
-Only if the feature has UI, else "None". **Cite `ux.md` for screens, states and copy; do not redesign them here.** This section says how the signed-off UX is built. Rules: [src/components/CLAUDE.md](../../../src/components/CLAUDE.md).
-- **Per form factor** ([ADR-0050](../../adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md)): the ~360px phone layout first (content order, primary actions, touch affordances), then what `md:` (tablet) and `lg:` (desktop) add. A TRD that describes only desktop is not done.
-- **Rendering:** which parts are server components reading through the data-access layer, and which leaf earns `"use client"`.
-- **Behaviour:** each request's `*ApiClient` and the hook that calls it (`useServerForm`, `useMutation`, `useAsyncData`); the DTO each component is handed.
-- **Surfaces:** which primitives and overlays (ADR-0040) it uses, and any new token.
-
-## Gates touched
-Which source-scanning tests this change meets, and any allowlist entry it adds with its reason. That way the cost is seen at design time, not when a test fails. The common ones:
-- a new domain → `PUBLIC_SURFACE` (module-boundaries);
-- a new `CLAUDE.md` → `LIVING_DOCS` (docs-integrity);
-- a new route → its caller and its portal guard (route-reachability, portal-boundary);
-- a file reaching a third domain → `RECORDED` (file-cohesion);
-- a sheet → `MAY_USE_SHEET` (overlay-surfaces);
-- a new `prisma.<model>` write outside a `*.repository.ts` → `one-repository`;
-- a listing fact or product-type change → `product-visibility` CENSUS.
-
-"None" if none.
-
-## Data model
-Schema changes. Flag [MIGRATION]. "None" if none.
-
-## API / contract changes
-Touches docs/CONTRACTS.md? If so the PR carries [CONTRACT] and CONTRACTS.md moves in lockstep. "None" if none.
-
-## Test plan
-The tests that will exist when done, cross-referenced to TESTING.md.
-
-## Delivery (PRs)
-Small PRs, each independently verifiable. Say which one changes behaviour, and for each whether it is `after U<k>` or `independent` — the handoff is read from this list.
-
-## Open questions
-Q ids from decisions.md. All must be decided or parked before Draft → Accepted.
-```
+Template: `scripts/templates/spec/trd.md` — already in the folder `spec:new` made; fill it, don't re-type it.
 
 9. **Enforce the cap.** ≤100 **readable** lines for `spec.md` only (`ux.md`, `trd.md` and `decisions.md` are uncapped, [ADR-0071](../../../docs/adr/0071-only-the-spec-is-line-capped.md)) — prose only, excluding front-matter, headings, table rows, fenced blocks, link-only lines, and blanks. Over the cap → split into subfeatures. Count it; don't estimate.
-10. **Index it.** Give the spec header a one-line `Summary`, run `npm run docs:index` (the specs tables are generated from headers; never type a row), and add the row to `docs/BACKLOG.md` under its phase by hand. Add each parked item to BACKLOG too, so a cut is never a loss.
+10. **Index it.** Give the spec header a one-line `Summary`, run `npm run docs:index` (the specs tables are generated from headers; never type a row; status changes go through `npm run spec:status`), and add the row to `docs/BACKLOG.md` under its phase by hand. Add each parked item to BACKLOG too, so a cut is never a loss.
 
 ---
 

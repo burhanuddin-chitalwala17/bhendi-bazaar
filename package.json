@@ -25,7 +25,11 @@
     "generate:bakeoff": "tsx scripts/generation-bakeoff.ts",
     "lint:boundary": "eslint src/app/api server/checkout server/payments src/lib --quiet",
     "gate": "bash scripts/gate.sh",
-    "adr:new": "node scripts/adr-new.mjs"
+    "adr:new": "node scripts/adr-new.mjs",
+    "spec:new": "node scripts/spec.mjs new",
+    "spec:status": "node scripts/spec.mjs status",
+    "mutate": "node scripts/mutate.mjs",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
