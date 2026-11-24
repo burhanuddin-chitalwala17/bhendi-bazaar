@@ -3,7 +3,7 @@
  * Buttons that cannot do their job still answer on tap rather than greying out (ADR-0053).
  */
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import { MarketplaceCard } from "@/components/channel/marketplace-card";
 import { ChannelCardList } from "@/components/channel/channel-card-list";
@@ -94,7 +94,7 @@ describe("the marketplace card (spec A4)", () => {
 });
 
 describe("the page's two sections", () => {
-  it("puts an unavailable marketplace, Meesho, WhatsApp and Instagram under Coming soon, with nothing to press", () => {
+  it("puts an unavailable marketplace, Meesho, WhatsApp and Instagram under Coming soon, with nothing to press but Why?", () => {
     render(
       <ChannelCardList
         orgId="org_1"
@@ -109,10 +109,21 @@ describe("the page's two sections", () => {
     expect(soon.getByText("WhatsApp")).toBeInTheDocument();
     expect(soon.getByText("Instagram")).toBeInTheDocument();
     expect(soon.queryAllByRole("link")).toHaveLength(0);
-    expect(soon.queryAllByRole("button")).toHaveLength(0);
+    expect(soon.queryAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual(["Why is WhatsApp coming soon?", "Why is Instagram coming soon?"]);
     const live = within(screen.getByRole("region", { name: "Where you sell" }));
     expect(live.getByRole("link", { name: "Connect Amazon" })).toBeInTheDocument();
     expect(live.queryByText("Flipkart")).toBeNull();
+  });
+});
+
+describe("a planned social platform explains itself (meta-foundation R10, A5)", () => {
+  it("Why? opens a sheet saying the platform is coming soon and why, and Got it closes it", async () => {
+    render(<ChannelCardList orgId="org_1" storePath={null} storeLabel={null} cards={[base]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Why is WhatsApp coming soon?" }));
+    expect(await screen.findByText("WhatsApp is coming soon")).toBeInTheDocument();
+    expect(screen.getByText(/finishing Meta's checks/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Got it" }));
+    await waitFor(() => expect(screen.queryByText("WhatsApp is coming soon")).toBeNull());
   });
 });
 

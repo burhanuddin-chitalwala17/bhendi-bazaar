@@ -4,6 +4,7 @@
  */
 
 import { channelConnectionService } from "@server/channels/channel-connection.service";
+import { metaCallbacksService, type DeletionStatus } from "@server/channels/meta-callbacks.service";
 import type { ChannelAttentionDTO, ChannelsOverviewDTO } from "@server/channels/channel-connection.types";
 import { storefrontService } from "@server/catalog/storefront.service";
 import { appUrl } from "@server/shared/app-url";
@@ -18,6 +19,11 @@ export interface ChannelsPageData {
 }
 
 export const channelsDAL = {
+  /** The public deletion-status page (meta-foundation R7): state and dates by reference, nothing else. */
+  async dataDeletion(code: string): Promise<DeletionStatus | null> {
+    return metaCallbacksService.status(code);
+  },
+
   async page(orgId: string): Promise<ChannelsPageData> {
     const [overview, settings] = await Promise.all([
       channelConnectionService.overview(orgId),

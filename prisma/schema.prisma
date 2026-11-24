@@ -2624,6 +2624,24 @@ model ConnectionLane {
   @@id([connectionId, lane])
 }
 
+/// A person's request, through Meta, to delete what we hold about them (meta-foundation R7, D7). Names
+/// nobody: the Meta user id is kept only as an HMAC and sealed for the job that acts on it.
+model DataDeletionRequest {
+  id           String    @id @default(cuid())
+  /// The reference Meta shows the person; also the status page's address.
+  code         String    @unique
+  /// `SOCIAL_PLATFORM` whose app the request came through.
+  product      String
+  userIdHash   String
+  sealedUserId String
+  /// `DELETION_STATE`: PENDING, DONE.
+  state        String    @default("PENDING")
+  requestedAt  DateTime  @default(now())
+  completedAt  DateTime?
+
+  @@index([userIdHash])
+}
+
 /// Events dropped at the intake, counted per day and product, never stored (meta-foundation R2, R5, D12).
 model MetaUnroutedCount {
   day            DateTime @db.Date

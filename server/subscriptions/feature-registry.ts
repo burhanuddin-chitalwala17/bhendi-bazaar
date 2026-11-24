@@ -145,6 +145,7 @@ export const JOB_FEATURES: Record<string, { readonly feature: Feature; readonly 
   "channels.drain-events": {
     core: "Hands on what Meta already sent for a connection that exists; the Social selling lock (Q36) is asserted where a shop connects and acts.",
   },
+  "channels.delete-person": { core: "A person's deletion request is the law's and Meta's, whatever any shop's plan." },
   "image.enhance": { core: "Work already queued finishes after a lock (Q12); new work is refused at request." },
   "requests.listing-complaints": { core: "Raised only for holders: channels refuses the listing work that would complain (D5)." },
   "requests.daily": { core: "Its marketplace needs come from channelTypesService.connectedOrgs, which keeps holders only (D5)." },

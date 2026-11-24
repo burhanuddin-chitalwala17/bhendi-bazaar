@@ -10,6 +10,7 @@ import { ChannelCardShell } from "./channel-card-shell";
 import { ACTION, CARD, CHIP, FEED, PLANNED_CHANNEL_COPY, PURPOSE, SECTION } from "./channel-copy";
 import { ExpandableLine } from "./expandable-line";
 import { FeedToggle } from "./feed-toggle";
+import { PlannedChannelWhy } from "./planned-channel-why";
 import { MarketplaceCard } from "./marketplace-card";
 import { channelMark } from "./channel-mark";
 import { PlatformMark } from "@/components/ui/icons/platform-marks";
@@ -114,6 +115,7 @@ export function ChannelCardList({ orgId, cards, storePath, storeLabel, channelsH
               purpose={PLANNED_CHANNEL_COPY[planned].purpose}
               mark={<PlatformMark name={planned} size="md" />}
               chip={{ tone: "muted", text: CHIP.comingSoon }}
+              actions={<PlannedChannelWhy label={PLANNED_CHANNEL_COPY[planned].label} />}
             />
           ))}
         </div>

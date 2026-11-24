@@ -244,3 +244,16 @@ word or null), and `wouldGo` of `total`.
 - `PUT /api/org/[orgId]/products/facts` (`withOrg`) — `readinessFixSchema`: `{ fact, value, productIds
   (1–100), undo }`, strict. Answers **`FixAnswerResultDTO`** `{ set, skipped }`, or `{ undone }` for an
   undo (one product); 400 for an answer not offered.
+
+## social-selling/meta-foundation (Meta's callbacks, the forget port)
+
+Meta's two account callbacks post one form field, `signed_request` (`metaSignedRequestSchema`,
+`src/lib/validation/schemas/meta-callback.schema.ts`), verified under the app secret in
+`server/channels/providers/meta/signed-request.ts`; any other signature is 401 with no body.
+`POST /api/channels/instagram/deauthorize` answers `{ received: true }`.
+`POST /api/channels/meta/data-deletion` answers Meta's shape, `{ url, confirmation_code }`: the code
+is twelve characters without 0/O/1/I/L, and the url is our `/data-deletion/<code>` page, which shows
+only whether the request is done and by when (`DeletionStatus`: `done`, `doneBy`).
+**`Forgetter`** (`server/shared/social-events/forget.ts`) is the one cross-domain port: a domain that
+holds what a platform user wrote or is registers `{ name, forget(platform, platformUserId) }` when
+the worker starts; `channels.delete-person` runs every one, and channels imports none of them.

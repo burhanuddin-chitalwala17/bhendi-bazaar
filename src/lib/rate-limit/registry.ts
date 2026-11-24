@@ -16,6 +16,7 @@ const PUBLIC_READ = "A public read: it shows what the pages already render, and 
 const OWN_READ = "The signed-in caller's own data, read-only.";
 const META_EVENTS =
   "Meta's signed webhook (ADR-0078): a 429 loses events Meta retries for days, then disables the webhook.";
+const META_ACCOUNT_CALLBACK = "Meta's signed account callback: refused unless the signed request verifies under our app secret.";
 const META_HANDSHAKE = "Meta's subscription check: answers only to our verify token, compared in constant time.";
 
 export const ROUTE_RATE_LIMITS = {
@@ -90,6 +91,8 @@ export const ROUTE_RATE_LIMITS = {
   "POST /api/webhooks/meta/instagram": { exempt: META_EVENTS },
   "GET /api/webhooks/meta/whatsapp": { exempt: META_HANDSHAKE },
   "POST /api/webhooks/meta/whatsapp": { exempt: META_EVENTS },
+  "POST /api/channels/instagram/deauthorize": { exempt: META_ACCOUNT_CALLBACK },
+  "POST /api/channels/meta/data-deletion": { exempt: META_ACCOUNT_CALLBACK },
 
   "POST /api/webhooks/razorpay": {
     exempt: "Razorpay's signed webhook; a refused retry is a payment never recorded.",

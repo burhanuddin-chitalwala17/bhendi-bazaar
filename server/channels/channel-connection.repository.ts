@@ -366,6 +366,18 @@ export const channelConnectionRepository = {
   },
 
   /**
+   * A platform's notice that our app was removed (meta-foundation D6): conditional on the notice
+   * being newer than the connection, so one delayed past a reconnect never undoes it.
+   */
+  async markRemoved(id: string, reason: ConnectionError, noticeAt: Date): Promise<number> {
+    const { count } = await prisma.channelConnection.updateMany({
+      where: { id, state: CONNECTION_STATE.CONNECTED, OR: [{ connectedAt: null }, { connectedAt: { lt: noticeAt } }] },
+      data: { state: CONNECTION_STATE.NEEDS_RECONNECT, lastErrorCode: reason, lastErrorAt: noticeAt },
+    });
+    return count;
+  },
+
+  /**
    * Claim the listing read (channel-import D3): only when no read is running, or the running one has
    * been silent past `READ_STALL_MS`. The count is the verdict; a second job finds 0 and exits.
    */

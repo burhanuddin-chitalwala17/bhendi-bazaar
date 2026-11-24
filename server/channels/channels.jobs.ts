@@ -31,6 +31,9 @@ import { prisma } from "@server/shared/prisma";
 import { channelPlan } from "./channel-plan";
 import { drainEventsSpec } from "./meta-drain.job";
 import { metaDrainService } from "./meta-drain.service";
+import { deletePersonSpec } from "./data-deletion.job";
+import { metaCallbacksService } from "./meta-callbacks.service";
+import "./channels.sinks";
 
 /**
  * A shop without Channels: the job ends succeeded with a skip, never failed or retried, since a lock
@@ -219,5 +222,13 @@ export const drainEventsJob = registerJob({
     if (result.retryAfterSeconds !== null) {
       await metaDrainService.request(payload.connectionId, payload.orgId, result.retryAfterSeconds);
     }
+  },
+});
+
+/** A person Meta asked us to forget: every registered domain forgets them, then the request is done (meta-foundation D7). */
+export const deletePersonJob = registerJob({
+  ...deletePersonSpec,
+  handler: async ({ payload }) => {
+    await metaCallbacksService.runDeletion(payload.requestId);
   },
 });

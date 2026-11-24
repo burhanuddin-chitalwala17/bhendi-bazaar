@@ -25,6 +25,8 @@ export const ROUTES = {
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
   policies: "/policies",
+  /** A person's data deletion request, by the reference Meta gave them (social-selling meta-foundation R7). */
+  dataDeletion: (code: string) => `/data-deletion/${code}`,
   /** A section of the policies page: `returns`, `shipping`, `privacy`, `grievance`… */
   policy: (section: string) => `/policies#${section}`,
   category: (slug: string) => `/category/${slug}`,

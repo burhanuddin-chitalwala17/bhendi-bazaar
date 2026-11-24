@@ -32,6 +32,10 @@ export const CONNECTION_ERROR = {
   REVOKED: "revoked",
   /** The marketplace account is already connected to another shop (channel-import Q10). */
   OTHER_SHOP: "other_shop",
+  /** WhatsApp offboarded the number: the Business app was set up again on another phone (connect-whatsapp R11). */
+  OFFBOARDED: "offboarded",
+  /** The shop removed our app inside Instagram or Meta (meta-foundation D6). */
+  REMOVED_IN_APP: "removed_in_app",
 } as const;
 export type ConnectionError = (typeof CONNECTION_ERROR)[keyof typeof CONNECTION_ERROR];
 

@@ -35,6 +35,15 @@ export const PLANNED_CHANNEL_COPY = {
   whatsapp: { label: "WhatsApp", purpose: "Show your catalogue in chats and message your customers" },
   instagram: { label: "Instagram", purpose: "Post your products and answer comments and DMs" },
 } as const;
+/** The Why? sheet on a planned social card (meta-foundation ux.md, copy deck). */
+export const PLANNED_WHY = {
+  open: "Why?",
+  openLabel: (label: string) => `Why is ${label} coming soon?`,
+  title: (label: string) => `${label} is coming soon`,
+  body: "We're finishing Meta's checks so every shop can connect safely. When it opens it appears above, ready to connect.",
+  done: "Got it",
+  close: "Close",
+} as const;
 export const PAGE_LOAD_FAILED = "Couldn't load your channels. Check your connection and try again.";
 
 export const MARKETPLACE_PITCH = (label: string) =>
@@ -78,6 +87,8 @@ export const REASON: Record<ConnectionError, (label: string) => string> = {
   revoked: () => "Access was removed from Seller Central.",
   other_shop: (label) =>
     `This ${label} account is already connected to another shop. An account can belong to one shop only; disconnect it there first.`,
+  removed_in_app: (label) => `Bhendi Bazaar was removed inside ${label}, so the connection stopped.`,
+  offboarded: () => "Your WhatsApp Business app was set up on another phone, so the connection stopped.",
 };
 
 export const ACTION = {

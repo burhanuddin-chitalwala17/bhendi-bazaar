@@ -11,11 +11,11 @@ A single Next.js 16 application — one deployable, one database. Not a service 
 
 ```
 Browser ──▶ Next.js 16 (App Router, React 19)      ──▶ PostgreSQL (Prisma 7 + adapter-pg)
-            ├── (main)  storefront    14 pages     ──▶ Cloudflare R2   (images and video — ADR-0028, ADR-0039)
+            ├── (main)  storefront    15 pages     ──▶ Cloudflare R2   (images and video — ADR-0028, ADR-0039)
             ├── (admin) console       43 pages     ──▶ Razorpay         (payments)
             ├── (org)   seller portal 33 pages     ──▶ Shiprocket       (shipping rates)
             ├── (auth)  sign-in flow   4 pages     ──▶ Resend           (email)
-            └── api/                 183 handlers  ──▶ YouTube          (embedded video; hosted video plays natively from R2)
+            └── api/                 185 handlers  ──▶ YouTube          (embedded video; hosted video plays natively from R2)
 ```
 
 Deployed on Vercel; every route is server-rendered on demand. There is no static generation and no ISR.
