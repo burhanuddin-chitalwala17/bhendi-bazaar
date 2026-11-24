@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-11-05
+- **Verified:** 2026-11-06
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
@@ -265,7 +265,7 @@ Meta's own pages before a plan depends on one.
 - **The token is a business integration system user token, not an OAuth pair.** Embedded Signup or
   Facebook Login for Business returns a code our server exchanges, server to server, for a
   token that does not expire on a clock. It has no refresh token; it dies when the shop removes
-  the app. So "renewal" is not a meaningful operation for Meta, only health checks.
+  the app. So "renewal" is not a meaningful operation for WhatsApp, only health checks.
 - **Embedded Signup (WhatsApp)** returns the shop's WABA id and phone number id. After the
   exchange our server must register the number for Cloud API and subscribe our app to the WABA's
   webhooks, and the shop must add a payment method to its WABA before it can send. A new Tech
@@ -308,6 +308,12 @@ Meta's own pages before a plan depends on one.
   publishing, comments, mentions, messaging and insights; it cannot reach ads or tagging.
   Facebook Login needs the account linked to a Page (scopes `instagram_basic` and friends;
   messages go through the Messenger Platform). The scope strings differ and the wrong one fails.
+- **Instagram's own login does expire** (Meta's business-login page, checked 2026-11-06). The code
+  becomes a 1-hour token, exchanged for a 60-day one; `GET /refresh_access_token`
+  (`grant_type=ig_refresh_token`) renews it once it is 24 hours old and still valid. One left
+  unused for 60 days cannot be renewed. The exchange returns the Instagram-scoped user id and the
+  granted permissions, not the username; `/me` gives `username` and `account_type`. Scopes:
+  `instagram_business_basic`, `_content_publish`, `_manage_comments`, `_manage_messages`.
 - **Embedded Signup can create the business portfolio and the WABA inside the pop-up**, so a shop
   needs only a personal Facebook login; partners report a new portfolio taking longer to be
   cleared for messaging. The flow can be pre-filled with the shop's name, email and website.

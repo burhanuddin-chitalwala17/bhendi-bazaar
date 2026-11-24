@@ -15,7 +15,7 @@
 Development continues in another Claude account (Q17). Work on branch `meta-whatsapp-connector`;
 a track may run on its own branch off it and merge back; the whole feature merges to `main` once
 (Q16). The research is in INTEGRATIONS.md under "Acting for a shop on Meta"; do not redo it.
-**Next step:** `/bb-sdlc spec-start social-selling/connect-instagram`, then its UX; in parallel,
+**Next step:** `/bb-sdlc ux-start social-selling/connect-instagram` (spec drafted 2026-11-06); in parallel,
 `inbox-core`, `post-composer` and `audience` may be specified, since they need no Meta access.
 **Owner's outside step, started separately:** Meta Business Verification and the Meta app (Q14).
 
