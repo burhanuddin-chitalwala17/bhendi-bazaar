@@ -1,8 +1,8 @@
 # Handoff — media-library photos feature (master)
 
-- **Updated:** 2026-11-24 19:30 UTC
+- **Updated:** 2026-11-24 19:52 UTC
 - **Planning branch:** `claude/gracious-gates-l2b7u5` (this file)
-- **Status:** Building — viewer U1 and picker U1 running
+- **Status:** viewer U1 and picker U1 DONE but only committed inside their sessions — **not on origin yet** (see below)
 
 Read this first if you are continuing from another account. Each build unit also keeps its own
 `handoff/<unit>.md` **on its own build branch**, updated after every step; that file is the truth
@@ -45,13 +45,36 @@ Each folder has spec.md, decisions.md, ux.md (prototype: https://claude.ai/artif
 
 | # | Unit | Starts from | Branch | State | Session (account 1) |
 |---|---|---|---|---|---|
-| 1 | viewer U1 — download route | `claude/gracious-gates-l2b7u5` | `claude/media-library-build` | running | `session_01Kc21QZt95tL4EJCVq7VQ7Q` |
+| 1 | viewer U1 — download route | `claude/gracious-gates-l2b7u5` | `claude/media-library-build` | done, `5ab6d8bd`, **unpushed** | `session_01Kc21QZt95tL4EJCVq7VQ7Q` |
 | 2 | viewer U2 — sheet download | `claude/media-library-build` after 1 | same | waiting | — |
 | 3 | viewer U3 — full-screen slider | after 2 | same | waiting | — |
 | 4 | bulk U1 — bulk routes | after 3 | same | waiting | — |
 | 5 | bulk U2 — zip builder, fflate, OPERATIONS CORS step | after 4 | same | waiting | — |
 | 6 | bulk U3 — selection mode | after 5 **and** the owner's CORS change | same | waiting | — |
-| 7 | picker-filters U1 | `claude/gracious-gates-l2b7u5` | `claude/media-picker-filters` | running | `session_01Kc21QZekBRwKqbeQZnEMFe` |
+| 7 | picker-filters U1 | `claude/gracious-gates-l2b7u5` | `claude/media-picker-filters` | done, `ab7229d5` `b2e1e700` `7750ec48`, **unpushed** | `session_01Kc21QZekBRwKqbeQZnEMFe` |
+
+## Unpushed work (as of 19:52 UTC)
+
+Each build session's auto-mode permission check refused `git push` from a session-to-session
+request; only the owner typing "push" in that session counts. Until that happens these commits
+exist only in those containers:
+
+- viewer U1 — https://claude.ai/code/session_01Kc21QZt95tL4EJCVq7VQ7Q — `5ab6d8bd` "catalog: download route for a library item's original [CONTRACT]". Gate and integration green, review findings fixed. No handoff file there; its notes are below.
+- picker U1 — https://claude.ai/code/session_01Kc21QZekBRwKqbeQZnEMFe — `ab7229d5`, `b2e1e700` (spec Implemented), `7750ec48` (handoff file). Gate green.
+
+If those sessions are lost before the push, the units must be rebuilt from the accepted TRDs.
+
+## Notes from viewer U1 for viewer U2
+
+- Use `orgMediaApiClient.canDownload` (HEAD; rejects `ApiError` with `.status` 404/410/422, no body), then navigate to `/api/org/${orgId}/media/${assetId}/download`. U2 adds an href helper to `orgMediaApiClient`.
+- Server copy `DOWNLOAD_FILE_GONE` / `DOWNLOAD_NO_FILE_FOR_YOUTUBE` lives in `server/catalog/media-download.ts`; UI copy goes in `media-library-copy.ts`.
+- viewer Q8 and Q10 stay `decided` until U2 ships their UI.
+- In these containers run the gate as `env -u NEXT_PUBLIC_APP_URL -u NEXTAUTH_URL npm run gate` (`open-shop-page` test fails otherwise; pre-existing).
+- Integration DB: `service postgresql start`, `createdb bhendi_bazaar_ci`, postgres password `postgres`, `npx prisma migrate deploy`.
+
+## Merge note from picker U1
+
+`docs/ARCHITECTURE.md` test counts and `docs/specs/README.md` will conflict with the viewer/bulk branch; rerun `npm run docs:index` after merging.
 
 ## How to continue from another account
 
