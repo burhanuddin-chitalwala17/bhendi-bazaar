@@ -26,6 +26,12 @@
 6. **Private account.** Tab note "Your account is private, so Instagram doesn't send us comments.
    DMs still arrive."
 
+## What Instagram never sends us
+GIFs, stickers and disappearing photos sent in a DM reach the Instagram app but not Bhendi Bazaar,
+so the thread cannot even mark them (Meta sends no event). The Instagram tab's "?" hint says so once:
+"GIFs, stickers and disappearing photos only show in the Instagram app." Everything else, voice
+notes included, shows here.
+
 ## Screens
 | Screen | Route / place | New or changed | Serves |
 |---|---|---|---|

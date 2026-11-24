@@ -34,7 +34,7 @@ in one tap (parent Q97).
   price (never the cart's), what is in stock, and the total we would charge. One action, Send
   checkout link, sends the buyer a link that opens checkout holding those items; payment and stock
   move only at checkout (parent Q97).
-- R6 — Voice notes, photos, documents and locations show as what they are; a photo or document can
+- R6 — Voice notes play in the thread; photos, documents and locations show as what they are; a photo or document can
   be opened, downloaded through us (Q1).
 - R7 — A buyer's YES, STOP or HINDI is understood by consent-core, whose confirming reply appears in
   the thread.

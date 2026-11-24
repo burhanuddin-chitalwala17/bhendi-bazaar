@@ -38,8 +38,8 @@ works (parent Q63).
   disabled; an action not possible explains itself on tap (Q7).
 - R7 — Where the platform allows it, a member can act on a message from the thread (hide a comment,
   answer a comment privately, send a template); each platform declares which actions it has.
-- R8 — Anything that arrives which the inbox cannot show (a voice note, a sticker) appears as a
-  line naming what it was, never dropped (Q5).
+- R8 — Voice notes play in the thread. Anything that arrives which the inbox cannot show (a
+  view-once photo, a poll) appears as a line naming what it was, never dropped (Q5).
 - R9 — A failed send shows Not sent, the reason in plain words, and Try again; a temporary failure
   is retried once first (Q9).
 - R10 — The inbox tells the rest of the platform only neutral things: a message arrived (for
@@ -65,7 +65,7 @@ Judged on a phone (~360px) first.
   clears it for every member.
 - A2 — A reply sent by one member shows their name to the other members.
 - A3 — The reply box shows each of the three states the source reports, with the right wording.
-- A4 — A voice note arrives as its named line.
+- A4 — A voice note plays in the thread; a view-once photo arrives as its named line.
 - A5 — A failed send shows its reason and Try again, and succeeds on retry.
 - A6 — A conversation unanswered for four hours produces one "waiting" event.
 

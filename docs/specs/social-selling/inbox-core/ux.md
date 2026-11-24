@@ -24,8 +24,9 @@
 4. **Find someone.** Search icon → type a name or handle → results across the current tab.
 5. **Send fails.** The bubble shows **Not sent · <reason>** and **Try again** (one automatic retry
    happened first, R9).
-6. **Something we can't show.** A voice note arrives as "🎤 Voice message · open in WhatsApp" (or
-   Instagram); nothing is dropped (R8).
+6. **Voice notes, and what we can't show.** A voice note plays in the thread (▶ 0:42, with its
+   speed button). A view-once photo or a poll arrives as a line, "View-once photo · open in
+   WhatsApp"; nothing that reaches us is dropped (R8).
 7. **Nothing connected yet.** Inbox → `EmptyState` "Messages from Instagram and WhatsApp will
    appear here" → **Connect** → Channels → back.
 
@@ -103,7 +104,8 @@ sending it is pending and a second tap is ignored.
 | Stale | A member replied elsewhere while typing: their bubble appears; the draft stays | — |
 | Long content | Long messages fold after 12 lines, "Show more" | — |
 | Many items | Older messages load on scroll up, position kept | — |
-| Unknown kind | "🎤 Voice message · open in WhatsApp", "Sticker", "Unsupported message" | Open in app |
+| Voice note | Player in the bubble: ▶, length, 1× / 1.5× | Play |
+| Unknown kind | "View-once photo · open in WhatsApp", "Poll · open in WhatsApp", "A message we can't show · open in <app>" | Open in app |
 
 ## Copy deck
 - Menu "Inbox"; title "Inbox"; filters "Needs you", "Unread", "Answered automatically".

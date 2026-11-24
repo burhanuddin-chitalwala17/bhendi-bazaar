@@ -28,7 +28,7 @@
 5. **YES, STOP, HINDI.** The buyer's word and consent-core's confirming reply appear in the thread,
    the reply marked Automatic; the details panel shows "Agreed to offers · 22 Nov".
 6. **Files.** A photo shows inline; a document as a file row with **Open**; a location as a map
-   line with **Open in Maps**; a voice note as "🎤 Voice message · 0:42 · open in WhatsApp".
+   line with **Open in Maps**; a voice note as a player that plays in the thread (▶ 0:42).
 
 ## Screens
 | Screen | Route / place | New or changed | Serves |
