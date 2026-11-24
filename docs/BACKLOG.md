@@ -238,7 +238,7 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [media-library/video-hosting](specs/media-library/video-hosting/) | A short video uploads from the phone like a photograph; the worker makes the sizes that play, and it is an image's peer in the library | ✅ Implemented — 2026-09-27 (PR-180, PR-181, PR-183) |
 | [media-library/viewer](specs/media-library/viewer/) | Any library item full screen, swiping through the rest; the original saved to the device | 📝 Accepted — 2026-11-24; ready to build |
 | [media-library/bulk-actions](specs/media-library/bulk-actions/) | Select many library items; download as one zip, retire, or tag them together | 📝 Accepted — 2026-11-24; ready to build |
-| [media-library/picker-filters](specs/media-library/picker-filters/) | The library picker filters by tag, usage, source and date, as the Library page does | 📝 Accepted — 2026-11-24; ready to build |
+| [media-library/picker-filters](specs/media-library/picker-filters/) | The library picker filters by tag, usage, source and date, as the Library page does | ✅ Implemented — 2026-11-24 (ab7229d5) |
 | viewer Q6 *(later)* | The full-screen viewer on surfaces other than the Library | parked |
 | bulk-actions Q8 *(later)* | Selecting library items beyond what is loaded | parked |
 | bulk-actions Q9 *(later)* | Bulk crop or improve | parked |

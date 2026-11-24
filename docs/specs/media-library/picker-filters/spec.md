@@ -1,7 +1,7 @@
 # Spec — picker-filters
 
 - **Summary:** The library picker filters by tag, usage, source and date, as the Library page does
-- **Status:** Accepted
+- **Status:** Implemented
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-24
