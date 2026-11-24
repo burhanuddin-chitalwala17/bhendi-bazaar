@@ -24,6 +24,10 @@ inbox-instagram; Q12 (contact sync, offboarding) into connect-whatsapp; Q96 into
 whatsapp-contacts and inbox-whatsapp; Q7 (reconciling missed webhooks) into both platform inboxes;
 Q97 into inbox-whatsapp. chat-autoreplies (Q89), whatsapp-catalogue-import (Q47) and bulk-publish
 (Q102) need their own specs; going-live.md takes Q2's timing.
+**Review gate (owner, 2026-11-22).** Once every spec and UX is written, one review as a senior
+product manager and UX lead, before any TRD: every flow obvious to the shop, no needless tap or
+screen, states kept across a refresh and a return, and every button showing its progress while a
+request is in flight and its outcome after.
 **Next step:** re-cut and write the step-2 specs, then their UX and prototype (Q108), module by
 module. Step 1 (post generation) runs in its own session.
 **Owner's outside step, started separately:** Meta Business Verification and the Meta app (Q14).
@@ -83,12 +87,12 @@ folder is merged, split or renamed into it; **new** means it is still to be writ
 | Post | post-composer | Compose and schedule a post or story from the library to any destination; other modules add panels to it | rewritten 2026-11-22 | social |
 | Post | instagram-publishing | Feed, carousel, reel and story published to Instagram, with everything its API allows | rewritten 2026-11-22 | channels |
 | Post | whatsapp-status-kit | A Status ready on time, one tap from the phone (Q18) | rewritten 2026-11-22 | social |
-| Converse | inbox-core | The inbox shell: a tab per platform, reply box, reply windows, unread (Q63) | exists | inbox |
-| Converse | inbox-instagram | DMs, story replies and comments answered from the inbox (Q36) | exists | channels |
-| Converse | inbox-whatsapp | Chats answered from the inbox, templates after 24 hours, a sent cart as an order card (Q97) | exists | channels |
-| Converse | comment-automations | A keyword comment gets the shop's DM; its rules are its own, shown as a panel in post-composer | exists | automations |
-| Converse | enquiry-autoreplies | Every DM and chat answered at once: greeting, away message by business hours, FAQs, starter questions, buttons, handover (Q89) | new | automations |
-| Converse | product-answers | A question about a product answered from live price, stock and sizes, with a Buy link; a missed-enquiry count (Q89) | new | automations |
+| Converse | inbox-core | The inbox shell: a tab per platform, reply box, reply windows, unread (Q63) | rewritten 2026-11-22 | inbox |
+| Converse | inbox-instagram | DMs, story replies and comments answered from the inbox (Q36) | rewritten 2026-11-22 | channels |
+| Converse | inbox-whatsapp | Chats answered from the inbox, templates after 24 hours, a sent cart as an order card (Q97) | rewritten 2026-11-22 | channels |
+| Converse | comment-automations | A keyword comment gets the shop's DM; its rules are its own, shown as a panel in post-composer | rewritten 2026-11-22 | automations |
+| Converse | enquiry-autoreplies | Every DM and chat answered at once: greeting, away message by business hours, FAQs, starter questions, buttons, handover (Q89) | rewritten 2026-11-22 | automations |
+| Converse | product-answers | A question about a product answered from live price, stock and sizes, with a Buy link; a missed-enquiry count (Q89) | rewritten 2026-11-22 | automations |
 | Converse | ai-autoreplies | AI wording over the same live data | parked (Q89) | automations |
 | Reach out | consent-core | Consent per sender and channel, the one "may I message?" answer, YES, STOP and HINDI in chat, contacts synced from the phone (Q9) | re-cut from audience and whatsapp-contacts | audience |
 | Reach out | whatsapp-sending | The one WhatsApp send every caller uses: consent and caps checked, spend cap, cost in paise, starter and own templates (Q8, Q37) | re-cut from whatsapp-campaigns and whatsapp-templates | campaigns |

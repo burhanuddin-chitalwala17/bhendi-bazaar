@@ -256,12 +256,12 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [social-selling/post-composer](specs/social-selling/post-composer/) | Post: compose and schedule from the library to any destination (was post-scheduling) | 📝 Spec rewritten 2026-11-22; UX next |
 | [social-selling/instagram-publishing](specs/social-selling/instagram-publishing/) | Post: feed, carousel, reel and story on Instagram | 📝 Spec rewritten 2026-11-22; UX next |
 | [social-selling/whatsapp-status-kit](specs/social-selling/whatsapp-status-kit/) | Post: a Status ready on time, one tap from the phone | 📝 Spec rewritten 2026-11-22; UX next |
-| [social-selling/inbox-core](specs/social-selling/inbox-core/) | Converse: the inbox shell, a tab per platform | 📝 Being rewritten — 2026-11-22 |
-| [social-selling/inbox-instagram](specs/social-selling/inbox-instagram/) | Converse: DMs, story replies and comments | 📝 Being rewritten — 2026-11-22 |
-| [social-selling/inbox-whatsapp](specs/social-selling/inbox-whatsapp/) | Converse: chats, templates after 24 hours, a sent cart as an order card | 📝 Being rewritten — 2026-11-22 |
-| [social-selling/comment-automations](specs/social-selling/comment-automations/) | Converse: a keyword comment gets the shop's DM | 📝 Being rewritten — 2026-11-22 |
-| social-selling/enquiry-autoreplies | Converse: greeting, away message, FAQs, buttons, handover | 📝 To write |
-| social-selling/product-answers | Converse: live price, stock and sizes with a Buy link; missed enquiries | 📝 To write |
+| [social-selling/inbox-core](specs/social-selling/inbox-core/) | Converse: the inbox shell, a tab per platform | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/inbox-instagram](specs/social-selling/inbox-instagram/) | Converse: DMs, story replies and comments | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/inbox-whatsapp](specs/social-selling/inbox-whatsapp/) | Converse: chats, templates after 24 hours, a sent cart as an order card | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/comment-automations](specs/social-selling/comment-automations/) | Converse: a keyword comment gets the shop's DM | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/enquiry-autoreplies](specs/social-selling/enquiry-autoreplies/) | Converse: greeting, away message, FAQs, buttons, handover | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/product-answers](specs/social-selling/product-answers/) | Converse: live price, stock and sizes with a Buy link; missed enquiries | 📝 Spec rewritten 2026-11-22; UX next |
 | social-selling: ai-autoreplies *(later)* | Converse: AI wording over the same live data, step 8 (Q89) | parked |
 | [social-selling/consent-core](specs/social-selling/consent-core/) | Reach out: consent, YES and STOP in chat, phone contacts (takes whatsapp-contacts) | 📝 Being rewritten — 2026-11-22 |
 | [social-selling/whatsapp-sending](specs/social-selling/whatsapp-sending/) | Reach out: the one WhatsApp send, spend cap, templates (takes whatsapp-templates) | 📝 Being rewritten — 2026-11-22 |
