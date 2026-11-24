@@ -27,7 +27,10 @@
    this long in that chat."
 6. **Instagram starter questions.** With Instagram connected: "Show on your Instagram profile" with
    up to four of the questions picked → appears on the profile's message screen.
-7. **See it as a buyer.** **Try it** opens a sheet with a fake chat: type "hi" or tap a button and
+7. **One switch, parts inside.** The top switch turns every automatic reply on or off. Inside,
+   each part (greeting, each common question, product answers, comments on any post) has its own
+   switch, on by default, so a shop can drop one without losing the rest.
+8. **See it as a buyer.** **Try it** opens a sheet with a fake chat: type "hi" or tap a button and
    watch the replies, nothing sent.
 
 ## Screens
@@ -54,15 +57,16 @@
 "typing…" (30 s) → "Hi Ayesha! Welcome to Niqab Boutique 🌙 How can we help?" with reply buttons
 **Delivery** · **Cash on delivery** · **Talk to the shop** (WhatsApp shows up to three buttons;
 more become a list "See all questions") → outside hours a second line "We're closed now and reply
-from 10 am." → "Talk to the shop" answers "Someone from the shop will reply soon, usually within
-2 hours." and the conversation turns Needs you.
+from 10 am." → "Talk to the shop" answers "Thanks! Someone from the shop will reply as soon as they can." (outside
+hours: "…will reply from 10 am.") and the conversation turns Needs you. It never promises a time
+the shop hasn't set.
 
 ## Copy deck
 - "Automatic replies", "Turn on" → "Turning on…", toast "Automatic replies are on." / "…are off."
 - "Greeting", "Right away", "30 s", "1 min", "Buyers see "typing…" while it waits. If you reply first, it isn't sent."
 - Default greeting "Hi <name>! Welcome to <shop> 🌙 How can we help?"; Hindi "नमस्ते <name>! <shop> में आपका स्वागत है 🌙 हम आपकी कैसे मदद करें?"
 - Questions "Delivery", "Cash on delivery", "Returns", "Where we are", "How to order"; "from your <setting>"; "Add your <setting> to answer this".
-- "Talk to the shop" → "Someone from the shop will reply soon, usually within <n> hours."
+- "Talk to the shop" → "Thanks! Someone from the shop will reply as soon as they can." / "…will reply from <time>."
 - Away "We're closed now and reply from <time>."
 - "After you reply, automatic replies wait this long in that chat."
 - "Show on your Instagram profile", "Up to 4 questions.", "Try it".

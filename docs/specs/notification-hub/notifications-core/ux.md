@@ -29,7 +29,7 @@
 | Bell and Needs you sheet | Portal header (every org page); `ResponsivePicker`-style sheet on a phone, popover from `lg:` | New | R3 |
 | Morning email | Email | New | R4 |
 | At-once email | Email | New | R5 |
-| Notification settings | `/org/[orgId]/shop/notifications` (Shop details) | New | R4 |
+| Notification settings | `/org/[orgId]/shop/details/notifications` (Shop details) | New | R4 |
 
 ## State matrix — Needs you sheet
 | State | What the shop sees | Action |

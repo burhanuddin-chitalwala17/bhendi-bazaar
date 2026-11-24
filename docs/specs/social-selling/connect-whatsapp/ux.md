@@ -67,7 +67,7 @@
 ## State matrix — Spending limit sheet
 | State | What the shop sees | Action |
 |---|---|---|
-| First use | Title "Set a monthly limit for WhatsApp messages"; body "Replies within 24 hours are free. Other messages cost about ₹0.86 each, billed to your WhatsApp account by Meta. We stop sending when you reach your limit."; choices ₹500 · ₹1,000 · ₹2,500 · Other amount · No limit | Save |
+| First use | Title "Set a monthly limit for WhatsApp messages"; body "Replies within 24 hours are free. Other messages cost about ₹0.86 each, billed to your WhatsApp account by Meta. We stop sending when you reach your limit."; choices ₹500 · ₹1,000 (selected, marked "Suggested") · ₹2,500 · Other amount · No limit | Save |
 | Saving | Button pending "Saving…" | — |
 | Success | Sheet closes, checklist ticks "Spending limit · ₹1,000 a month", toast "Limit saved." | — |
 | Retryable error | Inline "Couldn't save. Try again." | Try again |

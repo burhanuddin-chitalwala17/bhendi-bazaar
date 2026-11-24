@@ -17,7 +17,7 @@
 | Not yet | Not yet (grey) | "Hasn't agreed to offers. You can reply when they message you." |
 | Stopped | Stopped (red) | "Asked to stop on <date>. Only they can opt back in." |
 
-Per channel: a contact row shows two small badges, "WhatsApp ●" and "Email ●", coloured by status.
+Per channel: a contact row shows two small badges, "WhatsApp ●" and "Email ●", coloured by status and always naming it ("WhatsApp: Opted in"), never colour alone (ux-patterns §12).
 Order updates are never blocked by these (whatsapp-sending R1), and the tap text says so once:
 "Order updates still reach them."
 

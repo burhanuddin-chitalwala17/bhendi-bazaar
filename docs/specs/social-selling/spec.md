@@ -21,8 +21,10 @@ other account's session can read them.
 (Q108), every question answered, and the product review done: a lock of its own (Q8), three menu
 items (Q110), a setup checklist per channel (Q111), one settings page (Q112), one how-often rule
 (Q40), summaries for shop and owner (Q113), the inbox's Needs you state and matching Buy links (Q114).
-**Next step:** UX and a prototype for every module, written together and each supporting the
-others; then a senior UX designer's review of every flow; then the TRDs.
+**UX drafted (2026-11-22).** A ux.md beside every subfeature's spec, shared rules in
+[ux-patterns.md](ux-patterns.md), eight linked prototypes ([published](https://claude.ai/artifact/6Yqg4xgjp3mDRXYDVsVtwU), source in
+`prototypes/`), and a senior UX review with its fixes in [ux-review.md](ux-review.md).
+**Next step:** the owner answers ux-review's four questions and signs off each module's UX; then the TRDs.
 **Review standard (owner).** Every flow obvious to the shop, no needless tap or screen, states kept
 across a refresh and a return, and every button showing its progress while a request is in flight
 and its outcome after.

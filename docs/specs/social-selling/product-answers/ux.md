@@ -20,7 +20,7 @@
    message you when it's back." (kept for notification-hub).
 4. **On auction.** "This piece is in an auction right now and not for sale." with **See auction**.
 5. **Something it can't answer.** "Is it pure cotton?" with no fabric fact → the greeting's
-   handover: "Someone from the shop will reply soon" and Needs you.
+   handover: "Someone from the shop will reply as soon as they can" and Needs you.
 6. **The shop's view (A5).** Inbox top strip, once a day's figures exist: "Yesterday · 18 product
    questions · 15 answered · 3 need you" → tapping "3 need you" filters to them.
 

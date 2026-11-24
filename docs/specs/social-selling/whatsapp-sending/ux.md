@@ -35,10 +35,10 @@
 ## Screens
 | Screen | Route / place | New or changed | Serves |
 |---|---|---|---|
-| Messaging settings | `/org/[orgId]/shop/messaging` (Shop details section) | New | R2, R3, R8, R9 |
+| Messaging settings | `/org/[orgId]/shop/details/messaging` (Shop details section) | New | R2, R3, R8, R9 |
 | Limit sheet | `HandoffSheet` (shared with connect-whatsapp) | New | R2, R3 |
 | Hours editor | Sheet on a phone, inline from `md:` | New | R8 |
-| Templates list | `/org/[orgId]/shop/messaging/templates` | New | R5–R7 |
+| Templates list | `/org/[orgId]/shop/details/messaging/templates` | New | R5–R7 |
 | Template editor | `/templates/new`, `/templates/[id]`; full page on a phone, `TaskDialog` from `lg:` with preview beside | New | R6 |
 
 ## State matrix — Messaging settings

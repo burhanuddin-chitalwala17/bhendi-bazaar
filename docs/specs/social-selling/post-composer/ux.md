@@ -76,7 +76,7 @@ button is never disabled; tapping it with a problem scrolls to the first one and
 ## State matrix — Composer
 | State | What the shop sees | Action |
 |---|---|---|
-| First use | Empty strip with **Add pictures** and **Make a picture**, a one-line hint "Pick the pictures first; everything else follows." Where pre-ticks every connected destination | Add pictures |
+| First use | Empty strip with **Add pictures** and **Make a picture**, a one-line hint "Pick the pictures first; everything else follows." Where pre-ticks the destinations of the shop's last post; the very first time, Instagram post and WhatsApp Status (never a story by default, since a story is a different shape) | Add pictures |
 | Empty | = First use | — |
 | Loading | Edit/duplicate: fields as skeletons, then filled | — |
 | Partial | Draft: "Draft saved · 4 min ago" | Carry on |

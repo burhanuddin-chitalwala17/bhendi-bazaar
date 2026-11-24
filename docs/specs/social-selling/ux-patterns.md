@@ -1,6 +1,7 @@
 # UX patterns — social-selling
 
 - **Verified:** 2026-11-22
+- **Prototypes:** [published](https://claude.ai/artifact/6Yqg4xgjp3mDRXYDVsVtwU) · source [prototypes/](prototypes/) · review [ux-review.md](ux-review.md)
 - **Covers:** every ux.md of social-selling, its siblings (notification-hub, bulk-publish, checkout-links) and ai-images/social-posts
 - **References:** [spec.md](spec.md) (Q8, Q110–Q114), [src/components/CLAUDE.md](../../../src/components/CLAUDE.md), [ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0040](../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0050](../../adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md), [ADR-0053](../../adr/0053-readiness-advises-and-never-gates.md), [ADR-0066](../../adr/0066-the-ui-is-built-in-tiers-and-every-icon-goes-through-one-seam.md), [ADR-0067](../../adr/0067-words-live-in-copy-modules-and-our-own-paths-in-one-routes-table.md)
 
@@ -17,9 +18,11 @@
 | **Customers** (new) | Audience tab, Campaigns tab | Menu; Home card |
 | **Shop details** (exists) | Messaging settings (spending limit, shop hours, Advanced) · Notification settings | Menu; checklist "Spending limit"; links from any cost line |
 
-Phone: these sit in the portal's existing menu sheet; Inbox also takes a tab-bar slot when the
-shop has social selling on, since it is used daily. Tablet and desktop: the sidebar, in that order
-under a "Social" group, after Channels.
+Phone: these sit in the portal's existing More sheet. The tab bar already holds five (Home,
+Products, Orders, Earnings, More); with social selling on, **Inbox takes Earnings' slot** and
+Earnings moves to More, since a shop answers messages daily and checks earnings weekly. The tab
+shows its Needs you count, as the bar already does for Orders. Tablet and desktop: the sidebar's
+existing Grow group, right after Channels, in that order.
 
 ## 2. Every page uses the existing page grammar
 `PageHeader` (the one h1 and the "?" hint) · `ActionBar` for the page's primary action · `PageTabs`
@@ -33,7 +36,7 @@ phone, a short confirmation or handoff is `HandoffSheet`.
 | Moment | What the shop sees |
 |---|---|
 | Ready | The verb: **Connect WhatsApp**, **Schedule**, **Send to 104** |
-| Tapped | `Button pending`: the same button, a spinner and the verb in progress (**Connecting…**, **Scheduling…**, **Sending…**); never disabled, a second tap joins the first |
+| Tapped | `Button pending`: the same button, a spinner and the verb in progress (**Connecting…**, **Scheduling…**, **Sending…**); never disabled, a second tap joins the first (nothing is sent twice) |
 | Over 3 seconds | A quiet line under it: "Still working…" |
 | Over 30 seconds | "This is taking longer than usual. It may still finish; we'll show it here." The result arrives in place when it lands |
 | Done | The control changes to its new state in place (card turns Connected, row turns Scheduled), and a toast names what happened in the past tense: "WhatsApp connected." |
@@ -60,8 +63,8 @@ so and needs no tap. When all are ticked the list folds into "Setup done" and th
 
 ## 7. Money is shown before it is spent
 Every paid action shows its cost before the tap that spends it, in rupees, with what it counts
-against: "₹0.86 each · about ₹90 · this month ₹412 of ₹1,000". The confirming tap names the amount
-("Send to 104 · ₹90"). Free actions never show a price. AI pictures show their credit cost on the
+against: "about ₹0.86 each · about ₹90 in all · ₹212 of ₹1,000 used this month". The confirming tap
+names the amount ("Send to 104 · about ₹90"); an estimate always says "about". Free actions never show a price. AI pictures show their credit cost on the
 Generate button, as ai-images already does.
 
 ## 8. A locked feature shows itself, with its lock (Q8)
@@ -86,3 +89,13 @@ Each ux.md fills the state matrix of the SDLC: first use, empty, loading, partia
 retryable error, terminal error, refused, stale, long content, many items, slow, and form factors.
 Where a row cannot happen it says "n/a" and why. Loading is a skeleton in the final layout; slow
 adds "Still working…" after 3 seconds; stale shows "Updated <time>" with a refresh.
+
+## 12. Everyone can use it
+Colour never carries meaning alone: every status badge has its word ("Opted in", "Failed"), and
+every coloured dot sits beside one. A pending button sets `aria-busy`; toasts and progress lines
+are polite live regions, so a screen reader hears "Scheduled for today, 6:00 pm." without moving
+focus. A sheet takes focus on open and returns it to the control that opened it. The inbox list
+reads each row as one sentence ("Ayesha Khan, needs you, Talk to the shop, 40 minutes ago").
+Targets are at least 40px (§10); nothing is reachable by swipe or long-press only (reorder has
+Move left / Move right in its ⋯).
+

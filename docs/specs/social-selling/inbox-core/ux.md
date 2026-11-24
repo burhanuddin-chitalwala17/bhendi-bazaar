@@ -11,8 +11,9 @@
 > their message kinds belong to inbox-instagram and inbox-whatsapp; this file is the frame.
 
 ## Journeys
-1. **Answer what needs me.** Menu shows **Inbox · 3** → Inbox opens on the platform with the most
-   needing the shop, filter **Needs you** pre-selected when any exist → tap the first → thread,
+1. **Answer what needs me.** Tab bar shows **Inbox · 3** → Inbox opens on the last tab used, unless
+   that tab has nothing needing the shop and another has; each platform tab shows its own count, and
+   **Needs you** is pre-selected when anything needs the shop → tap the first → thread,
    with the automatic exchange so far and the line "Handed to you · buyer asked for the shop" → type
    → **Send** (pending, then the bubble shows Sent) → back: the row leaves Needs you, the count
    falls to 2.

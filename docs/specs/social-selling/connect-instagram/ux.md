@@ -15,7 +15,8 @@
 2. **Allow messages.** Card → **Allow messages** → a `HandoffSheet` with the three taps and
    **Open Instagram** (opens the app's settings page where the phone allows it) → the shop allows
    it in Instagram → back on the card the step stays "Waiting for your first message" until one
-   arrives, then ticks itself (Q16).
+   arrives, then ticks itself (Q16). A line under the step helps it along: "To check it now, send
+   @niqab.boutique a DM from another account."
 3. **Finish setup.** The checklist's next steps, **First post** (opens the composer) and
    **Comment-to-DM** (opens the composer's panel), each return to the card ticked. All ticked:
    "Setup done" folds the list and the card shows health only.
