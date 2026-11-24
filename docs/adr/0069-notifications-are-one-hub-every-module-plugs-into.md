@@ -22,10 +22,13 @@ and out of ([social-selling](../specs/social-selling/decisions.md) Q41, Q66, Q68
 3. **Every delivery is a row first**, unique per (event key, recipient, channel), written in the
    emitter's transaction; only a new row enqueues a send, keyed on that row.
 4. **Policy lives in the hub, facts live with the channel.** The hub owns which events a shop has
-   switched on, the shop's daily window, the global marketing cap (which wins over any channel's)
-   and channel order (WhatsApp first, else email). A channel owns what only it knows: its consent
-   records, its cost, its own cap and its delivery status. The hub reads each channel's counts to
-   enforce the global cap.
+   switched on and channel order (WhatsApp first, else email); alerts wait for the shop's hours
+   (social-selling Q112). A channel owns what only it knows: its consent records, its cost and its
+   delivery status. The shop's one how-often rule and its spending limit (social-selling Q40, Q8)
+   are campaigns' facts: every marketing delivery on any channel records a touch, and the rule is
+   checked under a lock per buyer, so no burst passes it. Revised 2026-11-23 while Proposed
+   (social-selling TRD A-D19); was: a global cap and a daily window owned by the hub, read from
+   each channel's counts.
 5. **The hub grows inside `server/notifications/`**; it is not a new domain.
 
 ## Alternatives considered
@@ -49,5 +52,5 @@ and out of ([social-selling](../specs/social-selling/decisions.md) Q41, Q66, Q68
 - ✅ The delivery row gives a record of what was sent to whom, once.
 - ⚠️ Every existing email sender moves onto the hub over time; until then two paths exist, so each
   move is a named unit (order-updates moves parcel notices; demand-alerts moves outbid).
-- ⚠️ The global cap reads counts from each channel at send time; a burst can pass it by one when
-  two sends race. Accepted, as advice rather than a lock (the pattern of channel-connectors Q18).
+- ⚠️ Every marketing send takes a lock per buyer to check the how-often rule; a short wait, in
+  exchange for no burst ever passing it.
