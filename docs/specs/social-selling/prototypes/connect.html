@@ -1,0 +1,407 @@
+<title>Connect and Catalogue</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap">
+<style>
+/* Layout: a storyboard of phone-width screens per journey, then state strips and a matrix. Tokens mirror the app's portal theme (globals.css). */
+
+:root{
+ --bg:oklch(0.985 0 0);--card:oklch(1 0 0);--muted:oklch(0.955 0 0);--border:oklch(0.915 0 0);
+ --fg:oklch(0.22 0.03 40);--fg-muted:oklch(0.52 0.04 40);
+ --primary:oklch(0.55 0.17 150);--on-primary:oklch(0.98 0.01 95);--accent:oklch(0.85 0.12 85);
+ --success:oklch(0.55 0.15 145);--warning:oklch(0.55 0.13 70);--danger:oklch(0.6 0.25 27);--info:oklch(0.52 0.13 245);
+ --wa:oklch(0.72 0.17 150);--ig1:oklch(0.7 0.19 55);--ig2:oklch(0.58 0.24 350);--ig3:oklch(0.45 0.2 300);
+ --font-body:"DM Sans",system-ui,sans-serif;--font-head:"Playfair Display",Georgia,serif;--radius:0.75rem}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+ --bg:oklch(0.15 0 0);--card:oklch(0.18 0 0);--muted:oklch(0.23 0 0);--border:oklch(0.3 0 0);
+ --fg:oklch(0.96 0.02 98);--fg-muted:oklch(0.72 0.05 98);--primary:oklch(0.7 0.19 150);--on-primary:oklch(0.14 0.04 260);
+ --accent:oklch(0.82 0.14 85);--success:oklch(0.72 0.16 145);--warning:oklch(0.78 0.14 75);--danger:oklch(0.65 0.22 22);--info:oklch(0.72 0.13 245);color-scheme:dark}}
+:root[data-theme="dark"]{
+ --bg:oklch(0.15 0 0);--card:oklch(0.18 0 0);--muted:oklch(0.23 0 0);--border:oklch(0.3 0 0);
+ --fg:oklch(0.96 0.02 98);--fg-muted:oklch(0.72 0.05 98);--primary:oklch(0.7 0.19 150);--on-primary:oklch(0.14 0.04 260);
+ --accent:oklch(0.82 0.14 85);--success:oklch(0.72 0.16 145);--warning:oklch(0.78 0.14 75);--danger:oklch(0.65 0.22 22);--info:oklch(0.72 0.13 245);color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:14px;line-height:1.45;margin:0}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px;max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+.modnav{display:flex;gap:6px;flex-wrap:wrap;font-size:12px}
+.modnav a{padding:5px 10px;border:1px solid var(--border);border-radius:999px;color:var(--fg-muted);text-decoration:none;background:var(--card)}
+.modnav a[aria-current]{color:var(--on-primary);background:var(--primary);border-color:var(--primary)}
+header h1{font-family:var(--font-head);font-size:30px;margin:12px 0 6px;text-wrap:balance}
+header p{margin:0;color:var(--fg-muted);max-width:72ch}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.tabs a{font-size:13px;padding:6px 12px;border:1px solid var(--border);border-radius:999px;color:var(--fg);text-decoration:none;background:var(--card)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+section h2{font-family:var(--font-head);font-size:22px;margin:0 0 4px}
+section>.lede{color:var(--fg-muted);margin:0 0 16px;max-width:76ch}
+.flow{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;padding-bottom:12px}
+.step{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;width:272px}
+.cap{font-size:12px;color:var(--fg-muted);min-height:34px}.cap b{color:var(--fg);font-weight:600}
+.arrow{flex:0 0 auto;align-self:center;color:var(--fg-muted);font-size:22px;padding-top:34px}
+.phone{border:1px solid var(--border);border-radius:24px;background:var(--bg);padding:10px;min-height:460px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 3px rgb(0 0 0 / .06);position:relative;overflow:hidden}
+.bar{display:flex;justify-content:space-between;font-size:11px;color:var(--fg-muted);padding:0 4px}
+.ph{display:flex;align-items:center;gap:8px;padding:2px 4px}.ph h3{font-family:var(--font-head);font-size:19px;margin:0;flex:1}
+.ph .q{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);display:grid;place-items:center;font-size:12px;color:var(--fg-muted)}
+.back{font-size:12px;color:var(--fg-muted)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:calc(var(--radius) + 4px);padding:12px;display:flex;flex-direction:column;gap:7px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.name{font-weight:600;display:flex;align-items:center;gap:8px;min-width:0}
+.mark{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;flex:0 0 auto}
+.mark.ig{background:linear-gradient(135deg,var(--ig1),var(--ig2) 55%,var(--ig3))}.mark.wa{background:var(--wa)}.mark.meta{background:var(--info)}.mark.az{background:oklch(0.25 0.02 260)}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);white-space:nowrap;color:var(--fg-muted);background:var(--card)}
+.badge.ok{color:var(--success);border-color:color-mix(in oklch,var(--success) 40%,transparent)}
+.badge.warn{color:var(--warning);border-color:color-mix(in oklch,var(--warning) 45%,transparent)}
+.badge.bad{color:var(--danger);border-color:color-mix(in oklch,var(--danger) 45%,transparent)}
+.badge.info{color:var(--info);border-color:color-mix(in oklch,var(--info) 40%,transparent)}
+.badge.solid{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.body{font-size:13px;color:var(--fg-muted)}.body strong{color:var(--fg);font-weight:600}
+.small{font-size:11.5px;color:var(--fg-muted)}
+.btn{font:inherit;font-size:13px;font-weight:600;border-radius:10px;padding:10px 12px;min-height:40px;border:1px solid transparent;background:var(--primary);color:var(--on-primary);text-align:center;cursor:pointer;width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.sec{background:transparent;border-color:var(--border);color:var(--fg)}
+.btn.ghost{background:transparent;color:var(--fg);border-color:transparent;padding-block:6px;min-height:36px}
+.btn.danger{background:transparent;color:var(--danger);border-color:transparent}
+.btn.fill-danger{background:var(--danger);color:#fff}
+.btn.inline{width:auto}
+.row2{display:flex;gap:8px}.row2>*{flex:1}
+.btn .spin{width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.btn .spin{animation:none}}
+.note{border-radius:10px;padding:10px;font-size:12.5px;border:1px solid var(--border);background:var(--card);display:flex;flex-direction:column;gap:6px}
+.note.success{border-color:color-mix(in oklch,var(--success) 45%,transparent)}
+.note.warning{border-color:color-mix(in oklch,var(--warning) 50%,transparent);background:color-mix(in oklch,var(--warning) 7%,var(--card))}
+.note.error{border-color:color-mix(in oklch,var(--danger) 45%,transparent)}
+.note.info{border-color:color-mix(in oklch,var(--info) 40%,transparent)}
+.note .t{font-weight:600}
+.ext{border:1px dashed var(--info);border-radius:14px;padding:12px;background:var(--card);display:flex;flex-direction:column;gap:8px}
+.ext .who{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--info);font-weight:600}
+.ext .row{border:1px solid var(--border);border-radius:8px;padding:8px;font-size:12.5px}
+.sheet{margin-top:auto;background:var(--card);border:1px solid var(--border);border-radius:18px 18px 10px 10px;padding:14px;display:flex;flex-direction:column;gap:9px;box-shadow:0 -6px 20px rgb(0 0 0 / .08)}
+.sheet .t{font-weight:700;font-size:15px}
+.dim{opacity:.5}
+.toast{align-self:center;background:var(--fg);color:var(--bg);font-size:12px;border-radius:999px;padding:6px 12px}
+.check{display:flex;flex-direction:column;gap:6px;font-size:12.5px;border-top:1px solid var(--border);padding-top:8px}
+.check .it{display:flex;gap:8px;align-items:flex-start}
+.check .tick{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border);flex:0 0 auto;display:grid;place-items:center;font-size:11px;margin-top:1px}
+.check .done{color:var(--fg-muted)}.check .done .tick{background:var(--success);border-color:var(--success);color:#fff}
+.check .next{font-weight:600}.check .next .tick{border-color:var(--primary)}
+.check .wait .tick{border-style:dashed}
+.list{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:calc(var(--radius) + 4px);background:var(--card);overflow:hidden}
+.li{display:flex;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);align-items:center}.li:last-child{border-bottom:0}
+.li .main{flex:1;min-width:0}.li .ttl{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.li .sub{font-size:12px;color:var(--fg-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thumb{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,color-mix(in oklch,var(--accent) 60%,var(--card)),color-mix(in oklch,var(--primary) 30%,var(--card)));flex:0 0 auto}
+.thumb.lg{width:100%;height:150px;border-radius:12px}
+.thumb.tall{width:100%;aspect-ratio:4/5;height:auto;border-radius:12px}
+.avatar{width:34px;height:34px;border-radius:50%;background:color-mix(in oklch,var(--info) 25%,var(--card));display:grid;place-items:center;font-size:12px;font-weight:700;flex:0 0 auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:999px;background:var(--card)}
+.chip.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.field{display:flex;flex-direction:column;gap:4px;font-size:12px}.field label{font-weight:600}
+.input{border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--card);font-size:16px;min-height:42px;color:var(--fg)}
+.input.area{min-height:84px;font-size:14px}
+.hint{font-size:11.5px;color:var(--fg-muted)}
+.progress{height:6px;border-radius:999px;background:var(--muted);overflow:hidden}.progress i{display:block;height:100%;background:var(--primary)}
+.bubbles{display:flex;flex-direction:column;gap:6px;flex:1}
+.bub{max-width:82%;padding:7px 10px;border-radius:14px;font-size:12.5px;background:var(--muted)}
+.bub.me{align-self:flex-end;background:color-mix(in oklch,var(--primary) 16%,var(--card))}
+.bub.auto{align-self:flex-end;background:color-mix(in oklch,var(--info) 12%,var(--card));border:1px dashed color-mix(in oklch,var(--info) 40%,transparent)}
+.bub .meta{display:block;font-size:10.5px;color:var(--fg-muted);margin-top:3px}
+.composer{display:flex;gap:6px;align-items:flex-end;border-top:1px solid var(--border);padding-top:8px}
+.composer .input{flex:1;font-size:14px;min-height:40px}
+.window{font-size:11px;color:var(--fg-muted);text-align:center}
+.tabbar{display:flex;justify-content:space-around;border-top:1px solid var(--border);padding-top:6px;margin-top:auto;font-size:10.5px;color:var(--fg-muted)}
+.tabbar .on{color:var(--primary);font-weight:700}
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px}.kpi div{border:1px solid var(--border);border-radius:10px;padding:8px;background:var(--card)}.kpi b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.matrix{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:12.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);font-weight:600;background:var(--muted)}
+tr:last-child td{border-bottom:0}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);font-weight:600;margin-bottom:4px}
+.legend{font-size:12px;color:var(--fg-muted);max-width:80ch}
+.demo-hint{font-size:12px;color:var(--fg-muted);border:1px dashed var(--border);border-radius:10px;padding:8px 10px;max-width:80ch}
+.sep{border:0;border-top:1px solid var(--border);margin:2px 0}
+.money{font-variant-numeric:tabular-nums}
+.btn[data-demo]{text-decoration:underline dotted;text-underline-offset:3px}
+
+</style>
+<div class="wrap">
+<header>
+  <nav class="modnav" aria-label="Social selling prototypes"><a href="connect.html" aria-current="page">Connect & Catalogue</a><a href="post.html">Post</a><a href="converse.html">Converse</a><a href="reach.html">Reach out</a><a href="home.html">Home & admin</a><a href="notify.html">Notifications</a><a href="bulk.html">Bulk publish</a><a href="links.html">Checkout links</a></nav>
+  <h1>Connect and Catalogue</h1>
+  <p>Prototype for social-selling's Connect and Catalogue modules: meta-foundation, connect-instagram, connect-whatsapp, whatsapp-catalogue-import and whatsapp-catalogue. Phone width first; each row is one journey from the screen before it.</p>
+</header>
+<p class="demo-hint">Buttons with a dotted underline are live: tap one to see what it does while it works and when it finishes (ux-patterns §3). Every string is the one that ships; dashed boxes are Meta's or WhatsApp's own screens.</p>
+<nav class="tabs" aria-label="Sections">
+  <a href="#before">Before it opens</a><a href="#ig">Instagram</a><a href="#ig-wrong">Instagram: goes wrong</a><a href="#wa">WhatsApp</a><a href="#settle">Settle your WhatsApp catalogue</a><a href="#catalogue">Your WhatsApp catalogue</a><a href="#health">Card health</a><a href="#disconnect">Disconnect</a><a href="#deletion">Data deletion</a>
+</nav>
+
+<section id="before">
+  <h2>Before it opens</h2>
+  <p class="lede">meta-foundation. While a platform is closed, its card waits under Coming soon and explains itself. A shop without the Social selling plan sees the same card with a lock.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Channels</b>, Coming soon section</div>
+      <div class="phone"><div class="bar"><span>9:41</span><span>Channels</span></div>
+        <div class="ph"><h3>Channels</h3><span class="q">?</span></div>
+        <div class="lbl">Coming soon</div>
+        <div class="card"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="badge">Coming soon</span></div><div class="body">Post your products and answer comments and DMs</div><button class="btn sec" type="button">Why?</button></div>
+        <div class="card"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="badge">Coming soon</span></div><div class="body">Show your catalogue in chats and message your customers</div><button class="btn sec" type="button">Why?</button></div>
+      </div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Why?</b> sheet</div>
+      <div class="phone"><div class="card dim"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="badge">Coming soon</span></div></div>
+        <div class="sheet"><span class="t">WhatsApp is coming soon</span><div class="body">We're finishing Meta's checks so every shop can connect safely. When it opens it appears above, ready to connect.</div><button class="btn" type="button">Got it</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Without the plan</b> (ux-patterns §8)</div>
+      <div class="phone"><div class="note info"><span class="t">Social selling is part of a paid plan</span>Sell on Instagram and WhatsApp from here. ₹699 a month. <button class="btn sec" type="button">Talk to us</button></div>
+        <div class="card"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="badge">Not connected</span></div><div class="body">Post, answer comments and DMs, and turn comments into sales.</div><button class="btn" type="button">🔒 Connect Instagram</button></div>
+      </div></div>
+  </div>
+</section>
+
+<section id="ig">
+  <h2>Instagram · connect, allow messages, finish setup</h2>
+  <p class="lede">connect-instagram. Instagram's own sign-in, no Facebook Page needed. The checklist carries the shop from connecting to its first post and comment-to-DM; each step opens its screen and comes back here.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Start:</b> Channels, Where you sell</div>
+      <div class="phone"><div class="bar"><span>9:41</span><span>Channels</span></div>
+        <div class="ph"><h3>Channels</h3><span class="q">?</span></div>
+        <div class="card"><div class="top"><span class="name"><span class="mark meta">M</span>Meta catalogue</span><span class="badge ok">On</span></div><div class="body">Your products on Facebook and Instagram</div></div>
+        <div class="card"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="badge">Not connected</span></div>
+          <div class="body">Post, answer comments and DMs, and turn comments into sales. Needs an Instagram business or creator account (free to switch).</div>
+          <button class="btn" type="button" data-demo="pending:Opening Instagram…">Connect Instagram</button></div>
+      </div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Instagram's page</b> (theirs)</div>
+      <div class="phone"><div class="ext"><span class="who">instagram.com</span>
+        <div class="row">Log in as <b>@niqab.boutique</b></div>
+        <div class="row"><b>Bhendi Bazaar</b> would like to: see your profile, publish posts and stories, manage comments, manage messages</div>
+        <div class="row" style="text-align:center"><b>Allow</b> · Cancel</div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Back on Channels:</b> connected, the checklist's next step is the button</div>
+      <div class="phone"><div class="bar"><span>9:42</span><span>Channels</span></div>
+        <div class="note success"><span class="t">Instagram connected.</span>Next: let us see your messages.</div>
+        <div class="card"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="badge ok">● Connected</span></div>
+          <div class="body"><strong>@niqab.boutique</strong> · Business</div>
+          <div class="check">
+            <div class="it done"><span class="tick">✓</span>Connect</div>
+            <div class="it next"><span class="tick"></span>Allow messages</div>
+            <div class="it"><span class="tick"></span>First post</div>
+            <div class="it"><span class="tick"></span>Comment-to-DM</div></div>
+          <button class="btn" type="button">Allow messages</button></div>
+      </div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Allow messages</b> sheet: three taps in Instagram</div>
+      <div class="phone"><div class="card dim"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="badge ok">● Connected</span></div></div>
+        <div class="sheet"><span class="t">Let Bhendi Bazaar see your messages</span>
+          <div class="body">Instagram asks you to allow this once, in the app:</div>
+          <div class="body">1. Settings → <strong>Messages and story replies</strong><br>2. Message controls → <strong>Connected tools</strong><br>3. Turn on <strong>Allow access to messages</strong></div>
+          <button class="btn" type="button">Open Instagram</button><button class="btn sec" type="button">Done</button></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Waiting</b> for a first message: it ticks itself; the shop can move on</div>
+      <div class="phone"><div class="card"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="badge ok">● Connected</span></div>
+          <div class="body"><strong>@niqab.boutique</strong> · Business</div>
+          <div class="check">
+            <div class="it done"><span class="tick">✓</span>Connect</div>
+            <div class="it wait"><span class="tick"></span>Allow messages · waiting for your first message</div>
+            <div class="it next"><span class="tick"></span>First post</div>
+            <div class="it"><span class="tick"></span>Comment-to-DM</div></div>
+          <button class="btn" type="button">Make your first post</button></div>
+        <div class="small">First post opens the composer (Post prototype) and returns here ticked.</div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Setup done:</b> the list folds; the card shows health</div>
+      <div class="phone"><div class="card"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="badge ok">● Connected</span></div>
+          <div class="body"><strong>@niqab.boutique</strong> · Business</div>
+          <div class="small">Connected by Farida · 22 Nov 2026</div><div class="small">Last checked 2 min ago · Setup done ✓</div>
+          <button class="btn danger" type="button">Disconnect</button></div></div></div>
+  </div>
+</section>
+
+<section id="ig-wrong">
+  <h2>Instagram · when it goes wrong</h2>
+  <p class="lede">Each is the note at the top of Channels after returning from Instagram. Nothing is connected in any of them.</p>
+  <div class="strip">
+    <div><div class="lbl">Personal account</div><div class="note warning"><span class="t">That's a personal Instagram account.</span>Bhendi Bazaar works with business and creator accounts, which are free. In Instagram: Profile → ☰ → Account type and tools → Switch to professional account.<button class="btn sec" type="button" data-demo="pending:Opening Instagram…">Try again</button></div></div>
+    <div><div class="lbl">Cancelled</div><div class="note">Nothing was connected. You can connect Instagram any time.<button class="btn sec" type="button">Connect Instagram</button></div></div>
+    <div><div class="lbl">Another shop's account</div><div class="note error">This Instagram account is already connected to another shop. An account can belong to one shop only; disconnect it there first.</div></div>
+    <div><div class="lbl">Different account on reconnect</div><div class="note warning">That's a different Instagram account from the one connected here. To switch, disconnect this one first, then connect the new one.<button class="btn sec" type="button">Disconnect</button></div></div>
+    <div><div class="lbl">Instagram didn't answer</div><div class="note error">Instagram didn't respond. Nothing was connected. Try again in a minute.<button class="btn sec" type="button" data-demo="pending:Opening Instagram…">Try again</button></div></div>
+    <div><div class="lbl">Message access turned off later</div><div class="card"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="badge warn">Needs you</span></div><div class="body">Instagram isn't sharing your messages with us. Turn on Allow access to messages.</div><button class="btn" type="button">Show me how</button></div></div>
+  </div>
+</section>
+
+<section id="wa">
+  <h2>WhatsApp · connect, keep the Business app, set a limit</h2>
+  <p class="lede">connect-whatsapp, with whatsapp-sending's spending-limit step. Meta's pop-up creates a business inside it if the shop has none. The number keeps working in the Business app; chats appear in both.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Start:</b> the WhatsApp card</div>
+      <div class="phone"><div class="card"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="badge">Not connected</span></div>
+        <div class="body">Your catalogue in WhatsApp chats, every chat answered from here, and messages to customers who asked for them. Keep using the WhatsApp Business app on the same number.</div>
+        <button class="btn" type="button" data-demo="pending:Opening Meta…">Connect WhatsApp</button>
+        <div class="small">Your WhatsApp catalogue will then be managed from Bhendi Bazaar. Chats, broadcasts and Status stay in your app.</div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Meta's pop-up</b> (theirs), pre-filled</div>
+      <div class="phone"><div class="ext"><span class="who">facebook.com · Meta</span>
+        <div class="row">Continue as <b>Farida</b></div>
+        <div class="row">Business: <b>Niqab Boutique</b> · or Create a business portfolio</div>
+        <div class="row"><b>Connect your existing WhatsApp Business app</b><br><span class="small">or add a new number</span></div></div>
+        <div class="small">Our card meanwhile: "Finish in the Meta window…"</div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>In the Business app</b>, scan Meta's code</div>
+      <div class="phone"><div class="ext"><span class="who">WhatsApp Business app</span>
+        <div class="row">Connect to Bhendi Bazaar? Your chats will appear in both places.</div>
+        <div class="row" style="text-align:center"><b>Connect</b></div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Setting up</b> the number, then the one question</div>
+      <div class="phone"><div class="card dim"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span></div><div class="body">Setting up your number…</div></div>
+        <div class="sheet"><span class="t">Set a monthly limit for WhatsApp messages</span>
+          <div class="body">Replies within 24 hours are free. Other messages cost about ₹0.86 each, billed to your WhatsApp account by Meta. We stop sending when you reach your limit.</div>
+          <div class="chips"><span class="chip">₹500</span><span class="chip on">₹1,000</span><span class="chip">₹2,500</span><span class="chip">Other</span><span class="chip">No limit</span></div>
+          <button class="btn" type="button" data-demo="pending:Saving…|toast:Limit saved.">Save</button>
+          <div class="small">You can change it any time in Shop details → Messaging.</div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Connected:</b> the checklist leads to the catalogue</div>
+      <div class="phone"><div class="toast">WhatsApp connected.</div>
+        <div class="card"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="badge ok">● Connected</span></div>
+          <div class="body"><strong>+91 98•••• 4321</strong> · Niqab Boutique</div>
+          <div class="check">
+            <div class="it done"><span class="tick">✓</span>Connect</div>
+            <div class="it done"><span class="tick">✓</span>Spending limit · ₹1,000 a month</div>
+            <div class="it next"><span class="tick"></span>Catalogue · 40 items to settle</div>
+            <div class="it wait"><span class="tick"></span>Templates · 12 in review</div>
+            <div class="it"><span class="tick"></span>Auto-replies</div></div>
+          <button class="btn" type="button">Settle catalogue</button></div></div></div>
+  </div>
+  <p class="legend">A number that can't keep the app (blue tick, or Meta refuses): before Meta's new-number path, our note says "This number can't stay on the WhatsApp Business app. If you continue, the app stops working on it and your Bhendi Bazaar Inbox becomes your WhatsApp."</p>
+</section>
+
+<section id="settle">
+  <h2>Settle your WhatsApp catalogue</h2>
+  <p class="lede">whatsapp-catalogue-import, on the existing Settle screen: the same three choices and words as Amazon and Flipkart. Nothing changes in WhatsApp until Done.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Listings page</b> for WhatsApp, opened from the checklist</div>
+      <div class="phone"><div class="back">← Channels</div><div class="ph"><h3>Settle your WhatsApp catalogue</h3></div>
+        <div class="body">These are the items in your WhatsApp catalogue now. Match each to a product, add it as new, or leave it off. Nothing changes in WhatsApp until you tap Done.</div>
+        <div class="chips"><span class="chip on">To settle · 36</span><span class="chip">Linked · 4</span><span class="chip">Left off · 0</span></div>
+        <div class="list">
+          <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Kashmiri shawl, maroon</div><div class="sub">₹1,450 · Looks like Kashmiri shawl</div></div><span class="badge">⋯</span></div>
+          <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Black nidha abaya</div><div class="sub">₹2,200 · Same SKU on WhatsApp</div></div><span class="badge ok">Linked</span></div>
+          <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Gift box (old stock)</div><div class="sub">₹300</div></div><span class="badge">⋯</span></div>
+        </div>
+        <div class="card" style="margin-top:auto"><div class="top"><span class="small">28 of 36 settled</span></div><button class="btn" type="button">Done</button></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Row menu:</b> the same three choices</div>
+      <div class="phone"><div class="list dim"><div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Kashmiri shawl, maroon</div></div></div></div>
+        <div class="sheet"><span class="t">Kashmiri shawl, maroon</span><div class="small">On WhatsApp: ₹1,450</div>
+          <button class="btn" type="button">Match to a product</button><button class="btn sec" type="button">Add as new product</button><button class="btn ghost" type="button">Leave off</button></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Match:</b> a different price is said plainly</div>
+      <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">Match to Kashmiri shawl</span>
+        <div class="note info">WhatsApp will show your page's price, ₹1,299, instead of ₹1,450.</div>
+        <button class="btn" type="button" data-demo="pending:Saving…|toast:Linked to Kashmiri shawl.">Link and save</button><button class="btn sec" type="button">Choose another</button></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Done</b> sheet: what will happen, then one push</div>
+      <div class="phone"><div class="sheet"><span class="t">Update your WhatsApp catalogue</span>
+        <div class="body"><strong>38</strong> will stay in your catalogue as your products.<br><strong>2</strong> will be removed from WhatsApp.<br>Prices will show as on your product pages.</div>
+        <button class="btn" type="button" data-demo="pending:Updating WhatsApp…|toast:Your WhatsApp catalogue now shows your products.">Update WhatsApp</button><button class="btn sec" type="button">Not yet</button></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Back on the card:</b> Catalogue ticked</div>
+      <div class="phone"><div class="card"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="badge ok">● Connected</span></div>
+          <div class="check">
+            <div class="it done"><span class="tick">✓</span>Connect</div>
+            <div class="it done"><span class="tick">✓</span>Spending limit · ₹1,000 a month</div>
+            <div class="it done"><span class="tick">✓</span>Catalogue · all in your catalogue</div>
+            <div class="it wait"><span class="tick"></span>Templates · 12 in review</div>
+            <div class="it next"><span class="tick"></span>Auto-replies</div></div>
+          <button class="btn" type="button">Set up auto-replies</button></div></div></div>
+  </div>
+  <div class="strip" style="margin-top:12px">
+    <div><div class="lbl">Done with rows unsettled</div><div class="note warning">8 not settled yet. They'll stay in WhatsApp as they are until you settle them.<div class="row2"><button class="btn sec" type="button">Settle them</button><button class="btn" type="button">Done anyway</button></div></div></div>
+    <div><div class="lbl">Catalogue changed while settling</div><div class="note info">Your WhatsApp catalogue changed. 2 new items added below.</div></div>
+    <div><div class="lbl">Grouped items</div><div class="note">These were one item with options on WhatsApp. After settling, make them one family from Products.</div></div>
+    <div><div class="lbl">Couldn't read the catalogue</div><div class="note warning"><span class="t">We couldn't read your WhatsApp catalogue.</span>Add your products with the bulk sheet, or skip: your shop's products go to WhatsApp as usual.<div class="row2"><button class="btn sec" type="button">Use the bulk sheet</button><button class="btn ghost" type="button">Skip</button></div></div></div>
+  </div>
+</section>
+
+<section id="catalogue">
+  <h2>Your WhatsApp catalogue</h2>
+  <p class="lede">whatsapp-catalogue. Automatic: one line on the card, the details behind it, and fixes many at a time through bulk publish.</p>
+  <div class="strip">
+    <div><div class="lbl">Filling for the first time</div><div class="card"><div class="body">Adding your products to WhatsApp · 40 of 142</div><div class="progress"><i style="width:28%"></i></div></div></div>
+    <div><div class="lbl">All good</div><div class="card"><div class="body"><strong>142 products</strong> in your WhatsApp catalogue · updated 3 min ago</div><button class="btn sec" type="button" data-demo="pending:Syncing…|done:Updated just now.">Sync now</button></div></div>
+    <div><div class="lbl">Some left out</div><div class="card"><div class="body"><strong>142</strong> in your catalogue · <strong>6 left out</strong></div><div class="small">4 need a photo · 2 have only AI-made pictures</div><button class="btn" type="button">Fix 6 products</button></div></div>
+    <div><div class="lbl">Refused by WhatsApp</div><div class="card"><div class="body">1 refused by WhatsApp: "The image doesn't show the product clearly."</div><button class="btn sec" type="button">Fix product</button></div></div>
+    <div><div class="lbl">WhatsApp down</div><div class="note warning">Couldn't update WhatsApp. We'll keep trying; your catalogue shows what it had.<button class="btn sec" type="button" data-demo="pending:Syncing…">Sync now</button></div></div>
+    <div><div class="lbl">What a buyer sees (WhatsApp's own)</div><div class="ext"><span class="who">WhatsApp catalogue</span><div class="row">Black nidha abaya · ₹2,200 · <s>₹2,600</s></div><div class="row">Kashmiri shawl · ₹1,299 · Out of stock</div><div class="row">Cotton kurta · S M L · ₹899 · Add to cart</div></div></div>
+  </div>
+</section>
+
+<section id="health">
+  <h2>Card health</h2>
+  <p class="lede">After setup, the card shows only what needs the shop, each with the one action that fixes it. Each also appears once on Home.</p>
+  <div class="strip">
+    <div><div class="lbl">No payment method</div><div class="card"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="badge ok">● Connected</span></div><div class="body">Add a payment method in Meta to send messages. Replies within 24 hours are free.</div><button class="btn" type="button">Add payment method</button></div></div>
+    <div><div class="lbl">Quality Low</div><div class="card"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="badge bad">Quality: Low</span></div><div class="body">WhatsApp rates your number Low. Marketing messages may be limited.</div><button class="btn sec" type="button">Why?</button></div></div>
+    <div><div class="lbl">App moved to another phone</div><div class="card"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="badge warn">Needs reconnecting</span></div><div class="body">Your WhatsApp Business app was set up on another phone, so the connection stopped.</div><button class="btn" type="button" data-demo="pending:Opening Meta…">Reconnect</button><button class="btn danger" type="button">Disconnect</button></div></div>
+    <div><div class="lbl">Meta's weekly limit</div><div class="card"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="badge">Full for now</span></div><div class="body">WhatsApp lets us add a limited number of new shops each week. Try again in a few days.</div><button class="btn sec" type="button">Why?</button></div></div>
+    <div><div class="lbl">Stale check</div><div class="card"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram</span><span class="badge ok">● Connected</span></div><div class="small" style="color:var(--warning)">Last checked 3 days ago</div><button class="btn sec" type="button" data-demo="pending:Checking…|done:Checked just now. All good.">Check now</button></div></div>
+  </div>
+</section>
+
+<section id="disconnect">
+  <h2>Disconnect</h2>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>WhatsApp</b> dialog: what stops, what stays</div>
+      <div class="phone"><div class="card dim"><div class="top"><span class="name"><span class="mark wa">W</span>WhatsApp</span><span class="badge ok">● Connected</span></div></div>
+        <div class="sheet"><span class="t">Disconnect WhatsApp?</span>
+          <div class="body"><strong>Stops:</strong> your catalogue stops updating, chats stop arriving here, and messages can't be sent.</div>
+          <div class="body"><strong>Stays:</strong> your number keeps working in the WhatsApp Business app. Your chats stay here for 90 days, then are deleted.</div>
+          <div class="small">To remove us completely, also remove Bhendi Bazaar in Meta Business Suite → Settings → Integrations.</div>
+          <button class="btn fill-danger" type="button" data-demo="pending:Disconnecting…|toast:WhatsApp disconnected.">Disconnect</button><button class="btn sec" type="button">Keep connected</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Instagram</b> dialog</div>
+      <div class="phone"><div class="sheet"><span class="t">Disconnect Instagram?</span>
+        <div class="body"><strong>Stops:</strong> scheduled posts won't publish, and new comments and DMs stop arriving here.</div>
+        <div class="body"><strong>Stays:</strong> your posts on Instagram stay as they are. Your conversations stay here for 90 days, then are deleted.</div>
+        <div class="small">To remove us completely, also remove Bhendi Bazaar in Instagram: Settings → Website permissions → Apps and websites.</div>
+        <button class="btn fill-danger" type="button" data-demo="pending:Disconnecting…|toast:Instagram disconnected.">Disconnect</button><button class="btn sec" type="button">Keep connected</button></div></div></div>
+  </div>
+</section>
+
+<section id="deletion">
+  <h2>Data deletion</h2>
+  <p class="lede">meta-foundation. A person who asked Meta to delete their data follows Meta's link to this public page.</p>
+  <div class="strip">
+    <div><div class="lbl">Done</div><div class="card"><div class="ph"><h3 style="font-size:17px">Your data deletion request</h3></div><div class="body">Your request is complete. We deleted what Bhendi Bazaar held about you from Instagram and WhatsApp.</div><div class="small">Reference: 7KQ2-91LM</div></div></div>
+    <div><div class="lbl">In progress</div><div class="card"><div class="ph"><h3 style="font-size:17px">Your data deletion request</h3></div><div class="body">We're deleting what Bhendi Bazaar holds about you. It will be done by 22 Dec 2026.</div><div class="small">Reference: 7KQ2-91LM</div></div></div>
+    <div><div class="lbl">Unknown reference</div><div class="note error">We couldn't find a request with that reference. Check the link Meta gave you.</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Form factors</h2>
+  <div class="matrix"><table>
+    <thead><tr><th>Width</th><th>Channels page</th><th>Meta / Instagram window</th><th>Sheets and dialogs</th><th>Settle page</th></tr></thead>
+    <tbody>
+      <tr><td>Phone (~360px)</td><td>One card per row; checklist inside the card; actions full width</td><td>A full tab</td><td>Bottom sheet</td><td>Rows; actions in a row menu; Done in the action bar</td></tr>
+      <tr><td>Tablet (<code>md:</code>)</td><td>Two cards across; actions inline</td><td>Pop-up window</td><td>Centred dialog</td><td>Table with action buttons per row</td></tr>
+      <tr><td>Desktop (<code>lg:</code>)</td><td>Three cards across</td><td>Pop-up window</td><td>Centred dialog</td><td>Table plus a details panel</td></tr>
+    </tbody></table></div>
+  <p class="legend">Order on Channels: Your store, Amazon, Flipkart, Google Shopping, Meta catalogue, Instagram, WhatsApp, then Coming soon.</p>
+</section>
+
+</div>
+
+<script>
+// Tap any button marked data-demo to see its states: Ready -> pending -> done or failed (ux-patterns §3).
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-demo]'); if(!b||b.dataset.busy) return;
+  var parts={};b.dataset.demo.split('|').forEach(function(p){var i=p.indexOf(':');parts[p.slice(0,i)]=p.slice(i+1);});
+  var orig=b.innerHTML; b.dataset.busy='1';
+  b.innerHTML='<span class="spin" aria-hidden="true"></span>'+(parts.pending||'Working…');
+  b.setAttribute('aria-busy','true');
+  setTimeout(function(){
+    b.removeAttribute('aria-busy');
+    if(parts.done){b.innerHTML=parts.done;}else{b.innerHTML=orig;}
+    var host=b.closest('.phone'); if(parts.toast&&host){var t=document.createElement('div');t.className='toast';t.textContent=parts.toast;t.setAttribute('role','status');host.insertBefore(t,host.children[1]||null);setTimeout(function(){t.remove();b.innerHTML=orig;delete b.dataset.busy;},2200);} else {setTimeout(function(){b.innerHTML=orig;delete b.dataset.busy;},1800);}
+  },1300);
+});
+</script>
