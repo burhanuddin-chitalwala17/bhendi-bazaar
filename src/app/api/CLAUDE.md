@@ -1,6 +1,6 @@
 # CLAUDE.md — route handlers
 
-- **Verified:** 2026-11-21
+- **Verified:** 2026-11-24
 - **Covers:** `src/app/api/**`
 
 > Read the root [`/CLAUDE.md`](../../../CLAUDE.md) first. Its seven Invariants are hard blocks here more than anywhere: this is where an untrusted request becomes a write.
@@ -27,4 +27,4 @@ A route outside `/api/admin` and `/api/org` has a line in `src/lib/rate-limit/re
 
 - **A price, total or amount in the body is discarded.** The server recomputes it from `Product.price` through the one effective-price resolver (Invariant 1, [ADR-0018](../../../docs/adr/0018-one-effective-price-function.md)).
 - **`paymentStatus` is written only by the handler that verified a gateway signature** with `crypto.timingSafeEqual` and matched the amount (Invariant 2).
-- **A webhook that cannot match its payload answers non-2xx.** A silent success is how a dead payment path stays invisible.
+- **A webhook that cannot match its payload answers non-2xx.** A silent success is how a dead payment path stays invisible. The one exception is Meta's (`webhooks/meta/*`): a signed event for an account no shop holds answers 200 and is counted, because Meta disables webhooks that keep failing ([ADR-0078](../../../docs/adr/0078-meta-events-arrive-through-one-signed-intake-and-are-drained-per-account.md)).

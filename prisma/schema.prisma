@@ -2562,15 +2562,61 @@ model ChannelConnection {
   /// The last problem a send met, `STOCK_PROBLEM`, cleared by the next send that goes (D7).
   stockProblem       String?
 
+  /// A social channel's WhatsApp business account and phone number ids (social-selling meta-foundation);
+  /// `externalAccountId` holds the Instagram account id. Events are routed by these, and each is unique
+  /// among live connections of a channel: partial unique indexes in the migration.
+  externalBusinessId String?
+  externalPhoneId    String?
+
   listings  ChannelListing[]
   locations ChannelLocation[]
   platformListings PlatformListing[]
+  metaEvents MetaEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([orgId, channel])
   @@index([channel, state])
+}
+
+/// One change Meta delivered by webhook, stored once by its dedupe key before anything acts on it
+/// (ADR-0078, meta-foundation D3). The payload is sealed under the platform key ring and kept 30 days.
+model MetaEvent {
+  id                String            @id @default(cuid())
+  /// `SOCIAL_PLATFORM`: instagram, whatsapp.
+  product           String
+  /// Meta's field, split by kind where one change carries several (`messages`, `messages.status`).
+  field             String
+  connectionId      String
+  connection        ChannelConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  externalAccountId String
+  dedupeKey         String            @unique
+  occurredAt        DateTime
+  receivedAt        DateTime          @default(now())
+  /// `META_EVENT_STATE`: PENDING, DONE, DEAD.
+  state             String            @default("PENDING")
+  attempts          Int               @default(0)
+  lastErrorCode     String?
+  sealedPayload     String
+  processedAt       DateTime?
+
+  // The drain's read is a partial index in the migration: (connectionId, occurredAt, id) WHERE PENDING.
+  @@index([receivedAt])
+}
+
+/// Events dropped at the intake, counted per day and product, never stored (meta-foundation R2, R5, D12).
+model MetaUnroutedCount {
+  day            DateTime @db.Date
+  product        String
+  /// For an account no shop has connected.
+  unrouted       Int      @default(0)
+  /// Refused: the signature matched no secret.
+  badSignature   Int      @default(0)
+  /// Accepted under the secret being rotated out; zero for days means it can be removed.
+  previousSecret Int      @default(0)
+
+  @@id([day, product])
 }
 
 /// One listing a shop has on a marketplace, as the marketplace reported it (channel-import D1).

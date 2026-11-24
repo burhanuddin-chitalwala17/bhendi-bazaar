@@ -25,6 +25,8 @@ const ROOT = resolve(__dirname, "../..");
 /** Routes whose caller is not in this repository. Each says who calls it. */
 const EXTERNALLY_CALLED: Record<string, string> = {
   "/api/webhooks/razorpay": "Razorpay posts here; the signature is what authenticates it.",
+  "/api/webhooks/meta/instagram": "Meta posts Instagram events and checks the subscription here; the signature authenticates it (ADR-0078).",
+  "/api/webhooks/meta/whatsapp": "Meta posts WhatsApp events and checks the subscription here; the signature authenticates it (ADR-0078).",
   "/api/webhooks/shipping/courier": "Shiprocket posts tracking updates here (its settings refuse a URL naming it).",
   "/api/auth/verify-email": "The link in the verification email.",
   "/api/auth/[...nextauth]": "next-auth's own handler, reached by its client.",

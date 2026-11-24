@@ -1,6 +1,6 @@
 # CLAUDE.md — channels domain
 
-- **Verified:** 2026-11-23
+- **Verified:** 2026-11-24
 - **Covers:** `server/channels/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md). This file covers **channels** only. Requirements are in [docs/specs/marketplace-integration/](../../docs/specs/marketplace-integration/); every decision, with who made it, is in each spec's `decisions.md`.
@@ -10,7 +10,7 @@ Channels owns a shop's authorised connection to a marketplace, and to its own so
 
 ## Boundaries
 
-**Owns:** `server/channels/**`, the `ChannelConnection` and `ChannelListing` tables (a read-only mirror of each marketplace listing, plus its link to a product), `PlatformListing` (each product's listing per marketplace as the shop means it: only its own values, what was last sent, and its publish), and stock sync's `ChannelLocation`, `MarketplaceOrder` and `StockCorrection`.
+**Owns:** `server/channels/**`, the `ChannelConnection` and `ChannelListing` tables (a read-only mirror of each marketplace listing, plus its link to a product), `PlatformListing` (each product's listing per marketplace as the shop means it: only its own values, what was last sent, and its publish), and stock sync's `ChannelLocation`, `MarketplaceOrder` and `StockCorrection`; for social channels, `MetaEvent` (each webhook change, stored once) and `MetaUnroutedCount` (what the intake dropped, counted).
 
 **Does not own:** where a shop says it sells (`listing`'s `OrgChannel`, written through `orgChannelService.setIn` in the same transaction as a connect or disconnect), the channel vocabulary (`server/shared/channels.ts`), or the encryption itself (`server/shared/crypto.ts`), or what becomes of a marketplace's refusal: errors are handed to `requests` as the shared `requests.listing-complaints` job, never by importing it (setup-requests D5).
 
@@ -32,6 +32,7 @@ Channels owns a shop's authorised connection to a marketplace, and to its own so
 - **A marketplace's issue message may reach the shop** (marketplace-publish Q6): the issue's own sentence, plain text, cut to 300 characters. Never a response body.
 - **Never call a live marketplace from a test.** Stub `fetch`.
 - **Every Meta call goes through the one Graph client** (`providers/meta/graph-client.ts`; social-selling TRD A-D4): the pinned Graph version, `appsecret_proof`, a ten-second timeout, the answer parsed with the caller's schema, failures as `MetaError` carrying our `SOCIAL_ERROR` code (`social/types.ts`), one log line with no body, token or Meta text. A call that changes something passes `mayHaveTakenEffect`, so a timeout is `UNCERTAIN`, never retried blind (ADR-0080). Meta's published limits live in `meta-limits.ts` with their source and date; the app's settings are read only in `providers/meta/settings.ts`.
+- **Meta's webhooks are stored, never acted on, in the request** (ADR-0078): `meta-intake.service` verifies the signature (current secret, or the previous one while rotating), splits the delivery with `providers/meta/webhook-split.ts`, writes each change once by its dedupe key with its payload sealed, and counts what it drops. An event for an account no shop holds keeps no payload and answers 200.
 
 ## Structure
 
@@ -69,6 +70,7 @@ Channels owns a shop's authorised connection to a marketplace, and to its own so
 | `channel-catalogue.service.ts` | Reads each marketplace's own types into listing's channel catalogue, through the home brand, once a day from `maintain`; a marketplace with no definitions reads nothing (listing-model/channel-catalogue D2) |
 | `channel-types.service.ts` | A marketplace's type definitions and type search, read through one org's connection (the home brand's) for requests; the token stays here (setup-requests D7, D10) |
 | `listing-complaints.ts` | Hands a send's, create's or look's errors to requests as one job per batch, in the caller's transaction; a failed hand-over is logged, never thrown (setup-requests D5, ADR-0053) |
+| `meta-intake.service.ts`, `meta-event.repository.ts`, `meta-unrouted.repository.ts`, `meta-event.types.ts` | The webhook intake and the one writers of `MetaEvent` and `MetaUnroutedCount` (meta-foundation D3) |
 | `social/types.ts` | Our words for the social platforms: `SOCIAL_PLATFORM`, `SOCIAL_ERROR` (social-selling TRD A-D3) |
-| `providers/meta/` | The Meta platform layer: `graph-client.ts` (the one client), `errors.ts` (Meta's codes in ours), `meta-limits.ts` (dated limits and lane pace), `settings.ts` (the app's settings, the secret under rotation) |
+| `providers/meta/` | The Meta platform layer: `graph-client.ts` (the one client), `errors.ts` (Meta's codes in ours), `meta-limits.ts` (dated limits and lane pace), `settings.ts` (the app's settings, the secret under rotation), `signature.ts` (Meta's signature and verify token in constant time), `webhook-split.ts` (a delivery into items and their dedupe keys; pure) |
 | `providers/` | `MarketplaceProvider`, one folder per marketplace (`*.listings.ts` reads its listings, `*.stock.ts` its locations, counts and orders, `*.publish.ts` its listing rules, publish, status and create; `stock.ts` and `publish.ts` the shared shapes), and `listing-read.ts`'s shared sink, retry and paise helpers |

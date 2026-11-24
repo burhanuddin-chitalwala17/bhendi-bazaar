@@ -454,6 +454,26 @@ export const channelConnectionRepository = {
     });
   },
 
+  /**
+   * The live social connections an event may belong to, by any id Meta routes by: the Instagram
+   * account, the WhatsApp phone number or account (meta-foundation D3). One query per delivery.
+   */
+  async socialRoutes(
+    channel: string,
+    ids: readonly string[],
+  ): Promise<Array<{ id: string; externalAccountId: string | null; externalPhoneId: string | null; externalBusinessId: string | null }>> {
+    if (ids.length === 0) return [];
+    const list = [...ids];
+    return await prisma.channelConnection.findMany({
+      where: {
+        channel,
+        state: { not: CONNECTION_STATE.DISCONNECTED },
+        OR: [{ externalAccountId: { in: list } }, { externalPhoneId: { in: list } }, { externalBusinessId: { in: list } }],
+      },
+      select: { id: true, externalAccountId: true, externalPhoneId: true, externalBusinessId: true },
+    });
+  },
+
   /** Every connection that still holds tokens, for the daily job (D7). */
   async live(): Promise<SecretRow[]> {
     return await prisma.channelConnection.findMany({

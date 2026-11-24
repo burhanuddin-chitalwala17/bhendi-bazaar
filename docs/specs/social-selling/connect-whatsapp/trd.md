@@ -76,7 +76,9 @@ Routes signup, status, check-now; CSP allow list (D1) with its reason; rate limi
 OAuth policy; one repository each for `MetaOnboardingCount`.
 
 ## Data model
-[MIGRATION] Connection `state` gains `SETTING_UP` and `SETUP_FAILED`; `setupCursor`,
+[MIGRATION] `ChannelConnection_tokens_check` relaxed: a live social connection holds an access
+token and no refresh token (WhatsApp's business token and Instagram's long-lived token renew
+themselves), so the check becomes refresh token or, for a social channel, access token. Connection `state` gains `SETTING_UP` and `SETUP_FAILED`; `setupCursor`,
 `contactSyncStartedAt`, `registeredPinSealed`; `MetaOnboardingCount(week PK, count)`.
 
 ## API / contract changes
