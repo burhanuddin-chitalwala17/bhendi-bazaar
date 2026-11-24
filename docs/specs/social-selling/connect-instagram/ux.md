@@ -20,7 +20,8 @@
    it in Instagram → back on the card the step stays "Waiting for your first message" until one
    arrives, then ticks itself (Q16). A line under the step helps it along: "To check it now, send
    @niqab.boutique a DM from another account."
-3. **Finish setup.** The checklist's next steps, **First post** (opens the composer) and
+3. **Finish setup.** The checklist's next steps, **First post** (opens the composer; when posts are
+   already waiting under Saved, the step reads "3 posts waiting · Post them" and opens Saved instead) and
    **Comment-to-DM** (opens the composer's panel), each return to the card ticked. All ticked:
    "Setup done" folds the list and the card shows health only.
 4. **Personal account.** Same start → Instagram allows → back on Channels with the note "That's a
@@ -66,7 +67,7 @@
 ## State matrix — Return note (Instagram)
 | Outcome | Tone | Text | Action |
 |---|---|---|---|
-| Connected | success | "Instagram connected. Next: turn on replies, so you can answer DMs from here." | Turn on replies |
+| Connected | success | "Instagram connected. Next: turn on replies, so you can answer DMs from here." (with saved posts, a second line: "3 posts are waiting for Instagram." · See them) | Turn on replies |
 | Personal account | warning | "That's a personal Instagram account. Bhendi Bazaar works with business and creator accounts, which are free. In Instagram: Profile → ☰ → Account type and tools → Switch to professional account." | Try again |
 | Cancelled | neutral | "Nothing was connected. You can connect Instagram any time." | Connect Instagram |
 | Link expired or altered | warning | "That link has expired. Start again from here." | Connect Instagram |

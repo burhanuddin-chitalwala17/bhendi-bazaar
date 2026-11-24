@@ -33,7 +33,8 @@ Published with a link, or a reason it can act on (parent Q51).
 - R5 — Before publishing, the account's remaining daily allowance is read; at zero the destination
   fails at once with when to try again, and Publish now (Q5).
 - R6 — A temporary failure is retried as post-composer says; a refusal (media, caption) fails at
-  once with Instagram's reason in our words; a lost connection fails with Reconnect (Q5).
+  once with Instagram's reason in our words; with no connection at its time (never made or lost) the
+  destination waits for one rather than failing (post-composer Q13).
 - R7 — A published destination shows when it was published and opens the post on Instagram.
 - R8 — A post using an AI-made picture reminds the shop, before scheduling, how Instagram expects
   realistic AI pictures to be disclosed (Q10).

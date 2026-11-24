@@ -32,7 +32,15 @@
    "Cancelled" at the foot of the Scheduled tab.
 6. **Do it again.** Published row → ⋯ → **Duplicate** → composer with the same pictures, caption,
    products and panels, **When** empty.
-7. **Come back to a draft.** Leave the composer half-done → Posts shows "2 drafts" at the top of
+7. **Make posts before connecting (A5).** Nothing connected → **New post** works the same → Where
+   picks Instagram post (not connected) → **Save post** → Posts, tab **Saved**: the row with
+   "Waiting for Instagram". Later, Instagram connected → back on the card a note "3 posts waiting
+   for Instagram" with **See them** → Saved tab → each row **Post now** or **Schedule** (or select
+   several → **Post all now** / **Schedule…** in the `SelectionBar`). Nothing posts by itself.
+8. **Disconnected before its time.** A scheduled Instagram post falls due while Instagram is
+   disconnected → it waits as "Waiting for Instagram" (not Failed, no retries) and moves to Saved;
+   Reconnect → the same offer as journey 7.
+9. **Come back to a draft.** Leave the composer half-done → Posts shows "2 drafts" at the top of
    Scheduled → tap → the composer as left, "Draft saved · 4 min ago" (ux-patterns §5).
 
 ## Screens
@@ -52,8 +60,9 @@
    strip one line names what it will be: "Post", "Carousel · 4", "Reel", or for a mix "A carousel
    takes pictures only. Remove the video or pick it alone for a reel."
 2. **Where.** One chip per destination: **Instagram post**, **Instagram story**, **WhatsApp
-   Status**. Instagram chips appear only when connected; otherwise a quiet line "Connect Instagram
-   to post there too" links to Channels and returns here (R3, A5). A story or Status with several
+   Status**, always, connected or not (Q13). A not-connected chip reads "Instagram post · not
+   connected" and can still be picked; under it: "We'll keep this post ready. It goes out once you
+   connect Instagram." with **Connect now** (Channels, back here, chip turns connected). A story or Status with several
    pictures uses the first, said under the chip: "Story uses your first picture."
 3. **Caption.** Text area, counter "1,840 / 2,200 · 4 / 30 #" shown from 80% of either limit;
    **Write a caption** above it. Hidden when only a story is picked (a story has no caption), with
@@ -68,7 +77,10 @@
    chips are the shop's own two most-used times once it has them). Picked time in words: "Fri 28
    Nov, 6:00 pm".
 8. **Action bar** (sticky at the foot): **Preview** (secondary) and **Schedule** / **Post now** /
-   **Save changes**. "Draft saved · just now" sits above it.
+   **Save changes**. When every picked destination is not connected, the main button reads **Save
+   post** (toast "Saved. It's waiting for Instagram."); a time may still be picked, kept for when it
+   connects. When some are connected, **Schedule** sends those, and the line above the bar says
+   "Instagram waits until you connect it." "Draft saved · just now" sits above it.
 
 Every rule is shown where it applies and explains itself on tap of Schedule (ux-patterns §3): the
 button is never disabled; tapping it with a problem scrolls to the first one and marks it.
@@ -97,19 +109,21 @@ button is never disabled; tapping it with a problem scrolls to the first one and
 | Empty tab | Scheduled: "Nothing scheduled." Published: "Nothing published yet." Failed: "No failed posts." | New post |
 | Loading | Row skeletons | — |
 | Partial | A row with mixed results: worst state on the line, "1 of 2 failed" (R8) | Open |
-| Success | Row: first picture, caption's first line, when, a small badge per destination (Scheduled · Publishing · Published · Ready for Status · Failed) | Open |
+| Success | Row: first picture, caption's first line, when, a small badge per destination (Waiting for Instagram · Scheduled · Publishing · Published · Ready for Status · Failed) | Open |
+| Saved tab | Posts waiting for a connection, newest first, with "Connect Instagram" at the top while it isn't; once connected, Post now / Schedule per row and in the `SelectionBar` | Connect · Post now |
 | Retryable error | List failed to load: `ErrorState` "Couldn't load your posts." | Try again |
 | Refused | No Social selling plan: Posts in the menu with the lock; the page shows the plan note (ux-patterns §8) | Talk to us |
 | Stale | A Ready for Status older than 24 h: "Not posted · was due <time>" | Share |
 | Many items | Paged, 20 a page; Published groups by week ("This week", "Last week", dates) | — |
 | Phone / tablet / desktop | Rows on a phone; table from `md:` with a column per destination | — |
 
-Tab counts show on Failed only when non-zero (it is the one that needs the shop). Drafts sit as a
+Tabs are Saved · Scheduled · Published · Failed; Saved shows only when it holds a post. Counts show on Failed, and on Saved once the platform is connected (then it needs the shop). Drafts sit as a
 folded "2 drafts" line atop Scheduled; cancelled posts as a folded "Cancelled" line at its foot.
 
 ## State matrix — A destination on the post detail
 | State | Badge | Line | Action |
 |---|---|---|---|
+| Waiting for Instagram | Waiting for Instagram | Not connected: "Goes out once you connect Instagram." (with its kept time, if any: "was set for Fri 6:00 pm") | Connect Instagram; once connected Post now · Schedule |
 | Scheduled | Scheduled | "Fri 28 Nov, 6:00 pm" | Edit · Cancel post |
 | Publishing | Publishing (spinner) | "Posting to Instagram…" | — |
 | Published | Published | "Posted Fri 28 Nov, 6:01 pm" | View on Instagram |
@@ -128,7 +142,7 @@ folded "2 drafts" line atop Scheduled; cancelled posts as a folded "Cancelled" l
   "A carousel takes pictures only. Remove the video or pick it alone for a reel."
 - Limits "Captions can be up to 2,200 characters." "Up to 30 hashtags." "Up to 10 products."
   "Pick at least one picture." "Pick where to post." "Pick a time in the future." "You can schedule up to 60 days ahead."
-- Toasts "Scheduled for <when>." "Posted." "Changes saved." "Post cancelled." "Draft deleted."
+- Toasts "Scheduled for <when>." "Saved. It's waiting for Instagram." "Posted." "Changes saved." "Post cancelled." "Draft deleted."
 - Cancel sheet "Cancel this post?" · "It won't be published. You can duplicate it later." · "Cancel post" · "Keep it".
 
 ## Sign-off

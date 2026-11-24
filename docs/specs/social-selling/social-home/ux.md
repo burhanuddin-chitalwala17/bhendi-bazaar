@@ -24,7 +24,7 @@
 
 ## Card order (most urgent first)
 1. A connection needing the shop (red/amber). 2. Messages needing it. 3. The next setup step,
-while setup is open. 4. Figures: answered automatically, posts, spend. A figure at zero is left
+while setup is open. 4. Figures: answered automatically, posts (with "3 posts waiting for Instagram · Connect" while saved posts wait), spend. A figure at zero is left
 out (R3); a card with nothing at all shows only the next step or "All good".
 
 ## Screens

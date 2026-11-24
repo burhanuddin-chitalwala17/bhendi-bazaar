@@ -131,7 +131,7 @@ tr:last-child td{border-bottom:0}
 </header>
 <p class="demo-hint">Buttons with a dotted underline are live: tap one to see what it does while it works and when it finishes (ux-patterns §3). Every string is the one that ships; dashed boxes are Meta's or WhatsApp's own screens.</p>
 <nav class="tabs" aria-label="Sections">
-  <a href="#posts">Posts page</a><a href="#compose">Compose</a><a href="#make">Make a picture</a><a href="#caption">Write a caption</a><a href="#ig">More for Instagram</a><a href="#schedule">Schedule</a><a href="#after">After it goes</a><a href="#status">Status, on time</a>
+  <a href="#posts">Posts page</a><a href="#compose">Compose</a><a href="#before">Before connecting</a><a href="#make">Make a picture</a><a href="#caption">Write a caption</a><a href="#ig">More for Instagram</a><a href="#schedule">Schedule</a><a href="#after">After it goes</a><a href="#status">Status, on time</a>
 </nav>
 
 <section id="posts">
@@ -209,12 +209,48 @@ tr:last-child td{border-bottom:0}
         <div class="row2"><button class="btn sec" type="button">Preview</button><button class="btn" type="button" data-demo="pending:Scheduling…|toast:Scheduled for today, 6:00 pm.">Schedule</button></div></div></div>
   </div>
   <div class="strip" style="margin-top:12px">
-    <div><div class="lbl">Instagram not connected (A5)</div><div class="chips"><span class="chip on">WhatsApp Status</span></div><div class="small">Connect Instagram to post there too ›</div></div>
     <div><div class="lbl">Mixed pictures and video</div><div class="note warning">A carousel takes pictures only. Remove the video or pick it alone for a reel.</div></div>
     <div><div class="lbl">Only a story</div><div class="note">Stories don't show a caption.</div></div>
     <div><div class="lbl">Near a limit</div><div class="small" style="text-align:right">1,840 / 2,200 · 4 / 30 #</div></div>
     <div><div class="lbl">Schedule with a problem</div><div class="note error">Pick a time in the future.</div><div class="small">Schedule scrolls to the first field marked red; it is never greyed out.</div></div>
     <div><div class="lbl">A picture deleted from the library</div><div class="note warning">This picture was deleted from your library. Pick another.<button class="btn sec" type="button">Replace</button></div></div>
+  </div>
+</section>
+
+<section id="before">
+  <h2>Before connecting</h2>
+  <p class="lede">post-composer Q13. Making a post happens on Bhendi Bazaar, so it is never blocked; only publishing needs the connection. A post for an unconnected platform is kept under Saved, and nothing posts by itself when the connection comes.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Composer</b>, nothing connected</div>
+      <div class="phone"><div class="back">← Posts</div>
+        <div class="lbl">Pictures</div><div style="display:flex;gap:6px;align-items:center"><span class="thumb"></span><span class="thumb"></span></div>
+        <div class="lbl">Where</div>
+        <div class="chips"><span class="chip on">Instagram post · not connected</span><span class="chip">Instagram story · not connected</span><span class="chip">WhatsApp Status</span></div>
+        <div class="note info" style="font-size:12px">We'll keep this post ready. It goes out once you connect Instagram.<button class="btn inline ghost" type="button">Connect now</button></div>
+        <div class="lbl">Caption</div><div class="input area">Eid edit is here ✨ #abaya</div>
+        <div class="lbl">When</div><div class="chips"><span class="chip">Now</span><span class="chip on">Fri 6 pm</span><span class="chip">Pick a time</span></div>
+        <div class="small">Draft saved · just now</div>
+        <button class="btn" type="button" data-demo="pending:Saving…|toast:Saved. It's waiting for Instagram.">Save post</button></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Posts</b>, Saved tab</div>
+      <div class="phone"><div class="ph"><h3>Posts</h3></div>
+        <div class="chips"><span class="chip on">Saved</span><span class="chip">Scheduled</span><span class="chip">Published</span><span class="chip">Failed</span></div>
+        <div class="note">Connect Instagram to post these.<button class="btn sec" type="button">Connect Instagram</button></div>
+        <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Eid edit is here ✨</div><div class="sub"><span class="badge">Waiting for Instagram</span> · was set for Fri 6:00 pm</div></div></div>
+        <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Shawls, 4 colours</div><div class="sub"><span class="badge">Waiting for Instagram</span></div></div></div>
+        <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">(story)</div><div class="sub"><span class="badge">Waiting for Instagram</span></div></div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>After connecting</b>: the shop chooses; nothing posts by itself</div>
+      <div class="phone"><div class="note success"><span class="t">Instagram connected.</span>3 posts are waiting for Instagram.<button class="btn sec" type="button">See them</button></div>
+        <div class="chips"><span class="chip on">Saved · 3</span><span class="chip">Scheduled</span><span class="chip">Published</span></div>
+        <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">☑ Eid edit is here ✨</div><div class="sub">was set for Fri 6:00 pm</div></div></div>
+        <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">☑ Shawls, 4 colours</div></div></div>
+        <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">☐ (story)</div></div></div>
+        <div class="card"><div class="small">2 selected</div><div class="row2"><button class="btn sec" type="button">Schedule…</button><button class="btn" type="button" data-demo="pending:Posting…|toast:Posting 2 to Instagram.">Post all now</button></div></div></div></div>
+  </div>
+  <div class="strip" style="margin-top:12px">
+    <div><div class="lbl">Disconnected before its time</div><div class="li"><span class="thumb"></span><div class="main"><div class="ttl">New arrivals</div><div class="sub"><span class="badge">Waiting for Instagram</span> · not Failed, not retried</div></div></div><button class="btn sec" type="button">Reconnect</button></div>
+    <div><div class="lbl">Some connected, some not</div><div class="small">Schedule sends Status now; "Instagram waits until you connect it."</div></div>
   </div>
 </section>
 

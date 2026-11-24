@@ -28,8 +28,8 @@ posts in one sitting and see what went out (parent Q51).
 - R2 — A post is one image, a carousel of 2–10 images, a reel (one video) or a story (one image or
   video), within what each destination accepts (Q4).
 - R3 — A post picks any of its destinations, Instagram feed, Instagram story and WhatsApp Status,
-  and is scheduled once. A destination shows only where it can work: Instagram once connected,
-  Status always (Q4).
+  and is scheduled once. Every destination is always offered: one not yet connected is marked so,
+  and the post is kept under Saved until it is (Q4, Q13).
 - R4 — The caption takes hashtags and @mentions as typed, within 2,200 characters and 30 hashtags;
   over a limit the field says so and Schedule explains on tap, never disabled (Q4).
 - R5 — Fields only one destination has (people tagged, collaborators, location on Instagram) come
@@ -38,15 +38,17 @@ posts in one sitting and see what went out (parent Q51).
   of other modules: comment-to-DM and later panels store their own settings, keyed by the post (Q6).
 - R7 — A post goes now or at any minute up to 60 days ahead, in IST, and starts publishing within two
   minutes of its time (Q5).
-- R8 — Each destination has its own state: Scheduled, Publishing, Published with a link, or Failed
-  with the reason and Publish now (or Reconnect when the connection is gone). A temporary failure is
-  retried three times over about 30 minutes first. The post's line shows the worst ("1 of 2 failed")
+- R8 — Each destination has its own state: Waiting for <platform> (not connected, whether its
+  time has come or not; not a failure, not retried), Scheduled, Publishing,
+  Published with a link, or Failed with the reason and Publish now. A temporary failure is retried
+  three times over about 30 minutes first. The post's line shows the worst ("1 of 2 failed")
   (parent Q51).
 - R9 — A failure, and a Status falling due, tell the shop through notifications-core.
 - R10 — A scheduled post can be edited or cancelled until its publish starts; then it is locked,
   and once published read-only with its link. Duplicate starts a new draft from it (Q7).
-- R11 — The Posts page lists Scheduled (soonest first), Published (newest first) and Failed, phone
-  first (Q7).
+- R11 — The Posts page lists Saved, Scheduled (soonest first), Published (newest first) and Failed,
+  phone first (Q7). When a platform connects, the posts waiting for it are offered to the shop;
+  none publishes by itself (Q13).
 
 ## Hazards the TRD must answer
 - **A post published twice** when its time's job runs twice or a retry overlaps.
@@ -61,7 +63,8 @@ Judged on a phone (~360px) first.
 - A2 — At 6pm the feed post is Published with a link and the Status is Ready for Status.
 - A3 — A failed destination shows its reason and Publish now; the other stays Published.
 - A4 — Editing a scheduled post changes what is published; cancelling keeps it as cancelled.
-- A5 — With Instagram not connected, only Status is offered, with a line on connecting Instagram.
+- A5 — With nothing connected, a member makes an Instagram post; it is kept under Saved as Waiting for Instagram. After
+  connecting Instagram the shop is offered it, and Post now publishes it; nothing published by itself.
 - A6 — "Make a picture" returns an AI-made picture into the library and into the post.
 
 ## Scope
