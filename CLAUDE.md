@@ -137,6 +137,7 @@ that touch your change. A new convention adds a line there and an ADR to point a
 - **Dependency direction is inward** — `server/` must not import from `src/`. Shared types belong in a neutral module.
 - **`any` is a defect at a trust boundary.** Route handlers, auth, and payment code are typed or they are wrong.
 - **Never hardcode our own origin.** Relative paths in the browser, `appUrl()` (`server/shared/app-url.ts`) on the server; `src/lib/config.ts` holds static brand facts only.
+- **Two identical failures stop the session.** When the same check fails twice for the same reason, report what you tried and your hypothesis, and wait — no third variation. Run checks with `npm run gate`, which prints only failures. [ADR-0079](docs/adr/0079-agent-sessions-are-kept-cheap-without-removing-a-check.md)
 - **Comments explain why, not what.** Write one only where the reason is not recoverable from the code: a non-obvious constraint, a rejected alternative, an external quirk. **One or two lines.** If it needs a paragraph it belongs in an ADR or a spec — link that from a short comment instead. No file-header essays, no restating the signature, no narrating the next line.
 
 <!-- BEGIN:nextjs-agent-rules -->

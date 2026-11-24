@@ -23,7 +23,9 @@
     "images:backfill-widths": "tsx scripts/backfill-image-widths.ts",
     "enhance:bakeoff": "tsx scripts/segment-bakeoff.ts",
     "generate:bakeoff": "tsx scripts/generation-bakeoff.ts",
-    "lint:boundary": "eslint src/app/api server/checkout server/payments src/lib --quiet"
+    "lint:boundary": "eslint src/app/api server/checkout server/payments src/lib --quiet",
+    "gate": "bash scripts/gate.sh",
+    "adr:new": "node scripts/adr-new.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

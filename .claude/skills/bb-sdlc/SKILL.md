@@ -231,22 +231,10 @@ Adds an immutable decision record. Format and rules: [docs/adr/README.md](../../
 ### Steps
 
 1. **Choose scope.** Cross-domain or project-wide → `docs/adr/`. Internal to one domain → that domain's `adr/`. Each sequence numbers independently from 0001.
-2. **Number it** — highest existing in that folder + 1, zero-padded to four digits. Filename `NNNN-kebab-title.md`.
-3. **Check it is a decision, not a task.** An ADR records a choice between alternatives that constrains future work. If there were no real alternatives, it is not an ADR.
-4. **Write it:**
-
-```markdown
-# ADR-NNNN: Title
-
-- **Date:** YYYY-MM-DD
-- **Status:** Proposed / Accepted
-- **Context:** Why was this needed? What forces are at play? State the problem and the pressure — 2–4 sentences. Not an enumeration of defects: an ADR is immutable, so it should read as well in a year as today.
-- **Decision:** What was decided. Numbered, specific enough to be checkable.
-- **Alternatives considered:** What else was on the table and why each was rejected. **An ADR with no rejected alternatives is not recording a decision.** Include the option a reasonable person would have chosen — often the textbook answer — and say why it lost here.
-- **Consequences:** ✅ what gets easier, ⚠️ what gets harder or riskier. Be honest about the costs; an ADR listing only benefits is advocacy.
-```
-
-5. **Run `npm run docs:index`.** The index is generated from each ADR's header; a typed row fails `docs:check`.
+2. **Check it is a decision, not a task.** An ADR records a choice between alternatives that constrains future work. If there were no real alternatives, it is not an ADR.
+3. **Create it:** `npm run adr:new -- "Title"` (add `--dir server/<domain>/adr` for a domain). It numbers the file, writes the template and regenerates the index; keep the title short, it becomes the filename.
+4. **Write it.** Context is 2–4 sentences and reads as well in a year. **An ADR with no rejected alternative is not recording a decision** — include the option a reasonable person would have chosen and say why it lost. Consequences say honestly what gets harder. Set `Status` to Accepted when the owner agrees.
+5. **Run `npm run docs:index`** after changing the title or status; a typed index row fails `docs:check`.
 6. **To reverse a past decision:** write a new ADR, then edit **only** the old one's `Status` line to `Superseded by ADR-NNNN` and add a pointer. Never edit a past Context, Decision, or Alternatives.
 7. **If the decision sets a standing convention**, add a one-line pointer to the conventions index, `docs/CONVENTIONS.md` (the root `CLAUDE.md` points every session at it). A rule that lives only in an ADR will not be followed — ADRs are not loaded into a session.
 
@@ -257,9 +245,9 @@ Adds an immutable decision record. Format and rules: [docs/adr/README.md](../../
 Walks the pre-merge gate. Report each item as pass, fail, or not-applicable — do not fix silently.
 
 1. **`/bb-review` has been run** and its findings addressed. If not, run it now; this is the substantive check and the rest is bookkeeping.
-2. **Tests exist** for changed logic, and pass. `npm run test:run`.
-3. **Typecheck passes.** `npx tsc --noEmit`.
-4. **Lint.** `npm run lint:boundary` passes; it is the blocking lint in CI. `npm run lint` introduces no new errors (advisory). `npm run docs:check` passes.
+2. **Tests exist** for changed logic.
+3. **`npm run gate` passes** — typecheck, unit tests with `docs:check`, and `lint:boundary`, the blocking lint in CI — and `npm run test:integration` against the disposable database.
+4. **Lint.** `npm run lint` introduces no new errors (advisory).
 5. **Commit subjects** read as history — `<area>: <what changed>`, `[CONTRACT]` if a DTO changed, `[MIGRATION]` if a migration was added.
 6. **A TRD exists** if the PR changes architecture or data flow, adds a package, starts a feature, or changes a contract.
 7. **Docs updated** where they are now wrong: the relevant `ARCHITECTURE.md` if structure changed, `CONTRACTS.md` if a DTO changed, `DEPENDENCIES.md` if a package was added, `OPERATIONS.md` if setup or deploy changed. Bump each touched doc's `Verified:` date.
