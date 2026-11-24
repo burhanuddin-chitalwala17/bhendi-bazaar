@@ -22,7 +22,9 @@ export const INSTAGRAM_FIELDS = ["comments", "messages", "messaging_postbacks", 
 export const INSTAGRAM_ACCOUNT = { BUSINESS: "business", CREATOR: "creator", PERSONAL: "personal" } as const;
 export type InstagramAccountType = (typeof INSTAGRAM_ACCOUNT)[keyof typeof INSTAGRAM_ACCOUNT];
 
-const SHORT = z.object({ access_token: z.string().min(10), user_id: z.union([z.string(), z.number()]).transform(String) });
+const SHORT_FLAT = z.object({ access_token: z.string().min(10), user_id: z.union([z.string(), z.number()]).transform(String) });
+/** Meta's pages show the answer both flat and wrapped in `data[]`; either is read (verify on dev, A8). */
+const SHORT = z.union([SHORT_FLAT, z.object({ data: z.array(SHORT_FLAT).min(1) }).transform((wrapped) => wrapped.data[0])]);
 const LONG = z.object({ access_token: z.string().min(10), expires_in: z.number().int().positive() });
 const ME = z.object({
   user_id: z.union([z.string(), z.number()]).transform(String),

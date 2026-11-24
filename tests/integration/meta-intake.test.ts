@@ -65,7 +65,7 @@ describe.skipIf(!isDisposableDb)("Meta webhook intake (local db)", () => {
     await prisma.channelConnection.deleteMany({ where: { orgId: { in: [orgId, otherOrgId] }, channel: "whatsapp" } });
     const make = (org: string, shop: { phone: string; business: string }) =>
       prisma.channelConnection.create({
-        data: { orgId: org, channel: "whatsapp", state: "CONNECTED", refreshToken: "sealed-placeholder", externalPhoneId: shop.phone, externalBusinessId: shop.business },
+        data: { orgId: org, channel: "whatsapp", state: "CONNECTED", accessToken: "sealed-placeholder", externalPhoneId: shop.phone, externalBusinessId: shop.business },
         select: { id: true },
       });
     connections.a = (await make(orgId, SHOP_A)).id;

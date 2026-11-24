@@ -46,7 +46,7 @@ describe.skipIf(!isDisposableDb)("Meta event drain (local db)", () => {
     await prisma.channelConnection.deleteMany({ where: { orgId, channel: "whatsapp" } });
     connectionId = (
       await prisma.channelConnection.create({
-        data: { orgId, channel: "whatsapp", state: "CONNECTED", refreshToken: "sealed-placeholder", externalPhoneId: SHOP.phone, externalBusinessId: SHOP.business },
+        data: { orgId, channel: "whatsapp", state: "CONNECTED", accessToken: "sealed-placeholder", externalPhoneId: SHOP.phone, externalBusinessId: SHOP.business },
         select: { id: true },
       })
     ).id;

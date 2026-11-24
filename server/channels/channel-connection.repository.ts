@@ -6,6 +6,7 @@ import {
   READ_ERROR,
   READ_STALL_MS,
   READ_STATE,
+  MARKETPLACE_CHANNELS,
   type ConnectionChannel,
   type ConnectionError,
   type MarketplaceChannel,
@@ -126,6 +127,9 @@ export interface OrdersCheckRow {
   accessTokenExpiresAt: Date | null;
 }
 
+/** The passes over every shop that call a marketplace read these only; a social row has no marketplace provider. */
+const MARKETPLACES: string[] = [...MARKETPLACE_CHANNELS];
+
 export const channelConnectionRepository = {
   async forOrg(orgId: string): Promise<ConnectionRow[]> {
     return await prisma.channelConnection.findMany({ where: { orgId }, select: ROW });
@@ -224,9 +228,12 @@ export const channelConnectionRepository = {
     });
   },
 
-  /** Takes the shop's row for this channel under `FOR UPDATE`, if it exists, for the rest of the transaction. */
+  /**
+   * Serialises connects for one shop and channel until the transaction ends: an advisory lock, since
+   * on a first connect there is no row yet for `FOR UPDATE` to hold.
+   */
   async lockFor(db: ConnectionDb, orgId: string, channel: ConnectionChannel): Promise<void> {
-    await (db as typeof prisma).$queryRaw`SELECT "id" FROM "ChannelConnection" WHERE "orgId" = ${orgId} AND "channel" = ${channel} FOR UPDATE`;
+    await db.$queryRaw`SELECT 1 AS "held" FROM pg_advisory_xact_lock(hashtext(${`channel-connect:${orgId}:${channel}`}))`;
   },
 
   /** Retire the connection: tokens gone, who and when kept (Q4). */
@@ -367,12 +374,12 @@ export const channelConnectionRepository = {
   /** Every connected marketplace account with its sealed token, in one statement: the daily problems look (marketplace-publish Q23). */
   /** Every connected (org, channel), no secrets (setup-requests D5: the daily category raise). */
   async connectedOrgs(): Promise<Array<{ orgId: string; channel: string }>> {
-    return await prisma.channelConnection.findMany({ where: { state: CONNECTION_STATE.CONNECTED }, select: { orgId: true, channel: true } });
+    return await prisma.channelConnection.findMany({ where: { state: CONNECTION_STATE.CONNECTED, channel: { in: MARKETPLACES } }, select: { orgId: true, channel: true } });
   },
 
   async connectedWithTokens(): Promise<OrdersCheckRow[]> {
     return await prisma.channelConnection.findMany({
-      where: { state: CONNECTION_STATE.CONNECTED },
+      where: { state: CONNECTION_STATE.CONNECTED, channel: { in: MARKETPLACES } },
       select: {
         id: true, orgId: true, channel: true, state: true, externalAccountId: true, stockSync: true,
         stockSyncChangedAt: true, ordersCursor: true, accessToken: true, accessTokenExpiresAt: true,
@@ -523,10 +530,10 @@ export const channelConnectionRepository = {
     });
   },
 
-  /** Every connection that still holds tokens, for the daily job (D7). */
+  /** Every marketplace connection that still holds tokens, for the daily job (D7); social ones have their own pass. */
   async live(): Promise<SecretRow[]> {
     return await prisma.channelConnection.findMany({
-      where: { state: { not: CONNECTION_STATE.DISCONNECTED } },
+      where: { state: { not: CONNECTION_STATE.DISCONNECTED }, channel: { in: MARKETPLACES } },
       select: SECRETS,
     });
   },

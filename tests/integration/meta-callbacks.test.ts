@@ -37,7 +37,7 @@ describe.skipIf(!isDisposableDb)("Meta account callbacks (local db)", () => {
     const { prisma } = await import("@server/shared/prisma");
     await prisma.channelConnection.deleteMany({ where: { orgId, channel } });
     const { id } = await prisma.channelConnection.create({
-      data: { orgId, channel, state: "CONNECTED", refreshToken: "sealed-placeholder", ...data },
+      data: { orgId, channel, state: "CONNECTED", accessToken: "sealed-placeholder", ...data },
       select: { id: true },
     });
     ids.push(id);

@@ -50,6 +50,8 @@ export function instagramConnectService(login: InstagramLogin = instagramLogin()
       if (consent.declined || !consent.code) return CONNECT_RESULT.CANCELLED;
       const { orgId, userId, purpose } = state;
       await socialPlan.assert(orgId);
+      // Closed in the ten minutes since the link was made: nothing is exchanged.
+      if (!isSocialOpen(CHANNEL)) return CONNECT_RESULT.UNAVAILABLE;
 
       let token: string;
       let expiresAt: Date;
@@ -96,7 +98,7 @@ export function instagramConnectService(login: InstagramLogin = instagramLogin()
           });
         });
       } catch (error) {
-        // Two shops consenting with one account at once: the partial unique index decides.
+        // Connects for one shop are serialised by `lockFor`, so only the one-shop-per-account index can refuse here.
         if (uniqueViolationFields(error) !== null) return CONNECT_RESULT.OTHER_SHOP;
         throw error;
       }

@@ -135,6 +135,40 @@ describe.skipIf(!isDisposableDb)("Instagram connect (local db)", () => {
     expect(await row(orgId)).toBeNull();
   });
 
+  it("reads Instagram's token answer wrapped in data[] as well as flat", async () => {
+    const ig = await service(happy({ "/oauth/access_token": { status: 200, body: { data: [{ access_token: "IGAAshort-token-value", user_id: IG_ID, permissions: "x" }] } } }));
+    expect(await ig.complete(await stateFor(orgId), { code: "CODE", declined: false })).toBe("connected");
+  });
+
+  it("Instagram closed while the shop was signing in: nothing is exchanged", async () => {
+    const t = happy();
+    const ig = await service(t);
+    vi.stubEnv("SOCIAL_CONNECT", "");
+    try {
+      expect(await ig.complete(await stateFor(orgId), { code: "CODE", declined: false })).toBe("unavailable");
+    } finally {
+      vi.stubEnv("SOCIAL_CONNECT", "instagram");
+    }
+    expect(t.calls).toHaveLength(0);
+  });
+
+  it("the marketplaces' daily pass and cross-shop reads never take an Instagram row", async () => {
+    const { channelConnectionRepository } = await import("@server/channels/channel-connection.repository");
+    const ig = await service(happy());
+    await ig.complete(await stateFor(orgId), { code: "CODE", declined: false });
+    expect((await channelConnectionRepository.live()).some((r) => r.channel === "instagram")).toBe(false);
+    expect((await channelConnectionRepository.connectedWithTokens()).some((r) => r.channel === "instagram")).toBe(false);
+    expect((await channelConnectionRepository.connectedOrgs()).some((r) => r.channel === "instagram")).toBe(false);
+  });
+
+  it("two connects for one shop at once end with one connection", async () => {
+    const ig = await service(happy());
+    const results = await Promise.all([ig.complete(await stateFor(orgId), { code: "A", declined: false }), ig.complete(await stateFor(orgId), { code: "B", declined: false })]);
+    expect(results).toEqual(["connected", "connected"]);
+    const { prisma } = await import("@server/shared/prisma");
+    expect(await prisma.channelConnection.count({ where: { orgId, channel: "instagram" } })).toBe(1);
+  });
+
   it("A2: a state signed for a marketplace is never spent on Instagram", async () => {
     const ig = await service(happy());
     expect(await ig.complete(await stateFor(orgId, "connect", "amazon"), { code: "CODE", declined: false })).toBe("expired");

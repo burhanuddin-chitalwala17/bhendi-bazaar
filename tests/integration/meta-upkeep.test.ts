@@ -20,7 +20,7 @@ describe.skipIf(!isDisposableDb)("Meta upkeep (local db)", () => {
     await prisma.channelConnection.deleteMany({ where: { orgId, channel: "instagram" } });
     connectionId = (
       await prisma.channelConnection.create({
-        data: { orgId, channel: "instagram", state: "CONNECTED", refreshToken: "sealed-placeholder", externalAccountId: `UPKEEP-${RUN}` },
+        data: { orgId, channel: "instagram", state: "CONNECTED", accessToken: "sealed-placeholder", externalAccountId: `UPKEEP-${RUN}` },
         select: { id: true },
       })
     ).id;

@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
     return backTo(request, state.orgId, await instagramConnect.complete(state, consent));
   } catch (error) {
     // Logged by kind only; the person lands on Channels told Instagram didn't respond.
+    // A plan switched off mid-connect lands here too, as FeatureLockedError, distinct in the log.
     console.error(JSON.stringify({ scope: "channels.instagram", step: "callback", error: (error as Error | null)?.name ?? "unknown" }));
     return backTo(request, state.orgId, CONNECT_RESULT.UNREACHABLE);
   }
