@@ -13,7 +13,7 @@ import type { SocialPlatform } from "./social/types";
 
 /**
  * A connection's stored events turned into facts and handed to their sinks in the order they
- * happened, one drain per account at a time (ADR-0078 decisions 3–4; meta-foundation D4, D5).
+ * happened, one drain per account at a time (ADR-0084 decisions 3–4; meta-foundation D4, D5).
  */
 
 const BATCH = 500;

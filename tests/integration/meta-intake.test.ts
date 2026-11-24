@@ -1,5 +1,5 @@
 /**
- * Meta's webhook intake against a real database (meta-foundation unit 2, ADR-0078): a signed
+ * Meta's webhook intake against a real database (meta-foundation unit 2, ADR-0084): a signed
  * delivery is stored once however often Meta sends it, a forged one stores nothing, each event
  * reaches only the shop its number belongs to, and events for accounts no shop holds are counted.
  */

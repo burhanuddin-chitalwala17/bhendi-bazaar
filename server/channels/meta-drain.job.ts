@@ -5,7 +5,7 @@ export const drainEventsPayload = z.object({ connectionId: z.string(), orgId: z.
 export type DrainEventsPayload = z.infer<typeof drainEventsPayload>;
 
 /**
- * One connection's stored Meta events handed on in order (ADR-0078 decision 3), enqueued by the
+ * One connection's stored Meta events handed on in order (ADR-0084 decision 3), enqueued by the
  * intake and by itself while events remain. Its handler is in channels.jobs.ts.
  */
 export const drainEventsSpec: JobSpec<DrainEventsPayload> = {

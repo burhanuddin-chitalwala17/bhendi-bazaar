@@ -4,14 +4,14 @@
 - **Domain:** content, reading catalog (media, products), promotions (effective price) and subscriptions (credit)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-23
-- **References:** [spec.md](spec.md), [../decisions.md](../decisions.md) (Q27, Q46–Q48), [ux.md](ux.md), [generation-foundation TRD](../generation-foundation/trd.md), [improve-with-ai TRD](../improve-with-ai/trd.md), [ADR-0076](../../../adr/0076-image-generation-goes-through-one-port-and-models-are-data.md), [ADR-0081](../../../adr/0081-text-generation-goes-through-the-generation-port.md), [post-composer TRD](../../social-selling/post-composer/trd.md)
+- **References:** [spec.md](spec.md), [../decisions.md](../decisions.md) (Q27, Q46–Q48), [ux.md](ux.md), [generation-foundation TRD](../generation-foundation/trd.md), [improve-with-ai TRD](../improve-with-ai/trd.md), [ADR-0076](../../../adr/0076-image-generation-goes-through-one-port-and-models-are-data.md), [ADR-0087](../../../adr/0087-text-generation-goes-through-the-generation-port.md), [post-composer TRD](../../social-selling/post-composer/trd.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
 
 ## Approach
 Two calls into content's generation module from the composer. "Make a picture" is improve-with-ai's
 request path with a new purpose (`social`) and presets from the post. "Write a caption" is the
-first text purpose (`caption`, ADR-0081). Words on a picture are checked by reading them back
+first text purpose (`caption`, ADR-0087). Words on a picture are checked by reading them back
 (Q48); a caption's price is checked against the live product before it goes out (Q47).
 
 ## Prior art
@@ -35,7 +35,7 @@ first text purpose (`caption`, ADR-0081). Words on a picture are checked by read
   regenerate once; fail again → render the original picture without lettering and composite exact
   text server-side (sharp, already a dependency) in the shop's heading face. The shop sees only a
   passing result.
-- **D3 — Caption purpose (R5, ADR-0081).** `caption.v1` prompt over structured facts (name, price
+- **D3 — Caption purpose (R5, ADR-0087).** `caption.v1` prompt over structured facts (name, price
   and list price in rupees from paise, offer, category, material, shop name, language); output
   limited to 600 characters and 8 hashtags. A deterministic post-check rejects any number that is
   not one of the facts' prices; a rejected draft is retried once, then a template caption is used.

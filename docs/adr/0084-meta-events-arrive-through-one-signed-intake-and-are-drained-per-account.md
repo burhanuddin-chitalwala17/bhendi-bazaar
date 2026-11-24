@@ -1,4 +1,4 @@
-# ADR-0078: Meta events arrive through one signed intake and are drained per account
+# ADR-0084: Meta events arrive through one signed intake and are drained per account
 
 - **Date:** 2026-11-23
 - **Status:** Proposed

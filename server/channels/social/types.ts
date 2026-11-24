@@ -30,7 +30,7 @@ export const SOCIAL_ERROR = {
   UNDELIVERABLE: "undeliverable",
   /** The platform refused the content or a parameter; the same call fails the same way. */
   REFUSED: "refused",
-  /** The request may have taken effect but we never heard back (ADR-0080). */
+  /** The request may have taken effect but we never heard back (ADR-0086). */
   UNCERTAIN: "uncertain",
 } as const;
 export type SocialError = (typeof SOCIAL_ERROR)[keyof typeof SOCIAL_ERROR];

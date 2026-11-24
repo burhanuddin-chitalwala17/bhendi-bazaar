@@ -1,4 +1,4 @@
--- social-selling meta-foundation unit 2 (ADR-0078): Meta's webhook events stored once, and the daily
+-- social-selling meta-foundation unit 2 (ADR-0084): Meta's webhook events stored once, and the daily
 -- counts of those dropped. Additive only: two nullable connection columns and two new tables; no DROP.
 -- AlterTable
 ALTER TABLE "ChannelConnection" ADD COLUMN     "externalBusinessId" TEXT,
@@ -46,7 +46,7 @@ CREATE INDEX "MetaEvent_receivedAt_idx" ON "MetaEvent"("receivedAt");
 -- AddForeignKey
 ALTER TABLE "MetaEvent" ADD CONSTRAINT "MetaEvent_connectionId_fkey" FOREIGN KEY ("connectionId") REFERENCES "ChannelConnection"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- The drain reads only pending events, per connection, in occurrence order (ADR-0078).
+-- The drain reads only pending events, per connection, in occurrence order (ADR-0084).
 CREATE INDEX "MetaEvent_pending_idx" ON "MetaEvent"("connectionId", "occurredAt", "id") WHERE "state" = 'PENDING';
 
 -- One live shop per WhatsApp number and per WhatsApp business account, as for an Instagram account

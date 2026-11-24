@@ -4,7 +4,7 @@
 - **Domain:** inbox (new)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-23
-- **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), the architecture [TRD](../trd.md) (A-D7, D8, D9, D12, D14, D16), [ADR-0079](../../../adr/0079-a-shops-conversations-are-sealed-under-its-own-key.md), [ADR-0080](../../../adr/0080-every-effect-on-a-platform-is-a-row-claimed-before-the-call.md), [ADR-0024](../../../adr/0024-phone-is-contact-data-not-an-identity-key.md)
+- **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), the architecture [TRD](../trd.md) (A-D7, D8, D9, D12, D14, D16), [ADR-0085](../../../adr/0085-a-shops-conversations-are-sealed-under-its-own-key.md), [ADR-0086](../../../adr/0086-every-effect-on-a-platform-is-a-row-claimed-before-the-call.md), [ADR-0024](../../../adr/0024-phone-is-contact-data-not-an-identity-key.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
 

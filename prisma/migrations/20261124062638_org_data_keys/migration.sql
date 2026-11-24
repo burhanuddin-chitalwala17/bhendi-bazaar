@@ -1,4 +1,4 @@
--- social-selling meta-foundation unit 5 (D9, ADR-0079): each shop's data key, wrapped by the platform
+-- social-selling meta-foundation unit 5 (D9, ADR-0085): each shop's data key, wrapped by the platform
 -- key ring. Additive: one new table; no DROP.
 -- CreateTable
 CREATE TABLE "OrgDataKey" (

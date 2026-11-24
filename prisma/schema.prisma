@@ -2582,7 +2582,7 @@ model ChannelConnection {
 }
 
 /// One change Meta delivered by webhook, stored once by its dedupe key before anything acts on it
-/// (ADR-0078, meta-foundation D3). The payload is sealed under the platform key ring and kept 30 days.
+/// (ADR-0084, meta-foundation D3). The payload is sealed under the platform key ring and kept 30 days.
 model MetaEvent {
   id                String            @id @default(cuid())
   /// `SOCIAL_PLATFORM`: instagram, whatsapp.
@@ -3315,7 +3315,7 @@ model ProductAnswersArchive {
   archivedAt   DateTime @default(now())
 }
 
-/// A shop's data key, stored only wrapped by the platform key ring (ADR-0079, social-selling A-D12).
+/// A shop's data key, stored only wrapped by the platform key ring (ADR-0085, social-selling A-D12).
 /// Chat text is sealed under it; a new `version` replaces a compromised key, and a key-ring rotation
 /// re-wraps `wrappedKey` without touching a sealed row. Written only by `server/shared/seal/`.
 model OrgDataKey {

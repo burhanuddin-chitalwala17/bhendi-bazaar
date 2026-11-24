@@ -4,7 +4,7 @@ import { SOCIAL_PLATFORM, type SocialPlatform } from "../../social/types";
 
 /**
  * Meta's webhook envelope split into one item per change worth storing, each with the key it is
- * stored once by (ADR-0078; meta-foundation D3). Pure: the payload in, items out.
+ * stored once by (ADR-0084; meta-foundation D3). Pure: the payload in, items out.
  */
 
 export interface WebhookItem {

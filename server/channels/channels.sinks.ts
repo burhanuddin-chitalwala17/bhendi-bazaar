@@ -4,7 +4,7 @@ import { channelConnectionRepository } from "./channel-connection.repository";
 import { CONNECTION_ERROR } from "./channel-connection.types";
 
 /**
- * Channels' own sinks, registered when the worker imports this file (ADR-0078 decision 4):
+ * Channels' own sinks, registered when the worker imports this file (ADR-0084 decision 4):
  * WhatsApp telling us the shop removed our app, or set its Business app up on another phone,
  * turns the card to Needs reconnecting (meta-foundation D6). The daily check stays the backstop.
  */

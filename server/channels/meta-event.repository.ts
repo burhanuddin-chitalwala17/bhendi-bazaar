@@ -25,7 +25,7 @@ export interface PendingEvent {
   retries: number;
 }
 
-/** After this many failed hand-overs an event is dead and skipped (ADR-0078 decision 3). */
+/** After this many failed hand-overs an event is dead and skipped (ADR-0084 decision 3). */
 export const META_EVENT_MAX_ATTEMPTS = 5;
 
 export const metaEventRepository = {

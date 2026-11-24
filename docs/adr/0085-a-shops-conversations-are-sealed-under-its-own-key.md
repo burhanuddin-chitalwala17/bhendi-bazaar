@@ -1,4 +1,4 @@
-# ADR-0079: A shop's conversations are sealed under its own key
+# ADR-0085: A shop's conversations are sealed under its own key
 
 - **Date:** 2026-11-23
 - **Status:** Proposed

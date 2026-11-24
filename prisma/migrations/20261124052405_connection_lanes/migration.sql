@@ -15,7 +15,7 @@ CREATE TABLE "ConnectionLane" (
 -- AddForeignKey
 ALTER TABLE "ConnectionLane" ADD CONSTRAINT "ConnectionLane_connectionId_fkey" FOREIGN KEY ("connectionId") REFERENCES "ChannelConnection"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- Arrival order within a second, and outage retries kept apart from poison attempts (ADR-0078).
+-- Arrival order within a second, and outage retries kept apart from poison attempts (ADR-0084).
 ALTER TABLE "MetaEvent" ADD COLUMN "seq" BIGSERIAL NOT NULL,
 ADD COLUMN "retries" INTEGER NOT NULL DEFAULT 0;
 DROP INDEX "MetaEvent_pending_idx";

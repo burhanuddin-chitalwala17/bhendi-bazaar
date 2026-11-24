@@ -1,4 +1,4 @@
-# ADR-0080: Every effect on a platform is a row claimed before the call
+# ADR-0086: Every effect on a platform is a row claimed before the call
 
 - **Date:** 2026-11-23
 - **Status:** Proposed

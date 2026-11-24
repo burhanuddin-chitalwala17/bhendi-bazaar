@@ -93,7 +93,7 @@ export const channelsMaintainJob = registerJob({
     await enqueue(prisma, checkStockSpec, {});
     await enqueueLater(prisma, checkOrdersSpec, {}, { afterSeconds: 0, onePerSeconds: ORDERS_CHECK_EVERY_SECONDS });
     // Meta's raw events aged out and lost work re-asked (meta-foundation D10), as jobs of their own so
-    // one failing never stops the pass; shop data keys re-wrapped after a key-ring rotation (ADR-0079).
+    // one failing never stops the pass; shop data keys re-wrapped after a key-ring rotation (ADR-0085).
     await enqueue(prisma, metaRetentionSpec, {});
     await enqueue(prisma, metaSweepSpec, {});
     const rewrap = await seal.rewrapStale().catch((error: unknown) => {
@@ -226,7 +226,7 @@ export const checkListingProblemsJob = registerJob({
   },
 });
 
-/** Meta's stored events for one connection, handed on in order (ADR-0078); asks again while events remain. */
+/** Meta's stored events for one connection, handed on in order (ADR-0084); asks again while events remain. */
 export const drainEventsJob = registerJob({
   ...drainEventsSpec,
   handler: async ({ payload }) => {

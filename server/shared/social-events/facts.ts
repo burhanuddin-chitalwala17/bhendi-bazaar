@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * What happened on a shop's Instagram or WhatsApp, in our words (ADR-0078 decision 4; social-selling
+ * What happened on a shop's Instagram or WhatsApp, in our words (ADR-0084 decision 4; social-selling
  * TRD A-D7). Channels translates Meta's payloads into these; inbox, automations and audience read
  * only these. Shared because channels must not import the domains that consume them.
  */
@@ -136,7 +136,7 @@ export const messageStatus = z.object({
   status: z.enum([MESSAGE_STATUS.SENT, MESSAGE_STATUS.DELIVERED, MESSAGE_STATUS.READ, MESSAGE_STATUS.FAILED]),
   /** Who the message went to: their scoped id, else their number. */
   recipientKey: z.string().nullable(),
-  /** Our row id, echoed back by WhatsApp from `biz_opaque_callback_data` (ADR-0080). */
+  /** Our row id, echoed back by WhatsApp from `biz_opaque_callback_data` (ADR-0086). */
   callbackRef: z.string().nullable(),
   errorCode: z.number().nullable(),
   /** What Meta will bill, when it says, and whether it is billable. */

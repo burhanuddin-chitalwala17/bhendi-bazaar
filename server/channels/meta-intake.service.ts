@@ -10,7 +10,7 @@ import { signingSecrets, webhookVerifyToken } from "./providers/meta/settings";
 import { splitWebhook, type RouteKind } from "./providers/meta/webhook-split";
 
 /**
- * Meta's webhooks: verify, store each change once, answer (ADR-0078; meta-foundation D3).
+ * Meta's webhooks: verify, store each change once, answer (ADR-0084; meta-foundation D3).
  * Nothing here acts on an event; the drain does, after the answer.
  */
 

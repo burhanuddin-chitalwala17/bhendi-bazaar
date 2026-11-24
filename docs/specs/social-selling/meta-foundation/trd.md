@@ -4,7 +4,7 @@
 - **Domain:** channels, with shared (social events, jobs) and the webhook routes
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-24
-- **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), the architecture [TRD](../trd.md) (A-D1–D21), [ADR-0078](../../../adr/0078-meta-events-arrive-through-one-signed-intake-and-are-drained-per-account.md), [ADR-0079](../../../adr/0079-a-shops-conversations-are-sealed-under-its-own-key.md), [ADR-0080](../../../adr/0080-every-effect-on-a-platform-is-a-row-claimed-before-the-call.md), [going-live.md](../going-live.md)
+- **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), the architecture [TRD](../trd.md) (A-D1–D21), [ADR-0084](../../../adr/0084-meta-events-arrive-through-one-signed-intake-and-are-drained-per-account.md), [ADR-0085](../../../adr/0085-a-shops-conversations-are-sealed-under-its-own-key.md), [ADR-0086](../../../adr/0086-every-effect-on-a-platform-is-a-row-claimed-before-the-call.md), [going-live.md](../going-live.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
 

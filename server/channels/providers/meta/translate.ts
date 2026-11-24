@@ -14,7 +14,7 @@ import {
 import { SOCIAL_PLATFORM, type SocialPlatform } from "../../social/types";
 
 /**
- * A stored Meta event into our facts (meta-foundation D4; ADR-0078). Pure. Meta's words are mapped
+ * A stored Meta event into our facts (meta-foundation D4; ADR-0084). Pure. Meta's words are mapped
  * to our closed sets here and nowhere else; anything no tool uses yet (read receipts) yields no fact.
  */
 

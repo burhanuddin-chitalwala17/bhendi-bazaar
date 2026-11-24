@@ -15,7 +15,7 @@ type Classification =
 const PUBLIC_READ = "A public read: it shows what the pages already render, and guesses nothing.";
 const OWN_READ = "The signed-in caller's own data, read-only.";
 const META_EVENTS =
-  "Meta's signed webhook (ADR-0078): a 429 loses events Meta retries for days, then disables the webhook.";
+  "Meta's signed webhook (ADR-0084): a 429 loses events Meta retries for days, then disables the webhook.";
 const META_ACCOUNT_CALLBACK = "Meta's signed account callback: refused unless the signed request verifies under our app secret.";
 const META_HANDSHAKE = "Meta's subscription check: answers only to our verify token, compared in constant time.";
 

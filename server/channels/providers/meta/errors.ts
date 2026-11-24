@@ -43,7 +43,7 @@ const WINDOW_SUBCODES = new Set([2018278, 2534022]);
 const UNDELIVERABLE_CODES = new Set([131026, 131051, 131052, 551]);
 /** Meta says the service was unavailable, so nothing happened: safe to retry. */
 const NOT_DONE_CODES = new Set([2, 131016]);
-/** Meta's generic "unknown error": on a call that changes something we cannot know whether it did (ADR-0080). */
+/** Meta's generic "unknown error": on a call that changes something we cannot know whether it did (ADR-0086). */
 const UNKNOWN_CODES = new Set([1, 131000]);
 
 const MAX_REASON = 300;
@@ -54,7 +54,7 @@ export interface MetaErrorBody {
   message?: string;
 }
 
-/** Which of our codes a Meta answer means; `mayHaveTakenEffect` marks a send or publish (ADR-0080). */
+/** Which of our codes a Meta answer means; `mayHaveTakenEffect` marks a send or publish (ADR-0086). */
 export function classifyMetaError(
   status: number,
   body: MetaErrorBody | null,

@@ -1,4 +1,4 @@
-# ADR-0081: Text generation goes through the generation port
+# ADR-0087: Text generation goes through the generation port
 
 - **Date:** 2026-11-23
 - **Status:** Proposed

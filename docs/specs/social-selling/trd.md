@@ -4,7 +4,7 @@
 - **Domain:** channels (Meta platform layer), and five new tool domains: social, inbox, automations, audience, campaigns; with notifications, content, cart and analytics
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-23
-- **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux-patterns.md](ux-patterns.md), [going-live.md](going-live.md), [INTEGRATIONS.md](../../INTEGRATIONS.md#acting-for-a-shop-on-meta-catalogue-whatsapp-instagram), ADRs [0003](../../adr/0003-one-repository-per-aggregate.md), [0012](../../adr/0012-modules-are-vertical-slices-by-domain.md), [0033](../../adr/0033-a-domain-is-reached-through-its-public-surface.md), [0038](../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [0046](../../adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md), [0060](../../adr/0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md), [0063](../../adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md), [0068](../../adr/0068-meta-is-a-connected-shopfront.md), [0069](../../adr/0069-notifications-are-one-hub-every-module-plugs-into.md), and the new [0078](../../adr/0078-meta-events-arrive-through-one-signed-intake-and-are-drained-per-account.md), [0079](../../adr/0079-a-shops-conversations-are-sealed-under-its-own-key.md), [0080](../../adr/0080-every-effect-on-a-platform-is-a-row-claimed-before-the-call.md), [0081](../../adr/0081-text-generation-goes-through-the-generation-port.md)
+- **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux-patterns.md](ux-patterns.md), [going-live.md](going-live.md), [INTEGRATIONS.md](../../INTEGRATIONS.md#acting-for-a-shop-on-meta-catalogue-whatsapp-instagram), ADRs [0003](../../adr/0003-one-repository-per-aggregate.md), [0012](../../adr/0012-modules-are-vertical-slices-by-domain.md), [0033](../../adr/0033-a-domain-is-reached-through-its-public-surface.md), [0038](../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [0046](../../adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md), [0060](../../adr/0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md), [0063](../../adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md), [0068](../../adr/0068-meta-is-a-connected-shopfront.md), [0069](../../adr/0069-notifications-are-one-hub-every-module-plugs-into.md), and the new [0084](../../adr/0084-meta-events-arrive-through-one-signed-intake-and-are-drained-per-account.md), [0085](../../adr/0085-a-shops-conversations-are-sealed-under-its-own-key.md), [0086](../../adr/0086-every-effect-on-a-platform-is-a-row-claimed-before-the-call.md), [0087](../../adr/0087-text-generation-goes-through-the-generation-port.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a
 > decision. This is the architecture every subfeature TRD builds on; a subfeature cites its D ids
@@ -21,16 +21,16 @@ shop down. The answer is a small set of mechanisms, each written once and used b
 1. **One Meta platform layer inside `channels`** (ADR-0068): connections, tokens, one Graph client,
    one webhook intake, and ports that speak in our words. No other domain sees a token, a Graph URL
    or a Meta field name.
-2. **Store first, process later, per account in order** (ADR-0078): the webhook route verifies the
+2. **Store first, process later, per account in order** (ADR-0084): the webhook route verifies the
    signature, writes each event once, answers 200, and a drain job per connection turns raw events
    into neutral facts handed to whichever domain owns them.
-3. **Every effect on a platform is a row claimed before the call** (ADR-0080): a message, a
+3. **Every effect on a platform is a row claimed before the call** (ADR-0086): a message, a
    publish, a catalogue batch. The row is the idempotency key, the progress record and the audit;
    an answer we never received is *uncertain*, never silently retried.
 4. **Serial per account, parallel across accounts**: a lease per (connection, lane) paces calls
    to each account inside Meta's limits without a distributed rate limiter, and one hot shop never
    starves the rest.
-5. **Sealed per shop** (ADR-0079): message bodies are encrypted under the shop's own data key;
+5. **Sealed per shop** (ADR-0085): message bodies are encrypted under the shop's own data key;
    no staff read model can select them.
 
 ## Prior art
@@ -108,7 +108,7 @@ shop down. The answer is a small set of mechanisms, each written once and used b
   80 messages a second per WhatsApp number, 5,000 items per catalogue batch, private reply once
   per comment within 7 days) live in `meta-limits.ts` as data, each with its source and checked
   date, because Meta's own pages disagree and change (INTEGRATIONS).
-- **D5 — One webhook intake, two routes (ADR-0078, meta-foundation R2).** `app/api/webhooks/meta/instagram/route.ts`
+- **D5 — One webhook intake, two routes (ADR-0084, meta-foundation R2).** `app/api/webhooks/meta/instagram/route.ts`
   and `…/meta/whatsapp/route.ts`, thin handlers over one intake service in `channels` (one Meta app):
   - `GET` answers Meta's verification with `hub.challenge` when `hub.verify_token` matches
     `META_WEBHOOK_VERIFY_TOKEN`, compared in constant time.
@@ -149,7 +149,7 @@ shop down. The answer is a small set of mechanisms, each written once and used b
   sinks may take one fact (an `InboundMessage` goes to inbox, then automations, then audience's
   YES/STOP reader), run in a declared order inside one drain so automations see the message inbox
   has stored. A sink is idempotent on the fact's dedupe key, because a drain may re-run.
-- **D8 — Every effect on a platform is a claimed row (ADR-0080).** Each tool keeps its own outbox
+- **D8 — Every effect on a platform is a claimed row (ADR-0086).** Each tool keeps its own outbox
   table (inbox `Message`, social `PostDestination`, campaigns `CampaignSend`, channels
   `CatalogueBatch`, `TemplateSubmission`) with one state machine:
   `HELD → QUEUED → CLAIMED → SENT | FAILED | UNCERTAIN`. The row is written in the business
@@ -194,7 +194,7 @@ shop down. The answer is a small set of mechanisms, each written once and used b
   (whatsapp-catalogue Q4).
 
 ### Data, privacy and money
-- **D12 — Sealed per shop (ADR-0079, Q116).** `OrgDataKey(orgId, version, wrappedKey, createdAt)`:
+- **D12 — Sealed per shop (ADR-0085, Q116).** `OrgDataKey(orgId, version, wrappedKey, createdAt)`:
   a random 256-bit data key per shop, wrapped with the current `CREDENTIAL_KEYS` version. Message
   bodies, conversation previews, captions of inbound comments, and attachments' captions are
   stored as `AES-256-GCM(dataKey, plaintext, aad = orgId|table|rowId)`; the additional data binds a
@@ -333,7 +333,7 @@ Per TESTING.md's targets, plus for this feature:
 One feature on one branch, built in parent Q107's order. Each subfeature TRD lists its own units;
 this architecture lands as the first units of meta-foundation (D4–D7, D9, D12) and inbox-core
 (D8, D13, D14), because everything else stands on them. Units:
-1. ADRs 0078–0081 and ADR-0069's revision (docs).
+1. ADRs 0084–0087 (written as 0078–0081, renumbered after main took those numbers) and ADR-0069's revision (docs).
 2. Graph client, limits table, fake adapters (no behaviour).
 3. Webhook intake, `MetaEvent`, drain, sinks registry, lanes (behaviour: events stored and drained).
 4. `OrgDataKey` and the seal (behaviour: nothing sealed yet).

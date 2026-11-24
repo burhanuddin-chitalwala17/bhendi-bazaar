@@ -3,7 +3,7 @@ import { decryptSecret, encryptSecret, needsReencryption } from "@server/shared/
 import { orgDataKeyRepository, type WrappedKey } from "./org-data-key.repository";
 
 /**
- * Chat text sealed under its shop's own data key (ADR-0079; social-selling A-D12). The additional
+ * Chat text sealed under its shop's own data key (ADR-0085; social-selling A-D12). The additional
  * data binds a ciphertext to its shop, table and row, so one pasted elsewhere does not open.
  * Opening is the caller's privilege to check: only a shop's member route, its own automations, or a
  * support grant may call `open` (A-D12); `sealed-columns.test.ts` arrives with the first sealed column.
@@ -98,7 +98,7 @@ export const seal = {
   },
 
   /**
-   * Re-wraps every data key still under an older ring version (ADR-0079 decision 4), in batches;
+   * Re-wraps every data key still under an older ring version (ADR-0085 decision 4), in batches;
    * no sealed row changes. One key that will not open is counted and skipped, never stops the rest.
    */
   async rewrapStale(batch = 500): Promise<{ rewrapped: number; failed: number }> {

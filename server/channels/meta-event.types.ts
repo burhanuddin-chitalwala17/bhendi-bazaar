@@ -1,4 +1,4 @@
-/** A stored Meta event's life (ADR-0078; meta-foundation D3, D4). */
+/** A stored Meta event's life (ADR-0084; meta-foundation D3, D4). */
 export const META_EVENT_STATE = {
   PENDING: "PENDING",
   DONE: "DONE",

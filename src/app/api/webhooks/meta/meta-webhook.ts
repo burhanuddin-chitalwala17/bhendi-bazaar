@@ -7,7 +7,7 @@ import { ERROR_RESPONSE_COPY } from "@/lib/lib-copy";
 
 /**
  * One Meta product's webhook route (meta-foundation R2, D3). Unlike Razorpay's, a signed but
- * unroutable delivery answers 200: Meta disables webhooks that keep failing (ADR-0078 decision 2).
+ * unroutable delivery answers 200: Meta disables webhooks that keep failing (ADR-0084 decision 2).
  * Refusals carry no body: Meta reads only the status.
  */
 

@@ -60,7 +60,7 @@ describe("graph client", () => {
     expect(answer.usage.pressure).toBeCloseTo(0.8);
   });
 
-  it("a send Meta accepted but answered in an unknown shape is uncertain, never failed (ADR-0080)", async () => {
+  it("a send Meta accepted but answered in an unknown shape is uncertain, never failed (ADR-0086)", async () => {
     const client = clientWith(async () => respond(200, { unexpected: "shape" }));
     await expect(
       client.call({ host: "facebook", method: "POST", path: "/1/messages", step: "wa.send", body: {} }, z.object({ id: z.string() })),
@@ -102,7 +102,7 @@ describe("graph client", () => {
     ).rejects.toBeInstanceOf(MetaShapeError);
   });
 
-  it("a server error on a send is uncertain; on a read it is unavailable (ADR-0080)", async () => {
+  it("a server error on a send is uncertain; on a read it is unavailable (ADR-0086)", async () => {
     const client = clientWith(async () => respond(500, {}));
     const send = client.call({ host: "facebook", method: "POST", path: "/1/messages", step: "wa.send", body: { a: 1 } }, z.unknown());
     await expect(send).rejects.toMatchObject({ code: SOCIAL_ERROR.UNCERTAIN });

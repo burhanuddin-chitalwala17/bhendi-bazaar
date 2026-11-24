@@ -1,6 +1,6 @@
 import { prisma } from "@server/shared/prisma";
 
-/** The one way to reach `OrgDataKey` (Invariant 5; ADR-0079). Returns wrapped keys only. */
+/** The one way to reach `OrgDataKey` (Invariant 5; ADR-0085). Returns wrapped keys only. */
 
 export interface WrappedKey {
   orgId: string;

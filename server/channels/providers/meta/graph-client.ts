@@ -41,7 +41,7 @@ export interface GraphRequest {
   /** Sent as JSON, or form-encoded when `form` is true (Meta's OAuth endpoints). */
   body?: Record<string, unknown>;
   form?: boolean;
-  /** A call that changes something on Meta; defaults to true for POST and DELETE (ADR-0080). */
+  /** A call that changes something on Meta; defaults to true for POST and DELETE (ADR-0086). */
   mayHaveTakenEffect?: boolean;
   context?: GraphContext;
 }
@@ -178,7 +178,7 @@ export function createGraphClient(options: { transport?: GraphTransport; appSecr
 
       const parsed = schema.safeParse(json);
       if (!parsed.success) {
-        // A send Meta accepted but answered strangely did go out: never let it look failed (ADR-0080).
+        // A send Meta accepted but answered strangely did go out: never let it look failed (ADR-0086).
         log(request, response.status, Date.now() - started, mayHaveTakenEffect ? SOCIAL_ERROR.UNCERTAIN : "shape", null);
         throw mayHaveTakenEffect ? new MetaError(SOCIAL_ERROR.UNCERTAIN, request.step) : new MetaShapeError(request.step);
       }

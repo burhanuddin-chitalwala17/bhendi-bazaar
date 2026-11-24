@@ -2,7 +2,7 @@ import type { FactKind, FactOf } from "./facts";
 
 /**
  * Where facts go: each owning domain registers its sinks when the worker starts, as job handlers
- * register (ADR-0078 decision 4). Channels hands facts here and imports none of them.
+ * register (ADR-0084 decision 4). Channels hands facts here and imports none of them.
  */
 
 export interface Sink<K extends FactKind = FactKind> {

@@ -1,5 +1,5 @@
 /**
- * A shop's chat text sealed under its own key (meta-foundation unit 5, ADR-0079) against a real
+ * A shop's chat text sealed under its own key (meta-foundation unit 5, ADR-0085) against a real
  * database: it opens only at its own shop, table and row; two first seals for a shop make one key;
  * a key-ring rotation re-wraps keys without touching what they sealed.
  */

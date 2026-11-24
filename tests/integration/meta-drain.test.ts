@@ -1,5 +1,5 @@
 /**
- * The drain against a real database (meta-foundation unit 3, ADR-0078): stored events become facts
+ * The drain against a real database (meta-foundation unit 3, ADR-0084): stored events become facts
  * handed to sinks in the order they happened, once; a failing sink stops the run without losing
  * order; a poison event dies after five tries and stops blocking; one drain per account at a time.
  */
