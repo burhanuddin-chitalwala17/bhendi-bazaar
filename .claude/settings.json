@@ -9,6 +9,8 @@
       "Bash(git push * -f)",
       "Bash(git push * -f *)",
       "Bash(git push *+*)",
+      "Bash(git push * main)",
+      "Bash(git push * *:main)",
       "Read(./package-lock.json)",
       "Read(./.next/**)",
       "Read(./docs/archive/**)"
