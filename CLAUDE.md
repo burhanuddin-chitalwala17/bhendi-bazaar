@@ -96,7 +96,8 @@ SPIKE            /bb-brainstorm <topic>           research only, no code
 SPEC             /bb-sdlc spec-start <feature>    one outcome; Scope In/Later cut by Claude; decisions.md opened
 UX               /bb-sdlc ux-start <feature>      ux.md: journeys, state matrix, copy; prototype; owner signs off
 TRD              trd.md                           cites ux.md and Q ids; no line cap (ADR-0071)
-IMPLEMENTATION   /bb-build <feature>              refuses open decisions or unsigned UX; failing test per A id first
+HANDOFF          TRD Accepted → planning session prints one prompt per unit and stops (ADR-0080)
+IMPLEMENTATION   /bb-build <feature>              in a new session; refuses open decisions or unsigned UX; failing test per A id first
 REVIEW           /bb-review                       in a fresh context, not by the author
 DOCS             ARCHITECTURE.md only if structure changed; the commit subject is the record (ADR-0078)
 MERGE            /bb-sdlc pr-finish walks the gate
