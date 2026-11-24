@@ -21,4 +21,9 @@ export const metaUnroutedRepository = {
       VALUES (${day}::date, ${product}, ${by})
       ON CONFLICT ("day", "product") DO UPDATE SET ${col} = "MetaUnroutedCount".${col} + EXCLUDED.${col}`;
   },
+
+  /** Counts are kept long enough to see a trend, then dropped (A-D15). */
+  async deleteBefore(day: string): Promise<number> {
+    return await prisma.$executeRaw`DELETE FROM "MetaUnroutedCount" WHERE "day" < ${day}::date`;
+  },
 };

@@ -33,6 +33,12 @@ export const dataDeletionRepository = {
     })) as Pick<DeletionRow, "state" | "requestedAt" | "completedAt"> | null;
   },
 
+  /** Requests still pending since before `cutoff`: their job ran out of retries or was lost. */
+  async pendingSince(cutoff: Date): Promise<string[]> {
+    const rows = await prisma.dataDeletionRequest.findMany({ where: { state: DELETION_STATE.PENDING, requestedAt: { lt: cutoff } }, select: { id: true }, take: 1000 });
+    return rows.map((r) => r.id);
+  },
+
   /** The sealed id goes with it: once forgotten, nothing here can name the person again (Q7). */
   async markDone(id: string, now: Date): Promise<void> {
     await prisma.dataDeletionRequest.updateMany({

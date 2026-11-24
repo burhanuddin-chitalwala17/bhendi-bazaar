@@ -34,6 +34,9 @@ import { metaDrainService } from "./meta-drain.service";
 import { deletePersonSpec } from "./data-deletion.job";
 import { metaCallbacksService } from "./meta-callbacks.service";
 import "./channels.sinks";
+import { metaRetentionSpec, metaSweepSpec } from "./meta-upkeep.job";
+import { metaUpkeepService } from "./meta-upkeep.service";
+import { seal } from "@server/shared/seal/seal";
 
 /**
  * A shop without Channels: the job ends succeeded with a skip, never failed or retried, since a lock
@@ -89,6 +92,15 @@ export const channelsMaintainJob = registerJob({
     // Stock sync's daily check, and a restart of the order check if its chain stopped (inventory-sync Q23).
     await enqueue(prisma, checkStockSpec, {});
     await enqueueLater(prisma, checkOrdersSpec, {}, { afterSeconds: 0, onePerSeconds: ORDERS_CHECK_EVERY_SECONDS });
+    // Meta's raw events aged out and lost work re-asked (meta-foundation D10), as jobs of their own so
+    // one failing never stops the pass; shop data keys re-wrapped after a key-ring rotation (ADR-0079).
+    await enqueue(prisma, metaRetentionSpec, {});
+    await enqueue(prisma, metaSweepSpec, {});
+    const rewrap = await seal.rewrapStale().catch((error: unknown) => {
+      console.error(`[channels] data key re-wrap failed: ${error instanceof Error ? error.name : "error"}`);
+      return null;
+    });
+    if (rewrap && rewrap.rewrapped + rewrap.failed > 0) console.log(`[channels] data keys re-wrapped: ${JSON.stringify(rewrap)}`);
     // Platform listings for anything linked since, and one more look at listings still waiting (marketplace-publish D5).
     await platformListingService.ensureForAll().catch((error: unknown) => console.error(`[channels] platform listings pass failed: ${error instanceof Error ? error.name : "error"}`));
     await listingPublishService.daily();
@@ -230,5 +242,21 @@ export const deletePersonJob = registerJob({
   ...deletePersonSpec,
   handler: async ({ payload }) => {
     await metaCallbacksService.runDeletion(payload.requestId);
+  },
+});
+
+/** Raw Meta events past 30 days deleted in batches (meta-foundation R11, Q2). */
+export const metaRetentionJob = registerJob({
+  ...metaRetentionSpec,
+  handler: async ({ jobId }) => {
+    console.log(`[jobs] channels.meta-retention ${jobId}: ${JSON.stringify(await metaUpkeepService.retention())}`);
+  },
+});
+
+/** Drains and deletion requests a lost job left waiting, asked again (social-selling A-D10). */
+export const metaSweepJob = registerJob({
+  ...metaSweepSpec,
+  handler: async ({ jobId }) => {
+    console.log(`[jobs] channels.meta-sweep ${jobId}: ${JSON.stringify(await metaUpkeepService.sweep())}`);
   },
 });

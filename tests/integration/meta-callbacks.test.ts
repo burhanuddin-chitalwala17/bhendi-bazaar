@@ -85,6 +85,21 @@ describe.skipIf(!isDisposableDb)("Meta account callbacks (local db)", () => {
     expect((await stateOf(mine)).state).toBe("CONNECTED");
   });
 
+  it("D12: a callback signed under the previous secret, while rotating, is accepted and counted", async () => {
+    const { metaCallbacksService } = await import("@server/channels/meta-callbacks.service");
+    const { prisma } = await import("@server/shared/prisma");
+    const previous = "integration-instagram-previous-secret";
+    vi.stubEnv("META_INSTAGRAM_APP_SECRET_PREVIOUS", previous);
+    const today = new Date(new Date().toISOString().slice(0, 10));
+    const before = (await prisma.metaUnroutedCount.findUnique({ where: { day_product: { day: today, product: "instagram" } } }))?.previousSecret ?? 0;
+    try {
+      await metaCallbacksService.deauthorize(signed({ algorithm: "HMAC-SHA256", user_id: `nobody-${RUN}` }, previous));
+    } finally {
+      vi.unstubAllEnvs();
+    }
+    expect((await prisma.metaUnroutedCount.findUnique({ where: { day_product: { day: today, product: "instagram" } } }))?.previousSecret).toBe(before + 1);
+  });
+
   it("A3: a deauthorize signed with any other secret changes nothing", async () => {
     const { metaCallbacksService, SignedRequestRefused } = await import("@server/channels/meta-callbacks.service");
     const mine = await connection("instagram", { externalAccountId: ACCOUNT });

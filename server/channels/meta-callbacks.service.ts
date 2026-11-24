@@ -10,6 +10,7 @@ import { channelConnectionRepository } from "./channel-connection.repository";
 import { CONNECTION_ERROR } from "./channel-connection.types";
 import { dataDeletionRepository, DELETION_STATE } from "./data-deletion.repository";
 import { deletePersonSpec } from "./data-deletion.job";
+import { metaUnroutedRepository } from "./meta-unrouted.repository";
 import { readSignedRequest } from "./providers/meta/signed-request";
 import { metaConfigured, signingSecrets, type MetaProduct } from "./providers/meta/settings";
 import { SOCIAL_PLATFORM } from "./social/types";
@@ -47,13 +48,22 @@ const userIdHash = (product: MetaProduct, userId: string) => createHmac("sha256"
  * Instagram's callbacks are signed with its own secret, the rest with the Meta app's. A product this
  * deployment has no settings for is skipped, so either platform's callbacks work alone (R10).
  */
-function verify(raw: string, products: readonly MetaProduct[]): { product: MetaProduct; userId: string; issuedAt: Date | null } {
+/** Awaited, so the count is written before the answer; a failed count is logged, never refuses Meta. */
+async function countPrevious(product: MetaProduct): Promise<void> {
+  try {
+    await metaUnroutedRepository.add(new Date().toISOString().slice(0, 10), product, "previousSecret", 1);
+  } catch (error) {
+    console.error(JSON.stringify({ scope: "meta.callback", step: "count-previous", error: (error as Error | null)?.name ?? "unknown" }));
+  }
+}
+
+async function verify(raw: string, products: readonly MetaProduct[]): Promise<{ product: MetaProduct; userId: string; issuedAt: Date | null }> {
   for (const product of products) {
     if (!metaConfigured(product)) continue;
     const signed = readSignedRequest(raw, signingSecrets(product));
     if (!signed) continue;
     // Counted while a secret is rotated, so the operator knows when the previous one can go (D12).
-    if (signed.secretIndex > 0) console.info(JSON.stringify({ scope: "meta.callback", product, secret: "previous" }));
+    if (signed.secretIndex > 0) await countPrevious(product);
     return { product, userId: signed.userId, issuedAt: signed.issuedAt };
   }
   throw new SignedRequestRefused();
@@ -68,7 +78,7 @@ export interface DeletionStatus {
 export const metaCallbacksService = {
   /** Instagram's deauthorize: the shop's Instagram card turns to Needs reconnecting (R6, A3). */
   async deauthorize(raw: string, now = new Date()): Promise<void> {
-    const { userId, issuedAt } = verify(raw, [SOCIAL_PLATFORM.INSTAGRAM]);
+    const { userId, issuedAt } = await verify(raw, [SOCIAL_PLATFORM.INSTAGRAM]);
     const routes = (await channelConnectionRepository.socialRoutes(SOCIAL_PLATFORM.INSTAGRAM, [userId])).filter((r) => r.externalAccountId === userId);
     let changed = 0;
     // Meta's own time when it gives one, so a notice replayed after a reconnect changes nothing.
@@ -78,7 +88,7 @@ export const metaCallbacksService = {
 
   /** A deletion request: stored, its job queued in the same commit, Meta answered with our code (R7, A4). */
   async requestDeletion(raw: string): Promise<{ url: string; confirmation_code: string }> {
-    const { product, userId } = verify(raw, [SOCIAL_PLATFORM.INSTAGRAM, SOCIAL_PLATFORM.WHATSAPP]);
+    const { product, userId } = await verify(raw, [SOCIAL_PLATFORM.INSTAGRAM, SOCIAL_PLATFORM.WHATSAPP]);
     const code = newCode();
     await prisma.$transaction(async (tx) => {
       const row = await dataDeletionRepository.create(tx, { code, product, userIdHash: userIdHash(product, userId), sealedUserId: encryptSecret(userId) });

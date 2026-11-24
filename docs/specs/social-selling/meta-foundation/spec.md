@@ -1,10 +1,10 @@
 # Spec — social-selling/meta-foundation
 
 - **Summary:** Meta's events and requests reach Bhendi Bazaar safely and exactly once, through one Meta app both connections share, and each platform stays Coming soon until it is opened
-- **Status:** Accepted
+- **Status:** Implemented — 2026-11-24, units 1–5 on branch `meta-whatsapp-connector`
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-22
+- **Verified:** 2026-11-24
 - **References:** [decisions.md](decisions.md), parent [social-selling](../spec.md) and its [decisions](../decisions.md) (Q2, Q7, Q34), [INTEGRATIONS.md](../../../INTEGRATIONS.md#acting-for-a-shop-on-meta-catalogue-whatsapp-instagram), [ADR-0068](../../../adr/0068-meta-is-a-connected-shopfront.md), [channel-connectors](../../marketplace-integration/channel-connectors/)
 
 > Requirements and product approach only. Technical approach lives in trd.md. Module: Connect.

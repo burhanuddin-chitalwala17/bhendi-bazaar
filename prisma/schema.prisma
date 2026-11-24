@@ -2625,7 +2625,7 @@ model ConnectionLane {
 }
 
 /// A person's request, through Meta, to delete what we hold about them (meta-foundation R7, D7). Names
-/// nobody: the Meta user id is kept only as an HMAC and sealed for the job that acts on it.
+/// nobody: the Meta user id is kept as an HMAC, and sealed only until the job has acted on it (Q7).
 model DataDeletionRequest {
   id           String    @id @default(cuid())
   /// The reference Meta shows the person; also the status page's address.
@@ -3313,4 +3313,19 @@ model ProductAnswersArchive {
   facts        Json?
   measurements Json?
   archivedAt   DateTime @default(now())
+}
+
+/// A shop's data key, stored only wrapped by the platform key ring (ADR-0079, social-selling A-D12).
+/// Chat text is sealed under it; a new `version` replaces a compromised key, and a key-ring rotation
+/// re-wraps `wrappedKey` without touching a sealed row. Written only by `server/shared/seal/`.
+model OrgDataKey {
+  orgId      String
+  version    Int
+  /// The 256-bit key under `encryptSecret`, so it carries the ring version that wraps it.
+  wrappedKey String
+  createdAt  DateTime  @default(now())
+  /// Set when a newer version replaced it; rows sealed under it still open until re-sealed.
+  retiredAt  DateTime?
+
+  @@id([orgId, version])
 }

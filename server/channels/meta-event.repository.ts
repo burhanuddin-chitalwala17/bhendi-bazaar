@@ -75,6 +75,26 @@ export const metaEventRepository = {
     return rows[0]?.retries ?? 0;
   },
 
+  /**
+   * Deletes one batch received before `cutoff`, by the `receivedAt` index (A-D15). Answers how many,
+   * and how many of them were never handed on, so that loss is visible rather than silent.
+   */
+  async deleteReceivedBefore(cutoff: Date, batch: number): Promise<{ deleted: number; unhanded: number }> {
+    const rows = await prisma.$queryRaw<Array<{ state: string }>>`
+      DELETE FROM "MetaEvent" WHERE "id" IN (
+        SELECT "id" FROM "MetaEvent" WHERE "receivedAt" < ${cutoff} ORDER BY "receivedAt" LIMIT ${batch})
+      RETURNING "state"`;
+    return { deleted: rows.length, unhanded: rows.filter((r) => r.state === META_EVENT_STATE.PENDING).length };
+  },
+
+  /** Connections with an event still pending that arrived before `cutoff`: a drain request was lost. */
+  async stranded(cutoff: Date): Promise<Array<{ connectionId: string; orgId: string }>> {
+    return await prisma.$queryRaw<Array<{ connectionId: string; orgId: string }>>`
+      SELECT DISTINCT e."connectionId", c."orgId"
+      FROM "MetaEvent" e JOIN "ChannelConnection" c ON c."id" = e."connectionId"
+      WHERE e."state" = ${META_EVENT_STATE.PENDING} AND e."receivedAt" < ${cutoff}`;
+  },
+
   async hasPending(connectionId: string): Promise<boolean> {
     const row = await prisma.metaEvent.findFirst({ where: { connectionId, state: META_EVENT_STATE.PENDING }, select: { id: true } });
     return row !== null;
