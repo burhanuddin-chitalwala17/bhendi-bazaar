@@ -1,6 +1,6 @@
 # UX — social-selling/inbox-core
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/converse.html](../prototypes/converse.html), sections "Inbox", "A conversation", "The reply box"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux-patterns](../ux-patterns.md), parent Q63, Q89, Q110, Q114, [inbox-instagram ux](../inbox-instagram/ux.md), [inbox-whatsapp ux](../inbox-whatsapp/ux.md), [enquiry-autoreplies ux](../enquiry-autoreplies/ux.md)
@@ -121,4 +121,4 @@ sending it is pending and a second tap is ignored.
 - Privacy: "🔒 Private to your shop", "How your chats stay private" and its three lines, "Who has opened your chats", "Only your team", "Share with support", "Support can open this one chat for 48 hours.", "Shared with support until <time> · Stop sharing".
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

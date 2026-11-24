@@ -1,6 +1,6 @@
 # UX — social-selling/enquiry-autoreplies
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/converse.html](../prototypes/converse.html), sections "Auto-replies", "What a buyer sees"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [inbox-core ux](../inbox-core/ux.md), [whatsapp-sending ux](../whatsapp-sending/ux.md) (shop hours), parent Q112
@@ -72,4 +72,4 @@ the shop hasn't set.
 - "Show on your Instagram profile", "Up to 4 questions.", "Try it".
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

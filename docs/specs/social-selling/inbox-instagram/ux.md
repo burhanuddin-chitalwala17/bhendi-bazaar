@@ -1,6 +1,6 @@
 # UX — social-selling/inbox-instagram
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/converse.html](../prototypes/converse.html), section "Instagram"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [inbox-core ux](../inbox-core/ux.md), [connect-instagram ux](../connect-instagram/ux.md)
@@ -63,4 +63,4 @@ notes included, shows here.
 - Tab notes as in the journeys.
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

@@ -25,7 +25,7 @@ The conditions:
 | # | Step | Where | Takes | Done when |
 |---|---|---|---|---|
 | 1 | Gather GST certificate (and Udyam if it carries the trade name), plus a business bank statement or utility bill in the same name | — | a day | Names identical across all |
-| 2 | Publish the policy additions (policy-drafts.md, once approved) and the "operated by" line | Our site | build | Pages live at stable URLs |
+| 2 | Publish the policy additions (policy-drafts.md, once approved), stating word for word that only a shop's own team reads its chats (Q116) and how long data is kept, and the "operated by" line | Our site | build | Pages live at stable URLs |
 | 3 | Create a Meta business portfolio in the legal name; add the website | business.facebook.com | minutes | Portfolio exists |
 | 4 | Verify the domain (DNS TXT on Cloudflare, or a meta tag) | Business settings → Brand safety → Domains | minutes | Domain shows Verified |
 | 5 | Start Business Verification with the documents | Security centre | up to 14 business days | "Verified" badge |

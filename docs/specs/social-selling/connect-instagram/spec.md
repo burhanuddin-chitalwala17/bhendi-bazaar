@@ -49,7 +49,7 @@ asks for neither (parent Q1).
 - R11 — The Instagram card sits after the Meta catalogue card, which keeps serving Facebook and
   Instagram shops from the feed (Q13).
 - R12 — Until setup is done the card shows its checklist, each step ticked when done and opening its
-  own screen, which returns to the card: Connect, Allow messages, First post, Comment-to-DM. The
+  own screen, which returns to the card: Connect, Turn on replies, First post, Comment-to-DM. The
   next step is the card's main button (parent Q111).
 
 ## Hazards the TRD must answer

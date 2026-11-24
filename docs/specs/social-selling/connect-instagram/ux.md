@@ -1,6 +1,6 @@
 # UX — social-selling/connect-instagram
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/connect.html](../prototypes/connect.html), sections "Instagram"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux-patterns](../ux-patterns.md), the shipped Channels page (`channel-copy.ts`), [channel-connectors](../../marketplace-integration/channel-connectors/)
@@ -83,4 +83,4 @@
 - Home line: "Instagram needs reconnecting. Posts won't publish until it is." · Reconnect.
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

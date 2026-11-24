@@ -1,6 +1,6 @@
 # UX — social-selling/post-composer
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/post.html](../prototypes/post.html), sections "Posts page", "Compose", "Schedule", "After it goes"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux-patterns](../ux-patterns.md), [instagram-publishing ux](../instagram-publishing/ux.md), [whatsapp-status-kit ux](../whatsapp-status-kit/ux.md), [ai-images/social-posts ux](../../ai-images/social-posts/ux.md), [comment-automations ux](../comment-automations/ux.md)
@@ -146,4 +146,4 @@ folded "2 drafts" line atop Scheduled; cancelled posts as a folded "Cancelled" l
 - Cancel sheet "Cancel this post?" · "It won't be published. You can duplicate it later." · "Cancel post" · "Keep it".
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

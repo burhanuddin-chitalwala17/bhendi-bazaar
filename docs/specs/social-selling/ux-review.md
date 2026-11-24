@@ -58,6 +58,21 @@
 3. Hold it: "Check price" until the caption is updated or Publish as is is tapped (ai-images Q47, replaced in place).
 4. Yes, on by default (comment-automations Q12).
 
+## Final cross-feature check (2026-11-23)
+Read every ux.md, spec and prototype together after the owner's later changes (chat privacy Q116,
+posts before connecting post-composer Q13, voice notes, the 7-second undo inbox-core Q16, the first
+offer consent-core Q11 and Q12, picked lists audience Q21, files instead of attested uploads
+audience Q15, the platform never using shop contacts Q117). Fixed in this pass:
+- connect-instagram's spec still named the checklist step "Allow messages"; now "Turn on replies".
+- Parent Q9 and consent-core's history still described the attested upload; replaced in place.
+- audience's UX capped files at 10,000 rows against Q15's 5,000; now 5,000.
+- A post held for its price had no item in the Needs you list; added to notifications-core.
+- going-live's policy step now carries the chat-privacy promise word for word.
+Nothing open for the owner. Facts the TRD spikes confirm against Meta: the contact sync re-running
+after a fresh onboarding (consent-core Q12), no unsend in Instagram's API (inbox-core Q16), the
+platform-terms clause behind Q117, and whether Instagram's API sets its AI label (instagram-publishing Q10).
+**Signed off by the owner, 2026-11-23.**
+
 ## Smaller notes, left as designed
 - An "All" inbox tab across platforms would save a tap for shops with both; the spec keeps a tab
   per platform (inbox-core R1). Worth revisiting after use.

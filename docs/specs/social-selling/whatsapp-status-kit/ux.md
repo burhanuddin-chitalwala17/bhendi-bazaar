@@ -1,6 +1,6 @@
 # UX — social-selling/whatsapp-status-kit
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/post.html](../prototypes/post.html), section "Status, on time"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux-patterns](../ux-patterns.md), [post-composer ux](../post-composer/ux.md), [notifications-core ux](../../notification-hub/notifications-core/ux.md)
@@ -54,4 +54,4 @@
 - "Open this on your phone"; "Not posted · was due <time>"; "Mark as skipped" → toast "Marked as skipped."
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

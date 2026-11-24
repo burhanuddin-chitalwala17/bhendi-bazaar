@@ -1,6 +1,6 @@
 # UX — social-selling/inbox-whatsapp
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/converse.html](../prototypes/converse.html), sections "WhatsApp", "An order in chat"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [inbox-core ux](../inbox-core/ux.md), [whatsapp-sending ux](../whatsapp-sending/ux.md), [checkout-links ux](../../checkout-links/ux.md)
@@ -69,4 +69,4 @@
 - Refusals: "You've reached this month's limit of ₹<n>." · "Add a payment method in Meta to send this." · "This buyer hasn't agreed to marketing messages."
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

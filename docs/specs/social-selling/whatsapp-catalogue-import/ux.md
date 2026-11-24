@@ -1,6 +1,6 @@
 # UX — social-selling/whatsapp-catalogue-import
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/connect.html](../prototypes/connect.html), section "Settle your WhatsApp catalogue"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux-patterns](../ux-patterns.md), the shipped Settle screen (`settle-copy.ts`, product-merge), [connect-whatsapp ux](../connect-whatsapp/ux.md)
@@ -68,4 +68,4 @@
 - Card step texts: "Catalogue · 36 items to settle" → "Catalogue · all in your catalogue".
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

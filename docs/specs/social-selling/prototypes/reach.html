@@ -131,7 +131,7 @@ tr:last-child td{border-bottom:0}
 </header>
 <p class="demo-hint">Buttons with a dotted underline are live: tap one to see what it does while it works and when it finishes (ux-patterns §3). Every string is the one that ships; dashed boxes are Meta's or WhatsApp's own screens.</p>
 <nav class="tabs" aria-label="Sections">
-  <a href="#audience">Audience</a><a href="#first">First offer</a><a href="#upload">Upload</a><a href="#lists">Lists</a><a href="#contact">A contact</a><a href="#campaigns">Campaigns</a><a href="#new">New campaign</a><a href="#review">Before you send</a><a href="#report">Report</a><a href="#messaging">Messaging settings</a><a href="#templates">Templates</a><a href="#buyer">What a buyer sees</a>
+  <a href="#audience">Audience</a><a href="#first">First offer</a><a href="#upload">Add from a file</a><a href="#lists">Lists</a><a href="#contact">A contact</a><a href="#campaigns">Campaigns</a><a href="#new">New campaign</a><a href="#review">Before you send</a><a href="#report">Report</a><a href="#messaging">Messaging settings</a><a href="#templates">Templates</a><a href="#buyer">What a buyer sees</a>
 </nav>
 
 <section id="audience">
@@ -145,8 +145,8 @@ tr:last-child td{border-bottom:0}
           <div class="lbl">Grow your list</div>
           <div class="li"><div class="main"><div class="ttl">Checkout box</div><div class="sub">Buyers can tick it at checkout · on for every shop</div></div><span class="badge ok">On</span></div>
           <div class="li"><div class="main"><div class="ttl">Get offers on WhatsApp</div><div class="sub">A button on your shop page</div></div><span class="badge ok">On</span></div>
-          <div class="li"><div class="main"><div class="ttl">Upload people who agreed</div><div class="sub">A CSV or spreadsheet</div></div></div>
-          <button class="btn" type="button">Upload</button></div></div></div>
+          <div class="li"><div class="main"><div class="ttl">First offer to your 312 phone contacts</div><div class="sub">Once each; Yes joins your list</div></div></div>
+          <button class="btn" type="button">Send first offer</button><div class="small">⋯ Add contacts from a file</div></div></div></div>
     <div class="arrow" aria-hidden="true">·</div>
     <div class="step"><div class="cap"><b>Growing</b>: figures, filters, rows</div>
       <div class="phone"><div class="ph"><h3>Customers</h3><span>🔍</span></div>
@@ -159,7 +159,7 @@ tr:last-child td{border-bottom:0}
           <div class="li"><span class="avatar">RB</span><div class="main"><div class="ttl">Rida B.</div><div class="sub">•••• 0912 · phone contacts</div></div><span class="badge">Not yet</span></div>
           <div class="li"><span class="avatar">SN</span><div class="main"><div class="ttl">Sana N.</div><div class="sub">•••• 7781 · replied STOP</div></div><span class="badge bad">Stopped</span></div>
         </div>
-        <div class="small">Your phone's contacts: 312 arrived · Not yet · <u>Send a first offer</u></div></div></div>
+        <div class="small">Your phone's contacts: 312 arrived · Not yet · <u>Send a first offer</u> · 38 new since · <u>Send</u></div></div></div>
   </div>
 </section>
 
@@ -188,32 +188,36 @@ tr:last-child td{border-bottom:0}
 </section>
 
 <section id="upload">
-  <h2>Upload</h2>
-  <p class="lede">One sheet, three steps. The tick is never pre-ticked and is recorded with who, when and which file.</p>
+  <h2>Add from a file</h2>
+  <p class="lede">Under the Audience page's ⋯, for contacts outside the WhatsApp phone. They arrive as Not yet and can get their one first offer; there is no "they agreed" tick.</p>
   <div class="flow">
     <div class="step"><div class="cap"><b>Pick and match</b></div>
-      <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">Upload customers</span>
+      <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">Add contacts from a file</span>
         <div class="li"><div class="main"><div class="ttl">diwali-buyers.csv</div><div class="sub">200 rows</div></div></div>
-        <div class="lbl">Columns</div>
         <div class="small">"Mobile" → Phone ▾<br>"Customer" → Name ▾</div>
         <button class="btn" type="button" data-demo="pending:Reading · 120 of 200…|done:Next">Next</button></div></div></div>
     <div class="arrow" aria-hidden="true">→</div>
-    <div class="step"><div class="cap"><b>Preview</b> and the tick</div>
+    <div class="step"><div class="cap"><b>Preview</b> and add</div>
       <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">200 rows · 196 valid</span>
         <div class="small">4 skipped (numbers not valid) · 3 asked to stop earlier and stay stopped.</div>
-        <div class="card"><div class="ttl">☐ These people agreed to get WhatsApp messages from Niqab Boutique</div><div class="small">We record that you ticked this, with your name and this file.</div></div>
-        <button class="btn" type="button" data-demo="pending:Adding…|toast:196 added as Not yet. 4 skipped.">Add 196 as Not yet</button>
-        <div class="small">Tick the box to add them as opted in: the button becomes <b>Add 196</b>.</div></div></div></div>
+        <button class="btn" type="button" data-demo="pending:Adding…|toast:196 added. Send them a first offer to ask if they'd like your offers.">Add 196</button></div></div></div>
   </div>
 </section>
 
 <section id="lists">
   <h2>Lists</h2>
   <div class="flow">
+    <div class="step"><div class="cap"><b>Pick people</b> into a list</div>
+      <div class="phone"><div class="chips"><span class="chip on">All</span><span class="chip">Opted in</span><span class="chip">Not yet</span></div>
+        <div class="li"><div class="main"><div class="ttl">☑ Ayesha Khan</div><div class="sub">•••• 1100 · Opted in</div></div></div>
+        <div class="li"><div class="main"><div class="ttl">☑ Zara M.</div><div class="sub">•••• 4410 · Opted in</div></div></div>
+        <div class="li"><div class="main"><div class="ttl">☐ Rida B.</div><div class="sub">•••• 0912 · Not yet</div></div></div>
+        <div class="card"><div class="small">12 selected</div><div class="row2"><button class="btn sec" type="button">Add to list</button><button class="btn" type="button" data-demo="pending:Saving…|toast:List saved · 4 opted in of 12.">New list from these</button></div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
     <div class="step"><div class="cap"><b>New list</b>, counted live</div>
       <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">New list</span>
         <div class="input">Abaya lovers</div>
-        <div class="chips"><span class="chip on">Bought from: Abayas ×</span><span class="chip on">Ordered in the last 90 days ×</span><span class="chip">＋ Wishlisted</span><span class="chip">＋ From upload</span></div>
+        <div class="chips"><span class="chip on">Bought from: Abayas ×</span><span class="chip on">Ordered in the last 90 days ×</span><span class="chip">＋ Wishlisted</span><span class="chip">＋ From file</span></div>
         <div class="money">38 opted in · only they are ever sent to</div>
         <button class="btn" type="button" data-demo="pending:Saving…|toast:List saved.">Save list</button></div></div></div>
     <div class="arrow" aria-hidden="true">·</div>

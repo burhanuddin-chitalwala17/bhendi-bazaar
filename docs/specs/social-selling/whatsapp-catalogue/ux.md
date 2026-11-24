@@ -1,6 +1,6 @@
 # UX — social-selling/whatsapp-catalogue
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/connect.html](../prototypes/connect.html), section "Your WhatsApp catalogue"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux-patterns](../ux-patterns.md), [bulk-publish ux](../../bulk-publish/ux.md)
@@ -55,4 +55,4 @@
 - Disconnect note in the WhatsApp dialog: "Your catalogue stops updating and stays in your WhatsApp account as it was."
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

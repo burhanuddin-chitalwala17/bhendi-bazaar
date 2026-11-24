@@ -24,7 +24,8 @@ items (Q110), a setup checklist per channel (Q111), one settings page (Q112), on
 **UX drafted (2026-11-22).** A ux.md beside every subfeature's spec, shared rules in
 [ux-patterns.md](ux-patterns.md), eight linked prototypes ([published](https://claude.ai/artifact/6Yqg4xgjp3mDRXYDVsVtwU), source in
 `prototypes/`), and a senior UX review with its fixes in [ux-review.md](ux-review.md).
-**Next step:** the owner answers ux-review's four questions and signs off each module's UX; then the TRDs.
+**UX signed off (2026-11-23)** after the final cross-feature check (ux-review.md). **Next step:** TRDs in
+build order (Q107), starting with step 1, then /bb-build unit by unit.
 **Review standard (owner).** Every flow obvious to the shop, no needless tap or screen, states kept
 across a refresh and a return, and every button showing its progress while a request is in flight
 and its outcome after.

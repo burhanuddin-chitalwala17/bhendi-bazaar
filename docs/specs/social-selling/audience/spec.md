@@ -1,6 +1,6 @@
 # Spec — social-selling/audience
 
-- **Summary:** A shop sees who it may message and grows that list: an Audience page of its contacts and their consent, named lists to send to, uploads of customers it has permission for, a checkout box and a store-page button that let buyers opt in
+- **Summary:** A shop sees who it may message and grows that list: an Audience page of its contacts and their consent, named lists to send to, picked or by filter, a first offer to its synced contacts, a checkout box and a store-page button that let buyers opt in
 - **Status:** Draft
 - **Domain:** audience
 - **Phase:** 11 — Listing: one entry, every channel
@@ -12,8 +12,8 @@
 
 ## What this feature is
 The Audience page, and the two places buyers opt in that the shop does not control: a box at
-checkout and a "Get offers on WhatsApp" button on the shop's page. Plus uploads of customer lists
-the shop vouches for, and named lists for campaigns.
+checkout and a "Get offers on WhatsApp" button on the shop's page. Plus a one-time first offer
+that asks the shop's contacts for consent, and named lists for campaigns.
 
 ## Why
 A shop's best customers are the ones who asked to hear from it. Making it easy for buyers to say
@@ -29,21 +29,22 @@ keeps it within consent (parent Q9, Q75).
   the order and the platform (Q8, parent Q27).
 - R3 — A shop with WhatsApp connected shows "Get offers on WhatsApp" on its store page; it opens
   WhatsApp with YES pre-filled to the shop's number, and sending it opts the buyer in (Q10).
-- R4 — A shop uploads a CSV or spreadsheet of customers; ticking "These people agreed to get WhatsApp
-  messages from <shop>" makes them messageable, the tick recorded with who, when and which file.
-  Invalid numbers are skipped and counted; anyone who stopped stays stopped (Q15, parent Q9).
-- R5 — A shop saves named lists: opted-in contacts narrowed by category bought, wishlisted, last
-  order within N days, or an uploaded list; only opted-in members are ever counted or sent to (Q17).
+- R4 — A shop may add contacts from a CSV or spreadsheet (under ⋯); they arrive as Not yet, each
+  eligible for its first offer. Invalid numbers are skipped and counted; anyone who stopped stays
+  stopped (Q15, parent Q9).
+- R5 — A shop saves named lists, by picking contacts or by filter (category bought, wishlisted, last
+  order within N days, an uploaded file); only opted-in members are ever counted or sent to (Q17, Q21).
 - R6 — Phones show masked to the last four digits; the full number shows on tap, and the view is
   recorded. Contacts cannot be exported (Q19).
 - R7 — Where the phone's contacts came from the Business app, the page says whether they arrived,
   are still coming, or were not shared.
 - R8 — The shop sends its synced contacts one first offer each, asking for consent in it, from
   this page; it sees the cost before sending, progress at up to 100 a day, and who said yes, who
-  said stop and who did not answer (Q20, consent-core Q11).
+  said stop and who did not answer; contacts arriving later are offered as "<n> new contacts · Send
+  first offer" (Q20, consent-core Q11, Q12).
 
 ## Hazards the TRD must answer
-- **A large upload** (5,000 rows) checked and merged without blocking the page.
+- **A large file** (5,000 rows) checked and merged without blocking the page.
 - **A list counted on Monday and sent on Friday:** counts always recomputed at send.
 
 ## Product acceptance
@@ -52,15 +53,16 @@ Judged on a phone (~360px) first.
   platform, on WhatsApp and email.
 - A2 — "Get offers on WhatsApp" on a shop's page opens WhatsApp with YES; sending it shows the buyer
   as Opted in on the Audience page.
-- A3 — An upload of 200 rows with the box ticked adds 196 opted-in contacts and says 4 were skipped.
+- A3 — A file of 200 rows adds 196 contacts as Not yet and says 4 were skipped.
 - A4 — A list "Wishlisted, last 30 days" shows its opted-in count and can be picked in a campaign.
 - A5 — A masked number shows in full on tap, and the view is recorded.
+- A7 — Ticking 12 contacts and New list from these makes a list counting its opted-in members.
 - A6 — A first offer to 312 synced contacts shows its cost before sending, goes 100 a day, and
   counts 48 yes, 9 stop and the rest no answer; the 48 are Opted in.
 
 ## Scope
 - **Outcome:** a shop knows who it may message, and grows and groups that list.
-- **In:** R1–R8, tested by A1–A6.
+- **In:** R1–R8, tested by A1–A7.
 - **Later:** contact export (Q19); a platform-wide contact screen (parent Q27).
 
 ## Open questions

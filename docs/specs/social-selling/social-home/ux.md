@@ -1,6 +1,6 @@
 # UX — social-selling/social-home
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/home.html](../prototypes/home.html)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), parent Q111, Q113, [ux-patterns](../ux-patterns.md)
@@ -61,4 +61,4 @@ out (R3); a card with nothing at all shows only the next step or "All good".
 - Admin: "Social", "Shops connected", "Needing attention", "Meta's onboarding limit", "<n> of <m> this week", "Events failing", "<n> in the last day".
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

@@ -1,6 +1,6 @@
 # UX — bulk-publish
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [social-selling/prototypes/bulk.html](../social-selling/prototypes/bulk.html)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [social-selling ux-patterns](../social-selling/ux-patterns.md) §4, the shipped readiness-fix pages and listing rows (`listing-fixes.tsx`, `listing-row.tsx`), [whatsapp-catalogue ux](../social-selling/whatsapp-catalogue/ux.md)
@@ -61,4 +61,4 @@
 - WhatsApp "Fix what's left out of WhatsApp"; Flipkart line as in journey 5.
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../social-selling/ux-review.md)) and the final cross-feature check.

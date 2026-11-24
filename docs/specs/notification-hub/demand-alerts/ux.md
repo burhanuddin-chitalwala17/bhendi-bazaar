@@ -1,6 +1,6 @@
 # UX — notification-hub/demand-alerts
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [social-selling/prototypes/notify.html](../../social-selling/prototypes/notify.html), sections "Settings", "What a buyer gets"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [hub-marketing ux](../hub-marketing/ux.md), [whatsapp-sending ux](../../social-selling/whatsapp-sending/ux.md)
@@ -43,4 +43,4 @@
 - Buyer texts as in journey 3.
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../../social-selling/ux-review.md)) and the final cross-feature check.

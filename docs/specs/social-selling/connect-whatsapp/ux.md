@@ -1,6 +1,6 @@
 # UX — social-selling/connect-whatsapp
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/connect.html](../prototypes/connect.html), sections "WhatsApp"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux-patterns](../ux-patterns.md), [whatsapp-sending](../whatsapp-sending/spec.md) (the spending-limit step), [whatsapp-catalogue-import](../whatsapp-catalogue-import/ux.md)
@@ -83,4 +83,4 @@
 - Return notes: "WhatsApp connected." · "Nothing was connected. You can connect WhatsApp any time." · "This WhatsApp number is already connected to another shop. A number can belong to one shop only; disconnect it there first." · "That's a different number from the one connected here. To switch, disconnect this one first, then connect the new one."
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

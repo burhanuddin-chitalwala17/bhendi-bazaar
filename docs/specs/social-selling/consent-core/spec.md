@@ -37,7 +37,8 @@ proof in one place, asked by every sender, makes it impossible to message someon
   filling only names nobody typed; later changes on the phone follow; a contact removed on the phone
   leaves only if it has no consent history and no conversation (Q1). Each may be sent one first
   offer, ever, that asks for consent in it: Yes or YES opts them in, Stop or STOP stops them, no
-  reply leaves them Not yet for good (Q11).
+  reply leaves them Not yet for good. The same holds for contacts uploaded from a file and for each
+  contact synced later, including a fresh sync after connecting again (Q11, Q12).
 - R7 — Buyers from before this feature are Not yet and are never chased (parent Q9).
 - R8 — Consent history is kept three years after its last change. A person's deletion request removes
   them from every shop, leaving only a marker that they stopped, so no upload can re-add them (Q10).

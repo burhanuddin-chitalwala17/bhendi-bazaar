@@ -1,6 +1,6 @@
 # UX — social-selling/instagram-publishing
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/post.html](../prototypes/post.html), sections "More for Instagram", "After it goes"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux-patterns](../ux-patterns.md), [post-composer ux](../post-composer/ux.md)
@@ -63,4 +63,4 @@
 - "Publishing…" · "Published <time>" · "View on Instagram".
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

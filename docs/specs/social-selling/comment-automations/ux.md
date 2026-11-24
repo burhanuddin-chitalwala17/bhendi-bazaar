@@ -1,6 +1,6 @@
 # UX — social-selling/comment-automations
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/converse.html](../prototypes/converse.html), section "Comment-to-DM"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [post-composer ux](../post-composer/ux.md), [inbox-instagram ux](../inbox-instagram/ux.md), [enquiry-autoreplies ux](../enquiry-autoreplies/ux.md)
@@ -59,4 +59,4 @@
 - Shop-wide "Comments on any post", "Posts with their own rule use theirs."
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

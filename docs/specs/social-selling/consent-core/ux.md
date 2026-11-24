@@ -1,6 +1,6 @@
 # UX — social-selling/consent-core
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/reach.html](../prototypes/reach.html), sections "A contact", "What a buyer sees"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux-patterns](../ux-patterns.md), [audience ux](../audience/ux.md), [whatsapp-sending ux](../whatsapp-sending/ux.md)
@@ -51,7 +51,7 @@ Order updates are never blocked by these (whatsapp-sending R1), and the tap text
 - Badges "Opted in", "Not yet", "Stopped"; tap texts as in the vocabulary table.
 - Replies EN: "You'll now get offers from <shop>. Reply STOP any time to stop." · "You won't get offers from <shop>. Reply START to get them again." · "Messages from <shop> will now be in English."
 - Replies HI: "अब आपको <shop> से ऑफ़र मिलेंगे। रोकने के लिए कभी भी STOP भेजें।" · "अब आपको <shop> से ऑफ़र नहीं मिलेंगे। फिर से पाने के लिए START भेजें।" · "अब से <shop> के संदेश हिंदी में आएँगे।"
-- History sources "replied YES", "replied STOP", "checkout box · <order>", "upload · <file> · ticked by <member>", "Get offers button", "first offer · tapped Yes", "first offer · tapped Stop".
+- History sources "replied YES", "replied STOP", "checkout box · <order>", "from file · <file>", "Get offers button", "first offer · tapped Yes", "first offer · tapped Stop".
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

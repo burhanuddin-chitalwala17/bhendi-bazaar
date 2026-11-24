@@ -1,6 +1,6 @@
 # UX — checkout-links
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [social-selling/prototypes/links.html](../social-selling/prototypes/links.html)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [inbox-whatsapp ux](../social-selling/inbox-whatsapp/ux.md), [product-answers ux](../social-selling/product-answers/ux.md), the shipped cart and checkout
@@ -52,4 +52,4 @@
 - "Pick your size".
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../social-selling/ux-review.md)) and the final cross-feature check.

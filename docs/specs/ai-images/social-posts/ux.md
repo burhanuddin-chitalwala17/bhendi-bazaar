@@ -1,6 +1,6 @@
 # UX — ai-images/social-posts
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [social-selling/prototypes/post.html](../../social-selling/prototypes/post.html), sections "Make a picture", "Write a caption"
 - **References:** [spec.md](spec.md), [../decisions.md](../decisions.md) (Q46–Q48), [improve-with-ai ux](../improve-with-ai/ux.md) (signed off), [post-composer ux](../../social-selling/post-composer/ux.md), [social-selling ux-patterns](../../social-selling/ux-patterns.md)
@@ -79,4 +79,4 @@
 - "Add a product first, so the caption can say what it is."
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../../social-selling/ux-review.md)) and the final cross-feature check.

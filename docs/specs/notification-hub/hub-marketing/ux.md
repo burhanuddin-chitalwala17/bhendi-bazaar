@@ -1,6 +1,6 @@
 # UX — notification-hub/hub-marketing
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [social-selling/prototypes/notify.html](../../social-selling/prototypes/notify.html), section "Unsubscribe"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [whatsapp-sending ux](../../social-selling/whatsapp-sending/ux.md) (the how-often rule under Advanced), [consent-core ux](../../social-selling/consent-core/ux.md)
@@ -39,4 +39,4 @@
 - Email footer "You agreed to offers from <shop>. Unsubscribe".
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../../social-selling/ux-review.md)) and the final cross-feature check.

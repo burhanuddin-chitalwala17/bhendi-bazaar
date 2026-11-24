@@ -1,6 +1,6 @@
 # UX — notification-hub/notifications-core
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [social-selling/prototypes/notify.html](../../social-selling/prototypes/notify.html), sections "The badge", "The morning email", "Settings"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [social-selling ux-patterns](../../social-selling/ux-patterns.md), [whatsapp-status-kit ux](../../social-selling/whatsapp-status-kit/ux.md)
@@ -43,9 +43,9 @@
 
 ## Copy deck
 - Bell label "Needs you"; empty "Nothing needs you right now."
-- Items "<n> messages waiting over 4 hours", "A post failed: <first words>", "Instagram needs reconnecting", "WhatsApp needs a payment method".
+- Items "<n> messages waiting over 4 hours", "A post failed: <first words>", "Instagram needs reconnecting", "WhatsApp needs a payment method", "A post is held: check the price in its caption".
 - Email subject "<n> things are waiting at <shop>"; footer "You get this at 9 am when something is waiting. Turn it off in Notifications."
 - Settings "Morning email · 9 am", "Status alerts still come by email, since they can't wait.", toasts "Morning email on." / "Morning email off."
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../../social-selling/ux-review.md)) and the final cross-feature check.

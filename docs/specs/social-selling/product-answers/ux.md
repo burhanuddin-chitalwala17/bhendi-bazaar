@@ -1,6 +1,6 @@
 # UX — social-selling/product-answers
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/converse.html](../prototypes/converse.html), sections "What a buyer sees", "Inbox"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [enquiry-autoreplies ux](../enquiry-autoreplies/ux.md), [inbox-core ux](../inbox-core/ux.md), [checkout-links ux](../../checkout-links/ux.md)
@@ -48,4 +48,4 @@
 - Strip "Yesterday · <n> product questions · <n> answered · <n> need you".
 
 ## Sign-off
-Not yet signed off. Awaiting the owner's review with the senior UX review.
+Signed off by the owner on 2026-11-23, after the senior UX review ([ux-review](../ux-review.md)) and the final cross-feature check.

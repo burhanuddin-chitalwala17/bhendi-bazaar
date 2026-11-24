@@ -1,6 +1,6 @@
 # UX — social-selling/meta-foundation
 
-- **Status:** Draft
+- **Status:** Signed off 2026-11-23
 - **Verified:** 2026-11-22
 - **Prototype:** [prototypes/connect.html](../prototypes/connect.html), section "Before it opens" and "Data deletion"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux-patterns](../ux-patterns.md)
