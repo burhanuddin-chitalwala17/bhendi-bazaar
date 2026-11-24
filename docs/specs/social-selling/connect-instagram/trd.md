@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-23
+- **Verified:** 2026-11-24
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), the architecture [TRD](../trd.md), [meta-foundation TRD](../meta-foundation/trd.md), the marketplace connect flow (`server/channels/connect-state.ts`, `server/channels/channel-connection.service.ts`)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -81,9 +81,9 @@ None beyond the card DTO (internal to channels' UI).
 - Checklist states from stubbed facts.
 
 ## Delivery
-1. Connect and callback with results (behaviour).
-2. Renewal, health, deauthorize wiring, disconnect.
-3. Card, checklist, Turn on replies sheet, return notes (UI).
+1. **built** — Connect and callback with results (behaviour).
+2. **after U1** — Renewal, health, deauthorize wiring, disconnect.
+3. **after U2** — Card, checklist, Turn on replies sheet, return notes (UI).
 
 ## Open questions
 None.

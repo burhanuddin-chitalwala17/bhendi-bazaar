@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-23
+- **Verified:** 2026-11-24
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), the architecture [TRD](../trd.md), the shipped listing read and settle (`server/channels/channel-import.service.ts`, `server/channels/channel-settle.service.ts`, `server/channels/listing-match.ts`)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -72,9 +72,9 @@ None.
 - Partial batch failure retries only failed items.
 
 ## Delivery
-1. Reader and the Listings page with WhatsApp as source (behaviour).
-2. Done push through the catalogue item builder.
-3. Unreadable path and card step.
+1. **after connect-whatsapp U2** — Reader and the Listings page with WhatsApp as source (behaviour).
+2. **after U1 and whatsapp-catalogue U2** — Done push through the catalogue item builder.
+3. **after U2** — Unreadable path and card step.
 
 ## Open questions
 None.

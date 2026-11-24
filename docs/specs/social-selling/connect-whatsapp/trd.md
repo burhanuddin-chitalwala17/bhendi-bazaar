@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-23
+- **Verified:** 2026-11-24
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), the architecture [TRD](../trd.md), [meta-foundation TRD](../meta-foundation/trd.md), [whatsapp-sending TRD](../whatsapp-sending/trd.md) (the spending limit), [consent-core TRD](../consent-core/trd.md) (contacts), [ADR-0035](../../../adr/0035-every-response-carries-a-nonce-based-csp.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -93,9 +93,9 @@ themselves), so the check becomes refresh token or, for a social channel, access
 - CSP: the nonce test still passes with the added hosts; no `unsafe-inline`.
 
 ## Delivery
-1. CSP, SDK leaf, `state`, signup route (behaviour: connection Setting up).
-2. Setup job and health (behaviour: Connected).
-3. Card states, checklist, disconnect (UI).
+1. **independent** (connect-instagram U1, which it builds on, is done) — CSP, SDK leaf, `state`, signup route (behaviour: connection Setting up).
+2. **after U1** — Setup job and health (behaviour: Connected).
+3. **after U2 and connect-instagram U3 (shares the checklist component)** — Card states, checklist, disconnect (UI).
 
 ## Open questions
 None.

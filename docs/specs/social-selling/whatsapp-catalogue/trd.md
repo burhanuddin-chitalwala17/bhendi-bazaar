@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Domain:** channels, reading catalog, promotions (effective price) and media through their public surfaces
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-23
+- **Verified:** 2026-11-24
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), the architecture [TRD](../trd.md), [ADR-0018](../../../adr/0018-one-effective-price-function.md), [ADR-0077](../../../adr/0077-the-pixel-promise-belongs-to-the-backdrop-tools-and-an-ai-picture-is-labelled-and-secondary.md), the shipped photo rule (`server/channels/listing-photos-out.ts`) and stock-change job (`server/shared/jobs/stock-changed.job.ts`)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -87,10 +87,10 @@ metaHandle, createdAt, finishedAt)`; `catalogueId` on the connection.
 - Load: 5,000 products sync in one batch within budget (A-D17).
 
 ## Delivery
-1. Item builder and hash (pure).
-2. Create/attach, sync and batches (behaviour).
-3. Triggers from catalog and promotions; nightly pass.
-4. Card line, details, Sync now (UI).
+1. **independent (pure)** — Item builder and hash (pure).
+2. **after U1 and connect-whatsapp U2** — Create/attach, sync and batches (behaviour).
+3. **after U2** — Triggers from catalog and promotions; nightly pass.
+4. **after U3** — Card line, details, Sync now (UI).
 
 ## Open questions
 None.
