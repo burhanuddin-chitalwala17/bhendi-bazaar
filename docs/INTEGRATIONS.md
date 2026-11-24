@@ -303,6 +303,15 @@ Meta's own pages before a plan depends on one.
   Captions may @mention; `user_tags` works on images and, since July 2025, stories; up to three
   `collaborators` on feed posts. Stickers (link, poll, location) cannot be published by API.
   Containers expire after 24 hours, 400 per account per day. No scheduling: we hold the time.
+- **Instagram has two logins.** Instagram's own login (`graph.instagram.com`, scopes
+  `instagram_business_*`) needs only a professional account, no Facebook Page, and covers
+  publishing, comments, mentions, messaging and insights; it cannot reach ads or tagging.
+  Facebook Login needs the account linked to a Page (scopes `instagram_basic` and friends;
+  messages go through the Messenger Platform). The scope strings differ and the wrong one fails.
+- **Embedded Signup can create the business portfolio and the WABA inside the pop-up**, so a shop
+  needs only a personal Facebook login; partners report a new portfolio taking longer to be
+  cleared for messaging. The flow can be pre-filled with the shop's name, email and website.
+  Chat history is offered only at this step, synced within 24 hours, or the shop reconnects.
 - **WhatsApp in-chat payment (India):** an `order_details` message paid through Razorpay or PayU
   inside WhatsApp, or by UPI intent; confirmation arrives as the gateway's webhook.
 

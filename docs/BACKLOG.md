@@ -15,7 +15,7 @@ What the platform solves for a small business, and where each lives. Every phase
 |---|---|---|---|
 | **1 — Own store** | A store and landing page the shop hands out on WhatsApp, cards and pamphlets, run from a phone | Phases 7, 9, 12 — [own-store](specs/own-store/) | 🔨 Phase 12: offers-hardening implemented 2026-10-29; order-fulfilment next |
 | **2 — Photos made ready** | A phone photo becomes an image fit for every platform | Phase 11 — [media-library](specs/media-library/), [image-enhancement](specs/image-enhancement/) | 🔨 In progress |
-| **3 — Sell everywhere** | One product, listed and stocked on Amazon, Flipkart, Google and Meta; WhatsApp and Instagram later | Phase 11 — [marketplace-integration](specs/marketplace-integration/), [channel-registry](specs/channel-registry/), [shopfront-feeds](specs/shopfront-feeds/) | 🔨 In progress |
+| **3 — Sell everywhere** | One product, listed and stocked on Amazon, Flipkart, Google and Meta; WhatsApp and Instagram in planning | Phase 11 — [marketplace-integration](specs/marketplace-integration/), [social-selling](specs/social-selling/), [channel-registry](specs/channel-registry/), [shopfront-feeds](specs/shopfront-feeds/) | 🔨 In progress |
 
 ---
 
@@ -247,6 +247,7 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [channel-registry](specs/channel-registry/) | Channels classed by where the sale completes; category, attribute and value mappings as versioned data; readiness answered before publishing rather than after a rejection, advising and never gating | ✅ Implemented — PR-255…PR-267 (2026-10-04) |
 | [channel-registry/readiness-fix](specs/channel-registry/readiness-fix/) | The products card names each channel's missing facts; one page per fact answers it for many products, saved as picked | 🔨 Built 2026-11-03, uncommitted; waiting for the owner's check on a phone |
 | [shopfront-feeds](specs/shopfront-feeds/) | One feed file at a URL that Google Shopping and Meta both fetch. First real publishing, and it needs approval from nobody | ✅ Implemented — 2026-10-14 |
+| [social-selling](specs/social-selling/) | Overview: a shop runs its Instagram and WhatsApp from here — catalogue, posts and stories, one inbox, messages to opted-in customers. Seventeen subfeatures in its spec, in dependency order; decisions Q1–Q25; work on branch `meta-whatsapp-connector` | 📝 Draft — 2026-11-06, next: connect-instagram |
 | [marketplace-integration](specs/marketplace-integration/) | Overview: one master product per item, one stock figure, Flipkart and Amazon run from here. Eight subfeatures below, in order; decisions in its decisions.md | 📝 Draft — 2026-10-20 |
 | [marketplace-integration/channel-connectors](specs/marketplace-integration/channel-connectors/) | Connect an Amazon or Flipkart account by consent and see its health. The trial of ADR-0061 | ✅ Implemented — 2026-10-21, both connected on the owner's accounts |
 | [marketplace-integration/channel-import](specs/marketplace-integration/channel-import/) | Every listing on a connected marketplace arrives in an inbox; exact-SKU matches link themselves | ✅ Implemented — 2026-10-21, Amazon and Flipkart listings read on the owner's accounts |
