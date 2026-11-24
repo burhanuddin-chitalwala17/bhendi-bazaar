@@ -24,9 +24,10 @@ answers in the shop's settings and policies (parent Q89).
 - R1 — Off until the shop turns it on; turning it on shows each reply pre-filled, editable, in
   English and Hindi (Q1).
 - R2 — The shop sets its business hours per day of the week, in IST (Q2).
-- R3 — A buyer's first message in a conversation gets a greeting at once, with buttons for the
-  common questions and "Talk to the shop". Outside business hours it also says when the shop will
-  reply (Q2).
+- R3 — A buyer's first message in a conversation gets a greeting, with buttons for the common
+  questions and "Talk to the shop", after a delay the shop sets (default 30 seconds) while the chat
+  shows "typing…"; a member replying within it cancels it. Outside business hours the greeting also
+  says when the shop will reply. A tapped button is answered at once (Q2).
 - R4 — Answers to common questions (delivery time and charges, cash on delivery, returns and
   exchanges, where the shop is, how to order) are drawn from the shop's own settings and store
   policies, never invented; a question with no answer in them is not offered (Q3).
@@ -49,8 +50,8 @@ answers in the shop's settings and policies (parent Q89).
 
 ## Product acceptance
 Judged on a phone (~360px) first.
-- A1 — At 11pm, with hours 10am–9pm, a buyer's "hi" on WhatsApp gets the greeting, the away line
-  and buttons within seconds.
+- A1 — At 11pm, with hours 10am–9pm, a buyer's "hi" on WhatsApp shows "typing…" and, 30 seconds
+  later, the greeting, the away line and buttons; a member replying first cancels it.
 - A2 — Tapping "Is COD available?" answers from the shop's own setting.
 - A3 — "Talk to the shop" marks the conversation Needs you and tells the buyer when.
 - A4 — After a member replies, the next buyer message gets no automatic reply for the paused time.
@@ -63,4 +64,4 @@ Judged on a phone (~360px) first.
 - **Later:** AI wording (parent Q89, step 8); replies per platform that differ.
 
 ## Open questions
-Q1, Q2, Q5.
+None.

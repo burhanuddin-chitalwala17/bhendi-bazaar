@@ -59,4 +59,4 @@ Judged on a phone (~360px) first.
 - **Later:** insights (parent Q21).
 
 ## Open questions
-Q10.
+None.

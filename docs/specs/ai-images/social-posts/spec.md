@@ -38,8 +38,9 @@ also needs words, and a shop writing captions every day for every post gives up.
 - R6 — A caption never states a price, offer or stock that the product does not have at that
   moment; it is drafted from the live product, and the shop is warned if the price changes before
   the post goes out (Q47).
-- R7 — Price, offer or brand name on a picture are added by us as exact text, never painted by the
-  model (Q48).
+- R7 — Price, offer or the shop's name painted on a picture are read back and checked against the
+  live product before the shop sees it; a mismatch is regenerated once, then placed by us as exact
+  text (Q48).
 
 ## Hazards the TRD must answer
 - **A model changes the product** in a post picture: the shop judges every result, as on listings.
@@ -57,7 +58,7 @@ Judged on a phone (~360px) first.
   price and hashtags, in the chosen language.
 - A4 — A post whose product's price changes after its caption was drafted warns the shop before it
   goes out.
-- A5 — An offer badge on a picture shows the exact price, as text we placed.
+- A5 — A picture asked to show "₹999" shows exactly ₹999: a misprinted result never reaches the shop.
 
 ## Scope
 - **Outcome:** a shop makes the pictures and words for a post without leaving the composer.
@@ -65,4 +66,4 @@ Judged on a phone (~360px) first.
 - **Later:** templates of seasonal frames; a fidelity check by a vision model (Q9).
 
 ## Open questions
-Q47, Q48.
+None.

@@ -32,7 +32,9 @@ range in one sitting, fixing many at a time, is what makes a new channel worth c
   Amazon is suggested "Sell on this page", the rest "Create a new page"; families go as families.
   The shop can accept every suggestion in one tap or change any (Q2, marketplace-publish Q7, Q11).
 - R4 — Before anything is sent, a review groups what will happen (new listings, changes, left out
-  with why), and any product opens to its full old-against-new view (Q1, marketplace-publish Q2).
+  with why). Every product has a checkbox, the ready ones ticked; a group or any product can be
+  unticked, and any opens to its full old-against-new view. Send sends only what is ticked (Q1,
+  marketplace-publish Q2).
 - R5 — Send runs in the background within each channel's limits; the screen shows progress, can be
   left and returned to, and each product's result appears on its listing as it always does.
   New Amazon pages pass Amazon's check-only mode first (marketplace-publish Q9).
@@ -62,4 +64,4 @@ Judged on a phone (~360px) first.
 - **Later:** creating Flipkart products, once Flipkart's API allows it.
 
 ## Open questions
-Q1, Q2.
+None.

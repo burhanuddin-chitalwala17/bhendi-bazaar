@@ -50,4 +50,4 @@ Judged on a phone (~360px) first.
 - **Later:** none: posting a Status by API does not exist (parent Q18).
 
 ## Open questions
-Q9.
+None.

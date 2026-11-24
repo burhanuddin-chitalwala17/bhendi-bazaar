@@ -24,8 +24,9 @@ price and stock stay the store's own (Invariant 1).
 - R1 — A link carries only products (a size being its own product) and quantities, never a price;
   checkout prices everything when it opens, as it always does (ADR-0002).
 - R2 — A link cannot be altered: one that has been changed opens nothing but the shop's page (Q1).
-- R3 — Opening it shows checkout with exactly those items, kept apart from whatever the buyer
-  already has in their cart, which is left untouched (Q2).
+- R3 — Opening it adds its items to the buyer's cart and shows checkout; opening it again adds
+  nothing more. Checkout marks the items that came from the link and shows anything already in the
+  cart, each removable, so nothing is paid for unseen (Q2).
 - R4 — An item out of stock when the link is opened is shown as such and left out; a price that
   changed since the link was sent shows the current price, plainly.
 - R5 — A link expires after a set time; an expired one opens the products' pages with a line saying
@@ -38,13 +39,16 @@ price and stock stay the store's own (Invariant 1).
 ## Hazards the TRD must answer
 - **A forwarded link** opened by someone else: it opens checkout for whoever holds it, which is
   harmless since they pay; nothing personal is in it.
-- **The same link opened twice** after the first became an order.
+- **The same link opened twice,** before or after the first became an order, adding its items twice.
+- **The cart's read-after-mount and sign-in merge rules** holding when a link adds items.
 
 ## Product acceptance
 Judged on a phone (~360px) first.
 - A1 — A link for a kurta in L and a dupatta opens checkout with those two, at today's prices.
 - A2 — With a dupatta now out of stock, the link opens with the kurta and says the dupatta is gone.
-- A3 — A buyer's existing cart is unchanged after checking out from a link.
+- A3 — A buyer with a scarf already in the cart opens a link for a kurta: checkout shows the kurta
+  marked as from the link and the scarf as already in the cart, removable; opening the link again
+  does not add a second kurta.
 - A4 — An edited link opens the shop's page; an expired one opens the products with the expired line.
 
 ## Scope
@@ -53,4 +57,4 @@ Judged on a phone (~360px) first.
 - **Later:** reporting sales per message (social-selling Q108).
 
 ## Open questions
-Q1, Q2.
+None.

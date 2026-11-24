@@ -56,4 +56,4 @@ ready for every module that follows.
 - **Later:** in-app bell and push (parent Q1, social-selling Q109); an admin view of deliveries (Q7).
 
 ## Open questions
-None, once social-selling whatsapp-status-kit Q9 is answered (R5).
+None.

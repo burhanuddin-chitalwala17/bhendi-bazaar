@@ -62,4 +62,4 @@ Judged on a phone (~360px) first.
 - **Later:** AI wording over the same answers (parent Q89, step 8); sales per enquiry (parent Q108).
 
 ## Open questions
-Q2, Q3.
+None.
