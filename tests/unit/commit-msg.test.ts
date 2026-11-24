@@ -21,7 +21,9 @@ describe("commit-msg", () => {
     const migration = "A\tprisma/migrations/20261124000000_x/migration.sql";
     expect(checkMessage("checkout: refund late captures", migration)).toMatch(/\[MIGRATION\]/);
     expect(checkMessage("checkout: refund late captures [MIGRATION]", migration)).toBeNull();
-    expect(checkMessage("cart: rename a field", "M\tdocs/CONTRACTS.md")).toMatch(/\[CONTRACT\]/);
-    expect(checkMessage("cart: rename a field [CONTRACT]", "M\tdocs/CONTRACTS.md")).toBeNull();
+    const contract = "M\tserver/cart/cart.types.ts\nM\tdocs/contracts/cart.md";
+    expect(checkMessage("cart: rename a field", contract)).toMatch(/\[CONTRACT\]/);
+    expect(checkMessage("cart: rename a field [CONTRACT]", contract)).toBeNull();
+    expect(checkMessage("docs: reword the cart contract", "M\tdocs/contracts/cart.md"), "a doc edit alone is not a contract change").toBeNull();
   });
 });

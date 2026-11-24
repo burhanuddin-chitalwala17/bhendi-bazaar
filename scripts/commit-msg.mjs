@@ -18,8 +18,11 @@ export function checkMessage(message, staged) {
   if (lines.some((l) => /^A\s+prisma\/migrations\/\d[^/]*\/migration\.sql$/.test(l)) && !subject.includes("[MIGRATION]")) {
     return "a migration folder is added: flag the subject [MIGRATION]";
   }
-  if (lines.some((l) => /^M\s+docs\/CONTRACTS?(\.md|\/)/.test(l)) && !subject.includes("[CONTRACT]")) {
-    return "the contracts changed: flag the subject [CONTRACT]";
+  // The same wire-type paths the Stop hook watches; a contracts doc edited alone is a doc change, not a contract one.
+  const wireType = lines.some((l) => /^[AMD]\s+(server\/[a-z-]+\/[^/]*\.types\.ts|src\/lib\/validation\/schemas\/.*\.ts)$/.test(l));
+  const contractsDoc = lines.some((l) => /^[AM]\s+docs\/(CONTRACTS\.md|contracts\/)/.test(l));
+  if (wireType && contractsDoc && !subject.includes("[CONTRACT]")) {
+    return "a wire type changed and its contract with it: flag the subject [CONTRACT]";
   }
   return null;
 }

@@ -18,7 +18,8 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 | [archive/CHANGELOG-HISTORY.md](archive/CHANGELOG-HISTORY.md) | The retired changelog: monthly summaries to Oct 2026, November's entries | Never — frozen ([ADR-0078](adr/0078-the-changelog-is-retired-and-the-commit-subject-is-the-record.md)) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | What exists **now**, at HLD level | Structure changes — updated *after*, never before |
 | [adr/](adr/) | Why each decision was made | Never. A new ADR supersedes an old one |
-| [CONTRACTS.md](CONTRACTS.md) | Shapes crossing the client/server boundary | A DTO changes → PR flagged `[CONTRACT]` |
+| [CONTRACTS.md](CONTRACTS.md) | Rules, the error envelope and shared shapes; an index of the per-domain files | A shared shape or a rule changes |
+| [contracts/](contracts/) | Each domain's shapes crossing the client/server boundary, one file per domain | A DTO changes → commit flagged `[CONTRACT]` |
 | [specs/](specs/) | Work not yet built | A feature is planned or delivered |
 | [BACKLOG.md](BACKLOG.md) | Where the project is, phase by phase | A phase starts, blocks, or completes |
 | [DEPENDENCIES.md](DEPENDENCIES.md) | Why each package is here | A package is added, bumped, or removed |

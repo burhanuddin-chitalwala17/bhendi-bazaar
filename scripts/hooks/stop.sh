@@ -31,8 +31,8 @@ fi
 
 # A DTO or schema moved, so CONTRACTS.md moves with it and the commit carries [CONTRACT] (ADR-0078).
 if printf '%s\n' "$CHANGED" | grep -qE '^(server/[a-z-]+/[^/]*\.types\.ts|src/lib/validation/schemas/.*\.ts)$'; then
-  if git diff --quiet HEAD -- docs/CONTRACTS.md && ! printf '%s\n' "$CHANGED" | grep -q '^docs/CONTRACTS.md$'; then
-    block "a wire type or schema changed but docs/CONTRACTS.md did not. Record the shape there and flag the commit subject [CONTRACT] — or say in the commit body why this is not a contract change."
+  if git diff --quiet HEAD -- docs/CONTRACTS.md docs/contracts && ! printf '%s\n' "$CHANGED" | grep -qE '^docs/(CONTRACTS\.md|contracts/)'; then
+    block "a wire type or schema changed but neither docs/CONTRACTS.md nor docs/contracts/ did. Record the shape in its domain's docs/contracts/<domain>.md and flag the commit subject [CONTRACT] — or say in the commit body why this is not a contract change."
   fi
 fi
 

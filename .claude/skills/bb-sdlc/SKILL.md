@@ -30,7 +30,7 @@ A document that cites a Q id (spec, ux, TRD, code comment) inherits that Q's Sta
 
 ## Where docs live
 
-- **Project-wide:** `docs/` — `ARCHITECTURE.md`, `CONTRACTS.md`, `BACKLOG.md`, `DEPENDENCIES.md`, `TESTING.md`, `OPERATIONS.md`, `INTEGRATIONS.md`, `adr/`, `specs/`.
+- **Project-wide:** `docs/` — `ARCHITECTURE.md`, `CONTRACTS.md` (+ `contracts/<domain>.md`), `BACKLOG.md`, `DEPENDENCIES.md`, `TESTING.md`, `OPERATIONS.md`, `INTEGRATIONS.md`, `adr/`, `specs/`.
 - **Domain-internal:** co-located with the code — `<domain>/CLAUDE.md`, `<domain>/ARCHITECTURE.md`, `<domain>/adr/`. No changelog: history is `git log` ([ADR-0078](../../../docs/adr/0078-the-changelog-is-retired-and-the-commit-subject-is-the-record.md)).
 - **Directory rules:** `src/components/CLAUDE.md` (front end), `src/app/api/CLAUDE.md` (route handlers).
 
@@ -143,7 +143,7 @@ Walks the pre-merge gate. Report each item as pass, fail, or not-applicable — 
 4. **Lint.** `npm run lint` introduces no new errors (advisory).
 5. **Commit subjects** read as history — `<area>: <what changed>`, `[CONTRACT]` if a DTO changed, `[MIGRATION]` if a migration was added.
 6. **A TRD exists** if the PR changes architecture or data flow, adds a package, starts a feature, or changes a contract.
-7. **Docs updated** where they are now wrong: the relevant `ARCHITECTURE.md` if structure changed, `CONTRACTS.md` if a DTO changed, `DEPENDENCIES.md` if a package was added, `OPERATIONS.md` if setup or deploy changed. Bump each touched doc's `Verified:` date.
+7. **Docs updated** where they are now wrong: the relevant `ARCHITECTURE.md` if structure changed, the domain's `docs/contracts/<domain>.md` if a DTO changed, `DEPENDENCIES.md` if a package was added, `OPERATIONS.md` if setup or deploy changed. Bump each touched doc's `Verified:` date.
 8. **UX and decisions honoured.** A screen this PR adds or changes appears in `ux.md` with its states and copy. No decision the PR depends on is still open in `decisions.md`.
 9. **Spec status moved** if this PR completed one — `Draft` → `Implemented` in the spec and in `docs/specs/README.md`, and the row in `BACKLOG.md`.
 10. **No findings written into docs.** Defects fixed in this PR should leave no trace as documentation; the commit records what changed, and that is enough.
