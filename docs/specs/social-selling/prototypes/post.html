@@ -1,0 +1,383 @@
+<title>Post</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap">
+<style>
+/* Layout: a storyboard of phone-width screens per journey, then state strips and a matrix. Tokens mirror the app's portal theme (globals.css). */
+
+:root{
+ --bg:oklch(0.985 0 0);--card:oklch(1 0 0);--muted:oklch(0.955 0 0);--border:oklch(0.915 0 0);
+ --fg:oklch(0.22 0.03 40);--fg-muted:oklch(0.52 0.04 40);
+ --primary:oklch(0.55 0.17 150);--on-primary:oklch(0.98 0.01 95);--accent:oklch(0.85 0.12 85);
+ --success:oklch(0.55 0.15 145);--warning:oklch(0.55 0.13 70);--danger:oklch(0.6 0.25 27);--info:oklch(0.52 0.13 245);
+ --wa:oklch(0.72 0.17 150);--ig1:oklch(0.7 0.19 55);--ig2:oklch(0.58 0.24 350);--ig3:oklch(0.45 0.2 300);
+ --font-body:"DM Sans",system-ui,sans-serif;--font-head:"Playfair Display",Georgia,serif;--radius:0.75rem}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+ --bg:oklch(0.15 0 0);--card:oklch(0.18 0 0);--muted:oklch(0.23 0 0);--border:oklch(0.3 0 0);
+ --fg:oklch(0.96 0.02 98);--fg-muted:oklch(0.72 0.05 98);--primary:oklch(0.7 0.19 150);--on-primary:oklch(0.14 0.04 260);
+ --accent:oklch(0.82 0.14 85);--success:oklch(0.72 0.16 145);--warning:oklch(0.78 0.14 75);--danger:oklch(0.65 0.22 22);--info:oklch(0.72 0.13 245);color-scheme:dark}}
+:root[data-theme="dark"]{
+ --bg:oklch(0.15 0 0);--card:oklch(0.18 0 0);--muted:oklch(0.23 0 0);--border:oklch(0.3 0 0);
+ --fg:oklch(0.96 0.02 98);--fg-muted:oklch(0.72 0.05 98);--primary:oklch(0.7 0.19 150);--on-primary:oklch(0.14 0.04 260);
+ --accent:oklch(0.82 0.14 85);--success:oklch(0.72 0.16 145);--warning:oklch(0.78 0.14 75);--danger:oklch(0.65 0.22 22);--info:oklch(0.72 0.13 245);color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:14px;line-height:1.45;margin:0}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px;max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+.modnav{display:flex;gap:6px;flex-wrap:wrap;font-size:12px}
+.modnav a{padding:5px 10px;border:1px solid var(--border);border-radius:999px;color:var(--fg-muted);text-decoration:none;background:var(--card)}
+.modnav a[aria-current]{color:var(--on-primary);background:var(--primary);border-color:var(--primary)}
+header h1{font-family:var(--font-head);font-size:30px;margin:12px 0 6px;text-wrap:balance}
+header p{margin:0;color:var(--fg-muted);max-width:72ch}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.tabs a{font-size:13px;padding:6px 12px;border:1px solid var(--border);border-radius:999px;color:var(--fg);text-decoration:none;background:var(--card)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+section h2{font-family:var(--font-head);font-size:22px;margin:0 0 4px}
+section>.lede{color:var(--fg-muted);margin:0 0 16px;max-width:76ch}
+.flow{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;padding-bottom:12px}
+.step{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;width:272px}
+.cap{font-size:12px;color:var(--fg-muted);min-height:34px}.cap b{color:var(--fg);font-weight:600}
+.arrow{flex:0 0 auto;align-self:center;color:var(--fg-muted);font-size:22px;padding-top:34px}
+.phone{border:1px solid var(--border);border-radius:24px;background:var(--bg);padding:10px;min-height:460px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 3px rgb(0 0 0 / .06);position:relative;overflow:hidden}
+.bar{display:flex;justify-content:space-between;font-size:11px;color:var(--fg-muted);padding:0 4px}
+.ph{display:flex;align-items:center;gap:8px;padding:2px 4px}.ph h3{font-family:var(--font-head);font-size:19px;margin:0;flex:1}
+.ph .q{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);display:grid;place-items:center;font-size:12px;color:var(--fg-muted)}
+.back{font-size:12px;color:var(--fg-muted)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:calc(var(--radius) + 4px);padding:12px;display:flex;flex-direction:column;gap:7px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.name{font-weight:600;display:flex;align-items:center;gap:8px;min-width:0}
+.mark{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;flex:0 0 auto}
+.mark.ig{background:linear-gradient(135deg,var(--ig1),var(--ig2) 55%,var(--ig3))}.mark.wa{background:var(--wa)}.mark.meta{background:var(--info)}.mark.az{background:oklch(0.25 0.02 260)}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);white-space:nowrap;color:var(--fg-muted);background:var(--card)}
+.badge.ok{color:var(--success);border-color:color-mix(in oklch,var(--success) 40%,transparent)}
+.badge.warn{color:var(--warning);border-color:color-mix(in oklch,var(--warning) 45%,transparent)}
+.badge.bad{color:var(--danger);border-color:color-mix(in oklch,var(--danger) 45%,transparent)}
+.badge.info{color:var(--info);border-color:color-mix(in oklch,var(--info) 40%,transparent)}
+.badge.solid{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.body{font-size:13px;color:var(--fg-muted)}.body strong{color:var(--fg);font-weight:600}
+.small{font-size:11.5px;color:var(--fg-muted)}
+.btn{font:inherit;font-size:13px;font-weight:600;border-radius:10px;padding:10px 12px;min-height:40px;border:1px solid transparent;background:var(--primary);color:var(--on-primary);text-align:center;cursor:pointer;width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.sec{background:transparent;border-color:var(--border);color:var(--fg)}
+.btn.ghost{background:transparent;color:var(--fg);border-color:transparent;padding-block:6px;min-height:36px}
+.btn.danger{background:transparent;color:var(--danger);border-color:transparent}
+.btn.fill-danger{background:var(--danger);color:#fff}
+.btn.inline{width:auto}
+.row2{display:flex;gap:8px}.row2>*{flex:1}
+.btn .spin{width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.btn .spin{animation:none}}
+.note{border-radius:10px;padding:10px;font-size:12.5px;border:1px solid var(--border);background:var(--card);display:flex;flex-direction:column;gap:6px}
+.note.success{border-color:color-mix(in oklch,var(--success) 45%,transparent)}
+.note.warning{border-color:color-mix(in oklch,var(--warning) 50%,transparent);background:color-mix(in oklch,var(--warning) 7%,var(--card))}
+.note.error{border-color:color-mix(in oklch,var(--danger) 45%,transparent)}
+.note.info{border-color:color-mix(in oklch,var(--info) 40%,transparent)}
+.note .t{font-weight:600}
+.ext{border:1px dashed var(--info);border-radius:14px;padding:12px;background:var(--card);display:flex;flex-direction:column;gap:8px}
+.ext .who{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--info);font-weight:600}
+.ext .row{border:1px solid var(--border);border-radius:8px;padding:8px;font-size:12.5px}
+.sheet{margin-top:auto;background:var(--card);border:1px solid var(--border);border-radius:18px 18px 10px 10px;padding:14px;display:flex;flex-direction:column;gap:9px;box-shadow:0 -6px 20px rgb(0 0 0 / .08)}
+.sheet .t{font-weight:700;font-size:15px}
+.dim{opacity:.5}
+.toast{align-self:center;background:var(--fg);color:var(--bg);font-size:12px;border-radius:999px;padding:6px 12px}
+.check{display:flex;flex-direction:column;gap:6px;font-size:12.5px;border-top:1px solid var(--border);padding-top:8px}
+.check .it{display:flex;gap:8px;align-items:flex-start}
+.check .tick{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border);flex:0 0 auto;display:grid;place-items:center;font-size:11px;margin-top:1px}
+.check .done{color:var(--fg-muted)}.check .done .tick{background:var(--success);border-color:var(--success);color:#fff}
+.check .next{font-weight:600}.check .next .tick{border-color:var(--primary)}
+.check .wait .tick{border-style:dashed}
+.list{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:calc(var(--radius) + 4px);background:var(--card);overflow:hidden}
+.li{display:flex;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);align-items:center}.li:last-child{border-bottom:0}
+.li .main{flex:1;min-width:0}.li .ttl{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.li .sub{font-size:12px;color:var(--fg-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thumb{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,color-mix(in oklch,var(--accent) 60%,var(--card)),color-mix(in oklch,var(--primary) 30%,var(--card)));flex:0 0 auto}
+.thumb.lg{width:100%;height:150px;border-radius:12px}
+.thumb.tall{width:100%;aspect-ratio:4/5;height:auto;border-radius:12px}
+.avatar{width:34px;height:34px;border-radius:50%;background:color-mix(in oklch,var(--info) 25%,var(--card));display:grid;place-items:center;font-size:12px;font-weight:700;flex:0 0 auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:999px;background:var(--card)}
+.chip.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.field{display:flex;flex-direction:column;gap:4px;font-size:12px}.field label{font-weight:600}
+.input{border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--card);font-size:16px;min-height:42px;color:var(--fg)}
+.input.area{min-height:84px;font-size:14px}
+.hint{font-size:11.5px;color:var(--fg-muted)}
+.progress{height:6px;border-radius:999px;background:var(--muted);overflow:hidden}.progress i{display:block;height:100%;background:var(--primary)}
+.bubbles{display:flex;flex-direction:column;gap:6px;flex:1}
+.bub{max-width:82%;padding:7px 10px;border-radius:14px;font-size:12.5px;background:var(--muted)}
+.bub.me{align-self:flex-end;background:color-mix(in oklch,var(--primary) 16%,var(--card))}
+.bub.auto{align-self:flex-end;background:color-mix(in oklch,var(--info) 12%,var(--card));border:1px dashed color-mix(in oklch,var(--info) 40%,transparent)}
+.bub .meta{display:block;font-size:10.5px;color:var(--fg-muted);margin-top:3px}
+.composer{display:flex;gap:6px;align-items:flex-end;border-top:1px solid var(--border);padding-top:8px}
+.composer .input{flex:1;font-size:14px;min-height:40px}
+.window{font-size:11px;color:var(--fg-muted);text-align:center}
+.tabbar{display:flex;justify-content:space-around;border-top:1px solid var(--border);padding-top:6px;margin-top:auto;font-size:10.5px;color:var(--fg-muted)}
+.tabbar .on{color:var(--primary);font-weight:700}
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px}.kpi div{border:1px solid var(--border);border-radius:10px;padding:8px;background:var(--card)}.kpi b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.matrix{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:12.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);font-weight:600;background:var(--muted)}
+tr:last-child td{border-bottom:0}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);font-weight:600;margin-bottom:4px}
+.legend{font-size:12px;color:var(--fg-muted);max-width:80ch}
+.demo-hint{font-size:12px;color:var(--fg-muted);border:1px dashed var(--border);border-radius:10px;padding:8px 10px;max-width:80ch}
+.sep{border:0;border-top:1px solid var(--border);margin:2px 0}
+.money{font-variant-numeric:tabular-nums}
+.btn[data-demo]{text-decoration:underline dotted;text-underline-offset:3px}
+
+</style>
+<div class="wrap">
+<header>
+  <nav class="modnav" aria-label="Social selling prototypes"><a href="connect.html">Connect & Catalogue</a><a href="post.html" aria-current="page">Post</a><a href="converse.html">Converse</a><a href="reach.html">Reach out</a><a href="home.html">Home & admin</a><a href="notify.html">Notifications</a><a href="bulk.html">Bulk publish</a><a href="links.html">Checkout links</a></nav>
+  <h1>Post</h1>
+  <p>Prototype for social-selling's Post module: post-composer, instagram-publishing, whatsapp-status-kit and ai-images/social-posts. Phone width first.</p>
+</header>
+<p class="demo-hint">Buttons with a dotted underline are live: tap one to see what it does while it works and when it finishes (ux-patterns §3). Every string is the one that ships; dashed boxes are Meta's or WhatsApp's own screens.</p>
+<nav class="tabs" aria-label="Sections">
+  <a href="#posts">Posts page</a><a href="#compose">Compose</a><a href="#make">Make a picture</a><a href="#caption">Write a caption</a><a href="#ig">More for Instagram</a><a href="#schedule">Schedule</a><a href="#after">After it goes</a><a href="#status">Status, on time</a>
+</nav>
+
+<section id="posts">
+  <h2>Posts page</h2>
+  <p class="lede">post-composer. Scheduled soonest first, Published newest first, Failed. Each row shows a badge per destination; the worst one leads.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>First use</b></div>
+      <div class="phone"><div class="bar"><span>9:41</span><span>Posts</span></div>
+        <div class="ph"><h3>Posts</h3><span class="q">?</span></div>
+        <div class="card" style="text-align:center"><div class="ttl" style="font-family:var(--serif);font-size:17px">Plan your posts for the week</div>
+          <div class="body">Pick pictures from your library, write once, and send to Instagram and your Status at the times you choose.</div>
+          <button class="btn" type="button">New post</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Scheduled</b> tab with drafts folded on top</div>
+      <div class="phone"><div class="ph"><h3>Posts</h3><span class="q">?</span></div>
+        <div class="chips"><span class="chip on">Scheduled</span><span class="chip">Published</span><span class="chip">Failed · 1</span></div>
+        <div class="note">2 drafts ›</div>
+        <div class="list">
+          <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Eid edit is here ✨ Black nidha…</div><div class="sub">Today, 6:00 pm · <span class="badge info">IG post</span> <span class="badge info">Status</span></div></div></div>
+          <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">New shawls, 4 colours</div><div class="sub">Sat 29 Nov, 10:00 am · <span class="badge info">IG post</span></div></div></div>
+          <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">(story)</div><div class="sub">Sun 30 Nov, 7:30 pm · <span class="badge info">IG story</span></div></div></div>
+        </div>
+        <div class="small">Cancelled · 1 ›</div>
+        <div class="card" style="margin-top:auto"><button class="btn" type="button">New post</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Published</b> by week; mixed results show the worst</div>
+      <div class="phone"><div class="chips"><span class="chip">Scheduled</span><span class="chip on">Published</span><span class="chip">Failed · 1</span></div>
+        <div class="lbl">This week</div>
+        <div class="list">
+          <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Kashmiri shawls are back</div><div class="sub">Wed 6:01 pm · <span class="badge bad">1 of 2 failed</span></div></div></div>
+          <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Cotton kurtas, summer</div><div class="sub">Tue 6:00 pm · <span class="badge ok">IG post</span> <span class="badge warn">Status · Share</span></div></div></div>
+          <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Gift boxes</div><div class="sub">Mon 10:01 am · <span class="badge ok">IG post</span> <span class="badge ok">Status</span></div></div></div>
+        </div></div></div>
+  </div>
+</section>
+
+<section id="compose">
+  <h2>Compose</h2>
+  <p class="lede">One page, in the order a shop thinks: pictures, where, words, products, when. The shape is named for the shop, never asked.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Start:</b> pictures first</div>
+      <div class="phone"><div class="back">← Posts</div><div class="ph"><h3>New post</h3></div>
+        <div class="lbl">Pictures</div>
+        <div class="card"><div class="body">Pick the pictures first; everything else follows.</div>
+          <div class="row2"><button class="btn" type="button">Add pictures</button><button class="btn sec" type="button">✨ Make a picture</button></div></div>
+        <div class="lbl">Where</div>
+        <div class="chips"><span class="chip on">Instagram post</span><span class="chip">Instagram story</span><span class="chip on">WhatsApp Status</span></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Library picker</b>, multi-select in tap order</div>
+      <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">Your library</span>
+        <div class="chips"><span class="chip on">All</span><span class="chip">Products</span><span class="chip">AI-made</span><span class="chip">Videos</span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+          <span class="thumb lg" style="outline:3px solid var(--primary);position:relative"><b style="position:absolute;top:2px;right:4px;color:var(--primary)">1</b></span>
+          <span class="thumb lg"></span>
+          <span class="thumb lg" style="outline:3px solid var(--primary);position:relative"><b style="position:absolute;top:2px;right:4px;color:var(--primary)">2</b></span>
+          <span class="thumb lg"></span><span class="thumb lg"></span><span class="thumb lg"></span></div>
+        <button class="btn" type="button">Add 2</button></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Filled</b>: shape line, caption, products, when</div>
+      <div class="phone"><div class="back">← Posts</div>
+        <div class="lbl">Pictures</div>
+        <div style="display:flex;gap:6px;align-items:center"><span class="thumb"></span><span class="thumb"></span><span class="thumb" style="border:1px dashed var(--line);background:none;text-align:center;line-height:44px">＋</span></div>
+        <div class="small">Carousel · 2 · Status uses your first picture.</div>
+        <div class="lbl">Where</div>
+        <div class="chips"><span class="chip on">Instagram post</span><span class="chip">Instagram story</span><span class="chip on">WhatsApp Status</span></div>
+        <div class="lbl">Caption <span style="float:right"><button class="btn ghost inline" type="button">✨ Write a caption</button></span></div>
+        <div class="input area">Eid edit is here ✨ Black nidha abaya, ₹2,200. DM SHOP to order. #abaya #eidcollection</div>
+        <div class="lbl">What's this post about?</div>
+        <div class="chips"><span class="chip on">Black nidha abaya ×</span><span class="chip">＋ Add products</span></div>
+        <div class="note">More for Instagram · 1 tagged ›</div>
+        <div class="note">Comment-to-DM · keyword SHOP ›</div>
+        <div class="lbl">When</div>
+        <div class="chips"><span class="chip">Now</span><span class="chip on">Today 6 pm</span><span class="chip">Tomorrow 10 am</span><span class="chip">Pick a time</span></div>
+        <div class="small">Draft saved · just now</div>
+        <div class="row2"><button class="btn sec" type="button">Preview</button><button class="btn" type="button" data-demo="pending:Scheduling…|toast:Scheduled for today, 6:00 pm.">Schedule</button></div></div></div>
+  </div>
+  <div class="strip" style="margin-top:12px">
+    <div><div class="lbl">Instagram not connected (A5)</div><div class="chips"><span class="chip on">WhatsApp Status</span></div><div class="small">Connect Instagram to post there too ›</div></div>
+    <div><div class="lbl">Mixed pictures and video</div><div class="note warning">A carousel takes pictures only. Remove the video or pick it alone for a reel.</div></div>
+    <div><div class="lbl">Only a story</div><div class="note">Stories don't show a caption.</div></div>
+    <div><div class="lbl">Near a limit</div><div class="small" style="text-align:right">1,840 / 2,200 · 4 / 30 #</div></div>
+    <div><div class="lbl">Schedule with a problem</div><div class="note error">Pick a time in the future.</div><div class="small">Schedule scrolls to the first field marked red; it is never greyed out.</div></div>
+    <div><div class="lbl">A picture deleted from the library</div><div class="note warning">This picture was deleted from your library. Pick another.<button class="btn sec" type="button">Replace</button></div></div>
+  </div>
+</section>
+
+<section id="make">
+  <h2>Make a picture</h2>
+  <p class="lede">ai-images/social-posts. The signed-off Improve with AI window, filled in from the post: its shape, its products to follow, post ideas, and words on the picture taken from the live product.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Describe it</b>, preset from the post</div>
+      <div class="phone"><div class="ph"><h3 style="font-size:16px">Describe the picture you want</h3><span>✕</span></div>
+        <div class="chips"><span class="chip">Worn on a Mumbai street, festive</span><span class="chip">Flat lay with marigolds</span><span class="chip">On a café table, morning light</span></div>
+        <div class="input area">Worn by a woman on a Mumbai street at dusk, festive lights</div>
+        <div class="lbl">Pictures to follow</div>
+        <div style="display:flex;gap:6px;align-items:center"><span class="thumb"></span><span class="thumb"></span><span class="small">＋ Add picture</span></div>
+        <div class="lbl">Shape</div>
+        <div class="chips"><span class="chip">Square</span><span class="chip on">Portrait · Instagram posts</span><span class="chip">Tall</span></div>
+        <div class="lbl">Add words</div>
+        <div class="chips"><span class="chip on">₹2,200</span><span class="chip">20% off</span><span class="chip on">Niqab Boutique</span><span class="chip">Your words</span></div>
+        <div class="money">This picture costs about ₹2.10 · Credit left ₹2,497.90</div>
+        <button class="btn" type="button" data-demo="pending:Making your picture…">Generate</button></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Working</b>, then the words are checked</div>
+      <div class="phone"><div class="card" style="text-align:center"><div class="thumb tall" style="margin:0 auto;opacity:.5"></div>
+        <div class="body">Checking the words on your picture…</div><div class="small">Usually under a minute. You can close this and come back.</div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Result</b> → Use this puts it in the post</div>
+      <div class="phone"><div class="ph"><h3 style="font-size:16px">Your new picture</h3></div>
+        <div class="thumb tall" style="margin:0 auto;width:70%;height:260px;position:relative"><span style="position:absolute;bottom:8px;left:8px;background:#fff;padding:2px 6px;border-radius:4px;font-weight:600">₹2,200 · Niqab Boutique</span></div>
+        <div class="note info">AI-made picture — check the product looks right before you use it.</div>
+        <div class="row2"><button class="btn sec" type="button">Regenerate</button><button class="btn" type="button" data-demo="pending:Saving…|toast:Saved to your library">Use this</button></div></div></div>
+  </div>
+</section>
+
+<section id="caption">
+  <h2>Write a caption</h2>
+  <p class="lede">Drafted from the named products' live facts, in English, Hindi or both. Editable at once; a later price change is caught.</p>
+  <div class="strip">
+    <div><div class="lbl">Tap Write a caption</div><button class="btn sec" type="button" data-demo="pending:Writing…|done:Write again">✨ Write a caption</button><div class="chips"><span class="chip on">English</span><span class="chip">Hindi</span><span class="chip">Both</span></div></div>
+    <div><div class="lbl">Filled</div><div class="input area">Eid edit is here ✨ Our black nidha abaya, soft and flowing, now ₹2,200 (was ₹2,600). Sizes S–XL. Comment SHOP and we'll DM you the link. #abaya #eidcollection #modestfashion</div></div>
+    <div><div class="lbl">Caption already written</div><div class="sheet" style="margin:0"><span class="t">Replace your caption?</span><div class="row2"><button class="btn sec" type="button">Add below</button><button class="btn" type="button">Replace</button></div></div></div>
+    <div><div class="lbl">No product named</div><div class="note">Add a product first, so the caption can say what it is.<button class="btn sec" type="button">Add products</button></div></div>
+    <div><div class="lbl">Price changed after drafting</div><div class="note warning">The price in your caption is ₹2,200; it's now ₹1,999.<button class="btn sec" type="button" data-demo="pending:Updating…|toast:Caption updated.">Update price</button></div></div>
+  </div>
+</section>
+
+<section id="ig">
+  <h2>More for Instagram</h2>
+  <p class="lede">instagram-publishing. Only what Instagram's publishing allows, folded until wanted; plus the crop preview and the AI note, which needs no extra tap.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>The fold</b>, opened</div>
+      <div class="phone"><div class="lbl">More for Instagram</div>
+        <div class="li"><div class="main"><div class="ttl">Tag people</div><div class="sub">@ayesha.styles on picture 1</div></div><span>›</span></div>
+        <div class="li"><div class="main"><div class="ttl">Collaborators</div><div class="sub">Up to 3 · @mumbai.modest</div></div><span>›</span></div>
+        <div class="li"><div class="main"><div class="ttl">Location</div><div class="sub">Bhendi Bazaar, Mumbai</div></div><span>›</span></div>
+        <div class="note info">This post uses an AI-made picture. Instagram asks for realistic AI pictures to be labelled; we'll add its AI info label.</div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Tag people</b>: tap where</div>
+      <div class="phone"><div class="small">Tap where to tag</div><div class="thumb tall" style="width:100%;height:280px;position:relative"><span class="badge solid" style="position:absolute;top:110px;left:90px">@ayesha.styles</span></div>
+        <div class="input">@ayesha.styles</div><button class="btn" type="button">Done</button></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Preview</b> per destination</div>
+      <div class="phone"><div class="chips"><span class="chip on">Instagram post</span><span class="chip">Instagram story</span><span class="chip">Status</span></div>
+        <div class="thumb" style="width:100%;height:300px"></div><div class="chips"><span class="chip">Square</span><span class="chip on">Portrait</span></div>
+        <div class="small">Story and Status fit the picture on a soft fill of itself; nothing is cropped off the product.</div></div></div>
+  </div>
+</section>
+
+<section id="schedule">
+  <h2>Schedule</h2>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Pick a time</b> sheet</div>
+      <div class="phone"><div class="sheet"><span class="t">When should it go?</span>
+        <div class="chips"><span class="chip">Today</span><span class="chip on">Tomorrow</span><span class="chip">Sat 29</span><span class="chip">Pick a date</span></div>
+        <div class="chips"><span class="chip">9 am</span><span class="chip on">10 am</span><span class="chip">1 pm</span><span class="chip">6 pm</span><span class="chip">8 pm</span><span class="chip">Other</span></div>
+        <div class="small">Fri 28 Nov, 10:00 am · India time. Up to 60 days ahead.</div>
+        <button class="btn" type="button">Set time</button></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Done</b>: back on Posts, row on top</div>
+      <div class="phone"><div class="toast">Scheduled for today, 6:00 pm.</div>
+        <div class="chips"><span class="chip on">Scheduled</span><span class="chip">Published</span><span class="chip">Failed</span></div>
+        <div class="list"><div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Eid edit is here ✨</div><div class="sub">Today, 6:00 pm · <span class="badge info">IG post</span> <span class="badge info">Status</span></div></div></div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Cancel</b> a scheduled post</div>
+      <div class="phone"><div class="sheet"><span class="t">Cancel this post?</span><div class="body">It won't be published. You can duplicate it later.</div>
+        <button class="btn fill-danger" type="button" data-demo="pending:Cancelling…|toast:Post cancelled.">Cancel post</button><button class="btn sec" type="button">Keep it</button></div></div></div>
+  </div>
+</section>
+
+<section id="after">
+  <h2>After it goes</h2>
+  <p class="lede">Post detail: each destination with its own state and the one action that helps.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Post detail</b>, mixed result</div>
+      <div class="phone"><div class="back">← Posts</div><div class="thumb" style="width:100%;height:180px"></div>
+        <div class="body">Kashmiri shawls are back…</div>
+        <div class="card"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram post</span><span class="badge ok">Published</span></div><div class="small">Posted Wed 26 Nov, 6:01 pm</div><button class="btn sec" type="button">View on Instagram</button></div>
+        <div class="card"><div class="top"><span class="name"><span class="mark ig">IG</span>Instagram story</span><span class="badge bad">Failed</span></div><div class="body">Instagram's daily limit reached. Try after 4:00 pm tomorrow.</div><button class="btn" type="button" data-demo="pending:Publishing…|done:Published just now.">Publish now</button></div>
+        <div class="row2"><button class="btn ghost" type="button">Duplicate</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Other reasons</b>, each with its action</div>
+      <div class="phone">
+        <div class="note">Instagram didn't answer. Trying again in 10 min (2 of 3).<button class="btn sec" type="button">Publish now</button></div>
+        <div class="note error">Instagram couldn't use this video: it must be 3 to 90 seconds and under 300 MB.<button class="btn sec" type="button">Edit post</button></div>
+        <div class="note error">Instagram is disconnected. Reconnect, then publish.<button class="btn sec" type="button">Reconnect</button></div>
+        <div class="note warning">The price in your caption is ₹2,200; it's now ₹1,999.<button class="btn sec" type="button">Update price</button></div></div></div>
+  </div>
+</section>
+
+<section id="status">
+  <h2>Status, on time</h2>
+  <p class="lede">whatsapp-status-kit. WhatsApp lets no app post a Status, so at the time the shop is told, and one tap hands WhatsApp the picture with the caption copied.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>6:00 pm</b>: the email (push later)</div>
+      <div class="phone"><div class="ext"><span class="who">Email · Bhendi Bazaar</span><div class="row"><b>Your Status is ready to post</b></div><div class="row">1 Status due now. Open on your phone to post.</div><div class="row" style="text-align:center"><b>Open</b></div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Handoff page</b> on the phone</div>
+      <div class="phone"><div class="back">← Posts</div><div class="ph"><h3 style="font-size:16px">Post to your Status</h3></div>
+        <div class="thumb tall" style="margin:0 auto;width:60%;height:250px"></div>
+        <div class="input area">Eid edit is here ✨ Black nidha abaya…</div><button class="btn inline" type="button" data-demo="done:Copied">Copy caption</button>
+        <div class="small">WhatsApp opens with your picture. Your caption is copied: paste it before posting.</div>
+        <button class="btn" type="button" data-demo="pending:Opening WhatsApp…|toast:Caption copied — paste it on your Status">Share to Status</button></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Back from WhatsApp</b>: one tap to say done</div>
+      <div class="phone"><div class="thumb tall" style="margin:0 auto;width:40%;height:160px"></div>
+        <button class="btn" type="button" data-demo="pending:Saving…|toast:Posted to your Status">I've posted it</button><button class="btn sec" type="button">Share again</button>
+        <div class="small">Nothing is read back from WhatsApp; your tap marks it posted.</div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>On a computer</b>: send it to the phone</div>
+      <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">Open this on your phone</span>
+        <div style="width:120px;height:120px;margin:6px auto;background:repeating-linear-gradient(45deg,#222 0 6px,#fff 6px 12px)"></div>
+        <div class="small" style="text-align:center">Scan with your phone's camera</div>
+        <div class="row2"><button class="btn sec" type="button">Download picture</button><button class="btn sec" type="button" data-demo="done:Copied">Copy caption</button></div></div></div></div>
+  </div>
+  <div class="strip" style="margin-top:12px">
+    <div><div class="lbl">Missed (over 24 h)</div><div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Cotton kurtas</div><div class="sub"><span class="badge warn">Not posted · was due Tue 6:00 pm</span></div></div></div><div class="row2"><button class="btn sec" type="button">Share</button><button class="btn ghost" type="button">Mark as skipped</button></div></div>
+    <div><div class="lbl">Two due at once</div><div class="small">1 of 2 · after I've posted it, <b>Next</b></div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Form factors</h2>
+  <div class="matrix"><table>
+    <thead><tr><th>Width</th><th>Posts page</th><th>Composer</th><th>Pickers</th><th>Status handoff</th></tr></thead>
+    <tbody>
+      <tr><td>Phone</td><td>Rows; New post in the action bar</td><td>Full page, one column; Preview as a sheet</td><td>Bottom sheet</td><td>Full page, buttons at the thumb</td></tr>
+      <tr><td>Tablet (<code>md:</code>)</td><td>Table, a column per destination</td><td>Full page, wider</td><td>Centred dialog</td><td>Sheet with the QR first</td></tr>
+      <tr><td>Desktop (<code>lg:</code>)</td><td>Table</td><td><code>TaskDialog</code>: form left, live preview right</td><td>Centred dialog</td><td>Sheet with the QR first</td></tr>
+    </tbody></table></div>
+</section>
+
+</div>
+
+<script>
+// Tap any button marked data-demo to see its states: Ready -> pending -> done or failed (ux-patterns §3).
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-demo]'); if(!b||b.dataset.busy) return;
+  var parts={};b.dataset.demo.split('|').forEach(function(p){var i=p.indexOf(':');parts[p.slice(0,i)]=p.slice(i+1);});
+  var orig=b.innerHTML; b.dataset.busy='1';
+  b.innerHTML='<span class="spin" aria-hidden="true"></span>'+(parts.pending||'Working…');
+  b.setAttribute('aria-busy','true');
+  setTimeout(function(){
+    b.removeAttribute('aria-busy');
+    if(parts.done){b.innerHTML=parts.done;}else{b.innerHTML=orig;}
+    var host=b.closest('.phone'); if(parts.toast&&host){var t=document.createElement('div');t.className='toast';t.textContent=parts.toast;t.setAttribute('role','status');host.insertBefore(t,host.children[1]||null);setTimeout(function(){t.remove();b.innerHTML=orig;delete b.dataset.busy;},2200);} else {setTimeout(function(){b.innerHTML=orig;delete b.dataset.busy;},1800);}
+  },1300);
+});
+</script>
