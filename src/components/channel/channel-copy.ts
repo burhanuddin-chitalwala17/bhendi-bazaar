@@ -32,8 +32,8 @@ export const PURPOSE: Record<Channel, string> = {
 };
 /** Planned channels shown under Coming soon only: not in the server's channel set until they are built. */
 export const PLANNED_CHANNEL_COPY = {
-  whatsapp: { label: "WhatsApp", purpose: "Share your catalogue and take orders in chats" },
-  instagram: { label: "Instagram", purpose: "Tag your products in posts, reels and stories" },
+  whatsapp: { label: "WhatsApp", purpose: "Show your catalogue in chats and message your customers" },
+  instagram: { label: "Instagram", purpose: "Post your products and answer comments and DMs" },
 } as const;
 export const PAGE_LOAD_FAILED = "Couldn't load your channels. Check your connection and try again.";
 
