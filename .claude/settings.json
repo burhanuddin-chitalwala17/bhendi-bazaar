@@ -22,17 +22,6 @@
           }
         ]
       }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash scripts/hooks/session-start.sh",
-            "timeout": 30
-          }
-        ]
-      }
     ]
   }
 }

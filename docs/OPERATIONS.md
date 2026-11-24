@@ -71,7 +71,7 @@ npm run dev                 # http://localhost:3000
 There are four env files. `.env` is local (local Postgres); `.env.dev` and `.env.prod` run the local app against the live dev or production database (`npm run dev:dev` / `npm run dev:prod`, passed with `node --env-file`, so they win over `.env`); `.env.example` is the committed shape of this table, in sections — Vercel, local only, worker, ops — with sample values only, and the one file `.gitignore` admits out of `.env*`. Deploy and ops secrets (worker SSH, image registry, backups) live only in GitHub secrets and Vercel. `src/lib/env.ts` holds the required-variable list, and is kept in step with this table. `src/instrumentation.ts` runs it at boot: `APP_ENV` and the rate-limit variables are **refused** (the instance will not start); the rest of the list is **logged** as `[startup] Missing required environment variables: …`, not refused, until each is checked against every Vercel environment (rate-limiting Q11), and `/api/health?deep=1` answers 503 while any is missing. It still omits `ENCRYPTION_KEY`, which this table marks required.
 
 ### Local development database
-Development runs against a local Postgres, never a metered cloud one — a hot-reload session against Prisma Postgres is what exhausted the workspace's operation quota in August 2026 (CHANGELOG PR-70). One-time setup:
+Development runs against a local Postgres, never a metered cloud one — a hot-reload session against Prisma Postgres is what exhausted the workspace's operation quota in August 2026 (PR-70; `git log -S "PR-70"` finds the entry). One-time setup:
 
 ```
 docker start bhendi-pg      # or: docker run --name bhendi-pg -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=bhendi_bazaar_dev -p 5433:5432 -d postgres:16
@@ -554,7 +554,7 @@ reference a corrected re-run skips them all and the null is permanent. Crop, imp
 deletion sweep each need that key. A write therefore stops when nothing in the library belongs to
 the configured store, and the report warns about the same thing rather than printing a clean plan
 the write will decline; `--allow-foreign` is how a library of genuinely external URLs says so.
-Report first, without `--write`, and read the summary before committing to it. Re-running is safe: a URL that already has an asset is linked, not duplicated. A URL nobody can fetch still gets a record, without dimensions, and is listed at the end so it can be looked at. Record the run in the CHANGELOG.
+Report first, without `--write`, and read the summary before committing to it. Re-running is safe: a URL that already has an asset is linked, not duplicated. A URL nobody can fetch still gets a record, without dimensions, and is listed at the end so it can be looked at. Record the run in the commit that follows it, or in a commit of its own.
 
 ## Infrastructure
 
@@ -639,7 +639,7 @@ BACKUP_AGE_IDENTITY="$(cat backup-key.txt)" DRILL_DATABASE_URL=postgresql://post
 It restores, recounts every table in every schema (the job queue's included) and fails on any
 difference; the counts were taken from the dump's own snapshot, so writes during the backup cannot
 cause one. It refuses a target whose host is not this machine, and one that already has tables. Record the
-date in the CHANGELOG; a drill older than 90 days is a GTM-READINESS section 9 failure.
+date in a commit subject (`ops: restore drill <date>`); a drill older than 90 days is a GTM-READINESS section 9 failure.
 
 **A real restore** is the same `age --decrypt | pg_restore` into a new database, then pointing
 `DATABASE_URL` at it, after the drill steps have proved the file.

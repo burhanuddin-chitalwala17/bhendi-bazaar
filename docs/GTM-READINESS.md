@@ -12,7 +12,7 @@ This is a self-contained handover. A fresh Claude session can pick up from here 
 1. Read [../CLAUDE.md](../CLAUDE.md) first. The project's invariants and conventions override anything here.
 2. Work the blockers in **section 6** in order. Each has the files to touch.
 3. **Working rules the owner set:**
-   - Fixes go straight to code + tests + a CHANGELOG line. A spec or TRD is needed only for money, payment state, schema/migration or `CONTRACTS.md` changes.
+   - Fixes go straight to code + tests, with a commit subject a reader can use (ADR-0078). A spec or TRD is needed only for money, payment state, schema/migration or `CONTRACTS.md` changes.
    - The owner commits and pushes. Never commit, push or stage.
    - Work stays on the `main` branch.
    - Buttons are never disabled. Double-submit protection is an in-flight guard, not `disabled`.

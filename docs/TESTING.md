@@ -76,7 +76,7 @@ The rest stay local-only and genuinely do need the seed — orgs, categories, ad
 row — which cannot run under CI by design ([Invariant 7](../CLAUDE.md)). Two ways forward, both
 open: let each own its fixtures the way `order-transaction.test.ts` does, or ship the reference
 rows as a data migration so CI has them after `migrate deploy`. Until then a PR whose behaviour
-is a constraint says so in its CHANGELOG entry, and says whether the database-backed suite was
+is a constraint says so in its commit body, and says whether the database-backed suite was
 actually run.
 
 ### Guard suites: tests whose subject is the repository, not a function

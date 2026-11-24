@@ -3,7 +3,7 @@
 - **Verified:** 2026-11-01
 - **Covers:** `docs/specs/*/`
 
-Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
+Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in `git log`.
 
 > Ordering principle: **transaction integrity before new capability.** The store's money path is the thing customers touch and the thing that is hardest to correct after the fact, so it leads.
 
@@ -381,13 +381,13 @@ Not a phase, but tracked:
 - **Existing products all weigh 0.5 kg** — weight was collected and never persisted until PR-22, so every row created before it carries the schema default. [product-weight-and-rates](specs/product-weight-and-rates/) R6; rates are wrong in both directions until the catalogue is corrected.
 - ~~**`Product.categoryId` cascades on delete**~~ ✅ Closed — the `category_tree` migration moved it to `onDelete: Restrict` on 2026-08-10 (`prisma/migrations/20260810120000_category_tree/`); this entry stayed open for six days afterwards because the fix was a local judgement with nothing to check the watch list against. Now a stated rule: [ADR-0020](adr/0020-money-bearing-records-never-cascade.md).
 
-- **Documentation system** — see [CHANGELOG.md](CHANGELOG.md) PR-01. The pre-2026-08 `_archive/` was deleted on 2026-11-12 (readable at commit 431ed6e7). The dead CSRF helper was deleted on 2026-10-05; the Origin check in `src/middleware.ts` is the protection ([ADR-0060](adr/0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md)).
+- **Documentation system** — see [the changelog archive](archive/CHANGELOG-HISTORY.md), 2026-08. The pre-2026-08 `_archive/` was deleted on 2026-11-12 (readable at commit 431ed6e7). The dead CSRF helper was deleted on 2026-10-05; the Origin check in `src/middleware.ts` is the protection ([ADR-0060](adr/0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md)).
 
 ---
 
 ## How to update this file
 - Phase status change (start, block, complete) → edit the row.
 - New spec → add a row under its phase.
-- Scope shift inside a phase → sub-bullet, plus a [CHANGELOG.md](CHANGELOG.md) entry.
+- Scope shift inside a phase → sub-bullet; the commit says why.
 - **Append-edit, not append-only** — phase status legitimately changes.
 - This file tracks *milestones and requirements*. It is not a defect list; a defect becomes either a spec (if it needs design) or a PR (if the rule is already stated in an ADR).

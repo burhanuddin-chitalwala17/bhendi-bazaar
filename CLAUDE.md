@@ -1,6 +1,6 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
-- **Verified:** 2026-11-21
+- **Verified:** 2026-11-24
 - **Covers:** `server/*/`, `src/components/*/`, `src/app/api/`, `docs/adr/*.md`, `.claude/`
 
 ## Purpose
@@ -98,7 +98,7 @@ UX               /bb-sdlc ux-start <feature>      ux.md: journeys, state matrix,
 TRD              trd.md                           cites ux.md and Q ids; no line cap (ADR-0071)
 IMPLEMENTATION   /bb-build <feature>              refuses open decisions or unsigned UX; failing test per A id first
 REVIEW           /bb-review                       in a fresh context, not by the author
-DOCS             ARCHITECTURE.md only if structure changed; CHANGELOG.md always
+DOCS             ARCHITECTURE.md only if structure changed; the commit subject is the record (ADR-0078)
 MERGE            /bb-sdlc pr-finish walks the gate
 ```
 
@@ -106,13 +106,13 @@ MERGE            /bb-sdlc pr-finish walks the gate
 - changes a domain's architecture or data flow,
 - adds a third-party package,
 - starts a new feature, **or**
-- changes a DTO in `CONTRACTS.md` — flagged `[CONTRACT]` in the CHANGELOG.
+- changes a DTO in `CONTRACTS.md` — flagged `[CONTRACT]` in the commit subject.
 
-Not required for typo fixes, no-behaviour config tweaks, single-function refactors, doc-only changes — which **still need** a CHANGELOG entry and tests for any changed logic.
+Not required for typo fixes, no-behaviour config tweaks, single-function refactors, doc-only changes — which **still need** tests for any changed logic.
 
 ### Golden Rules
 1. **Architecture docs describe what exists, not what is planned.** Update *after* the change, never before.
-2. **/bb-review runs before any unit is done.** The rest — append-only changelog, immutable ADRs, no pasted code, `Verified:` dates — is in the index below.
+2. **/bb-review runs before any unit is done.** The rest — commit subjects as the record, immutable ADRs, no pasted code, `Verified:` dates — is in the index below.
 3. **Commit each unit on the working branch; push only when the owner asks.** `git push` and `gh` are no longer denied in `.claude/settings.json` (owner, 2026-11-05); every other GitHub action stays the owner's. A new spec or TRD stays uncommitted until the owner has read it.
 
 ## Documentation & Process Conventions

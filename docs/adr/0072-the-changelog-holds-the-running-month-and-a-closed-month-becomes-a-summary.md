@@ -1,7 +1,7 @@
 # ADR-0072: The changelog holds the running month, and a closed month becomes a summary
 
 - **Date:** 2026-11-12
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0078](0078-the-changelog-is-retired-and-the-commit-subject-is-the-record.md)
 
 ## Context
 
