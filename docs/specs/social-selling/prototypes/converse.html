@@ -1,0 +1,392 @@
+<title>Converse</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap">
+<style>
+/* Layout: a storyboard of phone-width screens per journey, then state strips and a matrix. Tokens mirror the app's portal theme (globals.css). */
+
+:root{
+ --bg:oklch(0.985 0 0);--card:oklch(1 0 0);--muted:oklch(0.955 0 0);--border:oklch(0.915 0 0);
+ --fg:oklch(0.22 0.03 40);--fg-muted:oklch(0.52 0.04 40);
+ --primary:oklch(0.55 0.17 150);--on-primary:oklch(0.98 0.01 95);--accent:oklch(0.85 0.12 85);
+ --success:oklch(0.55 0.15 145);--warning:oklch(0.55 0.13 70);--danger:oklch(0.6 0.25 27);--info:oklch(0.52 0.13 245);
+ --wa:oklch(0.72 0.17 150);--ig1:oklch(0.7 0.19 55);--ig2:oklch(0.58 0.24 350);--ig3:oklch(0.45 0.2 300);
+ --font-body:"DM Sans",system-ui,sans-serif;--font-head:"Playfair Display",Georgia,serif;--radius:0.75rem}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+ --bg:oklch(0.15 0 0);--card:oklch(0.18 0 0);--muted:oklch(0.23 0 0);--border:oklch(0.3 0 0);
+ --fg:oklch(0.96 0.02 98);--fg-muted:oklch(0.72 0.05 98);--primary:oklch(0.7 0.19 150);--on-primary:oklch(0.14 0.04 260);
+ --accent:oklch(0.82 0.14 85);--success:oklch(0.72 0.16 145);--warning:oklch(0.78 0.14 75);--danger:oklch(0.65 0.22 22);--info:oklch(0.72 0.13 245);color-scheme:dark}}
+:root[data-theme="dark"]{
+ --bg:oklch(0.15 0 0);--card:oklch(0.18 0 0);--muted:oklch(0.23 0 0);--border:oklch(0.3 0 0);
+ --fg:oklch(0.96 0.02 98);--fg-muted:oklch(0.72 0.05 98);--primary:oklch(0.7 0.19 150);--on-primary:oklch(0.14 0.04 260);
+ --accent:oklch(0.82 0.14 85);--success:oklch(0.72 0.16 145);--warning:oklch(0.78 0.14 75);--danger:oklch(0.65 0.22 22);--info:oklch(0.72 0.13 245);color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:14px;line-height:1.45;margin:0}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px;max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+.modnav{display:flex;gap:6px;flex-wrap:wrap;font-size:12px}
+.modnav a{padding:5px 10px;border:1px solid var(--border);border-radius:999px;color:var(--fg-muted);text-decoration:none;background:var(--card)}
+.modnav a[aria-current]{color:var(--on-primary);background:var(--primary);border-color:var(--primary)}
+header h1{font-family:var(--font-head);font-size:30px;margin:12px 0 6px;text-wrap:balance}
+header p{margin:0;color:var(--fg-muted);max-width:72ch}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.tabs a{font-size:13px;padding:6px 12px;border:1px solid var(--border);border-radius:999px;color:var(--fg);text-decoration:none;background:var(--card)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+section h2{font-family:var(--font-head);font-size:22px;margin:0 0 4px}
+section>.lede{color:var(--fg-muted);margin:0 0 16px;max-width:76ch}
+.flow{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;padding-bottom:12px}
+.step{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;width:272px}
+.cap{font-size:12px;color:var(--fg-muted);min-height:34px}.cap b{color:var(--fg);font-weight:600}
+.arrow{flex:0 0 auto;align-self:center;color:var(--fg-muted);font-size:22px;padding-top:34px}
+.phone{border:1px solid var(--border);border-radius:24px;background:var(--bg);padding:10px;min-height:460px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 3px rgb(0 0 0 / .06);position:relative;overflow:hidden}
+.bar{display:flex;justify-content:space-between;font-size:11px;color:var(--fg-muted);padding:0 4px}
+.ph{display:flex;align-items:center;gap:8px;padding:2px 4px}.ph h3{font-family:var(--font-head);font-size:19px;margin:0;flex:1}
+.ph .q{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);display:grid;place-items:center;font-size:12px;color:var(--fg-muted)}
+.back{font-size:12px;color:var(--fg-muted)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:calc(var(--radius) + 4px);padding:12px;display:flex;flex-direction:column;gap:7px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.name{font-weight:600;display:flex;align-items:center;gap:8px;min-width:0}
+.mark{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;flex:0 0 auto}
+.mark.ig{background:linear-gradient(135deg,var(--ig1),var(--ig2) 55%,var(--ig3))}.mark.wa{background:var(--wa)}.mark.meta{background:var(--info)}.mark.az{background:oklch(0.25 0.02 260)}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);white-space:nowrap;color:var(--fg-muted);background:var(--card)}
+.badge.ok{color:var(--success);border-color:color-mix(in oklch,var(--success) 40%,transparent)}
+.badge.warn{color:var(--warning);border-color:color-mix(in oklch,var(--warning) 45%,transparent)}
+.badge.bad{color:var(--danger);border-color:color-mix(in oklch,var(--danger) 45%,transparent)}
+.badge.info{color:var(--info);border-color:color-mix(in oklch,var(--info) 40%,transparent)}
+.badge.solid{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.body{font-size:13px;color:var(--fg-muted)}.body strong{color:var(--fg);font-weight:600}
+.small{font-size:11.5px;color:var(--fg-muted)}
+.btn{font:inherit;font-size:13px;font-weight:600;border-radius:10px;padding:10px 12px;min-height:40px;border:1px solid transparent;background:var(--primary);color:var(--on-primary);text-align:center;cursor:pointer;width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.sec{background:transparent;border-color:var(--border);color:var(--fg)}
+.btn.ghost{background:transparent;color:var(--fg);border-color:transparent;padding-block:6px;min-height:36px}
+.btn.danger{background:transparent;color:var(--danger);border-color:transparent}
+.btn.fill-danger{background:var(--danger);color:#fff}
+.btn.inline{width:auto}
+.row2{display:flex;gap:8px}.row2>*{flex:1}
+.btn .spin{width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.btn .spin{animation:none}}
+.note{border-radius:10px;padding:10px;font-size:12.5px;border:1px solid var(--border);background:var(--card);display:flex;flex-direction:column;gap:6px}
+.note.success{border-color:color-mix(in oklch,var(--success) 45%,transparent)}
+.note.warning{border-color:color-mix(in oklch,var(--warning) 50%,transparent);background:color-mix(in oklch,var(--warning) 7%,var(--card))}
+.note.error{border-color:color-mix(in oklch,var(--danger) 45%,transparent)}
+.note.info{border-color:color-mix(in oklch,var(--info) 40%,transparent)}
+.note .t{font-weight:600}
+.ext{border:1px dashed var(--info);border-radius:14px;padding:12px;background:var(--card);display:flex;flex-direction:column;gap:8px}
+.ext .who{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--info);font-weight:600}
+.ext .row{border:1px solid var(--border);border-radius:8px;padding:8px;font-size:12.5px}
+.sheet{margin-top:auto;background:var(--card);border:1px solid var(--border);border-radius:18px 18px 10px 10px;padding:14px;display:flex;flex-direction:column;gap:9px;box-shadow:0 -6px 20px rgb(0 0 0 / .08)}
+.sheet .t{font-weight:700;font-size:15px}
+.dim{opacity:.5}
+.toast{align-self:center;background:var(--fg);color:var(--bg);font-size:12px;border-radius:999px;padding:6px 12px}
+.check{display:flex;flex-direction:column;gap:6px;font-size:12.5px;border-top:1px solid var(--border);padding-top:8px}
+.check .it{display:flex;gap:8px;align-items:flex-start}
+.check .tick{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border);flex:0 0 auto;display:grid;place-items:center;font-size:11px;margin-top:1px}
+.check .done{color:var(--fg-muted)}.check .done .tick{background:var(--success);border-color:var(--success);color:#fff}
+.check .next{font-weight:600}.check .next .tick{border-color:var(--primary)}
+.check .wait .tick{border-style:dashed}
+.list{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:calc(var(--radius) + 4px);background:var(--card);overflow:hidden}
+.li{display:flex;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);align-items:center}.li:last-child{border-bottom:0}
+.li .main{flex:1;min-width:0}.li .ttl{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.li .sub{font-size:12px;color:var(--fg-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thumb{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,color-mix(in oklch,var(--accent) 60%,var(--card)),color-mix(in oklch,var(--primary) 30%,var(--card)));flex:0 0 auto}
+.thumb.lg{width:100%;height:150px;border-radius:12px}
+.thumb.tall{width:100%;aspect-ratio:4/5;height:auto;border-radius:12px}
+.avatar{width:34px;height:34px;border-radius:50%;background:color-mix(in oklch,var(--info) 25%,var(--card));display:grid;place-items:center;font-size:12px;font-weight:700;flex:0 0 auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:999px;background:var(--card)}
+.chip.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.field{display:flex;flex-direction:column;gap:4px;font-size:12px}.field label{font-weight:600}
+.input{border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--card);font-size:16px;min-height:42px;color:var(--fg)}
+.input.area{min-height:84px;font-size:14px}
+.hint{font-size:11.5px;color:var(--fg-muted)}
+.progress{height:6px;border-radius:999px;background:var(--muted);overflow:hidden}.progress i{display:block;height:100%;background:var(--primary)}
+.bubbles{display:flex;flex-direction:column;gap:6px;flex:1}
+.bub{max-width:82%;padding:7px 10px;border-radius:14px;font-size:12.5px;background:var(--muted)}
+.bub.me{align-self:flex-end;background:color-mix(in oklch,var(--primary) 16%,var(--card))}
+.bub.auto{align-self:flex-end;background:color-mix(in oklch,var(--info) 12%,var(--card));border:1px dashed color-mix(in oklch,var(--info) 40%,transparent)}
+.bub .meta{display:block;font-size:10.5px;color:var(--fg-muted);margin-top:3px}
+.composer{display:flex;gap:6px;align-items:flex-end;border-top:1px solid var(--border);padding-top:8px}
+.composer .input{flex:1;font-size:14px;min-height:40px}
+.window{font-size:11px;color:var(--fg-muted);text-align:center}
+.tabbar{display:flex;justify-content:space-around;border-top:1px solid var(--border);padding-top:6px;margin-top:auto;font-size:10.5px;color:var(--fg-muted)}
+.tabbar .on{color:var(--primary);font-weight:700}
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px}.kpi div{border:1px solid var(--border);border-radius:10px;padding:8px;background:var(--card)}.kpi b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.matrix{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:12.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);font-weight:600;background:var(--muted)}
+tr:last-child td{border-bottom:0}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);font-weight:600;margin-bottom:4px}
+.legend{font-size:12px;color:var(--fg-muted);max-width:80ch}
+.demo-hint{font-size:12px;color:var(--fg-muted);border:1px dashed var(--border);border-radius:10px;padding:8px 10px;max-width:80ch}
+.sep{border:0;border-top:1px solid var(--border);margin:2px 0}
+.money{font-variant-numeric:tabular-nums}
+.btn[data-demo]{text-decoration:underline dotted;text-underline-offset:3px}
+
+</style>
+<div class="wrap">
+<header>
+  <nav class="modnav" aria-label="Social selling prototypes"><a href="connect.html">Connect & Catalogue</a><a href="post.html">Post</a><a href="converse.html" aria-current="page">Converse</a><a href="reach.html">Reach out</a><a href="home.html">Home & admin</a><a href="notify.html">Notifications</a><a href="bulk.html">Bulk publish</a><a href="links.html">Checkout links</a></nav>
+  <h1>Converse</h1>
+  <p>Prototype for social-selling's Converse module: inbox-core, inbox-instagram, inbox-whatsapp, comment-automations, enquiry-autoreplies and product-answers. Phone width first.</p>
+</header>
+<p class="demo-hint">Buttons with a dotted underline are live: tap one to see what it does while it works and when it finishes (ux-patterns §3). Every string is the one that ships; dashed boxes are Meta's or WhatsApp's own screens.</p>
+<nav class="tabs" aria-label="Sections">
+  <a href="#inbox">Inbox</a><a href="#thread">A conversation</a><a href="#box">The reply box</a><a href="#ig">Instagram</a><a href="#wa">WhatsApp</a><a href="#order">An order in chat</a><a href="#c2dm">Comment-to-DM</a><a href="#auto">Auto-replies</a><a href="#buyer">What a buyer sees</a>
+</nav>
+
+<section id="inbox">
+  <h2>Inbox</h2>
+  <p class="lede">inbox-core and product-answers. Needs you always first, oldest waiting at the top so nobody is forgotten. Yesterday's product questions sit above the list.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Nothing connected</b></div>
+      <div class="phone"><div class="ph"><h3>Inbox</h3></div>
+        <div class="card" style="text-align:center"><div class="ttl" style="font-family:var(--serif);font-size:17px">Messages from Instagram and WhatsApp will appear here</div>
+          <div class="body">Connect a platform to answer every message from here.</div><button class="btn" type="button">Connect</button></div>
+        <div class="tabbar"><span>Home</span><span>Orders</span><span class="on">Inbox</span><span>Products</span><span>More</span></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>The list</b>: Needs you first</div>
+      <div class="phone"><div class="ph"><h3>Inbox</h3><span>🔍 ⚙</span></div>
+        <div class="chips"><span class="chip on">WhatsApp · 2</span><span class="chip">Instagram · 1</span></div>
+        <div class="note info" style="font-size:12px">Yesterday · 18 product questions · 15 answered · <b>3 need you</b></div>
+        <div class="chips"><span class="chip on">Needs you</span><span class="chip">Unread</span><span class="chip">Answered automatically</span></div>
+        <div class="list">
+          <div class="li"><span class="avatar">AK</span><div class="main"><div class="ttl">Ayesha Khan</div><div class="sub">Talk to the shop · 40 min</div></div><span class="badge warn">Needs you</span></div>
+          <div class="li"><span class="avatar">RS</span><div class="main"><div class="ttl">🛒 Rukhsar S.</div><div class="sub">Sent a cart · 3 items · 12 min</div></div><span class="badge warn">Needs you</span></div>
+          <div class="li"><span class="avatar">ZM</span><div class="main"><div class="ttl" style="font-weight:700">Zara M. •</div><div class="sub">Is the black one available in L?</div></div><span class="small">2 min</span></div>
+          <div class="li"><span class="avatar">FB</span><div class="main"><div class="ttl">Fatima B.</div><div class="sub">Auto: Cotton kurta · ₹899…</div></div><span class="badge">Auto</span></div>
+        </div>
+        <div class="tabbar"><span>Home</span><span>Orders</span><span class="on">Inbox · 3</span><span>Products</span><span>More</span></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Empty filter</b> and <b>new while open</b></div>
+      <div class="phone"><div class="chips"><span class="chip on">Needs you</span><span class="chip">Unread</span><span class="chip">Answered automatically</span></div>
+        <div class="card" style="text-align:center"><div class="body">Nothing needs you. 🎉</div><button class="btn ghost" type="button">Show all</button></div>
+        <div style="text-align:center"><span class="badge solid">↑ 3 new</span></div>
+        <div class="small">New messages never jump rows under your thumb; the pill shows them.</div></div></div>
+  </div>
+</section>
+
+<section id="thread">
+  <h2>A conversation</h2>
+  <p class="lede">The shop's bubbles show who sent them, to members only. A handover line marks where the bot stepped back.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Thread</b> after a handover</div>
+      <div class="phone"><div class="top" style="display:flex;justify-content:space-between"><span class="back">← Ayesha Khan</span><span>ⓘ ⋯</span></div>
+        <div class="bubbles">
+          <div class="window">Today</div>
+          <div class="bub">hi</div>
+          <div class="bub auto">Hi Ayesha! Welcome to Niqab Boutique 🌙 How can we help?<span class="meta">Automatic · 10:02</span></div>
+          <div class="bub">Talk to the shop</div>
+          <div class="bub auto">Someone from the shop will reply soon, usually within 2 hours.<span class="meta">Automatic · 10:02</span></div>
+          <div class="window">— Handed to you · buyer tapped Talk to the shop —</div>
+          <div class="bub me">Salaam Ayesha, how can I help?<span class="meta">Farida · 10:40 · ✓✓</span></div>
+        </div>
+        <div class="composer"><span>📷</span><div class="input">Reply…</div><button class="btn inline" type="button" data-demo="pending:Sending…|done:Send">Send</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Failed send</b> and <b>a voice note</b></div>
+      <div class="phone"><div class="bubbles">
+          <div class="bub">🎤 Voice message · 0:42 · <u>open in WhatsApp</u></div>
+          <div class="bub me" style="opacity:.75">Yes, size L is in stock<span class="meta" style="color:var(--danger)">Not sent · WhatsApp didn't answer.</span></div>
+        </div><button class="btn sec" type="button" data-demo="pending:Sending…|done:Sent ✓">Try again</button></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Details</b> (ⓘ)</div>
+      <div class="phone"><div class="sheet"><span class="t">Ayesha Khan</span>
+        <div class="small">WhatsApp · +91 98•••• 1100 · Agreed to offers · 22 Nov</div>
+        <div class="lbl">Asked about</div><div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Black nidha abaya</div><div class="sub">₹2,200 · In stock</div></div></div>
+        <div class="lbl">Orders</div><div class="small">BB-7KQ2 · ₹2,200 · Delivered</div></div></div></div>
+  </div>
+</section>
+
+<section id="box">
+  <h2>The reply box</h2>
+  <p class="lede">It always says what the platform allows right now. Never disabled; never discovered by failing.</p>
+  <div class="strip">
+    <div><div class="lbl">Reply freely</div><div class="composer"><span>📷</span><div class="input">Reply…</div><button class="btn inline" type="button">Send</button></div></div>
+    <div><div class="lbl">Instagram, 24 h – 7 days</div><div class="window">Only a person can reply now · 4 days left</div><div class="composer"><div class="input">Reply…</div><button class="btn inline" type="button">Send</button></div></div>
+    <div><div class="lbl">WhatsApp, after 24 h</div><div class="note">Free replies ended 26 h ago. Send a template to restart the chat.<button class="btn sec" type="button">Choose a template · about ₹0.86</button></div></div>
+    <div><div class="lbl">Instagram, after 7 days</div><div class="note">Instagram allows no replies after 7 days.<button class="btn ghost" type="button">Open in Instagram</button></div></div>
+    <div><div class="lbl">Disconnected</div><div class="note warning">Instagram is disconnected. Reconnect to reply.<button class="btn sec" type="button">Reconnect</button></div></div>
+  </div>
+</section>
+
+<section id="ig">
+  <h2>Instagram</h2>
+  <p class="lede">inbox-instagram. Comments group under their post; a reply to a comment says who will see it.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Comments</b> under their post</div>
+      <div class="phone"><div class="chips"><span class="chip">WhatsApp</span><span class="chip on">Instagram</span></div>
+        <div class="chips"><span class="chip">Messages</span><span class="chip on">Comments</span></div>
+        <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Eid edit is here ✨</div><div class="sub">24 comments · 6 new</div></div></div>
+        <div class="li" style="padding-left:24px"><span class="avatar">ZM</span><div class="main"><div class="ttl">@zara.m</div><div class="sub">Price for L?</div></div></div>
+        <div class="li" style="padding-left:24px"><span class="avatar">AK</span><div class="main"><div class="ttl">@ayesha.k</div><div class="sub">SHOP 🙏 · <span class="badge">Answered by DM</span></div></div></div>
+        <div class="li"><span class="avatar">RA</span><div class="main"><div class="ttl">@rida.a replied to your story</div><div class="sub">Is this in maroon?</div></div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Comment thread</b>: public or private</div>
+      <div class="phone"><div class="back">← Comments</div>
+        <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Eid edit is here ✨</div><div class="sub">Your post · Wed</div></div></div>
+        <div class="bubbles"><div class="bub"><b>@zara.m</b> Price for L?</div></div>
+        <div class="chips"><span class="chip on">Public reply</span><span class="chip">Private DM</span></div>
+        <div class="small">Everyone can see this reply</div>
+        <div class="composer"><div class="input">@zara.m ₹2,200, L is in stock</div><button class="btn inline" type="button" data-demo="pending:Replying…|toast:Reply posted.">Reply</button></div>
+        <div class="small">⋯ Hide on Instagram</div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Story reply</b> and <b>hidden comment</b></div>
+      <div class="phone"><div class="bubbles"><div class="bub"><span class="thumb tall" style="display:block;width:70px;height:110px"></span><span class="meta">Replied to your story · 2 h ago</span></div><div class="bub">Is this in maroon?</div></div>
+        <div class="sep"></div>
+        <div class="bub" style="opacity:.5"><b>@spam.acc</b> follow for follow<span class="meta">Hidden on Instagram</span></div>
+        <button class="btn ghost" type="button" data-demo="pending:Unhiding…|done:Hide on Instagram">Unhide</button></div></div>
+  </div>
+</section>
+
+<section id="wa">
+  <h2>WhatsApp</h2>
+  <p class="lede">inbox-whatsapp. Ticks as WhatsApp reports them; after 24 hours the right template with its cost.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>After 24 h</b>: choose a template</div>
+      <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">Choose a template</span>
+        <div class="lbl">Follow up</div>
+        <div class="li"><div class="main"><div class="ttl">Back in touch</div><div class="sub">"Hi Ayesha, following up on your question about…" · about ₹0.12 · utility</div></div></div>
+        <div class="lbl">Offers</div>
+        <div class="li"><div class="main"><div class="ttl">New arrivals</div><div class="sub">about ₹0.86 · marketing · needs their agreement ✓</div></div></div>
+        <button class="btn" type="button" data-demo="pending:Sending…|toast:Template sent.">Send · ₹0.12</button>
+        <div class="small">Counts toward your ₹1,000 monthly limit · ₹212 used.</div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Refused</b>, said plainly</div>
+      <div class="phone">
+        <div class="note error">Not sent · You've reached this month's limit of ₹1,000.<button class="btn sec" type="button">Raise limit</button></div>
+        <div class="note error">Not sent · Add a payment method in Meta to send this.<button class="btn sec" type="button">Add payment method</button></div>
+        <div class="note">Not sent · This buyer hasn't agreed to marketing messages.</div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>STOP</b>, understood</div>
+      <div class="phone"><div class="bubbles"><div class="bub">STOP</div><div class="bub auto">You won't get offers from Niqab Boutique. Reply START to get them again.<span class="meta">Automatic</span></div></div></div></div>
+  </div>
+</section>
+
+<section id="order">
+  <h2>An order in chat</h2>
+  <p class="lede">A cart from the WhatsApp catalogue becomes an order card at our prices. One tap sends a checkout link holding what is in stock.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Order card</b></div>
+      <div class="phone"><div class="back">← Rukhsar S.</div>
+        <div class="card"><div class="top"><span class="name">🛒 Cart · 3 items</span><span class="small">12:01</span></div>
+          <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Black nidha abaya · M</div><div class="sub">₹2,200 · In stock</div></div></div>
+          <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Cotton kurta · L</div><div class="sub">₹899 (was ₹1,199) · In stock</div></div></div>
+          <div class="li" style="opacity:.55"><span class="thumb"></span><div class="main"><div class="ttl"><s>Kashmiri shawl</s></div><div class="sub">Out of stock · left out</div></div></div>
+          <div class="body"><b>₹3,099 for 2 items</b></div><div class="small">Prices are as on your shop today.</div>
+          <button class="btn" type="button" data-demo="pending:Sending…|done:Link sent · 12:04|toast:Checkout link sent.">Send checkout link</button></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Sent</b>, then <b>ordered</b></div>
+      <div class="phone"><div class="bubbles"><div class="bub me">Here's your checkout link for 2 items 👇<br><u>bhendibazaar.com/c/7KQ2…</u><span class="meta">Farida · 12:04 · ✓✓</span></div></div>
+        <div class="card"><div class="top"><span class="name">🛒 Cart · 3 items</span><span class="badge ok">Ordered · BB-7KQ2</span></div><button class="btn sec" type="button">Open order</button></div></div></div>
+  </div>
+</section>
+
+<section id="c2dm">
+  <h2>Comment-to-DM</h2>
+  <p class="lede">comment-automations. A folded panel in the composer, on when the post names a product, with the DM already written.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>In the composer</b></div>
+      <div class="phone"><div class="lbl">Comment-to-DM</div>
+        <div class="card"><div class="top"><span class="name">On</span><span class="small">Keyword</span></div>
+          <div class="input">SHOP</div><div class="small">One word, like SHOP or PRICE.</div>
+          <div class="lbl">They'll get</div>
+          <div class="bub auto" style="max-width:100%">Here's the Black nidha abaya you asked about 👇<div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Black nidha abaya</div><div class="sub">₹2,200</div></div></div><div class="row2"><span class="badge solid">Buy now</span><span class="badge">See details</span></div></div>
+          <button class="btn ghost" type="button">Edit message</button>
+          <div class="small">☐ Also reply publicly: "Sent you a DM 📩"</div></div>
+        <div class="note info" style="font-size:12px">Your caption doesn't mention SHOP. <u>Add "Comment SHOP for the link"</u></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Post detail</b>: is it working?</div>
+      <div class="phone"><div class="lbl">Comment-to-DM · SHOP <span style="float:right">⋯</span></div>
+        <div class="kpi"><div><b>12</b>DMs today</div><div><b>48</b>in total</div></div>
+        <div class="li"><div class="main"><div class="ttl">@ayesha.k · "shop 🙏"</div><div class="sub">DM sent · 2 min</div></div></div>
+        <div class="li"><div class="main"><div class="ttl">@zara.m · "SHOP"</div><div class="sub">Already sent to her</div></div></div>
+        <div class="li"><div class="main"><div class="ttl">@rm · "shop"</div><div class="sub">Too late · over 7 days</div></div></div>
+        <button class="btn sec" type="button" data-demo="pending:Pausing…|done:Resume|toast:Paused · new comments won't get a DM">Pause</button></div></div>
+  </div>
+</section>
+
+<section id="auto">
+  <h2>Auto-replies</h2>
+  <p class="lede">enquiry-autoreplies and product-answers. One screen, everything pre-filled from the shop's own settings, shown as the buyer will see it.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>First use</b>: look, then one tap</div>
+      <div class="phone"><div class="back">← Inbox</div><div class="ph"><h3 style="font-size:18px">Auto-replies</h3></div>
+        <div class="card"><div class="top"><span class="name">Automatic replies</span><span class="badge">Off</span></div>
+          <div class="small">Everything below is filled in from your settings. Change anything, then turn it on.</div>
+          <div class="bubbles"><div class="bub auto" style="align-self:flex-start">Hi Ayesha! Welcome to Niqab Boutique 🌙 How can we help?<div class="row2"><span class="badge">Delivery</span><span class="badge">Cash on delivery</span><span class="badge">Talk to the shop</span></div></div></div>
+          <button class="btn" type="button" data-demo="pending:Turning on…|done:On ✓|toast:Automatic replies are on.">Turn on</button>
+          <button class="btn ghost" type="button">Try it</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>The settings</b>, below the preview</div>
+      <div class="phone"><div class="lbl">Greeting</div>
+        <div class="chips"><span class="chip on">English</span><span class="chip">Hindi</span></div>
+        <div class="input area">Hi {name}! Welcome to Niqab Boutique 🌙 How can we help?</div>
+        <div class="chips"><span class="chip">Right away</span><span class="chip on">30 s</span><span class="chip">1 min</span></div>
+        <div class="small">Buyers see "typing…" while it waits. If you reply first, it isn't sent.</div>
+        <div class="lbl">Common questions</div>
+        <div class="li"><div class="main"><div class="ttl">Delivery ✓</div><div class="sub">from your Shipping settings</div></div></div>
+        <div class="li"><div class="main"><div class="ttl">Cash on delivery ✓</div><div class="sub">from Payments</div></div></div>
+        <div class="li"><div class="main"><div class="ttl">Returns</div><div class="sub" style="color:var(--warning)">Add your return policy to answer this</div></div><button class="btn inline sec" type="button">Add</button></div>
+        <div class="li"><div class="main"><div class="ttl">Answer product questions ✓</div><div class="sub">Price, offer, sizes in stock and a Buy link, read live</div></div></div>
+        <div class="lbl">Shop hours</div><div class="small">Mon–Sat 10 am–9 pm · <u>Edit in Messaging</u></div>
+        <div class="lbl">When you step in</div><div class="chips"><span class="chip">30 min</span><span class="chip on">2 h</span><span class="chip">12 h</span></div>
+        <div class="small">After you reply, automatic replies wait this long in that chat.</div>
+        <div class="lbl">Comments on any post</div><div class="small">Off · posts with their own rule use theirs ›</div>
+        <div class="lbl">Show on your Instagram profile</div><div class="small">Delivery · Cash on delivery · How to order (up to 4)</div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Try it</b>: a pretend chat, nothing sent</div>
+      <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">Try it as a buyer</span>
+        <div class="bubbles"><div class="bub me">hi</div><div class="window">typing… (30 s, skipped here)</div><div class="bub auto" style="align-self:flex-start">Hi! Welcome to Niqab Boutique 🌙 How can we help?</div><div class="bub me">Cash on delivery</div><div class="bub auto" style="align-self:flex-start">Yes, cash on delivery is available on orders up to ₹5,000.</div></div>
+        <div class="composer"><div class="input">Type as a buyer…</div></div></div></div></div>
+  </div>
+</section>
+
+<section id="buyer">
+  <h2>What a buyer sees</h2>
+  <p class="lede">On WhatsApp, at 11 pm with hours 10 am–9 pm (enquiry-autoreplies A1), then "price?" on a story (product-answers A1).</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Greeting</b>, after "typing…"</div>
+      <div class="phone"><div class="ext"><span class="who">WhatsApp · Niqab Boutique</span>
+        <div class="bubbles"><div class="bub me">hi</div><div class="window">typing…</div>
+        <div class="bub">Hi Ayesha! Welcome to Niqab Boutique 🌙 How can we help?<br>We're closed now and reply from 10 am.</div>
+        <div class="row2"><span class="badge">Delivery</span><span class="badge">Cash on delivery</span></div><div class="row2"><span class="badge">Talk to the shop</span></div></div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Product answer</b>, in seconds</div>
+      <div class="phone"><div class="ext"><span class="who">Instagram · @niqab.boutique</span>
+        <div class="bubbles"><div class="bub me"><span class="meta">Replied to their story</span>price?</div>
+        <div class="bub"><span class="thumb" style="display:block;width:100%;height:110px"></span><b>Cotton kurta, indigo</b><br>₹899 <s>₹1,199</s> · In stock: S, M, L<div class="row2"><span class="badge solid">Buy now</span><span class="badge">See details</span></div></div></div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Which one?</b> and <b>out of stock</b></div>
+      <div class="phone"><div class="ext"><span class="who">WhatsApp</span>
+        <div class="bubbles"><div class="bub me">Price?</div><div class="bub">Which one do you mean?</div><div class="row2"><span class="badge">Black nidha abaya</span><span class="badge">Cotton kurta</span></div><div class="row2"><span class="badge">Kashmiri shawl</span></div>
+        <div class="bub"><b>Kashmiri shawl</b> · Out of stock right now</div><div class="row2"><span class="badge">Tell me when it's back</span></div></div></div></div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Form factors</h2>
+  <div class="matrix"><table>
+    <thead><tr><th>Width</th><th>Inbox</th><th>Thread</th><th>Details</th><th>Auto-replies</th></tr></thead>
+    <tbody>
+      <tr><td>Phone</td><td>List; Inbox takes a tab-bar slot</td><td>Own page, box at the thumb</td><td>Sheet from ⓘ</td><td>Preview on top, settings below</td></tr>
+      <tr><td>Tablet (<code>md:</code>)</td><td>List and thread side by side in landscape</td><td>Right pane</td><td>Sheet</td><td>One column, wider</td></tr>
+      <tr><td>Desktop (<code>lg:</code>, <code>xl:</code>)</td><td>List left</td><td>Centre pane</td><td>Third pane from <code>xl:</code></td><td>Settings left, live preview right</td></tr>
+    </tbody></table></div>
+</section>
+
+</div>
+
+<script>
+// Tap any button marked data-demo to see its states: Ready -> pending -> done or failed (ux-patterns §3).
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-demo]'); if(!b||b.dataset.busy) return;
+  var parts={};b.dataset.demo.split('|').forEach(function(p){var i=p.indexOf(':');parts[p.slice(0,i)]=p.slice(i+1);});
+  var orig=b.innerHTML; b.dataset.busy='1';
+  b.innerHTML='<span class="spin" aria-hidden="true"></span>'+(parts.pending||'Working…');
+  b.setAttribute('aria-busy','true');
+  setTimeout(function(){
+    b.removeAttribute('aria-busy');
+    if(parts.done){b.innerHTML=parts.done;}else{b.innerHTML=orig;}
+    var host=b.closest('.phone'); if(parts.toast&&host){var t=document.createElement('div');t.className='toast';t.textContent=parts.toast;t.setAttribute('role','status');host.insertBefore(t,host.children[1]||null);setTimeout(function(){t.remove();b.innerHTML=orig;delete b.dataset.busy;},2200);} else {setTimeout(function(){b.innerHTML=orig;delete b.dataset.busy;},1800);}
+  },1300);
+});
+</script>
