@@ -41,6 +41,7 @@ phone, a short confirmation or handoff is `HandoffSheet`.
 | Over 30 seconds | "This is taking longer than usual. It may still finish; we'll show it here." The result arrives in place when it lands |
 | Done | The control changes to its new state in place (card turns Connected, row turns Scheduled), and a toast names what happened in the past tense: "WhatsApp connected." |
 | Failed | The control returns to Ready; an inline note under it says what went wrong and what to do, with **Try again** when trying again can help. Never a bare "Something went wrong" |
+| A message to a buyer | Held 7 seconds: "Sending in 7 · Undo" (inbox-core Q16); platforms allow no edit or delete after |
 | Not possible now | The button stays tappable and explains on tap (ADR-0053): "Connect Instagram first", with the action that fixes it |
 
 ## 4. Long work runs on its own, and shows where it is

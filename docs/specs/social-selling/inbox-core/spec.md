@@ -32,7 +32,8 @@ works (parent Q63).
   could not answer) or Answered automatically; each is a filter, and Needs you always comes first
   (parent Q114).
 - R5 — A member replies with text up to 1,000 characters and, optionally, one image from the
-  library (Q5).
+  library (Q5). What a member sends is held 7 seconds with Undo, which returns it to the box;
+  nothing sent can be edited or deleted, as the platforms allow neither (Q16).
 - R6 — The reply box always says what is possible now, from what the platform reports: reply
   freely; reply as a person for a few more days; or only a paid template, with its cost. It is never
   disabled; an action not possible explains itself on tap (Q7).
@@ -57,6 +58,7 @@ works (parent Q63).
 ## Hazards the TRD must answer
 - **Two members replying at once** to the same conversation.
 - **A source that delivers late or out of order**, so a thread reads in the wrong order.
+- **The 7-second hold** surviving a closed tab, and an Undo racing the send.
 - **A busy shop's inbox** (thousands of threads) staying fast on a phone.
 
 ## Product acceptance
@@ -71,10 +73,12 @@ Judged on a phone (~360px) first.
 
 - A7 — No admin page or read model returns a message body; a chat shared with support for a request
   opens for 48 hours only and appears in the shop's "Who has opened your chats".
+- A8 — Send then Undo within 7 seconds puts the text back in the box and nothing reaches the
+  buyer; without Undo it reaches the buyer after 7 seconds, even if the tab was closed.
 
 ## Scope
 - **Outcome:** a shop reads and answers its conversations in one shared inbox.
-- **In:** R1–R14, tested by A1–A7.
+- **In:** R1–R14, tested by A1–A8.
 - **Later:** assigning conversations (parent Q63); search of message text (Q3).
 
 ## Open questions

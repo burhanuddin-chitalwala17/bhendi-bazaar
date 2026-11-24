@@ -22,7 +22,11 @@
    bubbles marked Automatic; the shop can step in at any time by replying (that pauses
    automatic replies in it, enquiry-autoreplies R7).
 4. **Find someone.** Search icon → type a name or handle → results across the current tab.
-5. **Send fails.** The bubble shows **Not sent · <reason>** and **Try again** (one automatic retry
+5. **Take it back (Q16).** **Send** → the bubble appears at once, faded, with "Sending in 7 ·
+   **Undo**" counting down → **Undo** → the bubble goes and the text (and image) is back in the box
+   to fix. Left alone, it sends at 0 and the line turns into the ticks. Leaving the thread doesn't
+   stop it. The same hold applies to a template and to Send checkout link.
+6. **Send fails.** The bubble shows **Not sent · <reason>** and **Try again** (one automatic retry
    happened first, R9).
 6. **Voice notes, and what we can't show.** A voice note plays in the thread (▶ 0:42, with its
    speed button). A view-once photo or a poll arrives as a line, "View-once photo · open in
@@ -97,6 +101,7 @@ sending it is pending and a second tap is ignored.
 |---|---|---|
 | Loading | Bubble skeletons; the box ready at once | — |
 | Success | Bubbles, newest at the foot, scrolled there | Reply |
+| Held (7 s) | Bubble faded, "Sending in 7 · Undo" counting down | Undo |
 | Sending | Bubble at 60% opacity with a clock | — |
 | Retryable error | "Not sent · Instagram didn't answer." | Try again |
 | Terminal error | "Not sent · The buyer can't receive messages from you." | — |
@@ -111,7 +116,7 @@ sending it is pending and a second tap is ignored.
 - Menu "Inbox"; title "Inbox"; filters "Needs you", "Unread", "Answered automatically".
 - Sender lines "<first name>", "From the app", "Automatic".
 - Handover lines "Handed to you · buyer tapped Talk to the shop", "Handed to you · a question we couldn't answer".
-- Reply states as in the table; "Reply…", "Send", "Not sent", "Try again", "<n> new".
+- Reply states as in the table; "Reply…", "Send", "Not sent", "Try again", "<n> new", "Sending in <n> · Undo" (Undo puts it back in the box).
 - Empty states as in the matrix.
 - Privacy: "🔒 Private to your shop", "How your chats stay private" and its three lines, "Who has opened your chats", "Only your team", "Share with support", "Support can open this one chat for 48 hours.", "Shared with support until <time> · Stop sharing".
 
