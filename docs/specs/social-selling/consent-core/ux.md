@@ -51,7 +51,7 @@ Order updates are never blocked by these (whatsapp-sending R1), and the tap text
 - Badges "Opted in", "Not yet", "Stopped"; tap texts as in the vocabulary table.
 - Replies EN: "You'll now get offers from <shop>. Reply STOP any time to stop." · "You won't get offers from <shop>. Reply START to get them again." · "Messages from <shop> will now be in English."
 - Replies HI: "अब आपको <shop> से ऑफ़र मिलेंगे। रोकने के लिए कभी भी STOP भेजें।" · "अब आपको <shop> से ऑफ़र नहीं मिलेंगे। फिर से पाने के लिए START भेजें।" · "अब से <shop> के संदेश हिंदी में आएँगे।"
-- History sources "replied YES", "replied STOP", "checkout box · <order>", "upload · <file> · ticked by <member>", "Get offers button".
+- History sources "replied YES", "replied STOP", "checkout box · <order>", "upload · <file> · ticked by <member>", "Get offers button", "first offer · tapped Yes", "first offer · tapped Stop".
 
 ## Sign-off
 Not yet signed off. Awaiting the owner's review with the senior UX review.

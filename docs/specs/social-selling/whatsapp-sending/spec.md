@@ -33,7 +33,7 @@ no caller can bypass keeps every buyer's consent and every shop's budget safe (p
 - R4 — Cost is shown before every paid send and recorded in paise per delivered message, estimated
   from a dated price table and corrected to what Meta reports (Q10, Q11).
 - R5 — On connect, the starter templates (new arrivals, offer, back in stock, order update, abandoned
-  cart, auction) are submitted to the shop's account in English and Hindi (Q3, parent Q37).
+  cart, auction, and a first offer with "Yes, keep me posted" and "Stop messages" buttons) are submitted to the shop's account in English and Hindi (Q3, parent Q37).
 - R6 — A shop writes its own template or copies a starter one to change it; it shows Meta's verdict
   in plain words (in review, approved, rejected with why, paused, disabled) and its price (Q5, Q7).
 - R7 — A buyer gets the template in their language, English where theirs is not approved (parent Q37).

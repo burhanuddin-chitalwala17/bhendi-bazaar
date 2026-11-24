@@ -35,7 +35,9 @@ proof in one place, asked by every sender, makes it impossible to message someon
 - R5 — A stopped person can opt in again by any source; an uploaded list can never opt them back in (Q9).
 - R6 — A shop's phone contacts, from the one sync at connect, arrive as Not yet, with their names
   filling only names nobody typed; later changes on the phone follow; a contact removed on the phone
-  leaves only if it has no consent history and no conversation (Q1).
+  leaves only if it has no consent history and no conversation (Q1). Each may be sent one first
+  offer, ever, that asks for consent in it: Yes or YES opts them in, Stop or STOP stops them, no
+  reply leaves them Not yet for good (Q11).
 - R7 — Buyers from before this feature are Not yet and are never chased (parent Q9).
 - R8 — Consent history is kept three years after its last change. A person's deletion request removes
   them from every shop, leaving only a marker that they stopped, so no upload can re-add them (Q10).
@@ -49,13 +51,14 @@ proof in one place, asked by every sender, makes it impossible to message someon
 - A1 — A buyer sending YES to a shop's number is opted in for that shop on WhatsApp and gets the
   confirming reply; STOP stops it and confirms.
 - A2 — A sender asking about a person opted in to another shop only gets no, with the reason.
-- A3 — A shop's 300 phone contacts arrive as Not yet; none can be messaged.
+- A3 — A shop's 300 phone contacts arrive as Not yet; each can be sent one first offer, and only
+  those who tap Yes become Opted in; a second first offer to the same contact is refused.
 - A4 — An uploaded list containing someone who stopped leaves them stopped.
 - A5 — A deletion request removes the person from every shop and leaves the stop marker.
 
 ## Scope
 - **Outcome:** every marketing send rests on a consent the platform can prove.
-- **In:** R1–R8, tested by A1–A5. Screens: none; audience shows it.
+- **In:** R1–R8, tested by A1–A5. Screens: none; audience shows it, and the first offer.
 - **Later:** a buyer's own page of their consents across shops.
 
 ## Open questions

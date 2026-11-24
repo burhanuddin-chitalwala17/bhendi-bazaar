@@ -38,6 +38,9 @@ keeps it within consent (parent Q9, Q75).
   recorded. Contacts cannot be exported (Q19).
 - R7 — Where the phone's contacts came from the Business app, the page says whether they arrived,
   are still coming, or were not shared.
+- R8 — The shop sends its synced contacts one first offer each, asking for consent in it, from
+  this page; it sees the cost before sending, progress at up to 100 a day, and who said yes, who
+  said stop and who did not answer (Q20, consent-core Q11).
 
 ## Hazards the TRD must answer
 - **A large upload** (5,000 rows) checked and merged without blocking the page.
@@ -52,10 +55,12 @@ Judged on a phone (~360px) first.
 - A3 — An upload of 200 rows with the box ticked adds 196 opted-in contacts and says 4 were skipped.
 - A4 — A list "Wishlisted, last 30 days" shows its opted-in count and can be picked in a campaign.
 - A5 — A masked number shows in full on tap, and the view is recorded.
+- A6 — A first offer to 312 synced contacts shows its cost before sending, goes 100 a day, and
+  counts 48 yes, 9 stop and the rest no answer; the 48 are Opted in.
 
 ## Scope
 - **Outcome:** a shop knows who it may message, and grows and groups that list.
-- **In:** R1–R7, tested by A1–A5.
+- **In:** R1–R8, tested by A1–A6.
 - **Later:** contact export (Q19); a platform-wide contact screen (parent Q27).
 
 ## Open questions

@@ -29,6 +29,16 @@
    "Views are recorded."
 6. **Phone contacts.** A line on the page: "Your phone's contacts: 312 arrived · Not yet" (or
    "still arriving" / "weren't shared when you connected").
+7. **First offer to phone contacts (A6).** Grow card line "Send a first offer to your 312 phone
+   contacts" → **Send first offer** → one sheet: product (picked, or the last post's), the message
+   preview as WhatsApp shows it ("Hi Ayesha! 🌙 Niqab Boutique here. Our Eid edit is in: Black nidha
+   abaya, ₹2,200. Want our new arrivals and offers here?" with **Shop now**, **Yes, keep me
+   posted**, **Stop messages**), the line "Each contact gets this once. Those who tap Yes join your
+   list; no answer means we won't message them again.", cost "312 × about ₹0.86 · about ₹268 ·
+   ₹212 of ₹1,000 used this month", pace "Up to 100 a day, so WhatsApp keeps your number's quality
+   high · done by Thu" → **Send to 312 · about ₹268** (pending "Starting…") → the line becomes
+   progress "First offer · 100 of 312 sent · 21 said yes · 3 said stop" → done: "48 said yes ·
+   9 said stop · 255 no answer". The 48 are Opted in (source "first offer · tapped Yes").
 
 ## Screens
 | Screen | Route / place | New or changed | Serves |
@@ -74,6 +84,7 @@
 - Upload as above; "Add <n>", "Add <n> as Not yet", toast "<n> added as opted in. <n> skipped."
 - Lists "New list", "Bought from", "Wishlisted", "Ordered in the last <n> days", "From upload", "<n> opted in", "Save list".
 - "Show", "Views are recorded."
+- First offer: "Send a first offer to your <n> phone contacts", "Send first offer", "Each contact gets this once. Those who tap Yes join your list; no answer means we won't message them again.", "Up to 100 a day, so WhatsApp keeps your number's quality high · done by <day>", "Send to <n> · about ₹<x>", "First offer · <n> of <m> sent · <n> said yes · <n> said stop", buttons "Shop now", "Yes, keep me posted", "Stop messages"; already sent: "Your phone contacts have had their first offer."
 
 ## Sign-off
 Not yet signed off. Awaiting the owner's review with the senior UX review.

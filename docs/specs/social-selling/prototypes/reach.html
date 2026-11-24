@@ -131,7 +131,7 @@ tr:last-child td{border-bottom:0}
 </header>
 <p class="demo-hint">Buttons with a dotted underline are live: tap one to see what it does while it works and when it finishes (ux-patterns §3). Every string is the one that ships; dashed boxes are Meta's or WhatsApp's own screens.</p>
 <nav class="tabs" aria-label="Sections">
-  <a href="#audience">Audience</a><a href="#upload">Upload</a><a href="#lists">Lists</a><a href="#contact">A contact</a><a href="#campaigns">Campaigns</a><a href="#new">New campaign</a><a href="#review">Before you send</a><a href="#report">Report</a><a href="#messaging">Messaging settings</a><a href="#templates">Templates</a><a href="#buyer">What a buyer sees</a>
+  <a href="#audience">Audience</a><a href="#first">First offer</a><a href="#upload">Upload</a><a href="#lists">Lists</a><a href="#contact">A contact</a><a href="#campaigns">Campaigns</a><a href="#new">New campaign</a><a href="#review">Before you send</a><a href="#report">Report</a><a href="#messaging">Messaging settings</a><a href="#templates">Templates</a><a href="#buyer">What a buyer sees</a>
 </nav>
 
 <section id="audience">
@@ -159,7 +159,31 @@ tr:last-child td{border-bottom:0}
           <div class="li"><span class="avatar">RB</span><div class="main"><div class="ttl">Rida B.</div><div class="sub">•••• 0912 · phone contacts</div></div><span class="badge">Not yet</span></div>
           <div class="li"><span class="avatar">SN</span><div class="main"><div class="ttl">Sana N.</div><div class="sub">•••• 7781 · replied STOP</div></div><span class="badge bad">Stopped</span></div>
         </div>
-        <div class="small">Your phone's contacts: 312 arrived · Not yet</div></div></div>
+        <div class="small">Your phone's contacts: 312 arrived · Not yet · <u>Send a first offer</u></div></div></div>
+  </div>
+</section>
+
+<section id="first">
+  <h2>First offer to phone contacts</h2>
+  <p class="lede">consent-core Q11, audience Q20. The contacts synced at connect each get one offer, ever, with the consent question inside it. Yes joins the list, Stop stops it, silence means never again. Bhendi Bazaar never uses these contacts (Q117).</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>The sheet</b>: product, preview, cost, pace</div>
+      <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">Send a first offer to your 312 phone contacts</span>
+        <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Black nidha abaya</div><div class="sub">₹2,200 · Change</div></div></div>
+        <div class="bub" style="max-width:100%">Hi Ayesha! 🌙 Niqab Boutique here. Our Eid edit is in: Black nidha abaya, ₹2,200. Want our new arrivals and offers here?
+          <div class="row2"><span class="badge solid">Shop now</span></div><div class="row2"><span class="badge">Yes, keep me posted</span><span class="badge">Stop messages</span></div></div>
+        <div class="small">Each contact gets this once. Those who tap Yes join your list; no answer means we won't message them again.</div>
+        <div class="money">312 × about ₹0.86 · about ₹268 · ₹212 of ₹1,000 used this month</div>
+        <div class="small">Up to 100 a day, so WhatsApp keeps your number's quality high · done by Thu</div>
+        <button class="btn" type="button" data-demo="pending:Starting…|toast:First offer started · 100 today.">Send to 312 · about ₹268</button></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>What the buyer does</b></div>
+      <div class="phone"><div class="ext"><span class="who">WhatsApp · Niqab Boutique</span>
+        <div class="bubbles"><div class="bub">Hi Ayesha! 🌙 Niqab Boutique here. Our Eid edit is in…</div><div class="bub me">Yes, keep me posted</div><div class="bub">You'll now get offers from Niqab Boutique. Reply STOP any time to stop.</div></div></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Progress</b>, then the result</div>
+      <div class="phone"><div class="card"><div class="ttl">First offer</div><div class="small">100 of 312 sent · 21 said yes · 3 said stop</div><div class="progress"><i style="width:32%"></i></div></div>
+        <div class="card"><div class="ttl">First offer · done</div><div class="kpi"><div><b>48</b>said yes</div><div><b>9</b>said stop</div><div><b>255</b>no answer</div><div><b>₹268</b>cost</div></div><div class="small">The 48 are now Opted in.</div></div></div></div>
   </div>
 </section>
 
