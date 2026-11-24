@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-11-01
+- **Verified:** 2026-11-05
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
@@ -242,6 +242,52 @@ Amazon queue or event bus, never to a plain HTTP endpoint**, so consuming its or
 an AWS account and either polling that queue from our worker or bridging it back to an endpoint.
 **Flipkart posts to a URL we host**, signature-authenticated, but enabling it is a support ticket per
 seller that asks for a security test certificate for the receiving URL. Everything else polls.
+
+### Acting for a shop on Meta: catalogue, WhatsApp, Instagram
+
+Checked 2026-11-05 while spiking `meta-whatsapp-connector`. Third-party figures are marked; re-check
+Meta's own pages before a plan depends on one.
+
+- **One catalogue serves Facebook, Instagram and WhatsApp.** A WhatsApp Business account (WABA)
+  takes exactly one catalogue; several numbers on the WABA can share it. A catalogue fed by our
+  hosted feed is a normal catalogue for this purpose. WhatsApp's commerce settings start with the
+  catalogue hidden and are switched on by API.
+- **Acting on a shop's own Meta assets needs the Tech Provider path**, in order: Business
+  Verification (a few business days), App Review for *Advanced Access* to each permission (with a
+  screencast per permission, rejection-prone), then Access Verification (about 5 business days,
+  per Twilio's guide). Approved apps stay under Ongoing Review. Acting on **our own** business's
+  assets needs none of it.
+- **The permissions:** `business_management`, `catalog_management` (create and update a
+  business-owned catalogue), `whatsapp_business_management` and `whatsapp_business_messaging`,
+  and for posting `instagram_content_publish` (Facebook Login) or
+  `instagram_business_content_publish` (Instagram Login). Ask only for what the app uses; extra
+  permissions are a common rejection.
+- **The token is a business integration system user token, not an OAuth pair.** Embedded Signup or
+  Facebook Login for Business returns a code our server exchanges, server to server, for a
+  token that does not expire on a clock. It has no refresh token; it dies when the shop removes
+  the app. So "renewal" is not a meaningful operation for Meta, only health checks.
+- **Embedded Signup (WhatsApp)** returns the shop's WABA id and phone number id. After the
+  exchange our server must register the number for Cloud API and subscribe our app to the WABA's
+  webhooks, and the shop must add a payment method to its WABA before it can send. A new Tech
+  Provider can onboard **10 businesses per rolling 7 days** by default. Embedded Signup v2 was
+  retired on 15 October 2026; build against the current version (v4 at the time of checking).
+- **WhatsApp has no official API for Status or for Channels.** "Posting" on WhatsApp through the
+  Cloud API means *messages*: a product, multi-product (up to 30 items in up to 10 sections) or
+  catalogue message, free-form only within 24 hours of the customer's last message, otherwise a
+  Meta-approved template to an opted-in customer. Gateways that post to Channels drive a linked
+  personal session and risk the number being banned.
+- **WhatsApp costs per delivered template message** (since July 2025). India marketing ₹0.8631
+  and utility about ₹0.115 from 1 January 2026, per several Indian providers; replies within the
+  24-hour window are free. INR billing needs a WABA created as INR; USD WABAs stop delivering
+  in India from 1 January 2027.
+- **Instagram publishing** (`POST /<IG_ID>/media` then `/media_publish`) needs a professional
+  account and a public image URL. The cap is per account per rolling 24 hours, checkable at
+  `/content_publishing_limit`; Meta's own page says 100 in one place and 50 in another, and a
+  carousel counts as one.
+- **Product tags on Instagram posts are effectively gone for us.** Since 10 August 2023 only shops
+  with checkout enabled may tag products, by API or by hand, and existing tags were removed. Meta
+  has no onsite checkout in India, so a post can carry a caption and not a buyable tag;
+  `shopping_product_tag_eligibility` on the account answers it definitively.
 
 - **Myntra, Ajio and Nykaa** are invite-only partner programmes. Relevant to what this store
   sells, worth a name in the vocabulary, not worth chasing.
