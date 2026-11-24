@@ -23,7 +23,8 @@ answers in the shop's settings and policies (parent Q89).
 ## Requirements
 - R1 — Off until the shop turns it on; turning it on shows each reply pre-filled, editable, in
   English and Hindi (Q1).
-- R2 — The shop sets its business hours per day of the week, in IST (Q2).
+- R2 — The shop's hours are the one set kept on Messaging settings, per day of the week in IST; the
+  Auto-replies tab of the Inbox's settings holds the replies themselves (parent Q110, Q112).
 - R3 — A buyer's first message in a conversation gets a greeting, with buttons for the common
   questions and "Talk to the shop", after a delay the shop sets (default 30 seconds) while the chat
   shows "typing…"; a member replying within it cancels it. Outside business hours the greeting also

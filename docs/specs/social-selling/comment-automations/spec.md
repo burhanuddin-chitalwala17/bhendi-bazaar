@@ -20,9 +20,10 @@ Instagram captions cannot carry a link, and product tags need a checkout India d
 product, and it is free; doing it by hand for every comment is what makes them miss sales.
 
 ## Requirements
-- R1 — The composer shows this module's panel: a keyword (default SHOP) and a DM pre-filled with
-  the name and link of each product the post names; the shop may rewrite it to anything up to 1,000
-  characters. The rule is this module's, kept against the post (Q1, Q4).
+- R1 — The composer shows this module's panel: a keyword (default SHOP) and a DM pre-filled, for
+  each product the post names, with its name, Buy now (a checkout link) and See details (its page);
+  the shop may rewrite it to anything up to 1,000 characters. The rule is this module's, kept
+  against the post (Q1, Q4, parent Q114).
 - R2 — A shop may also keep one shop-wide rule, used for comments on any of its posts with no rule
   of its own, including posts made in the Instagram app (Q1).
 - R3 — A comment matches when it holds the keyword as a whole word, ignoring case, accents,

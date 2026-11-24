@@ -11,9 +11,9 @@
 > social-selling's step 7.
 
 ## What this feature is
-Four alerts on the shop's Notifications settings, each off until turned on: price drop, back in
-stock, abandoned cart, and auction (outbid, ending soon). Each reaches only buyers who opted in and
-showed interest in that product.
+Four alerts on the shop's notification settings, in Shop details, each off until turned on: price
+drop, back in stock, abandoned cart, and auction (outbid, ending soon). Each reaches only buyers who
+opted in and showed interest in that product.
 
 ## Why
 A buyer who wishlisted an item, left it in a cart or bid on it already wants it. Telling them when
@@ -32,13 +32,13 @@ cheapest to win a sale with (social-selling Q54).
 - R5 — Auction: opted-in bidders hear when they are outbid and when the auction ends in an hour; who
   hears is a rule that can widen to all opted-in followers later (Q6). A bidder keeps today's
   outbid email whatever their marketing consent (parent Q6).
-- R6 — Each alert goes once, by WhatsApp or email under hub-marketing's rules, only inside the shop's
-  daily window (default 9am–9pm IST); outside it, it waits, except an "ending in an hour" alert,
+- R6 — Each alert goes once, by WhatsApp or email under hub-marketing's rules, only inside the
+  shop's hours (social-selling Q112); outside them it waits, except an "ending in an hour" alert,
   which is dropped (Q7).
 - R7 — An alert is true when it arrives: re-checked before sending, skipped with why if the price
   rose back, the item sold out, the auction closed or the cart was ordered (Q7).
-- R8 — At the shop's monthly spend cap, WhatsApp alerts stop for the month and fall to email where
-  the buyer opted in; the shop is told once (Q7).
+- R8 — At the shop's monthly spending limit, WhatsApp alerts stop for the month and fall to email
+  where the buyer opted in; the shop is told once (Q7).
 
 ## Hazards the TRD must answer
 - **A flash sale on 500 products** alerting each wishlister once, not 500 times.

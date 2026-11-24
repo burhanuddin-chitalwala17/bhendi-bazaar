@@ -21,8 +21,9 @@ yes, and easy for the shop to see and group them, is what makes messaging worth 
 keeps it within consent (parent Q9, Q75).
 
 ## Requirements
-- R1 — The Audience page shows the shop's contacts with their consent per channel (Opted in, Not
-  yet, Stopped) and where it came from; Buyers shows past buyers as Not yet, read live (parent Q9).
+- R1 — Customers is its own item in the shop menu, with Audience and Campaigns as its tabs (parent
+  Q110). Audience shows the shop's contacts with their consent per channel (Opted in, Not yet,
+  Stopped) and where it came from; Buyers shows past buyers as Not yet, read live (parent Q9).
 - R2 — Checkout shows one unticked box naming the shops in the order and Bhendi Bazaar, on WhatsApp
   and email; guests get it too. Consent is recorded when payment is confirmed, for every shop in
   the order and the platform (Q8, parent Q27).

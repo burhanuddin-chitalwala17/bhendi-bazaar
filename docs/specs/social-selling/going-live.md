@@ -49,7 +49,7 @@ Ask only for what the app uses; an unused permission is a common rejection.
 | `instagram_business_manage_comments` | Reading comments, private replies, hiding (Q36) | inbox-instagram, comment-automations |
 | `instagram_business_manage_messages` | DMs in the inbox | inbox-instagram |
 | Human Agent (feature) | Replying to a DM up to 7 days later (Q36) | inbox-instagram |
-| `whatsapp_business_management` | Number, templates, webhooks subscription | connect-whatsapp, whatsapp-templates |
+| `whatsapp_business_management` | Number, templates, webhooks subscription | connect-whatsapp, whatsapp-sending |
 | `whatsapp_business_messaging` | Sending and receiving messages | inbox-whatsapp, whatsapp-campaigns |
 | `catalog_management` | Creating and syncing the shop's catalogue | whatsapp-catalogue |
 | `business_management` | Only if the TRD for connect-whatsapp proves Embedded Signup needs it; otherwise not asked | connect-whatsapp |

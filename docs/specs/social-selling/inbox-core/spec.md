@@ -26,7 +26,11 @@ works (parent Q63).
   replies; it shows the person's name or handle and, for a comment, its post (Q2).
 - R3 — Every member sees every conversation; each reply shows which member sent it, to members only.
   A reply sent by an automatic reply is marked as such (parent Q63, Q89).
-- R4 — A conversation is unread until a member opens it; the menu shows the shop's unread count (Q3).
+- R4 — Inbox is its own item in the shop menu, with the count of conversations needing the shop
+  beside it (parent Q110). A conversation is unread until a member opens it (Q3).
+- R4a — A conversation is Unread, Needs you (handed over by an automatic reply, or a question it
+  could not answer) or Answered automatically; each is a filter, and Needs you always comes first
+  (parent Q114).
 - R5 — A member replies with text up to 1,000 characters and, optionally, one image from the
   library (Q5).
 - R6 — The reply box always says what is possible now, from what the platform reports: reply
@@ -41,7 +45,8 @@ works (parent Q63).
 - R10 — The inbox tells the rest of the platform only neutral things: a message arrived (for
   automatic replies), a conversation has waited four hours, a send failed (for notifications-core).
   It never chooses how anyone is told (parent Q66).
-- R11 — Search finds a person by name or handle; there is no search of message text (Q3).
+- R11 — Search finds a person by name or handle; there is no search of message text (Q3). The
+  Inbox's settings hold the Auto-replies tab (parent Q110).
 - R12 — Each shop sees only its own conversations; the same message delivered twice shows once.
 - R13 — Messages are kept while the platform is connected and deleted 90 days after it is
   disconnected (parent Q34); the person's name and handle are kept, never a profile photo (Q15).

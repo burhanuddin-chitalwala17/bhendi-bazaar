@@ -20,14 +20,14 @@ A buyer hearing from a shop three ways in a morning stops listening, and reports
 rules across WhatsApp and email keeps every shop welcome in its buyers' phones (social-selling Q40).
 
 ## Requirements
-- R1 — A buyer message goes once: by WhatsApp when the buyer opted in there, has not stopped, is
-  inside WhatsApp's caps and it is delivered; otherwise by email when they opted in to email
-  (social-selling Q66).
-- R2 — No buyer gets more marketing messages from one shop in a day than the shop's global cap
-  (default 3), whatever each channel allows; a lower channel cap still holds. Order updates are
-  exempt (Q2).
-- R3 — A shop sets its global cap on its Notifications settings page, which also lists the channels
-  it has connected (Q2).
+- R1 — A buyer message goes once: by WhatsApp when the buyer opted in there, has not stopped and it
+  is delivered; otherwise by email when they opted in to email; always inside the shop's how-often
+  rule (social-selling Q66, Q40).
+- R2 — No buyer gets more marketing messages from one shop than the shop's one how-often rule allows
+  (default once a day, four times a week), counted across WhatsApp and email together. Order updates
+  are exempt (Q2, social-selling Q40).
+- R3 — The rule is changed under Advanced on the shop's Messaging settings, in Shop details, beside
+  the channels the shop has connected (social-selling Q110, Q112).
 - R4 — Every marketing email carries an unsubscribe link that, in one tap and without signing in,
   withdraws that buyer's email consent for that sender only, and says so (Q1).
 - R5 — A message skipped by a cap or a missing consent is recorded with why, and counts nothing.
@@ -39,11 +39,11 @@ rules across WhatsApp and email keeps every shop welcome in its buyers' phones (
 ## Product acceptance
 - A1 — A buyer opted in to both gets a price-drop alert on WhatsApp only.
 - A2 — A buyer opted in to email only gets it by email.
-- A3 — With a cap of 3, a fourth alert the same day is skipped and recorded as capped.
+- A3 — With the default rule, a second alert the same day is skipped and recorded as over the limit.
 - A4 — Unsubscribe in an email stops that shop's emails, and nothing else, in one tap.
 
 ## Scope
-- **Outcome:** buyer messages go once, by the right channel, within the shop's cap.
+- **Outcome:** buyer messages go once, by the right channel, within the shop's how-often rule.
 - **In:** R1–R5, tested by A1–A4.
 - **Later:** a buyer's own preferences page across shops.
 

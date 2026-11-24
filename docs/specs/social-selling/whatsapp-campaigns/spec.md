@@ -20,8 +20,9 @@ on WhatsApp. Today they forward by hand to broadcast lists the coexistence app m
 campaign does it properly, within consent and a budget (parent Q40).
 
 ## Requirements
-- R1 — A member creates a campaign: an approved template with its blanks filled, optionally one
-  product or up to 30 from the WhatsApp catalogue, sent to one named list (Q1).
+- R1 — Campaigns is a tab of Customers (parent Q110). A member creates a campaign: an approved
+  template with its blanks filled, optionally one product or up to 30 from the WhatsApp catalogue,
+  sent to one named list (Q1).
 - R2 — Before confirming, the shop sees who will get it, who is skipped and why (not opted in,
   stopped, over a cap), the price per message and the estimated total in rupees (Q3).
 - R3 — It goes now, or at a minute the shop picks; a scheduled campaign recounts at send and never

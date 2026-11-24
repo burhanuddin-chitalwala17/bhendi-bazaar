@@ -21,9 +21,11 @@ updates and alerts. If each checked consent and money on its own, one would forg
 no caller can bypass keeps every buyer's consent and every shop's budget safe (parent Q8, Q40).
 
 ## Requirements
-- R1 — Every send passes through one door, which asks consent-core, applies the shop's WhatsApp
-  frequency cap and spend cap, and answers sent, skipped (with the reason) or held. No caller can
-  skip it; a utility message (an order update) skips the frequency cap but not consent or spend (Q12).
+- R1 — Every send passes through one door, which asks consent-core, applies the shop's one "how
+  often" rule (at most once a day and four times a week per buyer, across WhatsApp and email) and
+  its spending limit, and answers sent, skipped (with the reason) or held. No caller can skip it; a
+  utility message (an order update) skips the how-often rule but not consent or spend (Q12, parent
+  Q40).
 - R2 — Connecting WhatsApp ends with this module's spend-cap step: a monthly amount or "No limit",
   never skipped; a shop that leaves before answering is asked before its first paid send (parent Q8).
 - R3 — At the cap, sends stop and the shop is told once; what was held can be sent when the cap is
@@ -35,8 +37,10 @@ no caller can bypass keeps every buyer's consent and every shop's budget safe (p
 - R6 — A shop writes its own template or copies a starter one to change it; it shows Meta's verdict
   in plain words (in review, approved, rejected with why, paused, disabled) and its price (Q5, Q7).
 - R7 — A buyer gets the template in their language, English where theirs is not approved (parent Q37).
-- R8 — The WhatsApp settings page shows the caps, this month's spend against the cap, and Meta's
-  quality rating for the number with what a drop means (Q13).
+- R8 — Messaging settings, in Shop details, show the spending limit and the shop's hours at the top,
+  this month's spend against the limit, and Meta's quality rating for the number with what a drop
+  means; the how-often rule, greeting delay, bot pause and per-product alert limits sit under
+  Advanced, each with its default (Q13, parent Q110, Q112).
 - R9 — Any member may write or archive a template and change the caps; who did is recorded (parent Q8).
 
 ## Hazards the TRD must answer
@@ -46,7 +50,7 @@ no caller can bypass keeps every buyer's consent and every shop's budget safe (p
 
 ## Product acceptance
 Judged on a phone (~360px) first.
-- A1 — Connecting WhatsApp ends at the spend-cap step; the amount shows on the settings page.
+- A1 — Connecting WhatsApp ends at the spending-limit step; the amount shows on Messaging settings.
 - A2 — A send to someone not opted in is skipped with "not opted in", and costs nothing.
 - A3 — A send that would cross the cap is held and the shop is told; raising the cap sends it.
 - A4 — Twelve starter templates appear on connect, each with Meta's verdict and price.

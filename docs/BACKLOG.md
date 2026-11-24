@@ -267,6 +267,7 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [social-selling/whatsapp-sending](specs/social-selling/whatsapp-sending/) | Reach out: the one WhatsApp send, spend cap, templates (takes whatsapp-templates) | 📝 Spec rewritten 2026-11-22; UX next |
 | [social-selling/audience](specs/social-selling/audience/) | Reach out: the Audience page, lists, uploads, checkout box | 📝 Spec rewritten 2026-11-22; UX next |
 | [social-selling/whatsapp-campaigns](specs/social-selling/whatsapp-campaigns/) | Reach out: compose, review cost, schedule, report | 📝 Spec rewritten 2026-11-22; UX next |
+| [social-selling/social-home](specs/social-selling/social-home/) | Overview: one Home card for the shop, an owner's overview on the admin channels page (Q113) | 📝 Spec written 2026-11-22; UX next |
 | social-selling: later | Ads, Facebook Page, Threads, checkout in WhatsApp, forms in chat, insights (Q21); platform sending (Q27); audit screen (Q34); assigning conversations (Q63); sales per post (Q108) | parked |
 | [notification-hub](specs/notification-hub/) | Overview: one hub every module plugs into; a sibling of social-selling | 📝 Draft |
 | [notification-hub/notifications-core](specs/notification-hub/notifications-core/) | Shop alerts once, badge and daily email; built in social-selling's step 2 (was hub-core) | 📝 Spec rewritten 2026-11-22; UX next |

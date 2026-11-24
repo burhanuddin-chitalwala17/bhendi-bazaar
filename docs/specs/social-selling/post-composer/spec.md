@@ -21,9 +21,10 @@ it remembers. One composer, fed by the library and its AI-made pictures, lets it
 posts in one sitting and see what went out (parent Q51).
 
 ## Requirements
-- R1 — Any member composes from media already in the shop's library; an upload lands in the library
-  first. A "Make a picture" button opens post generation, whose result lands in the library and is
-  picked like any other (parent Q26).
+- R1 — Posts is its own item in the shop menu (parent Q110). Any member composes from media already
+  in the shop's library; an upload lands in the library first. "Make a picture" opens post
+  generation, whose result lands in the library and is picked like any other; "Write a caption"
+  drafts the caption and hashtags from the post's products, editable (parent Q26, ai-images Q47).
 - R2 — A post is one image, a carousel of 2–10 images, a reel (one video) or a story (one image or
   video), within what each destination accepts (Q4).
 - R3 — A post picks any of its destinations, Instagram feed, Instagram story and WhatsApp Status,

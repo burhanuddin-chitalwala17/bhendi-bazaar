@@ -17,19 +17,15 @@ may run on its own branch off it and merge back; the whole feature merges to `ma
 research is in INTEGRATIONS.md under "Acting for a shop on Meta" and "What an inbox receives and
 may do"; do not redo it. Specs here are committed as written, by the owner's instruction, so the
 other account's session can read them.
-**Re-cut and audited 2026-11-21.** The work runs in the eight steps below (Q107); decisions.md was
-merged to one row per lasting question, its absorbed ids listed at its end. Before each step's
-build, bring its subfeature specs in line: Q1 (message access) into connect-instagram and
-inbox-instagram; Q12 (contact sync, offboarding) into connect-whatsapp; Q96 into audience,
-whatsapp-contacts and inbox-whatsapp; Q7 (reconciling missed webhooks) into both platform inboxes;
-Q97 into inbox-whatsapp. chat-autoreplies (Q89), whatsapp-catalogue-import (Q47) and bulk-publish
-(Q102) need their own specs; going-live.md takes Q2's timing.
-**Review gate (owner, 2026-11-22).** Once every spec and UX is written, one review as a senior
-product manager and UX lead, before any TRD: every flow obvious to the shop, no needless tap or
-screen, states kept across a refresh and a return, and every button showing its progress while a
-request is in flight and its outcome after.
-**Next step:** re-cut and write the step-2 specs, then their UX and prototype (Q108), module by
-module. Step 1 (post generation) runs in its own session.
+**Where it stands (2026-11-22).** Every subfeature spec is written fresh from the tree below
+(Q108), every question answered, and the product review done: a lock of its own (Q8), three menu
+items (Q110), a setup checklist per channel (Q111), one settings page (Q112), one how-often rule
+(Q40), summaries for shop and owner (Q113), the inbox's Needs you state and matching Buy links (Q114).
+**Next step:** UX and a prototype for every module, written together and each supporting the
+others; then a senior UX designer's review of every flow; then the TRDs.
+**Review standard (owner).** Every flow obvious to the shop, no needless tap or screen, states kept
+across a refresh and a return, and every button showing its progress while a request is in flight
+and its outcome after.
 **Owner's outside step, started separately:** Meta Business Verification and the Meta app (Q14).
 
 ## What this is
@@ -65,7 +61,8 @@ Making a post (graphics, captions, AI) is a separate vertical, not part of this 
 - **A contact is not consent (Q9).** A marketing message goes only to someone who opted in, with
   when and where recorded; a contact list arrives as "Not yet". An uploaded list is messageable
   when the shop attests to its permission, and the attestation is recorded.
-- **The shop pays Meta for its own messages (Q8)** and sees the cost before a send. Money in paise.
+- **A paid feature with its own lock (Q8).** The shop also pays Meta for its own messages, sees the
+  cost before every paid send, and sets a monthly spending limit. Money in paise.
 - **Promise only what Meta allows in India (Q18).** No product tags, no Status or Channels by API,
   no group broadcasts. A WhatsApp Status goes as a one-tap handoff to the phone.
 - **Instagram before paid WhatsApp messaging (Q107).** Comment-to-DM is free; messages cost.
@@ -98,6 +95,7 @@ folder is merged, split or renamed into it; **new** means it is still to be writ
 | Reach out | whatsapp-sending | The one WhatsApp send every caller uses: consent and caps checked, spend cap, cost in paise, starter and own templates (Q8, Q37) | rewritten 2026-11-22 | campaigns |
 | Reach out | audience | The Audience page: lists, uploads with attestation, the checkout box, the store page's button (Q75) | rewritten 2026-11-22 | audience |
 | Reach out | whatsapp-campaigns | A campaign composed, its cost reviewed, scheduled and reported (Q40) | rewritten 2026-11-22 | campaigns |
+| Overview | social-home | One Home card for the shop on how social selling is going and what needs it; an owner's overview on the admin channels page (Q113) | rewritten 2026-11-22 | social |
 
 **Siblings, outside the base:** post-generation (the released ai-images feature, given a social
 purpose, Q26), notification-hub (notifications-core re-cut from hub-core, then hub-marketing,
@@ -112,7 +110,7 @@ order-updates, demand-alerts, Q66), bulk-publish (Q102), checkout-links (Q108).
 | 4 | inbox-core | |
 | 5 | inbox-instagram, consent-core, whatsapp-sending, checkout-links, inbox-whatsapp | ⏳ |
 | 6 | comment-automations, enquiry-autoreplies, product-answers; then the single Meta review (Q2) | ⏳ |
-| 7 | audience, whatsapp-campaigns; hub-marketing, order-updates, demand-alerts | |
+| 7 | audience, whatsapp-campaigns, social-home; hub-marketing, order-updates, demand-alerts | |
 | 8 | ai-autoreplies | |
 
 A module is not a step: consent-core and whatsapp-sending belong to Reach out but are built in
@@ -123,13 +121,20 @@ sending (Q27); the audit screen (Q34); assigning conversations (Q63); sales per 
 (Q108). Not imported: chat history (Q12).
 
 ## Product acceptance
-- A1 — On a phone, a shop with only an Instagram professional account connects it and publishes
-  a story from a photo it chose, without leaving Bhendi Bazaar.
-- A2 — A comment with a chosen keyword on that shop's post receives the shop's DM (the product
-  link unless the shop changed it).
-- A3 — A shop with no Meta business account connects its WhatsApp number from the pop-up and,
-  minutes later, its products are in its WhatsApp catalogue at the price its product page shows.
-- A4 — A message to a list reaches only its opted-in members, after the shop saw what it costs.
+End to end, on a phone (~360px) first, each journey crossing modules.
+- A1 — **Set up.** A shop with social selling unlocked connects WhatsApp from Channels, keeps its
+  Business app, sets its spending limit, settles its 40 existing catalogue items, and sees every
+  checklist step ticked; its products are in its WhatsApp catalogue at their page prices.
+- A2 — **Post.** It makes a picture and a caption for a kurta from the composer, schedules a feed
+  post and a Status for 6pm with comment-to-DM on, and at 6pm the post is on Instagram and the
+  Status is one tap from its phone.
+- A3 — **Answer.** A buyer comments SHOP and gets a DM with Buy now; another replies "price?" to the
+  story and gets the price, sizes and Buy now; a third asks about returns at midnight and is answered
+  after 30 seconds; a fourth's question no reply can answer waits under Needs you.
+- A4 — **Sell.** A buyer sends a cart from the WhatsApp catalogue; the shop sends a checkout link
+  from the order card; the buyer pays at the live price.
+- A5 — **Reach out.** A campaign to opted-in buyers shows who gets it and the cost before sending,
+  reaches no one who did not opt in, and no buyer more often than the how-often rule allows.
 
 ## Open questions
 Q47 (left-off items removed from WhatsApp) and Q102 (when Amazon and Flipkart get bulk-publish),

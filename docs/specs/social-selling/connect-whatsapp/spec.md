@@ -40,7 +40,7 @@ costs the shop nothing it already has (parent Q12).
   half set up (Q5).
 - R7 — Connecting starts what only works at connect time: the one sync of the Business app's
   contacts Meta allows, within 24 hours (parent Q12), whose contacts consent-core keeps (Q17).
-- R8 — Connecting ends with the shop setting its monthly WhatsApp spend cap, an amount or "No
+- R8 — Connecting ends with the shop setting its monthly WhatsApp spending limit, an amount or "No
   limit" (parent Q8). The step belongs to whatsapp-sending and is added to this flow when that is
   built, before any outside shop connects (Q17).
 - R9 — The card says in plain words: not connected, connected, needs reconnecting (with the reason),
@@ -55,6 +55,10 @@ costs the shop nothing it already has (parent Q12).
   access is removed and our credentials deleted (Q13).
 - R13 — When Meta's weekly limit on new shops is reached, the card says Full for now and when to
   try again (parent Q2).
+- R14 — Until setup is done the card shows its checklist, each step ticked when done and opening its
+  own screen, which returns to the card: Connect, Spending limit, Catalogue (items to settle or
+  fix), Templates (in review or approved), Auto-replies. The next step is the card's main button
+  (parent Q111).
 
 ## Hazards the TRD must answer
 - **A forged pop-up result** attaching another business's account: confirmed with Meta, never trusted.
@@ -77,7 +81,7 @@ Judged on a phone (~360px) first.
 
 ## Scope
 - **Outcome:** a shop connects its WhatsApp number, keeping its Business app, and sees it healthy.
-- **In:** R1–R13, tested by A1–A8.
+- **In:** R1–R14, tested by A1–A8.
 - **Later:** chat history (parent Q12). Built on this: whatsapp-catalogue-import, whatsapp-catalogue,
   consent-core, whatsapp-sending, inbox-whatsapp.
 

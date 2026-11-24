@@ -48,6 +48,9 @@ asks for neither (parent Q1).
   deleted, and the dialog says how to remove Bhendi Bazaar in Instagram's settings too (Q8).
 - R11 — The Instagram card sits after the Meta catalogue card, which keeps serving Facebook and
   Instagram shops from the feed (Q13).
+- R12 — Until setup is done the card shows its checklist, each step ticked when done and opening its
+  own screen, which returns to the card: Connect, Allow messages, First post, Comment-to-DM. The
+  next step is the card's main button (parent Q111).
 
 ## Hazards the TRD must answer
 - **The 60-day token lapses unnoticed.** One unused for 60 days cannot be renewed, so renewal
@@ -71,7 +74,7 @@ Judged on a phone (~360px) first ([ADR-0015](../../../adr/0015-mobile-first-desi
 
 ## Scope
 - **Outcome:** a shop connects its Instagram professional account and sees it healthy.
-- **In:** R1–R11, tested by A1–A8.
+- **In:** R1–R12, tested by A1–A8.
 - **Later:** a Facebook Page connection and ads (parent Q21). Built on this: instagram-publishing,
   inbox-instagram, comment-automations.
 

@@ -11,8 +11,9 @@
 > social-selling's step 7.
 
 ## What this feature is
-A switch on the shop's Notifications settings, "Order updates on WhatsApp". With it on, buyers who
-opted in hear about their order on WhatsApp; everyone else, and every receipt, still by email.
+A switch on the shop's notification settings, in Shop details: "Order updates on WhatsApp". With
+it on, buyers who opted in hear about their order on WhatsApp; everyone else, and every receipt,
+still by email.
 
 ## Why
 Indian buyers look for order news on WhatsApp, not in email (social-selling Q61). Each message
