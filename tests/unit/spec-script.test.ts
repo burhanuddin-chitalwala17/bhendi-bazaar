@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolve } from "node:path";
-import { fillTemplate, pinLinks, setStatus } from "../../scripts/spec.mjs";
+import { fillTemplate, pinLinks, setStatus, ships } from "../../scripts/spec.mjs";
 
 const ROOT = resolve(__dirname, "../..");
 
@@ -16,6 +16,24 @@ describe("spec:new / spec:status", () => {
   it("sets only the Status line, and refuses a doc without one", () => {
     expect(setStatus("# S\n- **Status:** Draft\n- **Phase:** 1\nStatus: Draft", "Accepted")).toBe("# S\n- **Status:** Accepted\n- **Phase:** 1\nStatus: Draft");
     expect(() => setStatus("# S", "Accepted")).toThrow(/Status/);
+  });
+
+  it("ships only a status that begins with Implemented", () => {
+    expect(ships("Implemented")).toBe(true);
+    expect(ships("✅ Implemented — PR-89")).toBe(true);
+    expect(ships("Accepted — units 1–3 implemented, 4 outstanding")).toBe(false);
+    expect(ships("Not implemented")).toBe(false);
+  });
+
+  it("keeps the template's placeholder when no domain or phase is given", () => {
+    const t = "- **Domain:** <bounded context>\n- **Phase:** <phase>";
+    expect(fillTemplate(t, { feature: "x", date: "2026-11-24", depth: 1 })).toBe(t);
+  });
+
+  it("pins image and titled links too", () => {
+    const dir = resolve(ROOT, "docs/specs/gift-wrap");
+    const out = pinLinks('![flow](ux.md) and [t](trd.md "the TRD")', dir, ["docs/specs/gift-wrap/trd.md", "docs/specs/gift-wrap/ux.md"], "0123456789abcdef");
+    expect(out).toBe("flow (`01234567:docs/specs/gift-wrap/ux.md`) and t (`01234567:docs/specs/gift-wrap/trd.md`)");
   });
 
   it("pins links into deleted build docs and leaves every other link alone", () => {

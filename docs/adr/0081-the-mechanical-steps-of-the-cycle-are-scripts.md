@@ -16,13 +16,14 @@ worst case.
 
 1. `npm run spec:new` scaffolds `spec.md`, `decisions.md` and `trd.md` from `scripts/templates/spec/` and regenerates
    the indexes. The templates live there, not in the skill.
-2. `npm run spec:status` sets Status in the spec and TRD together. At Implemented it deletes `trd.md` and `ux.md` and
-   rewrites every link into them as a pinned `<sha>:path` ref (ADR-0073); it refuses while they are uncommitted.
-3. `npm run mutate` applies one mutation, runs the named tests, always restores the file, and prints the line for
-   the commit body; it exits 1 when the tests stay green.
-4. `npm run docs:index` also rewrites the counts ARCHITECTURE.md states; `docs:check` still fails on drift.
+2. `npm run spec:status` sets Status in the spec and TRD together. A status beginning with Implemented deletes
+   `trd.md` and `ux.md` and rewrites every link into them as a pinned `<sha>:path` ref (ADR-0073); while they are
+   uncommitted it refuses before writing anything.
+3. `npm run mutate` requires the named tests to exist and pass unmutated, applies one mutation, runs them, always
+   restores the file, and prints the line for the commit body; it exits 1 when they stay green or the run is cut short.
+4. `npm run docs:index` also rewrites the counts ARCHITECTURE.md states; `tests/unit/docs-integrity.test.ts` (and so `docs:check` and the unit suite) still fails on drift.
 5. A `commit-msg` hook (`.githooks/`, set by `npm install`) checks `<area>: <what changed>` and requires
-   `[MIGRATION]` when a migration folder is added and `[CONTRACT]` when the contracts change.
+   `[MIGRATION]` when a migration folder is added and `[CONTRACT]` when a wire type and its contracts doc change together.
 
 ## Alternatives
 
@@ -39,3 +40,4 @@ worst case.
 - ✅ A mutation can no longer be left behind, and a shipped feature's links are pinned the same way every time.
 - ⚠️ The hook needs `npm install` (its `prepare` script) to be active in a clone; until then it is silent.
 - ⚠️ BACKLOG.md's phase rows are prose and stay manual; `spec:status` reminds, it does not edit them.
+- ⚠️ The hook sees only what is staged: rewording a migration commit with `--amend` and nothing staged is not re-checked.

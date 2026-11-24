@@ -6,7 +6,8 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PASS_THROUGH = /^(Merge |Revert "|fixup! |squash! |amend! )/;
-const SHAPE = /^[A-Za-z][A-Za-z0-9 /,-]{0,39}: \S/;
+// An area is a word or two (`Fix`, `Styled shot`), a scoped type (`feat(storefront)`) or a file (`ARCHITECTURE.md`).
+const SHAPE = /^[A-Za-z][A-Za-z0-9 /,()._-]{0,39}: \S/;
 
 /** Returns why the message is refused, or null. `staged` is `git diff --cached --name-status` output. */
 export function checkMessage(message, staged) {

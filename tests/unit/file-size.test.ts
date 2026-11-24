@@ -81,6 +81,13 @@ describe("source file size", () => {
     expect(grew, "Take the room from the split its entry names, not from the ceiling").toEqual([]);
   });
 
+  it("a pinned ceiling follows the file down", () => {
+    const slack = Object.entries(PINNED)
+      .filter(([f, { kb }]) => existsSync(join(ROOT, f)) && kb > Math.ceil(kbOf(f)))
+      .map(([f, { kb }]) => `${f}: lower kb ${kb} → ${Math.ceil(kbOf(f))}`);
+    expect(slack, "A file that shrank keeps its room only until the next commit; otherwise it can grow back unflagged").toEqual([]);
+  });
+
   it("an entry leaves the list once its file is under the limit or gone", () => {
     const stale = Object.keys(PINNED).filter((f) => !existsSync(join(ROOT, f)) || kbOf(f) <= LIMIT_KB);
     expect(stale, "Remove these entries — the list is the backlog and must not go stale").toEqual([]);

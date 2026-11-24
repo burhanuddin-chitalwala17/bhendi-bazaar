@@ -3,7 +3,7 @@ import { checkMessage } from "../../scripts/commit-msg.mjs";
 
 describe("commit-msg", () => {
   it("accepts the project's subjects, old and new", () => {
-    for (const s of ["docs: retire the changelog", "Fix: a phone had no way to sign out", "Styled shot: choose the shape (#89)", "Release: AI images (#87)"]) {
+    for (const s of ["docs: retire the changelog", "Fix: a phone had no way to sign out", "Styled shot: choose the shape (#89)", "Release: AI images (#87)", "feat(storefront): a shop picks its heading face", "ARCHITECTURE.md: 141 migrations"]) {
       expect(checkMessage(`${s}\n\nbody`, ""), s).toBeNull();
     }
   });

@@ -1,7 +1,7 @@
 # Contracts — shipping
 
 - **Verified:** 2026-11-24
-- **Covers:** `server/shipping/*.types.ts`
+- **Covers:** `server/shipping/repositories/provider.repository.ts`
 
 The shipping shapes that cross the browser/server boundary. Rules, the error envelope and pagination are in
 [CONTRACTS.md](../CONTRACTS.md); read those first.

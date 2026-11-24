@@ -14,15 +14,18 @@ const ROOT = resolve(fileURLToPath(import.meta.url), "../..");
 const TEMPLATES = join(ROOT, "scripts/templates/spec");
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function fillTemplate(text, { feature, domain = "…", phase = "…", date, depth }) {
+/** @param {string} text @param {{ feature: string, domain?: string, phase?: string, date: string, depth: number }} ctx */
+export function fillTemplate(text, { feature, domain, phase, date, depth }) {
   const adr = `${"../".repeat(depth + 1)}adr/`;
-  return text
-    .replaceAll("<feature>", feature)
-    .replaceAll("YYYY-MM-DD", date)
-    .replace(/^- \*\*Domain:\*\* .*$/m, `- **Domain:** ${domain}`)
-    .replace(/^- \*\*Phase:\*\* .*$/m, `- **Phase:** ${phase}`)
-    .replaceAll("../../adr/", adr);
+  let out = text.replaceAll("<feature>", feature).replaceAll("YYYY-MM-DD", date).replaceAll("../../adr/", adr);
+  // Without a value the template's own placeholder stays: it says what belongs there.
+  if (domain) out = out.replace(/^- \*\*Domain:\*\* .*$/m, `- **Domain:** ${domain}`);
+  if (phase) out = out.replace(/^- \*\*Phase:\*\* .*$/m, `- **Phase:** ${phase}`);
+  return out;
 }
+
+/** Only a status that begins with Implemented ships the feature; "Accepted — unit 2 implemented" does not. */
+export const ships = (status) => /^(✅\s*)?Implemented\b/i.test(status.trim());
 
 export function setStatus(text, status) {
   if (!/^- \*\*Status:\*\* .*$/m.test(text)) throw new Error("no `- **Status:**` line");
@@ -31,7 +34,7 @@ export function setStatus(text, status) {
 
 /** Rewrites markdown links whose target resolves to one of `gone` as a pinned ref; returns the new text. */
 export function pinLinks(text, fileDir, gone, sha) {
-  return text.replace(/\[([^\]]+)\]\(([^)#\s]+)(#[^)]*)?\)/g, (whole, label, target) => {
+  return text.replace(/(!?)\[([^\]]+)\]\(([^)#\s]+)(#[^)\s]*)?(\s+"[^"]*")?\)/g, (whole, bang, label, target) => {
     if (/^[a-z]+:/i.test(target)) return whole;
     const abs = relative(ROOT, resolve(fileDir, target));
     return gone.includes(abs) ? `${label} (\`${sha.slice(0, 8)}:${abs}\`)` : whole;
@@ -80,15 +83,16 @@ function specStatus(args) {
   const dir = join(ROOT, "docs/specs", name);
   const spec = join(dir, "spec.md");
   if (!existsSync(spec)) throw new Error(`docs/specs/${name}/spec.md not found`);
+  const buildDocs = ["trd.md", "ux.md"].map((f) => join(dir, f)).filter(existsSync);
+  const rel = buildDocs.map((f) => relative(ROOT, f));
+  // Refuse before writing anything, so a refused run leaves every file as it was.
+  if (ships(status) && rel.length && execFileSync("git", ["status", "--porcelain", "--", ...rel], { cwd: ROOT, encoding: "utf8" }).trim()) {
+    throw new Error(`commit ${rel.join(", ")} first: the pinned ref must point at a commit that has them`);
+  }
   writeFileSync(spec, setStatus(readFileSync(spec, "utf8"), status));
   const done = [`docs/specs/${name}/spec.md → ${status}`];
 
-  const buildDocs = ["trd.md", "ux.md"].map((f) => join(dir, f)).filter(existsSync);
-  if (/implemented/i.test(status) && buildDocs.length) {
-    const rel = buildDocs.map((f) => relative(ROOT, f));
-    if (execFileSync("git", ["status", "--porcelain", "--", ...rel], { cwd: ROOT, encoding: "utf8" }).trim()) {
-      throw new Error(`commit ${rel.join(", ")} first: the pinned ref must point at a commit that has them`);
-    }
+  if (ships(status) && buildDocs.length) {
     const sha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim();
     for (const f of buildDocs) rmSync(f);
     for (const md of walkMarkdown(ROOT)) {
