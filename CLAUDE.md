@@ -114,7 +114,7 @@ Not required for typo fixes, no-behaviour config tweaks, single-function refacto
 ### Golden Rules
 1. **Architecture docs describe what exists, not what is planned.** Update *after* the change, never before.
 2. **/bb-review runs before any unit is done.** The rest — commit subjects as the record, immutable ADRs, no pasted code, `Verified:` dates — is in the index below.
-3. **Commit each unit on the working branch; push only when the owner asks.** `git push` and `gh` are no longer denied in `.claude/settings.json` (owner, 2026-11-05); every other GitHub action stays the owner's. A new spec or TRD stays uncommitted until the owner has read it.
+3. **Commit each unit on the working branch, then push that branch.** `.claude/settings.json` allows a plain `git push` to `origin` and denies a force-push (owner, 2026-11-24). Never push to `main` and never force-push; opening, merging or commenting on a PR stays the owner's. A new spec or TRD stays uncommitted until the owner has read it.
 
 ## Documentation & Process Conventions
 
