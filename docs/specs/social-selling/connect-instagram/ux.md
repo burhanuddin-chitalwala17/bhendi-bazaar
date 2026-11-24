@@ -79,7 +79,7 @@
 - Card title "Instagram"; purpose line "Post, answer comments and DMs, and turn comments into sales."
 - Checklist: "Connect" · "Turn on replies" · "First post" · "Comment-to-DM"; waiting line "waiting for your first message"; folded "Setup done".
 - Turn on replies sheet: title "Turn on replies from Bhendi Bazaar"; body "So you can answer your DMs here, Instagram asks you to switch this on once, in the app:"; foot "🔒 Private to your shop · No one at Bhendi Bazaar reads your chats." (opens the privacy sheet, inbox-core); steps "1. Settings → Messages and story replies", "2. Message controls → Connected tools", "3. Turn on Allow access to messages"; actions "Open Instagram", "Done".
-- Disconnect dialog: title "Disconnect Instagram?"; "Stops: scheduled posts won't publish, and new comments and DMs stop arriving here." "Stays: your posts on Instagram stay as they are. Your conversations stay here for 90 days, then are deleted." "To remove us completely, also remove Bhendi Bazaar in Instagram: Settings → Website permissions → Apps and websites." Buttons "Disconnect", "Keep connected"; toast "Instagram disconnected."
+- Disconnect dialog: title "Disconnect Instagram?"; "Stops: scheduled posts won't publish, and new comments and DMs stop arriving here." "Stays: your posts on Instagram stay as they are." "To remove us completely, also remove Bhendi Bazaar in Instagram: Settings → Website permissions → Apps and websites." Buttons "Disconnect", "Keep connected"; toast "Instagram disconnected."
 - Home line: "Instagram needs reconnecting. Posts won't publish until it is." · Reconnect.
 
 ## Sign-off

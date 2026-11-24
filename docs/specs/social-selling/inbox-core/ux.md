@@ -33,8 +33,7 @@
    first-use screen: "Only you and your team see these chats.") → tap → sheet **How your chats stay
    private**: "Only people you add to your shop can open your chats." · "No one at Bhendi Bazaar
    reads them. If you ever ask support for help with a chat, you choose to share it, just that
-   once." · "Disconnect any time, and your chats leave Bhendi Bazaar after 90 days. They stay in
-   your app as always." · **Who has opened your chats** (normally "Only your team").
+   once." · "Disconnect any time. Your chats stay in your app as always." · **Who has opened your chats** (normally "Only your team").
 9. **Share one chat with support.** Thread ⋯ → **Share with support** → pick the request → sheet
    "Support can open this one chat for 48 hours." **Share** → the thread shows "Shared with support
    until Tue 4 pm · Stop sharing"; the open is listed under Who has opened your chats.

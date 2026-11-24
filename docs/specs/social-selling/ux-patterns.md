@@ -76,6 +76,7 @@ Plain words a shop owner uses: *connected*, *needs reconnecting*, *spending limi
 *Needs you*, *answered automatically*. Never Meta's terms (WABA, template category, BSUID, webhook).
 About chats, never *access*, *see* or *read*: say what the shop gains ("answer from here"), and keep
 privacy as the small 🔒 "Private to your shop" line and its sheet, never a banner (parent Q116).
+How long data is kept lives in the privacy policy only; no screen repeats it (owner, 2026-11-23).
 Buttons are verbs; toasts are past tense; errors say what to do next. Every string ships from the
 area's copy module (ADR-0067). Shop-facing words are English; buyer-facing messages come in English
 and Hindi (parent Q37).

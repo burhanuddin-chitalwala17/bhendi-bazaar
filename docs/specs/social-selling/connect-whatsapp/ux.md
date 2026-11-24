@@ -79,7 +79,7 @@
 - Card title "WhatsApp"; purpose "Your catalogue in chats, every chat answered, and messages to customers who asked."
 - Checklist: "Connect" · "Spending limit" · "Catalogue" (with "N items to settle", "N need a fix" or "all in your catalogue") · "Templates" ("N in review", "approved") · "Auto-replies".
 - Coexistence note before the new-number path: "This number can't stay on the WhatsApp Business app. If you continue, the app stops working on it and your Bhendi Bazaar Inbox becomes your WhatsApp."
-- Disconnect dialog: "Stops: your catalogue stops updating, chats stop arriving here, and messages can't be sent." "Stays: your number keeps working in the WhatsApp Business app. Your chats stay here for 90 days, then are deleted." "To remove us completely, also remove Bhendi Bazaar in Meta Business Suite → Settings → Integrations." Buttons "Disconnect", "Keep connected"; toast "WhatsApp disconnected."
+- Disconnect dialog: "Stops: your catalogue stops updating, chats stop arriving here, and messages can't be sent." "Stays: your number keeps working in the WhatsApp Business app." "To remove us completely, also remove Bhendi Bazaar in Meta Business Suite → Settings → Integrations." Buttons "Disconnect", "Keep connected"; toast "WhatsApp disconnected."
 - Return notes: "WhatsApp connected." · "Nothing was connected. You can connect WhatsApp any time." · "This WhatsApp number is already connected to another shop. A number can belong to one shop only; disconnect it there first." · "That's a different number from the one connected here. To switch, disconnect this one first, then connect the new one."
 
 ## Sign-off
