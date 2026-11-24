@@ -52,6 +52,12 @@
    the keyword, which is the point, but it is automatic behaviour the shop did not switch on.
    Keep it on by default, or off until the shop turns it on in the panel?
 
+## Owner's answers (2026-11-23)
+1. Yes: Inbox takes Earnings' slot (parent Q115).
+2. Keep one box, naming both consents explicitly (audience Q8, replaced in place).
+3. Hold it: "Check price" until the caption is updated or Publish as is is tapped (ai-images Q47, replaced in place).
+4. Yes, on by default (comment-automations Q12).
+
 ## Smaller notes, left as designed
 - An "All" inbox tab across platforms would save a tap for shops with both; the spec keeps a tab
   per platform (inbox-core R1). Worth revisiting after use.

@@ -116,6 +116,7 @@ folded "2 drafts" line atop Scheduled; cancelled posts as a folded "Cancelled" l
 | Retrying | Publishing | "Instagram didn't answer. Trying again in 10 min (2 of 3)." | Publish now |
 | Failed | Failed | The reason in our words (instagram-publishing) | Publish now / Reconnect / Edit |
 | Ready for Status | Ready for Status | "Due now" | Share to Status (whatsapp-status-kit) |
+| Held: check price | Check price | "Your caption says ₹1,299; the product is now ₹1,199. Held until you choose." | Update price · Publish as is |
 | Cancelled | Cancelled | "Cancelled by Farida · 27 Nov" | Duplicate |
 
 ## Copy deck

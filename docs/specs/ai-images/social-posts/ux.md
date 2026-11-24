@@ -33,8 +33,11 @@
    **Add below**) → editable at once; **Write again** sits beside it.
 5. **Price changed (A4).** The product's price changes after drafting: the composer (if open) and
    the scheduled post show "The price in your caption is ₹1,299; it's now ₹1,199." → **Update
-   price** swaps the number in place, no rewrite → toast "Caption updated." A post that goes out
-   still unchanged has been flagged on its row and in a notification beforehand.
+   price** swaps the number in place, no rewrite → toast "Caption updated." Left unchanged, at its time
+   each destination is **held**, badge "Check price", the shop told through notifications; the post
+   offers **Update price** and **Publish as is** (sheet: "Publish with ₹1,299 in the caption? The
+   product is now ₹1,199." **Publish as is** / **Update price**). Nothing goes out stating a price
+   the shop did not confirm (Q47).
 
 ## Screens
 | Screen | Route / place | New or changed | Serves |
@@ -72,6 +75,7 @@
 - "Add words", "Your words", "Checking the words on your picture…".
 - "Replace your caption?" · "Replace" · "Add below".
 - "The price in your caption is <old>; it's now <new>." · "Update price" · toast "Caption updated."
+- Held: badge "Check price"; "Publish as is" → sheet "Publish with <old> in the caption? The product is now <new>." · "Publish as is" · "Update price".
 - "Add a product first, so the caption can say what it is."
 
 ## Sign-off

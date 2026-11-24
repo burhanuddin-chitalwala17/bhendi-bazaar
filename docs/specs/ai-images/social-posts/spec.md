@@ -37,7 +37,8 @@ also needs words, and a shop writing captions every day for every post gives up.
   the shop edits it freely before scheduling (Q47).
 - R6 — A caption never states a price, offer or stock that the product does not have at that
   moment; it is drafted from the live product, and the shop is warned if the price changes before
-  the post goes out (Q47).
+  the post goes out. A post still stating the old price at its time is held as Check price until
+  the shop updates the caption or taps Publish as is (Q47).
 - R7 — Price, offer or the shop's name painted on a picture are read back and checked against the
   live product before the shop sees it; a mismatch is regenerated once, then placed by us as exact
   text (Q48).

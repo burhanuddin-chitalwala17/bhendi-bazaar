@@ -64,8 +64,8 @@
 | Over 10,000 rows | "Upload up to 10,000 rows at a time." | — |
 
 ## Buyer-facing words
-- Checkout box (unticked): "Send me offers from Niqab Boutique and Bhendi Bazaar on WhatsApp and
-  email. Stop any time." (shops named; for one shop "from <shop>").
+- Checkout box (unticked, one box naming both consents, Q8): "I agree to get offers from Niqab
+  Boutique and, separately, from Bhendi Bazaar, on WhatsApp and email. I can stop either any time."
 - Store page button: "Get offers on WhatsApp" → WhatsApp opens with "YES" ready to send.
 
 ## Copy deck
