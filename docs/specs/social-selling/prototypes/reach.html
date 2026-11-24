@@ -1,0 +1,370 @@
+<title>Reach out</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap">
+<style>
+/* Layout: a storyboard of phone-width screens per journey, then state strips and a matrix. Tokens mirror the app's portal theme (globals.css). */
+
+:root{
+ --bg:oklch(0.985 0 0);--card:oklch(1 0 0);--muted:oklch(0.955 0 0);--border:oklch(0.915 0 0);
+ --fg:oklch(0.22 0.03 40);--fg-muted:oklch(0.52 0.04 40);
+ --primary:oklch(0.55 0.17 150);--on-primary:oklch(0.98 0.01 95);--accent:oklch(0.85 0.12 85);
+ --success:oklch(0.55 0.15 145);--warning:oklch(0.55 0.13 70);--danger:oklch(0.6 0.25 27);--info:oklch(0.52 0.13 245);
+ --wa:oklch(0.72 0.17 150);--ig1:oklch(0.7 0.19 55);--ig2:oklch(0.58 0.24 350);--ig3:oklch(0.45 0.2 300);
+ --font-body:"DM Sans",system-ui,sans-serif;--font-head:"Playfair Display",Georgia,serif;--radius:0.75rem}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+ --bg:oklch(0.15 0 0);--card:oklch(0.18 0 0);--muted:oklch(0.23 0 0);--border:oklch(0.3 0 0);
+ --fg:oklch(0.96 0.02 98);--fg-muted:oklch(0.72 0.05 98);--primary:oklch(0.7 0.19 150);--on-primary:oklch(0.14 0.04 260);
+ --accent:oklch(0.82 0.14 85);--success:oklch(0.72 0.16 145);--warning:oklch(0.78 0.14 75);--danger:oklch(0.65 0.22 22);--info:oklch(0.72 0.13 245);color-scheme:dark}}
+:root[data-theme="dark"]{
+ --bg:oklch(0.15 0 0);--card:oklch(0.18 0 0);--muted:oklch(0.23 0 0);--border:oklch(0.3 0 0);
+ --fg:oklch(0.96 0.02 98);--fg-muted:oklch(0.72 0.05 98);--primary:oklch(0.7 0.19 150);--on-primary:oklch(0.14 0.04 260);
+ --accent:oklch(0.82 0.14 85);--success:oklch(0.72 0.16 145);--warning:oklch(0.78 0.14 75);--danger:oklch(0.65 0.22 22);--info:oklch(0.72 0.13 245);color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:14px;line-height:1.45;margin:0}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px;max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+.modnav{display:flex;gap:6px;flex-wrap:wrap;font-size:12px}
+.modnav a{padding:5px 10px;border:1px solid var(--border);border-radius:999px;color:var(--fg-muted);text-decoration:none;background:var(--card)}
+.modnav a[aria-current]{color:var(--on-primary);background:var(--primary);border-color:var(--primary)}
+header h1{font-family:var(--font-head);font-size:30px;margin:12px 0 6px;text-wrap:balance}
+header p{margin:0;color:var(--fg-muted);max-width:72ch}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.tabs a{font-size:13px;padding:6px 12px;border:1px solid var(--border);border-radius:999px;color:var(--fg);text-decoration:none;background:var(--card)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+section h2{font-family:var(--font-head);font-size:22px;margin:0 0 4px}
+section>.lede{color:var(--fg-muted);margin:0 0 16px;max-width:76ch}
+.flow{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;padding-bottom:12px}
+.step{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;width:272px}
+.cap{font-size:12px;color:var(--fg-muted);min-height:34px}.cap b{color:var(--fg);font-weight:600}
+.arrow{flex:0 0 auto;align-self:center;color:var(--fg-muted);font-size:22px;padding-top:34px}
+.phone{border:1px solid var(--border);border-radius:24px;background:var(--bg);padding:10px;min-height:460px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 3px rgb(0 0 0 / .06);position:relative;overflow:hidden}
+.bar{display:flex;justify-content:space-between;font-size:11px;color:var(--fg-muted);padding:0 4px}
+.ph{display:flex;align-items:center;gap:8px;padding:2px 4px}.ph h3{font-family:var(--font-head);font-size:19px;margin:0;flex:1}
+.ph .q{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);display:grid;place-items:center;font-size:12px;color:var(--fg-muted)}
+.back{font-size:12px;color:var(--fg-muted)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:calc(var(--radius) + 4px);padding:12px;display:flex;flex-direction:column;gap:7px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.name{font-weight:600;display:flex;align-items:center;gap:8px;min-width:0}
+.mark{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;flex:0 0 auto}
+.mark.ig{background:linear-gradient(135deg,var(--ig1),var(--ig2) 55%,var(--ig3))}.mark.wa{background:var(--wa)}.mark.meta{background:var(--info)}.mark.az{background:oklch(0.25 0.02 260)}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);white-space:nowrap;color:var(--fg-muted);background:var(--card)}
+.badge.ok{color:var(--success);border-color:color-mix(in oklch,var(--success) 40%,transparent)}
+.badge.warn{color:var(--warning);border-color:color-mix(in oklch,var(--warning) 45%,transparent)}
+.badge.bad{color:var(--danger);border-color:color-mix(in oklch,var(--danger) 45%,transparent)}
+.badge.info{color:var(--info);border-color:color-mix(in oklch,var(--info) 40%,transparent)}
+.badge.solid{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.body{font-size:13px;color:var(--fg-muted)}.body strong{color:var(--fg);font-weight:600}
+.small{font-size:11.5px;color:var(--fg-muted)}
+.btn{font:inherit;font-size:13px;font-weight:600;border-radius:10px;padding:10px 12px;min-height:40px;border:1px solid transparent;background:var(--primary);color:var(--on-primary);text-align:center;cursor:pointer;width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.sec{background:transparent;border-color:var(--border);color:var(--fg)}
+.btn.ghost{background:transparent;color:var(--fg);border-color:transparent;padding-block:6px;min-height:36px}
+.btn.danger{background:transparent;color:var(--danger);border-color:transparent}
+.btn.fill-danger{background:var(--danger);color:#fff}
+.btn.inline{width:auto}
+.row2{display:flex;gap:8px}.row2>*{flex:1}
+.btn .spin{width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.btn .spin{animation:none}}
+.note{border-radius:10px;padding:10px;font-size:12.5px;border:1px solid var(--border);background:var(--card);display:flex;flex-direction:column;gap:6px}
+.note.success{border-color:color-mix(in oklch,var(--success) 45%,transparent)}
+.note.warning{border-color:color-mix(in oklch,var(--warning) 50%,transparent);background:color-mix(in oklch,var(--warning) 7%,var(--card))}
+.note.error{border-color:color-mix(in oklch,var(--danger) 45%,transparent)}
+.note.info{border-color:color-mix(in oklch,var(--info) 40%,transparent)}
+.note .t{font-weight:600}
+.ext{border:1px dashed var(--info);border-radius:14px;padding:12px;background:var(--card);display:flex;flex-direction:column;gap:8px}
+.ext .who{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--info);font-weight:600}
+.ext .row{border:1px solid var(--border);border-radius:8px;padding:8px;font-size:12.5px}
+.sheet{margin-top:auto;background:var(--card);border:1px solid var(--border);border-radius:18px 18px 10px 10px;padding:14px;display:flex;flex-direction:column;gap:9px;box-shadow:0 -6px 20px rgb(0 0 0 / .08)}
+.sheet .t{font-weight:700;font-size:15px}
+.dim{opacity:.5}
+.toast{align-self:center;background:var(--fg);color:var(--bg);font-size:12px;border-radius:999px;padding:6px 12px}
+.check{display:flex;flex-direction:column;gap:6px;font-size:12.5px;border-top:1px solid var(--border);padding-top:8px}
+.check .it{display:flex;gap:8px;align-items:flex-start}
+.check .tick{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border);flex:0 0 auto;display:grid;place-items:center;font-size:11px;margin-top:1px}
+.check .done{color:var(--fg-muted)}.check .done .tick{background:var(--success);border-color:var(--success);color:#fff}
+.check .next{font-weight:600}.check .next .tick{border-color:var(--primary)}
+.check .wait .tick{border-style:dashed}
+.list{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:calc(var(--radius) + 4px);background:var(--card);overflow:hidden}
+.li{display:flex;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);align-items:center}.li:last-child{border-bottom:0}
+.li .main{flex:1;min-width:0}.li .ttl{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.li .sub{font-size:12px;color:var(--fg-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thumb{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,color-mix(in oklch,var(--accent) 60%,var(--card)),color-mix(in oklch,var(--primary) 30%,var(--card)));flex:0 0 auto}
+.thumb.lg{width:100%;height:150px;border-radius:12px}
+.thumb.tall{width:100%;aspect-ratio:4/5;height:auto;border-radius:12px}
+.avatar{width:34px;height:34px;border-radius:50%;background:color-mix(in oklch,var(--info) 25%,var(--card));display:grid;place-items:center;font-size:12px;font-weight:700;flex:0 0 auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:999px;background:var(--card)}
+.chip.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.field{display:flex;flex-direction:column;gap:4px;font-size:12px}.field label{font-weight:600}
+.input{border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--card);font-size:16px;min-height:42px;color:var(--fg)}
+.input.area{min-height:84px;font-size:14px}
+.hint{font-size:11.5px;color:var(--fg-muted)}
+.progress{height:6px;border-radius:999px;background:var(--muted);overflow:hidden}.progress i{display:block;height:100%;background:var(--primary)}
+.bubbles{display:flex;flex-direction:column;gap:6px;flex:1}
+.bub{max-width:82%;padding:7px 10px;border-radius:14px;font-size:12.5px;background:var(--muted)}
+.bub.me{align-self:flex-end;background:color-mix(in oklch,var(--primary) 16%,var(--card))}
+.bub.auto{align-self:flex-end;background:color-mix(in oklch,var(--info) 12%,var(--card));border:1px dashed color-mix(in oklch,var(--info) 40%,transparent)}
+.bub .meta{display:block;font-size:10.5px;color:var(--fg-muted);margin-top:3px}
+.composer{display:flex;gap:6px;align-items:flex-end;border-top:1px solid var(--border);padding-top:8px}
+.composer .input{flex:1;font-size:14px;min-height:40px}
+.window{font-size:11px;color:var(--fg-muted);text-align:center}
+.tabbar{display:flex;justify-content:space-around;border-top:1px solid var(--border);padding-top:6px;margin-top:auto;font-size:10.5px;color:var(--fg-muted)}
+.tabbar .on{color:var(--primary);font-weight:700}
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px}.kpi div{border:1px solid var(--border);border-radius:10px;padding:8px;background:var(--card)}.kpi b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.matrix{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:12.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);font-weight:600;background:var(--muted)}
+tr:last-child td{border-bottom:0}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);font-weight:600;margin-bottom:4px}
+.legend{font-size:12px;color:var(--fg-muted);max-width:80ch}
+.demo-hint{font-size:12px;color:var(--fg-muted);border:1px dashed var(--border);border-radius:10px;padding:8px 10px;max-width:80ch}
+.sep{border:0;border-top:1px solid var(--border);margin:2px 0}
+.money{font-variant-numeric:tabular-nums}
+.btn[data-demo]{text-decoration:underline dotted;text-underline-offset:3px}
+
+</style>
+<div class="wrap">
+<header>
+  <nav class="modnav" aria-label="Social selling prototypes"><a href="connect.html">Connect & Catalogue</a><a href="post.html">Post</a><a href="converse.html">Converse</a><a href="reach.html" aria-current="page">Reach out</a><a href="home.html">Home & admin</a><a href="notify.html">Notifications</a><a href="bulk.html">Bulk publish</a><a href="links.html">Checkout links</a></nav>
+  <h1>Reach out</h1>
+  <p>Prototype for social-selling's Reach out module: consent-core, whatsapp-sending, audience and whatsapp-campaigns. Phone width first.</p>
+</header>
+<p class="demo-hint">Buttons with a dotted underline are live: tap one to see what it does while it works and when it finishes (ux-patterns §3). Every string is the one that ships; dashed boxes are Meta's or WhatsApp's own screens.</p>
+<nav class="tabs" aria-label="Sections">
+  <a href="#audience">Audience</a><a href="#upload">Upload</a><a href="#lists">Lists</a><a href="#contact">A contact</a><a href="#campaigns">Campaigns</a><a href="#new">New campaign</a><a href="#review">Before you send</a><a href="#report">Report</a><a href="#messaging">Messaging settings</a><a href="#templates">Templates</a><a href="#buyer">What a buyer sees</a>
+</nav>
+
+<section id="audience">
+  <h2>Audience</h2>
+  <p class="lede">audience. Leads with the one figure that matters and the three honest ways to grow it.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>First use</b></div>
+      <div class="phone"><div class="ph"><h3>Customers</h3></div>
+        <div class="chips"><span class="chip on">Audience</span><span class="chip">Campaigns</span></div>
+        <div class="card"><div class="ttl">No one can get your offers yet.</div>
+          <div class="lbl">Grow your list</div>
+          <div class="li"><div class="main"><div class="ttl">Checkout box</div><div class="sub">Buyers can tick it at checkout · on for every shop</div></div><span class="badge ok">On</span></div>
+          <div class="li"><div class="main"><div class="ttl">Get offers on WhatsApp</div><div class="sub">A button on your shop page</div></div><span class="badge ok">On</span></div>
+          <div class="li"><div class="main"><div class="ttl">Upload people who agreed</div><div class="sub">A CSV or spreadsheet</div></div></div>
+          <button class="btn" type="button">Upload</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Growing</b>: figures, filters, rows</div>
+      <div class="phone"><div class="ph"><h3>Customers</h3><span>🔍</span></div>
+        <div class="chips"><span class="chip on">Audience</span><span class="chip">Campaigns</span></div>
+        <div class="kpi"><div><b>104</b>can get offers on WhatsApp</div><div><b>61</b>by email</div></div>
+        <div class="chips"><span class="chip on">All</span><span class="chip">Opted in</span><span class="chip">Not yet</span><span class="chip">Stopped</span><span class="chip">Buyers</span><span class="chip">Lists</span></div>
+        <div class="list">
+          <div class="li"><span class="avatar">AK</span><div class="main"><div class="ttl">Ayesha Khan</div><div class="sub">•••• 1100 · checkout box</div></div><span class="badge ok">WA ●</span></div>
+          <div class="li"><span class="avatar">ZM</span><div class="main"><div class="ttl">Zara M.</div><div class="sub">•••• 4410 · replied YES</div></div><span class="badge ok">WA ●</span></div>
+          <div class="li"><span class="avatar">RB</span><div class="main"><div class="ttl">Rida B.</div><div class="sub">•••• 0912 · phone contacts</div></div><span class="badge">Not yet</span></div>
+          <div class="li"><span class="avatar">SN</span><div class="main"><div class="ttl">Sana N.</div><div class="sub">•••• 7781 · replied STOP</div></div><span class="badge bad">Stopped</span></div>
+        </div>
+        <div class="small">Your phone's contacts: 312 arrived · Not yet</div></div></div>
+  </div>
+</section>
+
+<section id="upload">
+  <h2>Upload</h2>
+  <p class="lede">One sheet, three steps. The tick is never pre-ticked and is recorded with who, when and which file.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Pick and match</b></div>
+      <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">Upload customers</span>
+        <div class="li"><div class="main"><div class="ttl">diwali-buyers.csv</div><div class="sub">200 rows</div></div></div>
+        <div class="lbl">Columns</div>
+        <div class="small">"Mobile" → Phone ▾<br>"Customer" → Name ▾</div>
+        <button class="btn" type="button" data-demo="pending:Reading · 120 of 200…|done:Next">Next</button></div></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Preview</b> and the tick</div>
+      <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">200 rows · 196 valid</span>
+        <div class="small">4 skipped (numbers not valid) · 3 asked to stop earlier and stay stopped.</div>
+        <div class="card"><div class="ttl">☐ These people agreed to get WhatsApp messages from Niqab Boutique</div><div class="small">We record that you ticked this, with your name and this file.</div></div>
+        <button class="btn" type="button" data-demo="pending:Adding…|toast:196 added as Not yet. 4 skipped.">Add 196 as Not yet</button>
+        <div class="small">Tick the box to add them as opted in: the button becomes <b>Add 196</b>.</div></div></div></div>
+  </div>
+</section>
+
+<section id="lists">
+  <h2>Lists</h2>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>New list</b>, counted live</div>
+      <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">New list</span>
+        <div class="input">Abaya lovers</div>
+        <div class="chips"><span class="chip on">Bought from: Abayas ×</span><span class="chip on">Ordered in the last 90 days ×</span><span class="chip">＋ Wishlisted</span><span class="chip">＋ From upload</span></div>
+        <div class="money">38 opted in · only they are ever sent to</div>
+        <button class="btn" type="button" data-demo="pending:Saving…|toast:List saved.">Save list</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Lists</b></div>
+      <div class="phone"><div class="chips"><span class="chip">All</span><span class="chip on">Lists</span></div>
+        <div class="li"><div class="main"><div class="ttl">Abaya lovers</div><div class="sub">38 opted in</div></div></div>
+        <div class="li"><div class="main"><div class="ttl">Wishlisted, last 30 days</div><div class="sub">22 opted in</div></div></div>
+        <div class="li"><div class="main"><div class="ttl">All opted in</div><div class="sub">104 · always there</div></div></div>
+        <button class="btn sec" type="button">New list</button></div></div>
+  </div>
+</section>
+
+<section id="contact">
+  <h2>A contact</h2>
+  <p class="lede">consent-core. One vocabulary everywhere; history read-only; the full number on tap, and the view recorded.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Contact</b></div>
+      <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">Sana N.</span>
+        <div class="small">+91 •••• •• 7781 · <u data-demo="done:+91 98201 17781">Show</u> · Views are recorded.</div>
+        <div class="row2"><span class="badge bad">WhatsApp · Stopped</span><span class="badge ok">Email · Opted in</span></div>
+        <div class="note">Asked to stop on 24 Nov. Only they can opt back in. Order updates still reach them.</div>
+        <div class="lbl">History</div>
+        <div class="small">Stopped · replied STOP · 24 Nov, 9:12 pm</div>
+        <div class="small">Opted in · checkout box · BB-7KQ2 · 2 Nov</div>
+        <div class="lbl">Orders</div><div class="small">BB-7KQ2 · ₹2,200 · Delivered</div></div></div></div>
+  </div>
+</section>
+
+<section id="campaigns">
+  <h2>Campaigns</h2>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>First use</b>, nothing approved yet</div>
+      <div class="phone"><div class="chips"><span class="chip">Audience</span><span class="chip on">Campaigns</span></div>
+        <div class="card" style="text-align:center"><div class="body">Your templates are still in review with WhatsApp. Campaigns open when one is approved.</div><button class="btn sec" type="button">See templates</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>The list</b></div>
+      <div class="phone"><div class="chips"><span class="chip">Audience</span><span class="chip on">Campaigns</span></div>
+        <div class="chips"><span class="chip">Drafts · 1</span><span class="chip on">Scheduled</span><span class="chip">Sent</span></div>
+        <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">New arrivals · Eid</div><div class="sub">Fri 7:00 pm · about 104 · about ₹90</div></div><span class="badge info">Scheduled</span></div>
+        <div class="li"><span class="thumb"></span><div class="main"><div class="ttl">Shawls are back</div><div class="sub">Sending · 64 of 104</div></div><span class="badge">Sending</span></div>
+        <button class="btn" type="button">New campaign</button></div></div>
+  </div>
+</section>
+
+<section id="new">
+  <h2>New campaign</h2>
+  <p class="lede">whatsapp-campaigns. One page like the post composer: message, products, who, when, then Review.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>The page</b></div>
+      <div class="phone"><div class="back">← Campaigns</div><div class="ph"><h3 style="font-size:18px">New campaign</h3></div>
+        <div class="lbl">Message</div>
+        <div class="li"><div class="main"><div class="ttl">New arrivals</div><div class="sub">Approved · about ₹0.86 each</div></div><span>Change</span></div>
+        <div class="bub auto" style="max-width:100%">Hi <span class="badge">Customer name</span>! New at Niqab Boutique: <span class="badge">Eid edit</span>. Tap to see 👇<div class="row2"><span class="badge solid">Shop now</span></div></div>
+        <div class="lbl">Products</div><div class="chips"><span class="chip on">Black nidha abaya</span><span class="chip on">Cotton kurta</span><span class="chip on">Kashmiri shawl</span><span class="chip">＋</span></div>
+        <div class="lbl">Who</div><div class="li"><div class="main"><div class="ttl">Abaya lovers</div><div class="sub">120 in this list</div></div><span>Change</span></div>
+        <div class="lbl">When</div><div class="chips"><span class="chip on">Now</span><span class="chip">Pick a time</span></div>
+        <div class="small">Draft saved · just now</div>
+        <button class="btn" type="button" data-demo="pending:Counting who gets it…">Review</button></div></div>
+  </div>
+</section>
+
+<section id="review">
+  <h2>Before you send</h2>
+  <p class="lede">The money and the people, before anything goes. The button says both.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Review</b> sheet</div>
+      <div class="phone"><div class="sheet"><span class="t">104 will get it</span>
+        <div class="small">16 skipped: 9 not opted in, 4 stopped, 3 messaged too often this week</div>
+        <div class="money">about ₹0.86 each · about ₹90 in all</div>
+        <div class="small">₹212 of ₹1,000 used this month</div>
+        <button class="btn" type="button" data-demo="pending:Starting…|toast:Sending to 104.">Send to 104 · about ₹90</button><button class="btn sec" type="button">Back to edit</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Would pass the limit</b></div>
+      <div class="phone"><div class="sheet"><span class="t">104 will get it</span>
+        <div class="money">about ₹90 in all</div>
+        <div class="note warning">This would pass your ₹1,000 limit by ₹42. 49 would be held.<button class="btn sec" type="button">Raise limit</button></div>
+        <button class="btn" type="button">Send to 104 · about ₹90</button></div></div></div>
+  </div>
+</section>
+
+<section id="report">
+  <h2>Report</h2>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Sending</b>: leave and come back</div>
+      <div class="phone"><div class="back">← Campaigns</div><div class="ttl">Shawls are back</div>
+        <div class="body">Sending · 64 of 104</div><div class="progress"><i style="width:62%"></i></div>
+        <button class="btn danger" type="button">Stop sending</button>
+        <div class="sheet"><span class="t">Stop now?</span><div class="body">40 not yet sent won't be sent or charged.</div><button class="btn fill-danger" type="button" data-demo="pending:Stopping…|toast:Stopped · 64 sent · 40 not sent">Stop</button><button class="btn sec" type="button">Keep sending</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Sent</b>: each figure opens its people</div>
+      <div class="phone"><div class="ttl">New arrivals · Eid</div><div class="small">Sent by Farida · Fri 7:00 pm</div>
+        <div class="kpi"><div><b>104</b>Sent</div><div><b>101</b>Delivered</div><div><b>77</b>Read</div><div><b>3</b>Failed</div><div><b>16</b>Skipped</div><div><b>23</b>Tapped Shop now</div></div>
+        <div class="money">Cost ₹88.40</div>
+        <div class="small">A scheduled one that reaches fewer says so: "98 sent (6 fewer than confirmed: they stopped or were messaged since)".</div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Late</b> after an outage (over 6 h)</div>
+      <div class="phone"><div class="note warning">This campaign was due at 7 pm but couldn't go. Send it now or cancel?<div class="row2"><button class="btn sec" type="button">Cancel campaign</button><button class="btn" type="button">Send now</button></div></div></div></div>
+  </div>
+</section>
+
+<section id="messaging">
+  <h2>Messaging settings</h2>
+  <p class="lede">whatsapp-sending, in Shop details. Two things up top; the rest under Advanced with defaults.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>The page</b></div>
+      <div class="phone"><div class="back">← Shop details</div><div class="ph"><h3 style="font-size:18px">Messaging</h3></div>
+        <div class="card"><div class="ttl">₹212 of ₹1,000 this month</div><div class="progress"><i style="width:21%"></i></div><div class="small">about 916 marketing messages left · Replies within 24 h are free</div><button class="btn sec" type="button">Change limit</button></div>
+        <div class="card"><div class="top"><span class="ttl">Shop hours</span><span>Edit</span></div><div class="small">Mon–Sat 10 am–9 pm · Sun closed</div><div class="small">Used by automatic replies, and alerts only go out in these hours.</div></div>
+        <div class="li"><div class="main"><div class="ttl">Quality: High</div><div class="sub">WhatsApp's rating of your number</div></div></div>
+        <div class="li"><div class="main"><div class="ttl">Message templates</div><div class="sub">12 approved</div></div><span>›</span></div>
+        <div class="li"><div class="main"><div class="ttl">Advanced</div><div class="sub">How often, greeting delay, bot pause, alerts per product</div></div><span>›</span></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>At the limit</b>: raise and send what's held</div>
+      <div class="phone"><div class="card"><div class="ttl" style="color:var(--danger)">Limit reached · 64 messages held</div><div class="progress"><i style="width:100%;background:var(--danger)"></i></div></div>
+        <div class="sheet"><span class="t">Raise your monthly limit</span><div class="chips"><span class="chip">₹1,000</span><span class="chip on">₹2,500</span><span class="chip">Other</span><span class="chip">No limit</span></div>
+          <div class="note info">Send the 64 held messages now? · about ₹55</div>
+          <div class="row2"><button class="btn sec" type="button">Not now</button><button class="btn" type="button" data-demo="pending:Saving…|toast:Limit raised. Sending 64 held.">Send held</button></div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Advanced</b>, each with its default</div>
+      <div class="phone"><div class="lbl">How often a buyer may get offers</div><div class="chips"><span class="chip on">Once a day, 4 a week</span><span class="chip">Other</span></div><div class="small">Messaging more often risks WhatsApp lowering your number's quality.</div>
+        <div class="lbl">Greeting delay</div><div class="small">30 s · Reset to default</div>
+        <div class="lbl">Pause automatic replies after you reply</div><div class="small">2 h</div>
+        <div class="lbl">Alerts per product</div><div class="small">Back-in-stock and price-drop alerts: once per product a week</div></div></div>
+  </div>
+</section>
+
+<section id="templates">
+  <h2>Templates</h2>
+  <p class="lede">Meta's verdicts in plain words, with the price each costs.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>List</b></div>
+      <div class="phone"><div class="ph"><h3 style="font-size:18px">Message templates</h3></div>
+        <div class="lbl">Offers</div>
+        <div class="li"><div class="main"><div class="ttl">New arrivals · EN, HI</div><div class="sub">about ₹0.86 · offer</div></div><span class="badge ok">Approved</span></div>
+        <div class="li"><div class="main"><div class="ttl">Festival sale</div><div class="sub">WhatsApp says it reads like a promotion but is marked as an update.</div></div><span class="badge bad">Rejected</span></div>
+        <div class="lbl">Updates</div>
+        <div class="li"><div class="main"><div class="ttl">Order update</div><div class="sub">about ₹0.12 · update</div></div><span class="badge info">In review</span></div>
+        <button class="btn sec" type="button">New template</button></div></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><div class="cap"><b>Editor</b> with live preview</div>
+      <div class="phone"><div class="chips"><span class="chip on">English</span><span class="chip">Hindi</span></div>
+        <div class="input area">Hi <span class="badge">Customer name</span>! New at <span class="badge">Shop name</span>: <span class="badge">Product</span> at <span class="badge">Price</span>.</div>
+        <div class="small">Add a blank: Customer name · Product · Price · Shop name</div>
+        <div class="lbl">Buttons (up to 3)</div><div class="chips"><span class="chip on">Shop now</span><span class="chip">＋</span></div>
+        <div class="lbl">Preview</div><div class="bub" style="max-width:100%">Hi Ayesha! New at Niqab Boutique: Black nidha abaya at ₹2,200.</div>
+        <button class="btn" type="button" data-demo="pending:Submitting…|toast:Sent to WhatsApp for review.">Submit to WhatsApp</button></div></div>
+  </div>
+</section>
+
+<section id="buyer">
+  <h2>What a buyer sees</h2>
+  <p class="lede">audience and consent-core. Every way in is the buyer's own act; every way out is one word.</p>
+  <div class="strip">
+    <div><div class="lbl">Checkout box (unticked)</div><div class="card"><div class="small">☐ Send me offers from Niqab Boutique and Bhendi Bazaar on WhatsApp and email. Stop any time.</div><button class="btn" type="button">Pay ₹2,200</button></div></div>
+    <div><div class="lbl">Store page button</div><div class="card"><div class="ttl">Niqab Boutique</div><button class="btn sec" type="button">Get offers on WhatsApp</button><div class="small">Opens WhatsApp with YES ready to send.</div></div></div>
+    <div><div class="lbl">YES</div><div class="bubbles"><div class="bub me">YES</div><div class="bub">You'll now get offers from Niqab Boutique. Reply STOP any time to stop.</div></div></div>
+    <div><div class="lbl">STOP</div><div class="bubbles"><div class="bub me">STOP</div><div class="bub">You won't get offers from Niqab Boutique. Reply START to get them again.</div></div></div>
+    <div><div class="lbl">HINDI</div><div class="bubbles"><div class="bub me">HINDI</div><div class="bub">अब से Niqab Boutique के संदेश हिंदी में आएँगे।</div></div></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+// Tap any button marked data-demo to see its states: Ready -> pending -> done or failed (ux-patterns §3).
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-demo]'); if(!b||b.dataset.busy) return;
+  var parts={};b.dataset.demo.split('|').forEach(function(p){var i=p.indexOf(':');parts[p.slice(0,i)]=p.slice(i+1);});
+  var orig=b.innerHTML; b.dataset.busy='1';
+  b.innerHTML='<span class="spin" aria-hidden="true"></span>'+(parts.pending||'Working…');
+  b.setAttribute('aria-busy','true');
+  setTimeout(function(){
+    b.removeAttribute('aria-busy');
+    if(parts.done){b.innerHTML=parts.done;}else{b.innerHTML=orig;}
+    var host=b.closest('.phone'); if(parts.toast&&host){var t=document.createElement('div');t.className='toast';t.textContent=parts.toast;t.setAttribute('role','status');host.insertBefore(t,host.children[1]||null);setTimeout(function(){t.remove();b.innerHTML=orig;delete b.dataset.busy;},2200);} else {setTimeout(function(){b.innerHTML=orig;delete b.dataset.busy;},1800);}
+  },1300);
+});
+</script>

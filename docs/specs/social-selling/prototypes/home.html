@@ -1,0 +1,212 @@
+<title>Home and admin</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap">
+<style>
+/* Layout: a storyboard of phone-width screens per journey, then state strips and a matrix. Tokens mirror the app's portal theme (globals.css). */
+
+:root{
+ --bg:oklch(0.985 0 0);--card:oklch(1 0 0);--muted:oklch(0.955 0 0);--border:oklch(0.915 0 0);
+ --fg:oklch(0.22 0.03 40);--fg-muted:oklch(0.52 0.04 40);
+ --primary:oklch(0.55 0.17 150);--on-primary:oklch(0.98 0.01 95);--accent:oklch(0.85 0.12 85);
+ --success:oklch(0.55 0.15 145);--warning:oklch(0.55 0.13 70);--danger:oklch(0.6 0.25 27);--info:oklch(0.52 0.13 245);
+ --wa:oklch(0.72 0.17 150);--ig1:oklch(0.7 0.19 55);--ig2:oklch(0.58 0.24 350);--ig3:oklch(0.45 0.2 300);
+ --font-body:"DM Sans",system-ui,sans-serif;--font-head:"Playfair Display",Georgia,serif;--radius:0.75rem}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+ --bg:oklch(0.15 0 0);--card:oklch(0.18 0 0);--muted:oklch(0.23 0 0);--border:oklch(0.3 0 0);
+ --fg:oklch(0.96 0.02 98);--fg-muted:oklch(0.72 0.05 98);--primary:oklch(0.7 0.19 150);--on-primary:oklch(0.14 0.04 260);
+ --accent:oklch(0.82 0.14 85);--success:oklch(0.72 0.16 145);--warning:oklch(0.78 0.14 75);--danger:oklch(0.65 0.22 22);--info:oklch(0.72 0.13 245);color-scheme:dark}}
+:root[data-theme="dark"]{
+ --bg:oklch(0.15 0 0);--card:oklch(0.18 0 0);--muted:oklch(0.23 0 0);--border:oklch(0.3 0 0);
+ --fg:oklch(0.96 0.02 98);--fg-muted:oklch(0.72 0.05 98);--primary:oklch(0.7 0.19 150);--on-primary:oklch(0.14 0.04 260);
+ --accent:oklch(0.82 0.14 85);--success:oklch(0.72 0.16 145);--warning:oklch(0.78 0.14 75);--danger:oklch(0.65 0.22 22);--info:oklch(0.72 0.13 245);color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:14px;line-height:1.45;margin:0}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px;max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+.modnav{display:flex;gap:6px;flex-wrap:wrap;font-size:12px}
+.modnav a{padding:5px 10px;border:1px solid var(--border);border-radius:999px;color:var(--fg-muted);text-decoration:none;background:var(--card)}
+.modnav a[aria-current]{color:var(--on-primary);background:var(--primary);border-color:var(--primary)}
+header h1{font-family:var(--font-head);font-size:30px;margin:12px 0 6px;text-wrap:balance}
+header p{margin:0;color:var(--fg-muted);max-width:72ch}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.tabs a{font-size:13px;padding:6px 12px;border:1px solid var(--border);border-radius:999px;color:var(--fg);text-decoration:none;background:var(--card)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+section h2{font-family:var(--font-head);font-size:22px;margin:0 0 4px}
+section>.lede{color:var(--fg-muted);margin:0 0 16px;max-width:76ch}
+.flow{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;padding-bottom:12px}
+.step{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;width:272px}
+.cap{font-size:12px;color:var(--fg-muted);min-height:34px}.cap b{color:var(--fg);font-weight:600}
+.arrow{flex:0 0 auto;align-self:center;color:var(--fg-muted);font-size:22px;padding-top:34px}
+.phone{border:1px solid var(--border);border-radius:24px;background:var(--bg);padding:10px;min-height:460px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 3px rgb(0 0 0 / .06);position:relative;overflow:hidden}
+.bar{display:flex;justify-content:space-between;font-size:11px;color:var(--fg-muted);padding:0 4px}
+.ph{display:flex;align-items:center;gap:8px;padding:2px 4px}.ph h3{font-family:var(--font-head);font-size:19px;margin:0;flex:1}
+.ph .q{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);display:grid;place-items:center;font-size:12px;color:var(--fg-muted)}
+.back{font-size:12px;color:var(--fg-muted)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:calc(var(--radius) + 4px);padding:12px;display:flex;flex-direction:column;gap:7px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.name{font-weight:600;display:flex;align-items:center;gap:8px;min-width:0}
+.mark{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;flex:0 0 auto}
+.mark.ig{background:linear-gradient(135deg,var(--ig1),var(--ig2) 55%,var(--ig3))}.mark.wa{background:var(--wa)}.mark.meta{background:var(--info)}.mark.az{background:oklch(0.25 0.02 260)}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);white-space:nowrap;color:var(--fg-muted);background:var(--card)}
+.badge.ok{color:var(--success);border-color:color-mix(in oklch,var(--success) 40%,transparent)}
+.badge.warn{color:var(--warning);border-color:color-mix(in oklch,var(--warning) 45%,transparent)}
+.badge.bad{color:var(--danger);border-color:color-mix(in oklch,var(--danger) 45%,transparent)}
+.badge.info{color:var(--info);border-color:color-mix(in oklch,var(--info) 40%,transparent)}
+.badge.solid{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.body{font-size:13px;color:var(--fg-muted)}.body strong{color:var(--fg);font-weight:600}
+.small{font-size:11.5px;color:var(--fg-muted)}
+.btn{font:inherit;font-size:13px;font-weight:600;border-radius:10px;padding:10px 12px;min-height:40px;border:1px solid transparent;background:var(--primary);color:var(--on-primary);text-align:center;cursor:pointer;width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.sec{background:transparent;border-color:var(--border);color:var(--fg)}
+.btn.ghost{background:transparent;color:var(--fg);border-color:transparent;padding-block:6px;min-height:36px}
+.btn.danger{background:transparent;color:var(--danger);border-color:transparent}
+.btn.fill-danger{background:var(--danger);color:#fff}
+.btn.inline{width:auto}
+.row2{display:flex;gap:8px}.row2>*{flex:1}
+.btn .spin{width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.btn .spin{animation:none}}
+.note{border-radius:10px;padding:10px;font-size:12.5px;border:1px solid var(--border);background:var(--card);display:flex;flex-direction:column;gap:6px}
+.note.success{border-color:color-mix(in oklch,var(--success) 45%,transparent)}
+.note.warning{border-color:color-mix(in oklch,var(--warning) 50%,transparent);background:color-mix(in oklch,var(--warning) 7%,var(--card))}
+.note.error{border-color:color-mix(in oklch,var(--danger) 45%,transparent)}
+.note.info{border-color:color-mix(in oklch,var(--info) 40%,transparent)}
+.note .t{font-weight:600}
+.ext{border:1px dashed var(--info);border-radius:14px;padding:12px;background:var(--card);display:flex;flex-direction:column;gap:8px}
+.ext .who{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--info);font-weight:600}
+.ext .row{border:1px solid var(--border);border-radius:8px;padding:8px;font-size:12.5px}
+.sheet{margin-top:auto;background:var(--card);border:1px solid var(--border);border-radius:18px 18px 10px 10px;padding:14px;display:flex;flex-direction:column;gap:9px;box-shadow:0 -6px 20px rgb(0 0 0 / .08)}
+.sheet .t{font-weight:700;font-size:15px}
+.dim{opacity:.5}
+.toast{align-self:center;background:var(--fg);color:var(--bg);font-size:12px;border-radius:999px;padding:6px 12px}
+.check{display:flex;flex-direction:column;gap:6px;font-size:12.5px;border-top:1px solid var(--border);padding-top:8px}
+.check .it{display:flex;gap:8px;align-items:flex-start}
+.check .tick{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border);flex:0 0 auto;display:grid;place-items:center;font-size:11px;margin-top:1px}
+.check .done{color:var(--fg-muted)}.check .done .tick{background:var(--success);border-color:var(--success);color:#fff}
+.check .next{font-weight:600}.check .next .tick{border-color:var(--primary)}
+.check .wait .tick{border-style:dashed}
+.list{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:calc(var(--radius) + 4px);background:var(--card);overflow:hidden}
+.li{display:flex;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);align-items:center}.li:last-child{border-bottom:0}
+.li .main{flex:1;min-width:0}.li .ttl{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.li .sub{font-size:12px;color:var(--fg-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thumb{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,color-mix(in oklch,var(--accent) 60%,var(--card)),color-mix(in oklch,var(--primary) 30%,var(--card)));flex:0 0 auto}
+.thumb.lg{width:100%;height:150px;border-radius:12px}
+.thumb.tall{width:100%;aspect-ratio:4/5;height:auto;border-radius:12px}
+.avatar{width:34px;height:34px;border-radius:50%;background:color-mix(in oklch,var(--info) 25%,var(--card));display:grid;place-items:center;font-size:12px;font-weight:700;flex:0 0 auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:999px;background:var(--card)}
+.chip.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.field{display:flex;flex-direction:column;gap:4px;font-size:12px}.field label{font-weight:600}
+.input{border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--card);font-size:16px;min-height:42px;color:var(--fg)}
+.input.area{min-height:84px;font-size:14px}
+.hint{font-size:11.5px;color:var(--fg-muted)}
+.progress{height:6px;border-radius:999px;background:var(--muted);overflow:hidden}.progress i{display:block;height:100%;background:var(--primary)}
+.bubbles{display:flex;flex-direction:column;gap:6px;flex:1}
+.bub{max-width:82%;padding:7px 10px;border-radius:14px;font-size:12.5px;background:var(--muted)}
+.bub.me{align-self:flex-end;background:color-mix(in oklch,var(--primary) 16%,var(--card))}
+.bub.auto{align-self:flex-end;background:color-mix(in oklch,var(--info) 12%,var(--card));border:1px dashed color-mix(in oklch,var(--info) 40%,transparent)}
+.bub .meta{display:block;font-size:10.5px;color:var(--fg-muted);margin-top:3px}
+.composer{display:flex;gap:6px;align-items:flex-end;border-top:1px solid var(--border);padding-top:8px}
+.composer .input{flex:1;font-size:14px;min-height:40px}
+.window{font-size:11px;color:var(--fg-muted);text-align:center}
+.tabbar{display:flex;justify-content:space-around;border-top:1px solid var(--border);padding-top:6px;margin-top:auto;font-size:10.5px;color:var(--fg-muted)}
+.tabbar .on{color:var(--primary);font-weight:700}
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px}.kpi div{border:1px solid var(--border);border-radius:10px;padding:8px;background:var(--card)}.kpi b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.matrix{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:12.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);font-weight:600;background:var(--muted)}
+tr:last-child td{border-bottom:0}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-muted);font-weight:600;margin-bottom:4px}
+.legend{font-size:12px;color:var(--fg-muted);max-width:80ch}
+.demo-hint{font-size:12px;color:var(--fg-muted);border:1px dashed var(--border);border-radius:10px;padding:8px 10px;max-width:80ch}
+.sep{border:0;border-top:1px solid var(--border);margin:2px 0}
+.money{font-variant-numeric:tabular-nums}
+.btn[data-demo]{text-decoration:underline dotted;text-underline-offset:3px}
+
+</style>
+<div class="wrap">
+<header>
+  <nav class="modnav" aria-label="Social selling prototypes"><a href="connect.html">Connect & Catalogue</a><a href="post.html">Post</a><a href="converse.html">Converse</a><a href="reach.html">Reach out</a><a href="home.html" aria-current="page">Home & admin</a><a href="notify.html">Notifications</a><a href="bulk.html">Bulk publish</a><a href="links.html">Checkout links</a></nav>
+  <h1>Home and admin</h1>
+  <p>Prototype for social-selling's social-home: the shop's Home card, where things live, and the admin overview.</p>
+</header>
+<p class="demo-hint">Buttons with a dotted underline are live: tap one to see what it does while it works and when it finishes (ux-patterns §3). Every string is the one that ships; dashed boxes are Meta's or WhatsApp's own screens.</p>
+<nav class="tabs" aria-label="Sections">
+  <a href="#card">Home card</a><a href="#menu">Where things live</a><a href="#admin">Admin overview</a>
+</nav>
+
+<section id="card">
+  <h2>Home card</h2>
+  <p class="lede">social-home. Most urgent first; every figure is a door to the screen behind it; a figure at zero is left out.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Nothing connected</b></div>
+      <div class="phone"><div class="ph"><h3>Home</h3></div>
+        <div class="card"><div class="ttl">Sell on Instagram and WhatsApp</div><div class="body">Connect to post, answer every message here, and send offers.</div><button class="btn" type="button">Connect</button></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Mid-setup</b>: the next step leads</div>
+      <div class="phone"><div class="card"><div class="top"><span class="ttl">Social selling</span><span class="small">2 of 5 steps done</span></div>
+        <div class="body">Next: settle your WhatsApp catalogue · 40 items</div><button class="btn" type="button">Settle catalogue</button>
+        <div class="li"><div class="main"><div class="ttl" style="color:var(--warning)">1 message needs you ›</div></div></div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Running</b>: a morning glance</div>
+      <div class="phone"><div class="card"><div class="top"><span class="ttl">Social selling</span></div>
+        <div class="li"><div class="main"><div class="ttl" style="color:var(--warning)">2 messages need you ›</div></div></div>
+        <div class="li"><div class="main"><div class="sub">34 answered automatically this week ›</div></div></div>
+        <div class="li"><div class="main"><div class="sub">3 posts this week · next today 6 pm ›</div></div></div>
+        <div class="li"><div class="main"><div class="sub">₹212 of ₹1,000 on WhatsApp this month ›</div></div></div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>Something broke</b>: it leads</div>
+      <div class="phone"><div class="card"><div class="top"><span class="ttl">Social selling</span><span class="badge warn">Needs you</span></div>
+        <div class="note warning">Instagram needs reconnecting. Posts won't publish until it is.<button class="btn" type="button" data-demo="pending:Opening Instagram…">Reconnect</button></div>
+        <div class="li"><div class="main"><div class="sub">34 answered automatically this week ›</div></div></div></div></div></div>
+    <div class="arrow" aria-hidden="true">·</div>
+    <div class="step"><div class="cap"><b>No plan</b>: the lock</div>
+      <div class="phone"><div class="card"><div class="ttl">Sell on Instagram and WhatsApp</div><div class="body">Post, answer every message here, and send offers to customers who asked.</div><button class="btn" type="button">🔒 Connect</button></div>
+        <div class="sheet"><span class="t">Social selling is part of the ₹699 plan</span><div class="body">₹699 a month, GST included. Everything you've set up stays.</div><button class="btn" type="button">Talk to us</button><button class="btn sec" type="button">Not now</button></div></div></div>
+  </div>
+</section>
+
+<section id="menu">
+  <h2>Where things live</h2>
+  <p class="lede">ux-patterns §1. Three new menu items; settings in Shop details; Inbox in the phone's tab bar.</p>
+  <div class="flow">
+    <div class="step"><div class="cap"><b>Phone</b>: menu sheet and tab bar</div>
+      <div class="phone"><div class="sheet" style="margin-top:0"><span class="t">Menu</span>
+        <div class="li"><div class="main"><div class="ttl">Channels</div></div></div>
+        <div class="lbl">Social</div>
+        <div class="li"><div class="main"><div class="ttl">Inbox</div></div><span class="badge warn">3</span></div>
+        <div class="li"><div class="main"><div class="ttl">Posts</div></div></div>
+        <div class="li"><div class="main"><div class="ttl">Customers</div></div></div>
+        <div class="li"><div class="main"><div class="ttl">Shop details</div><div class="sub">Messaging · Notifications</div></div></div></div>
+        <div class="tabbar"><span>Home</span><span>Orders</span><span class="on">Inbox · 3</span><span>Products</span><span>More</span></div></div></div>
+  </div>
+</section>
+
+<section id="admin">
+  <h2>Admin overview</h2>
+  <p class="lede">For the platform owner, on the admin channels page: trouble before shops report it.</p>
+  <div class="matrix"><table>
+    <thead><tr><th>Platform</th><th>Shops connected</th><th>Needing attention</th><th>Meta's onboarding limit</th><th>Events failing</th></tr></thead>
+    <tbody>
+      <tr><td>Instagram</td><td>42</td><td><u>2 ›</u></td><td>—</td><td>0 in the last day</td></tr>
+      <tr><td>WhatsApp</td><td>31</td><td><u>1 ›</u></td><td style="color:var(--warning)">9 of 10 this week</td><td style="color:var(--danger)">12 in the last day · <u>See events</u></td></tr>
+    </tbody></table></div>
+  <p class="legend">A row opens the list of shops behind it; a shop opens its connection detail. Empty: "No shops connected yet."</p>
+</section>
+
+</div>
+
+<script>
+// Tap any button marked data-demo to see its states: Ready -> pending -> done or failed (ux-patterns §3).
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-demo]'); if(!b||b.dataset.busy) return;
+  var parts={};b.dataset.demo.split('|').forEach(function(p){var i=p.indexOf(':');parts[p.slice(0,i)]=p.slice(i+1);});
+  var orig=b.innerHTML; b.dataset.busy='1';
+  b.innerHTML='<span class="spin" aria-hidden="true"></span>'+(parts.pending||'Working…');
+  b.setAttribute('aria-busy','true');
+  setTimeout(function(){
+    b.removeAttribute('aria-busy');
+    if(parts.done){b.innerHTML=parts.done;}else{b.innerHTML=orig;}
+    var host=b.closest('.phone'); if(parts.toast&&host){var t=document.createElement('div');t.className='toast';t.textContent=parts.toast;t.setAttribute('role','status');host.insertBefore(t,host.children[1]||null);setTimeout(function(){t.remove();b.innerHTML=orig;delete b.dataset.busy;},2200);} else {setTimeout(function(){b.innerHTML=orig;delete b.dataset.busy;},1800);}
+  },1300);
+});
+</script>
