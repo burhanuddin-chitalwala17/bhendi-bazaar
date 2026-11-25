@@ -216,3 +216,34 @@ export const conversationCare = {
     return count;
   },
 };
+
+/** What a member's reply needs of its thread (inbox-core D6). */
+export interface ReplyTarget {
+  id: string;
+  connectionId: string;
+  platform: string;
+  kind: string;
+  personKey: string;
+  threadKey: string;
+  postRef: string | null;
+  lastInboundAt: Date | null;
+}
+
+export const conversationReplies = {
+  async target(orgId: string, id: string): Promise<ReplyTarget | null> {
+    return await prisma.conversation.findFirst({
+      where: { id, orgId },
+      select: { id: true, connectionId: true, platform: true, kind: true, personKey: true, threadKey: true, postRef: true, lastInboundAt: true },
+    });
+  },
+
+  /** A member answered (D6): it no longer needs the shop, and automatic replies pause in it (enquiry-autoreplies R7). */
+  async memberReplied(tx: Tx, orgId: string, id: string, botPausedUntil: Date): Promise<void> {
+    await tx.$executeRaw`
+      UPDATE "Conversation"
+      SET "needsYou" = false, "needsYouReason" = NULL, "sortRank" = ${SORT_RANK.OTHER},
+          "botPausedUntil" = GREATEST(COALESCE("botPausedUntil", ${botPausedUntil}), ${botPausedUntil}),
+          "changeSeq" = nextval('"Conversation_changeSeq_seq"'), "updatedAt" = timezone('UTC', now())
+      WHERE "id" = ${id} AND "orgId" = ${orgId}`;
+  },
+};

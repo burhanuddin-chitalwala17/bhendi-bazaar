@@ -770,6 +770,8 @@ model User {
   sessions              Session[]
   orgMemberships        OrgMember[]
   mediaAssets           MediaAsset[]
+  /// Inbox replies this member sent (inbox-core D6); kept, unnamed, if the member leaves.
+  inboxMessages         Message[]
   addresses             UserAddress[]
   enhancementsRequested Enhancement[]
 
@@ -2811,14 +2813,17 @@ model Message {
   direction         String
   /// `MESSAGE_AUTHOR`: MEMBER, AUTOMATIC, APP, PERSON.
   author            String
+  /// The member who sent it from the inbox (R3), shown to members only.
   memberId          String?
+  member            User?        @relation(fields: [memberId], references: [id], onDelete: SetNull)
   /// `INBOX_MESSAGE_KIND`.
   kind              String
   /// What an UNSUPPORTED message was, in our words (R8): never the person's text.
   label             String?
   /// The text, sealed under the shop's key (A-D12); a cart's note and items as sealed JSON.
   bodySealed        String?
-  /// The platform's opaque media reference; fetched through the source on open, never by a browser.
+  /// The platform's opaque media reference, fetched through the source on open, never by a browser; for
+  /// what a member sent, the library asset's id.
   attachmentRef     String?
   /// For a reaction or an edit: the platform id of the message it acts on.
   refersTo          String?
@@ -2828,6 +2833,9 @@ model Message {
   /// `MESSAGE_STATE` for what the shop sent; null for what the person sent.
   state             String?
   sendAfter         DateTime?
+  /// Tries of this send since it was queued: one automatic retry for a not-sent error (Q9).
+  sendAttempts      Int          @default(0)
+  /// `SOCIAL_ERROR` code of the last failure; the UI words it (R9).
   errorCode         String?
   /// Platform time: a thread reads in this order (hazard: late or out-of-order delivery).
   sentAt            DateTime?
@@ -2838,6 +2846,7 @@ model Message {
 
   @@index([conversationId, sentAt, id])
   @@index([orgId, platformMessageId])
+  @@index([memberId])
 }
 
 /// A shop sharing one conversation with support for one request, for 48 hours (inbox-core D9, R14).

@@ -38,6 +38,10 @@ export const ORG_ROUTE_FEATURES: Record<string, Classification> = {
   "GET /api/org/[orgId]/posts/[id]/caption/price": { feature: FEATURE.SOCIAL_SELLING },
   "POST /api/org/[orgId]/posts/[id]/caption/price": { feature: FEATURE.SOCIAL_SELLING },
 
+  "POST /api/org/[orgId]/inbox/conversations/[id]/messages": { feature: FEATURE.SOCIAL_SELLING },
+  "POST /api/org/[orgId]/inbox/messages/[id]/undo": { feature: FEATURE.SOCIAL_SELLING },
+  "POST /api/org/[orgId]/inbox/messages/[id]/retry": { feature: FEATURE.SOCIAL_SELLING },
+
   "GET /api/org/[orgId]/channels/[channel]/connect": CH,
   "GET /api/org/[orgId]/channels/instagram/connect": { feature: FEATURE.SOCIAL_SELLING },
   "POST /api/org/[orgId]/channels/whatsapp/connect": { feature: FEATURE.SOCIAL_SELLING },
@@ -173,6 +177,9 @@ export const JOB_FEATURES: Record<string, { readonly feature: Feature; readonly 
   },
   "inbox.waiting": { core: "Tells a shop a chat has waited four hours: only threads that came through a connection it already made, whatever the plan now." },
   "inbox.retention": { core: "Deletes chats 90 days after an account is left: a promise to the people in them, whatever the plan." },
+  "inbox.send": {
+    core: "Sends what a member already pressed Send on behind the Social selling lock (the reply route); a send queued before a lapse finishes, as image.enhance's does.",
+  },
   "channels.meta-retention": { core: "Deletes raw events past 30 days for every account: a promise to the people in them, whatever the plan." },
   "channels.meta-sweep": { core: "Re-asks drains and deletion requests a lost job left behind; each does only what was already owed." },
   "channels.delete-person": { core: "A person's deletion request is the law's and Meta's, whatever any shop's plan." },

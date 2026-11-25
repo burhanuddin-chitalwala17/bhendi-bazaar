@@ -18,6 +18,8 @@ export async function enqueue<T>(
   tx: EnqueueTx,
   definition: JobSpec<T>,
   payload: T,
+  /** Not run before this time. The worker is woken only for a job due now, so a delayed one may wait for its backstop poll. */
+  options: { startAfter?: Date } = {},
 ): Promise<string> {
   const data: JobEnvelope = { type: definition.type, payload: definition.schema.parse(payload) };
   const group = definition.group?.(payload);
@@ -27,6 +29,7 @@ export async function enqueue<T>(
     db: fromPrisma(tx),
     ...(group ? { group: { id: group } } : {}),
     ...(priority !== undefined ? { priority } : {}),
+    ...(options.startAfter ? { startAfter: options.startAfter } : {}),
     ...(definition.retry ? { retryLimit: definition.retry.limit, retryDelay: definition.retry.delaySeconds, retryBackoff: true } : {}),
   });
   if (!id) throw new Error(`Job "${definition.type}" was not accepted by the queue`);

@@ -1,8 +1,10 @@
-/** The inbox's worker registrations: its sinks, its timed work and its forgetter (inbox-core D2, D5, D10). Only the worker imports this file. */
+/** The inbox's worker registrations: its sinks, its send job, its timed work and its forgetter (inbox-core D2, D5, D6, D10). Only the worker imports this file. */
 import "./inbox.sinks";
 import { registerJob } from "@server/shared/jobs/jobs.registry";
 import { prisma } from "@server/shared/prisma";
 import { registerForgetter } from "@server/shared/social-events/forget";
+import { inboxSendSpec } from "./inbox-send.job";
+import { inboxSendService } from "./inbox-send.service";
 import { RETENTION_EVERY_SECONDS, retentionDaily, retentionSpec, waitingSweepSpec } from "./inbox-care.job";
 import { inboxRetention } from "./inbox-retention.service";
 import { inboxWaiting } from "./inbox-waiting.service";
@@ -25,3 +27,11 @@ export const retentionJob = registerJob({
 });
 
 registerForgetter({ name: "inbox", forget: (platform, platformUserId) => inboxRetention.forgetPerson(platform, platformUserId) });
+
+/** One outbound message's next step: released at the hold's end, claimed, sent (D6). */
+export const inboxSendJob = registerJob({
+  ...inboxSendSpec,
+  handler: async ({ payload }) => {
+    await inboxSendService.deliver(payload.orgId, payload.messageId);
+  },
+});

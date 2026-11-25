@@ -22,6 +22,7 @@ A shop's conversations on its social platforms, and every message in them: what 
 - **Waiting is told once a spell** (D5, decisions Q19): `waitingEmittedAt` is claimed by the sweep and cleared where a thread starts waiting again. The sweep and retention are woken by `enqueueLater`, never a schedule slot.
 - **Support opens a chat only through a live share, and every open is logged first** (D9, Q21): `inboxPrivacy.openForSupport`. Nothing outside this domain calls `seal.open`: `tests/unit/sealed-columns.test.ts`.
 - **Retention pulls, it is not told** (D10, Q20): a thread's `accountRef` against channels' `socialOwners.settledBefore`.
+- **A send is a row before it is a call** (D6, ADR-0086): a member's reply is written `HELD` with its `inbox.send` job in one transaction, so a closed tab still sends. The job is due at once and waits out `sendAfter` (the hold, a busy lane, the retry's pause) itself, because the queue wakes a worker only for a job due now; a wait over 30 s goes back to the queue. Undo and the job's release are both conditional on `HELD`, so exactly one wins. The job claims `QUEUED → CLAIMED` and only a count of one calls the platform through channels' `conversationSources`. Only a platform's "not sent" (`rate_limited`, `unavailable`) is retried, once (Q9); a row found `CLAIMED` on a later run, or a call that may have gone, is `UNCERTAIN`, never sent again. A reply clears Needs you and pauses automatic replies (`botPausedUntil`).
 
 ## Structure
 | Path | Holds |
@@ -36,4 +37,5 @@ A shop's conversations on its social platforms, and every message in them: what 
 | `inbox-retention.service.ts` | Retention and a person's deletion |
 | `inbox-care.job.ts` | The sweep's and retention's job specs and their wake-ups |
 | `support-grant.repository.ts`, `seal-access.repository.ts` | The one writers of `SupportGrant` and `SealAccess` |
-| `message.repository.ts` | The one writer of `Message` |
+| `message.repository.ts` | The one writer of `Message`; `outboxRepository` there holds an outbound row's conditional steps |
+| `inbox-send.service.ts`, `inbox-send.types.ts`, `inbox-send.job.ts` | Replies: send with a hold, Undo, Try again, `sendAutomatic`, and the job's `deliver` (D6) |

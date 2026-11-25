@@ -83,7 +83,7 @@ Each domain's shapes are in its own file, so a change reads only the one it touc
 | campaigns | [contracts/campaigns.md](contracts/campaigns.md) | The WhatsApp send port and messaging settings |
 | social | [contracts/social.md](contracts/social.md) | Posts and their drafts |
 | notifications | [contracts/notifications.md](contracts/notifications.md) | The hub's event: what a module emits |
-| inbox | [contracts/inbox.md](contracts/inbox.md) | Needs you, the waiting event, support shares and the open log |
+| inbox | [contracts/inbox.md](contracts/inbox.md) | Needs you, the waiting event, support shares and the open log; replies and the `ConversationSource` port |
 
 Shapes every domain shares stay here.
 
