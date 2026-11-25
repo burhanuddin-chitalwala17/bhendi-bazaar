@@ -1,6 +1,6 @@
 # Decisions — viewer
 
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 
 > Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented ones (ADR-0062).
 > Owner decides money, policy, irreversible data, external commitments, taste.
@@ -15,9 +15,9 @@
 | Q5 | What is downloaded — the original or a resized copy? | The original stored file, named `<shop code>-<asset id>.<ext>` | Claude · reversible | 2026-11-24 | A seller sends it on; a resized copy loses detail they will want back | implemented (unit 1) |
 | Q6 | Should the product page's lightbox and other pickers get this viewer too? | No — Library only | Claude · reversible | 2026-11-24 | One outcome; buyers already have the product lightbox | parked |
 | Q7 | Where on a tile does the full-screen control sit, given the corners carry badges? | Top-left; a video's Processing/Failed badge moves below it | Claude · reversible | 2026-11-24 | Use count stays top-right where sellers look for it; state badges are rare | decided |
-| Q8 | Download on a YouTube link? | Offered, and on tap says it lives on YouTube with "Open on YouTube" | Claude · reversible | 2026-11-24 | ADR-0053: nothing disabled, the reason is one tap away | decided |
+| Q8 | Download on a YouTube link? | Offered, and on tap says it lives on YouTube with "Open on YouTube" | Claude · reversible | 2026-11-24 | ADR-0053: nothing disabled, the reason is one tap away | implemented (unit 2) |
 | Q9 | Does a photo zoom in the viewer? | Yes, pinch and wheel, as the product lightbox does | Claude · reversible | 2026-11-24 | Checking sharpness is why a seller opens it full screen | decided |
-| Q10 | Can a retired item be viewed and downloaded? | Viewed, yes. Downloaded while its file is kept (thirty days); after that the download says the file is gone | Claude · reversible | 2026-11-24 | Retired is a record kept (ADR-0032), but its bytes are deleted after thirty days | decided |
+| Q10 | Can a retired item be viewed and downloaded? | Viewed, yes. Downloaded while its file is kept (thirty days); after that the download says the file is gone | Claude · reversible | 2026-11-24 | Retired is a record kept (ADR-0032), but its bytes are deleted after thirty days | implemented (unit 2) |
 | Q11 | Where does closing the viewer return to? | Where it was opened from; the grid is scrolled to the item last shown | Claude · reversible | 2026-11-24 | The seller swiped to it, so it is what they want next | decided |
 
 ## Parked (Later)

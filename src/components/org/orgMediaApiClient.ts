@@ -8,6 +8,10 @@ export interface MediaLibraryPage {
   pagination: Pagination;
 }
 
+function downloadHref(orgId: string, assetId: string): string {
+  return `/api/org/${orgId}/media/${assetId}/download`;
+}
+
 /** One org's media library: its pages, one asset's uses, and what can be done to an asset. */
 export const orgMediaApiClient = {
   /** `query` is the filter string the library route parses; `page` is appended to it. */
@@ -37,12 +41,15 @@ export const orgMediaApiClient = {
     await apiRequest(`/api/org/${orgId}/media/${assetId}/crop`, { method: "POST", body: transform });
   },
 
+  /** Where the browser goes to save the original; the route answers a redirect to the file (trd D1). */
+  downloadHref,
+
   /**
    * Asked before the navigation, which would show the browser's error page on a refusal (trd D5).
    * Resolves when the file can be saved; an `ApiError` carries 404, 410 or 422 otherwise.
    */
   async canDownload(orgId: string, assetId: string): Promise<void> {
-    await apiRequest(`/api/org/${orgId}/media/${assetId}/download`, { method: "HEAD" });
+    await apiRequest(downloadHref(orgId, assetId), { method: "HEAD" });
   },
 
   async retire(orgId: string, assetId: string): Promise<void> {
