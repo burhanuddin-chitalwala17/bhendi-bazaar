@@ -1,0 +1,19 @@
+handoff/media-library-bulk-actions-u2.md
+  s_9d5fa95bbe24d4::t_16c6a86ab3b8a9 3,5,8-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "6cbc01c6dddbd38ac8da47966b7d9dd462721b04",
+  "prompts": {},
+  "sessions": {
+    "s_9d5fa95bbe24d4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f00ee551-450c-4171-b74f-9342da83f47a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
