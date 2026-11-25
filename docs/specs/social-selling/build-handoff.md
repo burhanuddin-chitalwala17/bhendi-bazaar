@@ -20,10 +20,10 @@ units are on the branch starts at once, one unit per session (ADR-0080 still hol
 data dirs in `Bhendi-bazaar-master/.pg-lanes/`). A lane pushes with `git pull --rebase origin
 meta-whatsapp-connector` then `git push origin HEAD:meta-whatsapp-connector`; never force. A migration that sorts
 before one that arrived is renamed later. The master keeps this file in its own docs-only worktree
-(`bhendi-bazaar-ss-master/`). A unit took ~26 minutes; usage limits stop every lane at once — sessions push at
+(`bhendi-bazaar-ss-master/`). Run vitest on Node 22 (the default Node 20 crashes it). A unit took ~26 minutes; usage limits stop every lane at once — sessions push at
 green checkpoints and resume after the reset.
 
-**Running now (lane):** connect-whatsapp U1 (1), whatsapp-catalogue U1 (2), notifications-core U1 (3),
+**Running now (lane):** connect-whatsapp U1 (1), notifications-core U1 (3),
 post-composer U1 (4), inbox-core U1 (5), consent-core U1 (6), checkout-links U1 (7). Every TRD's Delivery lines now
 carry `after …` marks — the next ready units are read from them.
 
@@ -58,6 +58,7 @@ Do not start the next unit.
 | connect-instagram U1 | `connect-instagram unit 1: connect and callback` and its review fixes |
 | connect-instagram U2 | `connect-instagram unit 2: renewal, health, disconnect [CONTRACT]` (d2fcd2b9) |
 | connect-instagram U3 | `connect-instagram unit 3: card, checklist, Turn on replies, return notes [CONTRACT] [MIGRATION]` (8f01f51a); rebuilt by the second account. Gate green, integration 823 passed. Departs from ux.md per decisions Q19, accepted as built by the owner 2026-11-25 |
+| whatsapp-catalogue U1 | `whatsapp-catalogue unit 1: item builder and content hash` (5719a40f). Q15 (brand, condition sent; reversible) |
 | Planning | notification-hub and publishing units marked (7017d471); all remaining units marked, social-posts U4 added, connection-ready event in post-composer U3 (34f25c60) |
 | Process | ADRs renumbered 0084–0087; rebased on main; next units' dependencies marked in their TRDs |
 
