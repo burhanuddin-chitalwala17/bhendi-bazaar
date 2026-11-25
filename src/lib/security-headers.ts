@@ -31,6 +31,13 @@ const RAZORPAY = "https://*.razorpay.com";
  *  A video we host is not a frame: it is a `<video>` reading our bucket under `media-src`. */
 const YOUTUBE_EMBED = "https://www.youtube-nocookie.com";
 
+/**
+ * Meta's JS SDK, loaded only when a shop taps Connect WhatsApp, and the Facebook frames and calls
+ * its Embedded Signup makes (connect-whatsapp D1). The pop-up itself is a window, which CSP does not govern.
+ */
+const META_SDK = "https://connect.facebook.net";
+const FACEBOOK = "https://*.facebook.com";
+
 /** The bucket's public read domain: every stored image, and every video rendition (ADR-0028). */
 function storeHost(): string[] {
   const base = process.env.R2_PUBLIC_BASE_URL;
@@ -100,7 +107,7 @@ export function contentSecurityPolicy(nonce: string, isDev: boolean, selfFramed 
 
     // No 'unsafe-inline'. React's dev build compiles with eval, the production build
     // does not — so the exception is scoped to dev rather than shipped.
-    "script-src": ["'self'", `'nonce-${nonce}'`, RAZORPAY, ...(isDev ? ["'unsafe-eval'"] : [])],
+    "script-src": ["'self'", `'nonce-${nonce}'`, RAZORPAY, META_SDK, ...(isDev ? ["'unsafe-eval'"] : [])],
 
     // Next inlines critical CSS and Tailwind emits style attributes; a nonce cannot reach
     // either. Style injection is a defacement vector, not an execution one, so this is the
@@ -124,6 +131,7 @@ export function contentSecurityPolicy(nonce: string, isDev: boolean, selfFramed 
       RAZORPAY,
       "https://lumberjack.razorpay.com",
       "https://vitals.vercel-insights.com",
+      FACEBOOK,
       // Where the bytes of a direct upload actually go. See `uploadHosts()` for why
       // this is a different host from the one images are read back from.
       ...uploadHosts(),
@@ -133,7 +141,7 @@ export function contentSecurityPolicy(nonce: string, isDev: boolean, selfFramed 
     // The Razorpay checkout modal and the product video player are both iframes on
     // someone else's origin. Chrome reports a refused frame as "This content is blocked",
     // which is how a missing host here surfaced as a broken gallery, not a policy error.
-    "frame-src": ["'self'", RAZORPAY, YOUTUBE_EMBED],
+    "frame-src": ["'self'", RAZORPAY, YOUTUBE_EMBED, FACEBOOK],
     // Razorpay's bank/UPI redirect posts back through a form.
     "form-action": ["'self'", RAZORPAY],
 

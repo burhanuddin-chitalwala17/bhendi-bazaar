@@ -7,6 +7,8 @@ import type { SettleListingFormValues } from "@/lib/validation/schemas/settle-li
 import type { ChannelTypeChangeInput } from "@/lib/validation/schemas/channel-mapping.schema";
 import type { Channel } from "@server/shared/channels";
 import type { SocialPlatform } from "@server/channels/social/types";
+import type { ConnectResult, WhatsAppSignupStart } from "@server/channels/channel-connection.types";
+import type { WhatsAppSignupInput } from "@/lib/validation/schemas/whatsapp-signup.schema";
 import type { MarketplaceFactsChangeInput } from "@/lib/validation/schemas/marketplace-facts.schema";
 import type { FillNowOutcome } from "@server/channels/channel-facts.types";
 import type { FamilySettleFormValues } from "@/lib/validation/schemas/family-settle.schema";
@@ -55,6 +57,16 @@ export const channelsApiClient = {
       `/api/org/${orgId}/channels/${channel}/connection/check`,
       { method: "POST" },
     );
+  },
+
+  /** Open a WhatsApp sign-up attempt: the state and ids Meta's pop-up opens with (connect-whatsapp D1). */
+  whatsappStart(orgId: string) {
+    return apiRequest<WhatsAppSignupStart>(`/api/org/${orgId}/channels/whatsapp/connect`, { method: "POST" });
+  },
+
+  /** What Meta's pop-up returned; the server confirms it with Meta before claiming the number. */
+  whatsappSignup(body: WhatsAppSignupInput) {
+    return apiRequest<{ result: ConnectResult }>("/api/channels/whatsapp/signup", { method: "POST", body });
   },
 
   /** "Done" on Instagram's Turn on replies sheet: the step waits for the first message (connect-instagram D3). */

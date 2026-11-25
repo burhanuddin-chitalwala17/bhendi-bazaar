@@ -35,15 +35,18 @@ function key(): Buffer {
   return createHmac("sha256", secret).update("channel-connect-state:v1").digest();
 }
 
+export const newStateNonce = () => randomBytes(12).toString("base64url");
+
 const sign = (body: string) => createHmac("sha256", key()).update(body).digest("base64url");
 
+/** A nonce the caller keeps (WhatsApp's sign-up attempt, connect-whatsapp D1) is passed in; otherwise one is made. */
 export function signConnectState(
-  input: Omit<ConnectState, "nonce" | "expiresAt">,
+  input: Omit<ConnectState, "nonce" | "expiresAt"> & { nonce?: string },
   now = Date.now(),
 ): string {
   const payload: ConnectState = {
     ...input,
-    nonce: randomBytes(12).toString("base64url"),
+    nonce: input.nonce ?? newStateNonce(),
     expiresAt: now + STATE_TTL_MS,
   };
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");

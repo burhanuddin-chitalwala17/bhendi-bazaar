@@ -34,6 +34,8 @@ export interface ConnectionRow {
   channel: string;
   state: string;
   externalAccountId: string | null;
+  /** A WhatsApp connection's phone number id (connect-whatsapp Q10). */
+  externalPhoneId: string | null;
   authorizedAt: Date | null;
   connectedAt: Date | null;
   disconnectedAt: Date | null;
@@ -80,6 +82,7 @@ const ROW = {
   channel: true,
   state: true,
   externalAccountId: true,
+  externalPhoneId: true,
   authorizedAt: true,
   connectedAt: true,
   disconnectedAt: true,
@@ -105,6 +108,9 @@ const ROW = {
   messagesOffAt: true,
   ...PEOPLE,
 } as const;
+
+/** A social token renews itself: no expiry, no refresh token. */
+const NO_EXPIRY = { accessTokenExpiresAt: null, refreshToken: null, refreshTokenExpiresAt: null } as const;
 
 const SECRETS = {
   id: true,
@@ -249,6 +255,62 @@ export const channelConnectionRepository = {
       lastCheckedAt: input.now,
       lastErrorCode: null,
       lastErrorAt: null,
+    };
+    return await db.channelConnection.upsert({
+      where: { orgId_channel: { orgId: input.orgId, channel: input.channel } },
+      create: { orgId: input.orgId, channel: input.channel, ...data },
+      update: data,
+      select: { id: true },
+    });
+  },
+
+  /** The shop's one live WhatsApp sign-up attempt (connect-whatsapp D1); a newer one replaces an older nonce. */
+  async openSignup(orgId: string, channel: SocialPlatform, nonce: string): Promise<void> {
+    await prisma.channelConnection.upsert({
+      where: { orgId_channel: { orgId, channel } },
+      create: { orgId, channel, state: CONNECTION_STATE.DISCONNECTED, signupNonce: nonce },
+      update: { signupNonce: nonce },
+      select: { id: true },
+    });
+  },
+
+  /** Spend the attempt's nonce: true once, for the live attempt only (A3). */
+  async spendSignup(orgId: string, channel: SocialPlatform, nonce: string): Promise<boolean> {
+    const { count } = await prisma.channelConnection.updateMany({
+      where: { orgId, channel, signupNonce: nonce },
+      data: { signupNonce: null },
+    });
+    return count === 1;
+  },
+
+  /** A number claimed from Meta's pop-up, Setting up (connect-whatsapp D2); the unique indexes refuse a second shop. */
+  async claimWhatsApp(
+    db: ConnectionDb,
+    input: {
+      orgId: string;
+      channel: SocialPlatform;
+      businessId: string;
+      phoneId: string;
+      kind: string;
+      accessToken: string;
+      userId: string;
+      now: Date;
+    },
+  ): Promise<{ id: string }> {
+    const data = {
+      state: CONNECTION_STATE.SETTING_UP,
+      externalBusinessId: input.businessId,
+      externalPhoneId: input.phoneId,
+      externalAccountKind: input.kind,
+      accessToken: input.accessToken,
+      ...NO_EXPIRY,
+      authorizedAt: input.now,
+      connectedById: input.userId,
+      connectedAt: input.now,
+      lastCheckedAt: input.now,
+      lastErrorCode: null,
+      lastErrorAt: null,
+      signupNonce: null,
     };
     return await db.channelConnection.upsert({
       where: { orgId_channel: { orgId: input.orgId, channel: input.channel } },

@@ -47,6 +47,8 @@ export const ROUTE_RATE_LIMITS = {
   "GET /api/channels/instagram/callback": {
     exempt: "Instagram's sign-in redirect, once per connection; its signed state authenticates it.",
   },
+  // The sign-up a signed-in member's page posts once per pop-up; counted as an account action.
+  "POST /api/channels/whatsapp/signup": { policy: P.ACCOUNT },
   "GET /api/channels/[channel]/callback": {
     exempt: "The marketplace's consent redirect, once per connection; its signed state authenticates it.",
   },

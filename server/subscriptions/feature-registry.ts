@@ -34,6 +34,7 @@ export const ORG_ROUTE_FEATURES: Record<string, Classification> = {
 
   "GET /api/org/[orgId]/channels/[channel]/connect": CH,
   "GET /api/org/[orgId]/channels/instagram/connect": { feature: FEATURE.SOCIAL_SELLING },
+  "POST /api/org/[orgId]/channels/whatsapp/connect": { feature: FEATURE.SOCIAL_SELLING },
   "POST /api/org/[orgId]/channels/[channel]/connection/check": CH,
   "POST /api/org/[orgId]/channels/instagram/connection/check": { feature: FEATURE.SOCIAL_SELLING },
   "POST /api/org/[orgId]/channels/instagram/replies": {
@@ -157,6 +158,10 @@ export const JOB_FEATURES: Record<string, { readonly feature: Feature; readonly 
   "channels.maintain": { ...CH, how: "Renews and re-seals every shop's tokens (Q11); health-checks only holders (D5)." },
   "channels.drain-events": {
     core: "Hands on what Meta already sent for a connection that exists; the Social selling lock (Q36) is asserted where a shop connects and acts.",
+  },
+  "channels.whatsapp-setup": {
+    feature: FEATURE.SOCIAL_SELLING,
+    how: "Queued only by a sign-up that asserted Social selling; the handler ends succeeded with a skip for a shop that lost it (connect-whatsapp D3).",
   },
   "channels.meta-retention": { core: "Deletes raw events past 30 days for every account: a promise to the people in them, whatever the plan." },
   "channels.meta-sweep": { core: "Re-asks drains and deletion requests a lost job left behind; each does only what was already owed." },

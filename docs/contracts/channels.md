@@ -69,6 +69,15 @@ Instagram is not open and the shop holds no live connection. Like the cards, it 
 and no account id. `POST /api/org/[orgId]/channels/instagram/replies` (no body) answers
 `{ ok: true }`, or 404 in the envelope when nothing is connected.
 
+WhatsApp (connect-whatsapp unit 1) connects through Meta's Embedded Signup pop-up in two calls.
+`POST /api/org/[orgId]/channels/whatsapp/connect` (no body) answers a **`WhatsAppSignupStart`**:
+`{ state, appId, configId }` (the signed state of the shop's one live attempt and the Meta app's
+public ids), or `{ result }` when WhatsApp is not open. `POST /api/channels/whatsapp/signup` takes
+`whatsappSignupSchema` (`state`; Meta's `code`; `businessId` and `phoneId`, numeric strings from the
+pop-up's session-info message; `kind` from `WHATSAPP_NUMBER_KIND`, coexistence or cloud), every
+field untrusted until the state is spent and Meta lists the number under the account for the
+exchanged token, and answers `{ result }`: `connected` means the number is claimed Setting up.
+
 `CONNECT_RESULT` is a closed set (connected, cancelled, expired, other_session, other_shop,
 different_account, unreachable, full, unavailable, and since connect-instagram unit 1 personal); a client renders each with ux.md's copy and
 nothing else. Google and Meta still turn on and off through `PUT /api/org/[orgId]/channels` above; since channel-connectors that schema accepts only `google` and `meta`, because a marketplace is on only by connecting it (D11).

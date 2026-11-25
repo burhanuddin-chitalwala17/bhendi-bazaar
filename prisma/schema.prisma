@@ -2580,7 +2580,7 @@ model ChannelConnection {
   org     Org    @relation(fields: [orgId], references: [id], onDelete: Restrict)
   /// A marketplace `CHANNEL` key.
   channel String
-  /// `CONNECTION_STATE`: CONNECTED, NEEDS_RECONNECT, DISCONNECTED.
+  /// `CONNECTION_STATE`: CONNECTED, NEEDS_RECONNECT, DISCONNECTED; WhatsApp also SETTING_UP, SETUP_FAILED.
   state   String
 
   /// The marketplace's own id for the seller (Amazon's selling_partner_id). Flipkart gives none.
@@ -2642,6 +2642,9 @@ model ChannelConnection {
   repliesAskedAt DateTime?
   firstMessageAt DateTime?
   messagesOffAt  DateTime?
+  /// The live WhatsApp sign-up attempt's nonce (connect-whatsapp D1): set when the pop-up opens,
+  /// cleared when its result is spent, so a replayed result connects nothing.
+  signupNonce    String?
 
   listings  ChannelListing[]
   locations ChannelLocation[]

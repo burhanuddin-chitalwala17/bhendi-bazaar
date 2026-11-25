@@ -54,6 +54,16 @@ describe("content security policy", () => {
     }
   });
 
+  it("admits Meta's SDK and Embedded Signup's frames and calls, with scripts from the SDK host only (connect-whatsapp D1)", () => {
+    // Connect WhatsApp loads Meta's SDK on tap; its sign-up draws Facebook frames and calls Facebook.
+    // A wildcard Facebook host in script-src would let any page Facebook serves run here.
+    expect(directive(prod, "script-src")).toContain("https://connect.facebook.net");
+    expect(directive(prod, "script-src")).not.toContain("facebook.com");
+    expect(directive(prod, "frame-src")).toContain("https://*.facebook.com");
+    expect(directive(prod, "connect-src")).toContain("https://*.facebook.com");
+    expect(directive(prod, "script-src")).not.toContain("'unsafe-inline'");
+  });
+
   it("admits the video player on the channels its embed actually uses", () => {
     // Regression: the policy inventoried the gateway's channels and the poster image host,
     // and nothing else. The player iframe (ADR-0017) had no entry in `frame-src`, so every

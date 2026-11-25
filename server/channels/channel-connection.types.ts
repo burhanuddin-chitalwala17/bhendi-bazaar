@@ -24,6 +24,10 @@ export const CONNECTION_STATE = {
   CONNECTED: "CONNECTED",
   NEEDS_RECONNECT: "NEEDS_RECONNECT",
   DISCONNECTED: "DISCONNECTED",
+  /** WhatsApp after Meta's pop-up, while the setup job makes the number ready (connect-whatsapp D2, D3). */
+  SETTING_UP: "SETTING_UP",
+  /** WhatsApp setup ran out of retries; nothing is half-done and the shop tries again (connect-whatsapp R6). */
+  SETUP_FAILED: "SETUP_FAILED",
 } as const;
 export type ConnectionState = (typeof CONNECTION_STATE)[keyof typeof CONNECTION_STATE];
 
@@ -102,6 +106,16 @@ export interface ChannelCardDTO {
 /** The Instagram account kinds that connect (connect-instagram R3); a personal account stores nothing. */
 export const SOCIAL_ACCOUNT_KIND = { BUSINESS: "business", CREATOR: "creator" } as const;
 export type SocialAccountKind = (typeof SOCIAL_ACCOUNT_KIND)[keyof typeof SOCIAL_ACCOUNT_KIND];
+
+/**
+ * How a WhatsApp number joined (connect-whatsapp R2, R3): kept on the WhatsApp Business app
+ * (coexistence), or moved fully to the Cloud API. Setup's steps differ by it (D3).
+ */
+export const WHATSAPP_NUMBER_KIND = { COEXISTENCE: "coexistence", CLOUD: "cloud" } as const;
+export type WhatsAppNumberKind = (typeof WHATSAPP_NUMBER_KIND)[keyof typeof WHATSAPP_NUMBER_KIND];
+
+/** What Meta's pop-up opens with (connect-whatsapp D1): the signed state and the app's public ids, or why not. */
+export type WhatsAppSignupStart = { state: string; appId: string; configId: string } | { result: ConnectResult };
 
 /** The Instagram card (connect-instagram ux.md "State matrix — Instagram card"). No token or account id. */
 export interface InstagramCardDTO {

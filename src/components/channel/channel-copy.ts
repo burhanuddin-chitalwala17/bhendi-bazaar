@@ -274,6 +274,15 @@ export const INSTAGRAM = {
   },
 } as const;
 
+/** Connect WhatsApp's button and the lines around Meta's pop-up (connect-whatsapp ux.md "Opening Meta"). */
+export const WHATSAPP = {
+  connect: "Connect WhatsApp",
+  opening: "Opening Meta…",
+  finishInMeta: "Finish in the Meta window…",
+  beforeConsent:
+    "Meta will ask to let Bhendi Bazaar manage your WhatsApp messages. That's what lets you reply from here. Your chats stay between you and your buyers.",
+} as const;
+
 /** Instagram's own app or site: on a phone the link opens the app where it is installed. */
 export const INSTAGRAM_APP_URL = "https://www.instagram.com/";
 
