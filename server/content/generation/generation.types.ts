@@ -108,6 +108,35 @@ export interface GenerationRequest {
   enhancementId: string | null;
 }
 
+/**
+ * What text is for (ADR-0087). A text purpose has its own ordered model list, read the same way as
+ * a picture's; it is a separate set because a text model takes no shape, size or reference.
+ */
+export const TEXT_PURPOSE = {
+  /** A post's caption and hashtags from its products' facts (ai-images/social-posts D3). */
+  CAPTION: "caption",
+} as const;
+export type TextPurpose = (typeof TEXT_PURPOSE)[keyof typeof TEXT_PURPOSE];
+
+/** What a caller asks a text model for. */
+export interface TextGenerationRequest {
+  purpose: TextPurpose;
+  /** The composed prompt; built from facts, never a shop's free text (ADR-0087 D4). */
+  prompt: string;
+  promptVersion: string;
+  /** The most the answer may run to: the bound the worst-case price is quoted at. */
+  maxOutputTokens: number;
+  idempotencyKey: string;
+}
+
+export interface TextGenerationResult {
+  generationId: string;
+  text: string;
+  modelId: string;
+  costMicroUsd: number;
+  costPaise: number;
+}
+
 /** What comes back (spec R6). */
 export interface GenerationResult {
   generationId: string;

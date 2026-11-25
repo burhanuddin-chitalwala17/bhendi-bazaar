@@ -1,4 +1,4 @@
-import type { GenerationPurpose } from "@server/content/generation/generation.types";
+import type { GenerationPurpose, TextPurpose } from "@server/content/generation/generation.types";
 
 /**
  * Where a purpose's model order comes from (generation-foundation trd D4; ai-images Q12). Asked
@@ -8,7 +8,7 @@ import type { GenerationPurpose } from "@server/content/generation/generation.ty
  */
 export interface ModelOrderSource {
   /** The model ids in the order to try them, or null where this source says nothing for the purpose. */
-  orderFor(purpose: GenerationPurpose): Promise<readonly string[] | null>;
+  orderFor(purpose: GenerationPurpose | TextPurpose): Promise<readonly string[] | null>;
 }
 
 /** The deployment's setting: `IMAGE_GEN_MODELS_<PURPOSE>`, comma-separated registry ids. */

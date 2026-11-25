@@ -10,14 +10,15 @@ What is made from an image: the six exact improvements and their ledger (`Enhanc
 
 ## Boundaries
 
-**Owns:** `server/content/**`, the `Enhancement`, `EnhancementSettings`, `OrgEnhancementPolicy`, `Generation` and `ExchangeRate` tables, and the loose objects under `proposals/` and `generations/`.
+**Owns:** `server/content/**`, the `Enhancement`, `EnhancementSettings`, `OrgEnhancementPolicy`, `Generation`, `ExchangeRate` and `CaptionDraft` tables, and the loose objects under `proposals/` and `generations/`.
 
 **Does not own:** the images themselves. Bytes are read and written only through `mediaAssetService` (catalog's public surface), never `object-store` or a catalog repository ([ADR-0033](../../docs/adr/0033-a-domain-is-reached-through-its-public-surface.md)). A post is social's: `social-picture.service.ts` reads one through `postService` for Make a picture's presets (ai-images/social-posts D1), and catalog's product photos through `productService`.
 
 ## Rules
 
 - **Every AI picture goes through `generation/`** ([ADR-0076](../../docs/adr/0076-image-generation-goes-through-one-port-and-models-are-data.md)). A caller builds a `GenerationRequest` and never names a provider. Only `generation/adapters/` may name a provider's host, field or credential; `tests/unit/generation-vendor-boundary.test.ts` fails otherwise.
-- **A model is a registry entry, with its price's source and date.** A new model is an entry in `generation/registry.ts`; a new provider is one adapter that passes `tests/unit/generation-adapter-contract.test.ts`. Which models run comes from the model-order sources in `generation/model-order.ts` (today `IMAGE_GEN_MODELS_<PURPOSE>`; purposes `scene`, `listing`, `social`), never a code change; an admin screen for it is a new source placed first (ai-images Q12).
+- **A model is a registry entry, with its price's source and date.** A new model is an entry in `generation/registry.ts`; a new provider is one adapter that passes `tests/unit/generation-adapter-contract.test.ts`. Which models run comes from the model-order sources in `generation/model-order.ts` (today `IMAGE_GEN_MODELS_<PURPOSE>`; purposes `scene`, `listing`, `social`, text `caption`), never a code change; an admin screen for it is a new source placed first (ai-images Q12).
+- **Text goes through the same port** ([ADR-0087](../../docs/adr/0087-text-generation-goes-through-the-generation-port.md)): `generation/text-generator.ts`, text models in `TEXT_MODELS`, priced per token. A caption states only numbers its facts hold (`caption/rules.ts`); a draft that does not is never shown.
 - **Fallback only on availability.** A refusal or an unreadable answer ends the run; it is never tried on another model.
 - **Money is micro-dollars to integer paise at a stored day's rate** (`generation/pricing.ts`, `generation/exchange-rate.ts`); never a rate typed into code.
 - **The exact tools never change the product's pixels** ([ADR-0059](../../docs/adr/0059-an-enhancement-never-changes-the-products-pixels-proven-before-encoding.md)): `white`, `studio` and `scene` paste the cut-out back and check it before encoding, whichever model painted the scene.

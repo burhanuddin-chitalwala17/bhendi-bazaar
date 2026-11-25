@@ -238,13 +238,16 @@ model Generation {
   /// The seller's own words, kept apart from the platform's; null where there were none.
   brief               String?
   referenceAssetIds   String[]
-  aspect              String
-  size                String
+  /// Null for text, which has no shape or size (ADR-0087).
+  aspect              String?
+  size                String?
   costMicroUsd        Int             @default(0)
   costPaise           Int             @default(0)
   /// The day whose rate priced this call; null for a free model.
   rateDay             DateTime?       @db.Date
   outputKeys          String[]
+  /// A text generation's answer (ADR-0087); null for a picture, whose bytes are under `outputKeys`.
+  outputText          String?
   synthetic           Boolean         @default(true)
   containsPerson      Boolean         @default(false)
   /// A worker died mid-call and the call was made again: the provider may have billed twice (trd D6).
@@ -258,6 +261,23 @@ model Generation {
 
   @@index([enhancementId])
   @@index([createdAt])
+}
+
+/// The facts a drafted caption was written from (ai-images/social-posts D4): what `captionStillTrue`
+/// compares with the live product. One per post; a new draft replaces it. Owned by content.
+model CaptionDraft {
+  postId               String   @id
+  post                 Post     @relation(fields: [postId], references: [id], onDelete: Restrict)
+  /// The products, and each one's list and effective price in paise, index-aligned (Invariant 3).
+  productIds           String[]
+  pricesPaise          Int[]
+  effectivePricesPaise Int[]
+  factsHash            String
+  /// `CAPTION_LANGUAGE`: en, hi, both.
+  language             String
+  /// The generation that wrote it; null when the template did.
+  generationId         String?
+  createdAt            DateTime @default(now())
 }
 
 enum GenerationState {
@@ -3594,6 +3614,7 @@ model Post {
   updatedAt   DateTime  @updatedAt
 
   destinations PostDestination[]
+  captionDraft CaptionDraft?
 
   @@index([orgId, state, scheduledAt])
 }

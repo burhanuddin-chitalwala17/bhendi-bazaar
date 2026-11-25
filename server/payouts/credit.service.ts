@@ -5,11 +5,13 @@ import { recordAdminAction, recordAdminActionIn } from "@server/shared/audit/aud
 import { creditRepository, type CreditDb, type CreditLineRow } from "@server/payouts/credit.repository";
 import { paymentDetailsRepository } from "@server/payouts/payment-details.repository";
 import {
+  CREDIT_RUN,
   REVERSIBLE_KINDS,
   withMargin,
   type AdminCreditAccountDto,
   type CreditAccountDto,
   type CreditLineDto,
+  type CreditRun,
   type PaymentDetailsDto,
   type PaymentProof,
 } from "@server/payouts/credit.types";
@@ -25,8 +27,9 @@ export class InsufficientCreditError extends ConflictError {
   constructor(
     readonly balancePaise: number,
     readonly neededPaise: number,
+    run: CreditRun = CREDIT_RUN.PICTURE,
   ) {
-    super("Not enough credit for this picture");
+    super(run.short);
     this.name = "InsufficientCreditError";
   }
 }
@@ -195,14 +198,15 @@ export const creditService = {
    */
   async charge(
     tx: CreditDb,
-    input: { orgId: string; enhancementId: string; costPaise: number; worstCostPaise: number; marginBps: number },
+    input: { orgId: string; enhancementId: string; costPaise: number; worstCostPaise: number; marginBps: number; run?: CreditRun },
   ): Promise<{ heldPaise: number; balancePaise: number }> {
+    const run = input.run ?? CREDIT_RUN.PICTURE;
     await creditRepository.lockOrg(input.orgId, tx);
     await creditRepository.ensureGrants([input.orgId], tx);
     const balance = await creditRepository.balance(input.orgId, tx);
     const worstCost = Math.max(input.costPaise, input.worstCostPaise);
     const heldPaise = withMargin(worstCost, input.marginBps);
-    if (balance < heldPaise) throw new InsufficientCreditError(balance, heldPaise);
+    if (balance < heldPaise) throw new InsufficientCreditError(balance, heldPaise, run);
     const written = await creditRepository.insertOnce(
       {
         orgId: input.orgId,
@@ -212,11 +216,16 @@ export const creditService = {
         marginBps: input.marginBps,
         enhancementId: input.enhancementId,
         runKey: `charge:${input.enhancementId}`,
-        note: "AI picture",
+        note: run.charge,
       },
       tx,
     );
     return { heldPaise, balancePaise: written ? balance - heldPaise : balance };
+  },
+
+  /** Runs of one kind (by id prefix) still holding credit after `before`, for the caller's lazy sweep. */
+  async openRuns(orgId: string, runPrefix: string, before: Date): Promise<string[]> {
+    return await creditRepository.openRuns(orgId, runPrefix, before);
   },
 
   /**
@@ -224,7 +233,7 @@ export const creditService = {
    * back in one line. A run has exactly one closing line — this or a refund, whichever is first —
    * so a late settle after a refund, or the reverse, changes nothing.
    */
-  async settle(enhancementId: string, actualCostPaise: number): Promise<void> {
+  async settle(enhancementId: string, actualCostPaise: number, label: CreditRun = CREDIT_RUN.PICTURE): Promise<void> {
     const run = await creditRepository.netForRun(enhancementId);
     if (!run.orgId || !run.charge) return;
     const owed = withMargin(actualCostPaise, run.charge.marginBps ?? 0);
@@ -238,12 +247,12 @@ export const creditService = {
       marginBps: run.charge.marginBps,
       enhancementId,
       runKey: `close:${enhancementId}`,
-      note: "AI picture, settled",
+      note: label.settle,
     });
   },
 
   /** A run that made nothing gives back everything it held (Q20). Its closing line, written once. */
-  async refund(enhancementId: string): Promise<void> {
+  async refund(enhancementId: string, label: CreditRun = CREDIT_RUN.PICTURE): Promise<void> {
     const run = await creditRepository.netForRun(enhancementId);
     if (!run.orgId || !run.charge) return;
     await creditRepository.insertOnce({
@@ -252,7 +261,7 @@ export const creditService = {
       amountPaise: Math.max(0, -run.paise),
       enhancementId,
       runKey: `close:${enhancementId}`,
-      note: "Picture not made",
+      note: label.refund,
     });
   },
 };

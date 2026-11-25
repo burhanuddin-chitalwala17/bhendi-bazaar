@@ -12,6 +12,8 @@ export interface GenerationRow {
   modelId: string | null;
   state: GenerationState;
   outputKeys: string[];
+  /** A text generation's answer (ADR-0087); null for a picture. */
+  outputText: string | null;
   costMicroUsd: number;
   costPaise: number;
   error: string | null;
@@ -24,6 +26,7 @@ const SELECT = {
   modelId: true,
   state: true,
   outputKeys: true,
+  outputText: true,
   costMicroUsd: true,
   costPaise: true,
   error: true,
@@ -37,8 +40,9 @@ export interface OpenGenerationInput {
   platformPrompt: string;
   brief: string | null;
   referenceAssetIds: string[];
-  aspect: string;
-  size: string;
+  /** Null for text, which has no shape or size. */
+  aspect: string | null;
+  size: string | null;
   containsPerson: boolean;
   enhancementId: string | null;
 }
@@ -102,6 +106,25 @@ export class GenerationRepository {
       data: { outputKeys, state: GenerationState.SUCCEEDED, finishedAt: new Date() },
     });
     return count === 1;
+  }
+
+  /** A text answer is kept on its row: small, and read back on a replay instead of calling again. */
+  async succeedText(id: string, text: string): Promise<boolean> {
+    const { count } = await prisma.generation.updateMany({
+      where: { id, state: GenerationState.SUBMITTED },
+      data: { outputText: text, state: GenerationState.SUCCEEDED, finishedAt: new Date() },
+    });
+    return count === 1;
+  }
+
+  /** What the generations under these keys cost, whatever became of them: spend is spend (trd D6). */
+  async costForKeys(idempotencyKeys: string[]): Promise<number> {
+    if (idempotencyKeys.length === 0) return 0;
+    const { _sum } = await prisma.generation.aggregate({
+      where: { idempotencyKey: { in: idempotencyKeys } },
+      _sum: { costPaise: true },
+    });
+    return _sum.costPaise ?? 0;
   }
 
   async fail(id: string, refused: boolean, error: string, modelId: string | null): Promise<boolean> {

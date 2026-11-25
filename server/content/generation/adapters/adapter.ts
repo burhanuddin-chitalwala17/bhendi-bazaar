@@ -5,7 +5,7 @@ import {
   type GenerationReference,
   type GenerationSize,
 } from "@server/content/generation/generation.types";
-import type { AdapterKey, ModelEntry } from "@server/content/generation/registry";
+import type { AdapterKey, ModelEntry, TextModelEntry } from "@server/content/generation/registry";
 
 /**
  * One provider's API (generation-foundation trd D2). An adapter is the only code that knows a
@@ -18,13 +18,31 @@ export interface AdapterCall {
   size: GenerationSize;
 }
 
+export interface TextCall {
+  prompt: string;
+  maxOutputTokens: number;
+}
+
+/** A text answer in our terms; token counts are null when the provider did not report them. */
+export interface TextAnswer {
+  text: string;
+  inputTokens: number | null;
+  outputTokens: number | null;
+}
+
 export interface Adapter {
   key: AdapterKey;
   /** Whether its credentials are set at all — asked before it is chosen, never after. */
   isConfigured(): boolean;
   /** One picture's bytes, or a `GenerationFailure`. */
   call(model: ModelEntry, input: AdapterCall): Promise<Buffer>;
+  /** Text, for a provider that speaks it (ADR-0087); absent where it does not. */
+  callText?(model: TextModelEntry, input: TextCall): Promise<TextAnswer>;
 }
+
+/** A token count a provider reported, or null for anything that is not a whole number. */
+export const tokenCount = (value: unknown): number | null =>
+  typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
 
 /** A generation is slower than a transform; still bounded, or a dead socket holds a job slot. */
 export const GENERATION_TIMEOUT_MS = 90_000;

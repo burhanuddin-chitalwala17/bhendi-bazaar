@@ -41,6 +41,13 @@ const FREE_REACH = 2;
  * own header, which is the better home for that.
  */
 const RECORDED: Record<string, { domains: string[]; why: string }> = {
+  "server/content/caption.service.ts": {
+    domains: ["catalog", "listing", "payouts", "promotions"],
+    why:
+      "A caption is made from facts four domains hold by definition (ai-images/social-posts D3–D5): catalog the " +
+      "product and shop name, listing which fact is the material, promotions the one effective price, and payouts " +
+      "the credit a model call is paid from. Each is a read or a named credit command; none gains a reason to change.",
+  },
   "src/data-access-layer/org/readiness-fix.dal.ts": {
     domains: ["catalog", "channels", "listing"],
     why:

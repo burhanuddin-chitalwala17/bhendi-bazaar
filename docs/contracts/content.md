@@ -56,3 +56,19 @@ picture (social-posts unit 4), which is its first caller (route-reachability).
 null) }`. **`PATCH /api/admin/settlements/[id]`** now parses **`settlementStatusSchema`**: `{ status: "PAID", ...proof }`
 or `{ status: "CANCELLED" }`. **Breaking:** `PAID` without `method` and `reference` is `400`; `paidAt` is replaced by
 `paidOn` (ai-images Q18).
+
+## ai-images/social-posts (captions)
+
+**`POST /api/org/[orgId]/posts/[id]/caption`** (`withOrg`, Social selling; bounded per shop) parses
+**`captionWriteSchema`** (`src/lib/validation/schemas/caption.schema.ts`): `{ language: "en" | "hi" | "both" }`. The
+facts are the saved post's own products, read live (price through promotions' resolver); nothing else is taken from
+the browser. It answers `{ draft }`, a **`CaptionDraftDto`** (`server/content/caption.types.ts`): `caption`,
+`source` (`model` | `template`) and `language`. A post with no product of the shop's is `400` "Add a product first, so
+the caption can say what it is."; a shop short of credit is `409` "Not enough credit for this caption".
+**`GET …/caption/price`** answers `{ changes }`, each a **`CaptionPriceChangeDto`** `{ productId, wasPaise, nowPaise, rewritable }`:
+a drafted price the saved caption still states that the product no longer has. **`POST …/caption/price`** (Update
+price) swaps each for today's in the saved draft at its version and answers `{ post, changes }`; `409` as autosave, or "The offer in your caption has changed. Write the caption again." when a change is not `rewritable` (ai-images Q52).
+
+**`captionService.captionStillTrue(postId, caption)`** is content's answer to social (post-composer D6): false while the
+caption states a drafted price its product no longer has. It takes the caption as well as the post, so a caption the
+shop already corrected by hand is not held (ai-images Q50).

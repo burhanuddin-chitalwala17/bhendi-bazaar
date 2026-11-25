@@ -24,6 +24,16 @@ export const PAYMENT_METHOD = {
 export type PaymentMethod = (typeof PAYMENT_METHOD)[keyof typeof PAYMENT_METHOD];
 export const PAYMENT_METHODS = Object.values(PAYMENT_METHOD);
 
+/**
+ * What a charged run is, for the words on its lines and its refusal. A picture unless said
+ * otherwise; a caption since ai-images/social-posts D5.
+ */
+export const CREDIT_RUN = {
+  PICTURE: { charge: "AI picture", settle: "AI picture, settled", refund: "Picture not made", short: "Not enough credit for this picture" },
+  CAPTION: { charge: "AI caption", settle: "AI caption, settled", refund: "Caption not written", short: "Not enough credit for this caption" },
+} as const;
+export type CreditRun = (typeof CREDIT_RUN)[keyof typeof CREDIT_RUN];
+
 /** ₹2,500 once (ai-images Q14), in paise. */
 export const STARTING_CREDIT_PAISE = 250_000;
 /** The largest single top-up, ₹10,00,000 (Q36): catches a mistyped zero. */

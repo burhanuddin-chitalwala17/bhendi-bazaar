@@ -75,3 +75,33 @@ export function socialPrompt(face: keyof typeof FACE_RULE, brief: string): Compo
     FACE_RULE[face];
   return { version: SOCIAL_PROMPT_VERSION, text: withBrief(platform, brief) };
 }
+
+/** Captions, v1 (ai-images/social-posts D3; ADR-0087 D4): facts in, never a shop's free text. */
+export const CAPTION_PROMPT_VERSION = "caption.v1";
+
+const CAPTION_LANGUAGE_RULE = {
+  en: "Write in English.",
+  hi: "Write in Hindi, in Devanagari script; hashtags may be in English.",
+  both: "Write it twice: first in English, then the same in Hindi in Devanagari script; one set of hashtags at the end.",
+} as const;
+
+/** The facts as the model reads them: prices already in rupees, so it never does arithmetic on money. */
+export interface CaptionPromptFacts {
+  shopName: string;
+  language: keyof typeof CAPTION_LANGUAGE_RULE;
+  products: Array<{ name: string; price: string; offerPrice: string | null; offer: string | null; category: string | null; material: string | null }>;
+}
+
+export function captionPrompt(facts: CaptionPromptFacts, limits: { maxChars: number; maxHashtags: number }): ComposedPrompt {
+  return {
+    version: CAPTION_PROMPT_VERSION,
+    text:
+      "Write an Instagram and WhatsApp Status caption for a small Indian shop's post about the products below. " +
+      "Use only the facts given: never state a price, discount, offer, quantity, stock level, size or date that is not " +
+      "in the facts, and write no other numbers. When a product has an offer price, say the offer price, and you may " +
+      "give the regular price as what it was. Warm and short, at most " +
+      `${limits.maxChars} characters in all, ending with at most ${limits.maxHashtags} relevant hashtags without digits. ` +
+      `${CAPTION_LANGUAGE_RULE[facts.language]} Reply with the caption only, no quotes and no notes.\n\n` +
+      `Facts (JSON):\n${JSON.stringify({ shop: facts.shopName, products: facts.products })}`,
+  };
+}

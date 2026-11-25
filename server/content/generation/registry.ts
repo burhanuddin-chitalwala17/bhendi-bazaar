@@ -5,8 +5,10 @@ import {
   type GenerationAspect,
   type GenerationPurpose,
   type GenerationSize,
+  TEXT_PURPOSE,
+  type TextPurpose,
 } from "@server/content/generation/generation.types";
-import type { PriceRule } from "@server/content/generation/pricing";
+import type { PriceRule, TokenPrice } from "@server/content/generation/pricing";
 
 /**
  * Every model the platform may call, as data (generation-foundation trd D3; ai-images Q6). One entry
@@ -28,6 +30,9 @@ export const DIALECT = {
   GATEWAY_HOSTED: "gateway-hosted",
   GEMINI_INTERACTIONS: "gemini-interactions",
   FAL_PRODUCT_SHOT: "fal-product-shot",
+  /** A text model the gateway hosts: chat messages in, `response` back (ADR-0087). */
+  GATEWAY_TEXT: "gateway-text",
+  GEMINI_TEXT: "gemini-generate-content",
 } as const;
 export type Dialect = (typeof DIALECT)[keyof typeof DIALECT];
 
@@ -158,4 +163,43 @@ export const DEFAULT_MODELS: Record<GenerationPurpose, readonly string[]> = {
 
 export function modelById(id: string): ModelEntry | undefined {
   return MODELS.find((model) => model.id === id);
+}
+
+/** A text model route (ADR-0087 D2): no shape, size or reference; priced per token. */
+export interface TextModelEntry {
+  id: string;
+  adapter: AdapterKey;
+  dialect: Dialect;
+  path: string;
+  price: TokenPrice;
+  checked: string;
+}
+
+export const TEXT_MODELS: readonly TextModelEntry[] = [
+  {
+    id: "gemini/gemini-2.5-flash",
+    adapter: ADAPTER.GEMINI,
+    dialect: DIALECT.GEMINI_TEXT,
+    path: "gemini-2.5-flash",
+    // Thinking is turned off in the call, so output is the caption alone.
+    price: { inputPerMillion: 300_000, outputPerMillion: 2_500_000 },
+    checked: "2026-11-25 ai.google.dev/gemini-api/docs/pricing (summary read; recheck)",
+  },
+  {
+    id: "cf/llama-3.3-70b",
+    adapter: ADAPTER.GATEWAY,
+    dialect: DIALECT.GATEWAY_TEXT,
+    path: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    price: { inputPerMillion: 293_000, outputPerMillion: 2_253_000 },
+    checked: "2026-11-25 developers.cloudflare.com/workers-ai/platform/pricing (summary read; recheck)",
+  },
+];
+
+/** Gemini first for its Hindi; the gateway's Llama when Gemini is down (ai-images Q7). */
+export const DEFAULT_TEXT_MODELS: Record<TextPurpose, readonly string[]> = {
+  [TEXT_PURPOSE.CAPTION]: ["gemini/gemini-2.5-flash", "cf/llama-3.3-70b"],
+};
+
+export function textModelById(id: string): TextModelEntry | undefined {
+  return TEXT_MODELS.find((model) => model.id === id);
 }

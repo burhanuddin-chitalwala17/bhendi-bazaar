@@ -23,5 +23,6 @@ A shop's posts: composed once from its library, its caption and the products it 
 |---|---|
 | `post.types.ts` | `POST_STATE`, `POST_DESTINATION_KIND`, `POST_DESTINATION_STATE`, limits, `PostDraftDTO`, words |
 | `post.service.ts` | Drafts: create, get, autosave, duplicate |
+| `post-caption.service.ts` | A post's caption from content: write, price changes, Update price (ai-images/social-posts D3, D4) |
 | `post.repository.ts` | The one writer of `Post` |
 | `post-destination.repository.ts` | The one writer of `PostDestination` |

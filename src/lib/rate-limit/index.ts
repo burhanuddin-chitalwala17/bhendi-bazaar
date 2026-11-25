@@ -11,6 +11,7 @@ import { isDeployed } from "./config";
 import { limiterFor } from "./limiter";
 import { RateLimitedError } from "./refusal";
 import { policyOf, type LimitedRoute } from "./registry";
+import type { RateLimitPolicy } from "./policies";
 import type { HeaderSource } from "./types";
 
 export { RateLimitedError, formatTimeRemaining } from "./refusal";
@@ -50,4 +51,13 @@ export async function limitRequest(
 ): Promise<NextResponse | null> {
   const refusal = await checkRateLimit(route, { headers: request.headers, userId: options.userId });
   return refusal ? toErrorResponse(refusal) : null;
+}
+
+/**
+ * The 429 to return, or null, for an org route bounded per shop rather than per caller: the portal
+ * guard holds who may call it, but a call that spends the shop's credit still needs a ceiling.
+ */
+export async function limitShop(route: string, orgId: string, policy: RateLimitPolicy): Promise<NextResponse | null> {
+  const result = await limiterFor(policy).limit(`${route}|org:${orgId}`);
+  return result.success ? null : toErrorResponse(new RateLimitedError(result));
 }

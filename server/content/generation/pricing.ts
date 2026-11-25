@@ -60,3 +60,14 @@ export function microUsdToPaise(microUsd: number, paisePerUsd: number): number {
 
 /** The size every caller uses unless it asks otherwise. */
 export const DEFAULT_SIZE: GenerationSize = GENERATION_SIZE.S1K;
+
+/** A text model's price per million tokens in and out, in micro-dollars (ADR-0087 D2). */
+export interface TokenPrice {
+  inputPerMillion: number;
+  outputPerMillion: number;
+}
+
+/** What a text call costs, in micro-dollars, rounded up so a recorded spend is never under the real one. */
+export function priceTextMicroUsd(rule: TokenPrice, inputTokens: number, outputTokens: number): number {
+  return ceilDiv(inputTokens * rule.inputPerMillion + outputTokens * rule.outputPerMillion, 1_000_000);
+}

@@ -1,5 +1,5 @@
 import { GENERATION_FAILURE, GenerationFailure, pixelsFor } from "@server/content/generation/generation.types";
-import { ADAPTER, DIALECT, type ModelEntry } from "@server/content/generation/registry";
+import { ADAPTER, DIALECT, type ModelEntry, type TextModelEntry } from "@server/content/generation/registry";
 import {
   boundedFetch,
   dataUrl,
@@ -7,8 +7,11 @@ import {
   fetchLinked,
   looksRefused,
   okOrFail,
+  tokenCount,
   type Adapter,
   type AdapterCall,
+  type TextAnswer,
+  type TextCall,
 } from "@server/content/generation/adapters/adapter";
 
 /**
@@ -83,6 +86,27 @@ async function hosted(base: string, token: string, model: ModelEntry, input: Ada
   throw new GenerationFailure(looksRefused(said) ? GENERATION_FAILURE.REFUSED : GENERATION_FAILURE.BAD_OUTPUT, said.slice(0, 200));
 }
 
+/** A hosted text model: chat messages in, `{ result: { response, usage } }` back (ADR-0087). */
+async function hostedText(base: string, token: string, model: TextModelEntry, input: TextCall): Promise<TextAnswer> {
+  const answer = await okOrFail(
+    await boundedFetch(`${base}/ai/run/${model.path}`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ messages: [{ role: "user", content: input.prompt }], max_tokens: input.maxOutputTokens }),
+    }),
+  );
+  const reply = (await answer.json().catch(() => null)) as {
+    result?: { response?: unknown; usage?: { prompt_tokens?: unknown; completion_tokens?: unknown } };
+    errors?: Array<{ message?: unknown }>;
+  } | null;
+  const text = reply?.result?.response;
+  if (typeof text === "string" && text.trim().length > 0) {
+    return { text, inputTokens: tokenCount(reply?.result?.usage?.prompt_tokens), outputTokens: tokenCount(reply?.result?.usage?.completion_tokens) };
+  }
+  const said = JSON.stringify(reply?.errors ?? "");
+  throw new GenerationFailure(looksRefused(said) ? GENERATION_FAILURE.REFUSED : GENERATION_FAILURE.BAD_OUTPUT, said.slice(0, 200));
+}
+
 export const gatewayAdapter: Adapter = {
   key: ADAPTER.GATEWAY,
   isConfigured: () => credentials() !== null,
@@ -93,5 +117,10 @@ export const gatewayAdapter: Adapter = {
     return model.dialect === DIALECT.GATEWAY_HOSTED
       ? await hosted(base, creds.token, model, input)
       : await thirdParty(base, creds.token, model, input);
+  },
+  async callText(model, input) {
+    const creds = credentials();
+    if (!creds) throw new GenerationFailure(GENERATION_FAILURE.UNAVAILABLE, "not configured");
+    return await hostedText(`${API}/${encodeURIComponent(creds.account)}`, creds.token, model, input);
   },
 };

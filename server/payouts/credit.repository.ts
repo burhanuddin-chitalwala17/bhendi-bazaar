@@ -104,6 +104,23 @@ export class CreditRepository {
   }
 
   /** What one run's lines net to: its charge and any adjustment (D5). */
+  /** Runs of one kind charged before `before` that have no closing line: a hold a dead process left open. */
+  async openRuns(orgId: string, runPrefix: string, before: Date): Promise<string[]> {
+    const charges = await prisma.creditLine.findMany({
+      where: { orgId, kind: CreditLineKind.CHARGE, enhancementId: { startsWith: runPrefix }, createdAt: { lt: before } },
+      select: { enhancementId: true },
+      take: 50,
+    });
+    const runs = charges.flatMap((row) => (row.enhancementId ? [row.enhancementId] : []));
+    if (runs.length === 0) return [];
+    const closed = await prisma.creditLine.findMany({
+      where: { runKey: { in: runs.map((run) => `close:${run}`) } },
+      select: { enhancementId: true },
+    });
+    const done = new Set(closed.map((row) => row.enhancementId));
+    return runs.filter((run) => !done.has(run));
+  }
+
   async netForRun(enhancementId: string, db: CreditDb = prisma): Promise<{ orgId: string | null; paise: number; charge: { providerCostPaise: number | null; marginBps: number | null } | null }> {
     const rows = await db.creditLine.findMany({
       where: { enhancementId },

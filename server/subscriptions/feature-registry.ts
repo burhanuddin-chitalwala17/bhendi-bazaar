@@ -31,6 +31,9 @@ export const ORG_ROUTE_FEATURES: Record<string, Classification> = {
   "GET /api/org/[orgId]/posts/[id]": { feature: FEATURE.SOCIAL_SELLING },
   "PUT /api/org/[orgId]/posts/[id]": { feature: FEATURE.SOCIAL_SELLING },
   "POST /api/org/[orgId]/posts/[id]/duplicate": { feature: FEATURE.SOCIAL_SELLING },
+  "POST /api/org/[orgId]/posts/[id]/caption": { feature: FEATURE.SOCIAL_SELLING },
+  "GET /api/org/[orgId]/posts/[id]/caption/price": { feature: FEATURE.SOCIAL_SELLING },
+  "POST /api/org/[orgId]/posts/[id]/caption/price": { feature: FEATURE.SOCIAL_SELLING },
 
   "GET /api/org/[orgId]/channels/[channel]/connect": CH,
   "GET /api/org/[orgId]/channels/instagram/connect": { feature: FEATURE.SOCIAL_SELLING },
