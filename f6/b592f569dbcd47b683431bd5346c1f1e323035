@@ -1,0 +1,9 @@
+handoff/media-library-photos-MASTER.md
+  ai_agent 3,5,75,83,99-107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "f6b592f569dbcd47b683431bd5346c1f1e323035",
+  "prompts": {}
+}
