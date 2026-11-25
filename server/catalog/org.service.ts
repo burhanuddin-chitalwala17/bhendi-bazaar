@@ -128,6 +128,11 @@ export class AdminOrgService {
     return Boolean(await orgMemberRepository.findMembership(userId, orgId));
   }
 
+  /** Every member's user id; on the service because `notifications` asks it (ADR-0033). */
+  async listMemberIds(orgId: string): Promise<string[]> {
+    return orgMemberRepository.listMemberIds(orgId);
+  }
+
   /**
    * Who to write to about this organisation — the name and address a payout or settlement
    * email is sent to. On the service because `payouts` asks it (ADR-0033).

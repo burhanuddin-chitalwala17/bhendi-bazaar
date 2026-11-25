@@ -59,6 +59,8 @@ export const ROUTES = {
     orders: (orgId: Id) => `/org/${orgId}/orders`,
     order: (orgId: Id, orderId: Id) => `/org/${orgId}/orders/${orderId}`,
     channels: (orgId: Id) => `/org/${orgId}/channels`,
+    /** The Status handoff page (whatsapp-status-kit), where a Status-due email leads. */
+    postStatus: (orgId: Id, postId: Id) => `/org/${orgId}/posts/${postId}/status`,
     requests: (orgId: Id) => `/org/${orgId}/requests`,
     channelListings: (orgId: Id, channel: string) => `/org/${orgId}/channels/${channel}/listings`,
     channelPublish: (orgId: Id, channel: string) => `/org/${orgId}/channels/${channel}/publish`,

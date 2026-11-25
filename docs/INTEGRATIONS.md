@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-11-06
+- **Verified:** 2026-11-25
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose

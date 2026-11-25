@@ -169,6 +169,7 @@ export const JOB_FEATURES: Record<string, { readonly feature: Feature; readonly 
   "media.sweep": { core: FREE },
   "media.transcode": { core: FREE },
   "notify.send": { core: FREE },
+  "notify.deliver": { core: "Sends what a module already chose to tell the shop; the emitting module is the one gated (notifications-core R1)." },
   "org.email-changed": { core: FREE },
   "payment.reconcile": { core: FREE },
   "fulfilment.sweep": { core: FREE },

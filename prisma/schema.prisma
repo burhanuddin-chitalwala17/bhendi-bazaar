@@ -3699,3 +3699,43 @@ model MarketingTouch {
 
   @@index([orgId, contactId, at])
 }
+
+/// Something a module told the notifications hub (ADR-0069, notifications-core D1). Facts are ids, never a
+/// message body (Q7); the event key makes a repeated emit one event.
+model NotificationEvent {
+  eventKey   String     @id
+  /// `NOTIFICATION_KIND` (server/notifications/notification.types.ts).
+  kind       String
+  /// `NOTIFICATION_AUDIENCE`: who the recipients are resolved from.
+  audience   String
+  orgId      String
+  facts      Json
+  createdAt  DateTime   @default(now())
+  deliveries Delivery[]
+
+  @@index([createdAt])
+}
+
+/// One event to one recipient by one channel, written before anything is sent (notifications-core D2, hub Q3).
+/// A BADGE row still PENDING is an unread badge item; the open-badge count is a partial index in the migration.
+model Delivery {
+  id          String            @id @default(cuid())
+  eventKey    String
+  event       NotificationEvent @relation(fields: [eventKey], references: [eventKey], onDelete: Cascade)
+  /// A user id for shop members; never an address, which is read when sending.
+  recipientId String
+  /// `DELIVERY_CHANNEL`: email, badge.
+  channel     String
+  /// `DELIVERY_TIMING`: AT_ONCE, DIGEST, BADGE.
+  timing      String
+  /// `DELIVERY_STATE`: PENDING, SENT, FAILED, SKIPPED, SUPERSEDED.
+  state       String            @default("PENDING")
+  /// Why it failed or was skipped; never a message body.
+  reason      String?
+  providerId  String?
+  /// When the state last changed.
+  at          DateTime          @default(now())
+
+  @@unique([eventKey, recipientId, channel])
+  @@index([at])
+}

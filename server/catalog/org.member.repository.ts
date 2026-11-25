@@ -46,6 +46,12 @@ export class OrgMemberRepository {
 
     return memberships.map(({ org, role }) => ({ ...org, role }));
   }
+
+  /** Everyone with a seat at this org: who the notifications hub tells about it (notifications-core Q2). */
+  async listMemberIds(orgId: string): Promise<string[]> {
+    const rows = await prisma.orgMember.findMany({ where: { orgId }, select: { userId: true }, orderBy: { userId: "asc" } });
+    return rows.map((r) => r.userId);
+  }
 }
 
 export const orgMemberRepository = new OrgMemberRepository();

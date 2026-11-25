@@ -48,7 +48,7 @@ class EmailService {
   /**
    * Send email using configured email provider
    */
-  private async sendEmail(options: SendEmailOptions): Promise<void> {
+  private async sendEmail(options: SendEmailOptions): Promise<string | null> {
     if (!this.resend) {
       throw new Error("Resend not initialized");
     }
@@ -78,6 +78,7 @@ class EmailService {
       console.log(
         `✅ Email sent successfully to ${options.to} (ID: ${data?.id})`
       );
+      return data?.id ?? null;
     } catch (error) {
       console.error("❌ Failed to send email:", error);
       throw error;
@@ -214,6 +215,11 @@ class EmailService {
   /** A parcel notice the worker sends (order-fulfilment D8); throws so the job retries. */
   async sendNotice(options: SendEmailOptions & { idempotencyKey: string }): Promise<void> {
     await this.sendEmail(options);
+  }
+
+  /** One hub delivery (notifications-core D5), keyed on its row; answers the provider's id for the record (R7). */
+  async sendDelivery(options: SendEmailOptions & { idempotencyKey: string }): Promise<string | null> {
+    return this.sendEmail(options);
   }
 
   /**

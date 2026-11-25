@@ -1,6 +1,6 @@
 # notifications — domain rules
 
-- **Verified:** 2026-11-01
+- **Verified:** 2026-11-25
 - **Covers:** `server/notifications/**`
 
 Transactional email. One provider (Resend, in `email.service.ts`), one shell, eight templates.
@@ -15,6 +15,15 @@ domain that enqueues it never imports this one.
 audience), and only a newly written row enqueues `notify.send`; the handler skips a row already
 sent and keys Resend on the notice id. Kinds and wording: `notice.types.ts`, `templates/parcelNoticeEmail.ts`.
 A notice's data never holds a buyer phone or address (spec A10).
+
+**The hub: a module emits, the hub delivers** ([ADR-0069](../../docs/adr/0069-notifications-are-one-hub-every-module-plugs-into.md),
+notification-hub/notifications-core). `notificationsService.emit(tx, { kind, orgId, audience, facts, eventKey })`
+writes a `NotificationEvent` (unique key) and one `Delivery` per (event, recipient, channel) on the emitter's
+transaction; a repeated key writes nothing. `policy.ts` alone picks channels and timing per kind; a module never
+names a channel. Only an `AT_ONCE` row enqueues `notify.deliver`; `DIGEST` rows wait for the morning email; a
+`badge` row still `PENDING` *is* the unread badge. Channels are plugs in `plugs.ts`. Facts are ids only, refused
+otherwise by `eventFacts`; an address is read when sending, never stored. A kind's owner registers `stillOpen`
+so the Needs you list drops what was fixed (marked `SUPERSEDED`).
 
 `contactMessageEmail.ts` is the one addressed to the store, not a buyer: Contact us delivers
 a message to `SUPPORT_INBOX` with the sender as Reply-To and stores nothing, so its route
