@@ -1,0 +1,87 @@
+src/components/channel/channel-copy.ts
+  s_c01598c08f8572::t_71ab0f20380f6a 1,243-245
+  s_c01598c08f8572::t_12f4365f8726a0 28,110-112,228-242,246-304
+server/subscriptions/feature-registry.ts
+  s_c01598c08f8572::t_b2f1ca382b712b 34-36
+server/channels/instagram-connection.service.ts
+  s_c01598c08f8572::t_a3f41d37b13955 185-198
+  s_c01598c08f8572::t_355da3fbd63cdf 57,59,68
+src/components/org/home/home-copy.ts
+  s_c01598c08f8572::t_96202d4f1a5a5b 59-60
+src/components/channel/instagram-card.tsx
+  s_c01598c08f8572::t_98137c80465362 1-79
+src/components/org/home/attention-lines.ts
+  s_c01598c08f8572::t_96202d4f1a5a5b 2,36-42
+server/channels/CLAUDE.md
+  s_c01598c08f8572::t_b4ae6c6a3ac047 3,79,82,84
+src/components/CLAUDE.md
+  s_c01598c08f8572::t_b4ae6c6a3ac047 3
+prisma/schema.prisma
+  s_c01598c08f8572::t_fb1585a6662127 2571-2579
+src/components/channel/channelsApiClient.ts
+  s_c01598c08f8572::t_acfaa79561a2ac 9,43,48,53,60-62
+src/app/(org)/org/[orgId]/channels/page.tsx
+  s_c01598c08f8572::t_ca1b0b1e30da44 5,8,39-41,50
+server/channels/channel-connection.repository.ts
+  s_c01598c08f8572::t_c5ec43fd60df2c 56-61,101-105,218-228,230-235,239-241,333-334,337-358,362-368,370
+  s_c01598c08f8572::t_a3f41d37b13955 359-361
+docs/contracts/channels.md
+  s_c01598c08f8572::t_b4ae6c6a3ac047 63-71
+  s_c01598c08f8572::t_aaaa520d96b13f 3
+tests/unit/instagram-card.test.tsx
+  s_c01598c08f8572::t_f948a61a23b5f7 271,278-279
+  s_c01598c08f8572::t_2687eae7e3e933 1-270,272-277,280-283
+src/app/api/CLAUDE.md
+  s_c01598c08f8572::t_b4ae6c6a3ac047 3
+docs/ARCHITECTURE.md
+  s_c01598c08f8572::t_b2f1ca382b712b 18,61,77
+tests/integration/instagram-card.test.ts
+  s_c01598c08f8572::t_489067c1f439ab 1-199
+server/channels/channel-connection.types.ts
+  s_c01598c08f8572::t_e89d0a62eda81b 5,102-125,135-136
+docs/specs/social-selling/connect-instagram/decisions.md
+  s_c01598c08f8572::t_14e057c62186f9 3,24
+  s_c01598c08f8572::t_cf344acd2d76a4 18-19,21
+server/channels/channels.sinks.ts
+  s_c01598c08f8572::t_a3f41d37b13955 29-49
+src/components/channel/connect-result-note.tsx
+  s_c01598c08f8572::t_ec0ed0e1f62399 9,17,84-85,107,118
+  s_c01598c08f8572::t_660d02926a64c9 12,14,16,24-33,79-83,86-106,108-117,119-121
+src/components/channel/channel-setup-checklist.tsx
+  s_c01598c08f8572::t_21df5ef16d7355 1-54
+src/components/channel/instagram-card-actions.tsx
+  s_c01598c08f8572::t_98137c80465362 1-107
+server/channels/social/checklist.ts
+  s_c01598c08f8572::t_e89d0a62eda81b 1-59
+prisma/migrations/20261124200000_instagram_card_facts/migration.sql
+  s_c01598c08f8572::t_fb1585a6662127 1-9
+src/components/channel/channel-card-list.tsx
+  s_c01598c08f8572::t_ca1b0b1e30da44 7,10,15,39-40,49,52,86,98-99,116
+server/channels/channel-connection.service.ts
+  s_c01598c08f8572::t_26ba16a2c46cce 11,18,30,32,45,155-193,248
+src/app/api/org/[orgId]/channels/instagram/replies/route.ts
+  s_c01598c08f8572::t_cc7cda5bb5f2e2 1-15
+src/components/channel/turn-on-replies-sheet.tsx
+  s_c01598c08f8572::t_794cf735662e2f 1-2,4-14,17-40,42-69
+  s_c01598c08f8572::t_f6920bae97877f 3,15-16,41
+server/channels/instagram-connect.service.ts
+  s_c01598c08f8572::t_355da3fbd63cdf 87-88
+src/components/channel/disconnect-dialog.tsx
+  s_c01598c08f8572::t_cfcaf0200b0e28 10,13,17,35-40,46,50,52-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "f090ae82a48073a232d79c9ffce359ad9b7d8399",
+  "prompts": {},
+  "sessions": {
+    "s_c01598c08f8572": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "11eb770c-d5ee-4e39-97b6-7dab8baefa73",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
