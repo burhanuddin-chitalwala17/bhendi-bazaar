@@ -1,33 +1,30 @@
 # Handoff — media-library/bulk-actions U1 (bulk routes)
 
-- **Status:** In progress — stopped for an account switch, no code written yet
+- **Status:** In progress — code, tests and gates green; /bb-review pending
 - **Last pushed sha:** (see `git log origin/claude/media-library-build -1`)
 - **Goal:** TRD Delivery U1: schemas (`ids` ≤100, de-duplicated), `retireMany`, `setTagMany`, `downloadLinks` (500 MB cap, `ZIP_LIMIT_BYTES`), `findManyForOrg`, `addTag` widened to exclude RETIRED, three `orgMediaApiClient` methods, `docs/contracts/catalog.md` lines. No UI. Closes A3 (server half), A4, A5, A6; Q3, Q4, Q5, Q10 (Q11 filename part).
 
 ## Done
-- Read spec, decisions, TRD, viewer U3 handoff. Branch fast-forwarded to d160044e; `npm ci` done; repo unshallowed.
-
-## Findings so far (read before coding)
-- `presignDownload` (`server/catalog/object-store.ts:268`) signs with a fixed `DOWNLOAD_TTL_SECONDS = 300` (5 min). TRD D4 wants 15 min for bulk links → add an optional `ttlSeconds` param (default 300) and pass `15 * 60` from bulk.
-- `downloadFilename(orgCode, assetId, mimeType)` and `downloadLink` live in `server/catalog/media-download.ts`; put `downloadLinks` + `ZIP_LIMIT_BYTES` there (or a new `media-bulk.ts`), and `retireMany` / `setTagMany` in a new `server/catalog/media-bulk.ts` that calls `mediaAssetService.retire` / `setTag` per id. Re-export through `mediaAssetService` the way `downloadLink` is (line 14 / 251) — keep the service byte-neutral-ish (pinned at 27 KB, currently 26.8 KB).
-- `media-asset.repository.ts` is 29216 B, pinned at 29 KB (29696 B): ~480 B headroom for `findManyForOrg` (select id, kind, state, objectKey, bytes, mimeType; `where { id: { in }, orgId, state: { not: PENDING } }`) and the `addTag` widening (`state: { not: MediaAssetState.RETIRED }` at line ~545). If over, trim a comment in that file rather than re-pinning.
-- Single-asset patterns: `retire` (service:307) throws `NotFoundError` / `ConflictError`, returns early for already RETIRED → retireMany must read the row first to count `alreadyRetired`. `setTag` service:276; repo `setTag` is the CAS loop (repo:555).
-- Route patterns: `src/app/api/org/[orgId]/media/[assetId]/tags/route.ts` (withOrg + schema.parse). New routes: `media/retire`, `media/tags`, `media/download-links` under `src/app/api/org/[orgId]/media/` — note `[assetId]` sibling dynamic segment; static segments win in Next routing.
-- Schemas go in `src/lib/validation/schemas/media-library.schema.ts`: `ids: z.array(z.string().min(1).max(64)).min(1).max(100).transform(dedupe)`.
-- 422 over the cap: `DomainError(msg, { status: 422 })` with details `{ totalBytes, limitBytes }` — check `DomainError`'s details option in `server/shared/domain-error.ts`.
+- `presignDownload(pathname, filename, ttlSeconds = 300)`; bulk passes 900 s.
+- `server/catalog/media-bulk.service.ts` (`mediaBulkService.retireMany | setTagMany | downloadLinks`, `ZIP_LIMIT_BYTES`). A separate `*.service` (precedent: `product-bulk.service.ts`) rather than re-exports through `mediaAssetService`: it calls `mediaAssetService.retire`, so a re-export would be a cycle, and the service file has ~200 B left under its pin.
+- Repo: `findManyForOrg`, `addTag` excludes RETIRED. Repo is 29661 B, pin 29696 B.
+- `DomainError` gained a generic `details` option; `toErrorResponse` passes it through (used by the 422 zip refusal). Recorded in `docs/CONTRACTS.md`.
+- DTOs `MediaBulkRetireOutcome`, `MediaBulkTagOutcome`, `MediaDownloadLinksDto`, `NO_FILE_REASON` in `media-library.types.ts`.
+- Routes `media/retire`, `media/tags`, `media/download-links` (POST, `withOrg`, FREE in feature registry); `orgMediaApiClient.retireMany | setTagMany | downloadLinks`.
+- Tests: `tests/unit/media-bulk-schema.test.ts`, `tests/integration/media-bulk.test.ts`, object-store TTL case, media-tags-repository updated.
+- Mutations (all red, restored): `>`→`>=` on the cap; `orgId` and PENDING out of `findManyForOrg`; `orgId` and RETIRED out of `addTag`.
+- Gate green; integration 761 passed / 7 skipped (join-equivalence needs a populated catalogue).
+- decisions.md: Q3, Q4, Q5, Q10 → implemented (unit 1).
 
 ## Next steps
-1. Failing tests first: unit `tests/unit/media-bulk-schema.test.ts` (101 refused, dedupe); integration `tests/integration/media-bulk.test.ts` per TRD Test plan (A4 retire 5/2 used + renditions, A6 other org notFound, A5 tag mix, remove CAS, A3 download-links 422 / own rows only / `noFile: link`). Names carry `(spec A<n>)`.
-2. Implement repo, module, service re-exports, three routes, `orgMediaApiClient` methods (route-reachability gate needs the caller), `docs/contracts/catalog.md`.
-3. `npm run docs:index`; gate; integration; mutations: the `>` in the 500 MB comparison and the `orgId` in `findManyForOrg` / `addTag` where.
-4. Q3, Q4, Q5, Q10 → `implemented (unit 1)` in decisions.md; /bb-review in a fresh subagent; commit `catalog: bulk retire, tag and download-links routes [CONTRACT]`; push; handoff Done with notes for U2.
+1. /bb-review in a fresh subagent; fix findings.
+2. Commit `catalog: bulk retire, tag and download-links routes [CONTRACT]`; push; Status Done with notes for U2.
 
-## Resume
+## Resume (macOS)
 ```
-npm ci; git fetch --unshallow   # if shallow
+export PATH=$HOME/.nvm/versions/node/v22.23.3/bin:$PATH   # vitest needs Node ≥ 21 (Map.groupBy)
+export DATABASE_URL=postgresql://$(whoami)@localhost:5432/bhendi_bazaar_ci   # user must be in the URL
+npx prisma generate && npx prisma migrate deploy
 env -u NEXT_PUBLIC_APP_URL -u NEXTAUTH_URL npm run gate
-service postgresql start; createdb -U postgres bhendi_bazaar_ci  # password 'postgres'
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/bhendi_bazaar_ci npx prisma migrate deploy
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/bhendi_bazaar_ci npm run test:integration
-/bb-build media-library/bulk-actions unit 1
+npm run test:integration
 ```
