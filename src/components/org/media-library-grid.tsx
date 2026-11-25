@@ -275,7 +275,7 @@ export function MediaLibraryGrid({ orgId, orgCode, initial, query }: MediaLibrar
                 )}
               </div>
               {/* Offered on a retired item too: its file is kept for thirty days (viewer Q10). */}
-              <div className="flex flex-col gap-2 sm:flex-row">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <MediaDownloadButton orgId={orgId} asset={open} />
               </div>
               {open.kind === "VIDEO" && open.state !== "RETIRED" && (

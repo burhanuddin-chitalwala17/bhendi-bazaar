@@ -37,7 +37,6 @@ export function useMediaDownload(orgId: string) {
       const status = cause instanceof ApiError ? cause.status : 0;
       if (status === 410) toast.error(MEDIA_VIEWER_COPY.fileGone);
       else if (status === 404) toast.error(MEDIA_VIEWER_COPY.notInLibrary);
-      else if (status === 422) explainYouTube(asset.ref);
       else
         toast.error(MEDIA_VIEWER_COPY.downloadFailed, {
           description: MEDIA_VIEWER_COPY.downloadFailedHint,

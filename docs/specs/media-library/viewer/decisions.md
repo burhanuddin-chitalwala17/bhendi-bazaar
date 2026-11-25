@@ -1,6 +1,6 @@
 # Decisions — viewer
 
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 
 > Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented ones (ADR-0062).
 > Owner decides money, policy, irreversible data, external commitments, taste.

@@ -21,7 +21,7 @@ export function MediaDownloadButton({ orgId, asset }: MediaDownloadButtonProps) 
 
   if (asset.kind === "VIDEO_EMBED") {
     return (
-      <Button type="button" variant="outline" onClick={() => void download(asset)}>
+      <Button type="button" variant="outline" size="lg" onClick={() => void download(asset)}>
         <Icon name="download" className="mr-2" />
         {MEDIA_VIEWER_COPY.download}
       </Button>
@@ -29,7 +29,7 @@ export function MediaDownloadButton({ orgId, asset }: MediaDownloadButtonProps) 
   }
 
   return (
-    <Button asChild variant="outline">
+    <Button asChild variant="outline" size="lg">
       <a
         href={orgMediaApiClient.downloadHref(orgId, asset.id)}
         aria-busy={isChecking || undefined}

@@ -58,7 +58,7 @@ describe("MediaDownloadButton", () => {
     expect(h.assign).not.toHaveBeenCalled();
   });
 
-  it("another shop's item reads as not in this library (spec A7)", async () => {
+  it("another shop's item reads as not in this library (ux Refused; A7 is U1's integration test)", async () => {
     h.canDownload.mockRejectedValue(new ApiError("", 404));
     render(<MediaDownloadButton orgId="org-1" asset={photo} />);
     tap();
