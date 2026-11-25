@@ -101,6 +101,9 @@ export function findOffenders(paths, read) {
     const status = statusOf(read(`${dir}/spec.md`));
     // A programme parent stays while a child has shipped: its decisions are the reasoning that child cites.
     const parent = !ships(status) && hasShippedChild(dir);
+    if (parent && !files.includes("decisions.md")) {
+      offenders.push({ path: `${dir}/`, problem: "a programme parent with no decisions.md", fix: "a parent stays only for the decisions its children cite; give it its decisions.md" });
+    }
     if (!ships(status) && !parent) {
       offenders.push({
         path: `${dir}/`,

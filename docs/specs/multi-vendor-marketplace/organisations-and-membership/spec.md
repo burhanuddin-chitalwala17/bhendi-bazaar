@@ -5,7 +5,7 @@
 - **Domain:** catalog, identity
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-08
-- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/organisations-and-membership/trd.md`, [../spec.md](../spec.md), ../data-model.md (`5ecf1cac:docs/specs/multi-vendor-marketplace/data-model.md`), `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`
+- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/organisations-and-membership/trd.md`, [../spec.md](../spec.md), ../data-model.md (`5ecf1cac:docs/specs/multi-vendor-marketplace/data-model.md`), [../decisions.md](../decisions.md), `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`
 
 > Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/multi-vendor-marketplace/organisations-and-membership/trd.md`.
 

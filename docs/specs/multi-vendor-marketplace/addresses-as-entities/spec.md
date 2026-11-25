@@ -6,7 +6,7 @@
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-08
 - **Depends on:** —
-- **References:** [../spec.md](../spec.md), ../data-model.md (`5ecf1cac:docs/specs/multi-vendor-marketplace/data-model.md`)
+- **References:** [../spec.md](../spec.md), ../data-model.md (`5ecf1cac:docs/specs/multi-vendor-marketplace/data-model.md`), [../decisions.md](../decisions.md)
 
 > Requirements and product approach only. Its trd.md was removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/multi-vendor-marketplace/addresses-as-entities/trd.md`.
 

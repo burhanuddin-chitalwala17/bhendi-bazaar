@@ -76,7 +76,9 @@ describe("main-ready: what main may hold", () => {
       "docs/specs/prog/spike.md": "",
       "docs/specs/prog/done/spec.md": spec("Implemented"),
     });
-    expect(offenders.map((o) => o.path)).toEqual(["docs/specs/prog/trd.md", "docs/specs/prog/spike.md"]);
+    expect(offenders.map((o) => o.path)).toEqual(["docs/specs/prog/", "docs/specs/prog/trd.md", "docs/specs/prog/spike.md"]);
+    expect(offenders[0].problem).toMatch(/no decisions\.md/);
+    offenders.shift();
     expect(offenders[0].problem).toMatch(/programme parent/);
   });
 

@@ -17,7 +17,7 @@ said when a plan may reach main, so each merge brought some along.
    ADRs, and for each shipped feature its `spec.md` and `decisions.md` — nothing else from planning.** A spec
    folder is on main only when its Status ships (`ships()`, a Status beginning with Implemented), or when it is
    a **programme parent**: its own Status does not ship but at least one child spec folder's does. A parent
-   stays because its children cite its decisions; it holds `spec.md`, `decisions.md` and child folders only.
+   stays because its children cite its decisions; it holds `spec.md`, `decisions.md` (required) and child folders only.
    A parent whose children have none of them shipped is planning, and stays on its branch (owner, 2026-11-25).
 2. **Planning lives on the feature branch.** spec-start, ux-start and the TRD are written and committed there,
    as are handoff prompts if they are kept as files (`handoff/`, [ADR-0080](0080-planning-and-building-never-share-a-session.md)), and reach main only in the merge that ships the feature, already retired. A container

@@ -5,7 +5,7 @@
 - **Domain:** catalog, shipping, checkout
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-09-27
-- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/stock-locations-and-allocation/trd.md`, data-model.md (`5ecf1cac:docs/specs/multi-vendor-marketplace/data-model.md`), `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`, [inventory-reservation](../../inventory-reservation/), shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`), [product-weight-and-rates](../../product-weight-and-rates/)
+- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/stock-locations-and-allocation/trd.md`, data-model.md (`5ecf1cac:docs/specs/multi-vendor-marketplace/data-model.md`), [../decisions.md](../decisions.md), `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`, [inventory-reservation](../../inventory-reservation/), shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`), [product-weight-and-rates](../../product-weight-and-rates/)
 
 > Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/multi-vendor-marketplace/stock-locations-and-allocation/trd.md`.
 
