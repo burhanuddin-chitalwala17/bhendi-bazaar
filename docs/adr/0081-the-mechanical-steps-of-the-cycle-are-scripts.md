@@ -1,7 +1,7 @@
 # ADR-0081: The mechanical steps of the cycle are scripts
 
 - **Date:** 2026-11-24
-- **Status:** Accepted
+- **Status:** Accepted (D2 amended by [ADR-0084](0084-main-holds-only-finished-work-planning-lives-on-its-feature-branch.md): Implemented deletes every file but spec.md and decisions.md, after checking their Q ids)
 
 ## Context
 

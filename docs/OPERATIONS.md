@@ -9,11 +9,13 @@ Node 22.x (CI pins `22.x`, as the worker image does) · PostgreSQL 14+ · npm ·
 ## First-time setup
 
 ```bash
-npm install                 # postinstall runs `prisma generate`
+npm install                 # postinstall runs `prisma generate`; prepare points git at .githooks/
 cp .env.example .env        # then fill in the values from the table below
 npx prisma migrate dev      # apply the migrations
 npm run dev                 # http://localhost:3000
 ```
+
+The hooks in `.githooks/` check commit subjects (`commit-msg`, [ADR-0081](adr/0081-the-mechanical-steps-of-the-cycle-are-scripts.md)) and refuse a push to `main` carrying unfinished work (`pre-push`, `npm run check:main-ready`, [ADR-0084](adr/0084-main-holds-only-finished-work-planning-lives-on-its-feature-branch.md)). They are active once, per clone, after `git config core.hooksPath .githooks` — which `npm install` runs; run it by hand if `npm install` ran with `--ignore-scripts`.
 
 ⚠️ **Do not run `npx prisma db seed` casually.** It deletes every table. See [Seeding](#seeding).
 

@@ -119,4 +119,5 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0081](0081-the-mechanical-steps-of-the-cycle-are-scripts.md) | The mechanical steps of the cycle are scripts | Accepted | 2026-11-24 |
 | [0082](0082-the-contracts-are-split-by-domain.md) | The contracts are split by domain | Accepted | 2026-11-24 |
 | [0083](0083-a-source-file-stays-under-25-kb-and-larger-ones-only-shrink.md) | A source file stays under 25 KB, and larger ones only shrink | Accepted | 2026-11-24 |
+| [0084](0084-main-holds-only-finished-work-planning-lives-on-its-feature-branch.md) | Main holds only finished work; planning lives on its feature branch | Proposed | 2026-11-25 |
 <!-- generated:adr-index:end -->

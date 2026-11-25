@@ -1,7 +1,7 @@
 # ADR-0001: Monorepo docs split by volatility; domain docs co-located with code
 
 - **Date:** 2026-08-03
-- **Status:** Accepted
+- **Status:** Accepted (D1 and D5 amended by [ADR-0084](0084-main-holds-only-finished-work-planning-lives-on-its-feature-branch.md): on main `specs/` holds shipped features; plans live on their feature branch)
 - **Context:** The project had ~10,000 lines of documentation and no working documentation *system*. Three structural problems, each with a different remedy: roughly half the content was pasted implementation code rather than references to it, so the tree invalidated itself on every refactor; there was no always-loaded rule surface at all, so no project convention reached an agent session; and no file had a single reason to change, so every document was simultaneously a tutorial, a reference, and a plan, and therefore permanently half-stale. A sibling project (`ums-soul`) had already converged on a structure that solves all three, so this ADR ports it rather than rediscovering it. The monorepo question — where the per-service layer goes when there are no separate service repos — is the only genuinely new decision here.
 - **Decision:**
   1. **Split docs by volatility, not by topic.** Each of these has exactly one home: *rules* (`CLAUDE.md`), *current state* (`ARCHITECTURE.md`), *immutable decisions* (`adr/`), *forward plans* (`specs/`), *history* (`CHANGELOG.md`), *registries* (`DEPENDENCIES.md`, `TESTING.md`, `CONTRACTS.md`, `OPERATIONS.md`). A file that would have to change for two different reasons is split.

@@ -3,12 +3,14 @@
 //   npm run spec:new -- <feature>[/<subfeature>] [--domain <d>] [--phase <p>]
 //       scaffolds spec.md, decisions.md and trd.md from scripts/templates/spec/ and regenerates the indexes.
 //   npm run spec:status -- <feature>[/<subfeature>] <Status>
-//       sets Status in spec.md and trd.md together. Implemented also deletes trd.md and ux.md and rewrites every
-//       link into them as a pinned `<sha>:path` ref to the last commit that had them (ADR-0073).
+//       sets Status in spec.md and trd.md together. Implemented also deletes every file but spec.md and decisions.md
+//       and rewrites every link into them as a pinned `<sha>:path` ref to the last commit that had them (ADR-0073),
+//       refusing first if any Q id they cite is missing from decisions.md (ADR-0084).
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { foreignNamesFrom, qGaps, ships } from "./main-ready.mjs";
 
 const ROOT = resolve(fileURLToPath(import.meta.url), "../..");
 const TEMPLATES = join(ROOT, "scripts/templates/spec");
@@ -25,7 +27,10 @@ export function fillTemplate(text, { feature, domain, phase, date, depth }) {
 }
 
 /** Only a status that begins with Implemented ships the feature; "Accepted — unit 2 implemented" does not. */
-export const ships = (status) => /^(✅\s*)?Implemented\b/i.test(status.trim());
+export { ships };
+
+/** What retiring a shipped feature deletes: everything but what must stay true and why (ADR-0084). */
+export const retiredFiles = (files) => files.filter((f) => f !== "spec.md" && f !== "decisions.md");
 
 export function setStatus(text, status) {
   if (!/^- \*\*Status:\*\* .*$/m.test(text)) throw new Error("no `- **Status:**` line");
@@ -83,16 +88,30 @@ function specStatus(args) {
   const dir = join(ROOT, "docs/specs", name);
   const spec = join(dir, "spec.md");
   if (!existsSync(spec)) throw new Error(`docs/specs/${name}/spec.md not found`);
-  const buildDocs = ["trd.md", "ux.md"].map((f) => join(dir, f)).filter(existsSync);
+  const buildDocs = ships(status)
+    ? retiredFiles(readdirSync(dir).filter((f) => statSync(join(dir, f)).isFile())).map((f) => join(dir, f))
+    : [];
   const rel = buildDocs.map((f) => relative(ROOT, f));
   // Refuse before writing anything, so a refused run leaves every file as it was.
-  if (ships(status) && rel.length && execFileSync("git", ["status", "--porcelain", "--", ...rel], { cwd: ROOT, encoding: "utf8" }).trim()) {
+  if (rel.length && execFileSync("git", ["status", "--porcelain", "--", ...rel], { cwd: ROOT, encoding: "utf8" }).trim()) {
     throw new Error(`commit ${rel.join(", ")} first: the pinned ref must point at a commit that has them`);
+  }
+  if (rel.length) {
+    const decisions = join(dir, "decisions.md");
+    const tracked = execFileSync("git", ["ls-files"], { cwd: ROOT, encoding: "utf8" }).split("\n");
+    const citing = buildDocs.filter((f) => /\.(md|html)$/.test(f)).map((f) => readFileSync(f, "utf8"));
+    const gaps = qGaps(citing, existsSync(decisions) ? readFileSync(decisions, "utf8") : null, foreignNamesFrom(tracked));
+    if (gaps.length) {
+      throw new Error(
+        `${rel.join(", ")} cite ${gaps.join(", ")}, which decisions.md does not hold; its reasoning would go with them. ` +
+          "Add each to decisions.md, or write another log's id as `<feature> Qn`, then run this again.",
+      );
+    }
   }
   writeFileSync(spec, setStatus(readFileSync(spec, "utf8"), status));
   const done = [`docs/specs/${name}/spec.md → ${status}`];
 
-  if (ships(status) && buildDocs.length) {
+  if (buildDocs.length) {
     const sha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim();
     for (const f of buildDocs) rmSync(f);
     for (const md of walkMarkdown(ROOT)) {

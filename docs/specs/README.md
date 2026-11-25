@@ -1,8 +1,8 @@
 # Specs
 
-- **Verified:** 2026-10-18
+- **Verified:** 2026-11-25
 
-Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach), a `decisions.md` (every decision, open or made), a `ux.md` when it has UI, and a `trd.md` (technical approach, no code), plus any supporting artifacts.
+**On main this tree holds shipped features only** — `spec.md` and `decisions.md` each; a feature is planned, built and retired on its feature branch and merges already Implemented ([ADR-0084](../adr/0084-main-holds-only-finished-work-planning-lives-on-its-feature-branch.md)). Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach), a `decisions.md` (every decision, open or made), a `ux.md` when it has UI, and a `trd.md` (technical approach, no code), plus any supporting artifacts.
 
 This is the home for per-feature detail. The phased status map is [../BACKLOG.md](../BACKLOG.md); decisions are in [../adr/](../adr/).
 
@@ -20,7 +20,7 @@ This is the home for per-feature detail. The phased status map is [../BACKLOG.md
 - **Header on each:** `Summary · Status · Domain · Phase · Verified · References`. `Summary` is one line and is the row the tables below are generated from — `npm run docs:index`; the tables are never typed by hand and `docs:check` fails while they are stale.
 - Scaffold with `/bb-sdlc spec-start <feature-name>`.
 
-A spec describes a **requirement** — what must be true. It is not a defect report: a known defect either becomes a spec (because meeting the requirement needs design) or a PR (because an ADR already states the rule). Nothing in here is a bug list, and the requirement remains true after the work lands: `Status` moves to Implemented and `spec.md` and `decisions.md` stay. `ux.md` and `trd.md` are deleted in that same commit, since the code, copy modules and tests now hold the truth; links into them become pinned git references ([ADR-0073](../adr/0073-a-shipped-feature-keeps-its-spec-and-decisions-and-drops-its-ux-and-trd.md)).
+A spec describes a **requirement** — what must be true. It is not a defect report: a known defect either becomes a spec (because meeting the requirement needs design) or a PR (because an ADR already states the rule). Nothing in here is a bug list, and the requirement remains true after the work lands: `Status` moves to Implemented and `spec.md` and `decisions.md` stay. Every other file — `ux.md`, `trd.md`, prototypes, spikes — is deleted in that same commit, once `spec:status` has checked each Q id they cite is in `decisions.md`, since the code, copy modules and tests now hold the truth; links into them become pinned git references ([ADR-0073](../adr/0073-a-shipped-feature-keeps-its-spec-and-decisions-and-drops-its-ux-and-trd.md)).
 
 ## Features
 
