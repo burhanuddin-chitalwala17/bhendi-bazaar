@@ -2,7 +2,7 @@
 
 - **Updated:** 2026-11-25 — resumed on new account; bulk U1 done and merged
 - **Planning branch:** `claude/gracious-gates-l2b7u5` (this file)
-- **Status:** viewer and picker-filters Implemented and merged here. bulk U1 done (`159397ca`) and merged. bulk U2 next; U3 waits on the owner's R2 CORS GET confirmation.
+- **Status:** viewer and picker-filters Implemented and merged here. bulk U1 done (`159397ca`) and merged. bulk U2 next; U3 follows U2 (owner confirmed R2 CORS GET on 2026-11-25).
 
 ## RESUME HERE (new account)
 
@@ -54,7 +54,7 @@ Each folder has spec.md, decisions.md, ux.md (prototype: https://claude.ai/artif
 - Viewer includes photos, hosted videos and YouTube links (viewer Q3).
 - Bulk retire and tag included (bulk Q2).
 - **R2 bucket CORS must allow `GET`** (bulk Q14) — owner adds it in Cloudflare
-  (bucket → Settings → CORS Policy → `"AllowedMethods": ["GET", "PUT"]`). **Not yet confirmed done.**
+  (bucket → Settings → CORS Policy → `"AllowedMethods": ["GET", "PUT"]`). **Confirmed done by the owner 2026-11-25.**
   Bulk U3 must not ship before it.
 
 ## Branches
