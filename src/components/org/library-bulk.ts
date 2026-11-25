@@ -1,5 +1,7 @@
 import type { MediaAssetDto, MediaBulkRetireOutcome, MediaBulkTagOutcome } from "@server/catalog/media-library.types";
 import { MEDIA_BULK_MAX_IDS } from "@/lib/validation/schemas/media-library.schema";
+import { TIMEOUT_UNSURE_MESSAGE } from "@/lib/api-client";
+import { ApiError } from "@/lib/api-error";
 import type { LibraryZipOutcome } from "./useLibraryZip";
 import { MEDIA_BULK_COPY as C } from "./media-library-copy";
 
@@ -139,6 +141,11 @@ export async function sendInBatches<T>(
     }
   }
   return { results, failure: null };
+}
+
+/** A write that timed out may have landed, so "Nothing was changed" would be a guess (src/components/CLAUDE.md). */
+export function timedOut(failure: unknown): boolean {
+  return failure instanceof ApiError && failure.message === TIMEOUT_UNSURE_MESSAGE;
 }
 
 /** Joins the outcomes of several batches into one, list by list. */

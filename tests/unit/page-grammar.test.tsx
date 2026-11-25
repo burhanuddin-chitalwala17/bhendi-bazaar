@@ -83,6 +83,21 @@ describe("SelectionBar", () => {
     expect(screen.getByRole("button", { name: "More actions" })).toBeTruthy();
   });
 
+  it("caps its width from md only where a screen asks, so the products console's six controls are not squeezed", () => {
+    const act = (label: string) => ({ label, onClick: () => {} });
+    const props = {
+      count: 2,
+      selectAll: { label: "Select all 105", onClick: () => {} },
+      actions: ["Edit price", "Edit stock", "Archive", "Delete"].map(act),
+      onClear: () => {},
+    };
+    const panel = () => screen.getByRole("region", { name: "Selection" }).firstElementChild!.className;
+    const { rerender } = render(<SelectionBar {...props} />);
+    expect(panel()).not.toContain("md:max-w-md");
+    rerender(<SelectionBar {...props} width="narrow" />);
+    expect(panel()).toContain("md:max-w-md");
+  });
+
   it("stays with a hint when a screen's selection mode is on and nothing is picked yet", () => {
     render(<SelectionBar count={0} hint="Tap rows to select them" actions={[{ label: "Archive", onClick: () => {} }]} onClear={() => {}} />);
     expect(screen.getByText("Tap rows to select them")).toBeTruthy();

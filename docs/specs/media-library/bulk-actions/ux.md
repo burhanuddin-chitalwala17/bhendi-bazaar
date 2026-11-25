@@ -64,12 +64,12 @@
 | Loading | Download building: progress bar and count; other actions wait | "Preparing your zip… {done} of {total} files" | Cancel |
 | Partial | Some done, some left out — one toast names both | see copy deck | Try those {n} again (download) |
 | Success | Toast; the grid re-reads | "Downloaded {n} files" · "Retired {n} pictures" · "Tagged {n} photos as {tag}" | — |
-| Retryable error | Nothing changed | "Couldn't reach the server. Nothing was changed." | Try again |
+| Retryable error | Nothing changed. A Retire or Tag that timed out may still land: the app's shared timed-out line instead, no Try again, the dialog or picker closes and the grid re-reads (review fix, 2026-11-25) | "Couldn't reach the server. Nothing was changed." · timed out: "This is taking too long, and it may still go through. Refresh to check before trying again." | Try again (not after a timeout) |
 | Terminal error | All files failed to fetch | "Couldn't fetch any of these files. Try again later." | — |
 | Refused | Over the zip limit; all in use; all retired (for Tag/Retire) | see copy deck | — |
 | Stale | An item retired elsewhere meanwhile: counted as left out | "{n} were already retired." | — |
 | Long content | Counts only; no names | — | — |
-| Many items | Up to 100 per Retire or Tag request (Q10); more is sent in batches, reported as one. A later batch failing: the outcome toast, then the unreachable line's first sentence (Q19) | "Couldn't reach the server." | — |
+| Many items | Up to 100 per Retire or Tag request (Q10); more is sent in batches, reported as one. A later batch failing: the outcome toast, then the unreachable line's first sentence (Q19), or the timed-out line if it timed out | "Couldn't reach the server." | — |
 | Slow | Retire or Tag past 3 s: the action's button shows its spinner | — | — |
 | Phone / tablet / desktop | Phone: bar floats above the bottom edge, three equal buttons. `md`: bar centred, max 480px | — | — |
 
@@ -149,4 +149,4 @@
 
 ## Sign-off
 
-Signed off by owner, 2026-11-24. Four zip lines (too big mid-download, removed, no longer ours, nothing to zip) added and approved by owner, 2026-11-25 (Q16). Built in U3, 2026-11-25: three rows amended by Claude-reversible decisions Q17 (overlay surfaces, per trd and ADR-0040), Q18 (hover tick position) and Q19 (partial batch line) — for the owner to confirm on the phone walk.
+Signed off by owner, 2026-11-24. Four zip lines (too big mid-download, removed, no longer ours, nothing to zip) added and approved by owner, 2026-11-25 (Q16). Built in U3, 2026-11-25: three rows amended by Claude-reversible decisions Q17 (overlay surfaces, per trd and ADR-0040), Q18 (hover tick position) and Q19 (partial batch line) — for the owner to confirm on the phone walk. Q19 wording approved by owner, 2026-11-25.

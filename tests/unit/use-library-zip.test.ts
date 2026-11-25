@@ -57,7 +57,7 @@ describe("useLibraryZip", () => {
     const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01"));
     const outcome = await run(result, [...photos, "yt"]);
 
-    expect(h.downloadLinks).toHaveBeenCalledWith("org-1", [...photos, "yt"]);
+    expect(h.downloadLinks).toHaveBeenCalledWith("org-1", [...photos, "yt"], expect.any(AbortSignal));
     expect(outcome).toEqual({ kind: "saved", saved: 12, total: 12, failedIds: [], links: 1, deleted: 0, gone: 0 });
     expect(h.saveBlob).toHaveBeenCalledTimes(1);
     const [blob, name] = h.saveBlob.mock.calls[0];
@@ -204,7 +204,10 @@ describe("useLibraryZip", () => {
     }));
     const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01"));
     const outcome = await run(result, selected);
-    expect(h.downloadLinks.mock.calls.map((call) => call[1].length)).toEqual([100, 50]);
+    // The whole selection first, for its size; then each later batch of files asks again (Q20).
+    const sizes = h.downloadLinks.mock.calls.map((call) => call[1].length);
+    expect(sizes.slice(0, 2)).toEqual([100, 50]);
+    expect(Math.max(...sizes.slice(2))).toBeLessThanOrEqual(10);
     expect(outcome).toMatchObject({ kind: "saved", saved: 150, total: 150 });
 
     const { result: small } = renderHook(() => useLibraryZip("org-1", "BBZ01", 400));
@@ -224,5 +227,71 @@ describe("useLibraryZip", () => {
       );
     const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01"));
     expect(await run(result, ids(150))).toEqual({ kind: "tooBig", totalBytes: null, limitBytes: 524288000 });
+  });
+
+  it("a slow phone never fetches on an expired link: later files get fresh ones (Q20, trd D4)", async () => {
+    const selected = ids(25);
+    h.downloadLinks.mockImplementation(async (_org: string, chunk: string[]) => {
+      const at = Date.now();
+      return { files: chunk.map((id) => ({ ...file(id), url: `https://r2.example/${id}?at=${at}` })), noFile: [], totalBytes: chunk.length * 3 };
+    });
+    const ages: number[] = [];
+    h.open.mockImplementation(async (url: string) => {
+      ages.push(Date.now() - Number(new URL(url).searchParams.get("at")));
+      vi.setSystemTime(Date.now() + 4 * 60_000); // four minutes a file
+      return streamOf("abc");
+    });
+    const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01"));
+    expect(await run(result, selected)).toMatchObject({ kind: "saved", saved: 25, total: 25, failedIds: [] });
+    expect(h.downloadLinks.mock.calls[0][1]).toEqual(selected);
+    expect(ages).toHaveLength(25);
+    // The server signs for 15 minutes (BULK_LINK_TTL_SECONDS).
+    expect(Math.max(...ages)).toBeLessThan(15 * 60_000);
+  });
+
+  it("a batch whose fresh links can't be had counts its files as failed, for Try those again (Q13, Q20)", async () => {
+    h.downloadLinks
+      .mockResolvedValueOnce({ files: ids(12).map(file), noFile: [], totalBytes: 36 })
+      .mockRejectedValueOnce(new ApiError("offline", 0));
+    const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01"));
+    expect(await run(result, ids(12))).toMatchObject({ kind: "saved", saved: 10, total: 12, failedIds: ["p11", "p12"] });
+    expect(h.downloadLinks).toHaveBeenCalledTimes(2);
+    expect(h.downloadLinks.mock.calls[1][1]).toEqual(["p11", "p12"]);
+  });
+
+  it("cancel while links are asked for aborts that request, up front or for a later batch (Q20)", async () => {
+    const waitForAbort = (_org: string, _ids: string[], signal: AbortSignal) =>
+      new Promise((_, reject) => signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError"))));
+    for (const later of [false, true]) {
+      h.downloadLinks.mockReset();
+      if (later) h.downloadLinks.mockResolvedValueOnce({ files: ids(12).map(file), noFile: [], totalBytes: 36 });
+      h.downloadLinks.mockImplementationOnce(waitForAbort);
+      const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01"));
+      let pending!: Promise<unknown>;
+      act(() => {
+        pending = result.current.download(ids(12));
+      });
+      await act(async () => {
+        await vi.waitFor(() => expect(h.downloadLinks).toHaveBeenCalledTimes(later ? 2 : 1));
+      });
+      act(() => result.current.cancel());
+      await act(async () => {
+        expect(await pending).toEqual({ kind: "cancelled" });
+      });
+      expect(h.saveBlob).not.toHaveBeenCalled();
+    }
+  });
+
+  it("a failed refresh still tries a link that is aged but not expired", async () => {
+    h.downloadLinks
+      .mockResolvedValueOnce({ files: ids(2).map(file), noFile: [], totalBytes: 6 })
+      .mockRejectedValueOnce(new ApiError("offline", 0));
+    h.open.mockImplementation(async () => {
+      vi.setSystemTime(Date.now() + 11 * 60_000);
+      return streamOf("abc");
+    });
+    const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01"));
+    expect(await run(result, ids(2))).toMatchObject({ kind: "saved", saved: 2, failedIds: [] });
+    expect(h.downloadLinks).toHaveBeenCalledTimes(2);
   });
 });

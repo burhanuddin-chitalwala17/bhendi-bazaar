@@ -14,6 +14,7 @@ import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { SELECTION_BAR_COPY } from "./shared-copy";
 
+/** Past the third, an action is a plain "More" menu item: its `pending` and `wrap` are not shown. */
 export interface SelectionAction {
   label: string;
   onClick: () => void;
@@ -48,9 +49,21 @@ const selectionBarVariants = cva(
   },
 );
 
-export interface SelectionBarProps extends VariantProps<
-  typeof selectionBarVariants
-> {
+// A second map because this axis styles the inner panel, not the positioned region.
+const selectionPanelVariants = cva(
+  "mb-2 flex items-center gap-2 rounded-card bg-foreground py-2 pl-4 pr-2 text-background shadow-overlay md:mb-0 md:min-w-96",
+  {
+    variants: {
+      // A screen with few, short actions keeps its bar narrow from md (bulk-actions ux: max 480px).
+      width: { fit: "", narrow: "md:max-w-md" },
+    },
+    defaultVariants: { width: "fit" },
+  },
+);
+
+export interface SelectionBarProps
+  extends VariantProps<typeof selectionBarVariants>,
+    VariantProps<typeof selectionPanelVariants> {
   count: number;
   actions: readonly SelectionAction[];
   onClear: () => void;
@@ -73,6 +86,7 @@ export function SelectionBar({
   onClear,
   noun = "selected",
   dock,
+  width,
   selectAll,
   hint,
   busy,
@@ -87,7 +101,7 @@ export function SelectionBar({
       aria-label={SELECTION_BAR_COPY.selection}
       className={cn(selectionBarVariants({ dock }))}
     >
-      <div className="mb-2 flex items-center gap-2 rounded-card bg-foreground py-2 pl-4 pr-2 text-background shadow-overlay md:mb-0 md:min-w-96 md:max-w-md">
+      <div className={selectionPanelVariants({ width })}>
         <div className="min-w-0 flex-1">
           <p aria-live="polite" className="truncate text-small font-semibold tabular-nums">
             {busy ? busy.label : count > 0 ? `${count} ${noun}` : hint}

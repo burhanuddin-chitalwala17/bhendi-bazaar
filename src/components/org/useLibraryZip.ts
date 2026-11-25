@@ -37,6 +37,46 @@ export function libraryZipName(shopCode: string | null, now: Date): string {
   return `${name.replace(/[^A-Za-z0-9._-]/g, "-")}.zip`;
 }
 
+/** Files fetched on one round of links, which the server signs for 15 minutes (Q20, trd D4). */
+const LINK_BATCH = 10;
+/** A link this old is asked for again before its file is fetched: a slow file can outlast a batch's links. */
+const LINK_STALE_MS = 10 * 60 * 1000;
+
+/**
+ * The link for each file, signed shortly before it is fetched (Q20). The first batch uses the links
+ * the size check already brought; each later one asks again. A batch that can't be asked fails its files.
+ */
+function freshLinks(
+  order: string[],
+  first: { urls: Map<string, string>; at: number },
+  ask: (ids: string[], signal: AbortSignal) => Promise<MediaDownloadLinksDto>,
+) {
+  // null: asked for, and no link came back.
+  const held = new Map<string, { url: string; at: number } | null>();
+  for (const id of order.slice(0, LINK_BATCH)) held.set(id, { url: first.urls.get(id)!, at: first.at });
+  return async (id: string, signal: AbortSignal): Promise<string> => {
+    const link = held.get(id);
+    if (link === undefined || (link && Date.now() - link.at > LINK_STALE_MS)) {
+      const from = order.indexOf(id);
+      const batch = order.slice(from, from + LINK_BATCH);
+      const at = Date.now();
+      const before = batch.map((asked) => [asked, held.get(asked)] as const);
+      for (const asked of batch) held.set(asked, null);
+      try {
+        const answer = await ask(batch, signal);
+        for (const file of answer.files) held.set(file.id, { url: file.url, at });
+      } catch (error) {
+        if (signal.aborted) throw error;
+        // An aged link may still be inside its 15 minutes: better tried than failed unasked.
+        for (const [asked, old] of before) if (old) held.set(asked, old);
+      }
+    }
+    const url = held.get(id)?.url;
+    if (!url) throw new Error("No link for this file");
+    return url;
+  };
+}
+
 function tooBigFrom(error: unknown): LibraryZipOutcome | null {
   if (!(error instanceof ApiError) || error.status !== 422) return null;
   const detail = (path: string) => Number(error.details.find((d) => d.path === path)?.message);
@@ -61,9 +101,10 @@ export function useLibraryZip(orgId: string, shopCode: string | null, limitBytes
       setProgress({ done: 0, total: ids.length });
       // At most 100 ids a request (Q10); each batch is capped by the server, their sum here (Q4).
       const links: MediaDownloadLinksDto = { files: [], noFile: [], totalBytes: 0 };
+      const signedAt = Date.now();
       try {
         for (let at = 0; at < ids.length; at += MEDIA_BULK_MAX_IDS) {
-          const batch = await orgMediaApiClient.downloadLinks(orgId, ids.slice(at, at + MEDIA_BULK_MAX_IDS));
+          const batch = await orgMediaApiClient.downloadLinks(orgId, ids.slice(at, at + MEDIA_BULK_MAX_IDS), abort.signal);
           links.files.push(...batch.files);
           links.noFile.push(...batch.noFile);
           links.totalBytes += batch.totalBytes;
@@ -87,7 +128,11 @@ export function useLibraryZip(orgId: string, shopCode: string | null, limitBytes
       };
       if (!links.files.length) return { kind: "nothingToZip", ...leftOut };
 
-      const urls = new Map(links.files.map((file) => [file.id, file.url]));
+      const linkFor = freshLinks(
+        links.files.map((file) => file.id),
+        { urls: new Map(links.files.map((file) => [file.id, file.url])), at: signedAt },
+        (batch, signal) => orgMediaApiClient.downloadLinks(orgId, batch, signal),
+      );
       setProgress({ done: 0, total: links.files.length });
       // fflate loads on the first Download, not with the Library (trd Packages).
       let zipModule;
@@ -99,7 +144,7 @@ export function useLibraryZip(orgId: string, shopCode: string | null, limitBytes
       const { buildZip, ZipLimitError } = zipModule;
       try {
         const zip = await buildZip(links.files, {
-          open: (entry, signal) => mediaFilesApiClient.open(urls.get(entry.id)!, signal),
+          open: async (entry, signal) => mediaFilesApiClient.open(await linkFor(entry.id, signal), signal),
           limitBytes,
           signal: abort.signal,
           onProgress: (done, total) => setProgress({ done, total }),
