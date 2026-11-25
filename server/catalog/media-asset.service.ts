@@ -11,6 +11,7 @@ import { recordAdminAction } from "@server/shared/audit/audit.service";
 import { isVideoContentType } from "@server/catalog/video";
 import { IMAGE_QUALITY, MAX_IMAGE_EDGE } from "@server/catalog/media";
 import { videoTranscodeSpec } from "@server/catalog/video.job";
+import { downloadLink } from "@server/catalog/media-download";
 import {
   MEDIA_LIBRARY_PAGE_SIZE,
   describeUses,
@@ -245,6 +246,9 @@ export const mediaAssetService = {
     if (!row) throw new NotFoundError("Image not found");
     return { asset: toMediaAssetDto(row), uses: await mediaAssetRepository.usesOf(id) };
   },
+
+  /** A presigned link that saves the original (viewer trd D1). */
+  downloadLink,
 
   /**
    * A photograph at the size an image model can use (improve-with-ai, review 2026-11-21): its stored

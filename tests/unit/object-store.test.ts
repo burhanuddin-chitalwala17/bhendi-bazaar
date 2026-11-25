@@ -147,3 +147,24 @@ describe("bulk category create schema", () => {
     expect(result.success).toBe(false);
   });
 });
+
+describe("presignDownload", () => {
+  it("signs a short-lived GET that saves under our filename (viewer spec A5, trd D1)", async () => {
+    const { presignDownload } = await load();
+    const url = new URL(await presignDownload("org/ORG-ABCDE/front.jpg", "ORG-ABCDE-asset1.jpg"));
+
+    // The bucket, not the public domain: the public domain cannot carry a disposition override.
+    expect(url.host).toBe("accountid.r2.cloudflarestorage.com");
+    expect(url.pathname).toBe("/bhendi-bazaar/org/ORG-ABCDE/front.jpg");
+    expect(url.searchParams.get("X-Amz-Expires")).toBe("300");
+    expect(url.searchParams.get("X-Amz-Signature")).toBeTruthy();
+    expect(url.searchParams.get("response-content-disposition")).toBe('attachment; filename="ORG-ABCDE-asset1.jpg"');
+  });
+
+  it("puts the disposition under the signature, so it cannot be swapped after signing", async () => {
+    const { presignDownload } = await load();
+    const a = new URL(await presignDownload("a/b.jpg", "one.jpg"));
+    const b = new URL(await presignDownload("a/b.jpg", "two.jpg"));
+    expect(a.searchParams.get("X-Amz-Signature")).not.toBe(b.searchParams.get("X-Amz-Signature"));
+  });
+});

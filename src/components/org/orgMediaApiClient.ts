@@ -37,6 +37,14 @@ export const orgMediaApiClient = {
     await apiRequest(`/api/org/${orgId}/media/${assetId}/crop`, { method: "POST", body: transform });
   },
 
+  /**
+   * Asked before the navigation, which would show the browser's error page on a refusal (trd D5).
+   * Resolves when the file can be saved; an `ApiError` carries 404, 410 or 422 otherwise.
+   */
+  async canDownload(orgId: string, assetId: string): Promise<void> {
+    await apiRequest(`/api/org/${orgId}/media/${assetId}/download`, { method: "HEAD" });
+  },
+
   async retire(orgId: string, assetId: string): Promise<void> {
     await apiRequest(`/api/org/${orgId}/media/${assetId}/retire`, { method: "POST" });
   },

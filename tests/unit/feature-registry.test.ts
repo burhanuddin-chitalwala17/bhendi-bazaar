@@ -12,7 +12,7 @@ import { FEATURE } from "@server/subscriptions/feature-access.types";
 
 const ROOT = resolve(__dirname, "../..");
 const ORG_API = join(ROOT, "src/app/api/org");
-const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"];
+const METHODS = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"];
 const FEATURE_CONST: Record<string, string> = Object.fromEntries(Object.entries(FEATURE).map(([k, v]) => [v, `FEATURE.${k}`]));
 
 function walk(dir: string): string[] {
