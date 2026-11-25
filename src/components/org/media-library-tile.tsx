@@ -8,7 +8,8 @@ import { PRODUCT_TILE_SIZES } from "@/components/shared/product-card";
 import { YouTubePoster } from "@/components/product/youtube-poster";
 import { formatDuration } from "@/lib/format";
 import { MEDIA_TAG, type MediaAssetDto } from "@server/catalog/media-library.types";
-import { MEDIA_GRID_COPY, MEDIA_VIEWER_COPY } from "./media-library-copy";
+import { cn } from "@/lib/utils";
+import { MEDIA_BULK_COPY, MEDIA_GRID_COPY, MEDIA_VIEWER_COPY } from "./media-library-copy";
 
 /** The sheet's preview: the panel's width from `md`, the phone's otherwise (ADR-0026). */
 export const LARGE_TILE_SIZES = "(min-width: 768px) 384px, 100vw";
@@ -33,6 +34,10 @@ interface MediaLibraryTileProps {
   onOpen: () => void;
   /** The ⤢ control: the same item, full screen (viewer R2, Q2). */
   onFullScreen: () => void;
+  /** In selection mode: a tap ticks instead of opening, and the tick takes the ⤢'s corner (bulk-actions R1). */
+  selection?: { selected: boolean; onToggle: () => void };
+  /** Outside the mode, from `lg`: the tick shown on hover, which starts the mode with this tile (Q7). */
+  onSelect?: () => void;
 }
 
 /**
@@ -42,25 +47,33 @@ interface MediaLibraryTileProps {
  * The control sits top-left and a state badge moves below it (viewer Q7): the use count keeps the
  * top-right corner, where the eye already goes for it.
  */
-export function MediaLibraryTile({ asset, onOpen, onFullScreen }: MediaLibraryTileProps) {
+export function MediaLibraryTile({ asset, onOpen, onFullScreen, selection, onSelect }: MediaLibraryTileProps) {
   const state = STATE_BADGES[asset.state];
+  const label = isVideoKind(asset.kind)
+    ? KIND_LABELS[asset.kind]
+    : MEDIA_GRID_COPY.photoLabel(asset.width ?? "?", asset.height ?? "?");
   return (
-    <div className="relative">
+    <div className="group relative">
       <Button
         type="button"
         variant="ghost"
-        onClick={onOpen}
-        className="relative aspect-square h-auto w-full overflow-hidden rounded-card bg-muted p-0"
-        aria-label={
-          isVideoKind(asset.kind)
-            ? KIND_LABELS[asset.kind]
-            : MEDIA_GRID_COPY.photoLabel(asset.width ?? "?", asset.height ?? "?")
-        }
+        onClick={selection ? selection.onToggle : onOpen}
+        aria-pressed={selection ? selection.selected : undefined}
+        className={cn(
+          "relative aspect-square h-auto w-full overflow-hidden rounded-card bg-muted p-0",
+          selection?.selected && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+        )}
+        aria-label={label}
       >
         <MediaTile asset={asset} />
         {/* Only a count, and only where there is one: most of a library is used nowhere yet,
             and a badge on all of it says nothing. The Usage filter is how they are found. */}
-        {asset.uses > 0 && <Badge className="absolute right-1 top-1">{MEDIA_GRID_COPY.useCount(asset.uses)}</Badge>}
+        {asset.uses > 0 && (
+          <Badge className={cn("absolute right-1 top-1", onSelect && !selection && "lg:group-hover:hidden lg:group-focus-within:hidden")}>
+            {MEDIA_GRID_COPY.useCount(asset.uses)}
+          </Badge>
+        )}
+        {selection && <Tick selected={selection.selected} className="absolute left-2.5 top-2.5" />}
         {state && (
           <Badge className="absolute left-1 top-13" variant={state.variant}>
             {state.label}
@@ -79,18 +92,48 @@ export function MediaLibraryTile({ asset, onOpen, onFullScreen }: MediaLibraryTi
         )}
       </Button>
       {/* Outside the tile's own button, because a button inside a button is not a control. */}
-      <Button
-        type="button"
-        variant="ghost"
-        shape="icon"
-        onClick={onFullScreen}
-        aria-label={MEDIA_VIEWER_COPY.fullScreen}
-        // 44px: the grid's tiles are small on a phone, and ux.md asks this target be a full 44 (no icon step has one).
-        className="absolute left-1 top-1 size-11 rounded-full border border-primary/30 bg-scrim/70 text-hero-foreground hover:bg-hero/90"
-      >
-        <Icon name="fullscreen" size="md" />
-      </Button>
+      {!selection && (
+        <Button
+          type="button"
+          variant="ghost"
+          shape="icon"
+          onClick={onFullScreen}
+          aria-label={MEDIA_VIEWER_COPY.fullScreen}
+          // 44px: the grid's tiles are small on a phone, and ux.md asks this target be a full 44 (no icon step has one).
+          className="absolute left-1 top-1 size-11 rounded-full border border-primary/30 bg-scrim/70 text-hero-foreground hover:bg-hero/90"
+        >
+          <Icon name="fullscreen" size="md" />
+        </Button>
+      )}
+      {/* Top-right, over the use count, because the ⤢ keeps the top-left until the mode starts. */}
+      {!selection && onSelect && (
+        <Button
+          type="button"
+          variant="ghost"
+          shape="icon"
+          onClick={onSelect}
+          aria-label={MEDIA_BULK_COPY.selectItem(label)}
+          className="absolute right-1 top-1 hidden size-11 rounded-full hover:bg-transparent lg:group-hover:flex lg:group-focus-within:flex"
+        >
+          <Tick selected={false} />
+        </Button>
+      )}
     </div>
+  );
+}
+
+/** The selection mark: a ringed circle, filled with a check once ticked. */
+function Tick({ selected, className }: { selected: boolean; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "flex size-6 items-center justify-center rounded-full border-2 border-background shadow-raised",
+        selected ? "bg-primary text-primary-foreground" : "bg-scrim/50",
+        className,
+      )}
+    >
+      {selected && <Icon name="done" size="sm" />}
+    </span>
   );
 }
 

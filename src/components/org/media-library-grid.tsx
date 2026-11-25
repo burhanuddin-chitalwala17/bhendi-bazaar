@@ -44,7 +44,9 @@ import {
   type MediaUseDto,
 } from "@server/catalog/media-library.types";
 import type { Pagination } from "@server/shared/pagination";
-import { MEDIA_GRID_COPY, MEDIA_VIEWER_COPY } from "./media-library-copy";
+import { MEDIA_BULK_COPY, MEDIA_GRID_COPY, MEDIA_VIEWER_COPY } from "./media-library-copy";
+import { useLibrarySelection } from "./useLibrarySelection";
+import { MediaLibrarySelectionBar } from "./media-library-selection-bar";
 import { FEATURE } from "@/components/subscriptions/features";
 
 interface MediaLibraryGridProps {
@@ -91,6 +93,9 @@ export function MediaLibraryGrid({ orgId, orgCode, initial, query }: MediaLibrar
   // Stable, because the viewer asks for the next page from an effect that depends on it.
   const loadMoreForViewer = useCallback(() => void loadMore(), [loadMore]);
   const [isPosterPickerOpen, setPosterPickerOpen] = useState(false);
+  const selection = useLibrarySelection();
+  // Only what is loaded counts: a retired item leaves the grid and so the selection (trd D8).
+  const picked = selection.selecting ? assets.filter((asset) => selection.ids.has(asset.id)) : [];
 
   const openId = open?.id ?? null;
   const loaded = useAsyncData((signal) => orgMediaApiClient.detail(orgId, openId!, signal), {
@@ -207,17 +212,65 @@ export function MediaLibraryGrid({ orgId, orgCode, initial, query }: MediaLibrar
   }
 
   return (
-    <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">{MEDIA_GRID_COPY.itemCount(total)}</p>
+    // Room under the last row, so the floating bar never covers a tile.
+    <div className={selection.selecting ? "space-y-3 pb-24" : "space-y-3"}>
+      <div className="flex min-h-10 flex-wrap items-center gap-2">
+        <p className="mr-auto text-xs text-muted-foreground">{MEDIA_GRID_COPY.itemCount(total)}</p>
+        {assets.length > 0 &&
+          (selection.selecting ? (
+            <>
+              {picked.length < assets.length && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => selection.selectAll(assets.map((asset) => asset.id))}>
+                  {MEDIA_BULK_COPY.selectAll(assets.length)}
+                </Button>
+              )}
+              {picked.length > 0 && (
+                <Button type="button" variant="ghost" size="sm" onClick={selection.clear}>
+                  {MEDIA_BULK_COPY.clear}
+                </Button>
+              )}
+              <Button type="button" variant="outline" size="sm" onClick={selection.stop}>
+                {MEDIA_BULK_COPY.done}
+              </Button>
+            </>
+          ) : (
+            <Button type="button" variant="outline" size="sm" onClick={selection.start}>
+              {MEDIA_BULK_COPY.select}
+            </Button>
+          ))}
+      </div>
       <ul className={PRODUCT_GRID_CLASSES} ref={tilesRef}>
         {assets.map((asset, at) => (
           <li key={asset.id}>
-            <MediaLibraryTile asset={asset} onOpen={() => show(asset)} onFullScreen={() => setViewerIndex(at)} />
+            <MediaLibraryTile
+              asset={asset}
+              onOpen={() => show(asset)}
+              onFullScreen={() => setViewerIndex(at)}
+              selection={
+                selection.selecting
+                  ? { selected: selection.ids.has(asset.id), onToggle: () => selection.toggle(asset.id) }
+                  : undefined
+              }
+              onSelect={() => {
+                selection.start();
+                selection.toggle(asset.id);
+              }}
+            />
           </li>
         ))}
       </ul>
 
       <LoadMore onMore={() => void loadMore()} done={done} loading={loading} error={error} count={assets.length} noun={MEDIA_GRID_COPY.loadMoreNoun} />
+
+      {selection.selecting && (
+        <MediaLibrarySelectionBar
+          orgId={orgId}
+          orgCode={orgCode ?? null}
+          picked={picked}
+          onClear={selection.clear}
+          onRetired={(ids) => ids.forEach(remove)}
+        />
+      )}
 
       <Sheet open={open !== null} onOpenChange={(next) => !next && setOpen(null)}>
         <SheetContent side="adaptive">

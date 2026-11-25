@@ -1,7 +1,7 @@
 # UX — bulk-actions
 
 - **Status:** Signed off
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 - **Prototype:** https://claude.ai/artifact/A3rngfrZXuCHNRTme36QSy (journey 2)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), ../viewer/ux.md (`94a656e9:docs/specs/media-library/viewer/ux.md`)
 
@@ -53,7 +53,7 @@
 | Long content | n/a | — | — |
 | Many items | **Select all {loaded}** selects what is loaded, never more (Q8) | "Select all {n}" | — |
 | Slow | n/a | — | — |
-| Phone / tablet / desktop | Phone: tap ticks. `lg`: a tick also appears on tile hover and starts the mode | — | — |
+| Phone / tablet / desktop | Phone: tap ticks. `lg`: a tick also appears top-right on tile hover and starts the mode (Q18) | — | — |
 
 ## State matrix — Selection bar
 
@@ -69,7 +69,7 @@
 | Refused | Over the zip limit; all in use; all retired (for Tag/Retire) | see copy deck | — |
 | Stale | An item retired elsewhere meanwhile: counted as left out | "{n} were already retired." | — |
 | Long content | Counts only; no names | — | — |
-| Many items | Up to 100 per Retire or Tag request (Q10); more is sent in batches, reported as one | — | — |
+| Many items | Up to 100 per Retire or Tag request (Q10); more is sent in batches, reported as one. A later batch failing: the outcome toast, then the unreachable line's first sentence (Q19) | "Couldn't reach the server." | — |
 | Slow | Retire or Tag past 3 s: the action's button shows its spinner | — | — |
 | Phone / tablet / desktop | Phone: bar floats above the bottom edge, three equal buttons. `md`: bar centred, max 480px | — | — |
 
@@ -89,7 +89,7 @@
 | Long content | n/a | — | — |
 | Many items | Numbers only | — | — |
 | Slow | Button spinner | — | — |
-| Phone / tablet / desktop | Centred dialog at every size | — | — |
+| Phone / tablet / desktop | Bottom sheet on a phone, centred dialog from `md` (`FormDialog`, Q17 amends "centred at every size") | — | — |
 
 ## State matrix — Tag sheet
 
@@ -107,7 +107,7 @@
 | Long content | n/a — two tags | — | — |
 | Many items | Batched as Retire is | — | — |
 | Slow | Button spinner | — | — |
-| Phone / tablet / desktop | Bottom sheet on phone, side panel from `md` (the existing adaptive sheet) | — | — |
+| Phone / tablet / desktop | Bottom sheet on phone, a popover on the bar's Tag button from `md` (`ResponsivePicker`, Q17 amends "side panel") | — | — |
 
 ## Copy deck
 
@@ -127,6 +127,10 @@
 | Zip, too big | That's {size}, more than {limit} at once · Select fewer and download in two goes. |
 | Zip, partial | Downloaded {ok} of {total} files · {n} couldn't be fetched. · Try those {n} again |
 | Zip, none fetched | Couldn't fetch any of these files. Try again later. |
+| Zip, too big mid-download | This selection is more than 500 MB · Select fewer and download in two goes. |
+| Zip, removed left out | {n} were removed and can't be downloaded. |
+| Zip, no longer ours left out | {n} are no longer in your library. |
+| Zip, nothing to zip | Nothing to download · YouTube links aren't files. |
 | Retire dialog title | Retire {n} pictures? |
 | Retire dialog body | They leave the library now, and their files are deleted after thirty days. |
 | Retire dialog, some used | {m} more are still in use, so they'll stay. Filter by Usage: In use to find them. |
@@ -145,4 +149,4 @@
 
 ## Sign-off
 
-Signed off by owner, 2026-11-24.
+Signed off by owner, 2026-11-24. Four zip lines (too big mid-download, removed, no longer ours, nothing to zip) added and approved by owner, 2026-11-25 (Q16). Built in U3, 2026-11-25: three rows amended by Claude-reversible decisions Q17 (overlay surfaces, per trd and ADR-0040), Q18 (hover tick position) and Q19 (partial batch line) — for the owner to confirm on the phone walk.

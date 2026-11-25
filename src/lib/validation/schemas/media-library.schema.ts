@@ -67,12 +67,15 @@ export const mediaTagSchema = z.object({
 
 export type MediaTagInput = z.infer<typeof mediaTagSchema>;
 
+/** The most ids one bulk request carries (bulk-actions Q10); the bar sends more in batches of this. */
+export const MEDIA_BULK_MAX_IDS = 100;
+
 /** A bulk library action's selection: at most 100 ids (bulk-actions Q10), each counted once. */
 export const mediaBulkSchema = z.object({
   ids: z
     .array(z.string().min(1).max(64))
     .min(1)
-    .max(100)
+    .max(MEDIA_BULK_MAX_IDS)
     .transform((ids) => [...new Set(ids)]),
 });
 
