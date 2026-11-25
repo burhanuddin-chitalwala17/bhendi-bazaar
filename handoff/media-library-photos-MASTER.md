@@ -1,8 +1,8 @@
 # Handoff — media-library photos feature (master)
 
-- **Updated:** 2026-11-25 04:31 UTC
+- **Updated:** 2026-11-25 04:52 UTC
 - **Planning branch:** `claude/gracious-gates-l2b7u5` (this file)
-- **Status:** viewer U1 and picker U1 done and pushed; viewer U2 running
+- **Status:** viewer U1, U2 and picker U1 done and merged into this branch; viewer U3 running
 
 Read this first if you are continuing from another account. Each build unit also keeps its own
 `handoff/<unit>.md` **on its own build branch**, updated after every step; that file is the truth
@@ -46,12 +46,18 @@ Each folder has spec.md, decisions.md, ux.md (prototype: https://claude.ai/artif
 | # | Unit | Starts from | Branch | State | Session (account 1) |
 |---|---|---|---|---|---|
 | 1 | viewer U1 — download route | `claude/gracious-gates-l2b7u5` | `claude/media-library-build` | done, pushed `4676e522`, gate re-run green by master | `session_01Kc21QZt95tL4EJCVq7VQ7Q` |
-| 2 | viewer U2 — sheet download | `claude/media-library-build` after 1 | same | running | `session_01Kc21QWDFRJaaeEwD3Lgcq3` |
-| 3 | viewer U3 — full-screen slider | after 2 | same | waiting | — |
+| 2 | viewer U2 — sheet download | `claude/media-library-build` after 1 | same | done `69033278`, merged here | `session_01Kc21QWDFRJaaeEwD3Lgcq3` |
+| 3 | viewer U3 — full-screen slider | after 2 | same | running | `session_01Kc21QZLqA5dbdePyBT5SPm` |
 | 4 | bulk U1 — bulk routes | after 3 | same | waiting | — |
 | 5 | bulk U2 — zip builder, fflate, OPERATIONS CORS step | after 4 | same | waiting | — |
 | 6 | bulk U3 — selection mode | after 5 **and** the owner's CORS change | same | waiting | — |
 | 7 | picker-filters U1 | `claude/gracious-gates-l2b7u5` | `claude/media-picker-filters` | done, pushed `9e24da09` (spec Implemented) | `session_01Kc21QZekBRwKqbeQZnEMFe` |
+
+## Merged into this branch
+
+Each finished unit is merged here at the commit it finished on, the gate re-run, then pushed:
+viewer U1 `4676e522`, picker U1 `9e24da09`, viewer U2 `69033278`. On a conflict, take the unit's side
+of `Verified:` dates and run `npm run docs:index` for the generated counts.
 
 ## Pushing
 
