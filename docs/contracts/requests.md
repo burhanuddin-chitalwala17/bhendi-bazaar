@@ -1,6 +1,6 @@
 # Contracts — requests
 
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 - **Covers:** `server/requests/*.types.ts`
 
 The requests shapes that cross the browser/server boundary. Rules, the error envelope and pagination are in
@@ -16,6 +16,9 @@ shop, product or words; **`AdminIssueDTO`** carries each report's shop, product 
 **`RequirementPlanDTO`** is a fields plan (each attribute's solution: reuse, add, from_product, fixed,
 not_possible, or since 2026-11-20 `map_parts` for a field in parts, which Apply skips and the admin maps per part
 on the type's field maps `[CONTRACT]`) or a category plan (Amazon's options), with a `hash` Apply must echo (D7).
+
+**`requestService.isOpenForShop(orgId, requestId)`** answers whether a request is the shop's own and still open: what
+the inbox lets a chat be shared with support for (inbox-core D9).
 
 Channels hands complaints to requests through the shared job `requests.listing-complaints`
 (`server/shared/jobs/listing-complaints.job.ts`): per product, its marketplace type when known and its

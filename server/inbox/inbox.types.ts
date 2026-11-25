@@ -73,5 +73,15 @@ export function statesBelow(state: MessageState): MessageState[] {
   return (Object.keys(STATE_RANK) as MessageState[]).filter((s) => (STATE_RANK[s] ?? 0) < rank);
 }
 
+/** `Conversation.sortRank`: one index serves "Needs you first" (D1). */
+export const SORT_RANK = { NEEDS_YOU: 0, OTHER: 1 } as const;
+
 /** A list row's preview is cut to this many characters before it is sealed. */
 export const PREVIEW_CHARS = 120;
+
+/** Why a thread needs the shop (D5): an automatic reply handed it over, or met a question it could not answer. */
+export const NEEDS_YOU_REASON = {
+  HANDOVER: "handover",
+  UNANSWERABLE: "unanswerable",
+} as const;
+export type NeedsYouReason = (typeof NEEDS_YOU_REASON)[keyof typeof NEEDS_YOU_REASON];

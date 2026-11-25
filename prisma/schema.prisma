@@ -2783,15 +2783,21 @@ model Conversation {
   window            Json?
   /// Taken afresh from its sequence on every write, a message's included: the change feed's cursor (A-D14).
   changeSeq         BigInt            @default(autoincrement())
+  /// The platform account the thread is with, so retention can tell a past account's threads (decisions Q20).
+  accountRef        String?
+  /// When this waiting spell's `conversation waiting` event went out; cleared once nothing waits (D5, Q19).
+  waitingEmittedAt  DateTime?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
-  messages Message[]
+  messages      Message[]
+  supportGrants SupportGrant[]
 
   @@unique([orgId, platform, threadKey])
   @@index([orgId, platform, sortRank, lastMessageAt(sort: Desc), id])
   @@index([orgId, changeSeq])
   @@index([connectionId])
+  @@index([platform, personKey])
 }
 
 /// One message in a conversation, in or out, and the outbox row for what a shop sends (inbox-core
@@ -2832,6 +2838,37 @@ model Message {
 
   @@index([conversationId, sentAt, id])
   @@index([orgId, platformMessageId])
+}
+
+/// A shop sharing one conversation with support for one request, for 48 hours (inbox-core D9, R14).
+model SupportGrant {
+  id             String       @id @default(cuid())
+  orgId          String
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  /// The shop's own request (a `Ticket` it has a need on) the chat is shared for.
+  requestId      String
+  grantedById    String
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, expiresAt])
+  @@index([orgId, createdAt])
+}
+
+/// Every open of a shop's chat by someone not its member: "Who has opened your chats" (D9, R14).
+/// Outlives the conversation, so the shop's record of who looked is never erased with the chat.
+model SealAccess {
+  id             String   @id @default(cuid())
+  orgId          String
+  conversationId String
+  grantId        String
+  /// The support user's id.
+  who            String
+  at             DateTime @default(now())
+
+  @@index([orgId, at(sort: Desc), id])
 }
 
 /// Events dropped at the intake, counted per day and product, never stored (meta-foundation R2, R5, D12).

@@ -91,6 +91,11 @@ export const requestService = {
 
   // ── The shop's side (Q25, Q31) ──────────────────────────────────────────────────────────────
 
+  /** Whether a request is the shop's own and still open: what a chat may be shared with support for (inbox-core D9). */
+  async isOpenForShop(orgId: string, requestId: string): Promise<boolean> {
+    return await ticketRepository.isOpenForOrg(orgId, requestId);
+  },
+
   async forShop(orgId: string, input: { productIds?: readonly string[]; take?: number } = {}): Promise<ShopTicketDTO[]> {
     const rows = await ticketRepository.forOrg(orgId, { productIds: input.productIds, take: input.take ?? PAGE });
     return rows.flatMap((r) => {

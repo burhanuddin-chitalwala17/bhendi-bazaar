@@ -17,6 +17,7 @@ import {
 } from "./inbox.types";
 import { messageRepository, type NewMessage } from "./message.repository";
 import { messageRows, previewOf, STRUCTURED_KINDS } from "./message-rows";
+import { waitingAfterArrival } from "./inbox-care.job";
 
 /**
  * Facts become conversations and messages (social-selling inbox-core D2). Each fact lands in one
@@ -75,7 +76,8 @@ async function ownersOf(facts: ReadonlyArray<{ connectionId: string }>): Promise
   };
 }
 
-async function land(orgId: string, landing: Landing): Promise<void> {
+async function land(owner: SocialOwner, landing: Landing): Promise<void> {
+  const { orgId, accountId } = owner;
   // Sealed before the transaction opens, so a shop's first key is never made while it is held.
   const sealed = await Promise.all(
     landing.drafts.map(async (draft) => {
@@ -84,7 +86,7 @@ async function land(orgId: string, landing: Landing): Promise<void> {
     }),
   );
   await prisma.$transaction(async (tx) => {
-    const conversationId = await conversationRepository.ensure(tx, { ...landing.key, orgId });
+    const conversationId = await conversationRepository.ensure(tx, { ...landing.key, orgId, accountRef: accountId });
     const rows: NewMessage[] = sealed.map(({ id, draft, bodySealed }) => ({
       id,
       conversationId,
@@ -114,6 +116,8 @@ async function land(orgId: string, landing: Landing): Promise<void> {
       kind: newest.kind,
       previewSealed: text ? await seal.seal({ orgId, table: "Conversation", rowId: conversationId }, text) : null,
     });
+    // Four hours on, this thread may be waiting (D5): the sweep is woken then, not polled meanwhile.
+    if (landing.inbound) await waitingAfterArrival(tx, landing.key.at);
   });
 }
 
@@ -124,10 +128,11 @@ export const inboxIntake = {
   async messages(facts: ReadonlyArray<FactOf<"inbound-message"> | FactOf<"outbound-echo">>, inbound: boolean): Promise<void> {
     const owner = await ownersOf(facts);
     for (const fact of facts) {
-      const { orgId } = owner(fact.connectionId);
+      const who = owner(fact.connectionId);
+      const { orgId } = who;
       // Instagram echoes what we sent through the API too; that row is already ours.
       if (!inbound && (await messageRepository.hasPlatformId(orgId, fact.messageId))) continue;
-      await land(orgId, {
+      await land(who, {
         key: dmKey(fact),
         inbound,
         isArrival: true,
@@ -161,10 +166,11 @@ export const inboxIntake = {
   async reactions(facts: ReadonlyArray<FactOf<"reaction">>): Promise<void> {
     const owner = await ownersOf(facts);
     for (const fact of facts) {
-      const { orgId, selfIds } = owner(fact.connectionId);
+      const who = owner(fact.connectionId);
+      const { orgId, selfIds } = who;
       // The shop's own reaction or edit in the platform's app names the shop as the person: no thread of its own.
       if (selfIds.includes(fact.personKey)) continue;
-      await land(orgId, {
+      await land(who, {
         key: dmKey(fact),
         inbound: true,
         isArrival: false,
@@ -181,10 +187,11 @@ export const inboxIntake = {
   async edits(facts: ReadonlyArray<FactOf<"message-edit">>): Promise<void> {
     const owner = await ownersOf(facts);
     for (const fact of facts) {
-      const { orgId, selfIds } = owner(fact.connectionId);
+      const who = owner(fact.connectionId);
+      const { orgId, selfIds } = who;
       // The shop's own reaction or edit in the platform's app names the shop as the person: no thread of its own.
       if (selfIds.includes(fact.personKey)) continue;
-      await land(orgId, {
+      await land(who, {
         key: dmKey(fact),
         inbound: true,
         isArrival: false,
@@ -201,11 +208,12 @@ export const inboxIntake = {
   async comments(facts: ReadonlyArray<FactOf<"comment">>): Promise<void> {
     const owner = await ownersOf(facts);
     for (const fact of facts) {
-      const { orgId, selfIds } = owner(fact.connectionId);
+      const who = owner(fact.connectionId);
+      const { orgId, selfIds } = who;
       const ours = selfIds.includes(fact.personKey);
       // The shop's own top-level comment is not a conversation with anyone.
       if (ours && !fact.parentId) continue;
-      await land(orgId, {
+      await land(who, {
         key: {
           connectionId: fact.connectionId,
           platform: fact.platform,
@@ -247,9 +255,10 @@ export const inboxIntake = {
   async carts(facts: ReadonlyArray<FactOf<"cart-order">>): Promise<void> {
     const owner = await ownersOf(facts);
     for (const fact of facts) {
-      const { orgId } = owner(fact.connectionId);
+      const who = owner(fact.connectionId);
+      const { orgId } = who;
       const cart = JSON.stringify({ catalogueId: fact.catalogueId, note: fact.note, items: fact.items });
-      await land(orgId, {
+      await land(who, {
         key: dmKey(fact),
         inbound: true,
         isArrival: true,

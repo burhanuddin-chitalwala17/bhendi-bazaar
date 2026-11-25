@@ -57,4 +57,10 @@ describe("sealed columns (A-D12)", () => {
     });
     expect(offenders).toEqual([]);
   });
+
+  it("only the inbox opens a sealed value: support reads through its live share there, never elsewhere (inbox-core D9)", () => {
+    const openers = files.filter((f) => !f.startsWith("server/inbox/") && !f.startsWith("server/shared/seal/") && /\bseal\.open\(/.test(readFileSync(f, "utf8")));
+    expect(openers).toEqual([]);
+    expect(files.some((f) => f === "server/inbox/inbox-privacy.service.ts" && /\bseal\.open\(/.test(readFileSync(f, "utf8")))).toBe(true);
+  });
 });

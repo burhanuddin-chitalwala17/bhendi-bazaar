@@ -128,6 +128,11 @@ export const ticketRepository = {
     return await prisma.ticketNeed.count({ where: { ticketId } });
   },
 
+  /** Whether the shop has a need on this ticket while it is open. */
+  async isOpenForOrg(orgId: string, ticketId: string): Promise<boolean> {
+    return (await prisma.ticketNeed.count({ where: { orgId, ticketId, ticket: { status: TICKET_STATUS.OPEN } } })) > 0;
+  },
+
   /** One shop's tickets, newest first (Q25). */
   async forOrg(orgId: string, input: { productIds?: readonly string[]; take: number }) {
     return await prisma.ticketNeed.findMany({

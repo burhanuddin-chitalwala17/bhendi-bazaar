@@ -27,6 +27,9 @@ export const ORG_ROUTE_FEATURES: Record<string, Classification> = {
   "PATCH /api/org/[orgId]/brands/[brandId]": { core: FREE },
   "POST /api/org/[orgId]/brands": { core: FREE },
 
+  "POST /api/org/[orgId]/inbox/conversations/[id]/support-share": { feature: FEATURE.SOCIAL_SELLING },
+  "DELETE /api/org/[orgId]/inbox/conversations/[id]/support-share": { core: "Stopping a share is the shop's privacy, whatever the plan (inbox-core R14)." },
+  "GET /api/org/[orgId]/inbox/privacy": { core: "Who has opened a shop's chats is its to see whatever the plan (inbox-core R14)." },
   "POST /api/org/[orgId]/posts": { feature: FEATURE.SOCIAL_SELLING },
   "GET /api/org/[orgId]/posts/[id]": { feature: FEATURE.SOCIAL_SELLING },
   "PUT /api/org/[orgId]/posts/[id]": { feature: FEATURE.SOCIAL_SELLING },
@@ -168,6 +171,8 @@ export const JOB_FEATURES: Record<string, { readonly feature: Feature; readonly 
     feature: FEATURE.SOCIAL_SELLING,
     how: "Queued only by a sign-up that has just asserted Social selling (connect-whatsapp D2).",
   },
+  "inbox.waiting": { core: "Tells a shop a chat has waited four hours: only threads that came through a connection it already made, whatever the plan now." },
+  "inbox.retention": { core: "Deletes chats 90 days after an account is left: a promise to the people in them, whatever the plan." },
   "channels.meta-retention": { core: "Deletes raw events past 30 days for every account: a promise to the people in them, whatever the plan." },
   "channels.meta-sweep": { core: "Re-asks drains and deletion requests a lost job left behind; each does only what was already owed." },
   "channels.delete-person": { core: "A person's deletion request is the law's and Meta's, whatever any shop's plan." },

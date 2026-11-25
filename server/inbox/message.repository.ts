@@ -68,3 +68,16 @@ export const messageRepository = {
     return (await prisma.message.count({ where: { orgId, platformMessageId } })) > 0;
   },
 };
+
+/** A shared thread's newest messages, sealed, for support's one open under a live grant (D9). */
+export const sharedThread = {
+  async newest(conversationId: string, take: number) {
+    const rows = await prisma.message.findMany({
+      where: { conversationId },
+      orderBy: [{ sentAt: "desc" }, { id: "desc" }],
+      select: { id: true, direction: true, author: true, kind: true, label: true, bodySealed: true, sentAt: true },
+      take,
+    });
+    return rows.reverse();
+  },
+};
