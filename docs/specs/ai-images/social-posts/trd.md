@@ -72,9 +72,9 @@ Route caption (rate-limited per shop); the generation vendor-boundary test cover
 - Credit settled once per call (shop-credits' tests extended).
 
 ## Delivery
-1. `social` purpose and presets (behaviour: pictures).
-2. Lettering and its check.
-3. Caption purpose, staleness, update (behaviour: captions).
+1. **after post-composer U1 (presets read the post's destinations and products; generation-foundation, improve-with-ai and shop-credits are done)** — `social` purpose and presets (behaviour: pictures).
+2. **after U1 and U3 (the read-back is a text answer, through the text modality U3 adds per ADR-0087)** — Lettering and its check.
+3. **after post-composer U1 (`CaptionDraft` is keyed by post)** — Caption purpose, staleness, update (behaviour: captions).
 
 ## Open questions
 None.

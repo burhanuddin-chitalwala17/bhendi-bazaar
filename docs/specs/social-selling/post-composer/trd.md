@@ -90,10 +90,10 @@ for the when and cancel sheets; one repository each for `Post`, `PostDestination
 - Asset delete refused while scheduled.
 
 ## Delivery
-1. Model, drafts, autosave (behaviour: drafts).
-2. Plugs registry, schedule, publish-due, read model (behaviour: scheduling).
-3. Waiting, release, late hold.
-4. Posts page and composer (UI).
+1. **independent** — Model, drafts, autosave (behaviour: drafts).
+2. **after U1** (meta-foundation's `publish` lane and `social.sweep`, which it uses, are done) — Plugs registry, schedule, publish-due, read model (behaviour: scheduling).
+3. **after U2, ai-images/social-posts U3 (`captionStillTrue` for the price hold) and notifications-core U1 ("A post is held")** — Waiting, release, late hold.
+4. **after U3** — Posts page and composer (UI).
 
 ## Open questions
 None.

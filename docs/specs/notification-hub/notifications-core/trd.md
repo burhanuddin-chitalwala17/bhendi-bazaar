@@ -69,9 +69,9 @@ Routes bell list, dismiss, prefs; `MAY_USE_SHEET`; one repository each; email te
 - Parcel notice word-for-word (A5).
 
 ## Delivery
-1. Events, deliveries, email plug, badge (behaviour).
-2. Parcel notices moved (behaviour unchanged, proven by snapshot).
-3. Digest, prefs, bell UI.
+1. **independent** (each emitting unit registers its own kind's `stillOpen`) — Events, deliveries, email plug, badge (behaviour).
+2. **after U1** — Parcel notices moved (behaviour unchanged, proven by snapshot).
+3. **after U1** — Digest, prefs, bell UI.
 
 ## Open questions
 None.

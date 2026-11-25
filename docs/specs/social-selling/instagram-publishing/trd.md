@@ -69,9 +69,9 @@ None beyond the plug contract.
 - Refusals mapped to ux's sentences; no Meta text logged.
 
 ## Delivery
-1. Container builders and renditions (pure + renditions).
-2. Publish with quota, polling, reuse (behaviour).
-3. Fields, place search, AI note.
+1. **after post-composer U1 (builds from a post and its destination kinds; content's renditions service is done)** — Container builders and renditions (pure + renditions).
+2. **after U1 and post-composer U2 (the plug registry and `publish-due`)** — Publish with quota, polling, reuse (behaviour).
+3. **after U2 and post-composer U4 (the fields render in the composer's fold)** — Fields, place search, AI note.
 
 ## Open questions
 None.

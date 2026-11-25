@@ -58,8 +58,8 @@ Shared job specs for each trigger; routes switches, activity.
 - Price rose back before send → skipped and recorded (A5).
 
 ## Delivery
-1. Triggers and audience rules (behaviour).
-2. Re-check, guards, hours; switches and activity UI.
+1. **after notifications-core U1 and product-answers U2 (`BackInStockRequest` for `askedBackInStock`)** — Triggers and audience rules (behaviour).
+2. **after U1, hub-marketing U1 (delivery and fallback), whatsapp-sending U1 (`hoursFor`, `MessagingSettings`) and notifications-core U3 (the Notifications page)** — Re-check, guards, hours; switches and activity UI.
 
 ## Open questions
 None.

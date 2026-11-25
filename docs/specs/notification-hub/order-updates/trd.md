@@ -54,8 +54,8 @@ Route switch.
 - Every order email word for word (A4).
 
 ## Delivery
-1. Events from checkout and fulfilment through the hub (behaviour unchanged).
-2. WhatsApp plug for utility, fallback, card.
+1. **after notifications-core U2 (notice kinds already emit through the hub)** — Events from checkout and fulfilment through the hub (behaviour unchanged).
+2. **after U1, hub-marketing U1 (the `whatsapp` plug), whatsapp-sending U3 (utility starters; `MessagingSettings` from U1) and notifications-core U3 (the Notifications page the card sits on)** — WhatsApp plug for utility, fallback, card.
 
 ## Open questions
 None.

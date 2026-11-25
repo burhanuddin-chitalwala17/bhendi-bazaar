@@ -58,8 +58,8 @@ Uses `deliverByWhatsApp`, `may`, `recordStop`.
 - One-click POST and GET stop only that shop's email (A4); altered token refused.
 
 ## Delivery
-1. WhatsApp plug and fallback order (behaviour).
-2. Unsubscribe headers, page, undo.
+1. **after notifications-core U1, whatsapp-sending U2 (`deliverByWhatsApp` and its send job, `MarketingTouch`) and consent-core U1 (`may`)** — WhatsApp plug and fallback order (behaviour).
+2. **after U1 and consent-core U1 (`recordStop`, OPT_IN events)** — Unsubscribe headers, page, undo.
 
 ## Open questions
 None.

@@ -53,8 +53,8 @@ None.
 - QR encoder against the ISO sample vectors.
 
 ## Delivery
-1. Plug, rendition, events (behaviour).
-2. Handoff page and QR (UI).
+1. **after post-composer U2 (the plug registry and `publish-due`) and notifications-core U1 (the `post due` event)** — Plug, rendition, events (behaviour).
+2. **after U1** — Handoff page and QR (UI).
 
 ## Open questions
 None.
