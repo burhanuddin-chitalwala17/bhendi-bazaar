@@ -32,7 +32,7 @@ so the post's line is a function of its destinations' states.
   connectionNeeded(orgId), publish(destination) }`. `connectionNeeded` is how Q13 works: a
   destination whose platform is not connected is created `WAITING` instead of `SCHEDULED`.
 - **D3 — Save and schedule (R3, R7, R10, Q13).** One route per verb: `PUT …/posts/[id]` (draft
-  autosave, version-checked, 409 on stale with the newer draft returned), `POST …/schedule` (now or
+  autosave, version-checked, 409 on stale, the composer re-reading the newer draft (Q15)), `POST …/schedule` (now or
   at a time ≤ 60 days, IST input stored as UTC), `POST …/cancel`, `POST …/duplicate`. Schedule
   validates the whole post with the plugs' schemas, then in one transaction sets destinations
   `QUEUED` (connected) or `WAITING` (not), bumps the version and enqueues `social.publish-due`

@@ -1,7 +1,7 @@
 # UX — social-selling/post-composer
 
 - **Status:** Signed off 2026-11-23
-- **Verified:** 2026-11-22
+- **Verified:** 2026-11-25
 - **Prototype:** [prototypes/post.html](../prototypes/post.html), sections "Posts page", "Compose", "Schedule", "After it goes"
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux-patterns](../ux-patterns.md), [instagram-publishing ux](../instagram-publishing/ux.md), [whatsapp-status-kit ux](../whatsapp-status-kit/ux.md), [ai-images/social-posts ux](../../ai-images/social-posts/ux.md), [comment-automations ux](../comment-automations/ux.md)
 
@@ -143,6 +143,8 @@ folded "2 drafts" line atop Scheduled; cancelled posts as a folded "Cancelled" l
 - Limits "Captions can be up to 2,200 characters." "Up to 30 hashtags." "Up to 10 products."
   "Pick at least one picture." "Pick where to post." "Pick a time in the future." "You can schedule up to 60 days ahead."
 - Toasts "Scheduled for <when>." "Saved. It's waiting for Instagram." "Posted." "Changes saved." "Post cancelled." "Draft deleted."
+- Draft errors (added in build, unit 1; decisions Q15): "This draft was changed on another screen. Showing the latest."
+  (a save from an older version: the composer shows the newer draft), "A product isn't in your shop. Pick another."
 - Cancel sheet "Cancel this post?" · "It won't be published. You can duplicate it later." · "Cancel post" · "Keep it".
 
 ## Sign-off

@@ -711,6 +711,7 @@ model User {
   channelsDisconnected ChannelConnection[] @relation("ChannelDisconnectedBy")
   featuresChanged      OrgFeature[]
   productsLastEdited   Product[]           @relation("ProductLastEditedBy")
+  postsCreated         Post[]              @relation("PostCreatedBy")
 
   @@index([platformRole])
   @@index([isBlocked])
@@ -807,6 +808,7 @@ model Org {
   channelConnections ChannelConnection[]
   ticketNeeds        TicketNeed[]
   contacts           Contact[]
+  posts              Post[]
 
   @@index([email])
   @@index([isActive])
@@ -3406,4 +3408,56 @@ model OrgDataKey {
   retiredAt  DateTime?
 
   @@id([orgId, version])
+}
+
+/// A shop's post: one authored record with destinations (social-selling/post-composer D1). Its shape
+/// (image, carousel, reel, story) is derived from its media, never stored (spec R2).
+model Post {
+  id          String    @id @default(cuid())
+  orgId       String
+  org         Org       @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  /// Bumped by every save; a save or a due job carrying an older one is refused (D3, A-D10).
+  version     Int       @default(0)
+  /// `POST_STATE`: DRAFT, SCHEDULED, SAVED, PUBLISHING, DONE, CANCELLED.
+  state       String    @default("DRAFT")
+  caption     String    @default("")
+  /// The library assets in the order they are posted; references by id, never copies (D7).
+  mediaIds    String[]  @default([])
+  /// The products the post is about, at most 10 (spec R6, Q6).
+  productIds  String[]  @default([])
+  scheduledAt DateTime?
+  createdById String
+  createdBy   User      @relation("PostCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  destinations PostDestination[]
+
+  @@index([orgId, state, scheduledAt])
+}
+
+/// Where one post goes, and that destination's own state: the claimed row of A-D8 (post-composer D1).
+model PostDestination {
+  id          String    @id @default(cuid())
+  postId      String
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Restrict)
+  /// `POST_DESTINATION_KIND`: IG_FEED, IG_STORY, WA_STATUS.
+  kind        String
+  /// `POST_DESTINATION_STATE`, DRAFT until the post is scheduled.
+  state       String    @default("DRAFT")
+  /// The destination plug's own fields, checked by that plug's schema (D2).
+  fields      Json      @default("{}")
+  platformId  String?
+  permalink   String?
+  errorCode   String?
+  errorText   String?
+  attempts    Int       @default(0)
+  publishedAt DateTime?
+  /// Who marked a Status as posted by hand (whatsapp-status-kit).
+  markedById  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  /// A post goes to each destination once; also the `(postId)` index.
+  @@unique([postId, kind])
 }

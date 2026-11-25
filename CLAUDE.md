@@ -1,6 +1,6 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 - **Covers:** `server/*/`, `src/components/*/`, `src/app/api/`, `docs/adr/*.md`, `.claude/`
 
 ## Purpose
@@ -44,6 +44,7 @@ Each is a directory under `server/`, owning its own service, repository, and typ
 | requests | `server/requests/` | Tickets for what a shop can't fix itself: requirements the admin enables, issues a developer fixes. Keyed by the fix, never by the shop |
 | subscriptions | `server/subscriptions/` | What each shop may use of the paid features (Channels, Storefront, Image enhancement, Social selling), and the one check every domain asks. Imports only `shared` |
 | audience | `server/audience/` | A shop's contacts and their marketing consent: the append-only log, its projection, and the one `may` every marketing sender asks |
+| social | `server/social/` | A shop's posts: drafts, destinations and their states. Knows no platform; a destination is a plug |
 | *(shared)* | `server/shared/` | Prisma client, audit log, pagination, retry, the job-queue seam, the closed set of channels, the one writer of `Address`, the neutral social facts (`social-events/`) and each shop's sealing key (`seal/`, ADR-0085). Only what genuinely spans domains — not a dumping ground |
 
 **There is no `admin` domain.** An admin listing is a query on its domain, kept as `admin.*` files there — and those files are read models: every write is a named command on the aggregate's one repository ([ADR-0055](docs/adr/0055-an-admin-surface-reads-through-projections-and-writes-through-the-aggregates-one-repository.md)). Admin *pages* are grouped by audience in `src/app/(admin)/`, which is a UI concern.

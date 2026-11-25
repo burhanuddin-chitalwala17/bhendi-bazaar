@@ -108,6 +108,8 @@ const PUBLIC_SURFACE: Record<string, string[]> = {
   subscriptions: [],
   // consent-core D2: `may` and the consent commands, through the service and types only.
   audience: [],
+  // social-selling A-Q7: a platform-free tool; its services and types only.
+  social: [],
 };
 
 /** Always public, in every domain. */

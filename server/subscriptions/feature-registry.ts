@@ -27,6 +27,11 @@ export const ORG_ROUTE_FEATURES: Record<string, Classification> = {
   "PATCH /api/org/[orgId]/brands/[brandId]": { core: FREE },
   "POST /api/org/[orgId]/brands": { core: FREE },
 
+  "POST /api/org/[orgId]/posts": { feature: FEATURE.SOCIAL_SELLING },
+  "GET /api/org/[orgId]/posts/[id]": { feature: FEATURE.SOCIAL_SELLING },
+  "PUT /api/org/[orgId]/posts/[id]": { feature: FEATURE.SOCIAL_SELLING },
+  "POST /api/org/[orgId]/posts/[id]/duplicate": { feature: FEATURE.SOCIAL_SELLING },
+
   "GET /api/org/[orgId]/channels/[channel]/connect": CH,
   "GET /api/org/[orgId]/channels/instagram/connect": { feature: FEATURE.SOCIAL_SELLING },
   "POST /api/org/[orgId]/channels/[channel]/connection/check": CH,

@@ -80,6 +80,7 @@ Each domain's shapes are in its own file, so a change reads only the one it touc
 | requests | [contracts/requests.md](contracts/requests.md) | Setup requests |
 | subscriptions | [contracts/subscriptions.md](contracts/subscriptions.md) | Feature access |
 | audience | [contracts/audience.md](contracts/audience.md) | Contacts and marketing consent |
+| social | [contracts/social.md](contracts/social.md) | Posts and their drafts |
 
 Shapes every domain shares stay here.
 

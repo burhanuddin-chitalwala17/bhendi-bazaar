@@ -248,6 +248,11 @@ export class MediaAssetRepository {
     });
   }
 
+  /** How many of these ids are ready assets in this org's library (post-composer D7). */
+  async countReady(orgId: string, ids: string[], db: MediaDb = prisma) {
+    return await db.mediaAsset.count({ where: { id: { in: ids }, orgId, state: MediaAssetState.READY } });
+  }
+
   /** Confirm only moves a PENDING row; a second confirm is a no-op reported as `false`. */
   async confirm(id: string, dims: ConfirmedDimensions, db: MediaDb = prisma) {
     const result = await db.mediaAsset.updateMany({

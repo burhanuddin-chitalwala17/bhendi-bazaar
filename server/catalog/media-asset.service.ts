@@ -429,6 +429,11 @@ export const mediaAssetService = {
     return await mediaAssetRepository.findReadyImage(orgId, source);
   },
 
+  /** Whether every id is a ready asset in this org's library: a post names only its own (post-composer D7). */
+  async allReadyInLibrary(orgId: string, ids: string[]): Promise<boolean> {
+    return ids.length === 0 || (await mediaAssetRepository.countReady(orgId, [...new Set(ids)])) === new Set(ids).size;
+  },
+
   /**
    * The stored bytes of one photograph, for a worker deriving from it — never for serving
    * (ADR-0026). The key comes back beside them because a service asked to work on the picture may

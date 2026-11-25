@@ -41,6 +41,7 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 | [server/notifications/CLAUDE.md](../server/notifications/CLAUDE.md) | Notifications — transactional email |
 | [server/subscriptions/CLAUDE.md](../server/subscriptions/CLAUDE.md) | Subscriptions — the paid-feature switches and the one check every domain asks |
 | [server/audience/CLAUDE.md](../server/audience/CLAUDE.md) | Audience — a shop's contacts, their marketing consent, and the one `may` every sender asks |
+| [server/social/CLAUDE.md](../server/social/CLAUDE.md) | Social — a shop's posts and their destinations, knowing no platform |
 | [src/components/CLAUDE.md](../src/components/CLAUDE.md) | The front end — its layers, and the gates each rule answers to (not a domain; loads when a component is read) |
 | [src/app/api/CLAUDE.md](../src/app/api/CLAUDE.md) | Route handlers — authorize, parse, delegate, answer (not a domain) |
 
