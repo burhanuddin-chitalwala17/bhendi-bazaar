@@ -1,6 +1,13 @@
 import { apiRequest } from "@/lib/api-client";
 import type { CropTransform } from "@/lib/image/crop-transform";
-import type { MediaAssetDetailDto, MediaAssetDto, MediaTag } from "@server/catalog/media-library.types";
+import type {
+  MediaAssetDetailDto,
+  MediaAssetDto,
+  MediaBulkRetireOutcome,
+  MediaBulkTagOutcome,
+  MediaDownloadLinksDto,
+  MediaTag,
+} from "@server/catalog/media-library.types";
 import type { Pagination } from "@server/shared/pagination";
 
 export interface MediaLibraryPage {
@@ -54,5 +61,19 @@ export const orgMediaApiClient = {
 
   async retire(orgId: string, assetId: string): Promise<void> {
     await apiRequest(`/api/org/${orgId}/media/${assetId}/retire`, { method: "POST" });
+  },
+
+  /** Up to 100 ids (bulk-actions Q10); the outcome says which went which way. */
+  retireMany(orgId: string, ids: string[]): Promise<MediaBulkRetireOutcome> {
+    return apiRequest<MediaBulkRetireOutcome>(`/api/org/${orgId}/media/retire`, { method: "POST", body: { ids } });
+  },
+
+  setTagMany(orgId: string, ids: string[], tag: MediaTag, on: boolean): Promise<MediaBulkTagOutcome> {
+    return apiRequest<MediaBulkTagOutcome>(`/api/org/${orgId}/media/tags`, { method: "POST", body: { ids, tag, on } });
+  },
+
+  /** Links valid 15 minutes. Over the zip limit an `ApiError` (422) carries `totalBytes` and `limitBytes` in its details. */
+  downloadLinks(orgId: string, ids: string[]): Promise<MediaDownloadLinksDto> {
+    return apiRequest<MediaDownloadLinksDto>(`/api/org/${orgId}/media/download-links`, { method: "POST", body: { ids } });
   },
 };

@@ -63,10 +63,10 @@ describe("the shop's toggle", () => {
 });
 
 describe("tagging a gallery's photographs", () => {
-  it("touches only the org's images that lack the tag", async () => {
+  it("touches only the org's images that lack the tag and are not retired (bulk-actions D3)", async () => {
     await mediaAssetRepository.addTag(["a1", "a2"], "PRODUCT", "org-1");
     expect(mediaAsset.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["a1", "a2"] }, orgId: "org-1", kind: "IMAGE", NOT: { tags: { has: "PRODUCT" } } },
+      where: { id: { in: ["a1", "a2"] }, orgId: "org-1", kind: "IMAGE", state: { not: "RETIRED" }, NOT: { tags: { has: "PRODUCT" } } },
       data: { tags: { push: "PRODUCT" } },
     });
   });

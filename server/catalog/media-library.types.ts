@@ -101,6 +101,33 @@ export interface MediaAssetDetailDto {
   uses: MediaUseDto[];
 }
 
+/** What a bulk retire did to each id (bulk-actions D1, D2). */
+export interface MediaBulkRetireOutcome {
+  retired: string[];
+  inUse: string[];
+  alreadyRetired: string[];
+  notFound: string[];
+}
+
+/** What a bulk tag did to each id (bulk-actions D1, D3). `changed` ids now read as asked, including any that already did. */
+export interface MediaBulkTagOutcome {
+  changed: string[];
+  notPhoto: string[];
+  retired: string[];
+  notFound: string[];
+}
+
+/** Why a selected item has no file to zip: a YouTube link, or a retired file already swept. */
+export const NO_FILE_REASON = { LINK: "link", DELETED: "deleted" } as const;
+export type NoFileReason = (typeof NO_FILE_REASON)[keyof typeof NO_FILE_REASON];
+
+/** Links for a zip built in the browser (bulk-actions D1, D4); `bytes` is null for a legacy row. */
+export interface MediaDownloadLinksDto {
+  files: { id: string; url: string; filename: string; bytes: number | null }[];
+  noFile: { id: string; reason: NoFileReason }[];
+  totalBytes: number;
+}
+
 /** The relation counts that together mean "something points at this asset". */
 export interface ReferenceCounts {
   productMedia: number;

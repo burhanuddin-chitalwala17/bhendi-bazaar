@@ -67,6 +67,22 @@ export const mediaTagSchema = z.object({
 
 export type MediaTagInput = z.infer<typeof mediaTagSchema>;
 
+/** A bulk library action's selection: at most 100 ids (bulk-actions Q10), each counted once. */
+export const mediaBulkSchema = z.object({
+  ids: z
+    .array(z.string().min(1).max(64))
+    .min(1)
+    .max(100)
+    .transform((ids) => [...new Set(ids)]),
+});
+
+export type MediaBulkInput = z.infer<typeof mediaBulkSchema>;
+
+/** One tag added to or removed from a selection; two explicit directions, never a toggle (Q6). */
+export const mediaBulkTagSchema = mediaBulkSchema.extend(mediaTagSchema.shape);
+
+export type MediaBulkTagInput = z.infer<typeof mediaBulkTagSchema>;
+
 /**
  * Why the platform took an image down (spec R12).
  *

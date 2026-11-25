@@ -491,6 +491,14 @@ export class MediaAssetRepository {
     return await prisma.mediaAsset.findFirst({ where: { id, orgId }, select: LIBRARY_SELECT });
   }
 
+  /** The org's confirmed rows among `ids`, enough to sort a bulk action's outcome (bulk-actions D3, D4). */
+  async findManyForOrg(orgId: string, ids: string[]) {
+    return await prisma.mediaAsset.findMany({
+      where: { id: { in: ids }, orgId, state: { not: MediaAssetState.PENDING } },
+      select: { id: true, kind: true, state: true, objectKey: true, bytes: true, mimeType: true },
+    });
+  }
+
   /** Where an asset is used, named for the org: a query over the referencing relations, never a counter (trd D7). */
   async usesOf(id: string): Promise<MediaUseDto[]> {
     const asset = await prisma.mediaAsset.findUnique({
@@ -537,12 +545,12 @@ export class MediaAssetRepository {
   /**
    * Add a tag to the org's images that lack it (media-tags D2, D3): one statement, idempotent, so a
    * gallery saved twice tags once. Only this org's images: a gallery naming a platform picture or
-   * another shop's leaves that picture alone (R5). A video in a gallery is not a product photograph.
+   * another shop's leaves that picture alone (R5). Nor a video, nor a retired one (bulk-actions D3).
    */
   async addTag(ids: string[], tag: MediaTag, orgId: string, db: MediaDb = prisma): Promise<void> {
     if (ids.length === 0) return;
     await db.mediaAsset.updateMany({
-      where: { id: { in: ids }, orgId, kind: MediaAssetKind.IMAGE, NOT: { tags: { has: tag } } },
+      where: { id: { in: ids }, orgId, kind: MediaAssetKind.IMAGE, state: { not: MediaAssetState.RETIRED }, NOT: { tags: { has: tag } } },
       data: { tags: { push: tag } },
     });
   }
