@@ -45,10 +45,15 @@ Do not start the next unit.
 | meta-foundation U1–U5 | `meta-foundation unit 1` … `unit 5` — Graph client, signed intake, drain and lanes, deauthorize and data deletion, seal, retention and sweep. Implemented |
 | connect-instagram U1 | `connect-instagram unit 1: connect and callback` and its review fixes |
 | connect-instagram U2 | `connect-instagram unit 2: renewal, health, disconnect [CONTRACT]` (d2fcd2b9) |
-| connect-instagram U3 | `connect-instagram unit 3: card, checklist, Turn on replies, return notes [CONTRACT] [MIGRATION]` (8f01f51a); rebuilt by the second account. Gate green, integration 823 passed. Departs from ux.md per decisions Q19 (owner to confirm) |
+| connect-instagram U3 | `connect-instagram unit 3: card, checklist, Turn on replies, return notes [CONTRACT] [MIGRATION]` (8f01f51a); rebuilt by the second account. Gate green, integration 823 passed. Departs from ux.md per decisions Q19, accepted as built by the owner 2026-11-25 |
 | Process | ADRs renumbered 0084–0087; rebased on main; next units' dependencies marked in their TRDs |
 
 ## Queue (in order; one at a time)
+
+**Owner's scope for this run (2026-11-25):** connect, catalogue, notifications (all of notification-hub) and
+publishing, then stop and report. Before notification-hub and publishing are queued, one planning session marks
+their TRDs' Delivery units `after U<k>` / `independent` and settles their order (known: whatsapp-status-kit needs
+notifications-core; post-composer U3 needs ai-images/social-posts U3's `captionStillTrue`).
 
 | # | Unit | Depends on | State |
 |---|---|---|---|
@@ -82,9 +87,7 @@ the four subfeatures above only.
 
 ## Blockers raised by build sessions
 
-- 2026-11-25 (U3, for the owner): connect-instagram decisions **Q19** departs from the signed-off ux.md — First post
-  and Comment-to-DM show as not done but open nothing until post-composer and comment-automations ship, so a card
-  whose next step is one of them has no main button. Reversible; does not block connect-whatsapp U1 or U2.
+- 2026-11-25: connect-instagram Q19 (card departs from ux.md) — **owner accepted it as built**.
 - 2026-11-25: the first account's U3 push problem is resolved by the rebuild above; its local commits are obsolete.
 
 - 2026-11-25: the U3 session's push to origin was refused three times by its auto-mode safety check (see
