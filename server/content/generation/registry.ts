@@ -152,6 +152,8 @@ export const MODELS: readonly ModelEntry[] = [
 export const DEFAULT_MODELS: Record<GenerationPurpose, readonly string[]> = {
   [GENERATION_PURPOSE.SCENE]: ["cf/flux-2-klein-4b", "fal/bria-product-shot"],
   [GENERATION_PURPOSE.LISTING]: ["cf/nano-banana-pro", "gemini/nano-banana-pro", "cf/flux-2-klein-9b"],
+  // Its own entry so a post picture's order can move without a listing's (social-posts D1, R2).
+  [GENERATION_PURPOSE.SOCIAL]: ["cf/nano-banana-pro", "gemini/nano-banana-pro", "cf/flux-2-klein-9b"],
 };
 
 export function modelById(id: string): ModelEntry | undefined {

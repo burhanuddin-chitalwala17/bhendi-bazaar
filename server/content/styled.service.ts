@@ -15,25 +15,27 @@ import {
   ENHANCEMENT_TOOL,
   PROPOSAL_MIME,
   STYLED_FACE,
+  STYLED_PURPOSE,
   isStyledAspect,
+  isStyledPurpose,
   proposalKeyFor,
   toEnhancementDto,
   type EnhancementDto,
   type EnhancementUsage,
   type RequestStyledInput,
   type StyledFace,
+  type StyledPurpose,
   type StyledQuoteDto,
 } from "@server/content/enhancement.types";
 import {
   GENERATION_ASPECT,
   type GenerationAspect,
   GENERATION_FAILURE,
-  GENERATION_PURPOSE,
   GENERATION_SIZE,
   GenerationFailure,
 } from "@server/content/generation/generation.types";
 import { generate, quoteRange } from "@server/content/generation/generator";
-import { listingPrompt } from "@server/content/generation/prompts";
+import { listingPrompt, socialPrompt } from "@server/content/generation/prompts";
 import { WEBP_QUALITY } from "@server/content/tools/tool";
 
 /**
@@ -46,6 +48,9 @@ import { WEBP_QUALITY } from "@server/content/tools/tool";
 const DEFAULT_ASPECT: GenerationAspect = GENERATION_ASPECT.SQUARE;
 const asAspect = (value: string | null): GenerationAspect => (isStyledAspect(value) ? value : DEFAULT_ASPECT);
 const SIZE = GENERATION_SIZE.S1K;
+/** A run from before purposes were recorded was a listing picture (social-posts D1). */
+const asPurpose = (value: string | null): StyledPurpose => (isStyledPurpose(value) ? value : STYLED_PURPOSE.LISTING);
+const PROMPT_FOR = { [STYLED_PURPOSE.LISTING]: listingPrompt, [STYLED_PURPOSE.SOCIAL]: socialPrompt } as const;
 
 export const STYLED_REFUSED_MESSAGE =
   "This description could not be made into a picture. Try describing it differently — nothing was charged.";
@@ -70,8 +75,8 @@ const toDto = (row: Parameters<typeof toEnhancementDto>[0]): EnhancementDto =>
   toEnhancementDto(row, mediaAssetService.publicUrlOf);
 
 /** The quote for this many pictures to follow, the photo itself counted, or a refusal the modal can show. */
-async function range(references: number, aspect: GenerationAspect) {
-  const quoted = await quoteRange(GENERATION_PURPOSE.LISTING, { references, aspect, size: SIZE }).catch((cause: unknown) => {
+async function range(purpose: StyledPurpose, references: number, aspect: GenerationAspect) {
+  const quoted = await quoteRange(purpose, { references, aspect, size: SIZE }).catch((cause: unknown) => {
     throw new DomainError(NOT_SET_UP, { cause });
   });
   if (!quoted) throw new DomainError(NOT_SET_UP);
@@ -80,8 +85,13 @@ async function range(references: number, aspect: GenerationAspect) {
 
 export const styledService = {
   /** The cost line and the reference limit (D4): the server's numbers, never the browser's. */
-  async quote(orgId: string, extraReferences: number, aspect: GenerationAspect = DEFAULT_ASPECT): Promise<StyledQuoteDto> {
-    const quoted = await range(1 + extraReferences, aspect);
+  async quote(
+    orgId: string,
+    extraReferences: number,
+    aspect: GenerationAspect = DEFAULT_ASPECT,
+    purpose: StyledPurpose = STYLED_PURPOSE.LISTING,
+  ): Promise<StyledQuoteDto> {
+    const quoted = await range(purpose, 1 + extraReferences, aspect);
     const [{ chargePaise }, { chargePaise: heldPaise }, account] = await Promise.all([
       creditService.priceFor(orgId, quoted.first.costPaise),
       creditService.priceFor(orgId, quoted.worstCostPaise),
@@ -124,12 +134,15 @@ export const styledService = {
       if (!found) throw new NotFoundError("A reference picture was not found in your library", { field: "referenceRefs" });
       if (found.id !== source.id) references.push(found);
     }
+    const purpose = input.purpose ?? STYLED_PURPOSE.LISTING;
     if (input.previousId) {
       const previous = await enhancementRepository.findForOrg(orgId, input.previousId);
-      if (!previous || previous.tool !== ENHANCEMENT_TOOL.STYLED) throw new NotFoundError("Earlier picture not found");
+      // A Regenerate stays what it was made for: a post picture is never redone as a listing one (review).
+      if (!previous || previous.tool !== ENHANCEMENT_TOOL.STYLED || asPurpose(previous.purpose) !== purpose) {
+        throw new NotFoundError("Earlier picture not found");
+      }
     }
-
-    const quoted = await range(1 + references.length, input.aspect);
+    const quoted = await range(purpose, 1 + references.length, input.aspect);
     if (references.length > quoted.first.maxReferences - 1) {
       throw new DomainError(`This picture can follow at most ${quoted.first.maxReferences - 1} more pictures`, {
         field: "referenceRefs",
@@ -150,6 +163,7 @@ export const styledService = {
           brief: input.brief,
           referenceRefs: references.map((reference) => reference.ref),
           aspect: input.aspect,
+          purpose,
           previousId: input.previousId ?? null,
         },
         tx,
@@ -202,10 +216,11 @@ export const styledService = {
         assetId: ids[index] as string,
       }));
       const face: StyledFace = row.preset === STYLED_FACE.WITH_FACE ? STYLED_FACE.WITH_FACE : STYLED_FACE.NO_FACE;
-      const prompt = listingPrompt(face, row.brief ?? "");
+      const purpose = asPurpose(row.purpose);
+      const prompt = PROMPT_FOR[purpose](face, row.brief ?? "");
       const result = await generate(
         {
-          purpose: GENERATION_PURPOSE.LISTING,
+          purpose,
           prompt: prompt.text,
           promptVersion: prompt.version,
           brief: row.brief,
@@ -213,7 +228,7 @@ export const styledService = {
           aspect: asAspect(row.aspect),
           size: SIZE,
           idempotencyKey: `enhancement:${row.id}:styled`,
-          // A listing picture may show a person; recorded so publishing can tag it (handoff, compliance).
+          // A styled picture may show a person; recorded so publishing can tag it (handoff, compliance).
           containsPerson: true,
           enhancementId: row.id,
         },

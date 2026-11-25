@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-11-20
+- **Verified:** 2026-11-25
 - **Covers:** `src/lib/rate-limit/**`, `src/instrumentation.ts`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -44,7 +44,7 @@ npm run dev                 # http://localhost:3000
 | `IMAGE_MODEL_ENDPOINT` | ○ | Where those model requests go. Unset, the code uses the service's public host; set it to point at a proxy or a staging host without a release |
 | `IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID` / `IMAGE_GEN_CLOUDFLARE_API_TOKEN` | ○ | The multi-model image gateway account (Cloudflare AI today) and an API token with Workers AI access. Both set makes every `cf/…` model in `server/content/generation/registry.ts` available; read only in `server/content/generation/adapters/` ([generation-foundation](specs/ai-images/generation-foundation/) D5). The scene's first-choice model is here, so without it scenes fall back to `IMAGE_MODEL_API_KEY` |
 | `IMAGE_GEN_GEMINI_API_KEY` | ○ | A Gemini API key (Google AI Studio). Makes every `gemini/…` model available — the direct route to Nano Banana, which takes up to 14 reference pictures where the gateway's takes 3 |
-| `IMAGE_GEN_MODELS_SCENE` / `IMAGE_GEN_MODELS_LISTING` | ○ | The ordered model list for a purpose, comma-separated registry ids (`cf/flux-2-klein-4b,fal/bria-product-shot`). Unset is the default in the registry. The first configured model that can take a request runs; the next is tried only when one is unavailable or out of credit, never after a refusal. Changing it needs no code change, only a redeploy for the variable |
+| `IMAGE_GEN_MODELS_SCENE` / `IMAGE_GEN_MODELS_LISTING` / `IMAGE_GEN_MODELS_SOCIAL` | ○ | The ordered model list for a purpose, comma-separated registry ids (`cf/flux-2-klein-4b,fal/bria-product-shot`). Unset is the default in the registry. The first configured model that can take a request runs; the next is tried only when one is unavailable or out of credit, never after a refusal. Changing it needs no code change, only a redeploy for the variable |
 | `RATE_LIMIT_STORE_URL` / `RATE_LIMIT_STORE_TOKEN` | ✅ preview, production | The shared rate-limit store's REST URL and token (Upstash). **Required when `APP_ENV` is `preview` or `production`** — without them the build and the boot refuse. Unset locally, where limits are in-process. `KV_REST_API_URL` / `KV_REST_API_TOKEN` are read as a fallback for one release, so the Vercel integration's values work unrenamed; see [Rate limiting](#rate-limiting) |
 | `RATE_LIMIT_CLIENT_IP_HEADER` | ✅ preview, production | The header the edge sets with the caller's address: `x-vercel-forwarded-for` on Vercel. **Required when deployed**; never `x-forwarded-for` unless the edge overwrites it, because a caller can send that one. Unset locally |
 | `ENCRYPTION_KEY` | ○ | Decrypts shipping credentials stored before 2026-10-20 only (`server/shared/crypto.ts`). Keep it set while any such row exists; new values use `CREDENTIAL_KEYS` |

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ENHANCEMENT_TOOL, STYLED_ASPECT, STYLED_ASPECTS, STYLED_BRIEF_MAX, STYLED_FACES } from "@server/content/enhancement.types";
+import { ENHANCEMENT_TOOL, STYLED_ASPECT, STYLED_ASPECTS, STYLED_BRIEF_MAX, STYLED_FACES, STYLED_PURPOSE, STYLED_PURPOSES } from "@server/content/enhancement.types";
 import { SCENE_PRESET_KEYS } from "@server/content/scene-presets";
 import { SHOT_ROLES } from "@server/catalog/shot-list";
 
@@ -67,6 +67,8 @@ export const requestStyledSchema = z
     // The modal will not send without a shape (Q42); a page opened before that shipped sends none,
     // and gets what it always got: square.
     aspect: z.enum(STYLED_ASPECTS, "Choose the picture's shape").default(STYLED_ASPECT.SQUARE),
+    // The window opened from the post composer says social (social-posts D1); every other caller sends none.
+    purpose: z.enum(STYLED_PURPOSES).default(STYLED_PURPOSE.LISTING),
     previousId: id.nullish().transform((value) => value ?? undefined),
     slot: z.string().trim().min(1).max(40).nullish().transform((value) => value ?? undefined),
     slotRole: z.enum(SHOT_ROLES).nullish().transform((value) => value ?? undefined),
@@ -81,6 +83,7 @@ export type RequestStyledBody = z.infer<typeof requestStyledSchema>;
 export const styledQuoteQuerySchema = z.object({
   references: z.coerce.number().int().min(0).max(13).catch(0),
   aspect: z.enum(STYLED_ASPECTS).catch(STYLED_ASPECT.SQUARE),
+  purpose: z.enum(STYLED_PURPOSES).catch(STYLED_PURPOSE.LISTING),
 });
 
 /** An allowance is a count of runs; the ceilings are sanity, not policy — the policy is the value. */

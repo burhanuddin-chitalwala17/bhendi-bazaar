@@ -22,6 +22,7 @@ const ENHANCEMENT_SELECT = {
   brief: true,
   referenceRefs: true,
   aspect: true,
+  purpose: true,
   previousId: true,
   createdAt: true,
   proposedAt: true,
@@ -49,6 +50,7 @@ export interface CreateEnhancementInput {
   brief?: string | null;
   referenceRefs?: string[];
   aspect?: string | null;
+  purpose?: string | null;
   previousId?: string | null;
 }
 

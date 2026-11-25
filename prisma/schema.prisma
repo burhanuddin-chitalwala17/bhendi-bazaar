@@ -181,6 +181,8 @@ model Enhancement {
   referenceRefs String[]         @default([])
   /// The shape a styled run was asked in (`1:1`, `4:5`, `9:16`, `4:3`); null is square (improve-with-ai Q42).
   aspect        String?
+  /// A styled run's generation purpose (`listing`, `social`); null is listing (ai-images/social-posts D1).
+  purpose       String?
   /// The run a Regenerate came from (R9).
   previousId    String?
   previous      Enhancement?     @relation("EnhancementRegenerate", fields: [previousId], references: [id], onDelete: Restrict)

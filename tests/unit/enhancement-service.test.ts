@@ -88,6 +88,7 @@ const row = (over: Partial<EnhancementRow> = {}): EnhancementRow => ({
   brief: null,
   referenceRefs: [],
   aspect: null,
+  purpose: null,
   previousId: null,
   createdAt: now,
   proposedAt: null,

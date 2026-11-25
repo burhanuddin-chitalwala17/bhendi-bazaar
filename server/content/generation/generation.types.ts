@@ -10,6 +10,8 @@ export const GENERATION_PURPOSE = {
   SCENE: "scene",
   /** A styled picture of the product for a listing (improve-with-ai). */
   LISTING: "listing",
+  /** A picture for a social post, shaped and referenced from the post (ai-images/social-posts D1). */
+  SOCIAL: "social",
 } as const;
 export type GenerationPurpose = (typeof GENERATION_PURPOSE)[keyof typeof GENERATION_PURPOSE];
 

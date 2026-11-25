@@ -8,6 +8,7 @@ import type { Prisma } from "@prisma/client";
 import { adminProductsRepository } from "@server/catalog/product.repository";
 import { productsRepository, type ProductDb, type RawDb } from "@server/catalog/product.read.repository";
 import { categoryRepository } from "@server/catalog/category.read.repository";
+import { productPhotoRepository } from "@server/catalog/product-photo.read.repository";
 import { collectSubtreeIds } from "@server/catalog/category.tree";
 import type { ProductFilter, ProductSuggestion } from "@server/catalog/product.types";
 import type { MarketplaceEntry, MarketplaceFill, MarketplaceFilled } from "@server/catalog/admin.product.types";
@@ -299,6 +300,11 @@ export class ProductService {
    */
   async countOutsideOrg(productIds: string[], orgId: string): Promise<number> {
     return await productsRepository.countOutsideOrg(productIds, orgId);
+  }
+
+  /** Each named product's main photo in this org's library, for a post picture (ai-images/social-posts D1). */
+  async mainPhotos(orgId: string, productIds: readonly string[]) {
+    return await productPhotoRepository.mainPhotos(orgId, productIds);
   }
 
   /** Price and owner of each product, for `promotions` to check an offer against a shop's ceiling. */

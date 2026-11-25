@@ -52,6 +52,7 @@ const row = (over: Partial<EnhancementRow> = {}): EnhancementRow => ({
   brief: null,
   referenceRefs: [],
   aspect: null,
+  purpose: null,
   previousId: null,
   createdAt: new Date("2026-09-27T10:00:00Z"),
   proposedAt: null,

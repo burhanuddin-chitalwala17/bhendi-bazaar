@@ -3,7 +3,7 @@ import type {
   EnhancementTool as PrismaEnhancementTool,
 } from "@prisma/client";
 import { hasAiMark } from "@server/catalog/media-library.types";
-import { GENERATION_ASPECT, type GenerationAspect } from "@server/content/generation/generation.types";
+import { GENERATION_ASPECT, GENERATION_PURPOSE, type GenerationAspect } from "@server/content/generation/generation.types";
 
 /**
  * The closed sets of image enhancement, declared once for the server, the schema and the sheet
@@ -284,6 +284,20 @@ export type StyledAspect = GenerationAspect;
 export const STYLED_ASPECTS = Object.values(STYLED_ASPECT);
 export const isStyledAspect = (value: unknown): value is StyledAspect => (STYLED_ASPECTS as readonly unknown[]).includes(value);
 
+/** What a styled picture is for: a listing's gallery, or a social post (ai-images/social-posts D1). */
+export const STYLED_PURPOSE = { LISTING: GENERATION_PURPOSE.LISTING, SOCIAL: GENERATION_PURPOSE.SOCIAL } as const;
+export type StyledPurpose = (typeof STYLED_PURPOSE)[keyof typeof STYLED_PURPOSE];
+export const STYLED_PURPOSES = Object.values(STYLED_PURPOSE) as [StyledPurpose, ...StyledPurpose[]];
+export const isStyledPurpose = (value: unknown): value is StyledPurpose => (STYLED_PURPOSES as readonly unknown[]).includes(value);
+
+/** What a post fills into Describe it (social-posts D1, ux journey 1): the shop may change both. */
+export interface SocialPicturePresetsDto {
+  /** Portrait for an Instagram post, Tall for only a story or Status; null when no destination is picked. */
+  aspect: StyledAspect | null;
+  /** The post's products' main photos, first product first, at most three. */
+  referenceRefs: string[];
+}
+
 /** The longest description a shop may write (improve-with-ai R3). */
 export const STYLED_BRIEF_MAX = 300;
 
@@ -306,6 +320,8 @@ export interface RequestStyledInput {
   face: StyledFace;
   /** The shape the shop chose before generating (Q42). */
   aspect: StyledAspect;
+  /** A listing picture when absent: every request before social-posts sent none. */
+  purpose?: StyledPurpose;
   /** The run this one regenerates, if any. */
   previousId?: string | null;
   slot?: string | null;
@@ -341,6 +357,7 @@ export interface EnhancementRow {
   brief: string | null;
   referenceRefs: string[];
   aspect: string | null;
+  purpose: string | null;
   previousId: string | null;
   createdAt: Date;
   proposedAt: Date | null;

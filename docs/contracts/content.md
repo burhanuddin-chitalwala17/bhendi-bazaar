@@ -1,6 +1,6 @@
 # Contracts — content
 
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 - **Covers:** `server/content/*.types.ts`
 
 The content shapes that cross the browser/server boundary. Rules, the error envelope and pagination are in
@@ -41,6 +41,15 @@ tools; a shop short of credit is `409` "Not enough credit for this picture". **`
 (`aspect` defaults to `1:1` when absent or unknown) answers **`StyledQuoteDto`** `{ chargePaise, heldPaise, balancePaise, maxExtraReferences }`. `EnhancementDto` gains `brief`,
 `referenceRefs`, `aspect` (null for the six tools and for styled runs from before Q42, which were square) and `previousId`
 (empty for the six tools). No amount crosses from the browser: every price is the server's.
+
+**Post pictures (ai-images/social-posts D1).** `requestStyledSchema` and the quote both take an optional **`purpose`**
+(`listing` | `social`; absent is `listing`, so every caller before social-posts is unchanged; on the quote an unknown
+value is `listing`, on the request it is `400`). The quote prices by that purpose's model order.
+`socialPictureService.presets(orgId, postId)` answers **`SocialPicturePresetsDto`**
+`{ aspect: "4:5" | "9:16" | null, referenceRefs: string[] }`: portrait when the post goes to the Instagram feed, tall
+when only to a story or Status, null with no destination; the post's products' main photos in this shop's library,
+first product first, at most three. Another shop's post is `404`. Its route arrives with the composer's Make a
+picture (social-posts unit 4), which is its first caller (route-reachability).
 
 **A payment proof** (**`paymentProofSchema`**) is `{ method: "UPI" | "BANK_TRANSFER" | "CASH" | "OTHER", reference
 (1–120, "Add the transaction reference"), paidOn (a date, not in the future), receiptRef (a URL in our own store, or

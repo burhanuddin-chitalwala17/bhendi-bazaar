@@ -58,3 +58,20 @@ export function listingPrompt(face: keyof typeof FACE_RULE, brief: string): Comp
     FACE_RULE[face];
   return { version: LISTING_PROMPT_VERSION, text: withBrief(platform, brief) };
 }
+
+/**
+ * Post pictures, v1 (social-posts D1): every product in the references kept exactly, the face rule,
+ * then the shop's words. No lettering yet; words on the picture are a later version (D2).
+ */
+export const SOCIAL_PROMPT_VERSION = "social.v1";
+
+export function socialPrompt(face: keyof typeof FACE_RULE, brief: string): ComposedPrompt {
+  const platform =
+    "Eye-catching picture for a shop's social media post. The products are the ones in the reference images, the " +
+    "first one the main product: keep each exactly as it is — its colours, pattern, embroidery, fabric, shape, any " +
+    "text and any logo. Do not add, remove or change any detail of a product. A reference that is a logo or a " +
+    "picture of a setting is a guide to follow, not a product. Photorealistic, natural light, modest styling, no " +
+    "added text, no watermark, no products other than those shown. " +
+    FACE_RULE[face];
+  return { version: SOCIAL_PROMPT_VERSION, text: withBrief(platform, brief) };
+}
