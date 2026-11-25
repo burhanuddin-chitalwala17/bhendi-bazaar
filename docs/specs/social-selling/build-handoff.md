@@ -25,7 +25,7 @@ green checkpoints and resume after the reset.
 
 **Paused for optimisation (owner, 2026-11-25):** no new units start; the running ones finish, then the build stops.
 
-**Running now (lane):** notifications-core U2 (3), inbox-core U4 (14), consent-core U3 (6), post-composer U2 (4), instagram-publishing U1 (2),
+**Running now (lane):** notifications-core U2 (3), consent-core U3 (6), post-composer U2 (4), instagram-publishing U1 (2),
 inbox-core U2 (5), inbox-core U3 (11), inbox-instagram U1 (12),. A lane whose unit is on origin
 is removed (worktree, local branch, its Postgres); a new unit gets a fresh lane. Lanes export `VITEST_MAX_WORKERS=2` (12 cores) and `GIT_TRACE2_EVENT=0` (git hangs on the git-ai daemon socket). The commit-msg hook caps the area before the colon at 40 characters (use `<subfeature> unit <n>:` without the parent path). Sessions write commit messages with `git commit -F -`, never a shared temp file (one was
 overwritten by another lane). Every TRD's Delivery lines carry `after …` marks — the next ready units are read from them.
@@ -75,6 +75,7 @@ Do not start the next unit.
 | checkout-links U2 | `checkout-links unit 2: checkout groups a link's items with its notes, the size step, order attribution [CONTRACT]` (217ab934, 905ed63f). Q7–Q10; Q9: a forwarded link may point at an unpaid order |
 | instagram-publishing U1 | `instagram-publishing U1: container builders and Instagram renditions` (ae9a34f4). Q11: carousels pictures only; U2 to confirm story tag positions |
 | notifications-core U3 | `notifications-core unit 3: morning email, prefs, Needs you bell, retention [CONTRACT] [MIGRATION]` (deb91934). Q11 retention (D7) built here; Q12–Q14, Q7 daily retention |
+| inbox-core U4 | `inbox-core unit 4: needs you, waiting event, support shares and log, retention [CONTRACT] [MIGRATION]` (b2b357b7). Q19–Q21; support's shared-chat service has no admin screen yet (parent Q34, Later) |
 | Planning | notification-hub and publishing units marked (7017d471); all remaining units marked, social-posts U4 added, connection-ready event in post-composer U3 (34f25c60) |
 | Process | ADRs renumbered 0084–0087; rebased on main; next units' dependencies marked in their TRDs |
 
