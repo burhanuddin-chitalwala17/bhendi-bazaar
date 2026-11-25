@@ -1,0 +1,27 @@
+src/lib/zip/build-zip.ts
+  s_9d5fa95bbe24d4::t_6081d04f2c928e 1-34,36-116
+src/components/org/mediaFilesApiClient.ts
+  s_9d5fa95bbe24d4::t_5b7b8faf0eaa91 1-14
+src/components/org/useLibraryZip.ts
+  s_9d5fa95bbe24d4::t_a0c2cbdeed3f9c 1-115
+handoff/media-library-bulk-actions-u2.md
+  s_9d5fa95bbe24d4::t_41934152ced18d 1-15
+src/lib/browser-navigation.ts
+  s_9d5fa95bbe24d4::t_043c4f638aa483 9-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "b846eb05d5e4c06ee4f527c6fc9188da2016d838",
+  "prompts": {},
+  "sessions": {
+    "s_9d5fa95bbe24d4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f00ee551-450c-4171-b74f-9342da83f47a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
