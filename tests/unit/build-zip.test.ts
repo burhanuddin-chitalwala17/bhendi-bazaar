@@ -106,6 +106,23 @@ describe("buildZip", () => {
     expect(open).toHaveBeenCalledTimes(2);
   });
 
+  it("cancel mid-read stops the stream in flight and fetches nothing more", async () => {
+    const controller = new AbortController();
+    const open = vi.fn(
+      async (_e: ZipEntry, signal: AbortSignal) =>
+        new ReadableStream<Uint8Array>({
+          start(c) {
+            c.enqueue(enc.encode("part"));
+            signal.addEventListener("abort", () => c.error(signal.reason));
+            queueMicrotask(() => controller.abort());
+          },
+        }),
+    );
+    const zipping = buildZip([entry("a"), entry("b")], { open, limitBytes: 1000, signal: controller.signal });
+    await expect(zipping).rejects.toMatchObject({ name: "AbortError" });
+    expect(open).toHaveBeenCalledTimes(1);
+  });
+
   it("an already-cancelled build fetches nothing", async () => {
     const open = vi.fn(async () => streamOf("x"));
     const controller = new AbortController();

@@ -122,7 +122,8 @@ describe("useLibraryZip", () => {
     h.downloadLinks.mockResolvedValue({ files: [{ ...file("p1"), bytes: null }], noFile: [], totalBytes: 0 });
     h.open.mockImplementation(async () => streamOf("x".repeat(64)));
     const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01", 32));
-    expect(await run(result, ["p1"])).toMatchObject({ kind: "tooBig", limitBytes: 32 });
+    // The true total is unknown mid-fetch, so no size is claimed for the copy to repeat.
+    expect(await run(result, ["p1"])).toEqual({ kind: "tooBig", totalBytes: null, limitBytes: 32 });
     expect(h.saveBlob).not.toHaveBeenCalled();
   });
 
@@ -155,6 +156,33 @@ describe("useLibraryZip", () => {
     expect(signal.aborted).toBe(true);
     expect(h.saveBlob).not.toHaveBeenCalled();
     expect(result.current.progress).toBeNull();
+  });
+
+  it("is busy while the links are asked for, and cancel then answers cancelled, not an error", async () => {
+    let fail!: (e: unknown) => void;
+    h.downloadLinks.mockReturnValue(new Promise((_, reject) => (fail = reject)));
+    const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01"));
+    let pending!: Promise<unknown>;
+    act(() => {
+      pending = result.current.download(ids(3));
+    });
+    expect(result.current.progress).toEqual({ done: 0, total: 3 });
+    act(() => result.current.cancel());
+    fail(new ApiError("offline", 0));
+    await act(async () => {
+      expect(await pending).toEqual({ kind: "cancelled" });
+    });
+    expect(h.open).not.toHaveBeenCalled();
+    expect(result.current.progress).toBeNull();
+  });
+
+  it("an unexpected failure is an outcome, never a rejection", async () => {
+    h.downloadLinks.mockResolvedValue({ files: [file("p1")], noFile: [], totalBytes: 3 });
+    h.saveBlob.mockImplementationOnce(() => {
+      throw new Error("blocked");
+    });
+    const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01"));
+    expect(await run(result, ["p1"])).toEqual({ kind: "error" });
   });
 
   it("a second tap while building joins the first", async () => {

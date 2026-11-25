@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "@/lib/api-error";
 import { saveBlob } from "@/lib/browser-navigation";
-import { buildZip, ZipLimitError } from "@/lib/zip/build-zip";
 import { NO_FILE_REASON, ZIP_LIMIT_BYTES } from "@server/catalog/media-library.types";
 import { mediaFilesApiClient } from "./mediaFilesApiClient";
 import { orgMediaApiClient } from "./orgMediaApiClient";
@@ -18,10 +17,12 @@ export type LibraryZipOutcome =
   | ({ kind: "saved"; saved: number; total: number; failedIds: string[] } & LeftOut)
   | ({ kind: "noneFetched"; failedIds: string[] } & LeftOut)
   | ({ kind: "nothingToZip" } & LeftOut)
-  | { kind: "tooBig"; totalBytes: number; limitBytes: number }
+  /** `totalBytes` is null when the real bytes passed the limit mid-fetch: the true total is unknown. */
+  | { kind: "tooBig"; totalBytes: number | null; limitBytes: number }
   | { kind: "error" }
   | { kind: "cancelled" };
 
+/** `total` is the selection while links are asked for, then the files being fetched. */
 export interface ZipProgress {
   done: number;
   total: number;
@@ -56,10 +57,12 @@ export function useLibraryZip(orgId: string, shopCode: string | null, limitBytes
 
   const build = useCallback(
     async (ids: string[], abort: AbortController): Promise<LibraryZipOutcome> => {
+      setProgress({ done: 0, total: ids.length });
       let links;
       try {
         links = await orgMediaApiClient.downloadLinks(orgId, ids);
       } catch (error) {
+        if (abort.signal.aborted) return { kind: "cancelled" };
         return tooBigFrom(error) ?? { kind: "error" };
       }
       if (abort.signal.aborted) return { kind: "cancelled" };
@@ -74,6 +77,14 @@ export function useLibraryZip(orgId: string, shopCode: string | null, limitBytes
 
       const urls = new Map(links.files.map((file) => [file.id, file.url]));
       setProgress({ done: 0, total: links.files.length });
+      // fflate loads on the first Download, not with the Library (trd Packages).
+      let zipModule;
+      try {
+        zipModule = await import("@/lib/zip/build-zip");
+      } catch {
+        return { kind: "error" };
+      }
+      const { buildZip, ZipLimitError } = zipModule;
       try {
         const zip = await buildZip(links.files, {
           open: (entry, signal) => mediaFilesApiClient.open(urls.get(entry.id)!, signal),
@@ -86,8 +97,8 @@ export function useLibraryZip(orgId: string, shopCode: string | null, limitBytes
         return { kind: "saved", saved: zip.added.length, total: links.files.length, failedIds: zip.failed, ...leftOut };
       } catch (error) {
         if (abort.signal.aborted) return { kind: "cancelled" };
-        if (error instanceof ZipLimitError) return { kind: "tooBig", totalBytes: error.bytes, limitBytes: error.limitBytes };
-        throw error;
+        if (error instanceof ZipLimitError) return { kind: "tooBig", totalBytes: null, limitBytes: error.limitBytes };
+        return { kind: "error" };
       }
     },
     [orgId, shopCode, limitBytes],

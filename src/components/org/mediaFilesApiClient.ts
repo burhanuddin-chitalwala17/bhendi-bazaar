@@ -1,4 +1,5 @@
 import { TRANSFER_TIMEOUT_MS, withTimeout } from "@/lib/api-client";
+import { ApiError } from "@/lib/api-error";
 
 /**
  * Reads a library file's bytes from a presigned bucket link (bulk-actions trd D5, D7). Not
@@ -8,7 +9,7 @@ export const mediaFilesApiClient = {
   /** The timeout covers the body too, so a stalled file fails and the zip moves on (Q13). */
   async open(url: string, signal: AbortSignal): Promise<ReadableStream<Uint8Array>> {
     const response = await fetch(url, { signal: withTimeout(signal, TRANSFER_TIMEOUT_MS), credentials: "omit" });
-    if (!response.ok || !response.body) throw new Error(`Couldn't fetch the file (${response.status})`);
+    if (!response.ok || !response.body) throw new ApiError(`Couldn't fetch the file (${response.status})`, response.status);
     return response.body;
   },
 };

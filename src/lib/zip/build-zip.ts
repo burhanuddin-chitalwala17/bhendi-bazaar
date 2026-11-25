@@ -61,12 +61,18 @@ async function readAll(
 
 /**
  * A stored (uncompressed) zip of `entries`, fetched one at a time (bulk-actions trd D6): photos and
- * videos are already compressed, and one file in flight keeps a phone's memory to the zip itself.
+ * videos are already compressed. Each file's output becomes a Blob as it is added, which the browser
+ * may move out of the page, so memory peaks near one file rather than the whole zip twice (Q15).
  * Rejects with an AbortError on cancel and a ZipLimitError past the limit; a failed entry is skipped.
  */
 export async function buildZip(entries: ZipEntry[], options: BuildZipOptions): Promise<BuildZipResult> {
   const { open, limitBytes, signal, onProgress } = options;
-  const parts: Uint8Array[] = [];
+  let parts: Uint8Array[] = [];
+  const pieces: Blob[] = [];
+  const seal = () => {
+    pieces.push(new Blob(parts as BlobPart[]));
+    parts = [];
+  };
   let zipError: Error | null = null;
   let ended = false;
   const zip = new Zip((error, chunk, final) => {
@@ -102,6 +108,7 @@ export async function buildZip(entries: ZipEntry[], options: BuildZipOptions): P
       bytes += chunk.byteLength;
     }
     file.push(new Uint8Array(0), true);
+    seal();
     added.push(entry.id);
     onProgress?.(added.length + failed.length, entries.length);
   }
@@ -112,5 +119,6 @@ export async function buildZip(entries: ZipEntry[], options: BuildZipOptions): P
   // A stored entry and the trailer are emitted synchronously; either check failing is a fflate change.
   if (zipError) throw zipError;
   if (!ended) throw new Error("The zip did not finish");
-  return { blob: new Blob(parts as BlobPart[], { type: "application/zip" }), added, failed };
+  seal();
+  return { blob: new Blob(pieces, { type: "application/zip" }), added, failed };
 }
