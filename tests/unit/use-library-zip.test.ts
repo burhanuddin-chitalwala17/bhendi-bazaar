@@ -194,4 +194,22 @@ describe("useLibraryZip", () => {
     expect(h.downloadLinks).toHaveBeenCalledTimes(1);
     expect(h.saveBlob).toHaveBeenCalledTimes(1);
   });
+
+  it("asks for links at most 100 ids a request, and holds their sum to the limit (Q10, Q4)", async () => {
+    const selected = ids(150);
+    h.downloadLinks.mockImplementation(async (_org: string, chunk: string[]) => ({
+      files: chunk.map(file),
+      noFile: [],
+      totalBytes: chunk.length * 3,
+    }));
+    const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01"));
+    const outcome = await run(result, selected);
+    expect(h.downloadLinks.mock.calls.map((call) => call[1].length)).toEqual([100, 50]);
+    expect(outcome).toMatchObject({ kind: "saved", saved: 150, total: 150 });
+
+    const { result: small } = renderHook(() => useLibraryZip("org-1", "BBZ01", 400));
+    h.open.mockClear();
+    expect(await run(small, selected)).toEqual({ kind: "tooBig", totalBytes: 450, limitBytes: 400 });
+    expect(h.open).not.toHaveBeenCalled();
+  });
 });

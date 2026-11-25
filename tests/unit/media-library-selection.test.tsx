@@ -181,6 +181,21 @@ describe("the bar's actions", () => {
     expect(within(screen.getByRole("dialog")).getByText(C.unreachable)).toBeTruthy();
   });
 
+  it("more than 100 go in batches; a later batch failing still says what landed (Q10)", async () => {
+    const assets = Array.from({ length: 101 }, (_, i) => item(`r${i}`));
+    h.retireMany
+      .mockResolvedValueOnce({ retired: assets.slice(0, 100).map((a) => a.id), inUse: [], alreadyRetired: [], notFound: [] })
+      .mockRejectedValueOnce(new Error("offline"));
+    grid(assets);
+    selectAll(101);
+    fireEvent.click(within(bar()).getByRole("button", { name: C.retire }));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: C.retireConfirm(101) })));
+    expect(h.retireMany.mock.calls.map((call) => call[1].length)).toEqual([100, 1]);
+    expect(h.toast.success).toHaveBeenCalledWith(C.retireDone(100), expect.anything());
+    expect(h.toast.error).toHaveBeenCalledWith(C.unreachableShort);
+    expect(tiles()).toHaveLength(1);
+  });
+
   it("Retire with every item in use opens no dialog and says why", () => {
     grid([item("a", { uses: 1 })]);
     selectAll(1);

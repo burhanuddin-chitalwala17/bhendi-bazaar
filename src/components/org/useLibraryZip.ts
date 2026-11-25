@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "@/lib/api-error";
 import { saveBlob } from "@/lib/browser-navigation";
-import { NO_FILE_REASON, ZIP_LIMIT_BYTES } from "@server/catalog/media-library.types";
+import { NO_FILE_REASON, ZIP_LIMIT_BYTES, type MediaDownloadLinksDto } from "@server/catalog/media-library.types";
+import { MEDIA_BULK_MAX_IDS } from "@/lib/validation/schemas/media-library.schema";
 import { mediaFilesApiClient } from "./mediaFilesApiClient";
 import { orgMediaApiClient } from "./orgMediaApiClient";
 
@@ -58,14 +59,22 @@ export function useLibraryZip(orgId: string, shopCode: string | null, limitBytes
   const build = useCallback(
     async (ids: string[], abort: AbortController): Promise<LibraryZipOutcome> => {
       setProgress({ done: 0, total: ids.length });
-      let links;
+      // At most 100 ids a request (Q10); each batch is capped by the server, their sum here (Q4).
+      const links: MediaDownloadLinksDto = { files: [], noFile: [], totalBytes: 0 };
       try {
-        links = await orgMediaApiClient.downloadLinks(orgId, ids);
+        for (let at = 0; at < ids.length; at += MEDIA_BULK_MAX_IDS) {
+          const batch = await orgMediaApiClient.downloadLinks(orgId, ids.slice(at, at + MEDIA_BULK_MAX_IDS));
+          links.files.push(...batch.files);
+          links.noFile.push(...batch.noFile);
+          links.totalBytes += batch.totalBytes;
+          if (abort.signal.aborted) return { kind: "cancelled" };
+        }
       } catch (error) {
         if (abort.signal.aborted) return { kind: "cancelled" };
         return tooBigFrom(error) ?? { kind: "error" };
       }
       if (abort.signal.aborted) return { kind: "cancelled" };
+      if (links.totalBytes > limitBytes) return { kind: "tooBig", totalBytes: links.totalBytes, limitBytes };
 
       const known = new Set([...links.files, ...links.noFile].map((item) => item.id));
       const leftOut: LeftOut = {

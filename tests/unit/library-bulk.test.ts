@@ -129,6 +129,10 @@ describe("planTag", () => {
     expect(planTag(picked)).toEqual({ kind: "open", ids: ["a", "b", "c", "d"], videos: 1, retired: 0 });
   });
 
+  it("leaves retired photos out of a mixed selection and counts them (R7)", () => {
+    expect(planTag([item("a"), item("r", { state: "RETIRED" })])).toEqual({ kind: "open", ids: ["a"], videos: 0, retired: 1 });
+  });
+
   it("refuses with nothing selected, no photos, or all retired", () => {
     expect(planTag([])).toEqual({ kind: "refused", notice: { tone: "error", title: C.nothingSelected } });
     expect(planTag([item("v", { kind: "VIDEO_EMBED" })])).toEqual({
