@@ -16,6 +16,7 @@ import { productService } from "@server/catalog/product.service";
 
 import { CONNECTION_STATE, type MarketplaceChannel } from "./channel-connection.types";
 import { channelConnectionRepository, type OrdersCheckRow } from "./channel-connection.repository";
+import { connectionPassesRepository } from "./channel-connection-passes.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
 import { complainedFields, computeListing, masterValues, parseOverrides, parseSent, snapshot, toWholeRupees } from "./listing-plan";
@@ -403,7 +404,7 @@ export const listingPublishService = {
     const ids = await platformListingRepository.claimDueChecks(now, new Date(now.getTime() + 600_000));
     const rows = (await platformListingRepository.claimedRows(ids)).filter((row) => row.publishState === PUBLISH_STATE.CHECKING);
     const connections = new Map(
-      (await channelConnectionRepository.withTokens([...new Set(rows.map((row) => row.connectionId))])).map((c) => [c.id, c]),
+      (await connectionPassesRepository.withTokens([...new Set(rows.map((row) => row.connectionId))])).map((c) => [c.id, c]),
     );
     const skus = await mirrorSkus(rows.filter((row) => row.sku === null && row.productId !== null && connections.has(row.connectionId)));
     const tokens = new Map<string, () => Promise<string>>();
@@ -430,7 +431,7 @@ export const listingPublishService = {
     const orgId = await platformListingRepository.orgOf(listingId);
     const row = orgId ? await platformListingRepository.find(listingId, orgId) : null;
     if (!row || row.publishState !== PUBLISH_STATE.CHECKING) return;
-    const [connection] = await channelConnectionRepository.withTokens([row.connectionId]);
+    const [connection] = await connectionPassesRepository.withTokens([row.connectionId]);
     const sku = row.sku ?? (row.productId && connection ? (await channelListingRepository.mirrorsFor(connection.id, [row.productId]))[0]?.sku ?? null : null);
     await lookAt(row, connection ?? null, connection ? tokenFor(connection) : null, now, sku);
   },

@@ -29,8 +29,15 @@ export interface SignupResult {
   kind: WhatsAppNumberKind;
 }
 
+const START_AGAIN = new Set<string>([SOCIAL_ERROR.AUTH, SOCIAL_ERROR.REFUSED, SOCIAL_ERROR.PERMISSION]);
+/** A sign-up attempt outlives Instagram's: coexistence onboarding, QR scan included, can pass ten minutes. */
+const SIGNUP_TTL_MS = 30 * 60_000;
+/** A failed setup holds nothing to keep: the shop may try again with any number (R6). */
+const holdsNumber = (state: string) => state !== CONNECTION_STATE.DISCONNECTED && state !== CONNECTION_STATE.SETUP_FAILED;
+
 function outcomeOf(error: unknown): ConnectResult {
-  if (error instanceof MetaError) return error.code === SOCIAL_ERROR.AUTH ? CONNECT_RESULT.EXPIRED : CONNECT_RESULT.UNREACHABLE;
+  // A spent or foreign code, or an account the token cannot reach, is Meta refusing: start again, not "try later".
+  if (error instanceof MetaError) return START_AGAIN.has(error.code) ? CONNECT_RESULT.EXPIRED : CONNECT_RESULT.UNREACHABLE;
   throw error;
 }
 
@@ -41,10 +48,11 @@ export function whatsappConnectService(signup: EmbeddedSignup = embeddedSignup()
       await socialPlan.assert(orgId);
       if (!isSocialOpen(CHANNEL)) return { result: CONNECT_RESULT.UNAVAILABLE };
       const existing = await channelConnectionRepository.find(orgId, CHANNEL);
-      const live = existing !== null && existing.state !== CONNECTION_STATE.DISCONNECTED;
+      const live = existing !== null && holdsNumber(existing.state);
       const nonce = newStateNonce();
       await channelConnectionRepository.openSignup(orgId, CHANNEL, nonce);
-      const state = signConnectState({ orgId, userId, channel: CHANNEL, purpose: live ? CONNECT_PURPOSE.RECONNECT : CONNECT_PURPOSE.CONNECT, nonce });
+      const purpose = live ? CONNECT_PURPOSE.RECONNECT : CONNECT_PURPOSE.CONNECT;
+      const state = signConnectState({ orgId, userId, channel: CHANNEL, purpose, nonce }, Date.now(), SIGNUP_TTL_MS);
       return { state, ...signup.settings() };
     },
 
@@ -76,7 +84,7 @@ export function whatsappConnectService(signup: EmbeddedSignup = embeddedSignup()
         await prisma.$transaction(async (tx) => {
           await channelConnectionRepository.lockFor(tx, orgId, CHANNEL);
           const existing = await channelConnectionRepository.find(orgId, CHANNEL, tx);
-          const live = existing !== null && existing.state !== CONNECTION_STATE.DISCONNECTED;
+          const live = existing !== null && holdsNumber(existing.state);
           // Switching numbers is disconnect, then connect (Q10).
           if (live && existing.externalPhoneId && existing.externalPhoneId !== result.phoneId) {
             outcome = CONNECT_RESULT.DIFFERENT_ACCOUNT;

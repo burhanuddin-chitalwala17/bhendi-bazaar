@@ -3,6 +3,7 @@ import { NotFoundError } from "@server/shared/domain-error";
 import { prisma } from "@server/shared/prisma";
 import { recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { channelConnectionRepository, type SecretRow } from "./channel-connection.repository";
+import { connectionPassesRepository } from "./channel-connection-passes.repository";
 import { CONNECTION_ERROR, CONNECTION_STATE } from "./channel-connection.types";
 import { socialPlan } from "./channel-plan";
 import { MetaError } from "./providers/meta/errors";
@@ -119,7 +120,7 @@ export function instagramConnectionService(login: InstagramLogin = instagramLogi
      */
     async maintain(isSuspended: (orgId: string) => Promise<boolean>, now = new Date()): Promise<UpkeepSummary & { failed: number }> {
       const summary = { checked: 0, renewed: 0, resealed: 0, needsReconnect: 0, unreachable: 0, skipped: 0, locked: 0, failed: 0 };
-      const rows = await channelConnectionRepository.liveSocial(CHANNEL);
+      const rows = await connectionPassesRepository.liveSocial(CHANNEL);
       const held = await socialPlan.allowed([...new Set(rows.map((r) => r.orgId))]);
       for (const row of rows) {
         try {

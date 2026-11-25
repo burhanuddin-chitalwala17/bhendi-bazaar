@@ -17,8 +17,8 @@ import { useWhatsAppSignup } from "./useWhatsAppSignup";
 const FULL = "min-h-10 w-full md:w-auto";
 
 /**
- * Connect WhatsApp (connect-whatsapp ux.md "First use", "Opening Meta"): Meta's SDK loads on the tap,
- * never before. A claimed number refreshes the card into Setting up; any other outcome is a return note.
+ * Connect WhatsApp (connect-whatsapp ux.md "First use", "Opening Meta"): Meta's SDK loads as the
+ * shop reaches for the button, never with the page. A claimed number refreshes the card into Setting up; any other outcome is a return note.
  */
 export function WhatsAppConnectButton({
   orgId,
@@ -41,14 +41,15 @@ export function WhatsAppConnectButton({
     },
     [orgId, router],
   );
-  const { phase, connect } = useWhatsAppSignup(orgId, { nonce, prefill, onResult });
+  const { phase, prepare, connect } = useWhatsAppSignup(orgId, { nonce, prefill, onResult });
+  const warm = () => void prepare().catch(() => undefined);
   const busy = phase !== "idle";
 
   return (
     <div className="flex w-full flex-col gap-2">
       <p className="text-sm text-muted-foreground">{busy ? WHATSAPP.finishInMeta : WHATSAPP.beforeConsent}</p>
       <LockedAction feature={FEATURE.SOCIAL_SELLING} label={label} className={FULL}>
-        <Button className={FULL} aria-busy={busy} onClick={() => void connect()}>
+        <Button className={FULL} aria-busy={busy} onPointerEnter={warm} onPointerDown={warm} onFocus={warm} onClick={() => void connect()}>
           {busy ? (
             <>
               <Spinner />

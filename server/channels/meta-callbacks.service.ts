@@ -7,6 +7,7 @@ import { appUrl } from "@server/shared/app-url";
 import { ROUTES } from "@server/shared/routes";
 import { allForgetters } from "@server/shared/social-events/forget";
 import { channelConnectionRepository } from "./channel-connection.repository";
+import { connectionPassesRepository } from "./channel-connection-passes.repository";
 import { CONNECTION_ERROR } from "./channel-connection.types";
 import { dataDeletionRepository, DELETION_STATE } from "./data-deletion.repository";
 import { deletePersonSpec } from "./data-deletion.job";
@@ -79,7 +80,7 @@ export const metaCallbacksService = {
   /** Instagram's deauthorize: the shop's Instagram card turns to Needs reconnecting (R6, A3). */
   async deauthorize(raw: string, now = new Date()): Promise<void> {
     const { userId, issuedAt } = await verify(raw, [SOCIAL_PLATFORM.INSTAGRAM]);
-    const routes = (await channelConnectionRepository.socialRoutes(SOCIAL_PLATFORM.INSTAGRAM, [userId])).filter((r) => r.externalAccountId === userId);
+    const routes = (await connectionPassesRepository.socialRoutes(SOCIAL_PLATFORM.INSTAGRAM, [userId])).filter((r) => r.externalAccountId === userId);
     let changed = 0;
     // Meta's own time when it gives one, so a notice replayed after a reconnect changes nothing.
     for (const route of routes) changed += await channelConnectionRepository.markRemoved(route.id, CONNECTION_ERROR.REMOVED_IN_APP, issuedAt ?? now);

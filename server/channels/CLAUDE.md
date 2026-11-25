@@ -44,7 +44,7 @@ Channels owns a shop's authorised connection to a marketplace, and to its own so
 |---|---|
 | `channel-connection.service.ts` | The public surface: overview cards, connect, disconnect, check, the daily `maintain` pass |
 | `channel-connection.types.ts` | Closed sets and DTOs |
-| `channel-connection.repository.ts` | The one writer of `ChannelConnection` |
+| `channel-connection.repository.ts`, `channel-connection-passes.repository.ts` | The one writer of `ChannelConnection`; read-only projections for passes over many shops and for routing Meta's events |
 | `connect-state.ts` | The signed OAuth `state` |
 | `channel-availability.ts` | The one switch: `CHANNELS_CONNECT` for marketplaces, `SOCIAL_CONNECT` for Instagram and WhatsApp |
 | `channel-plan.ts` | Whether a shop holds Channels: the assert every action makes, and the holders among many for a pass |

@@ -145,6 +145,21 @@ describe.skipIf(!isDisposableDb)("WhatsApp sign-up (local db)", () => {
     expect(await row(orgId)).toMatchObject({ state: "DISCONNECTED", accessToken: null, externalPhoneId: null });
   });
 
+  it("A3: a forged account id, one the token cannot reach, connects nothing and says start again", async () => {
+    const wa = await service(meta({ "/phone_numbers": { status: 400, body: { error: { message: "x", code: 100 } } } }));
+    expect(await wa.complete(await attempt(wa, orgId), result(PHONE, "999"))).toBe("expired");
+    expect(await row(orgId)).toMatchObject({ state: "DISCONNECTED", accessToken: null, externalPhoneId: null });
+  });
+
+  it("a shop whose setup failed may try again with another number", async () => {
+    const wa = await service(meta());
+    expect(await wa.complete(await attempt(wa, orgId), result())).toBe("connected");
+    const { prisma } = await import("@server/shared/prisma");
+    await prisma.channelConnection.updateMany({ where: { orgId, channel: "whatsapp" }, data: { state: "SETUP_FAILED" } });
+    expect(await wa.complete(await attempt(wa, orgId), result(OTHER_PHONE))).toBe("connected");
+    expect(await row(orgId)).toMatchObject({ state: "SETTING_UP", externalPhoneId: OTHER_PHONE });
+  });
+
   it("A3: a forged state connects nothing", async () => {
     const wa = await service(meta());
     await attempt(wa, orgId);

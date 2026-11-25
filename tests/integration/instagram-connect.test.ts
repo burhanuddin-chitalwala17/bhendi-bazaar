@@ -154,11 +154,12 @@ describe.skipIf(!isDisposableDb)("Instagram connect (local db)", () => {
 
   it("the marketplaces' daily pass and cross-shop reads never take an Instagram row", async () => {
     const { channelConnectionRepository } = await import("@server/channels/channel-connection.repository");
+    const { connectionPassesRepository } = await import("@server/channels/channel-connection-passes.repository");
     const ig = await service(happy());
     await ig.complete(await stateFor(orgId), { code: "CODE", declined: false });
     expect((await channelConnectionRepository.live()).some((r) => r.channel === "instagram")).toBe(false);
-    expect((await channelConnectionRepository.connectedWithTokens()).some((r) => r.channel === "instagram")).toBe(false);
-    expect((await channelConnectionRepository.connectedOrgs()).some((r) => r.channel === "instagram")).toBe(false);
+    expect((await connectionPassesRepository.connectedWithTokens()).some((r) => r.channel === "instagram")).toBe(false);
+    expect((await connectionPassesRepository.connectedOrgs()).some((r) => r.channel === "instagram")).toBe(false);
   });
 
   it("two connects for one shop at once end with one connection", async () => {

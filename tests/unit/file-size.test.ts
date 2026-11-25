@@ -53,10 +53,7 @@ const PINNED: Record<string, { kb: number; split: string }> = {
     kb: 26,
     split: "Storefront reads (by slug, similar, hero, offers, search) versus the reads other domains call (checkout, stock, pricing, channel feed); the second set is a public surface.",
   },
-  "server/channels/channel-connection.repository.ts": {
-    kb: 26,
-    split: "Every write stays here; the cross-shop reads (the daily passes', the orders check's, the intake's routes) move to a read-only channel-connection-passes.repository.ts. Pinned 2026-11-25 by connect-whatsapp unit 1 rather than split while parallel social-selling units edit this file.",
-  },
+
   "server/catalog/storefront.service.ts": {
     kb: 26,
     split: "The storefront page and its settings versus banner management (list, add, edit, remove, reorder); banners can be their own service.",

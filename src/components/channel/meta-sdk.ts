@@ -27,12 +27,25 @@ declare global {
 
 let loading: Promise<NonNullable<Window["FB"]>> | null = null;
 
+/** A script that loads but never initialises (a blocker, a partial load) must not leave the button pending. */
+const LOAD_TIMEOUT_MS = 15_000;
+
 export function loadMetaSdk(appId: string, nonce?: string): Promise<NonNullable<Window["FB"]>> {
   if (window.FB) return Promise.resolve(window.FB);
   if (loading) return loading;
   loading = new Promise((resolve, reject) => {
+    const fail = () => {
+      clearTimeout(timer);
+      loading = null;
+      script.remove();
+      reject(new Error("Meta's SDK did not load"));
+    };
+    const timer = setTimeout(fail, LOAD_TIMEOUT_MS);
     window.fbAsyncInit = () => {
+      clearTimeout(timer);
       window.FB!.init({ appId, autoLogAppEvents: false, xfbml: false, version: SDK_VERSION });
+      // From here `window.FB` answers; the pending promise is only for loads in flight.
+      loading = null;
       resolve(window.FB!);
     };
     const script = document.createElement("script");
@@ -41,11 +54,7 @@ export function loadMetaSdk(appId: string, nonce?: string): Promise<NonNullable<
     script.async = true;
     script.crossOrigin = "anonymous";
     if (nonce) script.nonce = nonce;
-    script.onerror = () => {
-      loading = null;
-      script.remove();
-      reject(new Error("Meta's SDK did not load"));
-    };
+    script.onerror = fail;
     document.body.appendChild(script);
   });
   return loading;

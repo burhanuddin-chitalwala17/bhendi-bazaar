@@ -43,11 +43,12 @@ const sign = (body: string) => createHmac("sha256", key()).update(body).digest("
 export function signConnectState(
   input: Omit<ConnectState, "nonce" | "expiresAt"> & { nonce?: string },
   now = Date.now(),
+  ttlMs = STATE_TTL_MS,
 ): string {
   const payload: ConnectState = {
     ...input,
     nonce: input.nonce ?? newStateNonce(),
-    expiresAt: now + STATE_TTL_MS,
+    expiresAt: now + ttlMs,
   };
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `${body}.${sign(body)}`;

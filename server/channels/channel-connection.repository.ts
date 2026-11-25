@@ -112,7 +112,7 @@ const ROW = {
 /** A social token renews itself: no expiry, no refresh token. */
 const NO_EXPIRY = { accessTokenExpiresAt: null, refreshToken: null, refreshTokenExpiresAt: null } as const;
 
-const SECRETS = {
+export const SECRETS = {
   id: true,
   orgId: true,
   channel: true,
@@ -145,7 +145,7 @@ export interface OrdersCheckRow {
 }
 
 /** The passes over every shop that call a marketplace read these only; a social row has no marketplace provider. */
-const MARKETPLACES: string[] = [...MARKETPLACE_CHANNELS];
+export const MARKETPLACES: string[] = [...MARKETPLACE_CHANNELS];
 
 export const channelConnectionRepository = {
   async forOrg(orgId: string): Promise<ConnectionRow[]> {
@@ -489,42 +489,9 @@ export const channelConnectionRepository = {
     });
   },
 
-  /** Several connections with their sealed tokens, in one read: a batched check's half of `forOrders`. */
-  async withTokens(ids: readonly string[]): Promise<OrdersCheckRow[]> {
-    if (ids.length === 0) return [];
-    return await prisma.channelConnection.findMany({
-      where: { id: { in: [...ids] } },
-      select: {
-        id: true, orgId: true, channel: true, state: true, externalAccountId: true, stockSync: true,
-        stockSyncChangedAt: true, ordersCursor: true, accessToken: true, accessTokenExpiresAt: true,
-      },
-    });
-  },
-
-  /** Every connected marketplace account with its sealed token, in one statement: the daily problems look (marketplace-publish Q23). */
-  /** Every connected (org, channel), no secrets (setup-requests D5: the daily category raise). */
-  async connectedOrgs(): Promise<Array<{ orgId: string; channel: string }>> {
-    return await prisma.channelConnection.findMany({ where: { state: CONNECTION_STATE.CONNECTED, channel: { in: MARKETPLACES } }, select: { orgId: true, channel: true } });
-  },
-
-  async connectedWithTokens(): Promise<OrdersCheckRow[]> {
-    return await prisma.channelConnection.findMany({
-      where: { state: CONNECTION_STATE.CONNECTED, channel: { in: MARKETPLACES } },
-      select: {
-        id: true, orgId: true, channel: true, state: true, externalAccountId: true, stockSync: true,
-        stockSyncChangedAt: true, ordersCursor: true, accessToken: true, accessTokenExpiresAt: true,
-      },
-    });
-  },
-
   /** The last problem a send met, or null once one goes (D7). */
   async setStockProblem(db: Pick<typeof prisma, "channelConnection">, id: string, problem: StockProblem | null): Promise<void> {
     await db.channelConnection.updateMany({ where: { id, stockProblem: problem === null ? { not: null } : { not: problem } }, data: { stockProblem: problem } });
-  },
-
-  /** Connections with stock sync on, for the order check and the daily check (inventory-sync D4, D5). */
-  async syncedConnections(): Promise<Array<{ id: string; orgId: string }>> {
-    return await prisma.channelConnection.findMany({ where: { state: CONNECTION_STATE.CONNECTED, stockSync: STOCK_SYNC.ON }, select: { id: true, orgId: true } });
   },
 
   async touchStock(db: Pick<typeof prisma, "channelConnection">, id: string, field: "stockSentAt" | "stockCheckedAt", now: Date): Promise<void> {
@@ -638,31 +605,6 @@ export const channelConnectionRepository = {
       },
       select: { id: true },
     });
-  },
-
-  /**
-   * The live social connections an event may belong to, by any id Meta routes by: the Instagram
-   * account, the WhatsApp phone number or account (meta-foundation D3). One query per delivery.
-   */
-  async socialRoutes(
-    channel: string,
-    ids: readonly string[],
-  ): Promise<Array<{ id: string; orgId: string; externalAccountId: string | null; externalPhoneId: string | null; externalBusinessId: string | null }>> {
-    if (ids.length === 0) return [];
-    const list = [...ids];
-    return await prisma.channelConnection.findMany({
-      where: {
-        channel,
-        state: { not: CONNECTION_STATE.DISCONNECTED },
-        OR: [{ externalAccountId: { in: list } }, { externalPhoneId: { in: list } }, { externalBusinessId: { in: list } }],
-      },
-      select: { id: true, orgId: true, externalAccountId: true, externalPhoneId: true, externalBusinessId: true },
-    });
-  },
-
-  /** Every connected account on one social platform with its sealed token: that platform's daily pass (connect-instagram D2). */
-  async liveSocial(channel: SocialPlatform): Promise<SecretRow[]> {
-    return await prisma.channelConnection.findMany({ where: { channel, state: CONNECTION_STATE.CONNECTED }, select: SECRETS });
   },
 
   /** Every marketplace connection that still holds tokens, for the daily job (D7); social ones have their own pass. */

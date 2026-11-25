@@ -110,4 +110,35 @@ describe("Connect WhatsApp", () => {
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith(expect.stringContaining("result=unavailable")));
     expect(append).not.toHaveBeenCalled();
   });
+
+  it("reaching for the button prepares the attempt, so the tap opens Meta's window with nothing awaited (Safari)", async () => {
+    const start = vi.spyOn(channelsApiClient, "whatsappStart").mockResolvedValue({ state: "STATE", appId: "1000000002", configId: "1000000003" });
+    const login = vi.fn();
+    window.FB = { init: vi.fn(), login };
+    render(<WhatsAppConnectButton orgId="org_1" />);
+    const button = screen.getByRole("button", { name: WHATSAPP.connect });
+    fireEvent.pointerDown(button);
+    await waitFor(() => expect(start).toHaveBeenCalledTimes(1));
+    await act(async () => undefined);
+    fireEvent.click(button);
+    // Synchronously inside the click: a window opened after an await is blocked.
+    expect(login).toHaveBeenCalledTimes(1);
+    expect(start).toHaveBeenCalledTimes(1);
+  });
+
+  it("an SDK that never initialises gives up and says Meta didn't respond, never pending for ever", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.spyOn(channelsApiClient, "whatsappStart").mockResolvedValue({ state: "STATE", appId: "1000000002", configId: "1000000003" });
+      render(<WhatsAppConnectButton orgId="org_1" />);
+      vi.spyOn(document.body, "appendChild").mockImplementation(<T extends Node>(node: T) => node);
+      fireEvent.click(screen.getByRole("button", { name: WHATSAPP.connect }));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15_001);
+      });
+      expect(router.replace).toHaveBeenCalledWith(expect.stringContaining("result=unreachable"));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

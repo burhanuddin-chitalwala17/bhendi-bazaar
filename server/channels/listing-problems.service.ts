@@ -1,6 +1,6 @@
 import { CHANNEL_LABELS } from "@server/shared/channels";
 
-import { channelConnectionRepository } from "./channel-connection.repository";
+import { connectionPassesRepository } from "./channel-connection-passes.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { isMarketplaceChannel, type MarketplaceChannel } from "./channel-connection.types";
 import { channelListingRepository } from "./channel-listing.repository";
@@ -23,7 +23,7 @@ export const listingProblemsService = {
    * statement records every answer. An account that cannot be read keeps what it had.
    */
   async checkAll(now = new Date()): Promise<{ accounts: number; problems: number }> {
-    const all = (await channelConnectionRepository.connectedWithTokens()).filter((c) => isMarketplaceChannel(c.channel));
+    const all = (await connectionPassesRepository.connectedWithTokens()).filter((c) => isMarketplaceChannel(c.channel));
     // One read for the pass (D8): a shop without Channels is not read.
     const holding = await channelPlan.allowed([...new Set(all.map((c) => c.orgId))]);
     const connections = all.filter((c) => holding.has(c.orgId));

@@ -2,6 +2,7 @@ import { CONNECTION_STATE, TYPES_UNAVAILABLE, isMarketplaceChannel, type Marketp
 
 export { TYPES_UNAVAILABLE, type TypesUnavailable };
 import { channelConnectionRepository } from "./channel-connection.repository";
+import { connectionPassesRepository } from "./channel-connection-passes.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { MarketplaceAuthError } from "./providers/marketplace-provider";
 import type { TypeDefinition, TypeMatch } from "./providers/publish";
@@ -49,7 +50,7 @@ export const channelTypesService = {
   /** Which shops sell on which marketplace now, for a pass over every shop (setup-requests D5). */
   /** Connected shops that hold Channels: a shop without it raises no marketplace request (feature-access Q19, D5). */
   async connectedOrgs(): Promise<Array<{ orgId: string; channel: MarketplaceChannel }>> {
-    const rows = (await channelConnectionRepository.connectedOrgs()).flatMap((r) => (isMarketplaceChannel(r.channel) ? [{ orgId: r.orgId, channel: r.channel }] : []));
+    const rows = (await connectionPassesRepository.connectedOrgs()).flatMap((r) => (isMarketplaceChannel(r.channel) ? [{ orgId: r.orgId, channel: r.channel }] : []));
     const holding = await channelPlan.allowed([...new Set(rows.map((r) => r.orgId))]);
     return rows.filter((r) => holding.has(r.orgId));
   },

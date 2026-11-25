@@ -1,6 +1,6 @@
 import { encryptSecret } from "@server/shared/crypto";
 import type { SocialPlatform } from "./social/types";
-import { channelConnectionRepository } from "./channel-connection.repository";
+import { connectionPassesRepository } from "./channel-connection-passes.repository";
 import { metaEventRepository, type NewMetaEvent } from "./meta-event.repository";
 import { metaDrainService } from "./meta-drain.service";
 import { metaUnroutedRepository } from "./meta-unrouted.repository";
@@ -106,7 +106,7 @@ export const metaIntakeService = {
     }
 
     const routeIds = [...new Set(items.map((item) => item.route.id))];
-    const connections = await channelConnectionRepository.socialRoutes(product, routeIds);
+    const connections = await connectionPassesRepository.socialRoutes(product, routeIds);
     const route = routeTable(connections);
     const orgOf = new Map(connections.map((connection) => [connection.id, connection.orgId]));
 

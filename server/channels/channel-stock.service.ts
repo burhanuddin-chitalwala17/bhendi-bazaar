@@ -7,6 +7,7 @@ import { productService } from "@server/catalog/product.service";
 
 import { CONNECTION_STATE, isMarketplaceChannel, type MarketplaceChannel } from "./channel-connection.types";
 import { channelConnectionRepository } from "./channel-connection.repository";
+import { connectionPassesRepository } from "./channel-connection-passes.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
 import { channelLocationRepository } from "./channel-location.repository";
@@ -212,7 +213,7 @@ export const channelStockService = {
   },
 
   async dailyCheckAll(): Promise<number> {
-    const rows = await channelConnectionRepository.syncedConnections();
+    const rows = await connectionPassesRepository.syncedConnections();
     // One read for the pass (D8): a shop without Channels is not checked.
     const allowed = await channelPlan.allowed([...new Set(rows.map((r) => r.orgId))]);
     const ids = rows.filter((r) => allowed.has(r.orgId)).map((r) => r.id);

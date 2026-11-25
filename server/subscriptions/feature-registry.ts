@@ -161,7 +161,7 @@ export const JOB_FEATURES: Record<string, { readonly feature: Feature; readonly 
   },
   "channels.whatsapp-setup": {
     feature: FEATURE.SOCIAL_SELLING,
-    how: "Queued only by a sign-up that asserted Social selling; the handler ends succeeded with a skip for a shop that lost it (connect-whatsapp D3).",
+    how: "Queued only by a sign-up that has just asserted Social selling (connect-whatsapp D2).",
   },
   "channels.meta-retention": { core: "Deletes raw events past 30 days for every account: a promise to the people in them, whatever the plan." },
   "channels.meta-sweep": { core: "Re-asks drains and deletion requests a lost job left behind; each does only what was already owed." },
