@@ -1,6 +1,6 @@
 /**
  * The version a downloaded sheet carries, and what an upload makes of it
- * ([own-store/bulk-sheet](../../../docs/specs/own-store/bulk-sheet/trd.md) D4; Q10, Q27, Q28).
+ * (own-store/bulk-sheet `planning-archive-2026-11-25:docs/specs/own-store/bulk-sheet/trd.md` D4; Q10, Q27, Q28).
  *
  * A fingerprint over every tab's column keys and every list's words changes exactly when the
  * sheet would, so no counter is stored anywhere.

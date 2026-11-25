@@ -47,7 +47,7 @@ export const commercialTermsService = {
   list: () => orgRepository.listCommercialTerms(),
 
   /**
-   * Set the rate and the ceiling ([org-payouts](../../docs/specs/org-payouts/) R12, R13).
+   * Set the rate and the ceiling (org-payouts `planning-archive-2026-11-25:docs/specs/org-payouts/` R12, R13).
    * Both move together because a ceiling without a rate is unenforceable and a rate without a
    * ceiling lets an offer give away more than the margin it is funded from.
    */

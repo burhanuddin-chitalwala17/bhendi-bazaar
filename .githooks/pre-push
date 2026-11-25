@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
-# Only finished work reaches main (ADR-0084). Judges each commit pushed to main by its own tree, so a push from
-# any worktree or branch is judged by what lands, not by what is checked out here.
+# Only finished work reaches main (ADR-0084). Judges the tree of the tip pushed to main, so a push from any
+# worktree or branch is judged by what lands, not by what is checked out here.
 zero=0000000000000000000000000000000000000000
 status=0
 while read -r local_ref local_sha remote_ref remote_sha; do
@@ -9,7 +9,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   dir=$(mktemp -d) && script="$dir/main-ready.mjs"
   # Prefer the rule as the pushed commit states it; fall back to this checkout's copy.
   git show "$local_sha:scripts/main-ready.mjs" >"$script" 2>/dev/null || cp scripts/main-ready.mjs "$script" 2>/dev/null
-  if [ -s "$script" ] && ! node "$script" --rev "$local_sha"; then
+  if [ -s "$script" ] && ! node "$script" --rev "$local_sha" </dev/null; then
     echo "pre-push: refused — main holds only finished work. Fix the above on your branch, then push again." >&2
     status=1
   fi

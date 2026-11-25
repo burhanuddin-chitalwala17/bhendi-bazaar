@@ -1,6 +1,6 @@
 /**
  * The workbook a shop downloads, built at the moment it is asked for
- * ([own-store/bulk-sheet](../../../docs/specs/own-store/bulk-sheet/trd.md) D1, D2).
+ * (own-store/bulk-sheet `planning-archive-2026-11-25:docs/specs/own-store/bulk-sheet/trd.md` D1, D2).
  *
  * Instructions first, then one tab per type the shop ticked. Every column, dropdown and stock
  * column is read now, so adding a type or a colour changes the next sheet with no file to edit.

@@ -1641,7 +1641,7 @@ model UserAddress {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Promotions — offers the platform and its orgs can run
-// (docs/specs/promotions/, ADR-0018, ADR-0019, ADR-0020)
+// (`planning-archive-2026-11-25:docs/specs/promotions/`, ADR-0018, ADR-0019, ADR-0020)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Who funds an offer. Genuinely two-valued and staying so, which is why it is an
@@ -1826,7 +1826,7 @@ model PromotionBudgetRelease {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Payouts — what each org earned, what the platform kept, what is still owed
-// (docs/specs/org-payouts/, ADR-0019, ADR-0020)
+// (`planning-archive-2026-11-25:docs/specs/org-payouts/`, ADR-0019, ADR-0020)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// SALE is written from the paid transition; REVERSAL offsets one; ADJUSTMENT is a

@@ -8,11 +8,7 @@ import { ships, statusOf } from "../../scripts/main-ready.mjs";
 const ROOT = resolve(__dirname, "../..");
 const SPECS = join(ROOT, "docs/specs");
 
-/**
- * Shipped before decision logs existed (ADR-0061, 2026-10-18): their reasoning is in their spec's own Open
- * decisions section or their ADR. A ratchet (ADR-0056): an entry leaves when the folder gains a decisions.md, and
- * none is added.
- */
+/** Shipped before ADR-0061 gave features a decisions.md; a ratchet (ADR-0056): entries only leave. */
 const PREDATES_DECISION_LOGS = new Map<string, string>(
   [
     "bidding", "channel-registry", "checkout-abandonment", "contact-us", "copy-product",
@@ -39,7 +35,8 @@ function shippedFolders(): { name: string; files: string[] }[] {
     const entries = readdirSync(dir);
     const spec = join(dir, "spec.md");
     if (depth > 0 && existsSync(spec) && ships(statusOf(readFileSync(spec, "utf8")))) {
-      out.push({ name: relative(SPECS, dir), files: entries.filter((e) => statSync(join(dir, e)).isFile()) });
+      // A subfolder without its own spec.md is planning too; a child spec is judged on its own.
+      out.push({ name: relative(SPECS, dir), files: entries.filter((e) => !existsSync(join(dir, e, "spec.md"))) });
     }
     for (const e of entries) if (statSync(join(dir, e)).isDirectory()) visit(join(dir, e), depth + 1);
   };

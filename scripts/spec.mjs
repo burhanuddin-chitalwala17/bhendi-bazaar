@@ -6,7 +6,7 @@
 //       sets Status in spec.md and trd.md together. Implemented also deletes every file but spec.md and decisions.md
 //       and rewrites every link into them as a pinned `<sha>:path` ref to the last commit that had them (ADR-0073),
 //       refusing first if any Q id they cite is missing from decisions.md (ADR-0084).
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -26,11 +26,14 @@ export function fillTemplate(text, { feature, domain, phase, date, depth }) {
   return out;
 }
 
-/** Only a status that begins with Implemented ships the feature; "Accepted — unit 2 implemented" does not. */
 export { ships };
 
-/** What retiring a shipped feature deletes: everything but what must stay true and why (ADR-0084). */
-export const retiredFiles = (files) => files.filter((f) => f !== "spec.md" && f !== "decisions.md");
+/**
+ * What retiring a shipped feature deletes: everything but what must stay true, why, and child specs (ADR-0084).
+ * @param {string[]} entries @param {(name: string) => boolean} [isChildSpec]
+ */
+export const retiredFiles = (entries, isChildSpec = () => false) =>
+  entries.filter((f) => f !== "spec.md" && f !== "decisions.md" && !isChildSpec(f));
 
 export function setStatus(text, status) {
   if (!/^- \*\*Status:\*\* .*$/m.test(text)) throw new Error("no `- **Status:**` line");
@@ -42,7 +45,7 @@ export function pinLinks(text, fileDir, gone, sha) {
   return text.replace(/(!?)\[([^\]]+)\]\(([^)#\s]+)(#[^)\s]*)?(\s+"[^"]*")?\)/g, (whole, bang, label, target) => {
     if (/^[a-z]+:/i.test(target)) return whole;
     const abs = relative(ROOT, resolve(fileDir, target));
-    return gone.includes(abs) ? `${label} (\`${sha.slice(0, 8)}:${abs}\`)` : whole;
+    return gone.some((g) => abs === g || abs.startsWith(`${g}/`)) ? `${label} (\`${sha.slice(0, 8)}:${abs}\`)` : whole;
   });
 }
 
@@ -55,6 +58,8 @@ function walkMarkdown(dir, out = []) {
   }
   return out;
 }
+
+const filesUnder = (p) => (statSync(p).isDirectory() ? readdirSync(p).flatMap((e) => filesUnder(join(p, e))) : [p]);
 
 function indexes() {
   execFileSync("node", [join(ROOT, "scripts/docs-index.mjs")], { stdio: "ignore" });
@@ -89,7 +94,7 @@ function specStatus(args) {
   const spec = join(dir, "spec.md");
   if (!existsSync(spec)) throw new Error(`docs/specs/${name}/spec.md not found`);
   const buildDocs = ships(status)
-    ? retiredFiles(readdirSync(dir).filter((f) => statSync(join(dir, f)).isFile())).map((f) => join(dir, f))
+    ? retiredFiles(readdirSync(dir), (f) => existsSync(join(dir, f, "spec.md"))).map((f) => join(dir, f))
     : [];
   const rel = buildDocs.map((f) => relative(ROOT, f));
   // Refuse before writing anything, so a refused run leaves every file as it was.
@@ -99,8 +104,11 @@ function specStatus(args) {
   if (rel.length) {
     const decisions = join(dir, "decisions.md");
     const tracked = execFileSync("git", ["ls-files"], { cwd: ROOT, encoding: "utf8" }).split("\n");
-    const citing = buildDocs.filter((f) => /\.(md|html)$/.test(f)).map((f) => readFileSync(f, "utf8"));
-    const gaps = qGaps(citing, existsSync(decisions) ? readFileSync(decisions, "utf8") : null, foreignNamesFrom(tracked));
+    const citing = buildDocs.flatMap(filesUnder).filter((f) => /\.(md|html)$/.test(f)).map((f) => readFileSync(f, "utf8"));
+    // The feature's own name before a Q id is still this log's id.
+    const foreign = foreignNamesFrom(tracked);
+    foreign.delete(name.split("/").pop());
+    const gaps = qGaps(citing, existsSync(decisions) ? readFileSync(decisions, "utf8") : null, foreign);
     if (gaps.length) {
       throw new Error(
         `${rel.join(", ")} cite ${gaps.join(", ")}, which decisions.md does not hold; its reasoning would go with them. ` +
@@ -113,7 +121,7 @@ function specStatus(args) {
 
   if (buildDocs.length) {
     const sha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim();
-    for (const f of buildDocs) rmSync(f);
+    for (const f of buildDocs) rmSync(f, { recursive: true });
     for (const md of walkMarkdown(ROOT)) {
       const text = readFileSync(md, "utf8");
       const next = pinLinks(text, dirname(md), rel, sha);
@@ -123,6 +131,9 @@ function specStatus(args) {
       }
     }
     done.push(...rel.map((r) => `${r} deleted`));
+    // pinLinks reads markdown only; a citation from code is listed for a hand-written pin.
+    const cited = spawnSync("git", ["grep", "-l", "-F", ...rel.flatMap((r) => ["-e", r]), "--", ".", ":!*.md"], { cwd: ROOT, encoding: "utf8" }).stdout.trim();
+    if (cited) done.push(`still cited by path from (pin to ${sha.slice(0, 8)}:<path> by hand):\n  ${cited.split("\n").join("\n  ")}`);
   } else {
     const trd = join(dir, "trd.md");
     if (existsSync(trd)) {

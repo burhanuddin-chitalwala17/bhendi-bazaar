@@ -69,11 +69,12 @@ describe("main-ready: a retired TRD's reasoning survives in decisions.md", () =>
 
   it("counts a range as every id inside it", () => {
     expect([...citedQIds("see Q3–Q5 and Q8")]).toEqual(["Q3", "Q4", "Q5", "Q8"]);
+    expect([...citedQIds("Q7–Q5")]).toEqual(["Q5", "Q6", "Q7"]);
   });
 
   it("leaves ids that belong to another log: parent, a named feature or domain, a link out of the folder", () => {
     const foreign = new Set(["shipping", "own-store"]);
-    const text = "parent Q30, Q31; (shipping Q32); own-store Q4; [listing](../spec.md) Q2, Q11; ours Q6";
+    const text = "parent Q30, Q31; parent's Q40; (shipping Q32); own-store Q4; [listing](../spec.md) Q2, Q11; ours Q6";
     expect([...citedQIds(text, foreign)]).toEqual(["Q6"]);
   });
 
@@ -87,8 +88,9 @@ describe("main-ready: a retired TRD's reasoning survives in decisions.md", () =>
     expect([...names].sort()).toEqual(["bulk-sheet", "own-store", "shipping"]);
   });
 
-  it("spec:status retires every file but spec.md and decisions.md", () => {
-    expect(retiredFiles(["spec.md", "decisions.md", "trd.md", "ux.md", "prototype.html", "spike.md"])).toEqual(["trd.md", "ux.md", "prototype.html", "spike.md"]);
+  it("spec:status retires every file and folder but spec.md, decisions.md and child specs", () => {
+    const entries = ["spec.md", "decisions.md", "trd.md", "ux.md", "prototype.html", "prototype", "variants"];
+    expect(retiredFiles(entries, (f: string) => f === "variants")).toEqual(["trd.md", "ux.md", "prototype.html", "prototype"]);
   });
 });
 
@@ -140,5 +142,15 @@ describe("main-ready against a commit, and the pre-push hook", () => {
     expect(blocked.stderr).not.toMatch(/no-verify/);
     expect(hook(planning, "refs/heads/feature").status).toBe(0);
     expect(hook(shipped, "refs/heads/main").status).toBe(0);
+    expect(hook("0".repeat(40), "refs/heads/main").status).toBe(0); // deleting a ref lands no tree
+  });
+
+  it("reads a non-ASCII path from a commit", () => {
+    write("docs/specs/café/spec.md", spec("Draft"));
+    git("add", "-A");
+    git("commit", "-qm", "accent");
+    const out = run("node", ["scripts/main-ready.mjs", "--rev", git("rev-parse", "HEAD")]);
+    expect(out.status).toBe(1);
+    expect(out.stderr).toMatch(/docs\/specs\/café\//);
   });
 });

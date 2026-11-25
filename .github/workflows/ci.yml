@@ -17,6 +17,23 @@ permissions:
   contents: read
 
 jobs:
+  # Only finished work merges to main (ADR-0084). PRs into main only: a feature branch carries its plans.
+  main-ready:
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22.x
+
+      # Node built-ins only, so no npm ci.
+      - name: Main holds only finished work
+        run: npm run check:main-ready
+
   # Every gate below starts at once and `deploy` waits for all of them. They used to run as one
   # chain (test → e2e → deploy → worker build), which made a push take 30–38 minutes.
   test:

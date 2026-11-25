@@ -16,8 +16,8 @@ said when a plan may reach main, so each merge brought some along.
 1. **Main holds code, the living docs (ARCHITECTURE, CONTRACTS, CONVENTIONS, OPERATIONS, BACKLOG and the rest),
    ADRs, and for each shipped feature its `spec.md` and `decisions.md` — nothing else from planning.** A spec
    folder is on main only when its Status ships (`ships()`, a Status beginning with Implemented).
-2. **Planning lives on the feature branch.** spec-start, ux-start, the TRD and the handoff are written and
-   committed there, and reach main only in the merge that ships the feature, already retired. A container
+2. **Planning lives on the feature branch.** spec-start, ux-start and the TRD are written and committed there,
+   as are handoff prompts if they are kept as files (`handoff/`, [ADR-0080](0080-planning-and-building-never-share-a-session.md)), and reach main only in the merge that ships the feature, already retired. A container
    folder with no `spec.md` may hold child spec folders and nothing else. No `handoff/` folder or other session
    notes on main.
 3. **Retiring keeps the reasoning.** `npm run spec:status -- <feature> Implemented` deletes every file in the
@@ -30,8 +30,9 @@ said when a plan may reach main, so each merge brought some along.
    - `npm run check:main-ready` (`scripts/main-ready.mjs`), not in the gate because a feature branch
      legitimately carries plans: fails, naming each offender and its fix, on `handoff/`, any spec folder whose
      Status does not ship, and any other file in a shipped folder. `/bb-sdlc pr-finish` runs it before a merge.
-   - `.githooks/pre-push` runs that check on the tree of each commit pushed to `refs/heads/main`, read with
-     `git ls-tree`/`git show`, so a push from any worktree is judged by what lands. `git push --no-verify`
+   - CI's `main-ready` job runs it on every pull request into `main`; the owner makes it a required check.
+   - `.githooks/pre-push` runs it on the tree of the tip pushed to `refs/heads/main`, read with
+     `git ls-tree`/`git show`, so a local push from any worktree is judged by what lands. `git push --no-verify`
      skips it; that is for an emergency the owner chooses, never a session's way round a refusal.
 5. The Q-id check is not in the gate: a shipped spec cites its parent's ids in prose (`(Q42)` after a link to
    the parent log) that no pattern tells apart from its own, and once the TRD is gone there is nothing left to
@@ -43,8 +44,9 @@ said when a plan may reach main, so each merge brought some along.
   long file, and sessions read the plan as current fact; plans also changed on two branches at once.
 - **A separate planning repository or a `planning` branch for all features.** Rejected: the plan and the code it
   plans would travel apart, and one long-lived branch collects every feature's conflicts.
-- **Enforce in CI on main only.** Rejected: CI runs after the push has landed; the hook refuses before it, and
-  the gate test keeps the always-true half honest on every branch.
+- **Enforce only in CI.** Rejected: a check on pushes to main runs after the push has landed, and a direct push
+  never meets the PR check. CI guards the GitHub merge, the hook the local push, and the gate test keeps the
+  always-true half honest on every branch.
 
 ## Consequences
 
@@ -52,6 +54,7 @@ said when a plan may reach main, so each merge brought some along.
 - ✅ A retired TRD cannot take a decision with it.
 - ⚠️ A plan is visible only on its branch; reading one means checking that branch out. What main held on
   2026-11-25 is kept on branch `planning-archive-2026-11-25`.
-- ⚠️ The hook is active only once `core.hooksPath` points at `.githooks` (`npm install`'s `prepare` sets it).
+- ⚠️ The hook is active only once `core.hooksPath` points at `.githooks` (`npm install`'s `prepare` sets it), and
+  the CI job blocks a merge only once branch protection requires it.
 - ⚠️ A programme parent whose Status does not ship cannot sit on main above its shipped children, though they
   cite its decisions; each such parent is the owner's call.

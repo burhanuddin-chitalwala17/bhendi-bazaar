@@ -7,7 +7,7 @@ import { whatsappSupportUrl } from "@/lib/support-contact";
 import { STORE_POLICIES_COPY } from "./support-copy";
 
 /**
- * The store's policies as one page of anchored sections (docs/specs/store-policies/). Every claim
+ * The store's policies as one page of anchored sections (`planning-archive-2026-11-25:docs/specs/store-policies/`). Every claim
  * here describes what the store does today; where there is no feature, it says how a person does it.
  */
 

@@ -1,6 +1,4 @@
-// main holds only finished work and the reasoning behind it (ADR-0084): a shipped spec folder keeps spec.md and
-// decisions.md, nothing unshipped and no session notes reach main. Self-contained, so the pre-push hook can run
-// the copy inside the commit it judges.
+// What main may not hold (ADR-0084). Self-contained, so the pre-push hook can run the copy inside the pushed commit.
 //
 //   npm run check:main-ready              judge the working tree
 //   node scripts/main-ready.mjs --rev <sha>  judge a commit's tree (what .githooks/pre-push runs)
@@ -30,13 +28,12 @@ export function citedQIds(text, foreignNames = new Set()) {
   const out = new Set();
   for (const m of text.matchAll(/\bQ\d+(?:\s*(?:,|–|-|and|or|&)\s*Q\d+)*\b/g)) {
     const before = text.slice(Math.max(0, m.index - 120), m.index);
-    if (/(?:\bparent|\]\(\.\.\/[^)]*\))[\s(]*$/i.test(before)) continue;
+    if (/(?:\bparent(?:'s)?|\]\(\.\.\/[^)]*\))[\s(]*$/i.test(before)) continue;
     const word = before.match(/([A-Za-z][\w-]*)[\s(]*$/)?.[1]?.toLowerCase();
     if (word && foreignNames.has(word)) continue;
     // A range cites every id inside it.
     for (const part of m[0].matchAll(/Q(\d+)(?:\s*[–-]\s*Q(\d+))?/g)) {
-      const from = Number(part[1]);
-      const to = part[2] ? Number(part[2]) : from;
+      const [from, to] = [Number(part[1]), Number(part[2] ?? part[1])].sort((a, b) => a - b);
       for (let n = from; n <= Math.min(to, from + 200); n++) out.add(`Q${n}`);
     }
   }
@@ -136,10 +133,11 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
   const cwd = git(process.cwd(), "rev-parse", "--show-toplevel").trim();
   const at = process.argv.indexOf("--rev");
   const rev = at >= 0 ? process.argv[at + 1] : null;
-  const lines = (s) => s.split("\n").filter(Boolean);
+  // -z: without it git quotes a non-ASCII path, which would then match nothing.
+  const entries = (s) => s.split("\0").filter(Boolean);
   const paths = rev
-    ? lines(git(cwd, "ls-tree", "-r", "--name-only", rev))
-    : lines(git(cwd, "ls-files", "--cached", "--others", "--exclude-standard")).filter((p) => existsSync(join(cwd, p)));
+    ? entries(git(cwd, "ls-tree", "-r", "-z", "--name-only", rev))
+    : entries(git(cwd, "ls-files", "-z", "--cached", "--others", "--exclude-standard")).filter((p) => existsSync(join(cwd, p)));
   const read = rev ? (p) => git(cwd, "show", `${rev}:${p}`) : (p) => readFileSync(join(cwd, p), "utf8");
   const offenders = findOffenders(paths, read);
   (offenders.length ? console.error : console.log)(report(offenders));
