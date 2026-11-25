@@ -120,6 +120,7 @@ describe("an overlay's surface is chosen, not inherited", () => {
     "src/components/shared/overlays/task-dialog.tsx": "Decision 2: the canvas pair.",
     "src/components/shared/overlays/form-dialog.tsx": "Decision 5: the short-form pair.",
     "src/components/shared/image-lightbox.tsx": "Decision 2: full-screen image viewer.",
+    "src/components/org/library-viewer.tsx": "Decision 2: full-screen image viewer (the Library's).",
     "src/components/shared/ShareDialog.tsx": "Decision 3: a non-form detail panel.",
     // Ratchet: these use raw DialogContent and should migrate to FormDialog.
     "src/components/org/brands-manager.tsx": "Ratchet: short form, wants FormDialog.",

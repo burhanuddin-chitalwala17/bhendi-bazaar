@@ -202,7 +202,9 @@ describe("the stored ceiling covers what the zoom asks for", () => {
 
   it("has no second spelling of the zoom cap in the components that zoom", () => {
     for (const file of [
-      "src/components/shared/image-lightbox.tsx",
+      // The zoom stage itself since viewer trd D7 extracted it; the lightbox and the Library
+      // viewer both render it, so neither can spell the cap a second time.
+      "src/components/shared/zoomable-image.tsx",
       "src/components/product/product-gallery.tsx",
     ]) {
       const source = readFileSync(file, "utf8");
