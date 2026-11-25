@@ -1,0 +1,23 @@
+docs/BACKLOG.md
+  s_9d5fa95bbe24d4::t_5d4806beefbc93 240
+docs/specs/media-library/bulk-actions/spec.md
+  s_9d5fa95bbe24d4::t_5d4806beefbc93 4
+docs/specs/README.md
+  s_9d5fa95bbe24d4::t_5d4806beefbc93 121
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "631d810f2719e2a96bcb3e0587c992cc3af4d307",
+  "prompts": {},
+  "sessions": {
+    "s_9d5fa95bbe24d4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f00ee551-450c-4171-b74f-9342da83f47a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
