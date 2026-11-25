@@ -1,0 +1,25 @@
+tests/integration/post-drafts.test.ts
+  s_c01598c08f8572::t_305ac43c26ddc7 1-155
+server/social/post.types.ts
+  s_c01598c08f8572::t_14aed51a95cd1e 1-50,54-55
+src/lib/validation/schemas/post.schema.ts
+  s_c01598c08f8572::t_89d46d09a35b9a 1-20,22-28
+server/social/post.service.ts
+  s_c01598c08f8572::t_eed080fa32c6b2 1-85,88-94,96-100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "b0f209b3ff15be7301cb10de05337187104fb48e",
+  "prompts": {},
+  "sessions": {
+    "s_c01598c08f8572": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "11eb770c-d5ee-4e39-97b6-7dab8baefa73",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
