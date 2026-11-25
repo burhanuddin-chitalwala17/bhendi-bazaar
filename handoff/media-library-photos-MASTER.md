@@ -1,8 +1,8 @@
 # Handoff — media-library photos feature (master)
 
-- **Updated:** 2026-11-25 — resumed on new account; bulk U1 done and merged
+- **Updated:** 2026-11-25 — bulk U2 done and merged
 - **Planning branch:** `claude/gracious-gates-l2b7u5` (this file)
-- **Status:** viewer and picker-filters Implemented and merged here. bulk U1 done (`159397ca`) and merged. bulk U2 next; U3 follows U2 (owner confirmed R2 CORS GET on 2026-11-25).
+- **Status:** viewer and picker-filters Implemented and merged here. bulk U1 (`159397ca`) and U2 (`6cbc01c6`) done and merged. bulk U3 next (owner confirmed R2 CORS GET on 2026-11-25).
 
 ## RESUME HERE (new account)
 
@@ -73,14 +73,14 @@ Each folder has spec.md, decisions.md, ux.md (prototype: https://claude.ai/artif
 | 2 | viewer U2 — sheet download | `claude/media-library-build` after 1 | same | done `69033278`, merged here | `session_01Kc21QWDFRJaaeEwD3Lgcq3` |
 | 3 | viewer U3 — full-screen slider | after 2 | same | done `d160044e` (viewer Implemented), merged here | `session_01Kc21QZLqA5dbdePyBT5SPm` |
 | 4 | bulk U1 — bulk routes | after 3 | same | done `159397ca`, merged here, gate re-run green by master | resumed on new account |
-| 5 | bulk U2 — zip builder, fflate, OPERATIONS CORS step | after 4 | same | waiting | — |
+| 5 | bulk U2 — zip builder, fflate, OPERATIONS CORS step | after 4 | same | done `6cbc01c6`, merged here, gate re-run green by master | new account |
 | 6 | bulk U3 — selection mode | after 5 **and** the owner's CORS change | same | waiting | — |
 | 7 | picker-filters U1 | `claude/gracious-gates-l2b7u5` | `claude/media-picker-filters` | done, pushed `9e24da09` (spec Implemented) | `session_01Kc21QZekBRwKqbeQZnEMFe` |
 
 ## Merged into this branch
 
 Each finished unit is merged here at the commit it finished on, the gate re-run, then pushed:
-viewer U1 `4676e522`, picker U1 `9e24da09`, viewer U2 `69033278`, viewer U3 `d160044e`, bulk U1 `159397ca`. On a conflict, take the unit's side
+viewer U1 `4676e522`, picker U1 `9e24da09`, viewer U2 `69033278`, viewer U3 `d160044e`, bulk U1 `159397ca`, bulk U2 `6cbc01c6`. On a conflict, take the unit's side
 of `Verified:` dates and run `npm run docs:index` for the generated counts.
 
 ## For bulk U3 (selection mode)
@@ -105,6 +105,10 @@ after it push on their own.
 ## Notes from bulk U1 for bulk U2
 
 See `handoff/media-library-bulk-actions-u1.md`: `downloadLinks` returns `{ files: [{ id, url, filename, bytes }], noFile, totalBytes }`; `bytes` may be null, so `buildZip` checks real sizes while streaming; links last 900 s; the 422 carries `totalBytes`/`limitBytes` in `details`.
+
+## Notes from bulk U2 for bulk U3
+
+See `handoff/media-library-bulk-actions-u2.md`. U3 calls `useLibraryZip(orgId, orgCode)`; outcomes `saved | noneFetched | nothingToZip | tooBig | error | cancelled`. U2 flagged states with no ux.md copy yet: `tooBig` with no size (limit hit mid-download), `deleted` items, `gone` items, `nothingToZip`.
 
 ## Notes from viewer U1 for viewer U2
 
