@@ -143,7 +143,7 @@ export const MEDIA_BULK_COPY = {
   tag: "Tag",
   retire: "Retire",
   cancel: "Cancel",
-  selectTile: "Select",
+  selectItem: (label: string) => `Select ${label}`,
   nothingSelected: "Select a picture first.",
   zipProgress: (done: number, total: number) => `Preparing your zip… ${done} of ${total} files`,
   zipDone: (n: number) => `Downloaded ${n} files`,

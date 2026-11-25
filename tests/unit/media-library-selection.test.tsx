@@ -195,8 +195,8 @@ describe("the bar's actions", () => {
     grid([...photos, item("v", { kind: "VIDEO" })]);
     selectAll(5);
     fireEvent.click(within(bar()).getByRole("button", { name: C.tag }));
-    const sheet = screen.getByRole("dialog");
-    expect(within(sheet).getByText(C.tagTitle(4))).toBeTruthy();
+    // Named on both surfaces: the sheet's heading on a phone, the popover's label from md.
+    const sheet = screen.getByRole("dialog", { name: C.tagTitle(4) });
     expect(within(sheet).getByText(C.tagNonPhotos(1))).toBeTruthy();
 
     const reference = within(sheet).getByRole("group", { name: MEDIA_GRID_COPY.tagLabel.REFERENCE });

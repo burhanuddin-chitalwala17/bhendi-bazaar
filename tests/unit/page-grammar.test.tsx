@@ -6,7 +6,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 let search = new URLSearchParams();
 vi.mock("next/navigation", () => ({
@@ -81,6 +81,28 @@ describe("SelectionBar", () => {
     expect(screen.getByText("2 selected")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
     expect(screen.getByRole("button", { name: "More actions" })).toBeTruthy();
+  });
+
+  it("stays with a hint when a screen's selection mode is on and nothing is picked yet", () => {
+    render(<SelectionBar count={0} hint="Tap rows to select them" actions={[{ label: "Archive", onClick: () => {} }]} onClear={() => {}} />);
+    expect(screen.getByText("Tap rows to select them")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Archive" })).toBeTruthy();
+  });
+
+  it("while busy, shows progress and only Cancel; the actions wait", () => {
+    const cancel = vi.fn();
+    render(
+      <SelectionBar
+        count={3}
+        busy={{ label: "Working 1 of 3", done: 1, total: 3, cancel: { label: "Cancel", onClick: cancel } }}
+        actions={[{ label: "Archive", onClick: () => {} }]}
+        onClear={() => {}}
+      />,
+    );
+    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("1");
+    expect(screen.queryByRole("button", { name: "Archive" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(cancel).toHaveBeenCalled();
   });
 });
 
