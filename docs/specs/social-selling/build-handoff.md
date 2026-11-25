@@ -23,9 +23,10 @@ before one that arrived is renamed later. The master keeps this file in its own 
 (`bhendi-bazaar-ss-master/`). Run vitest on Node 22 (the default Node 20 crashes it): `export PATH=$HOME/.nvm/versions/node/v22.23.3/bin:$PATH`. A unit took ~26 minutes; usage limits stop every lane at once — sessions push at
 green checkpoints and resume after the reset.
 
-**Running now (lane):** connect-whatsapp U1 (1), notifications-core U1 (3), inbox-core U1 (5), consent-core U3 (6),
-checkout-links U1 (7), whatsapp-sending U1 (8), post-composer U2 (4), instagram-publishing U1 (2), social-posts U1 (9),
-social-posts U3 (10). Sessions write commit messages with `git commit -F -`, never a shared temp file (one was
+**Running now (lane):** connect-whatsapp U1 (1), notifications-core U1 (3), consent-core U3 (6), checkout-links U1 (7),
+whatsapp-sending U1 (8), post-composer U2 (4), instagram-publishing U1 (2), social-posts U1 (9), social-posts U3 (10),
+inbox-core U2 (5), inbox-core U3 (11), inbox-instagram U1 (12), inbox-whatsapp U1 (13). A lane whose unit is on origin
+is removed (worktree, local branch, its Postgres); a new unit gets a fresh lane. Sessions write commit messages with `git commit -F -`, never a shared temp file (one was
 overwritten by another lane). Every TRD's Delivery lines carry `after …` marks — the next ready units are read from them.
 
 ## How the build runs
@@ -62,6 +63,7 @@ Do not start the next unit.
 | whatsapp-catalogue U1 | `whatsapp-catalogue unit 1: item builder and content hash` (5719a40f). Q15 (brand, condition sent; reversible) |
 | consent-core U1 | `consent-core unit 1: audience domain, contacts, consent log, projection and may [CONTRACT] [MIGRATION]` (5c0426f6) |
 | post-composer U1 | `post-composer unit 1: post model, drafts and version-checked autosave [CONTRACT] [MIGRATION]` (6d949b2b). Q15: stale autosave's 409 omits the newer draft (reversible) |
+| inbox-core U1 | `inbox-core unit 1: conversations and messages land from the sinks, sealed per shop [MIGRATION]` (d8198a91). Q17 per-table sequences, Q18 extra columns; unsent Instagram messages parked for the owner |
 | Planning | notification-hub and publishing units marked (7017d471); all remaining units marked, social-posts U4 added, connection-ready event in post-composer U3 (34f25c60) |
 | Process | ADRs renumbered 0084–0087; rebased on main; next units' dependencies marked in their TRDs |
 
