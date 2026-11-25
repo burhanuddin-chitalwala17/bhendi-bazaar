@@ -3,7 +3,10 @@
  * dialog read as connect-instagram ux.md wrote them (spec A1, A3, A4, A6, A8; R6, R7, R11, R12).
  */
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { toast } from "sonner";
+import { channelsApiClient } from "@/components/channel/channelsApiClient";
+import { INSTAGRAM_RESULT_NOTE } from "@/components/channel/channel-copy";
 
 import { InstagramCard } from "@/components/channel/instagram-card";
 import { InstagramResultNote } from "@/components/channel/connect-result-note";
@@ -211,6 +214,57 @@ describe("the return note from Instagram (A1, A3, A4)", () => {
     note(result);
     expect(screen.getByText(text)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: action })).toBeInTheDocument();
+  });
+});
+
+describe("every Instagram return note reads as ux.md wrote it (A8)", () => {
+  it.each([
+    [CONNECT_RESULT.CONNECTED, "Instagram connected. Next: turn on replies, so you can answer DMs from here.", "Turn on replies"],
+    [CONNECT_RESULT.CANCELLED, "Nothing was connected. You can connect Instagram any time.", "Connect Instagram"],
+    [CONNECT_RESULT.EXPIRED, "That link has expired. Start again from here.", "Connect Instagram"],
+    [CONNECT_RESULT.OTHER_SESSION, "That link has expired. Start again from here.", "Connect Instagram"],
+    [CONNECT_RESULT.UNREACHABLE, "Instagram didn't respond. Nothing was connected. Try again in a minute.", "Try again"],
+    [CONNECT_RESULT.DIFFERENT_ACCOUNT, "That's a different Instagram account from the one connected here. To switch, disconnect this one first, then connect the new one.", "Disconnect"],
+    [CONNECT_RESULT.OTHER_SHOP, "This Instagram account is already connected to another shop. An account can belong to one shop only; disconnect it there first.", null],
+    [CONNECT_RESULT.UNAVAILABLE, "Connecting Instagram isn't open yet. We'll show it here when it is.", null],
+    [CONNECT_RESULT.FULL, "Connecting Instagram isn't open yet. We'll show it here when it is.", null],
+  ] as const)("%s", (result, text, action) => {
+    render(<InstagramResultNote orgId="org_1" result={result} />);
+    expect(screen.getByRole("status")).toHaveTextContent(text);
+    const controls = [...screen.queryAllByRole("link"), ...screen.queryAllByRole("button")].map((el) => el.textContent);
+    expect(controls).toEqual(action ? [action] : []);
+  });
+
+  it("covers every outcome the callback can produce", () => {
+    for (const result of Object.values(CONNECT_RESULT)) expect(INSTAGRAM_RESULT_NOTE[result].text.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Connecting and Check now (ux.md Slow, Stale)", () => {
+  it("Connect shows Opening Instagram…, then Still working… after 3 s", () => {
+    vi.useFakeTimers();
+    try {
+      card(notConnected);
+      const link = screen.getByRole("link", { name: "Connect Instagram" });
+      link.addEventListener("click", (event) => event.preventDefault());
+      fireEvent.click(link);
+      expect(link).toHaveTextContent("Opening Instagram…");
+      expect(link).not.toHaveTextContent("Still working…");
+      act(() => vi.advanceTimersByTime(3000));
+      expect(link).toHaveTextContent("Opening Instagram… Still working…");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("Check now answers Checked just now. All good.", async () => {
+    const checkNow = vi.spyOn(channelsApiClient, "checkNow").mockResolvedValue({ result: "ok" });
+    const success = vi.spyOn(toast, "success").mockImplementation(() => "t");
+    card(connected({ stale: true, lastCheckedAt: new Date(Date.now() - 3 * 86_400_000).toISOString() }));
+    fireEvent.click(screen.getByRole("button", { name: "Check now" }));
+    await waitFor(() => expect(success).toHaveBeenCalledWith("Checked just now. All good."));
+    expect(checkNow).toHaveBeenCalledWith("org_1", "instagram");
+    vi.restoreAllMocks();
   });
 });
 

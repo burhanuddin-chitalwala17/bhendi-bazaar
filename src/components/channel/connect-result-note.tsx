@@ -46,12 +46,9 @@ export function ConnectResultNote({ orgId, channel, label, result }: ConnectResu
   const note = RESULT_NOTE[result];
   const [disconnectOpen, setDisconnectOpen] = useState(false);
 
+  useForgetResult();
   useEffect(() => {
     if (note.tone === "success") toast.success(note.text(label));
-    const url = new URL(window.location.href);
-    url.searchParams.delete("result");
-    url.searchParams.delete("channel");
-    window.history.replaceState(window.history.state, "", url.toString());
   }, [note, label]);
 
   if (note.tone === "success") return null;

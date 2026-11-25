@@ -13,6 +13,7 @@ import { FeedToggle } from "./feed-toggle";
 import { PlannedChannelWhy } from "./planned-channel-why";
 import { MarketplaceCard } from "./marketplace-card";
 import { InstagramCard } from "./instagram-card";
+import { SOCIAL_PLATFORM } from "@server/channels/social/types";
 import { channelMark } from "./channel-mark";
 import { PlatformMark } from "@/components/ui/icons/platform-marks";
 
@@ -49,7 +50,7 @@ const GRID = "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3";
 export function ChannelCardList({ orgId, cards, storePath, storeLabel, channelsHeld = true, instagram = null }: ChannelCardListProps) {
   const live = cards.filter((card) => card.state !== CARD_STATE.UNAVAILABLE);
   const soon = cards.filter((card) => card.state === CARD_STATE.UNAVAILABLE);
-  const planned = PLANNED_CHANNELS.filter((channel) => !(channel === "instagram" && instagram));
+  const planned = PLANNED_CHANNELS.filter((channel) => !(channel === SOCIAL_PLATFORM.INSTAGRAM && instagram));
 
   return (
     <div className="space-y-8">

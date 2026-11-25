@@ -177,13 +177,17 @@ describe.skipIf(!isDisposableDb)("Instagram card (local db)", () => {
     expect((await prisma.channelConnection.findUniqueOrThrow({ where: { id } })).messagesOffAt).toBeNull();
   });
 
-  it("Q4: connecting the same account again keeps its message access; another account after a disconnect starts over", async () => {
+  it("Q4, Q19: the same account again, even after a disconnect, keeps its message access; another account starts over", async () => {
     const id = await connect();
     await messageIn(id, new Date());
     await connect();
     expect(await steps()).toEqual(["connect:done", "replies:done", "first_post:next", "comment_dm:todo"]);
 
     const { instagramConnectionService } = await import("@server/channels/instagram-connection.service");
+    await instagramConnectionService(await graph(business())).disconnect(orgId, userId);
+    await connect();
+    expect(await steps()).toEqual(["connect:done", "replies:done", "first_post:next", "comment_dm:todo"]);
+
     await instagramConnectionService(await graph(business())).disconnect(orgId, userId);
     await connect(business("zarahijab", `${IG_ID}9`));
     expect(await card()).toMatchObject({ username: "zarahijab" });

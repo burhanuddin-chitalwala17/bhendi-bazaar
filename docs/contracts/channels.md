@@ -70,7 +70,7 @@ and no account id. `POST /api/org/[orgId]/channels/instagram/replies` (no body) 
 `{ ok: true }`, or 404 in the envelope when nothing is connected.
 
 `CONNECT_RESULT` is a closed set (connected, cancelled, expired, other_session, other_shop,
-different_account, unreachable, full, unavailable); a client renders each with ux.md's copy and
+different_account, unreachable, full, unavailable, and since connect-instagram unit 1 personal); a client renders each with ux.md's copy and
 nothing else. Google and Meta still turn on and off through `PUT /api/org/[orgId]/channels` above; since channel-connectors that schema accepts only `google` and `meta`, because a marketplace is on only by connecting it (D11).
 
 ## Marketplace listings
