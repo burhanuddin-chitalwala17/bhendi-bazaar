@@ -45,13 +45,17 @@ describe.skipIf(!isDisposableDb)("WhatsApp sign-up (local db)", () => {
     vi.stubEnv("META_SIGNUP_CONFIG_ID", "1000000003");
     vi.stubEnv("META_WEBHOOK_VERIFY_TOKEN", "whatsapp-signup-verify-token");
     vi.stubEnv("HOME_BRAND_ORG_ID", orgId);
+  });
+
+  /** The other shop holds Social selling; set where it is needed, since another suite may take it away. */
+  const otherHoldsSocial = async () => {
     const { prisma } = await import("@server/shared/prisma");
     await prisma.orgFeature.upsert({
       where: { orgId_feature: { orgId: otherOrgId, feature: "social_selling" } },
       create: { orgId: otherOrgId, feature: "social_selling", enabled: true },
       update: { enabled: true },
     });
-  });
+  };
 
   afterEach(async () => {
     const { prisma } = await import("@server/shared/prisma");
@@ -174,6 +178,7 @@ describe.skipIf(!isDisposableDb)("WhatsApp sign-up (local db)", () => {
   });
 
   it("A4: a number another shop holds is refused, and nothing is stored for this shop", async () => {
+    await otherHoldsSocial();
     const wa = await service(meta());
     expect(await wa.complete(await attempt(wa, otherOrgId), result())).toBe("connected");
     expect(await wa.complete(await attempt(wa, orgId), result())).toBe("other_shop");
