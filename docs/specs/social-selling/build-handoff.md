@@ -23,7 +23,8 @@ one unit (Delivery <n>: <description>). Failing test per acceptance id first; mu
 `npm run gate` (stop after two identical failures and report); integration tests need Postgres: `service postgresql start`,
 `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/bhendi_bazaar_dev npx prisma migrate deploy`, then
 `npm run test:integration`; /bb-review in a fresh subagent, fix its findings. Commit subjects `<area>: <what changed>`,
-trailer `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; push to origin meta-whatsapp-connector. Never merge
+trailer `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; push to origin meta-whatsapp-connector, also at each green
+checkpoint as `<unit> (wip): <what>`, so a usage-limit stop never loses work. Never merge
 into main, never touch inappnotification, never force-push. Then update docs/specs/social-selling/build-handoff.md
 (move the unit to Done with its commit, note any blocker), commit and push it. Finish with a report under 150 words.
 Do not start the next unit.
@@ -73,6 +74,8 @@ the four subfeatures above only.
 
 ## Blockers raised by build sessions
 
+- 2026-11-24 19:50 UTC: the U3 session hit the account's 5-hour usage limit before pushing anything; resumed
+  2026-11-25 04:30 UTC after the reset. A stopped session is resumed with a message, not restarted.
 - (Not this feature.) The U2 session holds two local commits for `main` (push settings, CLAUDE.md); the repo's
   deny rule refuses a push to `main`, so the owner pushes those or merges them by PR. Both are already on this
   branch as 111f5652 and 0c696196.
