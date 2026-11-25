@@ -100,6 +100,7 @@ describe.skipIf(!isDisposableDb)("Instagram card (local db)", () => {
         productRetailerId: null,
         referral: null,
         unsupportedLabel: null,
+        coordinates: null,
       },
     ]);
   }

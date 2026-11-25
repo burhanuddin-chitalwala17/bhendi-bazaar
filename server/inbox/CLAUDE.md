@@ -16,6 +16,8 @@ A shop's conversations on its social platforms, and every message in them: what 
 - **Platform time orders a thread** (hazard: late delivery). A message's `sentAt` is when it happened; only one at least as new as the newest moves the preview and the unread flag.
 - **A status only raises a row** (D2): `STATE_RANK` in `inbox.types.ts`, applied in one conditional statement scoped to the shop.
 - **Bodies and previews are sealed before they are written** (A-D12), bound to their own row (`Message` / `Conversation`). No file outside this domain names a sealed column, and no log or `admin.*` file here does: `tests/unit/sealed-columns.test.ts`.
+- **A cart's and a location's body is sealed JSON, not words** (`STRUCTURED_KINDS`, `LocationBody` in `message-rows.ts`; inbox-whatsapp Q12): the list names them by kind, never by a preview.
+- **A person's new id moves their DM thread in place** (`person-rekeyed`, inbox-whatsapp D1), unless a thread already holds the new id.
 - **Every write takes a fresh `changeSeq`** from its table's sequence (A-D14, decisions Q17); a message's change also bumps its conversation, so the list's cursor sees every change.
 
 ## Structure

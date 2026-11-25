@@ -85,6 +85,22 @@ export const conversationRepository = {
     await bump(tx, id);
   },
 
+  /**
+   * Moves a DM thread to the person's new key, unless one already holds it (inbox-whatsapp D1, Q12): a
+   * message under the new id handled before Meta's notice leaves two threads, both readable.
+   */
+  async rekey(tx: Tx, change: { orgId: string; platform: string; from: string; to: string; personKey: string }): Promise<void> {
+    await tx.$executeRaw`
+      UPDATE "Conversation"
+      SET "threadKey" = ${change.to}, "personKey" = ${change.personKey},
+          "changeSeq" = nextval('"Conversation_changeSeq_seq"'), "updatedAt" = timezone('UTC', now())
+      WHERE "orgId" = ${change.orgId} AND "platform" = ${change.platform} AND "threadKey" = ${change.from}
+        AND NOT EXISTS (
+          SELECT 1 FROM "Conversation" c
+          WHERE c."orgId" = ${change.orgId} AND c."platform" = ${change.platform} AND c."threadKey" = ${change.to}
+        )`;
+  },
+
   /** Something in the thread changed without a new message (a status, a reaction, an edit). */
   async touched(tx: Tx, ids: readonly string[]): Promise<void> {
     for (const id of new Set(ids)) await bump(tx, id);

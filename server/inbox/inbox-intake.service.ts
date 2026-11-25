@@ -16,7 +16,7 @@ import {
   type MessageState,
 } from "./inbox.types";
 import { messageRepository, type NewMessage } from "./message.repository";
-import { messageRows, previewOf } from "./message-rows";
+import { messageRows, previewOf, STRUCTURED_KINDS } from "./message-rows";
 
 /**
  * Facts become conversations and messages (social-selling inbox-core D2). Each fact lands in one
@@ -106,8 +106,8 @@ async function land(orgId: string, landing: Landing): Promise<void> {
     if (!landing.isArrival) return conversationRepository.touched(tx, [conversationId]);
     const last = rows.findLastIndex((row) => written.has(row.id));
     const newest = rows[last];
-    // A cart's body is its items; the list names it by its kind instead.
-    const text = newest.kind === INBOX_MESSAGE_KIND.CART ? null : previewOf(landing.drafts[last].text, PREVIEW_CHARS);
+    // A cart's or a location's body is a structure; the list names it by its kind instead.
+    const text = STRUCTURED_KINDS.has(newest.kind) ? null : previewOf(landing.drafts[last].text, PREVIEW_CHARS);
     await conversationRepository.arrived(tx, conversationId, {
       at: landing.key.at,
       inbound: landing.inbound,
@@ -226,6 +226,20 @@ export const inboxIntake = {
         state: ours ? MESSAGE_STATE.SENT : null,
         drafts: [{ part: "", kind: INBOX_MESSAGE_KIND.TEXT, label: null, text: fact.text, attachmentRef: null }],
       });
+    }
+  },
+
+  /**
+   * Meta gave the person a new id (inbox-whatsapp D1): their thread is re-keyed in place, so what follows
+   * lands in it. A thread already under the new id is left as it is; both stay readable.
+   */
+  async rekeys(facts: ReadonlyArray<FactOf<"person-rekeyed">>): Promise<void> {
+    const owner = await ownersOf(facts);
+    for (const fact of facts) {
+      const { orgId } = owner(fact.connectionId);
+      await prisma.$transaction((tx) =>
+        conversationRepository.rekey(tx, { orgId, platform: fact.platform, from: `dm:${fact.previousKey}`, to: `dm:${fact.personKey}`, personKey: fact.personKey }),
+      );
     }
   },
 

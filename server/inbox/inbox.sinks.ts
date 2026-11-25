@@ -16,3 +16,4 @@ registerSink({ name: "inbox.reaction", kind: FACT_KIND.REACTION, order: FIRST, h
 registerSink({ name: "inbox.message-edit", kind: FACT_KIND.MESSAGE_EDIT, order: FIRST, handle: (facts) => inboxIntake.edits(facts) });
 registerSink({ name: "inbox.comment", kind: FACT_KIND.COMMENT, order: FIRST, handle: (facts) => inboxIntake.comments(facts) });
 registerSink({ name: "inbox.cart-order", kind: FACT_KIND.CART_ORDER, order: FIRST, handle: (facts) => inboxIntake.carts(facts) });
+registerSink({ name: "inbox.person-rekeyed", kind: FACT_KIND.PERSON_REKEYED, order: FIRST, handle: (facts) => inboxIntake.rekeys(facts) });

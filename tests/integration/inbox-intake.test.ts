@@ -75,6 +75,7 @@ describe.skipIf(!isDisposableDb)("inbox intake (local db)", () => {
     productRetailerId: null,
     referral: null,
     unsupportedLabel: null,
+    coordinates: null,
     ...over,
   });
 

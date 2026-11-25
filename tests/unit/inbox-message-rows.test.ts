@@ -7,7 +7,7 @@ const fact = (over: Partial<FactOf<"inbound-message">>): FactOf<"inbound-message
   kind: "inbound-message", key: "k", connectionId: "c", platform: "instagram", occurredAt: new Date(0),
   personKey: "p", personScopedId: null, personName: null, personHandle: null, personPhone: null,
   messageId: "m", messageKind: "text", text: null, attachments: [], replyTo: null, buttonPayload: null,
-  storyRef: null, productRetailerId: null, referral: null, unsupportedLabel: null, ...over,
+  storyRef: null, productRetailerId: null, referral: null, unsupportedLabel: null, coordinates: null, ...over,
 });
 const file = (ref: string, caption: string | null = null) => ({ ref, mimeType: null, caption, fileName: null });
 

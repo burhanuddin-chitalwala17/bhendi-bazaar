@@ -19,6 +19,8 @@ export const FACT_KIND = {
   CONTACT_CHANGE: "contact-change",
   TEMPLATE_STATUS: "template-status",
   ACCOUNT_UPDATE: "account-update",
+  /** Meta gave the person a new business-scoped id (WhatsApp `user_changed_user_id`). */
+  PERSON_REKEYED: "person-rekeyed",
 } as const;
 export type FactKind = (typeof FACT_KIND)[keyof typeof FACT_KIND];
 
@@ -124,6 +126,8 @@ const messageBody = {
   referral: z.string().nullable(),
   /** What the platform could not show us, named (inbox-core R8). */
   unsupportedLabel: z.string().nullable(),
+  /** Where a shared location points, so a thread can open it in Maps (inbox-whatsapp R6). */
+  coordinates: z.object({ latitude: z.number(), longitude: z.number() }).nullable(),
 };
 
 export const inboundMessage = z.object({ kind: z.literal(FACT_KIND.INBOUND_MESSAGE), ...base, ...person, ...messageBody });
@@ -206,6 +210,14 @@ export const accountUpdate = z.object({
   detail: z.string().nullable(),
 });
 
+/** The person's key changed; their threads follow them (inbox-whatsapp D1, parent Q96). */
+export const personRekeyed = z.object({
+  kind: z.literal(FACT_KIND.PERSON_REKEYED),
+  ...base,
+  previousKey: z.string(),
+  personKey: z.string(),
+});
+
 export const socialFact = z.discriminatedUnion("kind", [
   inboundMessage,
   outboundEcho,
@@ -218,6 +230,7 @@ export const socialFact = z.discriminatedUnion("kind", [
   contactChange,
   templateStatus,
   accountUpdate,
+  personRekeyed,
 ]);
 export type SocialFact = z.infer<typeof socialFact>;
 export type FactOf<K extends FactKind> = Extract<SocialFact, { kind: K }>;

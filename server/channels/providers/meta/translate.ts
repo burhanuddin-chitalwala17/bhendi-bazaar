@@ -54,6 +54,7 @@ interface Body {
   productRetailerId: string | null;
   referral: string | null;
   unsupportedLabel: string | null;
+  coordinates: { latitude: number; longitude: number } | null;
 }
 
 const body = (messageKind: MessageKind, fields: Partial<Omit<Body, "messageKind">> = {}): Body => ({
@@ -66,6 +67,7 @@ const body = (messageKind: MessageKind, fields: Partial<Omit<Body, "messageKind"
   productRetailerId: null,
   referral: null,
   unsupportedLabel: null,
+  coordinates: null,
   ...fields,
 });
 
@@ -142,8 +144,9 @@ function whatsappPerson(message: Obj, contacts: unknown, side: "from" | "to") {
   const contact = arr(contacts)
     .map(obj)
     .find((c) => c && ((raw && c.wa_id === raw) || (scopedId && c.user_id === scopedId)));
+  // Keyed by the scoped id where Meta gives one, else the number in E.164 (inbox-whatsapp D1).
   return {
-    personKey: scopedId ?? raw ?? "unknown",
+    personKey: scopedId ?? digits(raw) ?? raw ?? "unknown",
     personScopedId: scopedId,
     personName: str(obj(contact?.profile)?.name),
     personHandle: str(obj(contact?.profile)?.username),
@@ -173,7 +176,13 @@ function whatsappBody(message: Obj): Body {
   }
   if (type === "location") {
     const l = obj(message.location);
-    return body(MESSAGE_KIND.LOCATION, { ...shared, text: [str(l?.name), str(l?.address)].filter(Boolean).join(", ") || null });
+    const latitude = num(l?.latitude);
+    const longitude = num(l?.longitude);
+    return body(MESSAGE_KIND.LOCATION, {
+      ...shared,
+      text: [str(l?.name), str(l?.address)].filter(Boolean).join(", ") || null,
+      coordinates: latitude !== null && longitude !== null ? { latitude, longitude } : null,
+    });
   }
   if (type === "contacts") return body(MESSAGE_KIND.CONTACTS, shared);
   if (type === "interactive") {
@@ -188,6 +197,18 @@ function whatsappBody(message: Obj): Body {
     return body(MESSAGE_KIND.BUTTON, { ...shared, text: str(b?.text), buttonPayload: str(b?.payload) });
   }
   return body(MESSAGE_KIND.UNSUPPORTED, { ...shared, unsupportedLabel: UNSUPPORTED_LABELS[type] ?? UNSUPPORTED_LABELS.unsupported });
+}
+
+/**
+ * The person's new business-scoped id (`user_changed_user_id`, INTEGRATIONS): their threads are re-keyed
+ * in place. Any other system notice changes nothing we hold.
+ */
+function rekeyed(event: StoredEvent, message: Obj, previousKey: string, base: { connectionId: string; platform: SocialPlatform; occurredAt: Date }): SocialFact[] {
+  const system = obj(message.system);
+  if (str(system?.type) !== "user_changed_user_id") return [];
+  const personKey = str(system?.user_id) ?? str(system?.new_user_id);
+  if (!personKey || personKey === previousKey || previousKey === "unknown") return [];
+  return [{ kind: FACT_KIND.PERSON_REKEYED, key: event.key, ...base, previousKey, personKey }];
 }
 
 function translateWhatsApp(event: StoredEvent): SocialFact[] {
@@ -215,7 +236,7 @@ function translateWhatsApp(event: StoredEvent): SocialFact[] {
         });
       return [{ kind: FACT_KIND.CART_ORDER, key: event.key, ...base, ...person, messageId, catalogueId: str(order?.catalog_id), note: str(order?.text), items }];
     }
-    if (type === "system") return [];
+    if (type === "system") return rekeyed(event, message, person.personKey, base);
     return [{ kind: FACT_KIND.INBOUND_MESSAGE, key: event.key, ...base, ...person, messageId, ...whatsappBody(message) }];
   }
 
@@ -232,7 +253,7 @@ function translateWhatsApp(event: StoredEvent): SocialFact[] {
         ...base,
         messageId: str(status.id) ?? "",
         status: mapped,
-        recipientKey: str(status.recipient_user_id) ?? str(status.recipient_id),
+        recipientKey: str(status.recipient_user_id) ?? digits(str(status.recipient_id)) ?? str(status.recipient_id),
         callbackRef: str(status.biz_opaque_callback_data),
         errorCode: num(obj(arr(status.errors)[0])?.code),
         pricingCategory: pricing ? PRICING[str(pricing.category) ?? ""] ?? PRICING_CATEGORY.OTHER : null,
@@ -250,6 +271,8 @@ function translateWhatsApp(event: StoredEvent): SocialFact[] {
         kind: FACT_KIND.OUTBOUND_ECHO,
         key: keyOf(event, index),
         ...base,
+        // Each echo carries its own time; the delivery's would misorder a thread (spec hazard: crossing replies).
+        occurredAt: toDate(echo.timestamp) ?? event.occurredAt,
         ...whatsappPerson(echo, payload.contacts, "to"),
         messageId: str(echo.id) ?? keyOf(event, index),
         ...whatsappBody(echo),

@@ -13,7 +13,7 @@ const contacts = [{ profile: { name: "Ayesha" }, wa_id: "919811111111" }];
 describe("WhatsApp into facts", () => {
   it("a text message names its sender and number, and parses as a fact", () => {
     const [fact] = translateEvent(whatsapp("messages", { contacts, message: { id: "wamid.A", from: "919811111111", type: "text", text: { body: "hi" } } }));
-    expect(fact).toMatchObject({ kind: FACT_KIND.INBOUND_MESSAGE, messageKind: MESSAGE_KIND.TEXT, text: "hi", personKey: "919811111111", personName: "Ayesha", personPhone: "+919811111111" });
+    expect(fact).toMatchObject({ kind: FACT_KIND.INBOUND_MESSAGE, messageKind: MESSAGE_KIND.TEXT, text: "hi", personKey: "+919811111111", personName: "Ayesha", personPhone: "+919811111111" });
     expect(socialFact.safeParse(fact).success).toBe(true);
   });
 
@@ -64,7 +64,7 @@ describe("WhatsApp into facts", () => {
     expect(fact).toMatchObject({
       kind: FACT_KIND.MESSAGE_STATUS,
       status: "delivered",
-      recipientKey: "919811111111",
+      recipientKey: "+919811111111",
       callbackRef: "send-row-1",
       pricingCategory: "marketing",
       billable: true,
@@ -100,7 +100,7 @@ describe("WhatsApp into facts", () => {
 
   it("an echo from the shop's own app is outbound, to the person", () => {
     const [fact] = translateEvent(whatsapp("smb_message_echoes", { message_echoes: [{ id: "e1", from: "919800000000", to: "919811111111", type: "text", text: { body: "Sure" } }] }));
-    expect(fact).toMatchObject({ kind: FACT_KIND.OUTBOUND_ECHO, personKey: "919811111111", text: "Sure" });
+    expect(fact).toMatchObject({ kind: FACT_KIND.OUTBOUND_ECHO, personKey: "+919811111111", text: "Sure" });
   });
 
   it("a click-to-WhatsApp ad's referral and a form reply are kept", () => {

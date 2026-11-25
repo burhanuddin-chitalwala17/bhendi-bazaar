@@ -1,6 +1,6 @@
 # Decisions — social-selling/inbox-whatsapp
 
-- **Verified:** 2026-11-21
+- **Verified:** 2026-11-25
 
 > Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented
 > ones
@@ -13,6 +13,7 @@
 |---|---|---|---|---|---|---|
 | Q1 | Which WhatsApp events reach the inbox, and what does a thread show? | Inbound messages (`messages`), the shop's own sends from the Business app (`smb_message_echoes`) and statuses for messages sent from the inbox. The shop's messages show Sent, Delivered, Read or Failed; a template is stored rendered with its values, so the thread reads as the person saw it. Group chats never appear: the Cloud API does not deliver them | Claude · reversible | 2026-11-06 | What a two-way chat needs; contacts sync is whatsapp-contacts' | decided |
 | Q9 | How is the person shown? | The name WhatsApp gives (profile name), with the number formatted when Meta gives it; otherwise the username, the person being keyed by Meta's business-scoped id (parent Q96). A number is contact data (ADR-0024) | Claude · reversible | 2026-11-21 | Meta may withhold the number. was: the profile name and the number, always | decided |
+| Q12 | What does unit 1 add to land WhatsApp's messages? | A new fact `person-rekeyed` (shared `social-events`) from the `user_changed_user_id` system message, which the inbox applies by moving the DM thread to the new key in place; when a thread already holds the new key both are left as they are, readable. A WhatsApp number used as a key is in E.164, as consent-core keys it. A location keeps its point (`coordinates` on the message fact) and its row's sealed body is JSON `{ place, latitude, longitude }`, named by its kind in the list like a cart, so a thread can open it in Maps (R6, ux journey 6). An echo takes its own timestamp, not the delivery's, so crossing replies sort true. Statuses that arrive before their row stay unit 2's (D2) | Claude · reversible | 2026-11-25 | Each keeps what arrived instead of dropping it; a merge of two threads is a person's history rewritten and waits for a case that needs it. Inbox-core's unit 2 reader must decode a `LOCATION` body as JSON. Not done: a number-keyed thread is not joined when the same person later arrives with a scoped id (Meta sends the id on every message since 31 March 2026, so such threads are rare); no WhatsApp thread exists outside test databases yet, so the move to E.164 keys needs no data migration | implemented (unit 1) |
 
 ## Parked (Later)
 None.

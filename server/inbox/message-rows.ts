@@ -50,6 +50,16 @@ export interface MessageRow {
   attachmentRef: string | null;
 }
 
+/** A `LOCATION` row's sealed body. */
+export interface LocationBody {
+  place: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+/** Kinds whose sealed body is a structure, not words: a list row names them by kind instead of a preview. */
+export const STRUCTURED_KINDS: ReadonlySet<InboxMessageKind> = new Set([INBOX_MESSAGE_KIND.CART, INBOX_MESSAGE_KIND.LOCATION]);
+
 type MessageFact = FactOf<"inbound-message"> | FactOf<"outbound-echo">;
 
 export function messageRows(fact: MessageFact): MessageRow[] {
@@ -57,6 +67,11 @@ export function messageRows(fact: MessageFact): MessageRow[] {
   if (!kind) {
     const label = NAMED[fact.messageKind] ?? fact.unsupportedLabel ?? NAMED_LINE.UNKNOWN;
     return [{ part: "", kind: INBOX_MESSAGE_KIND.UNSUPPORTED, label, text: fact.text, attachmentRef: null }];
+  }
+  if (kind === INBOX_MESSAGE_KIND.LOCATION) {
+    // Sealed as one body, so the thread can name the place and open its point in Maps (inbox-whatsapp R6, Q12).
+    const body: LocationBody = { place: fact.text, latitude: fact.coordinates?.latitude ?? null, longitude: fact.coordinates?.longitude ?? null };
+    return [{ part: "", kind, label: null, text: JSON.stringify(body), attachmentRef: null }];
   }
   if (!FILE_KINDS.has(kind) || fact.attachments.length === 0) {
     return [{ part: "", kind, label: null, text: fact.text, attachmentRef: null }];
