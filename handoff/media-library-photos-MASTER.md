@@ -1,8 +1,8 @@
 # Handoff — media-library photos feature (master)
 
-- **Updated:** 2026-11-25 — bulk U2 done and merged
+- **Updated:** 2026-11-25 — all units built and merged; waiting on the owner's phone walk
 - **Planning branch:** `claude/gracious-gates-l2b7u5` (this file)
-- **Status:** viewer and picker-filters Implemented and merged here. bulk U1 (`159397ca`) and U2 (`6cbc01c6`) done and merged. bulk U3 next (owner confirmed R2 CORS GET on 2026-11-25).
+- **Status:** viewer and picker-filters Implemented and merged here. bulk U1 (`159397ca`), U2 (`6cbc01c6`) and U3 (`1a015fe3`) done and merged. Next: owner's phone walk, then `/bb-sdlc pr-finish` (owner confirmed R2 CORS GET on 2026-11-25).
 
 ## RESUME HERE (new account)
 
@@ -74,13 +74,13 @@ Each folder has spec.md, decisions.md, ux.md (prototype: https://claude.ai/artif
 | 3 | viewer U3 — full-screen slider | after 2 | same | done `d160044e` (viewer Implemented), merged here | `session_01Kc21QZLqA5dbdePyBT5SPm` |
 | 4 | bulk U1 — bulk routes | after 3 | same | done `159397ca`, merged here, gate re-run green by master | resumed on new account |
 | 5 | bulk U2 — zip builder, fflate, OPERATIONS CORS step | after 4 | same | done `6cbc01c6`, merged here, gate re-run green by master | new account |
-| 6 | bulk U3 — selection mode | after 5 **and** the owner's CORS change | same | waiting | — |
+| 6 | bulk U3 — selection mode | after 5 **and** the owner's CORS change | same | done `1a015fe3`, merged here, gate and integration re-run green by master | new account |
 | 7 | picker-filters U1 | `claude/gracious-gates-l2b7u5` | `claude/media-picker-filters` | done, pushed `9e24da09` (spec Implemented) | `session_01Kc21QZekBRwKqbeQZnEMFe` |
 
 ## Merged into this branch
 
 Each finished unit is merged here at the commit it finished on, the gate re-run, then pushed:
-viewer U1 `4676e522`, picker U1 `9e24da09`, viewer U2 `69033278`, viewer U3 `d160044e`, bulk U1 `159397ca`, bulk U2 `6cbc01c6`. On a conflict, take the unit's side
+viewer U1 `4676e522`, picker U1 `9e24da09`, viewer U2 `69033278`, viewer U3 `d160044e`, bulk U1 `159397ca`, bulk U2 `6cbc01c6`, bulk U3 `1a015fe3`. On a conflict, take the unit's side
 of `Verified:` dates and run `npm run docs:index` for the generated counts.
 
 ## For bulk U3 (selection mode)
@@ -105,6 +105,12 @@ after it push on their own.
 ## Notes from bulk U1 for bulk U2
 
 See `handoff/media-library-bulk-actions-u1.md`: `downloadLinks` returns `{ files: [{ id, url, filename, bytes }], noFile, totalBytes }`; `bytes` may be null, so `buildZip` checks real sizes while streaming; links last 900 s; the 422 carries `totalBytes`/`limitBytes` in `details`.
+
+## Owner to confirm on the phone walk (from bulk U3)
+
+See `handoff/media-library-bulk-actions-u3.md` for the A1–A5 walk. Claude-reversible calls for the owner: Q17 (retire confirm is `FormDialog`, a bottom sheet on phone; tag picker is `ResponsivePicker`, a popover from `md`), Q18 (desktop hover tick top-right, hides the use count on hover), Q19 (a later batch failing shows "Couldn't reach the server." alone), and the bar's buttons are natural width, not three equal (shared `SelectionBar`).
+
+Local test DB: the drifted `bhendi_bazaar_ci` was renamed to `bhendi_bazaar_ci_old` (kept) and a clean one migrated; full integration suite green on `1a015fe3`.
 
 ## Notes from bulk U2 for bulk U3
 
