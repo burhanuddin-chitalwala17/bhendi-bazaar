@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api-client";
+import { apiRequest, TRANSFER_TIMEOUT_MS } from "@/lib/api-client";
 import type { CropTransform } from "@/lib/image/crop-transform";
 import type {
   MediaAssetDetailDto,
@@ -63,17 +63,30 @@ export const orgMediaApiClient = {
     await apiRequest(`/api/org/${orgId}/media/${assetId}/retire`, { method: "POST" });
   },
 
-  /** Up to 100 ids (bulk-actions Q10); the outcome says which went which way. */
+  /** Up to 100 ids (bulk-actions Q10), so the transfer deadline; the outcome says which went which way. */
   retireMany(orgId: string, ids: string[]): Promise<MediaBulkRetireOutcome> {
-    return apiRequest<MediaBulkRetireOutcome>(`/api/org/${orgId}/media/retire`, { method: "POST", body: { ids } });
+    return apiRequest<MediaBulkRetireOutcome>(`/api/org/${orgId}/media/retire`, {
+      method: "POST",
+      body: { ids },
+      timeoutMs: TRANSFER_TIMEOUT_MS,
+    });
   },
 
   setTagMany(orgId: string, ids: string[], tag: MediaTag, on: boolean): Promise<MediaBulkTagOutcome> {
-    return apiRequest<MediaBulkTagOutcome>(`/api/org/${orgId}/media/tags`, { method: "POST", body: { ids, tag, on } });
+    return apiRequest<MediaBulkTagOutcome>(`/api/org/${orgId}/media/tags`, {
+      method: "POST",
+      body: { ids, tag, on },
+      timeoutMs: TRANSFER_TIMEOUT_MS,
+    });
   },
 
   /** Links valid 15 minutes. Over the zip limit an `ApiError` (422) carries `totalBytes` and `limitBytes` in its details. */
-  downloadLinks(orgId: string, ids: string[]): Promise<MediaDownloadLinksDto> {
-    return apiRequest<MediaDownloadLinksDto>(`/api/org/${orgId}/media/download-links`, { method: "POST", body: { ids } });
+  downloadLinks(orgId: string, ids: string[], signal?: AbortSignal): Promise<MediaDownloadLinksDto> {
+    return apiRequest<MediaDownloadLinksDto>(`/api/org/${orgId}/media/download-links`, {
+      method: "POST",
+      body: { ids },
+      signal,
+      timeoutMs: TRANSFER_TIMEOUT_MS,
+    });
   },
 };

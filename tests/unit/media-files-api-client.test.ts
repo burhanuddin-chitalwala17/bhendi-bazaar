@@ -1,6 +1,7 @@
 // The one place the browser reads our bucket's bytes (bulk-actions trd D5, D7).
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mediaFilesApiClient } from "@/components/org/mediaFilesApiClient";
+import { orgMediaApiClient } from "@/components/org/orgMediaApiClient";
 import { TRANSFER_TIMEOUT_MS } from "@/lib/api-client";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -48,5 +49,20 @@ describe("mediaFilesApiClient.open", () => {
       name: "ApiError",
       status: 403,
     });
+  });
+});
+
+describe("orgMediaApiClient bulk requests", () => {
+  it("wait the transfer deadline, not the form's 30 s: 100 ids is many rows", async () => {
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({})));
+    try {
+      await orgMediaApiClient.retireMany("org1", ["a"]);
+      await orgMediaApiClient.setTagMany("org1", ["a"], "REFERENCE", true);
+      await orgMediaApiClient.downloadLinks("org1", ["a"]);
+      expect(timeout.mock.calls).toEqual([[TRANSFER_TIMEOUT_MS], [TRANSFER_TIMEOUT_MS], [TRANSFER_TIMEOUT_MS]]);
+    } finally {
+      timeout.mockRestore();
+    }
   });
 });

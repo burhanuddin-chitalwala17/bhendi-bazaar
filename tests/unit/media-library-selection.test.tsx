@@ -3,6 +3,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { MediaAssetDto } from "@server/catalog/media-library.types";
+import { ApiError } from "@/lib/api-error";
+import { TIMEOUT_UNSURE_MESSAGE } from "@/lib/api-client";
 
 const h = vi.hoisted(() => ({
   detail: vi.fn(),
@@ -194,6 +196,43 @@ describe("the bar's actions", () => {
     expect(h.toast.success).toHaveBeenCalledWith(C.retireDone(100), expect.anything());
     expect(h.toast.error).toHaveBeenCalledWith(C.unreachableShort);
     expect(tiles()).toHaveLength(1);
+  });
+
+  it("a timed-out retire never says nothing was changed: it may still land, and the grid re-reads", async () => {
+    h.retireMany.mockRejectedValue(new ApiError(TIMEOUT_UNSURE_MESSAGE, 0));
+    grid([item("a")]);
+    selectAll(1);
+    fireEvent.click(within(bar()).getByRole("button", { name: C.retire }));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: C.retireConfirm(1) })));
+    expect(screen.queryByText(C.unreachable)).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(h.toast.error).toHaveBeenCalledWith(TIMEOUT_UNSURE_MESSAGE);
+    expect(h.refresh).toHaveBeenCalled();
+  });
+
+  it("a later batch timing out says it may still land, not that the server was unreachable (Q19)", async () => {
+    const assets = Array.from({ length: 101 }, (_, i) => item(`r${i}`));
+    h.retireMany
+      .mockResolvedValueOnce({ retired: assets.slice(0, 100).map((a) => a.id), inUse: [], alreadyRetired: [], notFound: [] })
+      .mockRejectedValueOnce(new ApiError(TIMEOUT_UNSURE_MESSAGE, 0));
+    grid(assets);
+    selectAll(101);
+    fireEvent.click(within(bar()).getByRole("button", { name: C.retire }));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: C.retireConfirm(101) })));
+    expect(h.toast.error).toHaveBeenCalledWith(TIMEOUT_UNSURE_MESSAGE);
+    expect(h.toast.error).not.toHaveBeenCalledWith(C.unreachableShort);
+  });
+
+  it("a timed-out tag change says it may still land, offers no blind Try again, and re-reads the grid", async () => {
+    h.setTagMany.mockRejectedValue(new ApiError(TIMEOUT_UNSURE_MESSAGE, 0));
+    grid([item("a")]);
+    selectAll(1);
+    fireEvent.click(within(bar()).getByRole("button", { name: C.tag }));
+    const reference = within(screen.getByRole("dialog")).getByRole("group", { name: MEDIA_GRID_COPY.tagLabel.REFERENCE });
+    await act(async () => fireEvent.click(within(reference).getByRole("button", { name: C.tagAdd })));
+    expect(h.toast.error).toHaveBeenCalledWith(TIMEOUT_UNSURE_MESSAGE);
+    expect(h.toast.error).not.toHaveBeenCalledWith(C.unreachable, expect.anything());
+    expect(h.refresh).toHaveBeenCalled();
   });
 
   it("Retire with every item in use opens no dialog and says why", () => {

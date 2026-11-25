@@ -9,6 +9,7 @@ import { FormDialog } from "@/components/shared/overlays/form-dialog";
 import { ResponsivePicker } from "@/components/shared/overlays/responsive-picker";
 import { useMutation } from "@/hooks/core/useMutation";
 import { useDelayedFlag } from "@/hooks/core/useDelayedFlag";
+import { TIMEOUT_UNSURE_MESSAGE } from "@/lib/api-client";
 import { MEDIA_TAGS, type MediaAssetDto, type MediaTag } from "@server/catalog/media-library.types";
 import { orgMediaApiClient } from "./orgMediaApiClient";
 import { useLibraryZip } from "./useLibraryZip";
@@ -19,6 +20,7 @@ import {
   retireNotice,
   sendInBatches,
   tagNotice,
+  timedOut,
   zipNotice,
   type BulkNotice,
 } from "./library-bulk";
@@ -37,6 +39,11 @@ interface MediaLibrarySelectionBarProps {
 function say(notice: BulkNotice, retry?: (ids: string[]) => void) {
   const action = notice.retry && retry ? { label: notice.retry.label, onClick: () => retry(notice.retry!.ids) } : undefined;
   toast[notice.tone](notice.title, { description: notice.description, action });
+}
+
+/** After what landed: a timeout may still land, so no "Try again" that could do it twice (Q19). */
+function sayFailure(failure: unknown) {
+  toast.error(timedOut(failure) ? TIMEOUT_UNSURE_MESSAGE : C.unreachableShort);
 }
 
 type TagTarget = { ids: string[]; videos: number; retired: number };
@@ -76,11 +83,11 @@ export function MediaLibrarySelectionBar({ orgId, orgCode, picked, onClear, onRe
     setRetireFailed(false);
     const { results, failure } = await retireMutation.mutate(retiring.ids);
     const outcome = mergeOutcomes(results);
-    if (!outcome) return setRetireFailed(true);
-    say(retireNotice(outcome, retiring.alreadyRetired));
-    if (failure) toast.error(C.unreachableShort);
+    if (!outcome && !timedOut(failure)) return setRetireFailed(true);
+    if (outcome) say(retireNotice(outcome, retiring.alreadyRetired));
+    if (failure) sayFailure(failure);
     setRetiring(null);
-    onRetired(outcome.retired);
+    if (outcome) onRetired(outcome.retired);
     router.refresh();
   };
 
@@ -100,13 +107,13 @@ export function MediaLibrarySelectionBar({ orgId, orgCode, picked, onClear, onRe
       setTagChoice(null);
     });
     const outcome = mergeOutcomes(results);
-    if (!outcome) {
+    if (!outcome && !timedOut(failure)) {
       const again = whileShown(() => void applyTag(target, tag, on));
       toast.error(C.unreachable, { action: { label: C.tryAgain, onClick: () => again([]) } });
       return;
     }
-    say(tagNotice(outcome, { on, tag: MEDIA_GRID_COPY.tagLabel[tag], videos: target.videos, retired: target.retired }));
-    if (failure) toast.error(C.unreachableShort);
+    if (outcome) say(tagNotice(outcome, { on, tag: MEDIA_GRID_COPY.tagLabel[tag], videos: target.videos, retired: target.retired }));
+    if (failure) sayFailure(failure);
     setTagging(null);
     router.refresh();
   };
