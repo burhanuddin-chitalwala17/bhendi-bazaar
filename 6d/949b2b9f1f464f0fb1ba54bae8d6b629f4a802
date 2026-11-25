@@ -1,0 +1,30 @@
+docs/specs/social-selling/post-composer/decisions.md
+  5b0e2fad13006021 3,17
+  a319aeccc0fa8813 18
+docs/ARCHITECTURE.md
+  s_c01598c08f8572::t_b2f1ca382b712b 18
+docs/specs/social-selling/post-composer/trd.md
+  cfc179e1ef249a23 35
+prisma/schema.prisma
+  7bba75468bfb6ddc 3463
+CLAUDE.md
+  2e76cc76bdb803cc 3
+docs/specs/social-selling/post-composer/ux.md
+  c50a207df9ee0c35 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "6d949b2b9f1f464f0fb1ba54bae8d6b629f4a802",
+  "prompts": {},
+  "sessions": {
+    "s_c01598c08f8572": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "11eb770c-d5ee-4e39-97b6-7dab8baefa73",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
