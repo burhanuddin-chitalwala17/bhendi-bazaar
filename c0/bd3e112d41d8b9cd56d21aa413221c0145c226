@@ -1,0 +1,11 @@
+docs/specs/social-selling/connect-instagram/decisions.md
+  ai_agent 18
+docs/specs/social-selling/build-handoff.md
+  ai_agent 48,53-57,90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "c0bd3e112d41d8b9cd56d21aa413221c0145c226",
+  "prompts": {}
+}
