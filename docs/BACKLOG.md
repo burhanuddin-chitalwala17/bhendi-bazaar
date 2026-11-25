@@ -237,7 +237,7 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [media-library/renditions](specs/media-library/renditions/) | Surfaces declared once; a rendition made on demand from the source or the seller's crop, kept as a derived image | ✅ Implemented — PR-211 (2026-09-29) |
 | [media-library/video-hosting](specs/media-library/video-hosting/) | A short video uploads from the phone like a photograph; the worker makes the sizes that play, and it is an image's peer in the library | ✅ Implemented — 2026-09-27 (PR-180, PR-181, PR-183) |
 | [media-library/viewer](specs/media-library/viewer/) | Any library item full screen, swiping through the rest; the original saved to the device | ✅ Implemented — 2026-11-25 (5ab6d8bd, 69033278, 94a656e9) |
-| [media-library/bulk-actions](specs/media-library/bulk-actions/) | Select many library items; download as one zip, retire, or tag them together | 🔨 Built 2026-11-25, awaiting owner review |
+| [media-library/bulk-actions](specs/media-library/bulk-actions/) | Select many library items; download as one zip, retire, or tag them together | ✅ Implemented — 2026-11-25 (159397ca, 6cbc01c6, 1a015fe3, ed0799bc) |
 | [media-library/picker-filters](specs/media-library/picker-filters/) | The library picker filters by tag, usage, source and date, as the Library page does | ✅ Implemented — 2026-11-24 (ab7229d5) |
 | viewer Q6 *(later)* | The full-screen viewer on surfaces other than the Library | parked |
 | bulk-actions Q8 *(later)* | Selecting library items beyond what is loaded | parked |
