@@ -51,7 +51,7 @@ export const mediaBulkService = {
     return outcome;
   },
 
-  /** Add is one statement; remove is the per-photo compare-and-set (D3). Videos, links and retired photos are left out. */
+  /** Each photo through the shop's own toggle, so the outcome is what was written (D3 amended). Videos, links and retired photos are left out. */
   async setTagMany(orgId: string, ids: string[], tag: MediaTag, on: boolean): Promise<MediaBulkTagOutcome> {
     const rows = await rowsById(orgId, ids);
     const outcome: MediaBulkTagOutcome = { changed: [], notPhoto: [], retired: [], notFound: [] };
@@ -63,14 +63,9 @@ export const mediaBulkService = {
       else if (row.state === MediaAssetState.RETIRED) outcome.retired.push(id);
       else photos.push(id);
     }
-    if (on) {
-      await mediaAssetRepository.addTag(photos, tag, orgId);
-      outcome.changed.push(...photos);
-      return outcome;
-    }
     for (const id of photos) {
       // False: retired between the read and the write.
-      if (await mediaAssetRepository.setTag(orgId, id, tag, false)) outcome.changed.push(id);
+      if (await mediaAssetRepository.setTag(orgId, id, tag, on)) outcome.changed.push(id);
       else outcome.retired.push(id);
     }
     return outcome;

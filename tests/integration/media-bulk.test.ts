@@ -155,6 +155,21 @@ describe.skipIf(!isDisposableDb)("media bulk routes (local db)", () => {
     expect(await Promise.all([retired, theirs, mine].map(tagsOf))).toEqual([[], [], ["REFERENCE"]]);
   });
 
+  it("add counts a photo retired between the read and the write as retired, not changed", async () => {
+    const [kept, gone] = await Promise.all([make("addrace-kept"), make("addrace-gone")]);
+    const findMany = prisma.mediaAsset.findMany.bind(prisma.mediaAsset);
+    const spy = vi.spyOn(prisma.mediaAsset, "findMany").mockImplementationOnce((async (args: Parameters<typeof findMany>[0]) => {
+      const seen = await findMany(args);
+      await prisma.mediaAsset.update({ where: { id: gone }, data: { state: "RETIRED" } });
+      return seen;
+    }) as unknown as typeof prisma.mediaAsset.findMany);
+
+    const { body } = await post("tags", { ids: [kept, gone], tag: "REFERENCE", on: true });
+    spy.mockRestore();
+    expect(body).toEqual({ changed: [kept], notPhoto: [], retired: [gone], notFound: [] });
+    expect(await tagsOf(gone)).toEqual([]);
+  });
+
   it("removes a tag by compare-and-set, keeping a tag another request added meanwhile", async () => {
     const photo = await make("untag", { tags: ["REFERENCE"] });
     const findFirst = prisma.mediaAsset.findFirst.bind(prisma.mediaAsset);
