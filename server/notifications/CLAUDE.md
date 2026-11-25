@@ -25,6 +25,13 @@ names a channel. Only an `AT_ONCE` row enqueues `notify.deliver`; `DIGEST` rows 
 otherwise by `eventFacts`; an address is read when sending, never stored. A kind's owner registers `stillOpen`
 so the Needs you list drops what was fixed (marked `SUPERSEDED`).
 
+**What waits, and for how long** (notifications-core D3, D4, D7). A check is registered in `still-open.registry.ts`
+only, and every reader of open items (the bell route, the morning job) calls `registerStillOpenChecks()` first (Q10).
+The morning email is `notify.digest`, queued for the next 09:00 IST by the `emit` that writes a DIGEST row (Q12);
+it settles every row it covers, so a twin run sends nothing, and a failed send leaves its rows waiting and fails the
+job. A member's off switch is `MemberNotificationPrefs` (no row = on); the badge and at-once alerts have none.
+`social.retention` (queued daily by `channels.maintain`) deletes events past 13 months, their deliveries by cascade (Q7, Q11).
+
 `contactMessageEmail.ts` is the one addressed to the store, not a buyer: Contact us delivers
 a message to `SUPPORT_INBOX` with the sender as Reply-To and stores nothing, so its route
 awaits the send and reports a failure (contact-us (`431ed6e7:docs/specs/contact-us/trd.md`) D2, D4).

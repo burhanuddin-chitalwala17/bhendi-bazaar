@@ -13,6 +13,17 @@ import { OrgSwitcher } from "@/components/org/org-switcher";
 import { toPack } from "@server/analytics/attention.service";
 import { ROUTES } from "@server/shared/routes";
 import { ShopPlanProvider } from "@/components/subscriptions/plan-context";
+import { NeedsYouBell } from "@/components/notifications/needs-you-bell";
+import { notificationsService } from "@server/notifications/notifications.service";
+
+/** The bell's count (notifications-core D3): one indexed count. A failed read shows none, never a wrong one. */
+async function needsYouCount(userId: string, orgId: string): Promise<number> {
+  try {
+    return await notificationsService.badgeCount(userId, orgId);
+  } catch {
+    return 0;
+  }
+}
 
 /** The Orders tab's badge: parcels paid for and waiting on the shop. A failed read shows none, never a wrong one. */
 async function toPackCount(orgId: string): Promise<number> {
@@ -43,7 +54,11 @@ export default async function OrgLayout({
   }
 
   const session = await requireSession();
-  const [orgs, packCount] = await Promise.all([orgMemberRepository.listOrgsForUser(session.user.id), toPackCount(orgId)]);
+  const [orgs, packCount, bellCount] = await Promise.all([
+    orgMemberRepository.listOrgsForUser(session.user.id),
+    toPackCount(orgId),
+    needsYouCount(session.user.id, orgId),
+  ]);
   const currentOrg = orgs.find((org) => org.id === orgId);
   const handle = currentOrg?.handle;
 
@@ -74,6 +89,7 @@ export default async function OrgLayout({
           label={PORTAL_COPY.headerLabel}
           storefrontHref={handle ? ROUTES.store(handle) : undefined}
           leading={<OrgSwitcher orgs={orgs} currentOrgId={orgId} variant="bar" />}
+          bell={<NeedsYouBell orgId={orgId} initialCount={bellCount} />}
         />
         {/* Phone: clear the fixed tab bar, so the last row of every page stays tappable. */}
         <main className="min-w-0 flex-1 p-4 pb-tabbar md:p-8">

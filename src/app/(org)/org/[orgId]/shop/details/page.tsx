@@ -9,6 +9,11 @@ import { storefrontService } from "@server/catalog/storefront.service";
 import { NotFoundError } from "@server/shared/domain-error";
 import { returnHref } from "@/components/org/home/return-to";
 import { ONBOARDING_STEP } from "@server/catalog/org-onboarding.types";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { NOTIFICATIONS_UI_COPY } from "@/components/notifications/notifications-copy";
+import { ROUTES } from "@server/shared/routes";
 
 /** Shop details (org-profile D2, D7): the shop's facts, the buyer part first, then the private part. */
 export default async function ShopDetailsPage({
@@ -28,7 +33,19 @@ export default async function ShopDetailsPage({
 
   return (
     <PageShell width="wide">
-      <PageHeader help="details" title={SHOP_DETAILS_COPY.title} description={SHOP_DETAILS_COPY.help} />
+      <PageHeader
+        help="details"
+        title={SHOP_DETAILS_COPY.title}
+        description={SHOP_DETAILS_COPY.help}
+        actions={
+          <Button asChild variant="outline">
+            <Link href={ROUTES.org.notifications(scope.orgId)} prefetch={false}>
+              <Icon name="notifications" size="sm" />
+              {NOTIFICATIONS_UI_COPY.settings.link}
+            </Link>
+          </Button>
+        }
+      />
       {/* Keyed on the version read, so "Load latest" (a refresh) remounts with the newer values. */}
       <ShopDetailsEditor
         key={`${details.updatedAt}/${details.contactUpdatedAt}`}

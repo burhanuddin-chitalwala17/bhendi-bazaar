@@ -5,6 +5,9 @@ import { noticeSendSpec } from "@server/notifications/notice.job";
 import { noticeService } from "@server/notifications/notice.service";
 import { deliverSpec } from "@server/notifications/delivery.job";
 import { notificationsService } from "@server/notifications/notifications.service";
+import { digestSpec } from "@server/notifications/digest.job";
+import { registerStillOpenChecks } from "@server/notifications/still-open.registry";
+import { socialRetentionSpec } from "@server/shared/jobs/social-retention.job";
 
 /**
  * The notice to a shop's old address (org-profile D7, Q25). Idempotent on the job id: the
@@ -27,4 +30,23 @@ export const noticeSendJob = registerJob({
 export const deliverJob = registerJob({
   ...deliverSpec,
   handler: ({ payload }) => notificationsService.deliver(payload.deliveryId),
+});
+
+/** The 9 am email (notifications-core D4). Idempotent on the rows: a covered row is settled, so a twin run sends nothing. */
+export const digestJob = registerJob({
+  ...digestSpec,
+  handler: async ({ jobId, payload }) => {
+    registerStillOpenChecks();
+    const outcome = await notificationsService.sendDigest(payload.date);
+    console.log(`[jobs] notify.digest ${jobId}: ${JSON.stringify({ date: payload.date, ...outcome })}`);
+  },
+});
+
+/** Social selling's aged rows deleted once a day (social-selling D15): today the hub's, after 13 months (D7, Q7). */
+export const socialRetentionJob = registerJob({
+  ...socialRetentionSpec,
+  handler: async ({ jobId }) => {
+    const events = await notificationsService.retention();
+    console.log(`[jobs] social.retention ${jobId}: ${JSON.stringify({ notificationEvents: events })}`);
+  },
 });

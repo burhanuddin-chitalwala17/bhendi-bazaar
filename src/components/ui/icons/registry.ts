@@ -13,6 +13,7 @@ import {
   ArrowUUpLeftIcon,
   ArrowUpIcon,
   ArrowsClockwiseIcon,
+  BellIcon,
   BroadcastIcon,
   BuildingsIcon,
   CalendarBlankIcon,
@@ -166,6 +167,7 @@ export const ICONS = {
   live: BroadcastIcon,
   activity: PulseIcon,
   dot: CircleIcon,
+  notifications: BellIcon,
   square: SquareIcon,
   // commerce
   bag: HandbagIcon,

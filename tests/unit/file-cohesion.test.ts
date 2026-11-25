@@ -48,6 +48,11 @@ const RECORDED: Record<string, { domains: string[]; why: string }> = {
       "product and shop name, listing which fact is the material, promotions the one effective price, and payouts " +
       "the credit a model call is paid from. Each is a read or a named credit command; none gains a reason to change.",
   },
+  "src/app/(org)/org/[orgId]/layout.tsx": {
+    domains: ["analytics", "catalog", "notifications"],
+    why:
+      "The org portal's chrome: who is signed in and which shops (catalog), and the two counts every page carries, parcels to pack (analytics) and the Needs you bell (notifications-core D3). Each is one guarded read of its owner's service.",
+  },
   "src/data-access-layer/org/readiness-fix.dal.ts": {
     domains: ["catalog", "channels", "listing"],
     why:

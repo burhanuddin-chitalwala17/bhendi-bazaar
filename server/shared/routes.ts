@@ -71,6 +71,8 @@ export const ROUTES = {
     channelFamily: (orgId: Id) => `/org/${orgId}/channels/family`,
     shop: (orgId: Id) => `/org/${orgId}/shop`,
     shopDetails: (orgId: Id) => `/org/${orgId}/shop/details`,
+    /** A member's notification switches for this shop (notifications-core D4); the morning email links here. */
+    notifications: (orgId: Id) => `/org/${orgId}/shop/details/notifications`,
     storefront: (orgId: Id) => `/org/${orgId}/storefront`,
     storefrontLook: (orgId: Id) => `/org/${orgId}/storefront/look`,
     storefrontPreview: (orgId: Id) => `/org/${orgId}/storefront/preview`,

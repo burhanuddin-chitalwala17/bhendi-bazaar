@@ -20,6 +20,7 @@ export function PortalHeader({
   label,
   storefrontHref,
   leading,
+  bell,
 }: {
   name?: string | null;
   email?: string | null;
@@ -27,6 +28,8 @@ export function PortalHeader({
   storefrontHref?: string;
   /** Phone only: what the bar is about (the shop switcher). */
   leading?: ReactNode;
+  /** The org portal's Needs you bell (notifications-core ux.md); on every width. */
+  bell?: ReactNode;
 }) {
   const phoneBar = Boolean(leading);
   return (
@@ -35,6 +38,7 @@ export function PortalHeader({
       {/* Hidden below md: the label plus a full email cannot fit a phone-width row. */}
       <span className="hidden text-label uppercase text-muted-foreground md:inline">{label}</span>
       <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-4">
+        {bell}
         <div className={cn("hidden text-right leading-tight", phoneBar ? "md:block" : "sm:block")}>
           <p className="text-small font-medium text-foreground">{name ?? "Signed in"}</p>
           {email && <p className="hidden text-caption text-muted-foreground md:block">{email}</p>}

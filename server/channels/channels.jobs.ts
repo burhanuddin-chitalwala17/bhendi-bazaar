@@ -28,6 +28,7 @@ import { requestsDailySpec } from "@server/shared/jobs/listing-complaints.job";
 import { listingProblemsService } from "./listing-problems.service";
 import { checkOrdersSpec, checkStockSpec, ORDERS_CHECK_EVERY_SECONDS } from "./stock-checks.job";
 import { enqueue, enqueueLater } from "@server/shared/jobs/jobs.enqueue";
+import { socialRetentionSpec } from "@server/shared/jobs/social-retention.job";
 import { prisma } from "@server/shared/prisma";
 import { channelPlan } from "./channel-plan";
 import { drainEventsSpec } from "./meta-drain.job";
@@ -104,6 +105,8 @@ export const channelsMaintainJob = registerJob({
     // one failing never stops the pass; shop data keys re-wrapped after a key-ring rotation (ADR-0085).
     await enqueue(prisma, metaRetentionSpec, {});
     await enqueue(prisma, metaSweepSpec, {});
+    // Social selling's other aged rows, the hub's among them (social-selling D15, notifications-core D7).
+    await enqueue(prisma, socialRetentionSpec, {});
     const rewrap = await seal.rewrapStale().catch((error: unknown) => {
       console.error(`[channels] data key re-wrap failed: ${error instanceof Error ? error.name : "error"}`);
       return null;

@@ -60,3 +60,26 @@ export interface BadgeItem {
 
 /** A kind's answer to "does this still need the shop?", one batched call per kind (D3). */
 export type StillOpen = (facts: EventFacts[]) => Promise<boolean[]>;
+
+/** One row of the Needs you sheet (ux.md): a single item, or a kind grouped with its count once it piles up. */
+export interface NeedsYouRow {
+  key: string;
+  kind: NotificationKind;
+  title: string;
+  /** Our own screen that fixes it; never a dead link (ux: Stale). */
+  href: string;
+  /** ISO time of the newest item in the row. */
+  at: string;
+  count: number;
+}
+
+/** The bell's answer: the rows, and the count the badge now shows. */
+export interface NeedsYouDTO {
+  rows: NeedsYouRow[];
+  count: number;
+}
+
+/** A member's switches for one shop (D4). */
+export interface NotificationPrefsDTO {
+  morningEmail: boolean;
+}

@@ -16,3 +16,13 @@ its deliveries commit or roll back with the business row.
 
 **Still open** — `notificationsService.registerStillOpen(kind, check)`: the kind's owner answers, for a batch of
 facts, which items still need the shop; the rest leave the Needs you list.
+
+**Still-open checks are registered in one place** — `still-open.registry.ts` (decisions Q10): an emitting unit adds
+its kind's check there; the bell route and the morning email call `registerStillOpenChecks()` before reading.
+
+**The bell** — `GET /api/org/[orgId]/notifications` answers `NeedsYouDTO { rows: NeedsYouRow[], count }`: each row
+`{ key, kind, title, href, at (ISO), count }`, one per item or one per kind once it has three or more (ux: Many
+items). `title` is worded and `href` is our own screen (`kind-view.ts`); the browser formats only the time.
+
+**A member's switches** — `PUT /api/org/[orgId]/notifications/prefs` takes `notificationPrefsSchema`
+(`{ morningEmail: boolean }`, strict) and answers `NotificationPrefsDTO`. No row means the morning email is on.

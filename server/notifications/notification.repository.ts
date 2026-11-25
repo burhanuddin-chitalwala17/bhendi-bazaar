@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
-import { DELIVERY_CHANNEL, DELIVERY_STATE, type DeliveryState } from "./notification.types";
+import { DELIVERY_CHANNEL, DELIVERY_STATE, DELIVERY_TIMING, type DeliveryState } from "./notification.types";
 
 type HubDb = Pick<typeof prisma, "notificationEvent" | "delivery">;
 
@@ -58,6 +58,36 @@ export class NotificationRepository {
       data: { state: DELIVERY_STATE.SUPERSEDED, at: new Date() },
     });
     return count;
+  }
+
+  /** What waits for the morning email, written before `before` (D4); the partial index answers it. */
+  async listPendingDigest(before: Date) {
+    return prisma.delivery.findMany({
+      where: { timing: DELIVERY_TIMING.DIGEST, state: DELIVERY_STATE.PENDING, event: { createdAt: { lt: before } } },
+      orderBy: [{ at: "asc" }, { id: "asc" }],
+      select: { id: true, recipientId: true, at: true, event: { select: { kind: true, orgId: true, facts: true } } },
+    });
+  }
+
+  /** Settle several rows at once, each only from a state it may leave, as `settle` does for one. */
+  async settleMany(ids: string[], from: readonly DeliveryState[], to: DeliveryState, extra: { reason?: string | null; providerId?: string | null } = {}) {
+    if (ids.length === 0) return 0;
+    const { count } = await prisma.delivery.updateMany({
+      where: { id: { in: ids }, state: { in: [...from] } },
+      data: { state: to, at: new Date(), ...extra },
+    });
+    return count;
+  }
+
+  /**
+   * Delete up to `batch` events written before `cutoff`, their deliveries with them (cascade), by the
+   * indexed `createdAt` (Q7, social-selling D15). Answers how many events went.
+   */
+  async deleteEventsBefore(cutoff: Date, batch: number): Promise<number> {
+    return prisma.$executeRaw`
+      DELETE FROM "NotificationEvent" WHERE "eventKey" IN (
+        SELECT "eventKey" FROM "NotificationEvent" WHERE "createdAt" < ${cutoff} ORDER BY "createdAt" LIMIT ${batch}
+      )`;
   }
 }
 

@@ -3743,7 +3743,8 @@ model NotificationEvent {
 }
 
 /// One event to one recipient by one channel, written before anything is sent (notifications-core D2, hub Q3).
-/// A BADGE row still PENDING is an unread badge item; the open-badge count is a partial index in the migration.
+/// A BADGE row still PENDING is an unread badge item; the open-badge count is a partial index in the migration,
+/// as is `Delivery_open_digest_idx`, which the morning email reads (unit 3).
 model Delivery {
   id          String            @id @default(cuid())
   eventKey    String
@@ -3764,4 +3765,15 @@ model Delivery {
 
   @@unique([eventKey, recipientId, channel])
   @@index([at])
+}
+
+/// One member's switches for one shop's notifications (notifications-core D4, Q2). No row is the default:
+/// the morning email on. The badge and at-once alerts have no switch.
+model MemberNotificationPrefs {
+  orgId        String
+  userId       String
+  morningEmail Boolean  @default(true)
+  updatedAt    DateTime @updatedAt
+
+  @@id([orgId, userId])
 }
