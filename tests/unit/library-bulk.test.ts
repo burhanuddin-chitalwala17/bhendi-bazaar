@@ -52,7 +52,7 @@ describe("zipNotice", () => {
       title: C.zipTooBig("640 MB", "500 MB"),
       description: C.zipTooBigHint,
     });
-    expect(zipNotice({ kind: "tooBig", totalBytes: null, limitBytes: 500 * MB })?.title).toBe(C.zipTooBigMidway);
+    expect(zipNotice({ kind: "tooBig", totalBytes: null, limitBytes: 500 * MB })?.title).toBe(C.zipTooBigMidway("500 MB"));
   });
 
   it("never rounds a size down to the limit it is over", () => {

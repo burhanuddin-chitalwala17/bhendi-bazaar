@@ -87,7 +87,7 @@ export function SelectionBar({
       aria-label={SELECTION_BAR_COPY.selection}
       className={cn(selectionBarVariants({ dock }))}
     >
-      <div className="mb-2 flex items-center gap-2 rounded-card bg-foreground py-2 pl-4 pr-2 text-background shadow-overlay md:mb-0 md:min-w-96">
+      <div className="mb-2 flex items-center gap-2 rounded-card bg-foreground py-2 pl-4 pr-2 text-background shadow-overlay md:mb-0 md:min-w-96 md:max-w-md">
         <div className="min-w-0 flex-1">
           <p aria-live="polite" className="truncate text-small font-semibold tabular-nums">
             {busy ? busy.label : count > 0 ? `${count} ${noun}` : hint}
@@ -143,15 +143,17 @@ export function SelectionBar({
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            <Button
-              variant="inverse"
-              size="sm"
-              shape="icon"
-              aria-label={SELECTION_BAR_COPY.clearSelection}
-              onClick={onClear}
-            >
-              <Icon name="close" size="md" />
-            </Button>
+            {count > 0 && (
+              <Button
+                variant="inverse"
+                size="sm"
+                shape="icon"
+                aria-label={SELECTION_BAR_COPY.clearSelection}
+                onClick={onClear}
+              >
+                <Icon name="close" size="md" />
+              </Button>
+            )}
           </>
         )}
       </div>

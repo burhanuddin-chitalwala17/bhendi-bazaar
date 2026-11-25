@@ -71,7 +71,10 @@ export function useLibraryZip(orgId: string, shopCode: string | null, limitBytes
         }
       } catch (error) {
         if (abort.signal.aborted) return { kind: "cancelled" };
-        return tooBigFrom(error) ?? { kind: "error" };
+        const tooBig = tooBigFrom(error);
+        // One batch's total would understate the selection once earlier batches counted.
+        if (tooBig?.kind === "tooBig" && links.files.length + links.noFile.length > 0) return { ...tooBig, totalBytes: null };
+        return tooBig ?? { kind: "error" };
       }
       if (abort.signal.aborted) return { kind: "cancelled" };
       if (links.totalBytes > limitBytes) return { kind: "tooBig", totalBytes: links.totalBytes, limitBytes };

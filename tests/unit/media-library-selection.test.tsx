@@ -71,7 +71,7 @@ describe("selection mode (spec R1, R2)", () => {
     fireEvent.click(tiles()[0]);
     fireEvent.click(tiles()[2]);
     expect(tiles().map((tile) => tile.getAttribute("aria-pressed"))).toEqual(["true", "false", "true"]);
-    expect(within(bar()).getByText(C.count(2))).toBeTruthy();
+    expect(within(bar()).getByText("2 selected")).toBeTruthy();
     expect(h.detail).not.toHaveBeenCalled();
     // The ⤢ control is hidden in the mode; the tick takes its corner.
     expect(screen.queryByRole("button", { name: MEDIA_VIEWER_COPY.fullScreen })).toBeNull();
@@ -86,7 +86,7 @@ describe("selection mode (spec R1, R2)", () => {
     grid([item("a"), item("b"), item("c")]);
     fireEvent.click(screen.getByRole("button", { name: C.select }));
     fireEvent.click(screen.getByRole("button", { name: C.selectAll(3) }));
-    expect(within(bar()).getByText(C.count(3))).toBeTruthy();
+    expect(within(bar()).getByText("3 selected")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: C.clear }));
     expect(within(bar()).getByText(C.none)).toBeTruthy();
   });
@@ -169,7 +169,7 @@ describe("the bar's actions", () => {
     expect(h.refresh).toHaveBeenCalled();
     // The 3 leave the grid; the 2 in use stay ticked.
     expect(tiles()).toHaveLength(2);
-    expect(within(bar()).getByText(C.count(2))).toBeTruthy();
+    expect(within(bar()).getByText("2 selected")).toBeTruthy();
   });
 
   it("a failed retire keeps the dialog open with the error under the button", async () => {
@@ -222,6 +222,19 @@ describe("the bar's actions", () => {
       expect.objectContaining({ description: C.tagVideosLeftOut(1) }),
     );
     expect(h.refresh).toHaveBeenCalled();
+  });
+
+  it("one tag change at a time: Remove tapped while Add is in flight is not sent", async () => {
+    let land!: (value: unknown) => void;
+    h.setTagMany.mockReturnValue(new Promise((resolve) => (land = resolve)));
+    grid([item("a")]);
+    selectAll(1);
+    fireEvent.click(within(bar()).getByRole("button", { name: C.tag }));
+    const reference = within(screen.getByRole("dialog")).getByRole("group", { name: MEDIA_GRID_COPY.tagLabel.REFERENCE });
+    fireEvent.click(within(reference).getByRole("button", { name: C.tagAdd }));
+    fireEvent.click(within(reference).getByRole("button", { name: C.tagRemove }));
+    await act(async () => land({ changed: ["a"], notPhoto: [], retired: [], notFound: [] }));
+    expect(h.setTagMany).toHaveBeenCalledTimes(1);
   });
 
   it("Tag with only videos opens nothing and says only photos take tags", () => {

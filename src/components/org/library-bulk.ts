@@ -55,7 +55,7 @@ export function zipNotice(outcome: LibraryZipOutcome, selected: string[] = []): 
     case "tooBig":
       return notice(
         "error",
-        outcome.totalBytes === null ? C.zipTooBigMidway : C.zipTooBig(sizeMb(outcome.totalBytes), limitMb(outcome.limitBytes)),
+        outcome.totalBytes === null ? C.zipTooBigMidway(limitMb(outcome.limitBytes)) : C.zipTooBig(sizeMb(outcome.totalBytes), limitMb(outcome.limitBytes)),
         C.zipTooBigHint,
       );
     case "error":

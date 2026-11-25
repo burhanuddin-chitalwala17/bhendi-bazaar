@@ -212,4 +212,17 @@ describe("useLibraryZip", () => {
     expect(await run(small, selected)).toEqual({ kind: "tooBig", totalBytes: 450, limitBytes: 400 });
     expect(h.open).not.toHaveBeenCalled();
   });
+
+  it("a later batch refused as too big quotes no size, since one batch understates the selection", async () => {
+    h.downloadLinks
+      .mockResolvedValueOnce({ files: ids(100).map(file), noFile: [], totalBytes: 300 })
+      .mockRejectedValueOnce(
+        new ApiError("too big", 422, [
+          { path: "totalBytes", message: "671088640" },
+          { path: "limitBytes", message: "524288000" },
+        ]),
+      );
+    const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01"));
+    expect(await run(result, ids(150))).toEqual({ kind: "tooBig", totalBytes: null, limitBytes: 524288000 });
+  });
 });

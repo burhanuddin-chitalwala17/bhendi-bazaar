@@ -1,6 +1,6 @@
 # Handoff — media-library/bulk-actions U3 (selection mode)
 
-- **Status:** In progress — built, gate green, awaiting /bb-review
+- **Status:** Done — unit committed as `org: Library selection mode with bulk download, tag and retire`
 - **Last pushed sha:** (see `git log origin/claude/media-library-build -1`)
 - **Goal:** TRD Delivery U3: Select / Done, ticks on tiles, the selection bar (Download · Tag · Retire), the retire confirm, the tag picker, download with progress and outcomes, wired to U1's `orgMediaApiClient` bulk methods and U2's `useLibraryZip(orgId, orgCode)`. Changes behaviour. Closes A1, A2, A3 (bar), A4/A5 (UI half); Q1, Q2, Q6, Q7, Q12, Q13, Q14, Q16 (+ Q17–Q19 made here).
 
@@ -18,6 +18,25 @@
 - Tests: `tests/unit/library-bulk.test.ts`, `tests/unit/media-library-selection.test.tsx`, `use-library-zip.test.ts` (batching), `page-grammar.test.tsx` (hint, busy).
 - Mutations (all red, restored): `uses === 0` → `>= 0` in `planRetire`; retired photos let into `planTag`; summed-bytes limit check → `Infinity`; tile `onClick` always opens; partial-batch error toast dropped.
 - Gate green. Integration: 760 passed / 7 skipped / 1 failed — `jobs-enqueue` "no drift", because the shared `bhendi_bazaar_ci` holds another branch's tables (ConnectionLane, MetaEvent, OrgDataKey…); U3 has no prisma change.
+
+## Review (/bb-review, fresh subagent) — nothing blocking; handled
+1. Retire dialog closable mid-request → a failure went unsaid. Held open while the request runs.
+2. Q19 is copy → marked "Claude · proposed — owner to confirm"; on the phone-walk list.
+3. "Slow" row: bar buttons spun at once → `useDelayedFlag` (new, `src/hooks/core/`), spinner after 3 s; the dialog's and picker's buttons spin at once (their Loading rows).
+4. Add then Remove in the tag picker could race → one tag change at a time (ref guard); test + mutation.
+5. "500 MB" typed into the mid-download line → `zipTooBigMidway(limit)` from `ZIP_LIMIT_BYTES`.
+6. A later batch's 422 quoted one batch's size → `totalBytes: null` (mid-download line); test + mutation.
+7. Toast retry after the bar unmounted started an invisible zip → retries run only while the bar is mounted.
+8. Bar width at md → `md:max-w-md`. Phone "three equal buttons" **not** done: `SelectionBar` is shared with the products console; left for the phone walk.
+9. Unused `MEDIA_BULK_COPY.count` → removed.
+10. Clear (X) shown at 0 selected → only with something picked.
+Added mutations: tag guard removed; delay → 0; later-batch 422 rule → `false` (all red, restored).
+
+## For the owner (phone walk)
+- A1–A5 per spec at ~360px, after CORS `GET` (confirmed 2026-11-25).
+- Q17 surfaces (retire = bottom sheet on phone), Q18 hover tick top-right at lg, Q19 partial-batch line.
+- Bar buttons are natural width, not three equal (ux row).
+- Prototype link in ux.md could not be opened from this session (artifact not found / not shared).
 
 ## Resume (macOS)
 ```

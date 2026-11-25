@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { SelectionBar } from "@/components/shared/selection-bar";
 import { FormDialog } from "@/components/shared/overlays/form-dialog";
 import { ResponsivePicker } from "@/components/shared/overlays/responsive-picker";
 import { useMutation } from "@/hooks/core/useMutation";
+import { useDelayedFlag } from "@/hooks/core/useDelayedFlag";
 import { MEDIA_TAGS, type MediaAssetDto, type MediaTag } from "@server/catalog/media-library.types";
 import { orgMediaApiClient } from "./orgMediaApiClient";
 import { useLibraryZip } from "./useLibraryZip";
@@ -49,11 +50,20 @@ export function MediaLibrarySelectionBar({ orgId, orgCode, picked, onClear, onRe
   const [retireFailed, setRetireFailed] = useState(false);
   const [tagging, setTagging] = useState<TagTarget | null>(null);
   const [tagChoice, setTagChoice] = useState<TagChoice | null>(null);
+  // A toast outlives the bar; its retry must not start work no bar is left to show or cancel.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const whileShown = (retry: (ids: string[]) => void) => (ids: string[]) => mounted.current && retry(ids);
 
   const download = async (ids: string[]) => {
     if (ids.length === 0) return say({ tone: "error", title: C.nothingSelected });
     const notice = zipNotice(await zip.download(ids), ids);
-    if (notice) say(notice, (again) => void download(again));
+    if (notice) say(notice, whileShown((again) => void download(again)));
   };
 
   // Batches never throw: what landed before a failure is still said (Q10).
@@ -78,13 +88,21 @@ export function MediaLibrarySelectionBar({ orgId, orgCode, picked, onClear, onRe
     ({ ids, tag, on }: TagChoice) => sendInBatches(ids, (chunk) => orgMediaApiClient.setTagMany(orgId, chunk, tag, on)),
     { showToast: false },
   );
+  // One tag change at a time: Add then Remove on the same tag would otherwise race.
+  const tagBusy = useRef(false);
   const applyTag = async (target: TagTarget, tag: MediaTag, on: boolean) => {
+    if (tagBusy.current) return;
+    tagBusy.current = true;
     const choice = { ids: target.ids, tag, on };
     setTagChoice(choice);
-    const { results, failure } = await tagMutation.mutate(choice).finally(() => setTagChoice(null));
+    const { results, failure } = await tagMutation.mutate(choice).finally(() => {
+      tagBusy.current = false;
+      setTagChoice(null);
+    });
     const outcome = mergeOutcomes(results);
     if (!outcome) {
-      toast.error(C.unreachable, { action: { label: C.tryAgain, onClick: () => void applyTag(target, tag, on) } });
+      const again = whileShown(() => void applyTag(target, tag, on));
+      toast.error(C.unreachable, { action: { label: C.tryAgain, onClick: () => again([]) } });
       return;
     }
     say(tagNotice(outcome, { on, tag: MEDIA_GRID_COPY.tagLabel[tag], videos: target.videos, retired: target.retired }));
@@ -106,6 +124,9 @@ export function MediaLibrarySelectionBar({ orgId, orgCode, picked, onClear, onRe
   };
 
   const ids = picked.map((asset) => asset.id);
+  // The bar's buttons spin only once the work is slow (ux "Slow"); the dialog's and picker's spin at once.
+  const retireSlow = useDelayedFlag(retireMutation.isLoading, 3000);
+  const tagSlow = useDelayedFlag(tagMutation.isLoading, 3000);
 
   return (
     <>
@@ -128,7 +149,7 @@ export function MediaLibrarySelectionBar({ orgId, orgCode, picked, onClear, onRe
           {
             label: C.tag,
             onClick: onTag,
-            pending: tagMutation.isLoading,
+            pending: tagSlow,
             // The bar's own button is the picker's trigger, so the popover anchors to it from md.
             wrap: (button) => (
               <ResponsivePicker
@@ -163,13 +184,14 @@ export function MediaLibrarySelectionBar({ orgId, orgCode, picked, onClear, onRe
               </ResponsivePicker>
             ),
           },
-          { label: C.retire, onClick: onRetire, pending: retireMutation.isLoading },
+          { label: C.retire, onClick: onRetire, pending: retireSlow },
         ]}
       />
 
       <FormDialog
         open={retiring !== null}
-        onOpenChange={(open) => !open && setRetiring(null)}
+        // Held open while the request runs, so its failure is never said to a closed dialog.
+        onOpenChange={(open) => !open && !retireMutation.isLoading && setRetiring(null)}
         title={C.retireTitle(retiring?.ids.length ?? 0)}
         description={C.retireBody}
       >
