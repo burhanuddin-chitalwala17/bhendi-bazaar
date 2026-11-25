@@ -1,0 +1,24 @@
+tests/unit/library-bulk.test.ts
+  s_9d5fa95bbe24d4::t_edfd7fbcfda8f3 1-70,76-177
+  s_9d5fa95bbe24d4::t_a17268cda93a53 71-75
+src/components/org/media-library-copy.ts
+  s_9d5fa95bbe24d4::t_8afe2cda58d35c 133-183
+tests/unit/media-library-selection.test.tsx
+  s_9d5fa95bbe24d4::t_f1f9b00f17b32f 1-219
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "906e064388aea000cb44fa305b420c5cbfae3033",
+  "prompts": {},
+  "sessions": {
+    "s_9d5fa95bbe24d4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f00ee551-450c-4171-b74f-9342da83f47a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
