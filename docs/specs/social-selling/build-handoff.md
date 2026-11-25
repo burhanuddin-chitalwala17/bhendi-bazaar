@@ -7,23 +7,13 @@
 > Read this file to continue the build from any account. It is updated and pushed after every unit, so the
 > branch's last commit and this file agree on where the build stands.
 
-## Continue here (new account, 2026-11-25)
+## Continue here (second account, master session, 2026-11-25)
 
-The first account reached its usage limit; the master session stopped and its check-in is disabled.
-Everything on GitHub is on `meta-whatsapp-connector` up to this commit.
-
-1. **connect-instagram U3 is built but not on GitHub.** Session "Build: connect-instagram unit 3"
-   (`session_01Kc21QXpCPcPCStef6CTnBY`, first account) committed it locally (6bf1848b, 4b4e0f58, 4490fd4c,
-   65b511f8, merge c9e37846: card, checklist, Turn on replies, return notes, migration
-   `20261124200000_instagram_card_facts`; gate green, 826 integration tests). Its push was refused by that
-   session's safety check three times. Either open that session in the first account once its limit resets and
-   approve `git push origin meta-whatsapp-connector`, or, if its container is gone, **rebuild U3** in the new
-   account (it is the first queue row below). Do not rebuild while that push might still land.
-2. Then run the queue below, one unit per fresh session, with the prompt template. A new account may also act as
-   master: "Read docs/specs/social-selling/build-handoff.md and act as the master session: start the next
-   queued unit as a new session using the template there, and keep this file updated after each unit."
-3. Usage: a unit costs roughly $5–12 of usage; two units plus a master fill a 5-hour allowance. A session that
-   stops on the limit is resumed with a message after the reset, not restarted.
+The second account rebuilt connect-instagram U3 (8f01f51a); the first account's unpushed U3 is superseded and must
+**not** be pushed now. The next unit is queue row 3, connect-whatsapp U1. A master runs locally from the worktree
+`bhendi-bazaar-meta-whatsapp-connector/` with a gitignored `.env`; integration tests use the local disposable
+database `bhendi_bazaar_ci` (`tests/helpers/test-db.ts` allows only `bhendi_bazaar_dev` and `bhendi_bazaar_ci`, and
+silently skips any other name). Usage: a unit costs roughly $5–12; U3 took ~26 minutes.
 
 ## How the build runs
 
@@ -55,13 +45,13 @@ Do not start the next unit.
 | meta-foundation U1–U5 | `meta-foundation unit 1` … `unit 5` — Graph client, signed intake, drain and lanes, deauthorize and data deletion, seal, retention and sweep. Implemented |
 | connect-instagram U1 | `connect-instagram unit 1: connect and callback` and its review fixes |
 | connect-instagram U2 | `connect-instagram unit 2: renewal, health, disconnect [CONTRACT]` (d2fcd2b9) |
+| connect-instagram U3 | `connect-instagram unit 3: card, checklist, Turn on replies, return notes [CONTRACT] [MIGRATION]` (8f01f51a); rebuilt by the second account. Gate green, integration 823 passed. Departs from ux.md per decisions Q19 (owner to confirm) |
 | Process | ADRs renumbered 0084–0087; rebased on main; next units' dependencies marked in their TRDs |
 
 ## Queue (in order; one at a time)
 
 | # | Unit | Depends on | State |
 |---|---|---|---|
-| 2 | connect-instagram U3 — card, checklist, Turn on replies, return notes | U2 | built, not pushed (see Continue here 1) |
 | 3 | connect-whatsapp U1 — CSP, SDK leaf, state, signup route | — | queued |
 | 4 | connect-whatsapp U2 — setup job and health | U1 | queued |
 | 5 | connect-whatsapp U3 — card states, checklist, disconnect | U2, connect-instagram U3 | queued |
@@ -91,6 +81,11 @@ the four subfeatures above only.
 - A stray `/migration.sql` at the container root (outside the repo) can be deleted.
 
 ## Blockers raised by build sessions
+
+- 2026-11-25 (U3, for the owner): connect-instagram decisions **Q19** departs from the signed-off ux.md — First post
+  and Comment-to-DM show as not done but open nothing until post-composer and comment-automations ship, so a card
+  whose next step is one of them has no main button. Reversible; does not block connect-whatsapp U1 or U2.
+- 2026-11-25: the first account's U3 push problem is resolved by the rebuild above; its local commits are obsolete.
 
 - 2026-11-25: the U3 session's push to origin was refused three times by its auto-mode safety check (see
   Continue here 1).
