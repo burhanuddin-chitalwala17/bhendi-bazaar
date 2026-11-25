@@ -6,6 +6,7 @@ import type { ChannelListingDTO, LeftOffReason, SettlePickerProductDTO, SettleRe
 import type { SettleListingFormValues } from "@/lib/validation/schemas/settle-listing.schema";
 import type { ChannelTypeChangeInput } from "@/lib/validation/schemas/channel-mapping.schema";
 import type { Channel } from "@server/shared/channels";
+import type { SocialPlatform } from "@server/channels/social/types";
 import type { MarketplaceFactsChangeInput } from "@/lib/validation/schemas/marketplace-facts.schema";
 import type { FillNowOutcome } from "@server/channels/channel-facts.types";
 import type { FamilySettleFormValues } from "@/lib/validation/schemas/family-settle.schema";
@@ -39,21 +40,26 @@ export const channelsApiClient = {
   },
 
   /** A link, not a request: the browser follows it to the marketplace's consent page (connectors D5). */
-  connectUrl(orgId: string, channel: Channel) {
+  connectUrl(orgId: string, channel: Channel | SocialPlatform) {
     return `/api/org/${orgId}/channels/${channel}/connect`;
   },
 
   /** Stop acting for the shop on this marketplace (connectors R7). */
-  disconnect(orgId: string, channel: Channel) {
+  disconnect(orgId: string, channel: Channel | SocialPlatform) {
     return apiRequest(`/api/org/${orgId}/channels/${channel}/connection`, { method: "DELETE" });
   },
 
   /** "Check now": one read against the marketplace, recorded (connectors D7). */
-  checkNow(orgId: string, channel: Channel) {
+  checkNow(orgId: string, channel: Channel | SocialPlatform) {
     return apiRequest<{ result: "ok" | "needs_reconnect" | "unreachable" }>(
       `/api/org/${orgId}/channels/${channel}/connection/check`,
       { method: "POST" },
     );
+  },
+
+  /** "Done" on Instagram's Turn on replies sheet: the step waits for the first message (connect-instagram D3). */
+  repliesTurnedOn(orgId: string) {
+    return apiRequest(`/api/org/${orgId}/channels/instagram/replies`, { method: "POST" });
   },
 
   /** "Read again": queue a read of every listing (channel-import R2). */

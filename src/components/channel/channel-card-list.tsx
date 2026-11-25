@@ -4,14 +4,15 @@ import { Button } from "@/components/ui/button";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { CHANNEL, CHANNEL_LABELS } from "@server/shared/channels";
 import { isFeedChannel } from "@/lib/validation/schemas/org-channels.schema";
-import { CARD_STATE, type ChannelCardDTO } from "@server/channels/channel-connection.types";
+import { CARD_STATE, type ChannelCardDTO, type InstagramCardDTO } from "@server/channels/channel-connection.types";
 
 import { ChannelCardShell } from "./channel-card-shell";
-import { ACTION, CARD, CHIP, FEED, PLANNED_CHANNEL_COPY, PURPOSE, SECTION } from "./channel-copy";
+import { ACTION, CARD, CHIP, FEED, META_CATALOGUE_TITLE, PLANNED_CHANNEL_COPY, PURPOSE, SECTION } from "./channel-copy";
 import { ExpandableLine } from "./expandable-line";
 import { FeedToggle } from "./feed-toggle";
 import { PlannedChannelWhy } from "./planned-channel-why";
 import { MarketplaceCard } from "./marketplace-card";
+import { InstagramCard } from "./instagram-card";
 import { channelMark } from "./channel-mark";
 import { PlatformMark } from "@/components/ui/icons/platform-marks";
 
@@ -35,6 +36,8 @@ interface ChannelCardListProps {
   storeLabel: string | null;
   /** False while Channels is locked: connected cards say they are not syncing (feature-access). */
   channelsHeld?: boolean;
+  /** Instagram's card once it is open (connect-instagram R11); until then it stays under Coming soon. */
+  instagram?: InstagramCardDTO | null;
 }
 
 const GRID = "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3";
@@ -43,9 +46,10 @@ const GRID = "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3";
  * Where the shop sells, then what is being built (ux.md form factors: one column on a phone, two
  * from `md:`, three from `lg:`). Cards in a row share a height; actions sit right under a rule.
  */
-export function ChannelCardList({ orgId, cards, storePath, storeLabel, channelsHeld = true }: ChannelCardListProps) {
+export function ChannelCardList({ orgId, cards, storePath, storeLabel, channelsHeld = true, instagram = null }: ChannelCardListProps) {
   const live = cards.filter((card) => card.state !== CARD_STATE.UNAVAILABLE);
   const soon = cards.filter((card) => card.state === CARD_STATE.UNAVAILABLE);
+  const planned = PLANNED_CHANNELS.filter((channel) => !(channel === "instagram" && instagram));
 
   return (
     <div className="space-y-8">
@@ -79,7 +83,7 @@ export function ChannelCardList({ orgId, cards, storePath, storeLabel, channelsH
               return (
                 <ChannelCardShell
                   key={card.channel}
-                  label={card.label}
+                  label={card.channel === CHANNEL.META ? META_CATALOGUE_TITLE : card.label}
                   purpose={PURPOSE[card.channel]}
                   mark={channelMark(card.channel)}
                   chip={on ? { tone: "connected", text: CHIP.feedOn } : { tone: "muted", text: CHIP.feedOff }}
@@ -91,6 +95,8 @@ export function ChannelCardList({ orgId, cards, storePath, storeLabel, channelsH
             }
             return <MarketplaceCard key={card.channel} orgId={orgId} card={card} channelsHeld={channelsHeld} />;
           })}
+          {/* After Meta catalogue, the last of the cards above (connect-instagram Q13). */}
+          {instagram && <InstagramCard orgId={orgId} card={instagram} />}
         </div>
       </section>
 
@@ -107,7 +113,7 @@ export function ChannelCardList({ orgId, cards, storePath, storeLabel, channelsH
               chip={{ tone: "muted", text: CHIP.comingSoon }}
             />
           ))}
-          {PLANNED_CHANNELS.map((planned) => (
+          {planned.map((planned) => (
             <ChannelCardShell
               key={planned}
               tone="soon"

@@ -56,6 +56,8 @@ export const LINE_COPY = {
     return soonestDays === 0 ? `${what} · runs out today` : `${what} · runs out in about ${plural(soonestDays, "day", "days")}`;
   },
   reconnect: (label: string) => `${label} needs you to reconnect`,
+  /** connect-instagram ux.md "Home line": Instagram's says what stops. */
+  instagramReconnect: "Instagram needs reconnecting. Posts won't publish until it is.",
   renew: (label: string) => `${label} needs you to renew access`,
   matchLocations: (label: string) => `Match your ${label} locations so stock can be sent`,
   outOfStock: (label: string, n: number) => `${plural(n, "listing", "listings")} now out of stock on ${label}: we have 0`,

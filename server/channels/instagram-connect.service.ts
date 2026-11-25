@@ -84,6 +84,8 @@ export function instagramConnectService(login: InstagramLogin = instagramLogin()
             orgId,
             channel: CHANNEL,
             externalAccountId: account.accountId,
+            username: account.username,
+            accountKind: account.type,
             accessToken: encryptSecret(token),
             accessTokenExpiresAt: expiresAt,
             userId,

@@ -8,13 +8,14 @@ import { NotFoundError } from "@server/shared/domain-error";
 import { orgChannelService } from "@server/listing/org-channel.service";
 import { enqueue } from "@server/shared/jobs/jobs.enqueue";
 
-import { isOpen } from "./channel-availability";
+import { isOpen, isSocialOpen } from "./channel-availability";
 import {
   CARD_STATE,
   CONNECT_RESULT,
   CONNECTION_ERROR,
   CONNECTION_STATE,
   MARKETPLACE_CHANNELS,
+  SOCIAL_ACCOUNT_KIND,
   READ_STALL_MS,
   READ_STATE,
   isMarketplaceChannel,
@@ -26,7 +27,9 @@ import {
   type ConnectStart,
   type ChannelReadDTO,
   type ConnectionError,
+  type InstagramCardDTO,
   type MarketplaceChannel,
+  type SocialAccountKind,
   type ReadError,
   type ReadState,
 } from "./channel-connection.types";
@@ -39,6 +42,7 @@ import { listingReadSpec } from "./listing-read.job";
 import type { StockSyncState } from "./channel-stock.types";
 import { channelPlan, socialPlan } from "./channel-plan";
 import { SOCIAL_PLATFORM, SOCIAL_PLATFORM_LABELS } from "./social/types";
+import { checklist } from "./social/checklist";
 
 /**
  * A shop's connections to the marketplaces (channel-connectors). The only public surface of the
@@ -148,6 +152,45 @@ async function socialAttention(orgId: string, row: ConnectionRow | undefined): P
   return [{ channel, label: SOCIAL_PLATFORM_LABELS[channel], state: CARD_STATE.NEEDS_RECONNECT, reapproveBy: null }];
 }
 
+const asKind = (raw: string | null): SocialAccountKind | null =>
+  (Object.values(SOCIAL_ACCOUNT_KIND) as string[]).includes(raw ?? "") ? (raw as SocialAccountKind) : null;
+
+/**
+ * The Instagram card (connect-instagram D4, ux.md). Shown once Instagram is open, or while the shop
+ * still has a live connection. First post and Comment-to-DM read as not done until their modules
+ * ship (Q19): there is no post or comment rule to read yet.
+ */
+function instagramCard(row: ConnectionRow | undefined, now: Date): InstagramCardDTO | null {
+  const live = row !== undefined && row.state !== CONNECTION_STATE.DISCONNECTED;
+  if (!live && !isSocialOpen(SOCIAL_PLATFORM.INSTAGRAM)) return null;
+  const connected = row?.state === CONNECTION_STATE.CONNECTED;
+  const messagesOff = connected && row.messagesOffAt !== null;
+  return {
+    state: !live ? CARD_STATE.NOT_CONNECTED : connected ? CARD_STATE.CONNECTED : CARD_STATE.NEEDS_RECONNECT,
+    label: SOCIAL_PLATFORM_LABELS[SOCIAL_PLATFORM.INSTAGRAM],
+    username: live ? row.externalUsername : null,
+    accountKind: live ? asKind(row.externalAccountKind) : null,
+    connectedBy: nameOf(row?.connectedBy ?? null),
+    connectedAt: row?.connectedAt?.toISOString() ?? null,
+    disconnectedBy: row?.state === CONNECTION_STATE.DISCONNECTED ? nameOf(row.disconnectedBy) : null,
+    disconnectedAt: row?.state === CONNECTION_STATE.DISCONNECTED ? (row.disconnectedAt?.toISOString() ?? null) : null,
+    lastCheckedAt: live ? (row.lastCheckedAt?.toISOString() ?? null) : null,
+    stale: live && (!row.lastCheckedAt || now.getTime() - row.lastCheckedAt.getTime() > DAY_MS),
+    reason: row?.state === CONNECTION_STATE.NEEDS_RECONNECT ? ((row.lastErrorCode as ConnectionError | null) ?? null) : null,
+    messagesOff,
+    checklist: connected
+      ? checklist({
+          connected,
+          repliesAsked: row.repliesAskedAt !== null,
+          messageArrived: row.firstMessageAt !== null,
+          messagesOff,
+          posted: false,
+          commentRuleOn: false,
+        })
+      : null,
+  };
+}
+
 function plainCard(channel: Channel, state: CardState): ChannelCardDTO {
   return {
     channel,
@@ -202,7 +245,7 @@ export const channelConnectionService = {
       ),
       ...(await socialAttention(orgId, byChannel.get(SOCIAL_PLATFORM.INSTAGRAM))),
     ];
-    return { cards, attention };
+    return { cards, instagram: instagramCard(byChannel.get(SOCIAL_PLATFORM.INSTAGRAM), now), attention };
   },
 
   /**

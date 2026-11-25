@@ -2,6 +2,7 @@ import { CHANNEL, type Channel } from "@server/shared/channels";
 import type { StockSyncState } from "./channel-stock.types";
 import type { SocialPlatform } from "./social/types";
 import type { SettleFactsDTO, SettleTypeDTO } from "./channel-facts.types";
+import type { ChecklistStepDTO } from "./social/checklist";
 
 /**
  * The shapes the channels domain answers with (channel-connectors TRD). Nothing here carries a
@@ -98,6 +99,30 @@ export interface ChannelCardDTO {
   stockSync: StockSyncState | null;
 }
 
+/** The Instagram account kinds that connect (connect-instagram R3); a personal account stores nothing. */
+export const SOCIAL_ACCOUNT_KIND = { BUSINESS: "business", CREATOR: "creator" } as const;
+export type SocialAccountKind = (typeof SOCIAL_ACCOUNT_KIND)[keyof typeof SOCIAL_ACCOUNT_KIND];
+
+/** The Instagram card (connect-instagram ux.md "State matrix — Instagram card"). No token or account id. */
+export interface InstagramCardDTO {
+  state: typeof CARD_STATE.NOT_CONNECTED | typeof CARD_STATE.CONNECTED | typeof CARD_STATE.NEEDS_RECONNECT;
+  label: string;
+  /** The @username, without the @; null until connected. */
+  username: string | null;
+  accountKind: SocialAccountKind | null;
+  connectedBy: string | null;
+  connectedAt: string | null;
+  disconnectedBy: string | null;
+  disconnectedAt: string | null;
+  lastCheckedAt: string | null;
+  stale: boolean;
+  reason: ConnectionError | null;
+  /** Meta said message access is off, and no message has arrived since (D3): the card's Needs you state. */
+  messagesOff: boolean;
+  /** Null unless connected (R12). */
+  checklist: ChecklistStepDTO[] | null;
+}
+
 export interface ChannelAttentionDTO {
   channel: MarketplaceChannel | SocialPlatform;
   label: string;
@@ -107,6 +132,8 @@ export interface ChannelAttentionDTO {
 
 export interface ChannelsOverviewDTO {
   cards: ChannelCardDTO[];
+  /** Instagram's own card, after Meta catalogue (R11); null while Instagram is not open and the shop has no live connection. */
+  instagram: InstagramCardDTO | null;
   /** What the dashboard banner shows (spec R9). */
   attention: ChannelAttentionDTO[];
 }

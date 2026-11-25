@@ -1,6 +1,6 @@
 # Contracts — channels
 
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 - **Covers:** `server/channels/*.types.ts`
 
 The channels shapes that cross the browser/server boundary. Rules, the error envelope and pagination are in
@@ -59,6 +59,15 @@ Instagram (connect-instagram) has its own static routes beside these, none with 
 `POST /api/org/[orgId]/channels/instagram/connection/check` (`{ result }` as above). Since
 connect-instagram unit 2 an `attention` entry's `channel` may also be a `SocialPlatform`
 (`instagram`), labelled `Instagram`.
+
+Since connect-instagram unit 3 the overview also carries `instagram`: an **`InstagramCardDTO`**
+(`state` — not_connected, connected or needs_reconnect — `label`, `username` without the @,
+`accountKind` from `SOCIAL_ACCOUNT_KIND`, who connected or disconnected and when, `lastCheckedAt`,
+`stale`, `reason`, `messagesOff`, and `checklist`: `{ step, state }[]` from `CHECKLIST_STEP` and
+`STEP_STATE` in `server/channels/social/checklist.ts`, null unless connected), or null while
+Instagram is not open and the shop holds no live connection. Like the cards, it carries no token
+and no account id. `POST /api/org/[orgId]/channels/instagram/replies` (no body) answers
+`{ ok: true }`, or 404 in the envelope when nothing is connected.
 
 `CONNECT_RESULT` is a closed set (connected, cancelled, expired, other_session, other_shop,
 different_account, unreachable, full, unavailable); a client renders each with ux.md's copy and

@@ -26,3 +26,24 @@ registerSink({
     }
   },
 });
+
+/**
+ * Any message in proves the shop allowed access (connect-instagram D3): the first ticks Turn on
+ * replies, and one newer than Meta's refusal clears the card's Needs you. Runs after the inbox's.
+ */
+registerSink({
+  name: "channels.message-access",
+  kind: FACT_KIND.INBOUND_MESSAGE,
+  order: 100,
+  async handle(facts) {
+    const earliest = new Map<string, Date>();
+    const latest = new Map<string, Date>();
+    for (const fact of facts) {
+      const first = earliest.get(fact.connectionId);
+      if (!first || fact.occurredAt < first) earliest.set(fact.connectionId, fact.occurredAt);
+      const last = latest.get(fact.connectionId);
+      if (!last || fact.occurredAt > last) latest.set(fact.connectionId, fact.occurredAt);
+    }
+    for (const [id, first] of earliest) await channelConnectionRepository.markMessageArrived(id, first, latest.get(id) ?? first);
+  },
+});

@@ -2568,6 +2568,15 @@ model ChannelConnection {
   externalBusinessId String?
   externalPhoneId    String?
 
+  /// The Instagram card's account line (connect-instagram R7): the @username and `INSTAGRAM_ACCOUNT` kind, refreshed by each check.
+  externalUsername    String?
+  externalAccountKind String?
+  /// Message access (connect-instagram D3): when the shop said it turned replies on, when the first
+  /// message arrived, and when Meta last refused messages; the next message clears that.
+  repliesAskedAt DateTime?
+  firstMessageAt DateTime?
+  messagesOffAt  DateTime?
+
   listings  ChannelListing[]
   locations ChannelLocation[]
   platformListings PlatformListing[]

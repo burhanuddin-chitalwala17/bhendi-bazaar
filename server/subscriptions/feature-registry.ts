@@ -31,6 +31,9 @@ export const ORG_ROUTE_FEATURES: Record<string, Classification> = {
   "GET /api/org/[orgId]/channels/instagram/connect": { feature: FEATURE.SOCIAL_SELLING },
   "POST /api/org/[orgId]/channels/[channel]/connection/check": CH,
   "POST /api/org/[orgId]/channels/instagram/connection/check": { feature: FEATURE.SOCIAL_SELLING },
+  "POST /api/org/[orgId]/channels/instagram/replies": {
+    core: "Records that the shop allowed message access; it calls nothing at Instagram, so a lock has nothing to stop (connect-instagram Q19).",
+  },
   "DELETE /api/org/[orgId]/channels/instagram/connection": {
     core: "Disconnecting is always allowed: a lock never traps a shop's Instagram credential (connect-instagram D5).",
   },

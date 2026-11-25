@@ -54,8 +54,9 @@ export function instagramConnectionService(login: InstagramLogin = instagramLogi
   async function checkOne(orgId: string, now: Date): Promise<CheckOutcome> {
     const live = await liveToken(orgId);
     if (!live) throw new NotFoundError("Connection");
+    let account: Awaited<ReturnType<InstagramLogin["account"]>>;
     try {
-      await login.account(live.token);
+      account = await login.account(live.token);
     } catch (error) {
       if (error instanceof MetaError && error.code === SOCIAL_ERROR.AUTH) {
         await lost(live.id, now);
@@ -64,7 +65,7 @@ export function instagramConnectionService(login: InstagramLogin = instagramLogi
       if (error instanceof MetaError) return "unreachable";
       throw error;
     }
-    await channelConnectionRepository.markChecked(live.id, now);
+    await channelConnectionRepository.markChecked(live.id, now, { username: account.username, accountKind: account.type });
     return "ok";
   }
 
@@ -179,6 +180,20 @@ export function instagramConnectionService(login: InstagramLogin = instagramLogi
       if (!row || row.state !== CONNECTION_STATE.CONNECTED) throw new NotFoundError("Connection");
       if (row.lastCheckedAt && now.getTime() - row.lastCheckedAt.getTime() < CHECK_NOW_GAP_MS) return "ok";
       return await checkOne(orgId, now);
+    },
+
+    /** "Done" on the Turn on replies sheet (D3): the step waits for the first message. Free, as reads are. */
+    async repliesAsked(orgId: string, now = new Date()): Promise<void> {
+      const row = await channelConnectionRepository.find(orgId, CHANNEL);
+      if (!row || !(await channelConnectionRepository.markRepliesAsked(row.id, now))) throw new NotFoundError("Connection");
+    },
+
+    /**
+     * Meta answered a message read or send with "access to messages not allowed" (D3): the card says
+     * so until the next message arrives. For inbox-instagram to call; nothing reads messages yet (Q19).
+     */
+    async messagesRefused(connectionId: string, now = new Date()): Promise<void> {
+      await channelConnectionRepository.markMessagesOff(connectionId, now);
     },
 
     /**

@@ -1,4 +1,5 @@
 import { CARD_STATE } from "@server/channels/channel-connection.types";
+import { SOCIAL_PLATFORM } from "@server/channels/social/types";
 import { CHANNEL_LABELS, type Channel } from "@server/shared/channels";
 import { STOCK_ATTENTION } from "@server/channels/channel-stock.types";
 import { ATTENTION_CAP } from "@server/analytics/attention.types";
@@ -32,8 +33,13 @@ export function attentionLines(orgId: string, a: HomeAttentionDto, now: Date): A
   // Sales stopped on a marketplace.
   if (!a.channel.ok) lines.push(failed("channel"));
   else if (a.channel.value) {
-    const { label, state } = a.channel.value;
-    const text = state === CARD_STATE.RENEWAL_DUE ? LINE_COPY.renew(label) : LINE_COPY.reconnect(label);
+    const { channel, label, state } = a.channel.value;
+    const text =
+      channel === SOCIAL_PLATFORM.INSTAGRAM
+        ? LINE_COPY.instagramReconnect
+        : state === CARD_STATE.RENEWAL_DUE
+          ? LINE_COPY.renew(label)
+          : LINE_COPY.reconnect(label);
     lines.push({ key: "channel", ok: true, text, href: ROUTES.org.channels(orgId) });
   }
 

@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import { FormDialog } from "@/components/shared/overlays/form-dialog";
 import { useMutation } from "@/hooks/core/useMutation";
 import type { MarketplaceChannel } from "@server/channels/channel-connection.types";
+import { SOCIAL_PLATFORM } from "@server/channels/social/types";
 
 import { channelsApiClient } from "./channelsApiClient";
-import { ACTION, DISCONNECT } from "./channel-copy";
+import { ACTION, DISCONNECT, INSTAGRAM } from "./channel-copy";
 
 interface DisconnectDialogProps {
   orgId: string;
-  channel: MarketplaceChannel;
+  channel: MarketplaceChannel | typeof SOCIAL_PLATFORM.INSTAGRAM;
   label: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -31,22 +32,30 @@ export function DisconnectDialog({ orgId, channel, label, open, onOpenChange }: 
     },
   });
 
+  // Instagram has nothing left selling at old stock, so no Watch out (connect-instagram ux.md copy deck).
+  const lines =
+    channel === SOCIAL_PLATFORM.INSTAGRAM
+      ? { stops: INSTAGRAM.disconnect.stops, stays: INSTAGRAM.disconnect.stays, watchOut: null, revoke: INSTAGRAM.disconnect.revoke }
+      : { stops: DISCONNECT.stops(label), stays: DISCONNECT.stays(label), watchOut: DISCONNECT.watchOut(label), revoke: DISCONNECT.revoke(channel, label) };
+
   return (
     <FormDialog open={open} onOpenChange={onOpenChange} title={DISCONNECT.title(label)}>
       <div className="flex flex-col gap-3 text-sm">
         <p>
           <span className="font-semibold">{DISCONNECT.stopsLabel}</span>
-          {DISCONNECT.stops(label)}
+          {lines.stops}
         </p>
         <p>
           <span className="font-semibold">{DISCONNECT.staysLabel}</span>
-          {DISCONNECT.stays(label)}
+          {lines.stays}
         </p>
-        <p className="text-warning">
-          <span className="font-semibold">{DISCONNECT.watchOutLabel}</span>
-          {DISCONNECT.watchOut(label)}
-        </p>
-        <p className="text-muted-foreground">{DISCONNECT.revoke(channel, label)}</p>
+        {lines.watchOut && (
+          <p className="text-warning">
+            <span className="font-semibold">{DISCONNECT.watchOutLabel}</span>
+            {lines.watchOut}
+          </p>
+        )}
+        <p className="text-muted-foreground">{lines.revoke}</p>
         {disconnect.error && (
           <p role="alert" className="text-destructive">
             {DISCONNECT.failed}

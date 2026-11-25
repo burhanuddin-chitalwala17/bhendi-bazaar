@@ -2,9 +2,10 @@ import { requireOrgMember } from "@/lib/org-auth";
 import { channelsDAL } from "@/data-access-layer/channels.dal";
 import { PageHeader } from "@/components/shared/page-shell";
 import { ChannelCardList } from "@/components/channel/channel-card-list";
-import { ConnectResultNote } from "@/components/channel/connect-result-note";
+import { ConnectResultNote, InstagramResultNote } from "@/components/channel/connect-result-note";
 import { PAGE_INTRO } from "@/components/channel/channel-copy";
 import { isConnectResult, isMarketplaceChannel } from "@server/channels/channel-connection.types";
+import { SOCIAL_PLATFORM } from "@server/channels/social/types";
 import { CHANNEL_LABELS } from "@server/shared/channels";
 import { ORG_CHANNELS_PAGE_COPY } from "@/components/org/pages-copy";
 import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
@@ -35,6 +36,9 @@ export default async function OrgChannelsPage({
     <div className="space-y-6">
       <PageHeader help="channels" title={ORG_CHANNELS_PAGE_COPY.title} description={PAGE_INTRO} />
       {!scope.features.channels && <PlanBanner feature={FEATURE.CHANNELS} />}
+      {result && channel === SOCIAL_PLATFORM.INSTAGRAM && isConnectResult(result) && (
+        <InstagramResultNote orgId={scope.orgId} result={result} />
+      )}
       {outcome && (
         <ConnectResultNote
           orgId={scope.orgId}
@@ -43,7 +47,7 @@ export default async function OrgChannelsPage({
           result={outcome.result}
         />
       )}
-      <ChannelCardList orgId={scope.orgId} cards={overview.cards} storePath={storePath} storeLabel={storeLabel} channelsHeld={scope.features.channels} />
+      <ChannelCardList orgId={scope.orgId} cards={overview.cards} storePath={storePath} storeLabel={storeLabel} channelsHeld={scope.features.channels} instagram={overview.instagram} />
     </div>
   );
 }

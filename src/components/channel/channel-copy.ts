@@ -1,4 +1,4 @@
-import type { ConnectResult, ConnectionError } from "@server/channels/channel-connection.types";
+import { CONNECTION_ERROR, type ConnectResult, type ConnectionError } from "@server/channels/channel-connection.types";
 import { formatDate } from "@/lib/format";
 import { CHANNEL, type Channel } from "@server/shared/channels";
 
@@ -25,7 +25,7 @@ export const SECTION = {
 export const PURPOSE: Record<Channel, string> = {
   [CHANNEL.STORE]: "Your own shop on Bhendi Bazaar",
   [CHANNEL.GOOGLE]: "Your products in Google Shopping results",
-  [CHANNEL.META]: "Your products on Facebook and Instagram",
+  [CHANNEL.META]: "Your products in Facebook and Instagram shops, from your catalogue feed.",
   [CHANNEL.AMAZON]: "Listings, stock and orders with Seller Central",
   [CHANNEL.FLIPKART]: "Listings, stock and orders with Seller Hub",
   [CHANNEL.MEESHO]: "Sell to Meesho's buyers across India",
@@ -106,6 +106,9 @@ export const ACTION = {
   viewStore: "View store",
   tryAgain: "Try again",
 } as const;
+
+/** The feed card's own name beside the Instagram card (connect-instagram Q13): two names for two jobs. */
+export const META_CATALOGUE_TITLE = "Meta catalogue";
 
 export const FEED = {
   google: { off: "Show your products on Google Shopping. No account needed; Google reads your catalogue.", on: "On · your products are in Google's feed." },
@@ -222,3 +225,80 @@ export const COMPLETENESS_COPY = {
   ready: (channels: string[]) => `Ready for ${channels.join(", ")}`,
   missing: (channel: string, keys: string[]) => `${channel} still needs: ${keys.join(", ")}`,
 } as const;
+
+/**
+ * The Instagram card, its checklist, the Turn on replies sheet, its return notes and its disconnect
+ * dialog, as signed off in docs/specs/social-selling/connect-instagram/ux.md.
+ */
+export const INSTAGRAM = {
+  purpose: "Post, answer comments and DMs, and turn comments into sales.",
+  needsProfessional: "Needs an Instagram business or creator account (free to switch).",
+  beforeConsent: "Instagram will ask to let Bhendi Bazaar manage messages. That's what lets you reply from here. Your chats stay between you and your buyers.",
+  account: (username: string, kind: string | null) => `@${username}${kind ? ` · ${kind}` : ""}`,
+  kind: { business: "Business", creator: "Creator" },
+  needsYou: "Needs you",
+  messagesOff: "Replies from here are off in Instagram. Switch them back on to answer DMs here.",
+  showMeHow: "Show me how",
+  checking: "Checking…",
+  /** Removed inside Instagram says so; every other lost access is Instagram refusing us. */
+  reason: (code: ConnectionError | null) =>
+    code === CONNECTION_ERROR.REMOVED_IN_APP ? "Bhendi Bazaar was removed in Instagram's settings." : "Instagram stopped accepting our access.",
+  steps: {
+    connect: "Connect",
+    replies: "Turn on replies",
+    first_post: "First post",
+    comment_dm: "Comment-to-DM",
+  },
+  stepsLabel: "Setup",
+  waiting: "waiting for your first message",
+  checkItNow: (username: string) => `To check it now, send @${username} a DM from another account.`,
+  setupDone: "Setup done",
+  sheet: {
+    title: "Turn on replies from Bhendi Bazaar",
+    body: "So you can answer your DMs here, Instagram asks you to switch this on once, in the app:",
+    steps: [
+      "1. Settings → Messages and story replies",
+      "2. Message controls → Connected tools",
+      "3. Turn on Allow access to messages",
+    ],
+    privacy: "🔒 Private to your shop · No one at Bhendi Bazaar reads your chats.",
+    open: "Open Instagram",
+    done: "Done",
+    close: "Close",
+    failed: "Couldn't save that. Try again.",
+  },
+  disconnect: {
+    stops: "scheduled posts won't publish, and new comments and DMs stop arriving here.",
+    stays: "your posts on Instagram stay as they are.",
+    revoke: "To remove us completely, also remove Bhendi Bazaar in Instagram: Settings → Website permissions → Apps and websites.",
+  },
+} as const;
+
+/** Instagram's own app or site: on a phone the link opens the app where it is installed. */
+export const INSTAGRAM_APP_URL = "https://www.instagram.com/";
+
+/** The note at the top of Channels after coming back from Instagram (connect-instagram ux.md "Return note"). */
+export const INSTAGRAM_RESULT_NOTE: Record<ConnectResult, { tone: NoteTone; text: string; action: "replies" | "connect" | "retry" | "disconnect" | null }> = {
+  connected: { tone: "success", text: "Instagram connected. Next: turn on replies, so you can answer DMs from here.", action: "replies" },
+  personal: {
+    tone: "warning",
+    text: "That's a personal Instagram account. Bhendi Bazaar works with business and creator accounts, which are free. In Instagram: Profile → ☰ → Account type and tools → Switch to professional account.",
+    action: "retry",
+  },
+  cancelled: { tone: "neutral", text: "Nothing was connected. You can connect Instagram any time.", action: "connect" },
+  expired: { tone: "warning", text: "That link has expired. Start again from here.", action: "connect" },
+  other_session: { tone: "warning", text: "That link has expired. Start again from here.", action: "connect" },
+  other_shop: {
+    tone: "error",
+    text: "This Instagram account is already connected to another shop. An account can belong to one shop only; disconnect it there first.",
+    action: null,
+  },
+  different_account: {
+    tone: "warning",
+    text: "That's a different Instagram account from the one connected here. To switch, disconnect this one first, then connect the new one.",
+    action: "disconnect",
+  },
+  unreachable: { tone: "error", text: "Instagram didn't respond. Nothing was connected. Try again in a minute.", action: "retry" },
+  full: { tone: "warning", text: "Connecting Instagram isn't open yet. We'll show it here when it is.", action: null },
+  unavailable: { tone: "warning", text: "Connecting Instagram isn't open yet. We'll show it here when it is.", action: null },
+};

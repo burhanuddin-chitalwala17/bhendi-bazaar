@@ -53,6 +53,12 @@ export interface ConnectionRow {
   stockSentAt: Date | null;
   stockCheckedAt: Date | null;
   ordersCursor: string | null;
+  /** A social account's card line and message-access facts (connect-instagram D3, D4). */
+  externalUsername: string | null;
+  externalAccountKind: string | null;
+  repliesAskedAt: Date | null;
+  firstMessageAt: Date | null;
+  messagesOffAt: Date | null;
   connectedBy: { name: string | null; email: string | null } | null;
   disconnectedBy: { name: string | null; email: string | null } | null;
 }
@@ -92,6 +98,11 @@ const ROW = {
   stockSentAt: true,
   stockCheckedAt: true,
   ordersCursor: true,
+  externalUsername: true,
+  externalAccountKind: true,
+  repliesAskedAt: true,
+  firstMessageAt: true,
+  messagesOffAt: true,
   ...PEOPLE,
 } as const;
 
@@ -204,11 +215,30 @@ export const channelConnectionRepository = {
    */
   async connectSocial(
     db: ConnectionDb,
-    input: { orgId: string; channel: SocialPlatform; externalAccountId: string; accessToken: string; accessTokenExpiresAt: Date | null; userId: string; now: Date },
+    input: {
+      orgId: string;
+      channel: SocialPlatform;
+      externalAccountId: string;
+      username: string;
+      accountKind: string;
+      accessToken: string;
+      accessTokenExpiresAt: Date | null;
+      userId: string;
+      now: Date;
+    },
   ): Promise<{ id: string }> {
+    const previous = await db.channelConnection.findUnique({
+      where: { orgId_channel: { orgId: input.orgId, channel: input.channel } },
+      select: { externalAccountId: true },
+    });
+    // Message access belongs to the account: another account after a disconnect starts its checklist again.
+    const sameAccount = previous?.externalAccountId === input.externalAccountId;
     const data = {
       state: CONNECTION_STATE.CONNECTED,
       externalAccountId: input.externalAccountId,
+      externalUsername: input.username,
+      externalAccountKind: input.accountKind,
+      ...(sameAccount ? {} : { repliesAskedAt: null, firstMessageAt: null, messagesOffAt: null }),
       accessToken: input.accessToken,
       accessTokenExpiresAt: input.accessTokenExpiresAt,
       refreshToken: null,
@@ -300,11 +330,44 @@ export const channelConnectionRepository = {
     await db.channelConnection.update({ where: { id }, data: sealed, select: { id: true } });
   },
 
-  async markChecked(id: string, now: Date): Promise<void> {
+  /** `account` refreshes a social card's line: a handle can change on the platform. */
+  async markChecked(id: string, now: Date, account?: { username: string; accountKind: string }): Promise<void> {
     await prisma.channelConnection.updateMany({
       where: { id, state: CONNECTION_STATE.CONNECTED },
-      data: { lastCheckedAt: now, lastErrorCode: null, lastErrorAt: null },
+      data: {
+        lastCheckedAt: now,
+        lastErrorCode: null,
+        lastErrorAt: null,
+        ...(account ? { externalUsername: account.username, externalAccountKind: account.accountKind } : {}),
+      },
     });
+  },
+
+  /** The shop said it turned replies on (connect-instagram D3): the checklist step waits for a message. */
+  async markRepliesAsked(id: string, now: Date): Promise<number> {
+    const { count } = await prisma.channelConnection.updateMany({
+      where: { id, state: CONNECTION_STATE.CONNECTED },
+      data: { repliesAskedAt: now },
+    });
+    return count;
+  },
+
+  /**
+   * A message arrived (D3): the first one ticks Turn on replies, and any one newer than Meta's
+   * refusal proves access is back. Both conditional, so a replayed or older fact writes nothing.
+   */
+  async markMessageArrived(id: string, first: Date, last: Date): Promise<void> {
+    await prisma.channelConnection.updateMany({ where: { id, firstMessageAt: null }, data: { firstMessageAt: first } });
+    await prisma.channelConnection.updateMany({ where: { id, messagesOffAt: { lt: last } }, data: { messagesOffAt: null } });
+  },
+
+  /** Meta refused a message read or send because access is off (D3). Live rows only. */
+  async markMessagesOff(id: string, at: Date): Promise<number> {
+    const { count } = await prisma.channelConnection.updateMany({
+      where: { id, state: CONNECTION_STATE.CONNECTED },
+      data: { messagesOffAt: at },
+    });
+    return count;
   },
 
   /**

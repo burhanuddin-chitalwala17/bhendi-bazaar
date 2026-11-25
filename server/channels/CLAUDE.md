@@ -1,6 +1,6 @@
 # CLAUDE.md — channels domain
 
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 - **Covers:** `server/channels/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md). This file covers **channels** only. Requirements are in [docs/specs/marketplace-integration/](../../docs/specs/marketplace-integration/); every decision, with who made it, is in each spec's `decisions.md`.
@@ -76,10 +76,11 @@ Channels owns a shop's authorised connection to a marketplace, and to its own so
 | `listing-complaints.ts` | Hands a send's, create's or look's errors to requests as one job per batch, in the caller's transaction; a failed hand-over is logged, never thrown (setup-requests D5, ADR-0053) |
 | `meta-intake.service.ts`, `meta-event.repository.ts`, `meta-unrouted.repository.ts`, `meta-event.types.ts` | The webhook intake and the one writers of `MetaEvent` and `MetaUnroutedCount` (meta-foundation D3) |
 | `meta-drain.service.ts`, `meta-drain.job.ts`, `connection-lane.repository.ts` | The drain and its job spec (handler in `channels.jobs.ts`); the one writer of `ConnectionLane` and the `LANE` set (meta-foundation D4, D5) |
-| `meta-callbacks.service.ts`, `data-deletion.repository.ts`, `data-deletion.job.ts`, `channels.sinks.ts` | Deauthorize and data deletion, the one writer of `DataDeletionRequest`, the forget job's spec (handler in `channels.jobs.ts`); channels' own sink, connection health from account updates (meta-foundation D6, D7) |
+| `meta-callbacks.service.ts`, `data-deletion.repository.ts`, `data-deletion.job.ts`, `channels.sinks.ts` | Deauthorize and data deletion, the one writer of `DataDeletionRequest`, the forget job's spec (handler in `channels.jobs.ts`); channels' own sinks: connection health from account updates (meta-foundation D6, D7), and message access from any message in (connect-instagram D3) |
 | `meta-upkeep.service.ts`, `meta-upkeep.job.ts` | The daily upkeep, queued by `maintain`: raw events past 30 days deleted in batches, drains and deletion requests a lost job left re-asked (meta-foundation D10, Q8) |
 | `instagram-connect.service.ts` | Connecting Instagram (connect-instagram D1): the consent link, and the return, which stores the 60-day token sealed for a business or creator account no other shop holds, under the row lock, then asks for webhooks |
-| `instagram-connection.service.ts` | Keeping Instagram connected and ending it (connect-instagram D2, D4, D5): its own daily pass from `maintain` (the 60-day token renewed under `lockSecrets` once older than 7 days, the account read, webhooks asked for again, re-sealing), Check now, and disconnect |
+| `instagram-connection.service.ts` | Keeping Instagram connected and ending it (connect-instagram D2, D4, D5): its own daily pass from `maintain` (the 60-day token renewed under `lockSecrets` once older than 7 days, the account read, webhooks asked for again, re-sealing), Check now, the card's message-access facts (the sheet's Done, Meta's refusal), and disconnect |
 | `social/types.ts` | Our words for the social platforms: `SOCIAL_PLATFORM`, its labels, `SOCIAL_ERROR` (social-selling TRD A-D3) |
+| `social/checklist.ts` | A social card's setup checklist, computed from facts on each read and never stored; pure (connect-instagram D4) |
 | `providers/meta/` | The Meta platform layer: `graph-client.ts` (the one client), `errors.ts` (Meta's codes in ours), `meta-limits.ts` (dated limits and lane pace), `settings.ts` (the app's settings, the secret under rotation), `signature.ts` (Meta's signature and verify token in constant time), `signed-request.ts` (the callbacks' signed request), `instagram-login.ts` (Instagram Login: consent, token exchange and refresh, the account read, the webhook subscription), `webhook-split.ts` (a delivery into items and their dedupe keys; pure), `translate.ts` (a stored event into facts; pure) |
 | `providers/` | `MarketplaceProvider`, one folder per marketplace (`*.listings.ts` reads its listings, `*.stock.ts` its locations, counts and orders, `*.publish.ts` its listing rules, publish, status and create; `stock.ts` and `publish.ts` the shared shapes), and `listing-read.ts`'s shared sink, retry and paise helpers |
