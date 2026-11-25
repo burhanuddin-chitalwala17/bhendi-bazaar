@@ -1,0 +1,25 @@
+src/app/api/CLAUDE.md
+  s_9d5fa95bbe24d4::t_d8d7ef85462df4 3
+docs/specs/media-library/bulk-actions/decisions.md
+  s_9d5fa95bbe24d4::t_1b18148e709620 3,13-15,20
+tests/unit/media-tags-repository.test.ts
+  s_9d5fa95bbe24d4::t_d8d7ef85462df4 66,69
+handoff/media-library-bulk-actions-u1.md
+  s_9d5fa95bbe24d4::t_d4192b96bdac2e 3,8-17,20-21,23,25-27,29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "e2401d79a34b16fb90141998f1f128d7b27c03af",
+  "prompts": {},
+  "sessions": {
+    "s_9d5fa95bbe24d4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f00ee551-450c-4171-b74f-9342da83f47a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
