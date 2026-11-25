@@ -40,6 +40,7 @@ Each is a directory under `server/`, owning its own service, repository, and typ
 | analytics | `server/analytics/` | Aggregating read-model for the admin dashboard. **Read-only**, and the one documented exception to the no-cross-domain-reads rule |
 | wishlist | `server/wishlist/` | Saved products, and the demand signal an org reads off them |
 | channels | `server/channels/` | A shop's authorised connections to marketplaces: consent, encrypted tokens, renewal, health. Tokens never leave it |
+| inbox | `server/inbox/` | A shop's conversations on its social platforms and every message in them, sealed under the shop's key. Fed by sinks of neutral facts; knows no platform |
 | content | `server/content/` | What is made from an image: enhancement proposals and their ledger, renditions, what each channel asks of a photograph, and every AI-generated picture through one provider-agnostic port ([ADR-0076](docs/adr/0076-image-generation-goes-through-one-port-and-models-are-data.md)). Reads catalog's assets through catalog's public surface, never its repositories |
 | requests | `server/requests/` | Tickets for what a shop can't fix itself: requirements the admin enables, issues a developer fixes. Keyed by the fix, never by the shop |
 | subscriptions | `server/subscriptions/` | What each shop may use of the paid features (Channels, Storefront, Image enhancement, Social selling), and the one check every domain asks. Imports only `shared` |

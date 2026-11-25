@@ -39,6 +39,7 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 | [server/payments/CLAUDE.md](../server/payments/CLAUDE.md) | Payments — the gateway conversation and the single-writer rule |
 | [server/bidding/CLAUDE.md](../server/bidding/CLAUDE.md) | Bidding — timed auctions, and the sale gate that suspends an item from normal sale |
 | [server/notifications/CLAUDE.md](../server/notifications/CLAUDE.md) | Notifications — transactional email |
+| [server/inbox/CLAUDE.md](../server/inbox/CLAUDE.md) | Inbox — a shop's social conversations, fed by sinks, sealed per shop |
 | [server/subscriptions/CLAUDE.md](../server/subscriptions/CLAUDE.md) | Subscriptions — the paid-feature switches and the one check every domain asks |
 | [server/audience/CLAUDE.md](../server/audience/CLAUDE.md) | Audience — a shop's contacts, their marketing consent, and the one `may` every sender asks |
 | [server/social/CLAUDE.md](../server/social/CLAUDE.md) | Social — a shop's posts and their destinations, knowing no platform |

@@ -110,6 +110,8 @@ const PUBLIC_SURFACE: Record<string, string[]> = {
   audience: [],
   // social-selling A-Q7: a platform-free tool; its services and types only.
   social: [],
+  // social-selling inbox-core: services and types only; its repositories and sinks stay inside.
+  inbox: [],
 };
 
 /** Always public, in every domain. */

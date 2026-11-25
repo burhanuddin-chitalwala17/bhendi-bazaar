@@ -809,6 +809,7 @@ model Org {
   ticketNeeds        TicketNeed[]
   contacts           Contact[]
   posts              Post[]
+  conversations      Conversation[]
 
   @@index([email])
   @@index([isActive])
@@ -2585,6 +2586,7 @@ model ChannelConnection {
   platformListings PlatformListing[]
   metaEvents MetaEvent[]
   lanes      ConnectionLane[]
+  conversations Conversation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2652,6 +2654,99 @@ model DataDeletionRequest {
   completedAt  DateTime?
 
   @@index([userIdHash])
+}
+
+/// One thread between a shop and one person on one platform, or one comment with its replies
+/// (social-selling inbox-core D1, Q2). Written only by `server/inbox/conversation.repository.ts`.
+/// The list's indexes are partial and expression indexes in the migration: needs-you and unread
+/// counts, and the name prefix search.
+model Conversation {
+  id                String            @id @default(cuid())
+  orgId             String
+  org               Org               @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  connectionId      String
+  connection        ChannelConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  /// `SOCIAL_PLATFORM`: instagram, whatsapp.
+  platform          String
+  /// `CONVERSATION_KIND`: DM, COMMENT.
+  kind              String
+  /// `dm:<personKey>` or `comment:<top comment id>`: unique per shop and platform (Q2).
+  threadKey         String
+  /// The platform's id for the person, scoped to the shop; never a key across shops (ADR-0024).
+  personKey         String
+  personName        String?
+  personHandle      String?
+  /// Contact data as the platform gives it (Q15), never an identity key.
+  personPhone       String?
+  /// The post a comment thread is under.
+  postRef           String?
+  /// Platform time of the newest message: threads sort by it, whatever order events arrived in.
+  lastMessageAt     DateTime
+  lastInboundAt     DateTime?
+  /// The newest message's text, cut short and sealed under the shop's key (A-D12).
+  lastPreviewSealed String?
+  /// `INBOX_MESSAGE_KIND` of the newest message, so a list row can say "Photo" without opening it.
+  lastMessageKind   String?
+  unread            Boolean           @default(false)
+  needsYou          Boolean           @default(false)
+  needsYouReason    String?
+  autoAnswered      Boolean           @default(false)
+  /// 0 for Needs you, 1 otherwise: one index serves "Needs you first".
+  sortRank          Int               @default(1)
+  botPausedUntil    DateTime?
+  /// The reply window as the source reports it (D3).
+  window            Json?
+  /// Taken afresh from its sequence on every write, a message's included: the change feed's cursor (A-D14).
+  changeSeq         BigInt            @default(autoincrement())
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  messages Message[]
+
+  @@unique([orgId, platform, threadKey])
+  @@index([orgId, platform, sortRank, lastMessageAt(sort: Desc), id])
+  @@index([orgId, changeSeq])
+  @@index([connectionId])
+}
+
+/// One message in a conversation, in or out, and the outbox row for what a shop sends (inbox-core
+/// D1; ADR-0086). Written only by `server/inbox/message.repository.ts`.
+model Message {
+  id                String       @id @default(cuid())
+  conversationId    String
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  orgId             String
+  /// `MESSAGE_DIRECTION`: IN, OUT.
+  direction         String
+  /// `MESSAGE_AUTHOR`: MEMBER, AUTOMATIC, APP, PERSON.
+  author            String
+  memberId          String?
+  /// `INBOX_MESSAGE_KIND`.
+  kind              String
+  /// What an UNSUPPORTED message was, in our words (R8): never the person's text.
+  label             String?
+  /// The text, sealed under the shop's key (A-D12); a cart's note and items as sealed JSON.
+  bodySealed        String?
+  /// The platform's opaque media reference; fetched through the source on open, never by a browser.
+  attachmentRef     String?
+  /// For a reaction or an edit: the platform id of the message it acts on.
+  refersTo          String?
+  platformMessageId String?
+  /// Unique per shop and platform event, so a message delivered twice is stored once (R12).
+  dedupeKey         String       @unique
+  /// `MESSAGE_STATE` for what the shop sent; null for what the person sent.
+  state             String?
+  sendAfter         DateTime?
+  errorCode         String?
+  /// Platform time: a thread reads in this order (hazard: late or out-of-order delivery).
+  sentAt            DateTime?
+  /// Taken afresh from its sequence on every write: an open thread's cursor.
+  changeSeq         BigInt       @default(autoincrement())
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([conversationId, sentAt, id])
+  @@index([orgId, platformMessageId])
 }
 
 /// Events dropped at the intake, counted per day and product, never stored (meta-foundation R2, R5, D12).
