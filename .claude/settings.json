@@ -1,6 +1,16 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(git push origin *)",
+      "Bash(git push -u origin *)"
+    ],
     "deny": [
+      "Bash(git push *--force*)",
+      "Bash(git push * -f)",
+      "Bash(git push * -f *)",
+      "Bash(git push *+*)",
+      "Bash(git push * main)",
+      "Bash(git push * *:main)",
       "Read(./package-lock.json)",
       "Read(./.next/**)",
       "Read(./docs/archive/**)"

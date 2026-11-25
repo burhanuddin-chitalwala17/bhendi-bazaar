@@ -34,7 +34,7 @@ Emit the unit list as the TRD's Delivery section states it — one commit each �
 5. **Mark the decisions it shipped.** Every Q the unit implements moves from `decided` to `implemented (unit n)` in its `decisions.md`. From then on it is superseded, never edited ([ADR-0062](../../../docs/adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)).
 6. **Write the commit message** ([ADR-0078](../../../docs/adr/0078-the-changelog-is-retired-and-the-commit-subject-is-the-record.md)) — subject `<area>: <what changed>`, `[CONTRACT]` when a DTO or schema in `server/*/*.types.ts`, `src/lib/validation/schemas/` changed (and the domain's `docs/contracts/<domain>.md` moved in the same unit), `[MIGRATION]` when `prisma/migrations/` gained a folder (and its header says whose data a `DROP` discards). The body names the suites that ran.
 7. **Review in a fresh context.** Spawn a subagent that has not seen the implementation, hand it `.claude/skills/bb-review/SKILL.md` and the unit's range, and fix every finding before committing. The author's own review is step 2's hook, not this.
-8. **Commit** the unit on the working branch. Never push; the owner pushes ([CLAUDE.md](../../../CLAUDE.md) SDLC).
+8. **Commit** the unit on the working branch, then push that branch (`git push origin <branch>`). Never push to `main`, never force-push; a PR stays the owner's ([CLAUDE.md](../../../CLAUDE.md) SDLC).
 
 ## 3. Close the feature
 
