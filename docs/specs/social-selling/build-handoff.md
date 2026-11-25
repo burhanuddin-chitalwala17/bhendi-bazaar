@@ -25,7 +25,7 @@ green checkpoints and resume after the reset.
 
 **Paused for optimisation (owner, 2026-11-25):** no new units start; the running ones finish, then the build stops.
 
-**Running now (lane):** connect-whatsapp U1 (1), notifications-core U2 (3), notifications-core U3 (8), inbox-core U4 (14), consent-core U3 (6), checkout-links U2 (7), post-composer U2 (4), instagram-publishing U1 (2), social-posts U1 (9), social-posts U3 (10),
+**Running now (lane):** connect-whatsapp U1 (1), notifications-core U2 (3), notifications-core U3 (8), inbox-core U4 (14), consent-core U3 (6), checkout-links U2 (7), post-composer U2 (4), instagram-publishing U1 (2), social-posts U3 (10),
 inbox-core U2 (5), inbox-core U3 (11), inbox-instagram U1 (12),. A lane whose unit is on origin
 is removed (worktree, local branch, its Postgres); a new unit gets a fresh lane. Lanes export `VITEST_MAX_WORKERS=2` (12 cores) and `GIT_TRACE2_EVENT=0` (git hangs on the git-ai daemon socket). Sessions write commit messages with `git commit -F -`, never a shared temp file (one was
 overwritten by another lane). Every TRD's Delivery lines carry `after …` marks — the next ready units are read from them.
@@ -69,6 +69,7 @@ Do not start the next unit.
 | whatsapp-sending U1 | `whatsapp-sending unit 1: campaigns domain, settings, rates, spend, and the port [CONTRACT] [MIGRATION]` (7297beae). Q14–Q21; **owner: confirm the per-message rates (87 and 12 paise) against Meta's price list before the first paid send** |
 | notifications-core U1 | `notifications-core unit 1: events, deliveries, email plug, badge [CONTRACT] [MIGRATION]` (747bb0c8). Q9, Q10; TRD D7 (13-month retention) had no unit — assigned to U3 by the master |
 | inbox-whatsapp U1 | `inbox-whatsapp unit 1: WhatsApp messages land — E.164 keys, re-key on new user id, locations, echo time` (726a4a53). Q12; Meta's `user_changed_user_id` field name assumed |
+| ai-images/social-posts U1 | `ai-images/social-posts unit 1: social purpose, social.v1 prompt, model order and post presets [CONTRACT] [MIGRATION]` (da60a4ab). Q50 in ai-images/decisions.md; presets route moves to U4 |
 | Planning | notification-hub and publishing units marked (7017d471); all remaining units marked, social-posts U4 added, connection-ready event in post-composer U3 (34f25c60) |
 | Process | ADRs renumbered 0084–0087; rebased on main; next units' dependencies marked in their TRDs |
 
