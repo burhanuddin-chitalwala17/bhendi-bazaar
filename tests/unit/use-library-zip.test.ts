@@ -57,7 +57,7 @@ describe("useLibraryZip", () => {
     const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01"));
     const outcome = await run(result, [...photos, "yt"]);
 
-    expect(h.downloadLinks).toHaveBeenCalledWith("org-1", [...photos, "yt"]);
+    expect(h.downloadLinks).toHaveBeenCalledWith("org-1", [...photos, "yt"], expect.any(AbortSignal));
     expect(outcome).toEqual({ kind: "saved", saved: 12, total: 12, failedIds: [], links: 1, deleted: 0, gone: 0 });
     expect(h.saveBlob).toHaveBeenCalledTimes(1);
     const [blob, name] = h.saveBlob.mock.calls[0];
@@ -257,5 +257,41 @@ describe("useLibraryZip", () => {
     expect(await run(result, ids(12))).toMatchObject({ kind: "saved", saved: 10, total: 12, failedIds: ["p11", "p12"] });
     expect(h.downloadLinks).toHaveBeenCalledTimes(2);
     expect(h.downloadLinks.mock.calls[1][1]).toEqual(["p11", "p12"]);
+  });
+
+  it("cancel while links are asked for aborts that request, up front or for a later batch (Q20)", async () => {
+    const waitForAbort = (_org: string, _ids: string[], signal: AbortSignal) =>
+      new Promise((_, reject) => signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError"))));
+    for (const later of [false, true]) {
+      h.downloadLinks.mockReset();
+      if (later) h.downloadLinks.mockResolvedValueOnce({ files: ids(12).map(file), noFile: [], totalBytes: 36 });
+      h.downloadLinks.mockImplementationOnce(waitForAbort);
+      const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01"));
+      let pending!: Promise<unknown>;
+      act(() => {
+        pending = result.current.download(ids(12));
+      });
+      await act(async () => {
+        await vi.waitFor(() => expect(h.downloadLinks).toHaveBeenCalledTimes(later ? 2 : 1));
+      });
+      act(() => result.current.cancel());
+      await act(async () => {
+        expect(await pending).toEqual({ kind: "cancelled" });
+      });
+      expect(h.saveBlob).not.toHaveBeenCalled();
+    }
+  });
+
+  it("a failed refresh still tries a link that is aged but not expired", async () => {
+    h.downloadLinks
+      .mockResolvedValueOnce({ files: ids(2).map(file), noFile: [], totalBytes: 6 })
+      .mockRejectedValueOnce(new ApiError("offline", 0));
+    h.open.mockImplementation(async () => {
+      vi.setSystemTime(Date.now() + 11 * 60_000);
+      return streamOf("abc");
+    });
+    const { result } = renderHook(() => useLibraryZip("org-1", "BBZ01"));
+    expect(await run(result, ids(2))).toMatchObject({ kind: "saved", saved: 2, failedIds: [] });
+    expect(h.downloadLinks).toHaveBeenCalledTimes(2);
   });
 });

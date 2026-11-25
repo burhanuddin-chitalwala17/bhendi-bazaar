@@ -13,5 +13,14 @@
 6. `SelectionAction` documents that overflow actions drop `pending`/`wrap`.
 7. `docs/contracts/catalog.md`: "notFound" is for retire and tags.
 
+## Review (/bb-review, fresh subagent) — nothing blocking
+1. Cancel not passed to the up-front link requests (now 300 s) → passed; test + mutation.
+2. Two cva maps in SelectionBar → one-line reason (the axis styles the inner panel).
+3. A failed refresh discarded aged-but-valid links → kept; test + mutation.
+4. Bulk add now inherits setTag's 3-retry throw → accepted, noted in the TRD amendment.
+5. `timedOut` matches on message text → left: `TIMEOUT_UNSURE_MESSAGE` is the one constant `apiRequest` throws with; a code on `ApiError` would touch every client.
+6. Tag-timeout test didn't assert the picker closes → added.
+7. No test for Cancel during a later batch's links → added (with 1).
+
 ## Next
-- Gate, integration, /bb-review in a fresh subagent, final commit `org: review fixes for library bulk actions`.
+- Final commit `org: review fixes for library bulk actions`.

@@ -49,6 +49,7 @@ const selectionBarVariants = cva(
   },
 );
 
+// A second map because this axis styles the inner panel, not the positioned region.
 const selectionPanelVariants = cva(
   "mb-2 flex items-center gap-2 rounded-card bg-foreground py-2 pl-4 pr-2 text-background shadow-overlay md:mb-0 md:min-w-96",
   {

@@ -232,6 +232,7 @@ describe("the bar's actions", () => {
     await act(async () => fireEvent.click(within(reference).getByRole("button", { name: C.tagAdd })));
     expect(h.toast.error).toHaveBeenCalledWith(TIMEOUT_UNSURE_MESSAGE);
     expect(h.toast.error).not.toHaveBeenCalledWith(C.unreachable, expect.anything());
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(h.refresh).toHaveBeenCalled();
   });
 

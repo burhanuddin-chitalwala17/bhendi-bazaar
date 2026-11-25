@@ -60,9 +60,16 @@ function freshLinks(
       const from = order.indexOf(id);
       const batch = order.slice(from, from + LINK_BATCH);
       const at = Date.now();
+      const before = batch.map((asked) => [asked, held.get(asked)] as const);
       for (const asked of batch) held.set(asked, null);
-      const answer = await ask(batch, signal);
-      for (const file of answer.files) held.set(file.id, { url: file.url, at });
+      try {
+        const answer = await ask(batch, signal);
+        for (const file of answer.files) held.set(file.id, { url: file.url, at });
+      } catch (error) {
+        if (signal.aborted) throw error;
+        // An aged link may still be inside its 15 minutes: better tried than failed unasked.
+        for (const [asked, old] of before) if (old) held.set(asked, old);
+      }
     }
     const url = held.get(id)?.url;
     if (!url) throw new Error("No link for this file");
@@ -97,7 +104,7 @@ export function useLibraryZip(orgId: string, shopCode: string | null, limitBytes
       const signedAt = Date.now();
       try {
         for (let at = 0; at < ids.length; at += MEDIA_BULK_MAX_IDS) {
-          const batch = await orgMediaApiClient.downloadLinks(orgId, ids.slice(at, at + MEDIA_BULK_MAX_IDS));
+          const batch = await orgMediaApiClient.downloadLinks(orgId, ids.slice(at, at + MEDIA_BULK_MAX_IDS), abort.signal);
           links.files.push(...batch.files);
           links.noFile.push(...batch.noFile);
           links.totalBytes += batch.totalBytes;
