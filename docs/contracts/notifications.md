@@ -8,9 +8,11 @@ notification-hub/notifications-core D1). It crosses domains on the server, not t
 [CONTRACTS.md](../CONTRACTS.md).
 
 **An event** — `notificationsService.emit(tx, input)`, parsed by `emitInput`. `kind` is one of
-`NOTIFICATION_KIND`; `audience` is `SHOP_MEMBERS` (every member of `orgId`) or `BUYER` (then `recipientRef`
-names them); `eventKey` is unique per real happening, so emitting it again is the same event and tells nobody
-twice; `facts` maps a short name to an id or key (no spaces, at most 64 characters), never a message body. The
+`NOTIFICATION_KIND` or, for a parcel notice, `NOTICE_KIND`; `audience` is `SHOP_MEMBERS` (every member of
+`orgId`) or one named recipient in `recipientRef`: `BUYER`, `SHOP_INBOX` or `STAFF_INBOX`; `eventKey` is unique per
+real happening, so emitting it again is the same event and tells nobody twice; `facts` maps a short name to an id
+or key (no spaces, at most 64 characters), never a message body. A parcel notice's facts are instead its
+`parcelNoticeData` snapshot and it names its `shipmentId` (notifications-core D6, Q15). The
 emitter never names a channel: `policy.ts` decides. Called inside the emitter's transaction, so the event and
 its deliveries commit or roll back with the business row.
 

@@ -55,17 +55,17 @@ describe.skipIf(!isDisposableDb)("a refund owed is started once", () => {
       const inOrders = { orderId: { in: orderIds } };
       const refunds = await prisma.refund.findMany({ where: inOrders, select: { id: true } });
       await prisma.adminLog.deleteMany({ where: { resource: "Refund", resourceId: { in: refunds.map((r) => r.id) } } });
-      const notices = await prisma.notice.findMany({ where: { shipment: inOrders }, select: { id: true } });
+      const notices = await prisma.delivery.findMany({ where: { event: { shipment: inOrders } }, select: { id: true } });
       if (notices.length) {
         await prisma.$executeRawUnsafe(
-          `DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->'payload'->>'noticeId' = ANY($2)`,
+          `DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->'payload'->>'deliveryId' = ANY($2)`,
           JOBS_QUEUE,
           notices.map((n) => n.id),
         );
       }
       await prisma.refund.deleteMany({ where: inOrders });
       await prisma.promotionBudgetRelease.deleteMany({ where: inOrders });
-      await prisma.notice.deleteMany({ where: { shipment: inOrders } });
+      await prisma.notificationEvent.deleteMany({ where: { shipment: inOrders } });
       await prisma.orgLedgerEntryLine.deleteMany({ where: { entry: inOrders } });
       await prisma.orgLedgerEntry.deleteMany({ where: inOrders });
       await prisma.parcelEvent.deleteMany({ where: { shipment: inOrders } });
@@ -131,7 +131,7 @@ describe.skipIf(!isDisposableDb)("a refund owed is started once", () => {
   }
 
   const rowOf = (id: string) => prisma.refund.findUniqueOrThrow({ where: { id } });
-  const startedNotices = (parcelId: string) => prisma.notice.count({ where: { shipmentId: parcelId, kind: K.REFUND_STARTED_BUYER } });
+  const startedNotices = (parcelId: string) => prisma.notificationEvent.count({ where: { shipmentId: parcelId, kind: K.REFUND_STARTED_BUYER } });
 
   it("Q25, R13: a parcel lost, damaged or returned to the shop owes its ₹1,240 once, by the cancel's rule", async () => {
     const lost = await aPaidParcel();

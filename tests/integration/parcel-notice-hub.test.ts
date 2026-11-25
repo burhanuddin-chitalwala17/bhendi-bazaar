@@ -35,7 +35,8 @@ describe.skipIf(!isDisposableDb)("parcel notices through the hub (local db)", ()
       data: {
         code: `BB-SNAP-${RUN}`,
         address: { fullName: "Asha Buyer", mobile: "+919812345678", addressLine1: "12 Secret Lane", city: "Pune", state: "MH", pincode: "411001", country: "India" },
-        grandTotal: 0, paymentStatus: "paid", status: "confirmed", paidAt: NOW,
+        // Unpaid, so another suite's fulfilment sweep never nudges this parcel mid-test; the notices are written by hand.
+        grandTotal: 0, paymentStatus: "pending", status: "pending_payment", paidAt: null,
       },
       select: { id: true },
     })).id;
@@ -60,7 +61,7 @@ describe.skipIf(!isDisposableDb)("parcel notices through the hub (local db)", ()
 
   /** The rows a send job names for this parcel. */
   const sendIds = async () =>
-    (await prisma.notice.findMany({ where: { shipmentId }, select: { id: true } })).map((n) => n.id);
+    (await prisma.delivery.findMany({ where: { event: { shipmentId } }, select: { id: true } })).map((d) => d.id);
 
   /** Run every send job queued for `ids` as the worker would, twice: a redelivered job emails no one twice. */
   async function drain(ids: string[]) {
@@ -111,5 +112,29 @@ describe.skipIf(!isDisposableDb)("parcel notices through the hub (local db)", ()
       .replaceAll(shop.email ?? "<none>", "<shop email>")
       .replaceAll(shop.name, "<shop>");
     expect(pinned).toMatchSnapshot();
+  });
+
+  it("D6: a send queued before the migration finds its notice as the delivery of the same id, and sends it once", async () => {
+    const { parcelNoticeKey } = await import("@server/notifications/notice.service");
+    // The migration's own concatenation, so the key a backfilled row got is the key a new write would make.
+    const [{ key: eventKey }] = await prisma.$queryRawUnsafe<{ key: string }[]>(
+      `SELECT 'notice:' || $1 || ':' || $2 || ':' || $3 || ':' || $4 AS key`, shipmentId, K.PICKED_UP, "shop", "legacy",
+    );
+    expect(eventKey).toBe(parcelNoticeKey(shipmentId, K.PICKED_UP, "shop", "legacy"));
+    const noticeId = `legacy-${RUN}`;
+    const facts = { orderId, orderCode: "BB-SNAP01", parcelCode: "BB-SNAP01-SH1", orgId, shopName: "S", city: "Mumbai", since: NOW.toISOString() };
+    await prisma.notificationEvent.create({ data: { eventKey, kind: K.PICKED_UP, audience: "SHOP_INBOX", orgId, facts, shipmentId } });
+    await prisma.delivery.create({ data: { id: noticeId, eventKey, recipientId: "shop@example.invalid", channel: "email", timing: "AT_ONCE" } });
+    const sent = vi.spyOn(emailService, "sendNotice").mockResolvedValue(undefined);
+
+    for (let n = 0; n < 2; n++) {
+      const { definition, payload } = resolveJob({ type: "notify.send", payload: { noticeId } });
+      await definition.handler({ jobId: `legacy-job-${RUN}`, payload });
+    }
+
+    expect(sent).toHaveBeenCalledTimes(1);
+    expect(sent.mock.calls[0][0]).toMatchObject({ to: "shop@example.invalid", subject: "BB-SNAP01-SH1 picked up", idempotencyKey: `notice-${noticeId}` });
+    expect((await prisma.delivery.findUniqueOrThrow({ where: { id: noticeId } })).state).toBe("SENT");
+    sent.mockRestore();
   });
 });

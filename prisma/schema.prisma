@@ -1293,7 +1293,8 @@ model Shipment {
   shippingEvents ShippingEvent[]
   ledgerEntries  OrgLedgerEntry[]
   parcelEvents   ParcelEvent[]
-  notices        Notice[]
+  /// Parcel notices sent about it, through the notifications hub (notifications-core D6).
+  notices        NotificationEvent[]
   refund         Refund?
   budgetReleases PromotionBudgetRelease[]
 
@@ -1410,28 +1411,6 @@ model ParcelEvent {
   createdAt         DateTime  @default(now())
 
   @@index([shipmentId, createdAt])
-}
-
-/// One email about one parcel, written in the transaction that earned it and sent by the worker
-/// (order-fulfilment D8). The unique key is what makes a repeated move or sweep email once.
-model Notice {
-  id         String    @id @default(cuid())
-  shipmentId String
-  shipment   Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
-  /// One of NOTICE_KIND (server/notifications/notice.types.ts).
-  kind       String
-  /// One of NOTICE_AUDIENCE: who it is for, so a changed shop email cannot send it twice.
-  audience   String
-  /// The address resolved when the notice was written.
-  recipient  String
-  /// What the email says, captured at the time; parsed by kind before sending.
-  data       Json
-  /// What makes a repeatable kind unique: the timeline row a date change wrote; "" for once-per-parcel kinds.
-  ref        String    @default("")
-  sentAt     DateTime?
-  createdAt  DateTime  @default(now())
-
-  @@unique([shipmentId, kind, audience, ref])
 }
 
 /// A courier update we could not apply: an AWB no parcel carries, or a move on a cancelled parcel
@@ -3782,10 +3761,14 @@ model NotificationEvent {
   audience   String
   orgId      String
   facts      Json
+  /// The parcel a parcel notice is about (notifications-core D6, Q15), so shipping's sweeps skip a parcel already told.
+  shipmentId String?
+  shipment   Shipment?  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
   createdAt  DateTime   @default(now())
   deliveries Delivery[]
 
   @@index([createdAt])
+  @@index([shipmentId, kind])
 }
 
 /// One event to one recipient by one channel, written before anything is sent (notifications-core D2, hub Q3).
@@ -3795,7 +3778,8 @@ model Delivery {
   id          String            @id @default(cuid())
   eventKey    String
   event       NotificationEvent @relation(fields: [eventKey], references: [eventKey], onDelete: Cascade)
-  /// A user id for shop members; never an address, which is read when sending.
+  /// A user id for shop members, read for an address when sending; for a parcel notice, the address resolved
+  /// when it was written, as `Notice.recipient` held it (Q15): a guest buyer has no account to point at.
   recipientId String
   /// `DELIVERY_CHANNEL`: email, badge.
   channel     String

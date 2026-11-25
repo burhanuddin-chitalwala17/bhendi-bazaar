@@ -18,8 +18,8 @@ const h = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: h.refresh }) }));
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));
 vi.mock("@/components/org/parcels/parcelApiClient", () => ({ parcelApiClient: { markReady: h.markReady } }));
-vi.mock("@server/notifications/notice.repository", () => ({
-  noticeRepository: { findById: h.findById, markSent: h.markSent },
+vi.mock("@server/notifications/notification.repository", () => ({
+  notificationRepository: { findDelivery: h.findById, settle: h.markSent },
 }));
 vi.mock("resend", () => ({ Resend: class { emails = { send: h.send }; } }));
 vi.mock("@server/identity/account.service", () => ({ accountService: {} }));
@@ -32,7 +32,7 @@ import { toShopBuyer } from "@server/checkout/shop-parcel.types";
 import { toShopOrderView } from "@server/checkout/admin.order.repository";
 import { renderParcelNotice } from "@server/notifications/templates/parcelNoticeEmail";
 import { NOTICE_KIND, type ParcelNoticeData } from "@server/notifications/notice.types";
-import { noticeService } from "@server/notifications/notice.service";
+import { notificationsService } from "@server/notifications/notifications.service";
 
 const press = (name: string) => fireEvent.click(screen.getByRole("button", { name }));
 
@@ -149,15 +149,19 @@ describe("parcel notices (D8; ux.md Emails)", () => {
 
   it("a notice delivered twice is sent once, keyed by its id (A2, A5)", async () => {
     process.env.RESEND_API_KEY = "re_test";
-    const row = { id: "n1", kind: NOTICE_KIND.READY, recipient: "support@bhendibazaar.com", data, sentAt: null as Date | null };
-    h.findById.mockResolvedValueOnce(row).mockResolvedValueOnce({ ...row, sentAt: new Date() });
+    const row = {
+      id: "n1", recipientId: "support@bhendibazaar.com", channel: "email", state: "PENDING",
+      event: { kind: NOTICE_KIND.READY, orgId: "org_1", facts: data },
+    };
+    h.findById.mockResolvedValueOnce(row).mockResolvedValueOnce({ ...row, state: "SENT" });
     h.send.mockResolvedValue({ data: { id: "e1" }, error: null });
 
-    await noticeService.send("n1");
-    await noticeService.send("n1");
+    await notificationsService.deliver("n1");
+    await notificationsService.deliver("n1");
 
     expect(h.send).toHaveBeenCalledTimes(1);
+    expect(h.send.mock.calls[0][0]).toMatchObject({ to: "support@bhendibazaar.com", subject: "Parcel ready to book — Noor Attar, Mumbai" });
     expect(h.send.mock.calls[0][1]).toEqual({ idempotencyKey: "notice-n1" });
-    expect(h.markSent).toHaveBeenCalledWith("n1");
+    expect(h.markSent).toHaveBeenCalledWith("n1", ["PENDING", "FAILED"], "SENT", { providerId: null, reason: null });
   });
 });

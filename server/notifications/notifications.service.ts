@@ -17,6 +17,7 @@ import {
   NOTIFICATION_AUDIENCE,
   emitInput,
   eventFacts,
+  isParcelKind,
   type BadgeItem,
   type EmitInput,
   type EventFacts,
@@ -25,8 +26,9 @@ import {
   type NotificationKind,
   type StillOpen,
 } from "./notification.types";
-import { DELIVERY_POLICY } from "./policy";
-import { CHANNEL_PLUGS } from "./plugs";
+import { policyFor } from "./policy";
+import { CHANNEL_PLUGS, type DeliveryEvent } from "./plugs";
+import { parcelNoticeData } from "./notice.types";
 
 type EmitTx = Pick<Prisma.TransactionClient, "notificationEvent" | "delivery"> & EnqueueTx;
 
@@ -62,15 +64,18 @@ class NotificationsService {
   async emit(tx: EmitTx, input: EmitInput): Promise<number> {
     const event = emitInput.parse(input);
     const isNew = await notificationRepository.insertEventOnce(
-      { eventKey: event.eventKey, kind: event.kind, audience: event.audience, orgId: event.orgId, facts: event.facts },
+      {
+        eventKey: event.eventKey, kind: event.kind, audience: event.audience, orgId: event.orgId, facts: event.facts,
+        shipmentId: event.shipmentId ?? null,
+      },
       tx,
     );
     if (!isNew) return 0;
     // Read outside `tx` on purpose: catalog's surface takes no client, and no emitter adds a member in the same transaction.
     const recipients =
-      event.audience === NOTIFICATION_AUDIENCE.BUYER ? [event.recipientRef as string] : await adminOrgService.listMemberIds(event.orgId);
+      event.audience === NOTIFICATION_AUDIENCE.SHOP_MEMBERS ? await adminOrgService.listMemberIds(event.orgId) : [event.recipientRef as string];
     const rows = recipients.flatMap((recipientId) =>
-      DELIVERY_POLICY[event.kind].map((step) => ({ eventKey: event.eventKey, recipientId, channel: step.channel, timing: step.timing })),
+      policyFor(event.kind).map((step) => ({ eventKey: event.eventKey, recipientId, channel: step.channel, timing: step.timing })),
     );
     const written = await notificationRepository.insertDeliveries(rows, tx);
     const atOnce = written.filter((d) => d.timing === DELIVERY_TIMING.AT_ONCE);
@@ -92,7 +97,10 @@ class NotificationsService {
     if (!row || !(SENDABLE as readonly string[]).includes(row.state)) return;
     const plug = CHANNEL_PLUGS[row.channel as keyof typeof CHANNEL_PLUGS];
     if (!plug) return;
-    const event = { kind: row.event.kind as NotificationKind, orgId: row.event.orgId, facts: eventFacts.parse(row.event.facts) };
+    const { kind, orgId } = row.event;
+    const event: DeliveryEvent = isParcelKind(kind)
+      ? { kind, orgId, facts: parcelNoticeData.parse(row.event.facts) }
+      : { kind: kind as NotificationKind, orgId, facts: eventFacts.parse(row.event.facts) };
     try {
       const outcome = await plug.deliver({ id: row.id, recipientId: row.recipientId, event });
       if (!outcome) return;

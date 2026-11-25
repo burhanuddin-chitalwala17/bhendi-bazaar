@@ -10,11 +10,12 @@ Transactional email. One provider (Resend, in `email.service.ts`), one shell, ei
 redelivered job is one email (ADR-0038 D4). The job's spec lives in `server/shared/jobs/`, so the
 domain that enqueues it never imports this one.
 
-**A parcel email is a row first** (order-fulfilment (`431ed6e7:docs/specs/own-store/order-fulfilment/trd.md`) D8).
-`notice.service.ts` writes a `Notice` on the caller's transaction, unique per (parcel, kind,
-audience), and only a newly written row enqueues `notify.send`; the handler skips a row already
-sent and keys Resend on the notice id. Kinds and wording: `notice.types.ts`, `templates/parcelNoticeEmail.ts`.
-A notice's data never holds a buyer phone or address (spec A10).
+**A parcel email is an event on the hub** (order-fulfilment (`431ed6e7:docs/specs/own-store/order-fulfilment/trd.md`) D8,
+notifications-core D6). `notice.service.ts` emits it on the caller's transaction, keyed per (parcel, kind,
+audience, ref), as one email delivery at once to the address resolved when written; the event names its
+`shipmentId`, which is how shipping's sweeps skip a parcel already told and the admin's history is read. Kinds
+and wording: `notice.types.ts`, `templates/parcelNoticeEmail.ts`; sent by the email plug, keyed `notice-<id>`.
+`notify.send` only drains jobs queued before the move. A notice's data never holds a buyer phone or address (spec A10).
 
 **The hub: a module emits, the hub delivers** ([ADR-0069](../../docs/adr/0069-notifications-are-one-hub-every-module-plugs-into.md),
 notification-hub/notifications-core). `notificationsService.emit(tx, { kind, orgId, audience, facts, eventKey })`
@@ -22,7 +23,8 @@ writes a `NotificationEvent` (unique key) and one `Delivery` per (event, recipie
 transaction; a repeated key writes nothing. `policy.ts` alone picks channels and timing per kind; a module never
 names a channel. Only an `AT_ONCE` row enqueues `notify.deliver`; `DIGEST` rows wait for the morning email; a
 `badge` row still `PENDING` *is* the unread badge. Channels are plugs in `plugs.ts`. Facts are ids only, refused
-otherwise by `eventFacts`; an address is read when sending, never stored. A kind's owner registers `stillOpen`
+otherwise by `eventFacts`; a member's address is read when sending, never stored (a parcel notice keeps its
+snapshot and address, as `Notice` did: Q15). A kind's owner registers `stillOpen`
 so the Needs you list drops what was fixed (marked `SUPERSEDED`).
 
 **What waits, and for how long** (notifications-core D3, D4, D7). A check is registered in `still-open.registry.ts`

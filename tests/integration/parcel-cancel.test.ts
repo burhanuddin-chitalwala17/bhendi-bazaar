@@ -52,17 +52,17 @@ describe.skipIf(!isDisposableDb)("cancelling a paid parcel gives everything back
     await prisma.fulfilmentSettings.update({ where: { id: "default" }, data: { cancellationFeePaise: feeBefore } });
     if (orderIds.length) {
       const inOrders = { orderId: { in: orderIds } };
-      const notices = await prisma.notice.findMany({ where: { shipment: inOrders }, select: { id: true } });
+      const notices = await prisma.delivery.findMany({ where: { event: { shipment: inOrders } }, select: { id: true } });
       if (notices.length) {
         await prisma.$executeRawUnsafe(
-          `DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->'payload'->>'noticeId' = ANY($2)`,
+          `DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->'payload'->>'deliveryId' = ANY($2)`,
           JOBS_QUEUE,
           notices.map((n) => n.id),
         );
       }
       await prisma.refund.deleteMany({ where: inOrders });
       await prisma.promotionBudgetRelease.deleteMany({ where: inOrders });
-      await prisma.notice.deleteMany({ where: { shipment: inOrders } });
+      await prisma.notificationEvent.deleteMany({ where: { shipment: inOrders } });
       await prisma.orgLedgerEntryLine.deleteMany({ where: { entry: inOrders } });
       await prisma.orgLedgerEntry.deleteMany({ where: inOrders });
       await prisma.parcelEvent.deleteMany({ where: { shipment: inOrders } });
@@ -187,7 +187,7 @@ describe.skipIf(!isDisposableDb)("cancelling a paid parcel gives everything back
       { amountPaise: 124_000, state: "OWED", cause: S.CANCELLED },
     ]);
     expect((await prisma.order.findUniqueOrThrow({ where: { id: orderId } })).status).toBe(ORDER_STATUS.CANCELLED);
-    const kinds = (await prisma.notice.findMany({ where: { shipmentId: p } })).map((n) => n.kind).sort();
+    const kinds = (await prisma.notificationEvent.findMany({ where: { shipmentId: p } })).map((n) => n.kind).sort();
     expect(kinds).toEqual([K.CANCELLED_BUYER, K.CANCELLED_SHOP].sort());
 
     await expect(cancelParcel(p, shop(fx.orgId), "Out of stock")).rejects.toThrow("This parcel is already cancelled.");

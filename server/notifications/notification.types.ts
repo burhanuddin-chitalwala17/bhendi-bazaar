@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { NOTICE_KIND, parcelNoticeData, type NoticeKind } from "./notice.types";
 
 /** What a module can tell a shop (notifications-core Q2). A module names the kind; the hub picks the channel (R1). */
 export const NOTIFICATION_KIND = {
@@ -10,7 +11,16 @@ export const NOTIFICATION_KIND = {
 } as const;
 export type NotificationKind = (typeof NOTIFICATION_KIND)[keyof typeof NOTIFICATION_KIND];
 
-export const NOTIFICATION_AUDIENCE = { SHOP_MEMBERS: "SHOP_MEMBERS", BUYER: "BUYER" } as const;
+/**
+ * Who hears an event. Every member of the shop is resolved by the hub; any other audience names its one
+ * recipient, as a parcel notice does: the shop's own inbox, the staff inbox, or the buyer's address (Q15).
+ */
+export const NOTIFICATION_AUDIENCE = {
+  SHOP_MEMBERS: "SHOP_MEMBERS",
+  BUYER: "BUYER",
+  SHOP_INBOX: "SHOP_INBOX",
+  STAFF_INBOX: "STAFF_INBOX",
+} as const;
 export type NotificationAudience = (typeof NOTIFICATION_AUDIENCE)[keyof typeof NOTIFICATION_AUDIENCE];
 
 export const DELIVERY_CHANNEL = { EMAIL: "email", BADGE: "badge" } as const;
@@ -33,19 +43,42 @@ const factValue = z.string().regex(/^[A-Za-z0-9_:.-]{1,64}$/);
 export const eventFacts = z.record(z.string().regex(/^[A-Za-z][A-Za-z0-9]{0,31}$/), factValue);
 export type EventFacts = z.infer<typeof eventFacts>;
 
-/** What `notificationsService.emit` accepts (ADR-0069 D1). `recipientRef` is required for a BUYER event. */
+/** Every kind the hub carries: the shop's alerts, and the parcel notices moved onto it (D6). */
+export type HubKind = NotificationKind | NoticeKind;
+const HUB_KINDS = [...Object.values(NOTIFICATION_KIND), ...Object.values(NOTICE_KIND)] as [HubKind, ...HubKind[]];
+
+export const isParcelKind = (kind: string): kind is NoticeKind => (Object.values(NOTICE_KIND) as string[]).includes(kind);
+
+/** What an event carries, by kind: ids for the hub's own kinds; a parcel notice's snapshot as `Notice` held it (Q15). */
+export const factsOf = (kind: string) => (isParcelKind(kind) ? parcelNoticeData : eventFacts);
+
+const ALERT_AUDIENCES: readonly NotificationAudience[] = [NOTIFICATION_AUDIENCE.SHOP_MEMBERS, NOTIFICATION_AUDIENCE.BUYER];
+
+/** What `notificationsService.emit` accepts (ADR-0069 D1). Only a SHOP_MEMBERS event leaves its recipient to the hub. */
 export const emitInput = z
   .object({
-    kind: z.enum(Object.values(NOTIFICATION_KIND) as [NotificationKind, ...NotificationKind[]]),
+    kind: z.enum(HUB_KINDS),
     orgId: z.string().min(1),
     audience: z.enum(Object.values(NOTIFICATION_AUDIENCE) as [NotificationAudience, ...NotificationAudience[]]),
     recipientRef: z.string().min(1).optional(),
-    facts: eventFacts,
+    facts: z.record(z.string(), z.unknown()),
     /** Unique per real-world happening: the same key twice is one event (R2). */
     eventKey: z.string().min(1).max(200),
+    /** The parcel a parcel notice is about (D6). */
+    shipmentId: z.string().min(1).optional(),
   })
-  .refine((e) => (e.audience === NOTIFICATION_AUDIENCE.BUYER) === Boolean(e.recipientRef), {
-    message: "a BUYER event names its recipient; a shop event is for every member and names none",
+  .refine((e) => (e.audience !== NOTIFICATION_AUDIENCE.SHOP_MEMBERS) === Boolean(e.recipientRef), {
+    message: "an event for one recipient names it; a shop event is for every member and names none",
+  })
+  // A parcel notice's recipient is an address, a shop alert's a user: each kind keeps to the audiences that fit (Q15).
+  .refine((e) => (isParcelKind(e.kind) ? e.audience !== NOTIFICATION_AUDIENCE.SHOP_MEMBERS : ALERT_AUDIENCES.includes(e.audience)), {
+    message: "this audience does not fit this kind",
+  })
+  .transform((e, ctx) => {
+    const facts = factsOf(e.kind).safeParse(e.facts);
+    if (facts.success) return { ...e, facts: facts.data };
+    ctx.addIssue({ code: "custom", path: ["facts"], message: `facts do not fit ${e.kind}` });
+    return z.NEVER;
   });
 export type EmitInput = z.input<typeof emitInput>;
 

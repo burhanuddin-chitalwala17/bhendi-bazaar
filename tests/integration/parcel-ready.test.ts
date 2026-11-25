@@ -5,6 +5,7 @@
  */
 import "dotenv/config";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { parcelNotices } from "../helpers/parcel-notices";
 import { ensureFixtures, isDisposableDb } from "../helpers/test-db";
 import { JOBS_QUEUE, JOBS_SCHEMA } from "@server/shared/jobs/jobs.config";
 
@@ -49,16 +50,16 @@ describe.skipIf(!isDisposableDb)("the shop marks a parcel ready, and nudges foll
 
   afterAll(async () => {
     if (!madeOrderIds.length) return;
-    const ids = await prisma.notice.findMany({ where: { shipment: { orderId: { in: madeOrderIds } } }, select: { id: true } });
+    const ids = await prisma.delivery.findMany({ where: { event: { shipment: { orderId: { in: madeOrderIds } } } }, select: { id: true } });
     if (ids.length) {
       await prisma.$executeRawUnsafe(
-        `DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->'payload'->>'noticeId' = ANY($2)`,
+        `DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->'payload'->>'deliveryId' = ANY($2)`,
         JOBS_QUEUE,
         ids.map((n) => n.id),
       );
     }
     const inOrders = { orderId: { in: madeOrderIds } };
-    await prisma.notice.deleteMany({ where: { shipment: inOrders } });
+    await prisma.notificationEvent.deleteMany({ where: { shipment: inOrders } });
     await prisma.parcelEvent.deleteMany({ where: { shipment: inOrders } });
     await prisma.shipment.deleteMany({ where: inOrders });
     await prisma.order.deleteMany({ where: { id: { in: madeOrderIds } } });
@@ -101,13 +102,12 @@ describe.skipIf(!isDisposableDb)("the shop marks a parcel ready, and nudges foll
 
   const statusOf = async (id: string) =>
     (await prisma.shipment.findUniqueOrThrow({ where: { id }, select: { status: true } })).status;
-  const noticesOf = (id: string, kind?: string) =>
-    prisma.notice.findMany({ where: { shipmentId: id, ...(kind ? { kind } : {}) } });
-  const jobsFor = async (noticeId: string) => {
+  const noticesOf = (id: string, kind?: string) => parcelNotices(id, kind);
+  const jobsFor = async (deliveryId: string) => {
     const rows = await prisma.$queryRawUnsafe<{ n: bigint }[]>(
-      `SELECT count(*)::bigint AS n FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->>'type' = 'notify.send' AND data->'payload'->>'noticeId' = $2`,
+      `SELECT count(*)::bigint AS n FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->>'type' = 'notify.deliver' AND data->'payload'->>'deliveryId' = $2`,
       JOBS_QUEUE,
-      noticeId,
+      deliveryId,
     );
     return Number(rows[0].n);
   };
@@ -144,7 +144,7 @@ describe.skipIf(!isDisposableDb)("the shop marks a parcel ready, and nudges foll
 
     const ready = await noticesOf(p, K.READY);
     expect(ready).toHaveLength(1);
-    expect(ready[0].audience).toBe("admin");
+    expect(ready[0].audience).toBe("STAFF_INBOX");
     expect(await jobsFor(ready[0].id)).toBe(1);
   });
 

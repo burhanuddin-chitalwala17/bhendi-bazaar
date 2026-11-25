@@ -6,6 +6,7 @@
 import "dotenv/config";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+import { parcelNotices } from "../helpers/parcel-notices";
 import { ensureFixtures, isDisposableDb } from "../helpers/test-db";
 import { JOBS_QUEUE, JOBS_SCHEMA } from "@server/shared/jobs/jobs.config";
 
@@ -62,16 +63,16 @@ describe.skipIf(!isDisposableDb)("courier updates: signed, once, and conflicts k
     vi.unstubAllEnvs();
     if (awbs.length) await prisma.courierConflict.deleteMany({ where: { awb: { in: awbs } } });
     if (!madeOrderIds.length) return;
-    const ids = await prisma.notice.findMany({ where: { shipment: { orderId: { in: madeOrderIds } } }, select: { id: true } });
+    const ids = await prisma.delivery.findMany({ where: { event: { shipment: { orderId: { in: madeOrderIds } } } }, select: { id: true } });
     if (ids.length) {
       await prisma.$executeRawUnsafe(
-        `DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->'payload'->>'noticeId' = ANY($2)`,
+        `DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->'payload'->>'deliveryId' = ANY($2)`,
         JOBS_QUEUE,
         ids.map((n) => n.id),
       );
     }
     const inOrders = { orderId: { in: madeOrderIds } };
-    await prisma.notice.deleteMany({ where: { shipment: inOrders } });
+    await prisma.notificationEvent.deleteMany({ where: { shipment: inOrders } });
     await prisma.parcelEvent.deleteMany({ where: { shipment: inOrders } });
     await prisma.shippingEvent.deleteMany({ where: inOrders });
     await prisma.shipment.deleteMany({ where: inOrders });
@@ -129,7 +130,7 @@ describe.skipIf(!isDisposableDb)("courier updates: signed, once, and conflicts k
       }),
     );
   const statusOf = async (id: string) => (await prisma.shipment.findUniqueOrThrow({ where: { id }, select: { status: true } })).status;
-  const noticesOf = (id: string, kind: string) => prisma.notice.findMany({ where: { shipmentId: id, kind } });
+  const noticesOf = (id: string, kind: string) => parcelNotices(id, kind);
 
   it("A4: an update without the token, or with a wrong one, is refused and moves nothing; with it, the parcel moves", async () => {
     const awb = newAwb();

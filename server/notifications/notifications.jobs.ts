@@ -2,7 +2,6 @@ import { registerJob } from "@server/shared/jobs/jobs.registry";
 import { orgEmailChangedSpec } from "@server/shared/jobs/org-email-changed.job";
 import { emailService } from "@server/notifications/email.service";
 import { noticeSendSpec } from "@server/notifications/notice.job";
-import { noticeService } from "@server/notifications/notice.service";
 import { deliverSpec } from "@server/notifications/delivery.job";
 import { notificationsService } from "@server/notifications/notifications.service";
 import { digestSpec } from "@server/notifications/digest.job";
@@ -20,10 +19,10 @@ export const orgEmailChangedJob = registerJob({
   },
 });
 
-/** Sends one parcel notice. Idempotent on the notice, not the job: a repeat delivery finds it sent (ADR-0038 D4). */
+/** A parcel notice queued before the move onto the hub: its row became the delivery of the same id (D6). */
 export const noticeSendJob = registerJob({
   ...noticeSendSpec,
-  handler: ({ payload }) => noticeService.send(payload.noticeId),
+  handler: ({ payload }) => notificationsService.deliver(payload.noticeId),
 });
 
 /** Sends one hub delivery. Idempotent on the delivery, not the job: a settled row is skipped (notifications-core D2). */

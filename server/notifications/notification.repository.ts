@@ -50,6 +50,15 @@ export class NotificationRepository {
     });
   }
 
+  /** The parcel notices each parcel has had, for the admin's not-packed list (D6). */
+  async listParcelKinds(shipmentIds: string[]) {
+    if (shipmentIds.length === 0) return [];
+    return prisma.notificationEvent.findMany({
+      where: { shipmentId: { in: shipmentIds } },
+      select: { shipmentId: true, kind: true, createdAt: true },
+    });
+  }
+
   /** Badge items whose subject no longer needs the shop leave the list (D3). */
   async supersedeBadges(ids: string[]): Promise<number> {
     if (ids.length === 0) return 0;

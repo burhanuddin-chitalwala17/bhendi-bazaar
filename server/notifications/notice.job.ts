@@ -5,8 +5,8 @@ export const noticeSendPayload = z.object({ noticeId: z.string() });
 export type NoticeSendPayload = z.infer<typeof noticeSendPayload>;
 
 /**
- * "Send this notice" (order-fulfilment D8), enqueued in the transaction that wrote it. The handler
- * is in `notifications.jobs.ts`, which only the worker imports.
+ * "Send this notice" (order-fulfilment D8). Nothing enqueues it since parcel notices moved onto the hub (D6);
+ * it stays registered so a job queued before that migration still sends its notice, now a delivery of the same id.
  */
 export const noticeSendSpec: JobSpec<NoticeSendPayload> = {
   type: "notify.send",
