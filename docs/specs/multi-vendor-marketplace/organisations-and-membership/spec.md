@@ -5,7 +5,7 @@
 - **Domain:** catalog, identity
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-08
-- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/organisations-and-membership/trd.md`, [../spec.md](../spec.md), [../data-model.md](../data-model.md), `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`
+- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/organisations-and-membership/trd.md`, [../spec.md](../spec.md), ../data-model.md (`5ecf1cac:docs/specs/multi-vendor-marketplace/data-model.md`), [../decisions.md](../decisions.md), `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`
 
 > Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/multi-vendor-marketplace/organisations-and-membership/trd.md`.
 
@@ -44,6 +44,6 @@ missing.
 - **The portals themselves** — [../portal-separation](../portal-separation/) owns route structure, landing rules and authorization. This feature only makes membership *expressible*.
 - **What each role may do.** The role is stored; no code branches on it yet.
 - **Creating an organisation from the interface** — [../org-onboarding](../org-onboarding/).
-- **Managing members from the interface** — [../org-team](../org-team/).
-- **Invitations.** A membership is created directly; invitation flow, acceptance and expiry belong to [../org-team](../org-team/).
+- **Managing members from the interface** — ../org-team (`planning-archive-2026-11-25:docs/specs/multi-vendor-marketplace/org-team/`).
+- **Invitations.** A membership is created directly; invitation flow, acceptance and expiry belong to ../org-team (`planning-archive-2026-11-25:docs/specs/multi-vendor-marketplace/org-team/`).
 - **Vendor settlement and commission**, which the programme excludes entirely.

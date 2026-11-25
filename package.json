@@ -29,6 +29,7 @@
     "spec:new": "node scripts/spec.mjs new",
     "spec:status": "node scripts/spec.mjs status",
     "mutate": "node scripts/mutate.mjs",
+    "check:main-ready": "node scripts/main-ready.mjs",
     "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {

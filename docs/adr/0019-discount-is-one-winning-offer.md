@@ -4,7 +4,7 @@
 - **Status:** Accepted
 - **Context:** `Order.discount` is a single integer. It can say that ₹700 came off an order; it cannot say which items it touched, which offer produced it, or who paid for it. That was sufficient while no discount mechanism existed and the column was a constant zero.
 
-  [promotions](../specs/promotions/) makes both the platform and a selling organisation able to discount the same item, and [org-payouts](../specs/org-payouts/) has to pay that organisation correctly afterwards. At that point "what did this order earn" stops being a subtraction and becomes a question about who funded what. The same question is asked by a partial refund, by a coupon that covers only part of a basket, and by an organisation reading its own settlement — three features that would otherwise each grow their own answer.
+  promotions (`planning-archive-2026-11-25:docs/specs/promotions/`) makes both the platform and a selling organisation able to discount the same item, and org-payouts (`planning-archive-2026-11-25:docs/specs/org-payouts/`) has to pay that organisation correctly afterwards. At that point "what did this order earn" stops being a subtraction and becomes a question about who funded what. The same question is asked by a partial refund, by a coupon that covers only part of a basket, and by an organisation reading its own settlement — three features that would otherwise each grow their own answer.
 - **Decision:**
   1. **Offers compete; they never stack.** For any line, the discount is the single largest applicable offer, not a sequence of reductions applied in turn.
   2. **The winner's value is allocated across its lines** by largest-remainder rounding, so per-line shares sum to the scope total exactly.

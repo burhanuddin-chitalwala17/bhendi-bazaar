@@ -5,7 +5,7 @@
 - **Domain:** cross-domain: a new `subscriptions` domain owns the switches; channels, catalog (storefront), content (enhancement) honour them
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-12
-- **References:** [decisions.md](decisions.md), [ux.md](ux.md), [trd.md](trd.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md), [ADR-0044](../../../adr/0044-a-marketplace-orders-money-is-reported-not-computed.md), [setup-requests](../../setup-requests/spec.md), [shopfront-feeds](../../shopfront-feeds/)
+- **References:** [decisions.md](decisions.md), ux.md (`3dc22ac5:docs/specs/subscriptions/feature-access/ux.md`), trd.md (`3dc22ac5:docs/specs/subscriptions/feature-access/trd.md`), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md), [ADR-0044](../../../adr/0044-a-marketplace-orders-money-is-reported-not-computed.md), [setup-requests](../../setup-requests/spec.md), [shopfront-feeds](../../shopfront-feeds/)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 

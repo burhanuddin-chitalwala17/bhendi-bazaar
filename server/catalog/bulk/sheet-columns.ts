@@ -3,7 +3,7 @@ import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 /**
  * The columns of one tab of the bulk sheet, worked out from that tab's type at download time
- * ([own-store/bulk-sheet](../../../docs/specs/own-store/bulk-sheet/trd.md) D1, D2).
+ * (own-store/bulk-sheet `planning-archive-2026-11-25:docs/specs/own-store/bulk-sheet/trd.md` D1, D2).
  *
  * Nothing here is a fixed template: adding a type or a fact changes the next download with no
  * file to edit. A column's `key` is what the upload reads (a hidden row), its `heading` is only

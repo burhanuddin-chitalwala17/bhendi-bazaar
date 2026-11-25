@@ -5,7 +5,7 @@
 
 ## Context
 
-ADR-0064 let each theme carry its own type scale and spacing, and told a shop that wanted its own font "no — the answer is a fifth theme". Both choices failed in use. Themes carried headlines up to 96px, so a product title filled half a phone and a theme switch moved every size on the page. Shops also asked for a typeface that carries their brand, which is a stronger signal than any palette, and a new theme is too heavy a way to change a face. The owner asked for both changes on 2026-11-13 ([storefront-look](../specs/own-store/storefront-look/spec.md), [storefront-font](../specs/own-store/storefront-font/spec.md)).
+ADR-0064 let each theme carry its own type scale and spacing, and told a shop that wanted its own font "no — the answer is a fifth theme". Both choices failed in use. Themes carried headlines up to 96px, so a product title filled half a phone and a theme switch moved every size on the page. Shops also asked for a typeface that carries their brand, which is a stronger signal than any palette, and a new theme is too heavy a way to change a face. The owner asked for both changes on 2026-11-13 (storefront-look (`planning-archive-2026-11-25:docs/specs/own-store/storefront-look/spec.md`), storefront-font (`planning-archive-2026-11-25:docs/specs/own-store/storefront-font/spec.md`)).
 
 ## Decision
 

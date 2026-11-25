@@ -17,7 +17,7 @@ import type { OrderEmailView } from "@server/notifications/templates/purchaseCon
  * **Nothing here may throw.** The gateway has already taken the money, so refusing to confirm an
  * order over a bookkeeping row or an unsent email is the worse outcome. Fulfilment is
  * deliberately *not* triggered here either: booking is a placeholder until
- * [shipping-fulfilment](../../docs/specs/shipping-fulfilment/), and a failed booking must never
+ * shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`), and a failed booking must never
  * look like a failed payment.
  */
 export async function onPaymentConfirmed(orderId: string): Promise<void> {

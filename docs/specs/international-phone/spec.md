@@ -33,4 +33,4 @@ Buyers abroad place orders for family in India, and organisations can have conta
 ## Out of scope (this feature)
 - Proving a buyer owns the number (OTP).
 - Asking for a phone at signup, which does not happen today.
-- What a courier accepts for a non-Indian contact — booking is deferred with [shipping-fulfilment](../shipping-fulfilment/), and tracked on the [BACKLOG](../../BACKLOG.md) watch list.
+- What a courier accepts for a non-Indian contact — booking is deferred with shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`), and tracked on the [BACKLOG](../../BACKLOG.md) watch list.

@@ -83,7 +83,7 @@ Judged on a ~360px phone first.
 - **Delivery, six units:** 1 navigation shell and renames · 2 create screen · 3 Home and setup
   list · 4 hints and "?" · 5 pickup address sheet and reviews in context · 6 share.
 - **Later:** user-started "Show me around" tour (Q20) · QR poster for the counter (Q15) · team
-  page (Q16, [org-team](../../multi-vendor-marketplace/org-team/)) · payout details at first payout
+  page (Q16, org-team (`planning-archive-2026-11-25:docs/specs/multi-vendor-marketplace/org-team/`)) · payout details at first payout
   (Q17, org-profile Q9) · a "Pick your look" step once storefront-themes ships (Q18).
 
 ## Open questions

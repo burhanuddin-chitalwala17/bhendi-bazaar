@@ -1,7 +1,7 @@
 # ADR-0073: A shipped feature keeps its spec and decisions, and drops its ux and TRD
 
 - **Date:** 2026-11-12
-- **Status:** Accepted. Amends [ADR-0010](0010-spec-convention.md) (specs are never deleted) and [ADR-0061](0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md) (ux.md stays the reference for built screens)
+- **Status:** Accepted. Amends [ADR-0010](0010-spec-convention.md) (specs are never deleted) and [ADR-0061](0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md) (ux.md stays the reference for built screens); amended by [ADR-0084](0084-main-holds-only-finished-work-planning-lives-on-its-feature-branch.md) (every file but spec.md and decisions.md goes, Q ids checked first; nothing unshipped on main)
 
 ## Context
 

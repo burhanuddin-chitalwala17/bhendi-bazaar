@@ -7,7 +7,7 @@
 
 The platform began painting pictures with one hosted model (a scene backdrop through fal, PR-198) and
 is about to paint many more: styled product shots, then Instagram and WhatsApp posts
-([ai-images](../specs/ai-images/)). Image models change price and quality every few months, each fails
+(ai-images (`planning-archive-2026-11-25:docs/specs/ai-images/`)). Image models change price and quality every few months, each fails
 on different products (no model kept every product detail in more than 29% of cases in a 2026
 benchmark, [INTEGRATIONS.md](../INTEGRATIONS.md#image-generation-cloudflare-ai-fal)), and the owner wants
 to move between them on evidence without a rewrite. Two providers are wanted at once — a gateway that

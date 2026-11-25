@@ -1,6 +1,6 @@
 # Documentation
 
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 - **Covers:** `docs/*.md`, `docs/adr/*.md`, `docs/specs/*/`
 
 A map of this directory. Every link here points at a file that exists — if one does not, that is a defect ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)).
@@ -20,7 +20,7 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 | [adr/](adr/) | Why each decision was made | Never. A new ADR supersedes an old one |
 | [CONTRACTS.md](CONTRACTS.md) | Rules, the error envelope and shared shapes; an index of the per-domain files | A shared shape or a rule changes |
 | [contracts/](contracts/) | Each domain's shapes crossing the client/server boundary, one file per domain | A DTO changes → commit flagged `[CONTRACT]` |
-| [specs/](specs/) | Work not yet built | A feature is planned or delivered |
+| [specs/](specs/) | Each shipped feature's requirements and decisions; plans live on their feature branch ([ADR-0084](adr/0084-main-holds-only-finished-work-planning-lives-on-its-feature-branch.md)) | A feature ships |
 | [BACKLOG.md](BACKLOG.md) | Where the project is, phase by phase | A phase starts, blocks, or completes |
 | [DEPENDENCIES.md](DEPENDENCIES.md) | Why each package is here | A package is added, bumped, or removed |
 | [TESTING.md](TESTING.md) | Test strategy and coverage targets | The strategy changes |

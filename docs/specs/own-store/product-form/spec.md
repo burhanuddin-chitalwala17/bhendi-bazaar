@@ -5,7 +5,7 @@
 - **Domain:** catalog, with listing (readiness) and shared (audit)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-10-30
-- **References:** [decisions.md](decisions.md), `431ed6e7:docs/specs/own-store/product-form/ux.md`, [own-store](../spec.md) (Q13, Q16, Q17), [bulk-sheet](../bulk-sheet/) (sibling), [copy-product](../../copy-product/), [listing-vocabulary](../../listing-vocabulary/), [ADR-0021](../../../adr/0021-audit-trail-never-fails-the-action.md), [ADR-0029](../../../adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
+- **References:** [decisions.md](decisions.md), `431ed6e7:docs/specs/own-store/product-form/ux.md`, [own-store](../spec.md) (Q13, Q16, Q17), bulk-sheet (`planning-archive-2026-11-25:docs/specs/own-store/bulk-sheet/`) (sibling), [copy-product](../../copy-product/), [listing-vocabulary](../../listing-vocabulary/), [ADR-0021](../../../adr/0021-audit-trail-never-fails-the-action.md), [ADR-0029](../../../adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
 > Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/own-store/product-form/trd.md`.
 

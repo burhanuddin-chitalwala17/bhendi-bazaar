@@ -5,7 +5,7 @@
 - **Domain:** catalog, with cross-domain reads
 - **Phase:** 9 — Seller storefronts
 - **Verified:** 2026-09-19
-- **References:** [multi-vendor-marketplace](../multi-vendor-marketplace/), [promotions](../promotions/), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0016](../../adr/0016-mobile-app-shell.md), [ADR-0018](../../adr/0018-one-effective-price-function.md), [ADR-0022](../../adr/0022-design-decisions-go-through-tokens.md), and the subfeatures below
+- **References:** [multi-vendor-marketplace](../multi-vendor-marketplace/), promotions (`planning-archive-2026-11-25:docs/specs/promotions/`), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0016](../../adr/0016-mobile-app-shell.md), [ADR-0018](../../adr/0018-one-effective-price-function.md), [ADR-0022](../../adr/0022-design-decisions-go-through-tokens.md), and the subfeatures below
 
 > Requirements and product approach only. Each subfeature's trd.md was removed once shipped (ADR-0073); git keeps them.
 

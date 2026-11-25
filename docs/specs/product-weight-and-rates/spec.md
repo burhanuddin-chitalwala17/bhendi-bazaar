@@ -5,7 +5,7 @@
 - **Domain:** catalog, shipping
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-10
-- **References:** `431ed6e7:docs/specs/product-weight-and-rates/trd.md`, [shipping-fulfilment](../shipping-fulfilment/), [CONTRACTS.md](../../CONTRACTS.md)
+- **References:** `431ed6e7:docs/specs/product-weight-and-rates/trd.md`, shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`), [CONTRACTS.md](../../CONTRACTS.md)
 
 > Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/product-weight-and-rates/trd.md`.
 
@@ -47,7 +47,7 @@ sees the billable figure on the parcel card; the shipment record keeps the real 
 
 ## Out of scope (this feature)
 
-- Booking real shipments — [shipping-fulfilment](../shipping-fulfilment/). This feature makes the price right; that one makes the parcel real.
+- Booking real shipments — shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`). This feature makes the price right; that one makes the parcel real.
 - Package dimensions and volumetric weight. Couriers may price on either; dimensions are a follow-on once weight is trustworthy.
 - Splitting a basket across multiple parcels by weight limit.
 - Warehouse or per-location differences.

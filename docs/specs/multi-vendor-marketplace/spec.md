@@ -5,7 +5,7 @@
 - **Domain:** cross-domain
 - **Phase:** 3 — Fulfilment, reaching back into Phase 2
 - **Verified:** 2026-08-08
-- **References:** [data-model.md](data-model.md), `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`, and the subfeatures below
+- **References:** data-model.md (`5ecf1cac:docs/specs/multi-vendor-marketplace/data-model.md`), `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`, and the subfeatures below
 
 > Requirements and product approach only. Each subfeature's technical approach lives in its own `trd.md`.
 
@@ -62,7 +62,7 @@ which is why they share a parent, and why neither can be reviewed sensibly as a 
 | [portal-separation](portal-separation/)                           | Three audiences, three portals, one authorization model ✅ done | organisations-and-membership              |
 | [org-onboarding](org-onboarding/)                                 | Someone with no organisation can create one ✅ done           | portal-separation                         |
 | [org-portal-chrome](org-portal-chrome/)                           | You can see and change which organisation you are acting for ✅ done | portal-separation                         |
-| [org-team](org-team/)                                             | An organisation's people can be managed                      | portal-separation                         |
+| org-team (`planning-archive-2026-11-25:docs/specs/multi-vendor-marketplace/org-team/`)                                             | An organisation's people can be managed                      | portal-separation                         |
 | [dashboard-widgets](dashboard-widgets/) | One dashboard, assembled from widgets that declare their audience ✅ done | portal-separation                         |
 | [addresses-as-entities](addresses-as-entities/)                   | An address is a record, not a JSON blob ✅ done               | —                                         |
 | [category-tree](category-tree/)                                   | Categories nest to any depth ✅ done                          | —                                         |

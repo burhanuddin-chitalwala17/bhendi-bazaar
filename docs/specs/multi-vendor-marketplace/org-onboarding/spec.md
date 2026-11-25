@@ -35,7 +35,7 @@ only vendors are ones a platform admin types in by hand, which is a directory, n
 - **A5** — If creation fails partway, no organisation and no membership exist.
 
 ## Out of scope (this feature)
-- **Inviting or managing members** — [../org-team](../org-team/).
+- **Inviting or managing members** — ../org-team (`planning-archive-2026-11-25:docs/specs/multi-vendor-marketplace/org-team/`).
 - **The switcher and header inside the portal** — [../org-portal-chrome](../org-portal-chrome/). The menu entry here is the way *in*; what it looks like once inside is chrome.
 - **Approval or verification.** Creation is self-serve and immediate; `isVerified` exists on the record and nothing gates on it yet, per the programme spec.
 - **A public vendor page or org slug.** No public identity exists yet; if one arrives, its slug question is decided then.

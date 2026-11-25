@@ -54,13 +54,13 @@ Connected through the admin console at `/admin/shipping/providers`, encrypted wi
 
 ## Rate caching
 
-`ShippingRateCache` exists in the schema and nothing reads or writes it. It was built for the day rate lookups became the hot path; quotes are requested live today. Dropping the table or starting to use it is a decision for [shipping-fulfilment](../../docs/specs/shipping-fulfilment/), not an accident to leave standing.
+`ShippingRateCache` exists in the schema and nothing reads or writes it. It was built for the day rate lookups became the hot path; quotes are requested live today. Dropping the table or starting to use it is a decision for shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`), not an accident to leave standing.
 
 ## Current state of quoting vs booking
 
 **Quoting is real; booking is by hand.** Rate quotes come from the Shiprocket provider through the orchestrator. There is no booking call: a parcel is born `packing`, and an admin books the courier on Shiprocket and records it (own-store Q18). The mock booking that used to sit in `providers/_placeholder/` is deleted ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/) D3).
 
-Automatic booking is [shipping-fulfilment](../../docs/specs/shipping-fulfilment/), which is gated on a product decision. Its other prerequisite, [product-weight-and-rates](../../docs/specs/product-weight-and-rates/), is done.
+Automatic booking is shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`), which is gated on a product decision. Its other prerequisite, [product-weight-and-rates](../../docs/specs/product-weight-and-rates/), is done.
 
 ## Weight
 

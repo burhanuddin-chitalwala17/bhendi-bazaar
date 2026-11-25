@@ -3,7 +3,7 @@
 - **Verified:** 2026-11-21
 - **Covers:** `server/content/**`
 
-> **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md). This file covers **content** only. Requirements are in [docs/specs/image-enhancement/](../../docs/specs/image-enhancement/) and [docs/specs/ai-images/](../../docs/specs/ai-images/); every decision, with who made it, is in each spec's `decisions.md`.
+> **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md). This file covers **content** only. Requirements are in [docs/specs/image-enhancement/](../../docs/specs/image-enhancement/) and docs/specs/ai-images/ (`planning-archive-2026-11-25:docs/specs/ai-images/`); every decision, with who made it, is in each spec's `decisions.md`.
 
 ## Purpose
 What is made from an image: the six exact improvements and their ledger (`Enhancement`), renditions, what each channel asks of a photograph, and — from 2026-11-21 — every AI-generated picture through one generation module.

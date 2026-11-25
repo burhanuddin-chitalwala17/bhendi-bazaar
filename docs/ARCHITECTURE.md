@@ -3,7 +3,7 @@
 - **Verified:** 2026-11-25
 - **Covers:** `src/app/*/`, `server/*/`, `prisma/schema.prisma`, `src/lib/rate-limit/**`
 
-Describes what **exists now**, at HLD level. Not a plan — planned work is in [BACKLOG.md](BACKLOG.md) and [specs/](specs/). Update *after* a structural change, never before ([../CLAUDE.md](../CLAUDE.md) Golden Rules). Domain-internal detail belongs in `<domain>/CLAUDE.md`, co-located with the code.
+Describes what **exists now**, at HLD level. Not a plan — planned work is in [BACKLOG.md](BACKLOG.md), and each plan on its feature branch ([ADR-0084](adr/0084-main-holds-only-finished-work-planning-lives-on-its-feature-branch.md)). Update *after* a structural change, never before ([../CLAUDE.md](../CLAUDE.md) Golden Rules). Domain-internal detail belongs in `<domain>/CLAUDE.md`, co-located with the code.
 
 ## Shape
 
@@ -70,11 +70,11 @@ One table is written by a trigger rather than a repository: `ProductPriceHistory
 
 The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defines the provider contract, `server/shipping/providers/shiprocket/` implements it, and `server/shipping/services/orchestrator.service.ts` coordinates rate quoting. Provider credentials are stored encrypted and connected through the admin console.
 
-**Quotes are live; booking is by hand.** Quotes come from the Shiprocket provider; an admin books the courier on Shiprocket and records it (own-store Q18). A parcel moves only through checkout's `fulfilment.service.ts`, which locks the order, moves the parcel through shipping's single writer and derives the order's status from its parcels ([order-fulfilment](specs/own-store/order-fulfilment/) D2, D4). Automatic booking is [shipping-fulfilment](specs/shipping-fulfilment/).
+**Quotes are live; booking is by hand.** Quotes come from the Shiprocket provider; an admin books the courier on Shiprocket and records it (own-store Q18). A parcel moves only through checkout's `fulfilment.service.ts`, which locks the order, moves the parcel through shipping's single writer and derives the order's status from its parcels ([order-fulfilment](specs/own-store/order-fulfilment/) D2, D4). Automatic booking is shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`).
 
 ## Testing
 
-433 Vitest files (331 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 37 errors, 35 of them `no-explicit-any`. None of those is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
+435 Vitest files (333 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 37 errors, 35 of them `no-explicit-any`. None of those is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
 
 ## Intentionally absent
 

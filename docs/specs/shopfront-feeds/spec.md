@@ -5,7 +5,7 @@
 - **Domain:** cross-domain (catalog, listing, promotions, bidding)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-14
-- **References:** `431ed6e7:docs/specs/shopfront-feeds/trd.md`, [channel-registry](../channel-registry/), [seo](../seo/), [ADR-0018](../../adr/0018-one-effective-price-function.md), [ADR-0023](../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)
+- **References:** `431ed6e7:docs/specs/shopfront-feeds/trd.md`, [channel-registry](../channel-registry/), seo (`planning-archive-2026-11-25:docs/specs/seo/`), [ADR-0018](../../adr/0018-one-effective-price-function.md), [ADR-0023](../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)
 
 > Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/shopfront-feeds/trd.md`.
 
@@ -60,7 +60,7 @@ The two are built together because Meta reads Google's format; what differs is w
   feed-format errors.
 
 ## Out of scope (this feature)
-- Product structured data on pages — [seo](../seo/).
+- Product structured data on pages — seo (`planning-archive-2026-11-25:docs/specs/seo/`).
 - Instagram posts, and Meta's own checkout (not offered in India) — `instagram-post`, later.
 - Per-shop feeds and shops' own Merchant Center or Business accounts — later, with `channel-connectors`.
 - Shipping and returns, which are set once in each channel's console, not per product.

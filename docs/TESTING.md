@@ -1,6 +1,6 @@
 # TESTING.md — test strategy
 
-- **Verified:** 2026-11-05
+- **Verified:** 2026-11-25
 - **Covers:** `tests/*/`, `e2e/`, `.github/workflows/ci.yml`, `vitest.config.ts`, `playwright.config.ts`
 
 ## Stack
@@ -195,6 +195,7 @@ A journey asserts what a person sees, never a timing: wait for the confirmation 
 
 5. **Dependencies block.** ✅ `node scripts/audit-prod.mjs`: a high or critical advisory in a production dependency fails the test job unless `audit-allowlist.json` names it with a reason and an expiry. A registry outage is retried once and reported as an outage, not a finding.
 6. **Browser journeys block the deploy.** ✅ The `e2e` job builds, starts and runs `npx playwright test` on every event, and `deploy` needs it. A failed run uploads its report and traces.
+7. **Only finished work merges to main.** The `main-ready` job runs `npm run check:main-ready` on pull requests into `main` only, since a feature branch carries its plans; it blocks the merge once branch protection requires it ([ADR-0084](adr/0084-main-holds-only-finished-work-planning-lives-on-its-feature-branch.md)).
 
 Warnings stay non-blocking throughout (101 in total on 2026-09-28: 93 `no-unused-vars`, 5 `exhaustive-deps`).
 

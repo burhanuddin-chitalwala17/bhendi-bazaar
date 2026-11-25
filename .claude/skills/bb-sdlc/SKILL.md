@@ -1,6 +1,6 @@
 ---
 name: bb-sdlc
-description: Operational SDLC flows for bhendi-bazaar. Four subcommands — spec-start (cut a feature to one outcome and scaffold spec.md, decisions.md and trd.md in docs/specs/), ux-start (journeys, a state matrix for every screen, exact copy and a phone-first prototype, signed off by the owner before the TRD), adr-new (add a decision record to docs/adr/ or a domain's adr/), pr-finish (walk the pre-merge checklist). Invoke during the SDLC cycle. Examples — "/bb-sdlc spec-start order-cancellation", "/bb-sdlc ux-start channel-connectors", "/bb-sdlc adr-new switch product search to pg_trgm", "/bb-sdlc pr-finish".
+description: Operational SDLC flows for bhendi-bazaar. Four subcommands — spec-start (cut a feature to one outcome and scaffold spec.md, decisions.md and trd.md in docs/specs/), ux-start (journeys, a state matrix for every screen, exact copy and a phone-first prototype, signed off by the owner before the TRD), adr-new (add a decision record to docs/adr/ or a domain's adr/), pr-finish (walk the pre-merge checklist, retire the spec, check main-ready). Planning happens on the feature branch and reaches main only finished. Invoke during the SDLC cycle. Examples — "/bb-sdlc spec-start order-cancellation", "/bb-sdlc ux-start channel-connectors", "/bb-sdlc adr-new switch product search to pg_trgm", "/bb-sdlc pr-finish".
 ---
 
 # /bb-sdlc — operational SDLC flows
@@ -12,6 +12,8 @@ Four subcommands. Pick the one matching the invocation. The cycle they serve is 
 **Stop the feature growing.** A feature is one outcome a person can see, shippable alone in about six units. You draw the cut; do not ask the owner where it goes. Something is *In* only if an acceptance criterion needs it. A new capability, screen, persona or external dependency is *Later*. Anything waiting on an outside party (an approval, a ticket, a contract) is its own feature. Edge cases and states of what is In are never scope creep: they are required. When a conversation proposes something new mid-feature, say "parked as Q<n>", log it, and carry on. Do not redesign the feature around it.
 
 **Log every decision, and decide the small ones yourself.** Every question goes in the feature's `decisions.md` the moment it comes up, and every answer the moment it is given, including answers given in chat. You decide anything reversible that sits within an existing ADR, marked `Claude · reversible`, with one line of why. The owner decides money, marketplace or legal policy, irreversible data, external commitments and matters of taste. Ask those in batches of at most five, each with your recommendation first. Before ending any planning turn, check that nothing said in the conversation is missing from the log.
+
+**Planning lives on the feature branch, and reaches main only finished** ([ADR-0084](../../../docs/adr/0084-main-holds-only-finished-work-planning-lives-on-its-feature-branch.md)). spec-start, ux-start, the TRD and the handoff are written and committed on the feature's branch, never on `main` and never merged to it while the Status does not begin with Implemented. Main holds a shipped feature's `spec.md` and `decisions.md`, and nothing else from planning; a programme parent stays once a child ships, with `spec.md` and `decisions.md` only.
 
 **Planning ends in a handoff, never in code** ([ADR-0080](../../../docs/adr/0080-planning-and-building-never-share-a-session.md)). When the TRD is Accepted, this session's last output is the handoff, and then it stops: one line per Delivery unit, each a ready-to-paste prompt (`/bb-build <feature> unit <n>`), marked `after U<k>` or `independent`. The owner starts each in a new session; or, when asked, this session starts them — one new session per unit, sequential units one after another, independent units in parallel only if no two touch the same files, each on its own branch. It does not watch them; each reports when done. Asked to "just start building" here, give the handoff instead and say why.
 
@@ -40,7 +42,7 @@ When something below says "the relevant `ARCHITECTURE.md`", choose by scope: one
 
 ## Subcommand: `spec-start <feature-name>`
 
-Scaffolds a feature folder under `docs/specs/`. Convention: [ADR-0010](../../../docs/adr/0010-spec-convention.md).
+Scaffolds a feature folder under `docs/specs/`, on the feature's branch (`git worktree add -b <branch> ../bhendi-bazaar-<topic> main`), never on `main` ([ADR-0084](../../../docs/adr/0084-main-holds-only-finished-work-planning-lives-on-its-feature-branch.md)). Convention: [ADR-0010](../../../docs/adr/0010-spec-convention.md).
 
 ### Steps
 
@@ -68,7 +70,7 @@ Template: `scripts/templates/spec/trd.md` — already in the folder `spec:new` m
 
 ## Subcommand: `ux-start <feature-name>`
 
-The UX stage. It runs after the spec and before the TRD, for any feature a person sees. It exists so the owner meets the experience, edge cases included, on paper rather than in code ([ADR-0061](../../../docs/adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)). A feature with no UI writes "No UI — UX stage skipped" in its spec's Scope and goes straight to the TRD.
+The UX stage, on the feature's branch like the spec. It runs after the spec and before the TRD, for any feature a person sees. It exists so the owner meets the experience, edge cases included, on paper rather than in code ([ADR-0061](../../../docs/adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)). A feature with no UI writes "No UI — UX stage skipped" in its spec's Scope and goes straight to the TRD.
 
 ### Steps
 
@@ -145,8 +147,9 @@ Walks the pre-merge gate. Report each item as pass, fail, or not-applicable — 
 6. **A TRD exists** if the PR changes architecture or data flow, adds a package, starts a feature, or changes a contract.
 7. **Docs updated** where they are now wrong: the relevant `ARCHITECTURE.md` if structure changed, the domain's `docs/contracts/<domain>.md` if a DTO changed, `DEPENDENCIES.md` if a package was added, `OPERATIONS.md` if setup or deploy changed. Bump each touched doc's `Verified:` date.
 8. **UX and decisions honoured.** A screen this PR adds or changes appears in `ux.md` with its states and copy. No decision the PR depends on is still open in `decisions.md`.
-9. **Spec status moved** if this PR completed one — `Draft` → `Implemented` in the spec and in `docs/specs/README.md`, and the row in `BACKLOG.md`.
-10. **No findings written into docs.** Defects fixed in this PR should leave no trace as documentation; the commit records what changed, and that is enough.
-11. **Branch is not `main`.** Commit each PR-sized unit on `develop` (or the branch the user named). Push the working branch when the unit is committed; never push to `main` or force-push, and open a PR only when the user asks in this conversation.
+9. **Retired if it ships.** `npm run spec:status -- <feature> Implemented` flips the Status, regenerates `docs/specs/README.md`, and deletes every file but `spec.md` and `decisions.md` once each Q id they cite is in `decisions.md`; delete the feature's `handoff/` prompts too, and move its row in `BACKLOG.md` by hand. A feature that does not ship yet does not merge to main.
+10. **`npm run check:main-ready` passes** — required before merging to `main`. It fails, naming each offender and its fix, on an unshipped spec folder, any file beside a shipped spec but `spec.md`/`decisions.md`, or `handoff/`. `.githooks/pre-push` runs the same check on a push to `main`.
+11. **No findings written into docs.** Defects fixed in this PR should leave no trace as documentation; the commit records what changed, and that is enough.
+12. **Branch is not `main`.** Commit each PR-sized unit on `develop` (or the branch the user named). Push the working branch when the unit is committed; never push to `main` or force-push, and open a PR only when the user asks in this conversation.
 
 Report the checklist with its verdicts, then state plainly whether the PR is ready.
