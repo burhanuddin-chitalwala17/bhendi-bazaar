@@ -1,0 +1,9 @@
+docs/specs/social-selling/build-handoff.md
+  ai_agent 26-28,61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "98b59f340ac072a6d62b69b49a7b7c3ecf9b92ac",
+  "prompts": {}
+}
