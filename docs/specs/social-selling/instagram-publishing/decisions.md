@@ -1,6 +1,6 @@
 # Decisions — social-selling/instagram-publishing
 
-- **Verified:** 2026-11-22
+- **Verified:** 2026-11-25
 
 > Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented
 > ones
@@ -15,6 +15,7 @@
 | Q5 | What are Instagram's limits and failures, and how are they handled? | Before each publish the plug reads the account's remaining daily quota; at zero the destination fails at once with "Instagram's daily limit reached; try after <time>" and Publish now, not retried. Network failures, timeouts, Instagram 5xx, rate limiting and a container still processing after 5 minutes count as temporary and are retried; refused media or caption fails at once with Instagram's reason in plain words, and a revoked token with Reconnect | Claude · reversible | 2026-11-06 | Meta's own figure is 50 or 100 per 24h depending on the page; reading it beats guessing | decided |
 | Q9 | Which of Instagram's post features are offered? | Everything Instagram's publishing API allows: @mentions and hashtags in the caption (2,200 characters, 30 hashtags), people tagged on feed images and on stories, up to three collaborators on a feed post or reel, and a location where the API accepts one. Stickers (link, poll, location sticker) and music cannot be published by API and are not offered | Owner | 2026-11-21 | The owner asked for whatever Instagram provides. was: @mentions as typed; user tags, collaborators, location and stickers not offered | decided |
 | Q10 | How is an AI-made picture disclosed when posted to Instagram? | Before scheduling, a post using an AI-made picture shows a short reminder that Instagram expects realistic AI pictures to be disclosed, with the way to do it; we never post it silently. The TRD's spike checks whether Instagram's API can set its own "AI info" label, and sets it if so | Owner | 2026-11-22 | Meta labels and asks for disclosure of realistic AI imagery; a shop caught out loses trust in its account | decided |
+| Q11 | What does a container carry where Instagram's API allows more than our post shapes, or where the TRD is silent? | A carousel is pictures only (post-composer R2), though the API takes videos in one. A feed picture's rendition is cut to exactly 1:1 or 4:5 and sent smaller when the library picture lacks 1080 px, never enlarged nor left off-shape. A story renders from the shop's own crop, since its blurred fill crops nothing. People tags on a story picture are sent with x/y; U2's spike confirms Instagram takes them and drops x/y if not | Claude · reversible | 2026-11-25 | Keeps the composer's one shape list; Instagram refuses a feed picture narrower than 4:5 | implemented (unit 1) |
 
 ## Parked (Later)
 None beyond the parent's (insights, parent Q21).

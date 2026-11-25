@@ -1,4 +1,4 @@
-import sharp from "sharp";
+import sharp, { type Sharp } from "sharp";
 
 import { mediaAssetService } from "@server/catalog/media-asset.service";
 import {
@@ -52,8 +52,40 @@ export async function sourceForSurface(
 ): Promise<string> {
   const asset = await mediaAssetService.describeForRendition(assetId);
   if (!asset) return assetId;
-  if (coversSurface(asset, surface)) return assetId;
+  // A blurred fill crops nothing, so the shop's own crop always serves.
+  if (surface.fit === "blurFill" || coversSurface(asset, surface)) return assetId;
   return asset.derivedFromId ?? assetId;
+}
+
+const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+
+/**
+ * The surface's box, shrunk to what the picture holds without enlarging, in whole steps of its
+ * ratio: flooring each side alone can leave a 4:5 narrower than Instagram takes.
+ */
+async function shapedBox(bytes: Buffer, surface: MediaSurface): Promise<{ width: number; height: number }> {
+  const meta = await sharp(bytes).metadata();
+  const turned = (meta.orientation ?? 1) >= 5;
+  const width = (turned ? meta.height : meta.width) ?? 0;
+  const height = (turned ? meta.width : meta.height) ?? 0;
+  if (width >= surface.width && height >= surface.height) return surface;
+  const g = gcd(surface.width, surface.height);
+  const [stepW, stepH] = [surface.width / g, surface.height / g];
+  const k = Math.max(1, Math.floor(Math.min(width / stepW, height / stepH)));
+  return { width: k * stepW, height: k * stepH };
+}
+
+/** The whole picture centred on a blurred cover of itself, so a tall box crops nothing off it. */
+function blurFilled(bytes: Buffer, picture: Buffer, surface: MediaSurface): Sharp {
+  return sharp(bytes)
+    .rotate()
+    .resize(surface.width, surface.height, { fit: "cover" })
+    .blur(40)
+    .composite([{ input: picture, gravity: "centre" }]);
+}
+
+function fitted(bytes: Buffer, box: { width: number; height: number }, fit: "cover" | "inside"): Sharp {
+  return sharp(bytes).rotate().resize(box.width, box.height, { fit, withoutEnlargement: true });
 }
 
 /** The surface's own key is the transform, so the pair is unique and readable in the row. */
@@ -79,16 +111,18 @@ export async function renditionUrl(
   const from = await sourceForSurface(assetId, surface);
   const { bytes } = await mediaAssetService.readImageBytes(from);
 
-  const rendered = await sharp(bytes)
-    .rotate()
-    .resize(surface.width, surface.height, {
-      fit: surface.fit,
-      withoutEnlargement: true,
-    })
-    .flatten(surface.format === "jpeg" ? { background: "#ffffff" } : false)
-    .toFormat(surface.format === "jpeg" ? "jpeg" : "webp", { quality: surface.quality })
-    .toBuffer();
   const jpeg = surface.format === "jpeg";
+  const box = surface.exactShape ? await shapedBox(bytes, surface) : surface;
+  let sized: Sharp;
+  if (surface.fit === "blurFill") {
+    sized = blurFilled(bytes, await fitted(bytes, surface, "inside").toBuffer(), surface);
+  } else {
+    sized = fitted(bytes, box, surface.fit);
+  }
+  const rendered = await sized
+    .flatten(jpeg ? { background: "#ffffff" } : false)
+    .toFormat(jpeg ? "jpeg" : "webp", { quality: surface.quality })
+    .toBuffer();
 
   // Recorded against the asset that was asked for, not the one it was rendered from: the
   // caller asked this asset for this surface, and that is the pair the next ask looks up.

@@ -207,8 +207,9 @@ export const ZOOMABLE_IMAGE_SIZES = `${Math.min(MAX_ZOOM_SCALE, 2) * 100}vw`;
  * to the ceiling and to the zoom rule ([ADR-0027](../../docs/adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md)).
  *
  * `cover` fills the box and loses what does not fit; `inside` fits the whole picture within it
- * and keeps the shape. Nothing pads and nothing stretches — where the pixels are not there, the
- * rendition is made from the untouched original instead (R4).
+ * and keeps the shape; `blurFill` fits it on a blurred copy of itself. Nothing else pads, and
+ * nothing stretches: where the pixels are not there, the rendition is made from the untouched
+ * original instead (R4).
  */
 export const MEDIA_SURFACES = {
   /** The product grid tile. Three to a row on a phone, so the pixels are modest (ADR-0016). */
@@ -227,17 +228,27 @@ export const MEDIA_SURFACES = {
   marketplaceJpeg: { width: 1600, height: 1600, fit: "inside", quality: 85, format: "jpeg" },
   /** A feed post, composed square and delivered at 1080 (channel-rules). */
   social: { width: 1080, height: 1080, fit: "cover", quality: 82 },
+  /** Instagram's feed, square or 4:5, as the JPEG its container fetches (instagram-publishing D1). */
+  instagramSquare: { width: 1080, height: 1080, fit: "cover", quality: 85, format: "jpeg", exactShape: true },
+  instagramPortrait: { width: 1080, height: 1350, fit: "cover", quality: 85, format: "jpeg", exactShape: true },
+  /** A 9:16 story never crops off the product: the whole picture on a blurred fill of itself (ux.md). */
+  instagramStory: { width: 1080, height: 1920, fit: "blurFill", quality: 85, format: "jpeg" },
 } as const satisfies Record<string, MediaSurface>;
 
 export interface MediaSurface {
   width: number;
   height: number;
-  /** `cover` fills and crops; `inside` fits the whole picture and keeps its shape. */
-  fit: "cover" | "inside";
+  /**
+   * `cover` fills and crops; `inside` fits the whole picture and keeps its shape; `blurFill` fits it
+   * inside the full box, filled behind with a blurred cover of itself.
+   */
+  fit: "cover" | "inside" | "blurFill";
   /** Whole-number quality as sharp takes it, not the 0-1 fraction `IMAGE_QUALITY` uses. */
   quality: number;
   /** WebP unless a destination refuses it; a JPEG is flattened onto white, having no transparency. */
   format?: "jpeg";
+  /** A `cover` too small for the box is cut to the box's shape and sent smaller, never left off-shape. */
+  exactShape?: true;
 }
 
 export type MediaSurfaceKey = keyof typeof MEDIA_SURFACES;
