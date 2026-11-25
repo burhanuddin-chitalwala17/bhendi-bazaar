@@ -13,6 +13,8 @@ const cartItemSchema = z.object({
   quantity: quantitySchema,
   size: z.string().max(50).optional(),
   color: z.string().max(50).optional(),
+  /** The checkout link that added this line: a display mark, checked to exist before it is stored. */
+  fromLinkId: z.string().max(40).optional(),
 });
 
 // Update cart schema

@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { cartRepository } from "@server/cart/cart.repository";
+import { checkoutLinkRepository } from "@server/cart/checkout-link.repository";
 import { mergeCartLines } from "@server/cart/cart.merge";
 import type { CartItem, CartLineInput } from "@server/cart/cart.types";
 import { DomainError } from "@server/shared/domain-error";
@@ -29,7 +30,7 @@ export class CartService {
       lines.map((line) => line.productId),
       new Date()
     );
-    const cart = await cartRepository.upsert(userId, lines, expectedVersion);
+    const cart = await cartRepository.upsert(userId, await this.withKnownLinkMarks(lines), expectedVersion);
     return { version: cart.version };
   }
 
@@ -54,6 +55,7 @@ export class CartService {
           quantity: item.quantity,
           size: item.size,
           color: item.color,
+          fromLinkId: item.fromLinkId,
         }))
       );
       // An item that went to auction while the device cart sat there drops out, the
@@ -65,7 +67,7 @@ export class CartService {
       );
       const sellable = merged.filter((line) => !locked.has(line.productId));
       // Unconditional write: signing in is the tiebreak, not a stale-tab race.
-      const saved = await cartRepository.upsert(userId, sellable);
+      const saved = await cartRepository.upsert(userId, await this.withKnownLinkMarks(sellable));
       return { items: saved.items, version: saved.version };
     } catch (error) {
       console.error("[CartService] syncCart failed:", error);
@@ -86,6 +88,13 @@ export class CartService {
     lines: Array<Pick<CartLineInput, "productId" | "size" | "color">>
   ): Promise<void> {
     await cartRepository.removeLinesIn(tx, userId, lines);
+  }
+
+  /** A line's link mark is display only; one naming no link is dropped rather than failing the write (checkout-links D3). */
+  private async withKnownLinkMarks<L extends CartLineInput>(lines: L[]): Promise<L[]> {
+    const marks = [...new Set(lines.flatMap((line) => (line.fromLinkId ? [line.fromLinkId] : [])))];
+    const known = await checkoutLinkRepository.existingIds(marks);
+    return lines.map((line) => (line.fromLinkId && !known.has(line.fromLinkId) ? { ...line, fromLinkId: null } : line));
   }
 
   private validateCartLines(lines: CartLineInput[]): void {

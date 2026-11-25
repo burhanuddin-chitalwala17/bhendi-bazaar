@@ -623,8 +623,61 @@ model CartItem {
   size     String?
   color    String?
 
+  /// The checkout link this line came from, so checkout can show it as such (checkout-links D3).
+  /// Display only. SetNull: a deleted link must not delete the buyer's cart line.
+  fromLinkId String?
+  fromLink   CheckoutLink? @relation(fields: [fromLinkId], references: [id], onDelete: SetNull)
+
   @@index([cartId])
   @@index([productId])
+  @@index([fromLinkId])
+}
+
+enum CheckoutLinkSource {
+  INBOX_ORDER
+  AUTOMATIC
+  CAMPAIGN
+}
+
+/// A link made for one buyer that opens checkout holding these products (checkout-links D1).
+/// It carries products and quantities, never a price to charge: checkout prices them when opened
+/// (ADR-0002). Reached by its random token together with the shop's handle (D2).
+model CheckoutLink {
+  id                 String             @id @default(cuid())
+  /// 128 random bits, base64url — a guess is a 2^128 search.
+  token              String             @unique
+  /// Restrict: a link records attribution (ADR-0020).
+  orgId              String
+  org                Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  /// [{ productId, quantity }]: what the link adds, and nothing else.
+  items              Json
+  source             CheckoutLinkSource
+  /// The inbox order, answer or campaign it was made for (Q3).
+  sourceRef          String?
+  /// { productId: paise } as priced when made — shown as "was ₹y", never charged (D4).
+  displayPricesPaise Json
+  expiresAt          DateTime
+  /// The order it became (D5).
+  orderId            String?
+  order              Order?             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  createdAt          DateTime           @default(now())
+
+  opens     CheckoutLinkOpen[]
+  cartItems CartItem[]
+
+  @@index([orgId])
+}
+
+/// One per (link, cart): the claim that makes a second open add nothing (checkout-links D3).
+/// `cartKey` is `user:<id>` or `device:<id>` — a guest's cart lives on the device, not here.
+model CheckoutLinkOpen {
+  id        String       @id @default(cuid())
+  linkId    String
+  link      CheckoutLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  cartKey   String
+  createdAt DateTime     @default(now())
+
+  @@unique([linkId, cartKey])
 }
 
 /// A user's saved products. One per user, created on the first heart rather than at
@@ -810,6 +863,7 @@ model Org {
   contacts           Contact[]
   posts              Post[]
   conversations      Conversation[]
+  checkoutLinks      CheckoutLink[]
 
   @@index([email])
   @@index([isActive])
@@ -1075,6 +1129,8 @@ model Order {
   ledgerEntries  OrgLedgerEntry[]
   refunds        Refund[]
   budgetReleases PromotionBudgetRelease[]
+  /// The links whose lines this order bought (checkout-links D5).
+  checkoutLinks  CheckoutLink[]
 
   @@index([userId])
   @@index([code])

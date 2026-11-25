@@ -11,6 +11,11 @@ type CartStoreState = Cart & {
   removeLines: (lines: Array<Pick<CartItem, "productId" | "size" | "color">>) => void;
   setItems: (items: CartItem[]) => void;
   /**
+   * Add a checkout link's lines, marked as from it (checkout-links D3). Once per link on this device:
+   * a line already here keeps the larger quantity rather than doubling.
+   */
+  addFromLink: (linkId: string, lines: CartItem[]) => void;
+  /**
    * The saved cart has been read from this device. False through the server render and the
    * first client render, so both show the same empty cart and React does not mismatch; the
    * saved lines arrive one render later (docs/GTM-READINESS.md B9).
@@ -184,6 +189,23 @@ export const useCartStore = create<CartStoreState>()(
       setItems: (items) => {
         const totals = computeTotals(items);
         set({ items, totals, updatedAt: new Date() });
+      },
+
+      addFromLink: (linkId, lines) => {
+        set((state) => {
+          if (state.items.some((i) => i.fromLinkId === linkId)) return state;
+          const nextItems = [...state.items];
+          for (const line of lines) {
+            const at = nextItems.findIndex((i) => variantKey(i) === variantKey(line));
+            if (at >= 0) {
+              const held = nextItems[at];
+              nextItems[at] = { ...held, quantity: Math.max(held.quantity, line.quantity), fromLinkId: linkId };
+            } else {
+              nextItems.push({ ...line, id: crypto.randomUUID(), fromLinkId: linkId });
+            }
+          }
+          return { items: nextItems, totals: computeTotals(nextItems), updatedAt: new Date() };
+        });
       },
 
     }),

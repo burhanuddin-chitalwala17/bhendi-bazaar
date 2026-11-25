@@ -14,6 +14,8 @@ export const RATE_LIMIT_POLICY = {
   BID: "bid",
   MESSAGE: "message",
   ACCOUNT: "account",
+  /** Opening a checkout link, per address (checkout-links D3). */
+  LINK: "link",
 } as const;
 
 export type RateLimitPolicy = (typeof RATE_LIMIT_POLICY)[keyof typeof RATE_LIMIT_POLICY];
@@ -38,4 +40,5 @@ export const POLICY_BUDGETS: Record<RateLimitPolicy, Budget> = {
   [RATE_LIMIT_POLICY.BID]: { requests: 20, windowSeconds: MINUTE },
   [RATE_LIMIT_POLICY.MESSAGE]: { requests: 5, windowSeconds: 10 * MINUTE },
   [RATE_LIMIT_POLICY.ACCOUNT]: { requests: 30, windowSeconds: MINUTE },
+  [RATE_LIMIT_POLICY.LINK]: { requests: 20, windowSeconds: 10 * MINUTE },
 };

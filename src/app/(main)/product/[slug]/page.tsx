@@ -20,6 +20,7 @@ import { JsonLd } from "@/components/shared/JsonLd";
 import { productJsonLd } from "@/lib/structured-data";
 import { PRODUCT_PAGE_COPY } from "./product-page-copy";
 import { ROUTES } from "@server/shared/routes";
+import { ExpiredLinkLine } from "@/components/cart/checkout-link/ExpiredLinkLine";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -89,6 +90,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const shopHandle = chromeShop?.handle ?? null;
   return (
     <div className="space-y-8 md:space-y-12">
+      {/* Reads the query on the client, so the page itself stays as cacheable as it was. */}
+      <Suspense fallback={null}>
+        <ExpiredLinkLine />
+      </Suspense>
       {(() => {
         const ld = productJsonLd(appUrl(), product);
         return ld ? <JsonLd data={ld} /> : null;

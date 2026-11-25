@@ -51,6 +51,9 @@ export const ROUTE_RATE_LIMITS = {
     exempt: "The marketplace's consent redirect, once per connection; its signed state authenticates it.",
   },
 
+  // A buyer opens a link once; a token guesser many times (checkout-links D3).
+  "POST /api/checkout-links/open": { policy: P.LINK },
+
   "POST /api/checkout/allocate": { policy: P.CHECKOUT },
   "POST /api/checkout/promotions/quote": { policy: P.COUPON },
 

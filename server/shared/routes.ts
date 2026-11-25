@@ -31,6 +31,10 @@ export const ROUTES = {
   policy: (section: string) => `/policies#${section}`,
   category: (slug: string) => `/category/${slug}`,
   product: (slug: string) => `/product/${slug}`,
+  /** A product page opened from an expired checkout link: it shows the expired line (checkout-links R5). */
+  productFromExpiredLink: (slug: string) => `/product/${slug}?link=expired`,
+  /** A checkout link as sent in a chat (checkout-links D2). */
+  checkoutLink: (shopHandle: string, token: string) => `/c/${shopHandle}/${token}`,
   bid: (slug: string) => `/bid/${slug}`,
   order: (orderId: Id) => `/order/${orderId}`,
   stores: "/store",

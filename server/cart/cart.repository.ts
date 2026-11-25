@@ -45,6 +45,7 @@ interface CartLineRow {
   quantity: number;
   size: string | null;
   color: string | null;
+  fromLinkId?: string | null;
   product: {
     id: string;
     slug: string;
@@ -101,6 +102,7 @@ export function toWireCartItem(
       [...row.product.stockLocations].sort((a, b) => b.quantity - a.quantity)[0]
         ?.orgAddress.address.pincode || "",
     org: row.product.org,
+    ...(row.fromLinkId ? { fromLinkId: row.fromLinkId } : {}),
   };
 }
 
@@ -129,7 +131,15 @@ function toLineRows(lines: CartLineInput[]) {
     quantity: line.quantity,
     size: line.size || null,
     color: line.color || null,
+    fromLinkId: line.fromLinkId || null,
   }));
+}
+
+/** A link line as checkout-links opens it: today's wire line, what is on hand, and whether it is on sale. */
+export interface PreviewLine {
+  line: CartItem;
+  onHand: number;
+  onSale: boolean;
 }
 
 export class CartRepository {
@@ -214,6 +224,40 @@ export class CartRepository {
       include: CART_INCLUDE,
     });
     return toServerCart(saved, await loadPriceContext());
+  }
+
+  /**
+   * Price and check link lines without storing them: the cart lives on the buyer's device
+   * (checkout-links decisions Q4). Archived and withdrawn products are read on purpose so they come
+   * back by name, not on sale.
+   */
+  async previewLines(lines: ReadonlyArray<{ productId: string; quantity: number }>, fromLinkId?: string): Promise<PreviewLine[]> {
+    if (lines.length === 0) return [];
+    const products = await prisma.product.findMany({
+      relationLoadStrategy: "join",
+      where: { id: { in: lines.map((line) => line.productId) } },
+      include: {
+        ...CART_INCLUDE.items.include.product.include,
+        org: { select: { id: true, name: true, code: true, handle: true, isActive: true, isBlocked: true } },
+      },
+    });
+    const byId = new Map(products.map((product) => [product.id, product]));
+    const context = await loadPriceContext();
+    return lines.flatMap((line) => {
+      const product = byId.get(line.productId);
+      if (!product) return [];
+      const { isActive, isBlocked, ...org } = product.org;
+      return [
+        {
+          line: toWireCartItem(
+            { id: `${fromLinkId ?? "link"}:${product.id}`, quantity: line.quantity, size: null, color: null, fromLinkId, product: { ...product, org } },
+            context,
+          ),
+          onHand: product.stockLocations.reduce((sum, row) => sum + row.quantity, 0),
+          onSale: product.archivedAt === null && isActive && !isBlocked,
+        },
+      ];
+    });
   }
 
   /** Empty the cart, bumping the version so other tabs learn about it. */

@@ -11,6 +11,7 @@ export interface CartLine {
   quantity: number;
   size?: string | null;
   color?: string | null;
+  fromLinkId?: string | null;
 }
 
 export function lineKey(line: Pick<CartLine, "productId" | "size" | "color">): string {
@@ -22,7 +23,9 @@ export function mergeCartLines<L extends CartLine>(localLines: L[], remoteLines:
   for (const line of remoteLines) merged.set(lineKey(line), line);
   for (const line of localLines) {
     const existing = merged.get(lineKey(line));
-    merged.set(lineKey(line), existing ? { ...existing, quantity: line.quantity } : line);
+    // A link's mark survives the merge from whichever side holds it (checkout-links D3).
+    const kept = existing && { ...existing, quantity: line.quantity, fromLinkId: line.fromLinkId || existing.fromLinkId };
+    merged.set(lineKey(line), kept || line);
   }
   return [...merged.values()];
 }

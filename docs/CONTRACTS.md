@@ -66,7 +66,7 @@ Each domain's shapes are in its own file, so a change reads only the one it touc
 
 | Domain | File | Holds |
 |---|---|---|
-| cart | [contracts/cart.md](contracts/cart.md) | Cart persistence and the sign-in merge |
+| cart | [contracts/cart.md](contracts/cart.md) | Cart persistence, the sign-in merge, and checkout links |
 | checkout | [contracts/checkout.md](contracts/checkout.md) | Orders and their lifecycle |
 | promotions | [contracts/promotions.md](contracts/promotions.md) | Offers, coupons and the effective price |
 | payments | [contracts/payments.md](contracts/payments.md) | Gateway conversation and payment state |

@@ -14,6 +14,8 @@ export interface CartLineInput {
   quantity: number;
   size?: string | null;
   color?: string | null;
+  /** The checkout link this line came from (checkout-links D3). Display only. */
+  fromLinkId?: string | null;
 }
 
 /** The org block checkout groups parcels by — the one shared declaration. */
@@ -34,6 +36,8 @@ export interface CartItem {
   weight: number; // kg
   shippingFromPincode: string;
   org: OrgSummary;
+  /** Set when a checkout link added this line (checkout-links D3). */
+  fromLinkId?: string;
 }
 
 export interface CartTotals {
