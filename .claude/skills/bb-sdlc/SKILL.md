@@ -147,6 +147,6 @@ Walks the pre-merge gate. Report each item as pass, fail, or not-applicable — 
 8. **UX and decisions honoured.** A screen this PR adds or changes appears in `ux.md` with its states and copy. No decision the PR depends on is still open in `decisions.md`.
 9. **Spec status moved** if this PR completed one — `Draft` → `Implemented` in the spec and in `docs/specs/README.md`, and the row in `BACKLOG.md`.
 10. **No findings written into docs.** Defects fixed in this PR should leave no trace as documentation; the commit records what changed, and that is enough.
-11. **Branch is not `main`.** Commit each PR-sized unit on `develop` (or the branch the user named). Never push or open a PR unless the user asks in this conversation.
+11. **Branch is not `main`.** Commit each PR-sized unit on `develop` (or the branch the user named). Push the working branch when the unit is committed; never push to `main` or force-push, and open a PR only when the user asks in this conversation.
 
 Report the checklist with its verdicts, then state plainly whether the PR is ready.
