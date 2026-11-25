@@ -1,8 +1,32 @@
 # Handoff — media-library photos feature (master)
 
-- **Updated:** 2026-11-25 06:51 UTC
+- **Updated:** 2026-11-25 06:58 UTC — **PAUSED for account switch**
 - **Planning branch:** `claude/gracious-gates-l2b7u5` (this file)
-- **Status:** viewer (U1–U3) and picker-filters Implemented and merged here; bulk-actions U1 running
+- **Status:** PAUSED. viewer and picker-filters Implemented and merged here. bulk-actions U1 was mid-build and told to checkpoint and push to `claude/media-library-build`; bulk U2 and U3 not started.
+
+## RESUME HERE (new account)
+
+Nothing is scheduled any more; no session is running. To continue:
+
+1. Open a session on `claude/media-library-build` and read `handoff/media-library-bulk-actions-u1.md`.
+   - If its Status is not Done, say: "Resume the bb-build of media-library/bulk-actions unit 1 from
+     handoff/media-library-bulk-actions-u1.md. Keep that handoff current; commit and push
+     claude/media-library-build after every step. No PR, no force-push."
+   - If it is Done (or the checkpoint never landed and the file is missing), start/redo U1 with:
+     "Build unit 1 of the accepted feature media-library/bulk-actions by invoking the bb-build skill
+     with media-library/bulk-actions unit 1." (Same standing rules.)
+2. After U1: start bulk U2 from the same branch (`… unit 2`): fflate 0.8.3 pinned, buildZip,
+   mediaFilesApiClient, useLibraryZip, DEPENDENCIES.md row, OPERATIONS.md CORS GET step.
+3. After U2, **and only once `GET` is in the R2 bucket's CORS policy** (bucket → Settings → CORS →
+   `"AllowedMethods": ["GET", "PUT"]`): start bulk U3 (`… unit 3`), selection mode. The ⤢ control
+   hides in selection mode and the tick takes the top-left (already decided; see below).
+4. After each unit: merge its finished commit into `claude/gracious-gates-l2b7u5`, take the unit's
+   side of `Verified:` dates, run `npm run docs:index` for generated counts, run
+   `env -u NEXT_PUBLIC_APP_URL -u NEXTAUTH_URL npm run gate`, push.
+5. When bulk U3 is done: the owner walks each spec's acceptance on a phone, then `/bb-sdlc pr-finish`.
+
+Build sessions started on the new account load `.claude/settings.json` (from main `4fc858bf`), which
+allows a plain `git push` to origin, so they push on their own.
 
 Read this first if you are continuing from another account. Each build unit also keeps its own
 `handoff/<unit>.md` **on its own build branch**, updated after every step; that file is the truth
@@ -48,7 +72,7 @@ Each folder has spec.md, decisions.md, ux.md (prototype: https://claude.ai/artif
 | 1 | viewer U1 — download route | `claude/gracious-gates-l2b7u5` | `claude/media-library-build` | done, pushed `4676e522`, gate re-run green by master | `session_01Kc21QZt95tL4EJCVq7VQ7Q` |
 | 2 | viewer U2 — sheet download | `claude/media-library-build` after 1 | same | done `69033278`, merged here | `session_01Kc21QWDFRJaaeEwD3Lgcq3` |
 | 3 | viewer U3 — full-screen slider | after 2 | same | done `d160044e` (viewer Implemented), merged here | `session_01Kc21QZLqA5dbdePyBT5SPm` |
-| 4 | bulk U1 — bulk routes | after 3 | same | running | `session_01Kc21QY3ZZ7k2VocBTTyKHs` |
+| 4 | bulk U1 — bulk routes | after 3 | same | **paused mid-unit**; read `handoff/media-library-bulk-actions-u1.md` on `claude/media-library-build` | `session_01Kc21QY3ZZ7k2VocBTTyKHs` (old account) |
 | 5 | bulk U2 — zip builder, fflate, OPERATIONS CORS step | after 4 | same | waiting | — |
 | 6 | bulk U3 — selection mode | after 5 **and** the owner's CORS change | same | waiting | — |
 | 7 | picker-filters U1 | `claude/gracious-gates-l2b7u5` | `claude/media-picker-filters` | done, pushed `9e24da09` (spec Implemented) | `session_01Kc21QZekBRwKqbeQZnEMFe` |
