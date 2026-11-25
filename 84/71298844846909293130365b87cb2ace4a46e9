@@ -1,0 +1,77 @@
+docs/INTEGRATIONS.md
+  s_c01598c08f8572::t_3b577f098fd6c2 3
+server/subscriptions/feature-registry.ts
+  s_c01598c08f8572::t_5c9d37f2b1a71a 167
+server/notifications/CLAUDE.md
+  s_c01598c08f8572::t_d3504dc2089805 3,19-26
+server/catalog/org.service.ts
+  s_c01598c08f8572::t_a6f66dc0f450dd 131-135
+server/notifications/plugs.ts
+  s_c01598c08f8572::t_dd65bd132f6390 46
+  s_c01598c08f8572::t_1c49ce958ed95e 1-19,21-22,25-32,36-40,43-45,47,49-52,54-56,58-64
+  s_c01598c08f8572::t_421e97219349c3 20,23-24,33-35,41-42,48,53,57
+docs/specs/notification-hub/notifications-core/decisions.md
+  s_c01598c08f8572::t_a38044cf6f6c49 3,16
+  s_c01598c08f8572::t_41f83001e2ceaa 17
+tests/unit/notification-hub.test.ts
+  s_c01598c08f8572::t_41f83001e2ceaa 21-26
+server/shared/routes.ts
+  s_c01598c08f8572::t_3cc77088217ed7 58-59
+prisma/migrations/20261125090000_notification_hub/migration.sql
+  s_c01598c08f8572::t_8c214b9582591a 1-44
+tests/integration/notification-hub.test.ts
+  s_c01598c08f8572::t_87a48927ee5cbc 1-40,44-74,79-90,96,98-99,101-142,144-175,188-191,193,197,199-200
+  s_c01598c08f8572::t_b126ffa1fe8765 41-43,75-78,91-92,100
+  s_c01598c08f8572::t_41f83001e2ceaa 176-187
+  s_c01598c08f8572::t_e4f1bcf81272e8 93-95,97
+  s_c01598c08f8572::t_5c9d37f2b1a71a 143
+server/notifications/notification.repository.ts
+  s_c01598c08f8572::t_0d319cd692066a 1-64
+prisma/schema.prisma
+  s_c01598c08f8572::t_8ad6c2f3b2e867 3341-3379
+docs/CONTRACTS.md
+  s_c01598c08f8572::t_a38044cf6f6c49 3
+  s_c01598c08f8572::t_ed71583daac5de 82
+server/notifications/notification.types.ts
+  s_c01598c08f8572::t_dd65bd132f6390 47-49
+  s_c01598c08f8572::t_b5c489ac460b0a 1-46,50-62
+server/catalog/org.member.repository.ts
+  s_c01598c08f8572::t_a6f66dc0f450dd 49-54
+server/notifications/notifications.service.ts
+  s_c01598c08f8572::t_41f56e326e6c91 104-105
+  s_c01598c08f8572::t_dd65bd132f6390 43,76,110-114
+  s_c01598c08f8572::t_e489d886e64cf2 1-41,44-75,77-103,106-109,115-124
+  s_c01598c08f8572::t_d6092698f9067e 42
+server/notifications/notifications-copy.ts
+  s_c01598c08f8572::t_5e487a1cb2636a 1-9
+server/notifications/policy.ts
+  s_c01598c08f8572::t_3295b1f0e4b4f7 1-26
+server/notifications/templates/statusDueEmail.ts
+  s_c01598c08f8572::t_5e487a1cb2636a 1-21
+docs/ARCHITECTURE.md
+  s_c01598c08f8572::t_db76fd92718c7c 61,77
+server/notifications/notifications.jobs.ts
+  s_c01598c08f8572::t_079af0a7f946f2 6-7,25-29
+docs/contracts/notifications.md
+  s_c01598c08f8572::t_ed71583daac5de 1-18
+server/notifications/delivery.job.ts
+  s_c01598c08f8572::t_421e97219349c3 1-11
+docs/specs/notification-hub/decisions.md
+  s_c01598c08f8572::t_a38044cf6f6c49 3,16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "8471298844846909293130365b87cb2ace4a46e9",
+  "prompts": {},
+  "sessions": {
+    "s_c01598c08f8572": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "11eb770c-d5ee-4e39-97b6-7dab8baefa73",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
