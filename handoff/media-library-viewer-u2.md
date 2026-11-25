@@ -12,7 +12,11 @@
 - Tests: `tests/unit/media-download-button.test.tsx` (spec A5, A6; ux toasts).
 
 ## Done
-- (nothing yet)
+- Built as planned (d7bb0e7d). Gate green; integration 753 passed / 7 skipped; six guard mutations caught.
+- Q8, Q10 → implemented (unit 2). src/components/CLAUDE.md Verified bumped after re-read; docs:index counts.
+
+## In progress
+- /bb-review in a fresh subagent (range 4676e52..HEAD). Then fix findings, squash-free final commit `catalog: …` naming suites + mutations.
 
 ## Resume
 ```
