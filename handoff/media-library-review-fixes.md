@@ -1,6 +1,6 @@
 # Handoff — media-library bulk actions, review fixes
 
-- **Status:** In progress
+- **Status:** Done — final commit `org: review fixes for library bulk actions`
 - **Branch:** `claude/media-library-build` (started at 1a015fe3)
 - **Goal:** the seven owner-approved findings from the integrated review, 2026-11-25.
 
@@ -22,5 +22,6 @@
 6. Tag-timeout test didn't assert the picker closes → added.
 7. No test for Cancel during a later batch's links → added (with 1).
 
-## Next
-- Final commit `org: review fixes for library bulk actions`.
+## Checks
+- Gate green (typecheck, unit, boundary lint).
+- Integration: 744 passed / 21 skipped / 4 failed. The 4 (channel-readiness, product-edit-keeps-facts ×2, jobs-enqueue drift) are outside this range; the first three pass when run alone (29/29), and the drift one is the shared `bhendi_bazaar_ci` holding another branch's tables, as in U3. media-bulk 9/9.
