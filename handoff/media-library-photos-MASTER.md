@@ -1,8 +1,8 @@
 # Handoff — media-library photos feature (master)
 
-- **Updated:** 2026-11-24 19:52 UTC
+- **Updated:** 2026-11-25 04:31 UTC
 - **Planning branch:** `claude/gracious-gates-l2b7u5` (this file)
-- **Status:** viewer U1 and picker U1 DONE but only committed inside their sessions — **not on origin yet** (see below)
+- **Status:** viewer U1 and picker U1 done and pushed; viewer U2 running
 
 Read this first if you are continuing from another account. Each build unit also keeps its own
 `handoff/<unit>.md` **on its own build branch**, updated after every step; that file is the truth
@@ -45,24 +45,19 @@ Each folder has spec.md, decisions.md, ux.md (prototype: https://claude.ai/artif
 
 | # | Unit | Starts from | Branch | State | Session (account 1) |
 |---|---|---|---|---|---|
-| 1 | viewer U1 — download route | `claude/gracious-gates-l2b7u5` | `claude/media-library-build` | done, `5ab6d8bd`, **unpushed** | `session_01Kc21QZt95tL4EJCVq7VQ7Q` |
-| 2 | viewer U2 — sheet download | `claude/media-library-build` after 1 | same | waiting | — |
+| 1 | viewer U1 — download route | `claude/gracious-gates-l2b7u5` | `claude/media-library-build` | done, pushed `4676e522`, gate re-run green by master | `session_01Kc21QZt95tL4EJCVq7VQ7Q` |
+| 2 | viewer U2 — sheet download | `claude/media-library-build` after 1 | same | running | `session_01Kc21QWDFRJaaeEwD3Lgcq3` |
 | 3 | viewer U3 — full-screen slider | after 2 | same | waiting | — |
 | 4 | bulk U1 — bulk routes | after 3 | same | waiting | — |
 | 5 | bulk U2 — zip builder, fflate, OPERATIONS CORS step | after 4 | same | waiting | — |
 | 6 | bulk U3 — selection mode | after 5 **and** the owner's CORS change | same | waiting | — |
-| 7 | picker-filters U1 | `claude/gracious-gates-l2b7u5` | `claude/media-picker-filters` | done, `ab7229d5` `b2e1e700` `7750ec48`, **unpushed** | `session_01Kc21QZekBRwKqbeQZnEMFe` |
+| 7 | picker-filters U1 | `claude/gracious-gates-l2b7u5` | `claude/media-picker-filters` | done, pushed `9e24da09` (spec Implemented) | `session_01Kc21QZekBRwKqbeQZnEMFe` |
 
-## Unpushed work (as of 19:52 UTC)
+## Pushing
 
-Each build session's auto-mode permission check refused `git push` from a session-to-session
-request; only the owner typing "push" in that session counts. Until that happens these commits
-exist only in those containers:
-
-- viewer U1 — https://claude.ai/code/session_01Kc21QZt95tL4EJCVq7VQ7Q — `5ab6d8bd` "catalog: download route for a library item's original [CONTRACT]". Gate and integration green, review findings fixed. No handoff file there; its notes are below.
-- picker U1 — https://claude.ai/code/session_01Kc21QZekBRwKqbeQZnEMFe — `ab7229d5`, `b2e1e700` (spec Implemented), `7750ec48` (handoff file). Gate green.
-
-If those sessions are lost before the push, the units must be rebuilt from the accepted TRDs.
+main (`4fc858bf`, `40041ed6`) now lets build sessions push their working branch. A session that
+started before that change could not push until the owner typed "push" in it; sessions started
+after it push on their own.
 
 ## Notes from viewer U1 for viewer U2
 
