@@ -49,9 +49,11 @@ export function toErrorResponse(
         // A lock names its feature, so the client opens the right sheet (feature-access D4).
         ...(error instanceof FeatureLockedError
           ? { details: [{ path: "feature", message: error.feature }] }
-          : error.field
-            ? { details: [{ path: error.field, message: error.message }] }
-            : {}),
+          : error.details
+            ? { details: [...error.details] }
+            : error.field
+              ? { details: [{ path: error.field, message: error.message }] }
+              : {}),
       },
       error.status
     );

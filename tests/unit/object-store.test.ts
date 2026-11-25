@@ -161,6 +161,12 @@ describe("presignDownload", () => {
     expect(url.searchParams.get("response-content-disposition")).toBe('attachment; filename="ORG-ABCDE-asset1.jpg"');
   });
 
+  it("signs for longer when asked, as bulk links are (bulk-actions trd D4)", async () => {
+    const { presignDownload } = await load();
+    const url = new URL(await presignDownload("a/b.jpg", "b.jpg", 15 * 60));
+    expect(url.searchParams.get("X-Amz-Expires")).toBe("900");
+  });
+
   it("puts the disposition under the signature, so it cannot be swapped after signing", async () => {
     const { presignDownload } = await load();
     const a = new URL(await presignDownload("a/b.jpg", "one.jpg"));

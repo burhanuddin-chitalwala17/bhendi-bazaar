@@ -264,10 +264,15 @@ const DOWNLOAD_TTL_SECONDS = 300;
 /**
  * A presigned GET that saves the original under `filename`, which goes into the header unquoted:
  * pass a header-safe name (`downloadFilename` makes one). The disposition is signed, so it cannot be swapped.
+ * A bulk zip passes a longer `ttlSeconds`, since a slow phone fetches its files one after another (bulk-actions trd D4).
  */
-export async function presignDownload(pathname: string, filename: string): Promise<string> {
+export async function presignDownload(
+  pathname: string,
+  filename: string,
+  ttlSeconds: number = DOWNLOAD_TTL_SECONDS
+): Promise<string> {
   const query = new URLSearchParams({
-    "X-Amz-Expires": String(DOWNLOAD_TTL_SECONDS),
+    "X-Amz-Expires": String(ttlSeconds),
     "response-content-disposition": `attachment; filename="${filename}"`,
   });
   const signed = await client().client.sign(new Request(`${objectUrl(pathname)}?${query}`, { method: "GET" }), {

@@ -12,15 +12,23 @@
 export class DomainError extends Error {
   readonly status: number;
   readonly field?: string;
+  /** Facts a client needs to word the refusal itself, e.g. a zip's total and limit (bulk-actions D1). */
+  readonly details?: readonly { path: string; message: string }[];
 
   constructor(
     message: string,
-    options: { status?: number; field?: string; cause?: unknown } = {}
+    options: {
+      status?: number;
+      field?: string;
+      cause?: unknown;
+      details?: readonly { path: string; message: string }[];
+    } = {}
   ) {
     super(message, options.cause !== undefined ? { cause: options.cause } : undefined);
     this.name = "DomainError";
     this.status = options.status ?? 400;
     this.field = options.field;
+    this.details = options.details;
   }
 }
 

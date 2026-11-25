@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -53,6 +53,10 @@ can name columns.
 `[{ "path": "feature", "message": "channels" }]` (or `storefront`, `image_enhancement`), with the
 plan's sentence as `error`. Thrown as `FeatureLockedError`; a client opens the locked sheet on that
 detail instead of a toast (subscriptions/feature-access D4).
+
+**A refusal the client words itself** carries its facts as `details` from `DomainError`'s `details` option —
+the zip limit's `[{ "path": "totalBytes", ... }, { "path": "limitBytes", ... }]`, each `message` a decimal string
+(media-library/bulk-actions D1).
 
 Neither key is compiler-checked, which is why both sides go through the shared helpers
 rather than reaching into the body. A handler that hand-rolls `NextResponse.json({ ... })`

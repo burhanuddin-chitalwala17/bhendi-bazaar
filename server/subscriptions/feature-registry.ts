@@ -80,6 +80,9 @@ export const ORG_ROUTE_FEATURES: Record<string, Classification> = {
   "HEAD /api/org/[orgId]/media/[assetId]/download": { core: FREE },
   "GET /api/org/[orgId]/media/[assetId]": { core: FREE },
   "GET /api/org/[orgId]/media": { core: FREE },
+  "POST /api/org/[orgId]/media/retire": { core: FREE },
+  "POST /api/org/[orgId]/media/tags": { core: FREE },
+  "POST /api/org/[orgId]/media/download-links": { core: FREE },
   "PATCH /api/org/[orgId]/products/[id]/archive": { core: FREE },
   "GET /api/org/[orgId]/products/[id]/listings/[channel]/pages": CH,
   "PUT /api/org/[orgId]/products/[id]/listings/[channel]": {
