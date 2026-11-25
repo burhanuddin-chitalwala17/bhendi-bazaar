@@ -76,3 +76,24 @@ describe("a shipped feature keeps spec.md and decisions.md only", () => {
     expect(stale, `Remove these from PREDATES_DECISION_LOGS:\n${stale.map((s) => `    ${s}`).join("\n")}`).toEqual([]);
   });
 });
+
+// A parent can carry a TRD while a new child is planned on its branch; once every child has shipped, nothing can.
+describe("a programme parent whose children have all shipped keeps spec.md and decisions.md only", () => {
+  it("holds no trd, spike or other planning file", () => {
+    const extra: string[] = [];
+    const visit = (dir: string, depth: number) => {
+      const entries = readdirSync(dir);
+      const spec = join(dir, "spec.md");
+      const children = entries.filter((e) => existsSync(join(dir, e, "spec.md")));
+      const childShips = (c: string) => ships(statusOf(readFileSync(join(dir, c, "spec.md"), "utf8")));
+      if (depth > 0 && existsSync(spec) && !ships(statusOf(readFileSync(spec, "utf8"))) && children.length && children.every(childShips)) {
+        for (const e of entries) {
+          if (e !== "spec.md" && e !== "decisions.md" && !children.includes(e)) extra.push(`docs/specs/${relative(SPECS, dir)}/${e}`);
+        }
+      }
+      for (const e of entries) if (statSync(join(dir, e)).isDirectory()) visit(join(dir, e), depth + 1);
+    };
+    visit(SPECS, 0);
+    expect(extra, `Move what a child cites into the parent's decisions.md, then delete:\n${extra.map((e) => `    ${e}`).join("\n")}`).toEqual([]);
+  });
+});

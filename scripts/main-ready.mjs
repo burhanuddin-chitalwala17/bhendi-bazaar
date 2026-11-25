@@ -90,13 +90,18 @@ export function findOffenders(paths, read) {
       offenders.push({ path: p, problem: "a loose file in docs/specs/", fix: "move it into its feature folder or delete it" });
     }
   }
-  for (const [dir, files] of specFolders(paths)) {
+  const folders = specFolders(paths);
+  const shipsAt = (dir) => folders.get(dir)?.includes("spec.md") && ships(statusOf(read(`${dir}/spec.md`)));
+  const hasShippedChild = (dir) => [...folders.keys()].some((d) => posix.dirname(d) === dir && shipsAt(d));
+  for (const [dir, files] of folders) {
     if (!files.includes("spec.md")) {
       offenders.push({ path: `${dir}/`, problem: `holds ${files.join(", ")} but no spec.md`, fix: "a folder holds a spec or only child spec folders; delete the stray files" });
       continue;
     }
     const status = statusOf(read(`${dir}/spec.md`));
-    if (!ships(status)) {
+    // A programme parent stays while a child has shipped: its decisions are the reasoning that child cites.
+    const parent = !ships(status) && hasShippedChild(dir);
+    if (!ships(status) && !parent) {
       offenders.push({
         path: `${dir}/`,
         problem: `Status "${status || "(none)"}" does not ship`,
@@ -105,11 +110,19 @@ export function findOffenders(paths, read) {
       continue;
     }
     for (const f of files.filter((f) => !KEPT.has(f))) {
-      offenders.push({
-        path: `${dir}/${f}`,
-        problem: "a shipped feature keeps spec.md and decisions.md only",
-        fix: `\`npm run spec:status -- ${feature(dir)} "${status}"\` retires it`,
-      });
+      offenders.push(
+        parent
+          ? {
+              path: `${dir}/${f}`,
+              problem: "a programme parent on main keeps spec.md, decisions.md and its child folders only",
+              fix: "move any reasoning a child cites into its decisions.md, then delete the file",
+            }
+          : {
+              path: `${dir}/${f}`,
+              problem: "a shipped feature keeps spec.md and decisions.md only",
+              fix: `\`npm run spec:status -- ${feature(dir)} "${status}"\` retires it`,
+            },
+      );
     }
   }
   return offenders;
@@ -128,7 +141,8 @@ function git(cwd, ...args) {
 }
 
 // realpath: the hook runs a copy under the temp dir, which on macOS is a symlink.
-if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+const invokedAs = process.argv[1] && existsSync(process.argv[1]) ? realpathSync(process.argv[1]) : null;
+if (invokedAs === fileURLToPath(import.meta.url)) {
   // The hook runs a copy extracted from the pushed commit, so the repository is the caller's, not this file's.
   const cwd = git(process.cwd(), "rev-parse", "--show-toplevel").trim();
   const at = process.argv.indexOf("--rev");

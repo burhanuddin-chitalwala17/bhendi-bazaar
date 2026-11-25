@@ -6,7 +6,7 @@
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-10
 - **Depends on:** money-as-paise
-- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/order-and-cart-lines/trd.md`, [../spec.md](../spec.md), [../data-model.md](../data-model.md)
+- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/order-and-cart-lines/trd.md`, [../spec.md](../spec.md), ../data-model.md (`5ecf1cac:docs/specs/multi-vendor-marketplace/data-model.md`)
 
 > Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/multi-vendor-marketplace/order-and-cart-lines/trd.md`.
 

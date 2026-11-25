@@ -2,7 +2,7 @@
 
 - **Verified:** 2026-11-25
 
-**On main this tree holds shipped features only** — `spec.md` and `decisions.md` each; a feature is planned, built and retired on its feature branch and merges already Implemented ([ADR-0084](../adr/0084-main-holds-only-finished-work-planning-lives-on-its-feature-branch.md)). Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach), a `decisions.md` (every decision, open or made); while it is planned and built on its branch, also a `ux.md` when it has UI, a `trd.md` (technical approach, no code) and any supporting artifacts, all removed at Implemented.
+**On main this tree holds shipped features only** — `spec.md` and `decisions.md` each, plus any programme parent above a shipped child, kept for the decisions its children cite; a feature is planned, built and retired on its feature branch and merges already Implemented ([ADR-0084](../adr/0084-main-holds-only-finished-work-planning-lives-on-its-feature-branch.md)). Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach), a `decisions.md` (every decision, open or made); while it is planned and built on its branch, also a `ux.md` when it has UI, a `trd.md` (technical approach, no code) and any supporting artifacts, all removed at Implemented.
 
 This is the home for per-feature detail. The phased status map is [../BACKLOG.md](../BACKLOG.md); decisions are in [../adr/](../adr/).
 

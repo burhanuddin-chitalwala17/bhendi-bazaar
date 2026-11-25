@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execFileSync, spawnSync } from "node:child_process";
 import { chmodSync, cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { pathToFileURL } from "node:url";
 import { dirname, join, resolve } from "node:path";
 import { citedQIds, definedQIds, findOffenders, foreignNamesFrom, qGaps, report } from "../../scripts/main-ready.mjs";
 import { retiredFiles } from "../../scripts/spec.mjs";
@@ -58,6 +59,34 @@ describe("main-ready: what main may hold", () => {
   it("lets a container folder hold child spec folders without a spec of its own", () => {
     expect(judge({ "docs/specs/subs/feature/spec.md": spec("Implemented") })).toEqual([]);
   });
+
+  it("keeps an unshipped programme parent with a shipped child, as the reasoning its children cite", () => {
+    const tree = {
+      "docs/specs/prog/spec.md": spec("Draft — programme overview"),
+      "docs/specs/prog/decisions.md": "",
+      "docs/specs/prog/done/spec.md": spec("Implemented"),
+    };
+    expect(judge(tree)).toEqual([]);
+  });
+
+  it("refuses planning files in a programme parent", () => {
+    const offenders = judge({
+      "docs/specs/prog/spec.md": spec("Accepted"),
+      "docs/specs/prog/trd.md": "",
+      "docs/specs/prog/spike.md": "",
+      "docs/specs/prog/done/spec.md": spec("Implemented"),
+    });
+    expect(offenders.map((o) => o.path)).toEqual(["docs/specs/prog/trd.md", "docs/specs/prog/spike.md"]);
+    expect(offenders[0].problem).toMatch(/programme parent/);
+  });
+
+  it("refuses a parent whose children have none of them shipped", () => {
+    const paths = judge({
+      "docs/specs/prog/spec.md": spec("Draft"),
+      "docs/specs/prog/next/spec.md": spec("Accepted"),
+    }).map((o) => o.path);
+    expect(paths).toEqual(["docs/specs/prog/", "docs/specs/prog/next/"]);
+  });
 });
 
 describe("main-ready: a retired TRD's reasoning survives in decisions.md", () => {
@@ -91,6 +120,15 @@ describe("main-ready: a retired TRD's reasoning survives in decisions.md", () =>
   it("spec:status retires every file and folder but spec.md, decisions.md and child specs", () => {
     const entries = ["spec.md", "decisions.md", "trd.md", "ux.md", "prototype.html", "prototype", "variants"];
     expect(retiredFiles(entries, (f: string) => f === "variants")).toEqual(["trd.md", "ux.md", "prototype.html", "prototype"]);
+  });
+});
+
+describe("main-ready as a module", () => {
+  it("imports cleanly when argv[1] is not a file (node -e, a script passing arguments)", () => {
+    const url = pathToFileURL(join(ROOT, "scripts/main-ready.mjs")).href;
+    const out = spawnSync("node", ["--input-type=module", "-e", `import ${JSON.stringify(url)}`, "not-a-file"], { encoding: "utf8" });
+    expect(out.stderr).toBe("");
+    expect(out.status).toBe(0);
   });
 });
 

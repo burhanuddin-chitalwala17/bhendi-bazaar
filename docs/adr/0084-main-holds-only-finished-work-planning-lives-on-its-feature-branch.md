@@ -15,7 +15,10 @@ said when a plan may reach main, so each merge brought some along.
 
 1. **Main holds code, the living docs (ARCHITECTURE, CONTRACTS, CONVENTIONS, OPERATIONS, BACKLOG and the rest),
    ADRs, and for each shipped feature its `spec.md` and `decisions.md` — nothing else from planning.** A spec
-   folder is on main only when its Status ships (`ships()`, a Status beginning with Implemented).
+   folder is on main only when its Status ships (`ships()`, a Status beginning with Implemented), or when it is
+   a **programme parent**: its own Status does not ship but at least one child spec folder's does. A parent
+   stays because its children cite its decisions; it holds `spec.md`, `decisions.md` and child folders only.
+   A parent whose children have none of them shipped is planning, and stays on its branch (owner, 2026-11-25).
 2. **Planning lives on the feature branch.** spec-start, ux-start and the TRD are written and committed there,
    as are handoff prompts if they are kept as files (`handoff/`, [ADR-0080](0080-planning-and-building-never-share-a-session.md)), and reach main only in the merge that ships the feature, already retired. A container
    folder with no `spec.md` may hold child spec folders and nothing else. No `handoff/` folder or other session
@@ -26,10 +29,12 @@ said when a plan may reach main, so each merge brought some along.
    log is written `<feature> Qn` or `parent Qn`.
 4. **Enforced in three places:**
    - `tests/unit/finished-work.test.ts`, in the gate on every branch: a shipped folder holds only `spec.md` and
-     `decisions.md`, and has a `decisions.md` (features shipped before ADR-0061 are a ratchet allowlist).
+     `decisions.md`, and has a `decisions.md` (features shipped before ADR-0061 are a ratchet allowlist); a
+     programme parent whose children have all shipped holds no planning file either. A parent with a child
+     still being planned may carry a parent TRD on that branch, so the gate cannot ask more.
    - `npm run check:main-ready` (`scripts/main-ready.mjs`), not in the gate because a feature branch
      legitimately carries plans: fails, naming each offender and its fix, on `handoff/`, any spec folder whose
-     Status does not ship, and any other file in a shipped folder. `/bb-sdlc pr-finish` runs it before a merge.
+     Status does not ship unless it is a programme parent, and any other file in a shipped folder or parent. `/bb-sdlc pr-finish` runs it before a merge.
    - CI's `main-ready` job runs it on every pull request into `main`; the owner makes it a required check.
    - `.githooks/pre-push` runs it on the tree of the tip pushed to `refs/heads/main`, read with
      `git ls-tree`/`git show`, so a local push from any worktree is judged by what lands. `git push --no-verify`
@@ -44,6 +49,9 @@ said when a plan may reach main, so each merge brought some along.
   long file, and sessions read the plan as current fact; plans also changed on two branches at once.
 - **A separate planning repository or a `planning` branch for all features.** Rejected: the plan and the code it
   plans would travel apart, and one long-lived branch collects every feature's conflicts.
+- **Programme parents follow the plain rule** (removed until their own Status ships). Rejected by the owner:
+  shipped children cite their parent's decisions and spec, so removing the parent takes reasoning for shipped
+  code off main, and a programme can run for months.
 - **Enforce only in CI.** Rejected: a check on pushes to main runs after the push has landed, and a direct push
   never meets the PR check. CI guards the GitHub merge, the hook the local push, and the gate test keeps the
   always-true half honest on every branch.
@@ -56,5 +64,5 @@ said when a plan may reach main, so each merge brought some along.
   2026-11-25 is kept on branch `planning-archive-2026-11-25`.
 - ⚠️ The hook is active only once `core.hooksPath` points at `.githooks` (`npm install`'s `prepare` sets it), and
   the CI job blocks a merge only once branch protection requires it.
-- ⚠️ A programme parent whose Status does not ship cannot sit on main above its shipped children, though they
-  cite its decisions; each such parent is the owner's call.
+- ⚠️ A programme parent on main shows a Status that does not ship; its unshipped children are absent until
+  they ship, so the parent's spec can describe more than main holds.

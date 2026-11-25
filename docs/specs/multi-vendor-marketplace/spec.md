@@ -5,7 +5,7 @@
 - **Domain:** cross-domain
 - **Phase:** 3 — Fulfilment, reaching back into Phase 2
 - **Verified:** 2026-08-08
-- **References:** [data-model.md](data-model.md), `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`, and the subfeatures below
+- **References:** data-model.md (`5ecf1cac:docs/specs/multi-vendor-marketplace/data-model.md`), `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`, and the subfeatures below
 
 > Requirements and product approach only. Each subfeature's technical approach lives in its own `trd.md`.
 
