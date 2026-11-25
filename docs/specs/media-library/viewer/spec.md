@@ -1,7 +1,7 @@
 # Spec — viewer
 
 - **Summary:** A seller opens any library item full screen, swipes through the rest of the library, and saves the original to their device
-- **Status:** Accepted
+- **Status:** Implemented
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-24
