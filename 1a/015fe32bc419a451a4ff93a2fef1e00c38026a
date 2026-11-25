@@ -1,0 +1,44 @@
+handoff/media-library-bulk-actions-u3.md
+  ai_agent 3,22-39
+docs/ARCHITECTURE.md
+  s_9d5fa95bbe24d4::t_1e35252be61c7d 77
+src/components/org/media-library-selection-bar.tsx
+  s_9d5fa95bbe24d4::t_50f42d7a7ba6ba 3,11,53-61,66,91-92,94-95,98-101,104-105,127-129,152,187,193-194
+src/components/org/library-bulk.ts
+  s_9d5fa95bbe24d4::t_e07ee7fdb2a546 58
+tests/unit/media-library-selection.test.tsx
+  s_9d5fa95bbe24d4::t_e07ee7fdb2a546 74,89,172
+  s_9d5fa95bbe24d4::t_31fc9c78d060fa 227-239
+src/components/shared/selection-bar.tsx
+  s_9d5fa95bbe24d4::t_e07ee7fdb2a546 90,146-156
+tests/unit/library-bulk.test.ts
+  s_9d5fa95bbe24d4::t_e07ee7fdb2a546 55
+src/hooks/core/useDelayedFlag.ts
+  s_9d5fa95bbe24d4::t_50f42d7a7ba6ba 1-12
+src/components/org/useLibraryZip.ts
+  s_9d5fa95bbe24d4::t_e07ee7fdb2a546 74-77
+src/components/org/media-library-copy.ts
+  s_9d5fa95bbe24d4::t_e07ee7fdb2a546 156
+tests/unit/use-delayed-flag.test.ts
+  s_9d5fa95bbe24d4::t_31fc9c78d060fa 1-20
+tests/unit/use-library-zip.test.ts
+  s_9d5fa95bbe24d4::t_1e35252be61c7d 215-227
+docs/specs/media-library/bulk-actions/decisions.md
+  ai_agent 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "1a015fe32bc419a451a4ff93a2fef1e00c38026a",
+  "prompts": {},
+  "sessions": {
+    "s_9d5fa95bbe24d4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f00ee551-450c-4171-b74f-9342da83f47a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
