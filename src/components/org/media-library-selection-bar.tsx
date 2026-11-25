@@ -132,6 +132,7 @@ export function MediaLibrarySelectionBar({ orgId, orgCode, picked, onClear, onRe
     <>
       <SelectionBar
         count={picked.length}
+        width="narrow"
         hint={C.none}
         onClear={onClear}
         busy={
