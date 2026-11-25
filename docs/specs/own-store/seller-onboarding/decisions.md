@@ -26,7 +26,7 @@
 | Q13 | Where are reviews read? | On the product's portal page (its reviews, newest first) and as a Home item "{n} new reviews"; the Reviews page stays for all of them | Claude · reversible | 2026-10-30 | Read beside what they are about; replies stay parked (own-store Later) | superseded by Q34 |
 | Q14 | What do the numbers show before the first order? | One line: "Your numbers start with your first order." | Claude · reversible | 2026-10-30 | A grid of zeros reads as failure | implemented (unit 3) |
 | Q15 | A printable QR poster for the counter? | Parked | Claude · reversible | 2026-10-30 | New capability; share link covers A2. BACKLOG row | parked |
-| Q16 | A team page to add staff? | Parked to [org-team](../../multi-vendor-marketplace/org-team/) | Claude · reversible | 2026-10-30 | Its own feature, already scoped | parked |
+| Q16 | A team page to add staff? | Parked to org-team (`planning-archive-2026-11-25:docs/specs/multi-vendor-marketplace/org-team/`) | Claude · reversible | 2026-10-30 | Its own feature, already scoped | parked |
 | Q17 | Payout details step? | Parked to org-profile Q9 and the payouts feature | Claude · reversible | 2026-10-30 | own-store Q14: asked when the first payout needs it | parked |
 | Q18 | A "Pick your look" setup step? | Parked until storefront-themes ships; it may replace step 4's logo half | Claude · reversible | 2026-10-30 | Themes are vertical 7 | parked |
 | Q19 | What order do the setup steps run in? | Open shop → First product → Pickup address → Logo and line → Share | Owner | 2026-10-30 | Product first gets something live fastest (Dukaan); logo first makes the first share look finished | implemented (unit 3) |

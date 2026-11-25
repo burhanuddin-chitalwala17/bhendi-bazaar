@@ -47,6 +47,6 @@ Today the page is a cover image, a name, a block of text and two policies. A sur
 
 - A contact channel of the shop's own — still [contact-us](../../contact-us/), platform-scoped.
 - An embedded Instagram feed or posts — the social domain, later in this phase.
-- Structured data for search engines beyond title, description and preview — [seo](../../seo/).
+- Structured data for search engines beyond title, description and preview — seo (`planning-archive-2026-11-25:docs/specs/seo/`).
 - Press, awards and certifications as uploaded badges. Unverifiable by the platform, so not proof; revisit when there is a way to verify.
 - Video in the story. [ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md) makes it possible; it waits for a seller who has one.

@@ -5,7 +5,7 @@
 - **Domain:** bidding *(new)*, catalog, checkout, payouts
 - **Phase:** 8 — Bidding
 - **Verified:** 2026-09-09
-- **References:** `431ed6e7:docs/specs/bidding/trd.md`, [org-payouts](../org-payouts/), [ADR-0004](../../adr/0004-money-as-integer-paise.md), [ADR-0007](../../adr/0007-conditional-stock-decrement.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0021](../../adr/0021-audit-trail-never-fails-the-action.md)
+- **References:** `431ed6e7:docs/specs/bidding/trd.md`, org-payouts (`planning-archive-2026-11-25:docs/specs/org-payouts/`), [ADR-0004](../../adr/0004-money-as-integer-paise.md), [ADR-0007](../../adr/0007-conditional-stock-decrement.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0021](../../adr/0021-audit-trail-never-fails-the-action.md)
 
 > Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/bidding/trd.md`.
 

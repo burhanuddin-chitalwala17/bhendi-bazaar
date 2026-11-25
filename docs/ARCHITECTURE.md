@@ -70,7 +70,7 @@ One table is written by a trigger rather than a repository: `ProductPriceHistory
 
 The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defines the provider contract, `server/shipping/providers/shiprocket/` implements it, and `server/shipping/services/orchestrator.service.ts` coordinates rate quoting. Provider credentials are stored encrypted and connected through the admin console.
 
-**Quotes are live; booking is by hand.** Quotes come from the Shiprocket provider; an admin books the courier on Shiprocket and records it (own-store Q18). A parcel moves only through checkout's `fulfilment.service.ts`, which locks the order, moves the parcel through shipping's single writer and derives the order's status from its parcels ([order-fulfilment](specs/own-store/order-fulfilment/) D2, D4). Automatic booking is [shipping-fulfilment](specs/shipping-fulfilment/).
+**Quotes are live; booking is by hand.** Quotes come from the Shiprocket provider; an admin books the courier on Shiprocket and records it (own-store Q18). A parcel moves only through checkout's `fulfilment.service.ts`, which locks the order, moves the parcel through shipping's single writer and derives the order's status from its parcels ([order-fulfilment](specs/own-store/order-fulfilment/) D2, D4). Automatic booking is shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`).
 
 ## Testing
 

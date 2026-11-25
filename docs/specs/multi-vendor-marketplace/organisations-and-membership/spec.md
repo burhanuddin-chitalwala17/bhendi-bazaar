@@ -44,6 +44,6 @@ missing.
 - **The portals themselves** — [../portal-separation](../portal-separation/) owns route structure, landing rules and authorization. This feature only makes membership *expressible*.
 - **What each role may do.** The role is stored; no code branches on it yet.
 - **Creating an organisation from the interface** — [../org-onboarding](../org-onboarding/).
-- **Managing members from the interface** — [../org-team](../org-team/).
-- **Invitations.** A membership is created directly; invitation flow, acceptance and expiry belong to [../org-team](../org-team/).
+- **Managing members from the interface** — ../org-team (`planning-archive-2026-11-25:docs/specs/multi-vendor-marketplace/org-team/`).
+- **Invitations.** A membership is created directly; invitation flow, acceptance and expiry belong to ../org-team (`planning-archive-2026-11-25:docs/specs/multi-vendor-marketplace/org-team/`).
 - **Vendor settlement and commission**, which the programme excludes entirely.

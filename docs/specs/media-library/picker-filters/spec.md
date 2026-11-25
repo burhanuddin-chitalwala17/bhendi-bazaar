@@ -5,7 +5,7 @@
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-24
-- **References:** [../spec.md](../spec.md) (media-library R6), [decisions.md](decisions.md), ux.md, trd.md, [ai-images/media-tags](../../ai-images/media-tags/)
+- **References:** [../spec.md](../spec.md) (media-library R6), [decisions.md](decisions.md), ux.md, trd.md, ai-images/media-tags (`planning-archive-2026-11-25:docs/specs/ai-images/media-tags/`)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 

@@ -44,7 +44,7 @@ the webhook read `localOrderId`, and every webhook silently no-op'd while return
 - **"PICKED UP" is what the webhook says once the courier has the parcel**; "PICKUP SCHEDULED" and "OUT FOR PICKUP" come before and leave a booked parcel where it is.
 - **Rate lookups are slow and rate-limited**, which is why quotes are cached (`ShippingRateCache`).
 - **A label link is an S3 object on Shiprocket's bucket** (`kr-shipmultichannel-mum.s3.ap-south-1.amazonaws.com`), or a `shiprocket.in` page. ⚠️ *Unverified* — taken from community examples, not their docs; `server/shipping/label.ts` holds the allowlist the booking form checks against (order-fulfilment D7). Confirm on the first real booking and widen the list there.
-- **Booking and rate quoting are separate calls.** A rate quote is not a reservation — the price can change between quoting and booking, which is the source of [shipping-fulfilment](specs/shipping-fulfilment/) Q2.
+- **Booking and rate quoting are separate calls.** A rate quote is not a reservation — the price can change between quoting and booking, which is the source of shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`) Q2.
 
 ## Resend (email)
 
@@ -375,7 +375,7 @@ plans should be confirmed with `api-partner-support@flipkart.com` before relying
 ## Image generation (Cloudflare AI, fal)
 
 The services that paint pixels for us. Reached from `server/content/providers/` today; the provider-neutral
-module is [generation-foundation](specs/ai-images/generation-foundation/). Checked against Cloudflare's docs
+module is generation-foundation (`planning-archive-2026-11-25:docs/specs/ai-images/generation-foundation/`). Checked against Cloudflare's docs
 2026-11-20 (pricing page dated 2026-11-18). **Prices move; recheck before relying on one.**
 
 **Cloudflare: one account, two kinds of model.**

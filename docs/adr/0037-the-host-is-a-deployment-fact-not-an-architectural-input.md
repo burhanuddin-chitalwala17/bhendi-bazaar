@@ -38,4 +38,4 @@ The store has done this well once already. [ADR-0028](0028-images-live-in-cloudf
 
 ⚠️ Some platform conveniences are given up or wrapped. Vercel's analytics and speed-insights packages are imported directly in `src/app/layout.tsx` today and are vendor-coupled; they are cheap to remove, and this ADR does not require removing them — it requires that nothing *depend* on them.
 
-⚠️ Self-hosting Next.js needs a cache handler for the data cache to work the way the hosted platform provides it for free. This is a known cost of the rule, and it lands on [read-caching](../specs/read-caching/) whenever that work resumes.
+⚠️ Self-hosting Next.js needs a cache handler for the data cache to work the way the hosted platform provides it for free. This is a known cost of the rule, and it lands on read-caching (`planning-archive-2026-11-25:docs/specs/read-caching/`) whenever that work resumes.

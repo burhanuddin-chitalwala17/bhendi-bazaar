@@ -264,7 +264,7 @@ Each blocker covers **Issue → Impact → Solution → How → Evidence**.
 - **Issue:** no error tracking, health endpoint or alerting.
 - **Impact:** a checkout 500, a lost webhook or a dead worker is discovered through a customer complaint.
 - **Solution / How:**
-  - Sentry via `instrumentation.ts` with `onRequestError` (follow `docs/specs/error-tracking/`).
+  - Sentry via `instrumentation.ts` with `onRequestError` (follow `planning-archive-2026-11-25:docs/specs/error-tracking/`).
   - Root `error.tsx` and `global-error.tsx`.
   - `/api/health` that does not hit the DB on every ping.
   - UptimeRobot monitor.
@@ -351,7 +351,7 @@ Each blocker covers **Issue → Impact → Solution → How → Evidence**.
 
 | Theme | Work | Why |
 |---|---|---|
-| **Caching** | Cache Components with `cacheTag`/`revalidateTag` on catalogue reads (`expire: 0` for withdrawals); prices per request; session and wishlist behind Suspense. ADR first: the nonce CSP versus static shells. Ship `docs/specs/read-caching/` | The biggest TTFB and DB-cost lever; protects the quota when a link goes viral |
+| **Caching** | Cache Components with `cacheTag`/`revalidateTag` on catalogue reads (`expire: 0` for withdrawals); prices per request; session and wishlist behind Suspense. ADR first: the nonce CSP versus static shells. Ship `planning-archive-2026-11-25:docs/specs/read-caching/` | The biggest TTFB and DB-cost lever; protects the quota when a link goes viral |
 | **Search** | `pg_trgm` GIN index on product name; channel name matching in SQL `similarity()`; revisit a search engine past about 100k SKUs | ILIKE scans the whole table on every keystroke — https://www.postgresql.org/docs/current/pgtrgm.html |
 | **Channel paths** | SKU lookup by index; keyset pagination for listings; readiness stored on save or cached per org; ChannelListing indexes | Today each view is O(catalogue); a seller with 5k SKUs hits pool timeouts |
 | **Performance budgets** | Lighthouse CI on the preview; bundle size per route; k6 journey before each sale | Stops regressions coming back silently |

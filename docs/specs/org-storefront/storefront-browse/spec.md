@@ -5,7 +5,7 @@
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts
 - **Verified:** 2026-09-19
-- **References:** [../spec.md](../spec.md) (programme), `431ed6e7:docs/specs/org-storefront/trd.md` D6/D7/D11, [storefront-pages](../storefront-pages/), [promotions](../../promotions/)
+- **References:** [../spec.md](../spec.md) (programme), `431ed6e7:docs/specs/org-storefront/trd.md` D6/D7/D11, [storefront-pages](../storefront-pages/), promotions (`planning-archive-2026-11-25:docs/specs/promotions/`)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 

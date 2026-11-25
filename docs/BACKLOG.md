@@ -62,7 +62,7 @@ Also in this phase, no spec required (they are corrections with an ADR already s
 |---|---|---|
 | [product-weight-and-rates](specs/product-weight-and-rates/) | A product's weight is persisted and drives its shipping quote | ✅ Done — PR-22/48/53; parcels bill at summed weight rounded up to whole kg |
 | [multi-vendor-marketplace](specs/multi-vendor-marketplace/) | Three audiences, three portals, and the data model a marketplace needs | ✅ 9 of 10 subfeatures done (dashboard-widgets PR-50 closes the build); org-team deferred by decision — the one remaining |
-| [shipping-fulfilment](specs/shipping-fulfilment/) | A confirmed order results in a real booked shipment with real tracking | ⏸️ Deferred by decision (2026-08-10): keep live quotes + manual fulfilment; build later |
+| shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`) | A confirmed order results in a real booked shipment with real tracking | ⏸️ Deferred by decision (2026-08-10): keep live quotes + manual fulfilment; build later |
 
 `shipping-fulfilment`'s open question was decided 2026-08-10 — keep the current flow (live quotes, manual fulfilment); see its `spec.md`. It depends on `product-weight-and-rates`, since booking real parcels at fictional weights is worse than not booking them.
 
@@ -79,7 +79,7 @@ Making Phase 2 and 3 stick rather than landing once. Mostly process, governed by
 | Spec | Requirement | Status |
 |---|---|---|
 | [rate-limiting](specs/rate-limiting/) | Every public endpoint is classified for rate limiting in one registry, enforced in every deployed environment; a deploy that can't enforce is refused | ✅ Implemented (2026-10-29) — product-wide: every public route is limited or exempt with a reason ([ADR-0063](adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md)). Later: CI proxy for the shared store (Q13), portal handler limits (Q15), the outage alert with error-tracking (Q14) |
-| [supply-chain-integrity](specs/supply-chain-integrity/) | What the store ships carries no published vulnerability and no committed secret, and the pipeline is what establishes it | 📝 Draft |
+| supply-chain-integrity (`planning-archive-2026-11-25:docs/specs/supply-chain-integrity/`) | What the store ships carries no published vulnerability and no committed secret, and the pipeline is what establishes it | 📝 Draft |
 
 - Restore the test suite, prioritised by the Invariants ([TESTING.md](TESTING.md) sets the targets)
 - Quality gates block the pipeline
@@ -93,8 +93,8 @@ Two of this phase's strands are now specified; the rest stays deliberately undet
 
 | Spec | Requirement | Status |
 |---|---|---|
-| [error-tracking](specs/error-tracking/) | When something fails, somebody finds out — in minutes, with enough detail to act | 📝 Draft |
-| [read-caching](specs/read-caching/) | A page that renders the same for everyone is built once, and no price on it is ever stale | 📝 Draft |
+| error-tracking (`planning-archive-2026-11-25:docs/specs/error-tracking/`) | When something fails, somebody finds out — in minutes, with enough detail to act | 📝 Draft |
+| read-caching (`planning-archive-2026-11-25:docs/specs/read-caching/`) | A page that renders the same for everyone is built once, and no price on it is ever stale | 📝 Draft |
 | in-app notifications: requests on the bell | "Ready" and "new request" as in-app notifications once the in-app notifications branch (PR #57) is rebased and merged (setup-requests Q19) | ⏸ Later |
 
 Both were pulled forward out of "not started" for the same reason: Phase 9 shipped a URL designed to be *shared*, so the storefront now attracts the one traffic shape that uncached reads handle worst, and the store's growing set of deliberately fail-open controls — the limiter, the reconciliation sweep, the ledger backfill — each record a failure and notify nobody.
@@ -122,8 +122,8 @@ A new phase, added 2026-08-15. It pairs two features that look separate and are 
 
 | Spec | Requirement | Status |
 |---|---|---|
-| [promotions](specs/promotions/) | The platform and each organisation can run time-boxed offers, applied automatically or unlocked by a coupon code | 🔨 In progress — PR-67 |
-| [org-payouts](specs/org-payouts/) | A record of what each organisation has earned, what the platform kept, and what is still owed | 🔨 In progress — PR-67 |
+| promotions (`planning-archive-2026-11-25:docs/specs/promotions/`) | The platform and each organisation can run time-boxed offers, applied automatically or unlocked by a coupon code | 🔨 In progress — PR-67 |
+| org-payouts (`planning-archive-2026-11-25:docs/specs/org-payouts/`) | A record of what each organisation has earned, what the platform kept, and what is still owed | 🔨 In progress — PR-67 |
 
 Strictly ordered: `promotions` before `org-payouts`. The ledger reads the funding split each discount records, so building it first would mean writing entries whose attribution is a constant zero and then migrating them.
 
@@ -171,10 +171,10 @@ A new phase, added 2026-09-19. Phases 1–9 built a marketplace and gave its sel
 
 | Spec | Requirement | Status |
 |---|---|---|
-| [seo](specs/seo/) | Every public page describes itself, every product is machine-readable at the price it is actually sold for, and every URL answers with the status that is true of it | 📝 Draft |
-| [store-policies](specs/store-policies/) | One public page states how the store ships, cancels, returns, refunds and handles data, in words that match what it actually does | 📝 Draft |
+| seo (`planning-archive-2026-11-25:docs/specs/seo/`) | Every public page describes itself, every product is machine-readable at the price it is actually sold for, and every URL answers with the status that is true of it | 📝 Draft |
+| store-policies (`planning-archive-2026-11-25:docs/specs/store-policies/`) | One public page states how the store ships, cancels, returns, refunds and handles data, in words that match what it actually does | 📝 Draft |
 
-Sequenced after Phase 9 rather than before it, because storefronts add a public URL namespace and the rules for what gets indexed should be settled once, across both. The overlap is deliberate and bounded: [storefront-discovery](specs/org-storefront/storefront-discovery/) owns `/store/<handle>`, [seo](specs/seo/) owns the marketplace, and the two state the same rules for their own surfaces rather than one importing the other.
+Sequenced after Phase 9 rather than before it, because storefronts add a public URL namespace and the rules for what gets indexed should be settled once, across both. The overlap is deliberate and bounded: [storefront-discovery](specs/org-storefront/storefront-discovery/) owns `/store/<handle>`, seo (`planning-archive-2026-11-25:docs/specs/seo/`) owns the marketplace, and the two state the same rules for their own surfaces rather than one importing the other.
 
 Two of this phase's constraints come from earlier decisions rather than from search practice. [ADR-0018](adr/0018-one-effective-price-function.md) means a machine-readable price is a second surface needing the same per-request resolution, so nothing here may be cached past an offer window — the declared price and the displayed price have to be the same value, not two readings of one. [ADR-0023](adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md) means availability is decided by the clock and not by a field, so an item held by a live bidding event must not be declared purchasable even though nothing on the product says it isn't. Getting either wrong is a Google policy violation rather than a display bug.
 
@@ -183,11 +183,11 @@ It also closes the **soft 404** entry on the watch list below, which has been op
 
 ## Phase 13 — Design system
 
-Added 2026-11-04 from the platform UI audit. Programme overview: [design-system](specs/design-system/); every decision in its decisions.md.
+Added 2026-11-04 from the platform UI audit. Programme overview: design-system (`planning-archive-2026-11-25:docs/specs/design-system/`); every decision in its decisions.md.
 
 | Spec | Requirement | Status |
 |---|---|---|
-| [design-system/foundations](specs/design-system/foundations/) | Type scale (phone first), icon seam on Phosphor, motion and depth tokens, the gates | 🔨 Built 2026-11-04, awaiting owner review |
+| design-system/foundations (`planning-archive-2026-11-25:docs/specs/design-system/foundations/`) | Type scale (phone first), icon seam on Phosphor, motion and depth tokens, the gates | 🔨 Built 2026-11-04, awaiting owner review |
 | design-system/page-grammar | One page header, action bar, empty/error/loading state, tabs, status badge, list-or-table | 🔨 Built 2026-11-04, awaiting owner review |
 | design-system/storefront-journey | Home, category and search, product page, cart, checkout, order page | 🔨 Built 2026-11-04, awaiting owner review |
 | design-system/seller-workspace | Products list for a phone with bulk edits, top bar, orders | 🔨 Built 2026-11-04, awaiting owner review |
@@ -195,7 +195,7 @@ Added 2026-11-04 from the platform UI audit. Programme overview: [design-system]
 | design-system/brand-icons | 6–10 brand icons drafted by Claude, approved by the owner | 🔨 Built 2026-11-04, awaiting owner review |
 | design-system/image-slots | One picture field with phone and desktop versions, crop or fit, for admin and shop banners | 🔨 Built 2026-11-04, awaiting owner review |
 | design-system/render-performance | Build on the caching that landed on main | planned |
-| [navigation-flows](specs/navigation-flows/) | Every feature finishes and exits back where it started, one step at a time, without losing typed work | ⏸ Parked 2026-11-12: listing fix loop and the three address fixes shipped; the rest waits (audit.md is the worklist) |
+| navigation-flows (`planning-archive-2026-11-25:docs/specs/navigation-flows/`) | Every feature finishes and exits back where it started, one step at a time, without losing typed work | ⏸ Parked 2026-11-12: listing fix loop and the three address fixes shipped; the rest waits (audit.md is the worklist) |
 | navigation-flows Q13 *(later)* | Buyer returns and refunds: no flow exists today | parked |
 | navigation-flows Q14 *(later)* | Marketplace read and stock-sync wording for sellers | parked |
 | storefront-look Q9 *(later)* | The marketplace home banner without a shade, as storefronts | parked |
@@ -216,8 +216,8 @@ Added 2026-10-29: track 1 of three (see *Three tracks*). Programme overview: [ow
 | own-store/seller-onboarding | Task home, setup list, grouped navigation, phone tab bar, in-place creation | planned |
 | own-store/org-profile | Essentials only; contact and legal editable; tax and bank asked at first payout | planned |
 | own-store/storefront-themes | Four templates, own header with the platform's logo and contacts, shared cart, "Visit {Shop name}" | planned |
-| [own-store/storefront-look](specs/own-store/storefront-look/) | Every template on the platform type scale, a first phone screen never bare, banners vivid with no shade | 🔨 UX signed off 2026-11-13; TRD drafted |
-| [own-store/storefront-font](specs/own-store/storefront-font/) | A shop picks its store's heading font from a short curated list; sizes stay the platform's | 🔨 UX signed off 2026-11-13; TRD drafted |
+| own-store/storefront-look (`planning-archive-2026-11-25:docs/specs/own-store/storefront-look/`) | Every template on the platform type scale, a first phone screen never bare, banners vivid with no shade | 🔨 UX signed off 2026-11-13; TRD drafted |
+| own-store/storefront-font (`planning-archive-2026-11-25:docs/specs/own-store/storefront-font/`) | A shop picks its store's heading font from a short curated list; sizes stay the platform's | 🔨 UX signed off 2026-11-13; TRD drafted |
 | storefront-font Q3–Q5 *(later)* | Body-font choice, fonts on request, non-Latin scripts | parked |
 | offers-hardening Q8 *(later)* | A shop ending its own markdown just before a platform campaign | parked |
 | offers-hardening Q10, Q13 *(later)* | Coupon use and ledger reversal for an order cancelled before dispatch or before payment | parked, order-fulfilment |
@@ -270,10 +270,10 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [marketplace-integration/marketplace-publish](specs/marketplace-integration/marketplace-publish/) | Review and publish listing changes and new listings (families too) to Amazon, price and pause to Flipkart; each answer back on its field | 🔨 Built 2026-11-02, uncommitted; waiting for the owner's check on a phone |
 | [listing-model](specs/listing-model/) | Overview: one BB product holding every channel's attributes (Amazon, Flipkart, Meesho, Google, Meta); each channel's own catalogue; one mapping layer. Five subfeatures, one release; ADR-0070 | 📝 Draft — 2026-11-07 |
 | [listing-model/channel-catalogue](specs/listing-model/channel-catalogue/) | Each channel's types and fields stored with what they require; readiness names every required field missing, before sending | 📝 Draft — 2026-11-07 |
-| [listing-model/field-maps](specs/listing-model/field-maps/) | One map per channel field, made by Claude from each channel's own documentation; admin read-and-edit | 📝 Draft — 2026-11-07 |
-| [listing-model/attributes](specs/listing-model/attributes/) | Attributes and typed values as rows a developer adds; brand parties fill compliance attributes; type follows category | 📝 Draft — 2026-11-07 |
-| [listing-model/dynamic-form](specs/listing-model/dynamic-form/) | The form asks every channel's attributes, required for connected ones; per-channel completeness; brand parties | 📝 Draft — 2026-11-07 |
-| [listing-model/retire-old-paths](specs/listing-model/retire-old-paths/) | Old fact list, facts column and old map tables removed in the same release, after a full comparison | 📝 Draft — 2026-11-07 |
+| listing-model/field-maps (`planning-archive-2026-11-25:docs/specs/listing-model/field-maps/`) | One map per channel field, made by Claude from each channel's own documentation; admin read-and-edit | 📝 Draft — 2026-11-07 |
+| listing-model/attributes (`planning-archive-2026-11-25:docs/specs/listing-model/attributes/`) | Attributes and typed values as rows a developer adds; brand parties fill compliance attributes; type follows category | 📝 Draft — 2026-11-07 |
+| listing-model/dynamic-form (`planning-archive-2026-11-25:docs/specs/listing-model/dynamic-form/`) | The form asks every channel's attributes, required for connected ones; per-channel completeness; brand parties | 📝 Draft — 2026-11-07 |
+| listing-model/retire-old-paths (`planning-archive-2026-11-25:docs/specs/listing-model/retire-old-paths/`) | Old fact list, facts column and old map tables removed in the same release, after a full comparison | 📝 Draft — 2026-11-07 |
 | [setup-requests](specs/setup-requests/) | Two tickets for what a shop can't fix itself: a requirement the app raises and the admin enables with one tap or one decision (Amazon fields, Amazon category); an issue the shop writes under a category, fixed by a developer | 🔨 Built 2026-11-05, uncommitted; waiting for the owner's check (set `HOME_BRAND_ORG_ID`) |
 | setup-requests: value match | Amazon rejects our answer for a field: a third kind on the same engine (setup-requests Q16) | ⏸ Later |
 | setup-requests: product type | A listing being settled matches none of our types: a kind on the same engine (Q17) | ⏸ Later |
@@ -345,12 +345,12 @@ Not a phase, but tracked:
 - **Duplicate declarations** ([ADR-0003](adr/0003-one-repository-per-aggregate.md)) — runtime symbol names resolved in PR-08 (14 → 2). Two remain, both deliberate: `formatCurrency` is behaviourally identical, and `isValidPincode` needs the decision below. The 26 remaining *type* duplicates are the [CONTRACTS.md](CONTRACTS.md) work.
 - **Phone-based sign-in and recovery are blocked, not merely unbuilt** ([ADR-0024](adr/0024-phone-is-contact-data-not-an-identity-key.md)) — since PR-103 a phone number may back any number of accounts, so OTP login, "recover my account by phone" and any dedupe-by-number all lose the assumption they rest on. Each needs a way to disambiguate *which* account before it can be built, and that is its own ADR. Phone is also no longer any signal against throwaway accounts.
 - **A guided shoot needs a native camera.** [media-library](specs/media-library/) checks photos after they are chosen because a web page's camera button opens the phone's camera app and hands back a file; an in-browser viewfinder would give live framing and a shot sequence but forfeits the phone's own image processing and fails inside in-app browsers. If a native app is ever built, the guided shoot — front, back, label, one tap each — is its first feature.
-- **Courier phone format** — every phone has been E.164 since [international-phone](specs/international-phone/) (PR-102), and may be non-Indian. What Shiprocket accepts for a pickup or delivery phone is unverified, and must be known before [shipping-fulfilment](specs/shipping-fulfilment/) books real parcels.
+- **Courier phone format** — every phone has been E.164 since [international-phone](specs/international-phone/) (PR-102), and may be non-Indian. What Shiprocket accepts for a pickup or delivery phone is unverified, and must be known before shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`) books real parcels.
 - **PIN code validation** — consolidated to one rule in PR-09 (eleven declarations → one). Remaining: query existing `Address` rows for PIN codes with a leading zero, which the tightened rule rejects on update.
 - **Error swallowing in the data layer** — PR-13 fixed `products.dal.ts`; the same catch-and-relabel pattern remains in the other DAL modules and in `server/catalog/product.repository.ts`, where a query failure is reported as `"Product not found"`. Preserve `cause`; keep absence distinguishable from failure.
-- **Sale price is read two different ways** — `src/components/shared/PriceDisplay.tsx` treats a sale price as an offer only when it is positive and below the regular price, matching `effectiveUnitPrice` in `server/checkout/pricing.ts`. Eight other sites — the cart line, the checkout summary, the shipping-rate hook, both order detail pages, the org parcel value — simply fall back with `??`, so a sale price of zero or one above the regular price renders differently depending on where the buyer is looking. [promotions](specs/promotions/) PR 3 consolidates them onto the one function; until then it is a display inconsistency on the money path.
+- **Sale price is read two different ways** — `src/components/shared/PriceDisplay.tsx` treats a sale price as an offer only when it is positive and below the regular price, matching `effectiveUnitPrice` in `server/checkout/pricing.ts`. Eight other sites — the cart line, the checkout summary, the shipping-rate hook, both order detail pages, the org parcel value — simply fall back with `??`, so a sale price of zero or one above the regular price renders differently depending on where the buyer is looking. promotions (`planning-archive-2026-11-25:docs/specs/promotions/`) PR 3 consolidates them onto the one function; until then it is a display inconsistency on the money path.
 - ~~**A sold product cannot be taken off the storefront**~~ ✅ Closed — PR-112 made the refusal honest and PR-113 made it avoidable: a product leaves sale by archiving ([ADR-0029](adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md), [product-archive](specs/product-archive/)). Hard delete survives only for a product no record depends on.
-- **Soft 404 on a missing product** — a slug that does not resolve returns HTTP 200 with an error page rather than a real 404. `notFound()` on `NotFoundError` fixes it; matters for search-engine handling. Now owned by [seo](specs/seo/) R7, Phase 10 — it needs the `not-found.tsx`/`error.tsx` boundaries that do not exist yet, so it is not the one-line change this entry assumed.
+- **Soft 404 on a missing product** — a slug that does not resolve returns HTTP 200 with an error page rather than a real 404. `notFound()` on `NotFoundError` fixes it; matters for search-engine handling. Now owned by seo (`planning-archive-2026-11-25:docs/specs/seo/`) R7, Phase 10 — it needs the `not-found.tsx`/`error.tsx` boundaries that do not exist yet, so it is not the one-line change this entry assumed.
 - **Route the database through Prisma Accelerate** — it is already provisioned (`PRISMA_DATABASE_URL`) and read by nothing. Pooling and caching at the proxy addresses serverless connection pressure more thoroughly than tuning `max` on the local pool. See [OPERATIONS.md](OPERATIONS.md) § Infrastructure.
 - **Storefront reads are uncached, and page-level ISR cannot fix it** — PR-82 and PR-83 turned prefetch off at all 61 link sites (storefront, then the portals), which removed the speculative load but not the per-request cost: a category page is still roughly three sequential round trips, and it renders identical HTML for every visitor. Nothing under `src/app/(main)` reads `cookies()`, `headers()` or the session on the server — the auth-aware chrome is all `"use client"` on `useSession()` — so there is nothing per-user in the render to justify repeating it.
 

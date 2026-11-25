@@ -5,7 +5,7 @@
 - **Domain:** catalog, shipping, checkout
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-09-27
-- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/stock-locations-and-allocation/trd.md`, [data-model.md](../data-model.md), `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`, [inventory-reservation](../../inventory-reservation/), [shipping-fulfilment](../../shipping-fulfilment/), [product-weight-and-rates](../../product-weight-and-rates/)
+- **References:** `431ed6e7:docs/specs/multi-vendor-marketplace/stock-locations-and-allocation/trd.md`, [data-model.md](../data-model.md), `431ed6e7:docs/specs/multi-vendor-marketplace/consumer-inventory.md`, [inventory-reservation](../../inventory-reservation/), shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`), [product-weight-and-rates](../../product-weight-and-rates/)
 
 > Requirements and product approach only. Technical approach lives in `431ed6e7:docs/specs/multi-vendor-marketplace/stock-locations-and-allocation/trd.md`.
 
@@ -46,7 +46,7 @@ There is a second reason to do it before the catalogue grows. A location's addre
 
 ## Out of scope (this feature)
 - **The guarded stock movement itself** — [inventory-reservation](../../inventory-reservation/) owns the requirement that the last unit sells once. This feature changes *where* that guard points, and depends on it landing first.
-- **Real courier booking** — [shipping-fulfilment](../../shipping-fulfilment/), still blocked on its own open decision. This feature supplies the pickup address that booking will need.
+- **Real courier booking** — shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`), still blocked on its own open decision. This feature supplies the pickup address that booking will need.
 - Stock transfers as a tracked operation with an in-transit state. Correcting quantities per location covers R9; movement as a first-class event is a later feature.
 - Per-location pricing, and choosing a location to optimise anything other than parcel count and distance.
 - Holding stock while a customer browses — already out of scope for [inventory-reservation](../../inventory-reservation/).

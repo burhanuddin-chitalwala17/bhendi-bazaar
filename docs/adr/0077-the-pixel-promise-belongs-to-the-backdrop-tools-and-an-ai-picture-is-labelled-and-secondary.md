@@ -8,7 +8,7 @@
 ADR-0059 made "an enhancement never changes the product's pixels" a tested property, and every
 enhancement until now could keep it: a backdrop is painted around our own cut-out, which is pasted
 back and compared with zero tolerance. The owner now wants a picture of the product worn by a person
-in a real setting ([ai-images](../specs/ai-images/), Q28). No image model can do that while keeping the
+in a real setting (ai-images (`planning-archive-2026-11-25:docs/specs/ai-images/`), Q28). No image model can do that while keeping the
 product's pixels: the cloth must fold around a body and take the setting's light. Read as written,
 ADR-0059 forbids the feature; quietly ignoring it would make its test a lie for one tool.
 

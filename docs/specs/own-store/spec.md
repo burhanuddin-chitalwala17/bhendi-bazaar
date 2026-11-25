@@ -5,7 +5,7 @@
 - **Domain:** catalog, checkout, promotions, shipping, notifications, payouts
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-10-29
-- **References:** [decisions.md](decisions.md), [org-storefront](../org-storefront/), [seller-profile](../seller-profile/), [promotions](../promotions/), [shipment-lifecycle](../shipment-lifecycle/), [bulk-catalog-upload](../bulk-catalog-upload/), [ADR-0061](../../adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)
+- **References:** [decisions.md](decisions.md), [org-storefront](../org-storefront/), [seller-profile](../seller-profile/), promotions (`planning-archive-2026-11-25:docs/specs/promotions/`), [shipment-lifecycle](../shipment-lifecycle/), [bulk-catalog-upload](../bulk-catalog-upload/), [ADR-0061](../../adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)
 
 > The parent of seven subfeatures, one per vertical. Each gets its own spec, decisions, UX and TRD
 > when it starts; this file holds what they share and their order. Track 1 of three (BACKLOG.md).

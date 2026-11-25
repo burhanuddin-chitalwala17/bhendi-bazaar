@@ -33,6 +33,6 @@
 
 ## Parked (Later)
 - Q13 — CI proxy for the shared store: BACKLOG Phase 4, under rate-limiting.
-- Q14 — the outage alert: [error-tracking](../error-tracking/), Phase 5.
+- Q14 — the outage alert: error-tracking (`planning-archive-2026-11-25:docs/specs/error-tracking/`), Phase 5.
 - Q15 — portal handler limits: BACKLOG Phase 4, under rate-limiting.
 - Q21 — per-account sign-in cap: revisit with account lockout.

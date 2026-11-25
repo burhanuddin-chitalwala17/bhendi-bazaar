@@ -46,7 +46,7 @@ themselves document, plus what our code does today.
   BreadcrumbList are emitted.
 - **Crawling**: `robots.ts` allows every agent except private paths — **unless `BLOCK_CRAWLERS=1`**,
   the pre-launch switch (`src/lib/crawl-block.ts`) that disallows everything and stamps `noindex`.
-- **SEO spec** (`docs/specs/seo/`) is Draft since 2026-09-19 (R1–R11: titles, honest price markup,
+- **SEO spec** (`planning-archive-2026-11-25:docs/specs/seo/`) is Draft since 2026-09-19 (R1–R11: titles, honest price markup,
   breadcrumbs, status codes, sitemap dates, alt text, server rendering). Much of it is built; its status
   was never reconciled.
 

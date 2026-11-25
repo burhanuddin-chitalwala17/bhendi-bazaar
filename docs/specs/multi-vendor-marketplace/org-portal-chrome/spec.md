@@ -35,5 +35,5 @@ does.
 - **A5** — The switcher also offers creating another organisation.
 
 ## Out of scope (this feature)
-- Team management — [../org-team](../org-team/).
+- Team management — ../org-team (`planning-archive-2026-11-25:docs/specs/multi-vendor-marketplace/org-team/`).
 - Any notification, search, or breadcrumb apparatus in the header. It exists to answer "who am I, acting as whom" and nothing else yet.

@@ -44,7 +44,7 @@ The hooks in `.githooks/` check commit subjects (`commit-msg`, [ADR-0081](adr/00
 | `IMAGE_SEGMENT_PROVIDER` | ○ | Which service cuts a product out of its background for the `cut out`, `on white` and `studio` improvements: `zone` — the image host's own delivery transform on the custom images domain, free to 5,000 a month — or `model`, the hosted vision model. **Defaults to `zone`**, and whichever is asked for, the other runs when it is not set up. An unrecognised value is the default rather than an error: it is a preference, not a credential |
 | `IMAGE_MODEL_API_KEY` | ○ | The key for that hosted vision model. Setting it is the whole of what makes `model` available; without it only the image host's transform can run, which means **on an `r2.dev` base nothing can**, since that host serves objects and transforms none. Set it locally, or background removal is unavailable in development. The same key buys the **scene** improvement's fallback painter; its first choice is the gateway (`IMAGE_GEN_*`). With neither set there are no scenes anywhere, and whichever account paints needs a *balance* as well as a key (see [A scene costs money](#a-scene-costs-money)) |
 | `IMAGE_MODEL_ENDPOINT` | ○ | Where those model requests go. Unset, the code uses the service's public host; set it to point at a proxy or a staging host without a release |
-| `IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID` / `IMAGE_GEN_CLOUDFLARE_API_TOKEN` | ○ | The multi-model image gateway account (Cloudflare AI today) and an API token with Workers AI access. Both set makes every `cf/…` model in `server/content/generation/registry.ts` available; read only in `server/content/generation/adapters/` ([generation-foundation](specs/ai-images/generation-foundation/) D5). The scene's first-choice model is here, so without it scenes fall back to `IMAGE_MODEL_API_KEY` |
+| `IMAGE_GEN_CLOUDFLARE_ACCOUNT_ID` / `IMAGE_GEN_CLOUDFLARE_API_TOKEN` | ○ | The multi-model image gateway account (Cloudflare AI today) and an API token with Workers AI access. Both set makes every `cf/…` model in `server/content/generation/registry.ts` available; read only in `server/content/generation/adapters/` (generation-foundation (`planning-archive-2026-11-25:docs/specs/ai-images/generation-foundation/`) D5). The scene's first-choice model is here, so without it scenes fall back to `IMAGE_MODEL_API_KEY` |
 | `IMAGE_GEN_GEMINI_API_KEY` | ○ | A Gemini API key (Google AI Studio). Makes every `gemini/…` model available — the direct route to Nano Banana, which takes up to 14 reference pictures where the gateway's takes 3 |
 | `IMAGE_GEN_MODELS_SCENE` / `IMAGE_GEN_MODELS_LISTING` | ○ | The ordered model list for a purpose, comma-separated registry ids (`cf/flux-2-klein-4b,fal/bria-product-shot`). Unset is the default in the registry. The first configured model that can take a request runs; the next is tried only when one is unavailable or out of credit, never after a refusal. Changing it needs no code change, only a redeploy for the variable |
 | `RATE_LIMIT_STORE_URL` / `RATE_LIMIT_STORE_TOKEN` | ✅ preview, production | The shared rate-limit store's REST URL and token (Upstash). **Required when `APP_ENV` is `preview` or `production`** — without them the build and the boot refuse. Unset locally, where limits are in-process. `KV_REST_API_URL` / `KV_REST_API_TOKEN` are read as a fallback for one release, so the Vercel integration's values work unrenamed; see [Rate limiting](#rate-limiting) |
@@ -307,7 +307,7 @@ real money on any service that bills per image, which is what `--limit` is for. 
 Every other improvement is free or nearly so: `light` and `enlarge` run on our own CPU, and a
 cut-out is free to 5,000 a month on the image host (past that the platform absorbs the overage, shown
 on `/admin/enhancements`). **A scene is not free.** It is painted through the generation module
-([generation-foundation](specs/ai-images/generation-foundation/)): klein-4b on the gateway first, about
+(generation-foundation (`planning-archive-2026-11-25:docs/specs/ai-images/generation-foundation/`)): klein-4b on the gateway first, about
 **₹0.13** a paint, then Bria on fal, about **₹3.75**, when the gateway is unavailable. What was paid is the
 `Generation` row's, priced at that day's stored exchange rate, plus about ₹0.18 for the cut-out when the
 paid model made it; the ledger records the total, which is what the platform's daily cap counts. A paint
@@ -372,7 +372,7 @@ npx prisma migrate dev # create + apply a migration
 3. Connect with provider credentials — stored AES-256-GCM encrypted.
 4. Only configured providers can be enabled; changes take effect immediately.
 
-This makes **rate quoting** live. Shipment booking currently uses a mock implementation — see [ARCHITECTURE.md](ARCHITECTURE.md) and [shipping-fulfilment](specs/shipping-fulfilment/).
+This makes **rate quoting** live. Shipment booking currently uses a mock implementation — see [ARCHITECTURE.md](ARCHITECTURE.md) and shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`).
 
 ## The worker
 

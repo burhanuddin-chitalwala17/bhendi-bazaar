@@ -5,7 +5,7 @@
 - **Domain:** shipping (consequences in checkout, catalog, payments)
 - **Phase:** 3 — Fulfilment & marketplace
 - **Verified:** 2026-09-24
-- **References:** `431ed6e7:docs/specs/shipment-lifecycle/trd.md`, [ADR-0007](../../adr/0007-conditional-stock-decrement.md), [ADR-0020](../../adr/0020-money-bearing-records-never-cascade.md), [shipping-fulfilment](../shipping-fulfilment/), CHANGELOG PR-132
+- **References:** `431ed6e7:docs/specs/shipment-lifecycle/trd.md`, [ADR-0007](../../adr/0007-conditional-stock-decrement.md), [ADR-0020](../../adr/0020-money-bearing-records-never-cascade.md), shipping-fulfilment (`planning-archive-2026-11-25:docs/specs/shipping-fulfilment/`), CHANGELOG PR-132
 
 > Requirements and product approach only. The technical approach was trd.md, removed once shipped (ADR-0073): `git show 431ed6e7:docs/specs/shipment-lifecycle/trd.md`.
 

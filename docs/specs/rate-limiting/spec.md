@@ -46,7 +46,7 @@ The owner asked on 2026-10-29 that this be built once and generalised (Q1): the 
 
 - **Outcome:** no public endpoint can be unlimited in a deployed environment without someone having written down why.
 - **In:** R1–R8; A1–A7, with A4's alert arriving with error-tracking (Q14).
-- **Later:** limits on the admin and org portal handlers, which sit behind an authenticated gate (Q15); the alert half of R5 (Q14, [error-tracking](../error-tracking/), Phase 5); exercising the shared store from CI through a local proxy (Q13); choice of provider — Upstash is already integrated and is not revisited.
+- **Later:** limits on the admin and org portal handlers, which sit behind an authenticated gate (Q15); the alert half of R5 (Q14, error-tracking (`planning-archive-2026-11-25:docs/specs/error-tracking/`), Phase 5); exercising the shared store from CI through a local proxy (Q13); choice of provider — Upstash is already integrated and is not revisited.
 
 ## Open questions
 

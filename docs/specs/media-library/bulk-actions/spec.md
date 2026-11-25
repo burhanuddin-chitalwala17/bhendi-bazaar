@@ -5,7 +5,7 @@
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-24
-- **References:** [../spec.md](../spec.md) (media-library R6, R7), [decisions.md](decisions.md), ux.md, trd.md, [viewer](../viewer/), [ai-images/media-tags](../../ai-images/media-tags/), [ADR-0032](../../../adr/0032-records-people-authored-are-retired-not-deleted.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
+- **References:** [../spec.md](../spec.md) (media-library R6, R7), [decisions.md](decisions.md), ux.md, trd.md, [viewer](../viewer/), ai-images/media-tags (`planning-archive-2026-11-25:docs/specs/ai-images/media-tags/`), [ADR-0032](../../../adr/0032-records-people-authored-are-retired-not-deleted.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 
