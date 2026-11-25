@@ -72,9 +72,9 @@ Reads whatsapp-sending's hours and the policy sources through public surfaces.
 - Ice breakers set on the profile (A5) against the fake source.
 
 ## Delivery
-1. Settings, `decide`, sink (behaviour).
-2. Delayed greeting with typing; answers; handover.
-3. Settings tab and Try it (UI); ice breakers.
+1. **after inbox-core U1 (sink ordered after inbox's, `botPausedUntil`) and comment-automations U1 (the normaliser `decide` matches with)** — Settings, `decide`, sink (behaviour).
+2. **after U1, inbox-core U3 and U4 (`sendAutomatic`, `markNeedsYou`) and whatsapp-sending U1 (`hoursFor`)** — Delayed greeting with typing; answers; handover.
+3. **after U2, inbox-core U5 (the Inbox settings page the tab sits on) and inbox-instagram U2 (the source the ice-breakers job calls)** — Settings tab and Try it (UI); ice breakers.
 
 ## Open questions
 None.

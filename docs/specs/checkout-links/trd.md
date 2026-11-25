@@ -64,8 +64,8 @@ Public route classified; `EXTERNALLY_CALLED` (links in chats); one repository ea
 - A price in the stored snapshot is never charged (100%: pricing authority).
 
 ## Delivery
-1. Model, create, open-once (behaviour).
-2. Checkout grouping and notes, size step, attribution.
+1. **independent** — Model, create, open-once (behaviour).
+2. **after U1** — Checkout grouping and notes, size step, attribution.
 
 ## Open questions
 None.

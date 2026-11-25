@@ -82,10 +82,10 @@ rule for `sendTemplate`; `MAY_USE_SHEET`; one repository each.
 - Starter submission idempotent across reconnects (A4); copy-and-edit submits In review (A5).
 
 ## Delivery
-1. Settings, rates, spend, the port with consent and how-often (behaviour).
-2. Send job, statuses, settlement.
-3. Templates and starters.
-4. Messaging page, limit sheet, templates UI.
+1. **after consent-core U1 (`may`)** — Settings, rates, spend, the port with consent and how-often (behaviour).
+2. **after U1 and connect-whatsapp U2 (a connected number and its `messages` lane)** — Send job, statuses, settlement.
+3. **after U1 and connect-whatsapp U2 (the setup job asks for `campaigns.submit-starters`)** — Templates and starters.
+4. **after U2 and U3** — Messaging page, limit sheet, templates UI.
 
 ## Open questions
 None.

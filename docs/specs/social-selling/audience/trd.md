@@ -78,10 +78,10 @@ productId, startedAt, sentToday, dayStartedAt, state)`; order columns `offersCon
 - Show number audited (A5).
 
 ## Delivery
-1. Contacts page, figures, masked numbers (UI over consent-core).
-2. Checkout box and store button (behaviour).
-3. Lists (filter and picked).
-4. Files and first offer.
+1. **after consent-core U1 (contacts and consent) and connect-whatsapp U2 (`contactSyncStartedAt` for the sync status)** — Contacts page, figures, masked numbers (UI over consent-core).
+2. **after consent-core U2 (the inbound YES opts in; `recordOptIn` from U1)** — Checkout box and store button (behaviour).
+3. **after U1** — Lists (filter and picked).
+4. **after U1, consent-core U3 (the first-offer claim) and whatsapp-sending U3 (`deliverByWhatsApp` and the first-offer template)** — Files and first offer.
 
 ## Open questions
 None.

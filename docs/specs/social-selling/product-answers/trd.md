@@ -61,9 +61,9 @@ None new beyond automations' routes.
 - Daily strip counts (A5).
 
 ## Delivery
-1. Reference, intent, answer (behaviour).
-2. Which-one, back-in-stock request, counts.
-3. Strip and switch (UI).
+1. **after enquiry-autoreplies U2 (the decision and answer path it is part of), comment-automations U1 (the rule's products), post-composer U1 (the post's products) and checkout-links U2 (Buy now, the size step)** — Reference, intent, answer (behaviour).
+2. **after U1 and consent-core U1 (audience, which holds `BackInStockRequest`)** — Which-one, back-in-stock request, counts.
+3. **after U2, inbox-core U5 (the Inbox the strip sits on) and enquiry-autoreplies U3 (the Auto-replies tab the switch sits in)** — Strip and switch (UI).
 
 ## Open questions
 None.

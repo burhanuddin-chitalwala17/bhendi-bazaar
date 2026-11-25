@@ -69,9 +69,9 @@ None beyond whatsapp-sending's port and audience's list read.
 - Load: 10,000 recipients in under 10 minutes against the fake source (A-D17).
 
 ## Delivery
-1. Model, review, confirm (behaviour).
-2. Run, stop, resume, late.
-3. Report; UI.
+1. **after audience U3 (`listMembersMayReceive`) and whatsapp-sending U3 (templates, rates)** — Model, review, confirm (behaviour).
+2. **after U1, whatsapp-sending U2 (the send job and settlement) and whatsapp-catalogue U2 (product messages name catalogue items)** — Run, stop, resume, late.
+3. **after U2 and audience U1 (the Customers page the tab sits in)** — Report; UI.
 
 ## Open questions
 None.

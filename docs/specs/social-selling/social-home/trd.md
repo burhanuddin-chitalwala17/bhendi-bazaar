@@ -52,8 +52,8 @@ Each domain exposes its one figure on its public surface.
 - Admin counts from seeded rows; a needing-attention shop links to its connection (A3).
 
 ## Delivery
-1. Figures and card (UI).
-2. Admin overview.
+1. **after inbox-core U2, post-composer U3, product-answers U2, whatsapp-sending U2, connect-instagram U3 and connect-whatsapp U3 (each figure's source; Q113: built when every figure exists)** — Figures and card (UI).
+2. **after inbox-core U3, whatsapp-sending U2 and connect-whatsapp U2 (the sends and `MetaOnboardingCount` it counts)** — Admin overview.
 
 ## Open questions
 None.

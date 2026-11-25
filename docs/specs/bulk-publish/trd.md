@@ -58,9 +58,9 @@ None.
 - WhatsApp groups by reason (A5).
 
 ## Delivery
-1. Read model and fix groups.
-2. Suggestions, review, run (behaviour).
-3. UI.
+1. **after whatsapp-catalogue U2 (WhatsApp's groups read `CatalogueItem` left-out reasons)** — Read model and fix groups.
+2. **after U1** — Suggestions, review, run (behaviour).
+3. **after U2** — UI.
 
 ## Open questions
 None.

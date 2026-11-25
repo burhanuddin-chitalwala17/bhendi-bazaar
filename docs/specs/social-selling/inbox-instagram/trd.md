@@ -64,9 +64,9 @@ None beyond `ConversationSource`.
 - Reconcile dedupes against a webhook-delivered copy (A6).
 
 ## Delivery
-1. Translator and sinks wiring (behaviour: Instagram messages and comments land).
-2. Source: DM, replies, hide.
-3. Reconcile, access-off note.
+1. **after inbox-core U1 (its sinks take the facts)** — Translator and sinks wiring (behaviour: Instagram messages and comments land).
+2. **after U1 and inbox-core U3 (the `ConversationSource` port and the send path)** — Source: DM, replies, hide.
+3. **after U2 and connect-instagram U2 (the `MESSAGES_OFF` health it sets)** — Reconcile, access-off note.
 
 ## Open questions
 None.

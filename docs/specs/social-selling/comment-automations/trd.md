@@ -63,9 +63,9 @@ New domain `automations`; routes rule save, pause, shop-wide; one repository eac
 - Burst of 500 comments: all under 7 days answered, paced (integration with the fake source).
 
 ## Delivery
-1. Model, matcher, sink, claim and send (behaviour).
-2. Default-on hook, activity, pause.
-3. Composer panel and shop-wide rule UI.
+1. **after inbox-instagram U2 (`CommentEvent` and the private reply), inbox-core U3 (`sendAutomatic`), checkout-links U1 (`checkoutLinks.create`) and post-composer U1 (rules keyed by post)** — Model, matcher, sink, claim and send (behaviour).
+2. **after U1 and post-composer U2 (scheduling, where the `afterSchedule` hook is called)** — Default-on hook, activity, pause.
+3. **after U2, post-composer U4 (the composer the panel slots into) and enquiry-autoreplies U3 (the Auto-replies tab holding the shop-wide rule)** — Composer panel and shop-wide rule UI.
 
 ## Open questions
 None.

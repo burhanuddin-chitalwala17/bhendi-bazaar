@@ -75,6 +75,7 @@ Route caption (rate-limited per shop); the generation vendor-boundary test cover
 1. **after post-composer U1 (presets read the post's destinations and products; generation-foundation, improve-with-ai and shop-credits are done)** — `social` purpose and presets (behaviour: pictures).
 2. **after U1 and U3 (the read-back is a text answer, through the text modality U3 adds per ADR-0087)** — Lettering and its check.
 3. **after post-composer U1 (`CaptionDraft` is keyed by post)** — Caption purpose, staleness, update (behaviour: captions).
+4. **after U1, U2, U3 and post-composer U4 (the controls live in the composer and the Posts page)** — Make a picture from the composer with presets and Add words, Write a caption with its languages and Replace sheet, the price-changed note, badge and Publish as is sheet (UI, per ux.md; Q49).
 
 ## Open questions
 None.

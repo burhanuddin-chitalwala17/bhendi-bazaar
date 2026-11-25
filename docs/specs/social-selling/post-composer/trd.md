@@ -92,7 +92,7 @@ for the when and cancel sheets; one repository each for `Post`, `PostDestination
 ## Delivery
 1. **independent** — Model, drafts, autosave (behaviour: drafts).
 2. **after U1** (meta-foundation's `publish` lane and `social.sweep`, which it uses, are done) — Plugs registry, schedule, publish-due, read model (behaviour: scheduling).
-3. **after U2, ai-images/social-posts U3 (`captionStillTrue` for the price hold) and notifications-core U1 ("A post is held")** — Waiting, release, late hold.
+3. **after U2, ai-images/social-posts U3 (`captionStillTrue` for the price hold), notifications-core U1 ("A post is held"), connect-instagram U2 and connect-whatsapp U2 (the flows that emit `connection ready`)** — Waiting, release, late hold; adds the `connection ready` event, emitted from connect-instagram's and connect-whatsapp's existing flows when a connection becomes healthy (Q14).
 4. **after U3** — Posts page and composer (UI).
 
 ## Open questions

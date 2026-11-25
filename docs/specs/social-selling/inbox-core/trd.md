@@ -114,11 +114,11 @@ automations, no hold), `connectionClosed`, `forgetPerson`.
 - Unknown kinds as named lines (A4).
 
 ## Delivery
-1. Model, seal use, sinks (behaviour: messages land).
-2. List, thread, read state, counts, search, changes feed.
-3. Send with hold, undo, retry, uncertain (behaviour: replies).
-4. Needs you, waiting event, privacy grants and log, retention.
-5. UI and the tab bar slot.
+1. **independent** (meta-foundation's sinks registry, lanes and seal are done) — Model, seal use, sinks (behaviour: messages land).
+2. **after U1** — List, thread, read state, counts, search, changes feed.
+3. **after U1** — Send with hold, undo, retry, uncertain (behaviour: replies).
+4. **after U1 and notifications-core U1 (the `conversation waiting` event)** — Needs you, waiting event, privacy grants and log, retention.
+5. **after U2, U3 and U4** — UI and the tab bar slot.
 
 ## Open questions
 None.

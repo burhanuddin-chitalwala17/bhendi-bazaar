@@ -75,9 +75,9 @@ the projection is written only with its event), `StopMarker`.
 - Concurrency: STOP and a send racing; the send after commit is refused (integration).
 
 ## Delivery
-1. Model, `may`, events and projection (behaviour).
-2. Keyword sink with replies; contact sync sink.
-3. First-offer claim; deletion and retention.
+1. **independent** — Model, `may`, events and projection (behaviour).
+2. **after U1 and inbox-core U3 (`sendAutomatic` for the confirming reply)** — Keyword sink with replies; contact sync sink.
+3. **after U1** — First-offer claim; deletion and retention.
 
 ## Open questions
 None.

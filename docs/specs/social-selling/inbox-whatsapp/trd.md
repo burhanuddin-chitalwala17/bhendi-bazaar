@@ -68,9 +68,9 @@ Message `attachmentRef` for stored media; conversation re-key on user id change.
 - Media route refuses another org.
 
 ## Delivery
-1. Translator and sinks (behaviour: WhatsApp messages land).
-2. Source sends, templates outside window, statuses.
-3. Order card and checkout link; media.
+1. **after inbox-core U1 (its sinks take the facts)** — Translator and sinks (behaviour: WhatsApp messages land).
+2. **after U1, inbox-core U3 (the `ConversationSource` port and held send) and whatsapp-sending U3 (`deliverByWhatsApp` and approved templates)** — Source sends, templates outside window, statuses.
+3. **after U2 and checkout-links U2 (`checkoutLinks.create` and the link's order for "Ordered")** — Order card and checkout link; media.
 
 ## Open questions
 None.
