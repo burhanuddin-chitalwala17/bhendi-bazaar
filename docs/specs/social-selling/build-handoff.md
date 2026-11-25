@@ -9,11 +9,22 @@
 
 ## Continue here (second account, master session, 2026-11-25)
 
-The second account rebuilt connect-instagram U3 (8f01f51a); the first account's unpushed U3 is superseded and must
-**not** be pushed now. The next unit is queue row 3, connect-whatsapp U1. A master runs locally from the worktree
-`bhendi-bazaar-meta-whatsapp-connector/` with a gitignored `.env`; integration tests use the local disposable
-database `bhendi_bazaar_ci` (`tests/helpers/test-db.ts` allows only `bhendi_bazaar_dev` and `bhendi_bazaar_ci`, and
-silently skips any other name). Usage: a unit costs roughly $5–12; U3 took ~26 minutes.
+**Scope (owner, 2026-11-25): build the whole feature in this run** — every social-selling subfeature, all of
+notification-hub, ai-images/social-posts, bulk-publish and checkout-links.
+
+**Parallel lanes (owner, 2026-11-25).** Parallelism is bounded only by dependencies: every unit whose `after …`
+units are on the branch starts at once, one unit per session (ADR-0080 still holds). Each lane is its own worktree
+(`bhendi-bazaar-meta-whatsapp-connector/`, `bhendi-bazaar-ss-lane<N>/` on local branch `ss-lane<N>`), its own
+`node_modules`, and its own local Postgres on port 543<N+1> holding a `bhendi_bazaar_ci` database
+(`tests/helpers/test-db.ts` allows only `bhendi_bazaar_dev`/`bhendi_bazaar_ci` and silently skips any other name;
+data dirs in `Bhendi-bazaar-master/.pg-lanes/`). A lane pushes with `git pull --rebase origin
+meta-whatsapp-connector` then `git push origin HEAD:meta-whatsapp-connector`; never force. A migration that sorts
+before one that arrived is renamed later. The master keeps this file in its own docs-only worktree
+(`bhendi-bazaar-ss-master/`). A unit took ~26 minutes; usage limits stop every lane at once — sessions push at
+green checkpoints and resume after the reset.
+
+**Running now:** connect-whatsapp U1, whatsapp-catalogue U1, notifications-core U1, post-composer U1; a planning
+session marking the remaining subfeatures' units.
 
 ## How the build runs
 
@@ -46,6 +57,7 @@ Do not start the next unit.
 | connect-instagram U1 | `connect-instagram unit 1: connect and callback` and its review fixes |
 | connect-instagram U2 | `connect-instagram unit 2: renewal, health, disconnect [CONTRACT]` (d2fcd2b9) |
 | connect-instagram U3 | `connect-instagram unit 3: card, checklist, Turn on replies, return notes [CONTRACT] [MIGRATION]` (8f01f51a); rebuilt by the second account. Gate green, integration 823 passed. Departs from ux.md per decisions Q19, accepted as built by the owner 2026-11-25 |
+| Planning | notification-hub and publishing units marked (7017d471) |
 | Process | ADRs renumbered 0084–0087; rebased on main; next units' dependencies marked in their TRDs |
 
 ## Queue (in order; one at a time)
@@ -87,6 +99,8 @@ the four subfeatures above only.
 
 ## Blockers raised by build sessions
 
+- 2026-11-25 owner decisions: post-composer U3 adds the "connection ready" event (emitted from the connect
+  flows); ai-images/social-posts gets a UI unit 4; social-posts U3 builds before U2 (U2's check reads text back).
 - 2026-11-25: connect-instagram Q19 (card departs from ux.md) — **owner accepted it as built**.
 - 2026-11-25: the first account's U3 push problem is resolved by the rebuild above; its local commits are obsolete.
 
