@@ -106,7 +106,8 @@ export function ZoomableImage({ src, alt, onSwipeNext, onSwipePrevious, onLoad, 
       isPinchingRef.current = false;
       return;
     }
-    if (scale > 1) return;
+    // No guard on the scale here: while zoomed the move is a pan and records no swipe at all,
+    // so a second check would be a rule enforced twice and tested never.
     const delta = swipeStartXRef.current - swipeEndXRef.current;
     if (delta > SWIPE_PX) onSwipeNext?.();
     if (delta < -SWIPE_PX) onSwipePrevious?.();

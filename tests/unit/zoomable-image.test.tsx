@@ -43,12 +43,17 @@ describe("ZoomableImage", () => {
     expect(previous).toHaveBeenCalledTimes(1);
   });
 
-  it("a zoomed drag pans instead of swiping", () => {
+  it("a zoomed drag pans the picture instead of swiping to the next", () => {
     const next = vi.fn();
     render(<ZoomableImage src="/a.jpg" alt="Kurta" onSwipeNext={next} />);
+    // Pan is a fraction of the stage, so the stage must have a size for it to be one.
+    for (const axis of ["clientWidth", "clientHeight"] as const) {
+      Object.defineProperty(area(), axis, { configurable: true, value: 400 });
+    }
     fireEvent.wheel(area(), { deltaY: -500 });
     swipe(300, 100);
     expect(next).not.toHaveBeenCalled();
+    expect(stage().style.transform).toMatch(/translate\(-\d/);
   });
 
   it("a new picture starts unzoomed", () => {
