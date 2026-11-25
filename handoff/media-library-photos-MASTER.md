@@ -1,8 +1,8 @@
 # Handoff — media-library photos feature (master)
 
-- **Updated:** 2026-11-25 06:58 UTC — **PAUSED for account switch**
+- **Updated:** 2026-11-25 — resumed on new account; bulk U1 done and merged
 - **Planning branch:** `claude/gracious-gates-l2b7u5` (this file)
-- **Status:** PAUSED. viewer and picker-filters Implemented and merged here. bulk-actions U1 was mid-build and told to checkpoint and push to `claude/media-library-build`; bulk U2 and U3 not started.
+- **Status:** viewer and picker-filters Implemented and merged here. bulk U1 done (`159397ca`) and merged. bulk U2 next; U3 waits on the owner's R2 CORS GET confirmation.
 
 ## RESUME HERE (new account)
 
@@ -72,7 +72,7 @@ Each folder has spec.md, decisions.md, ux.md (prototype: https://claude.ai/artif
 | 1 | viewer U1 — download route | `claude/gracious-gates-l2b7u5` | `claude/media-library-build` | done, pushed `4676e522`, gate re-run green by master | `session_01Kc21QZt95tL4EJCVq7VQ7Q` |
 | 2 | viewer U2 — sheet download | `claude/media-library-build` after 1 | same | done `69033278`, merged here | `session_01Kc21QWDFRJaaeEwD3Lgcq3` |
 | 3 | viewer U3 — full-screen slider | after 2 | same | done `d160044e` (viewer Implemented), merged here | `session_01Kc21QZLqA5dbdePyBT5SPm` |
-| 4 | bulk U1 — bulk routes | after 3 | same | **paused mid-unit**; read `handoff/media-library-bulk-actions-u1.md` on `claude/media-library-build` | `session_01Kc21QY3ZZ7k2VocBTTyKHs` (old account) |
+| 4 | bulk U1 — bulk routes | after 3 | same | done `159397ca`, merged here, gate re-run green by master | resumed on new account |
 | 5 | bulk U2 — zip builder, fflate, OPERATIONS CORS step | after 4 | same | waiting | — |
 | 6 | bulk U3 — selection mode | after 5 **and** the owner's CORS change | same | waiting | — |
 | 7 | picker-filters U1 | `claude/gracious-gates-l2b7u5` | `claude/media-picker-filters` | done, pushed `9e24da09` (spec Implemented) | `session_01Kc21QZekBRwKqbeQZnEMFe` |
@@ -80,7 +80,7 @@ Each folder has spec.md, decisions.md, ux.md (prototype: https://claude.ai/artif
 ## Merged into this branch
 
 Each finished unit is merged here at the commit it finished on, the gate re-run, then pushed:
-viewer U1 `4676e522`, picker U1 `9e24da09`, viewer U2 `69033278`, viewer U3 `d160044e`. On a conflict, take the unit's side
+viewer U1 `4676e522`, picker U1 `9e24da09`, viewer U2 `69033278`, viewer U3 `d160044e`, bulk U1 `159397ca`. On a conflict, take the unit's side
 of `Verified:` dates and run `npm run docs:index` for the generated counts.
 
 ## For bulk U3 (selection mode)
@@ -95,6 +95,16 @@ selection mode and the tick takes the top-left. No new Q needed. The tile is
 main (`4fc858bf`, `40041ed6`) now lets build sessions push their working branch. A session that
 started before that change could not push until the owner typed "push" in it; sessions started
 after it push on their own.
+
+## Local setup (new account, macOS)
+
+- Use Node 22 (`nvm use 22`); vitest fails on the default Node 20.
+- Integration DB: Homebrew Postgres 14, `DATABASE_URL=postgresql://burhanuddin.c@localhost:5432/bhendi_bazaar_ci` (no `postgres` role).
+- Worktrees: `../bhendi-bazaar-media-library-build`, `../bhendi-bazaar-gracious-gates`.
+
+## Notes from bulk U1 for bulk U2
+
+See `handoff/media-library-bulk-actions-u1.md`: `downloadLinks` returns `{ files: [{ id, url, filename, bytes }], noFile, totalBytes }`; `bytes` may be null, so `buildZip` checks real sizes while streaming; links last 900 s; the 422 carries `totalBytes`/`limitBytes` in `details`.
 
 ## Notes from viewer U1 for viewer U2
 
