@@ -1,11 +1,16 @@
-src/lib/validation/schemas/post.schema.ts
-  s_c01598c08f8572::t_89d46d09a35b9a 1-28
-tests/integration/post-drafts.test.ts
-  s_c01598c08f8572::t_305ac43c26ddc7 1-155
-server/social/post.types.ts
-  s_c01598c08f8572::t_14aed51a95cd1e 1-55
-server/social/post.service.ts
-  s_c01598c08f8572::t_eed080fa32c6b2 1-100
+docs/specs/social-selling/post-composer/decisions.md
+  5b0e2fad13006021 3,17
+  a319aeccc0fa8813 18
+docs/ARCHITECTURE.md
+  s_c01598c08f8572::t_b2f1ca382b712b 18
+docs/specs/social-selling/post-composer/trd.md
+  cfc179e1ef249a23 35
+prisma/schema.prisma
+  7bba75468bfb6ddc 3463
+CLAUDE.md
+  2e76cc76bdb803cc 3
+docs/specs/social-selling/post-composer/ux.md
+  c50a207df9ee0c35 4
 ---
 {
   "schema_version": "authorship/3.0.0",
