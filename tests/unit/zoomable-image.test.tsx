@@ -56,6 +56,17 @@ describe("ZoomableImage", () => {
     expect(stage().style.transform).toMatch(/translate\(-\d/);
   });
 
+  it("a drag that turns into a pinch does not swipe on release", () => {
+    const next = vi.fn();
+    render(<ZoomableImage src="/a.jpg" alt="Kurta" onSwipeNext={next} />);
+    fireEvent.touchStart(area(), { touches: [{ clientX: 300, clientY: 100 }] });
+    fireEvent.touchMove(area(), { touches: [{ clientX: 150, clientY: 100 }] });
+    fireEvent.touchStart(area(), { touches: [{ clientX: 150, clientY: 100 }, { clientX: 250, clientY: 100 }] });
+    fireEvent.touchEnd(area(), { touches: [{ clientX: 150, clientY: 100 }] });
+    fireEvent.touchEnd(area(), { touches: [] });
+    expect(next).not.toHaveBeenCalled();
+  });
+
   it("a new picture starts unzoomed", () => {
     const { rerender } = render(<ZoomableImage src="/a.jpg" alt="Kurta" />);
     fireEvent.wheel(area(), { deltaY: -500 });

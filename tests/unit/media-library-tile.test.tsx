@@ -65,8 +65,8 @@ describe("the tile's full-screen control", () => {
     expect(screen.getByText(MEDIA_GRID_COPY.useCount(2)).className).toContain("right-1");
     const state = screen.getByText(MEDIA_GRID_COPY.stateProcessing);
     expect(state.className).toContain("left-1");
-    // Below the 44px control, not under it.
-    expect(state.className).toContain("top-11");
+    // Below the 44px control (4px + 44px), not under it.
+    expect(state.className).toContain("top-13");
   });
 });
 

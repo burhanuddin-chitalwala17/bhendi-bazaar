@@ -24,10 +24,8 @@ export function useLibraryViewer({ count, index, onIndexChange, onMore, done }: 
   /** Pictures whose bytes would not load; cleared by Try again (ux Retryable error). */
   const [failed, setFailed] = useState<ReadonlySet<string>>(new Set());
 
-  const atEnd = index >= count - 1;
-
   const next = () => {
-    if (atEnd) {
+    if (index >= count - 1) {
       // Not done means the next page is already on its way: it is not the last one yet.
       if (done) toast(MEDIA_VIEWER_COPY.lastOne);
       return;
@@ -64,7 +62,6 @@ export function useLibraryViewer({ count, index, onIndexChange, onMore, done }: 
     next,
     previous,
     go,
-    atEnd,
     hasFailed: (id: string) => failed.has(id),
     markFailed: (id: string) => setFailed((prev) => new Set(prev).add(id)),
     retry: (id: string) =>

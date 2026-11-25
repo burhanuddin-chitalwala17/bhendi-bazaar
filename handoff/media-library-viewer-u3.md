@@ -1,6 +1,6 @@
 # Handoff — media-library/viewer U3 (the viewer)
 
-- **Status:** In progress — review pending
+- **Status:** In progress — review fixed, closing the feature
 - **Last pushed sha:** (see `git log origin/claude/media-library-build -1`)
 - **Goal:** TRD Delivery U3: extract `ZoomableImage` from `ImageLightbox` (D7); `LibraryViewer` + `useLibraryViewer` (D6, D8, D9, D10); the ⤢ tile control (Q7); "View full image" in the sheet; Download in the viewer. Closes A1–A4, A6 (viewer); Q1–Q4, Q7, Q9, Q11. Last unit: spec → Implemented after.
 
@@ -21,7 +21,8 @@
 - Copy deck finished in `MEDIA_VIEWER_COPY`; icon `fullscreen` = ArrowsOut.
 - Gates: `overlay-surfaces` MAY_USE_DIALOG + `image-delivery` zoom-cap list now name the new files.
 - Tests: `zoomable-image` (6), `library-viewer` (14), `media-library-tile` (5). Gate green; integration 753 passed / 7 skipped.
-- Mutations: 8 recorded (see commit body). One pair was redundant — `handleTouchEnd`'s second `scale > 1` guard is gone, so the pan branch is load-bearing and caught.
+- Mutations: 13, all caught, recorded in the body of the `media-library: the Library's full-screen viewer …` commit.
+- /bb-review (fresh context): 6 blockers, 17 nits. Fixed: strip scroll at sm+ and strip follows the slide; Loading placeholder; Q1–Q4, Q7, Q9, Q11 → implemented (unit 3); drag-then-pinch no longer swipes; badge below ⤢ (top-13); 20px glyph (ux amended); stable onMore; dead-overlay close; findIndex guard; atEnd dropped; trd D6/D8 corrected; copy-deck rows for slide alt and strip aria; Verified dates. Not fixed, with reasons: squash the wip commits (needs a force-push, denied); minimap top-3 (would sit under the lightbox's absolute ✕); keep image-lightbox in the zoom-cap list (it no longer imports the cap, so the test would fail); quality={88} and the lightbox's own strip predate U3.
 
 ## Resume
 ```

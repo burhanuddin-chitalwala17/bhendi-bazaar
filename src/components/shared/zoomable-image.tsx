@@ -74,6 +74,8 @@ export function ZoomableImage({ src, alt, onSwipeNext, onSwipePrevious, onLoad, 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
       isPinchingRef.current = true;
+      // A drag that became a pinch is not a swipe: the release must not read its stale distance.
+      swipeEndXRef.current = swipeStartXRef.current;
       const [t1, t2] = [e.touches[0], e.touches[1]];
       pinchDistanceRef.current = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
     } else if (e.touches.length === 1) {

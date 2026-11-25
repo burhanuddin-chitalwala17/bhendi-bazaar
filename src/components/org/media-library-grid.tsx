@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { toast } from "sonner";
@@ -88,6 +88,8 @@ export function MediaLibraryGrid({ orgId, orgCode, initial, query }: MediaLibrar
   /** Which item the viewer is on, or null while it is closed (viewer trd D9). */
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const tilesRef = useRef<HTMLUListElement>(null);
+  // Stable, because the viewer asks for the next page from an effect that depends on it.
+  const loadMoreForViewer = useCallback(() => void loadMore(), [loadMore]);
   const [isPosterPickerOpen, setPosterPickerOpen] = useState(false);
 
   const openId = open?.id ?? null;
@@ -248,7 +250,10 @@ export function MediaLibraryGrid({ orgId, orgCode, initial, query }: MediaLibrar
                   type="button"
                   variant="outline"
                   size="lg"
-                  onClick={() => setViewerIndex(assets.findIndex((asset) => asset.id === open.id))}
+                  onClick={() => {
+                    const at = assets.findIndex((asset) => asset.id === open.id);
+                    if (at >= 0) setViewerIndex(at);
+                  }}
                 >
                   <Icon name="fullscreen" className="mr-2" />
                   {MEDIA_VIEWER_COPY.viewFullImage}
@@ -454,7 +459,7 @@ export function MediaLibraryGrid({ orgId, orgCode, initial, query }: MediaLibrar
         total={total}
         index={viewerIndex}
         onIndexChange={setViewerIndex}
-        onMore={() => void loadMore()}
+        onMore={loadMoreForViewer}
         done={done}
         loading={loading}
         onClose={() => {

@@ -62,7 +62,7 @@ export function MediaLibraryTile({ asset, onOpen, onFullScreen }: MediaLibraryTi
             and a badge on all of it says nothing. The Usage filter is how they are found. */}
         {asset.uses > 0 && <Badge className="absolute right-1 top-1">{MEDIA_GRID_COPY.useCount(asset.uses)}</Badge>}
         {state && (
-          <Badge className="absolute left-1 top-11" variant={state.variant}>
+          <Badge className="absolute left-1 top-13" variant={state.variant}>
             {state.label}
           </Badge>
         )}
@@ -85,9 +85,10 @@ export function MediaLibraryTile({ asset, onOpen, onFullScreen }: MediaLibraryTi
         shape="icon"
         onClick={onFullScreen}
         aria-label={MEDIA_VIEWER_COPY.fullScreen}
+        // 44px: the grid's tiles are small on a phone, and ux.md asks this target be a full 44 (no icon step has one).
         className="absolute left-1 top-1 size-11 rounded-full border border-primary/30 bg-scrim/70 text-hero-foreground hover:bg-hero/90"
       >
-        <Icon name="fullscreen" size="sm" />
+        <Icon name="fullscreen" size="md" />
       </Button>
     </div>
   );

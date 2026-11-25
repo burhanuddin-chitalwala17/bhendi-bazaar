@@ -1,7 +1,7 @@
 # UX — viewer
 
 - **Status:** Signed off
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 - **Prototype:** https://claude.ai/artifact/A3rngfrZXuCHNRTme36QSy (journey 1)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md)
 
@@ -50,7 +50,7 @@
 | Long content | n/a — the control is an icon | aria "View full screen" | — |
 | Many items | ⤢ on every tile; it costs nothing until tapped | — | — |
 | Slow | n/a | — | — |
-| Phone / tablet / desktop | 22px control at every size, inside a 44px touch target | — | — |
+| Phone / tablet / desktop | 20px control at every size (the icon scale's nearest step; was 22px, changed in U3), inside a 44px touch target | — | — |
 
 ## State matrix — Side sheet (changed parts only)
 
@@ -98,6 +98,8 @@
 | Sheet button | View full image |
 | Sheet / viewer button | Download |
 | Viewer counter | {n} of {total} |
+| Slide alt / dialog title (read aloud) | Library item {n} of {total} |
+| Strip thumbnail (aria) | View item {n} |
 | Viewer close (aria) | Close |
 | Viewer details (aria) | Details |
 | Viewer arrows (aria) | Previous · Next |

@@ -1,13 +1,13 @@
 // The Library's full-screen viewer (viewer spec R1, R3–R6; trd D8, D9; ux viewer state matrix).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import type { MediaAssetDto } from "@server/catalog/media-library.types";
 
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));
 vi.mock("@/components/product/video-player", () => ({
   GALLERY_SLIDE_SIZES: "100vw",
-  VideoPlayer: ({ active }: { active?: boolean }) => <div data-testid="video-player" data-active={String(active)} />,
+  VideoPlayer: () => <div data-testid="video-player" />,
 }));
 vi.mock("@/components/product/youtube-embed", () => ({
   YouTubeEmbed: ({ ref_ }: { ref_: string }) => <div data-testid="youtube-embed">{ref_}</div>,
@@ -51,7 +51,13 @@ function Harness({ assets, start = 0, done = true, total }: { assets: MediaAsset
   );
 }
 
-beforeEach(() => vi.clearAllMocks());
+const scrolled = vi.fn();
+beforeEach(() => {
+  vi.clearAllMocks();
+  Element.prototype.scrollIntoView = function (this: Element) {
+    scrolled(this.getAttribute("aria-label"));
+  };
+});
 afterEach(cleanup);
 
 const counter = (n: number, total: number) => screen.getByText(MEDIA_VIEWER_COPY.counter(n, total));
@@ -155,6 +161,25 @@ describe("LibraryViewer", () => {
     render(<Harness assets={[photo(0), photo(1), photo(2)]} />);
     fireEvent.click(screen.getByRole("button", { name: MEDIA_VIEWER_COPY.thumbnail(3) }));
     expect(counter(3, 3)).toBeInTheDocument();
+  });
+
+  it("shows the tile's thumbnail enlarged until the full picture arrives (ux Loading)", async () => {
+    render(<Harness assets={[photo(0)]} />);
+    expect(screen.getByTestId("slide-placeholder")).toBeInTheDocument();
+    // next/image reports a load after the image decodes, a tick later.
+    fireEvent.load(screen.getByRole("img", { name: MEDIA_VIEWER_COPY.slideAlt(1, 1) }));
+    await waitFor(() => expect(screen.queryByTestId("slide-placeholder")).toBeNull());
+  });
+
+  it("the strip follows the current item (ux J1)", () => {
+    render(<Harness assets={[photo(0), photo(1), photo(2)]} />);
+    key("ArrowRight");
+    expect(scrolled).toHaveBeenLastCalledWith(MEDIA_VIEWER_COPY.thumbnail(2));
+  });
+
+  it("closes rather than sit empty when the list shrinks under it", () => {
+    render(<Harness assets={[photo(0)]} start={3} />);
+    expect(h.onClose).toHaveBeenCalled();
   });
 
   it("✕ closes and ⓘ hands the current item to the details sheet", () => {

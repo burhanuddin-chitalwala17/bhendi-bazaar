@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import NextImage from "next/image";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
@@ -65,7 +66,17 @@ export function LibraryViewer({
   // A video's own controls are not a swipe, so the player stops the touch before it reaches here.
   const swipe = useHorizontalSwipe({ onNext: next, onPrevious: previous });
 
+  const activeThumb = useRef<HTMLButtonElement>(null);
+  // The strip follows the slide, so the current thumbnail is never off-screen (ux J1 step 3).
+  useEffect(() => {
+    activeThumb.current?.scrollIntoView?.({ inline: "center", block: "nearest" });
+  }, [index]);
+
   const current = assets[index];
+  // The list shrank under the index (a refresh while past page 1): close, rather than a dead overlay.
+  useEffect(() => {
+    if (!current) onClose();
+  }, [current, onClose]);
   if (!current) return null;
 
   const position = index + 1;
@@ -132,10 +143,13 @@ export function LibraryViewer({
 
         <div className="flex shrink-0 flex-col gap-2 px-3 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
           {assets.length > 1 && (
-            <div className="flex gap-1.5 overflow-x-auto sm:justify-center">
+            // Centred by margin, not justify-center: a centred track that overflows cannot scroll to its start.
+            <div className="overflow-x-auto">
+              <div className="mx-auto flex w-max gap-1.5">
               {assets.map((asset, at) => (
                 <Button
                   key={asset.id}
+                  ref={at === index ? activeThumb : undefined}
                   type="button"
                   variant="ghost"
                   onClick={() => go(at)}
@@ -154,6 +168,7 @@ export function LibraryViewer({
                   <Spinner />
                 </span>
               )}
+              </div>
             </div>
           )}
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
@@ -184,10 +199,7 @@ function Slide({
   onPrevious: () => void;
   onFailed: () => void;
 }) {
-  if (asset.kind === "IMAGE") {
-    // Swipe and zoom are the same finger, so the stage decides which this was.
-    return <ZoomableImage src={asset.ref} alt={alt} onSwipeNext={onNext} onSwipePrevious={onPrevious} onError={onFailed} />;
-  }
+  if (asset.kind === "IMAGE") return <PhotoSlide asset={asset} alt={alt} onNext={onNext} onPrevious={onPrevious} onFailed={onFailed} />;
   if (asset.kind === "VIDEO_EMBED") {
     return (
       <div className="flex h-full items-center" {...swipe}>
@@ -228,6 +240,41 @@ function Slide({
           <p className="text-caption text-hero-foreground/70">{MEDIA_VIEWER_COPY.processingHint}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+/** A photograph, with the tile's own thumbnail enlarged under it until the full image arrives (ux Loading). */
+function PhotoSlide({
+  asset,
+  alt,
+  onNext,
+  onPrevious,
+  onFailed,
+}: {
+  asset: MediaAssetDto;
+  alt: string;
+  onNext: () => void;
+  onPrevious: () => void;
+  onFailed: () => void;
+}) {
+  const [loadedRef, setLoadedRef] = useState<string | null>(null);
+  return (
+    <div className="relative h-full">
+      {loadedRef !== asset.ref && (
+        <span aria-hidden data-testid="slide-placeholder" className="absolute inset-0">
+          <NextImage src={asset.ref} alt="" fill sizes={THUMB_SIZES} className="object-contain blur-sm" />
+        </span>
+      )}
+      {/* Swipe and zoom are the same finger, so the stage decides which this was. */}
+      <ZoomableImage
+        src={asset.ref}
+        alt={alt}
+        onSwipeNext={onNext}
+        onSwipePrevious={onPrevious}
+        onLoad={() => setLoadedRef(asset.ref)}
+        onError={onFailed}
+      />
     </div>
   );
 }
