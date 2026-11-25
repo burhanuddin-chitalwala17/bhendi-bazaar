@@ -1,6 +1,6 @@
 # DEPENDENCIES.md — dependency registry
 
-- **Verified:** 2026-11-20
+- **Verified:** 2026-11-25
 - **Covers:** `package.json`
 
 `package.json` says *what*. This file says *why*, *who uses it*, and *when it was last checked*.
@@ -40,6 +40,7 @@
 | `react-day-picker` | `^10.0.1` | The calendar behind the one date-range field (media-library (`431ed6e7:docs/specs/media-library/trd.md`) UI approach): range selection, keyboard and screen-reader behaviour, month navigation — the parts of a calendar that go wrong when hand-rolled. Styled through our tokens via `classNames`, its own stylesheet unused. Brings `date-fns`, used nowhere else | `src/components/ui/calendar.tsx` | 2026-09-27 |
 | `react-easy-crop` | `^6.2.3` | The crop widget behind the upload-time rotate-and-crop dialog (media-library (`431ed6e7:docs/specs/media-library/trd.md`) D6a): pinch-zoom, drag, wheel zoom and quarter-turn rotation on a touch screen are the interaction a hand-rolled crop gets wrong on a phone. It renders our picture and reports a rectangle; it stores nothing and touches no colour. Ships a stylesheet the component imports — without it the frame has no bounds and the picture does not show, which is how it first shipped | `src/components/product/crop-dialog.tsx` | 2026-09-27 |
 | `@vercel/analytics` + `@vercel/speed-insights` | `^2.0.1` / `^2.0.0` | Page analytics and Core Web Vitals, mounted in `src/app/layout.tsx`. Both serve their script from our own origin, so the CSP needs no third-party `script-src` for them | `src/app/layout.tsx` | 2026-09-21 |
+| `fflate` | `0.8.3` | Builds a Library selection's zip in the browser: streaming `Zip` with stored `ZipPassThrough` entries, one file at a time, so a phone holds the zip plus one file ([media-library/bulk-actions](specs/media-library/bulk-actions/spec.md) D6, Q15). Chosen over `jszip` (larger, and builds the whole archive at once rather than entry by entry) and `client-zip` (answers a `Response` we would buffer anyway, no per-file progress). No dependencies, MIT. Pinned exactly | `src/lib/zip/build-zip.ts` only | 2026-11-25 |
 | `sonner` | `^2.0.7` | Toast notifications | `src/app/providers.tsx` | 2026-08-03 |
 | `clsx` + `tailwind-merge` + `class-variance-authority` | — | The shadcn/ui `cn()` helper and variant definitions | `src/lib/utils.ts` | 2026-08-03 |
 

@@ -16,7 +16,7 @@ export const TIMEOUT_UNSURE_MESSAGE = API_CLIENT_COPY.timeoutUnsure;
 
 const READS = new Set(["GET", "HEAD"]);
 
-function withTimeout(signal: AbortSignal | null | undefined, ms: number): AbortSignal {
+export function withTimeout(signal: AbortSignal | null | undefined, ms: number): AbortSignal {
   const timeout = AbortSignal.timeout(ms);
   if (!signal) return timeout;
   // AbortSignal.any is missing on older Safari; the caller's own signal then wins.

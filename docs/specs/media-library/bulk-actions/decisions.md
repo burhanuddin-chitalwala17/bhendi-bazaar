@@ -18,10 +18,11 @@
 | Q8 | Can "Select all" reach items not yet loaded? | No — it selects what is loaded, and says so | Claude · reversible | 2026-11-24 | Selecting what the seller has not seen invites retiring the wrong thing | parked |
 | Q9 | Bulk crop or improve? | Not in this feature | Claude · reversible | 2026-11-24 | Each needs per-picture judgement; not asked for | parked |
 | Q10 | Is there a cap on how many items one Retire or Tag request carries? | 100 per request, the same as the grid can load in a sitting | Claude · reversible | 2026-11-24 | Bounds a write; a seller never notices | implemented (unit 1) |
-| Q11 | What is the zip called? | `<shop code>-library-<date>.zip`; files inside named as a single download names them | Claude · reversible | 2026-11-24 | Says whose and when; files match what single download gives | decided |
+| Q11 | What is the zip called? | `<shop code>-library-<date>.zip`; files inside named as a single download names them | Claude · reversible | 2026-11-24 | Says whose and when; files match what single download gives | implemented (unit 2) |
 | Q12 | What happens to a selection when a filter changes? | Selection mode ends and the selection clears | Claude · reversible | 2026-11-24 | A tick on a tile no longer shown is one the seller cannot see they made | decided |
 | Q13 | Some files fail to fetch while zipping? | The zip holds what arrived; the toast offers to retry only the failed ones as a second zip | Claude · reversible | 2026-11-24 | Never makes the seller redo the twelve that worked | decided |
 | Q14 | May the browser read files from the R2 bucket (add `GET` to its CORS policy) so the zip is built on the phone? | Yes — the owner adds `GET` beside `PUT` in the bucket's CORS policy before bulk-actions U3 ships | Owner | 2026-11-24 | The files are already public; this only lets our own pages read their bytes (trd D5) | decided |
+| Q15 | Does a file stream into the zip as it arrives, or is it read whole first? | Read whole, then added; peak memory is the zip plus one file, not one chunk | Claude · reversible | 2026-11-25 | A fetch that fails halfway would otherwise leave a valid-looking zip with a truncated file in it; skipped and reported is what Q13 promises. Stored entries reuse the chunks, so the cost is one file, briefly (trd D6 amended) | implemented (unit 2) |
 
 ## Parked (Later)
 - Q8 — selecting beyond what is loaded; BACKLOG Phase 11.

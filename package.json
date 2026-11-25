@@ -54,6 +54,7 @@
     "clsx": "^2.1.1",
     "cn": "^0.5.1",
     "exceljs": "^4.4.0",
+    "fflate": "0.8.3",
     "libphonenumber-js": "^1.13.13",
     "next": "16.4.3",
     "next-auth": "^4.24.13",

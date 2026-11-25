@@ -117,6 +117,9 @@ export interface MediaBulkTagOutcome {
   notFound: string[];
 }
 
+/** The most one zip may hold (Q4): the phone builds it in memory, and checks the real bytes against it too. */
+export const ZIP_LIMIT_BYTES = 500 * 1024 * 1024;
+
 /** Why a selected item has no file to zip: a YouTube link, or a retired file already swept. */
 export const NO_FILE_REASON = { LINK: "link", DELETED: "deleted" } as const;
 export type NoFileReason = (typeof NO_FILE_REASON)[keyof typeof NO_FILE_REASON];
