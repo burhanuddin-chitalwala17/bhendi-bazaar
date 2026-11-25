@@ -4,7 +4,7 @@
  * Nothing here is trusted or typed: the output is exactly what the sheet said,
  * keyed by lower-cased header, for the Zod row schema to parse. exceljs over the
  * npm SheetJS build because the latter is abandoned with unfixed parser CVEs and
- * this parses hostile files (see the spec folder's sheet-parsing-options.md).
+ * this parses hostile files (docs/specs/bulk-catalog-upload/decisions.md Q1).
  */
 import ExcelJS from "exceljs";
 import { Readable } from "node:stream";
