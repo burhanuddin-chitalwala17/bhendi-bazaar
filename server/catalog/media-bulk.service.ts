@@ -9,14 +9,13 @@ import { presignDownload } from "@server/catalog/object-store";
 import { downloadFilename } from "@server/catalog/media-download";
 import {
   NO_FILE_REASON,
+  ZIP_LIMIT_BYTES,
   type MediaBulkRetireOutcome,
   type MediaBulkTagOutcome,
   type MediaDownloadLinksDto,
   type MediaTag,
 } from "@server/catalog/media-library.types";
 
-/** The most one zip may hold (Q4): the phone builds it in memory. */
-export const ZIP_LIMIT_BYTES = 500 * 1024 * 1024;
 export const ZIP_TOO_LARGE = "That's more than can be downloaded at once. Select fewer and download in two goes.";
 const BULK_LINK_TTL_SECONDS = 15 * 60;
 

@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-11-20
+- **Verified:** 2026-11-25
 - **Covers:** `src/lib/rate-limit/**`, `src/instrumentation.ts`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -152,7 +152,7 @@ Until this is done, `r2.dev` works. It is rate-limited and Cloudflare says not t
 [
   {
     "AllowedOrigins": ["http://localhost:3000", "https://bhendi-bazaar.com"],
-    "AllowedMethods": ["PUT"],
+    "AllowedMethods": ["PUT", "GET"],
     "AllowedHeaders": ["Content-Type"],
     "ExposeHeaders": ["ETag"],
     "MaxAgeSeconds": 3600
@@ -160,7 +160,7 @@ Until this is done, `r2.dev` works. It is rate-limited and Cloudflare says not t
 ]
 ```
 
-Every origin that uploads must be listed — add Vercel preview URLs if you upload from them. Only `PUT` is needed: reads are plain public GETs and are not a CORS matter.
+Every origin that uploads or downloads must be listed — add Vercel preview URLs if you use them. `PUT` is the bulk wizards' upload. `GET` is the Library's zip download ([media-library/bulk-actions](specs/media-library/bulk-actions/spec.md) D5, Q14): the page fetches each selected file's presigned link and reads its bytes to build the zip on the phone, and a script reading bytes cross-origin needs CORS even though the files are public. **On a bucket set up before bulk-actions, add `"GET"` to the existing rule** — until then every zip ends "Couldn't fetch any of these files". Showing an image never needs it.
 
 **5. Set the five variables** locally and in Vercel (see the table above), then redeploy. `R2_PUBLIC_BASE_URL` is read by `next.config.ts` **at build time** for the image loader, so a change to it needs a new build, not just a restart.
 
