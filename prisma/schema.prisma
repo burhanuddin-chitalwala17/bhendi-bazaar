@@ -806,6 +806,7 @@ model Org {
   features           OrgFeature[]
   channelConnections ChannelConnection[]
   ticketNeeds        TicketNeed[]
+  contacts           Contact[]
 
   @@index([email])
   @@index([isActive])
@@ -2663,6 +2664,74 @@ model MetaUnroutedCount {
   previousSecret Int      @default(0)
 
   @@id([day, product])
+}
+
+/// One person known to one shop (social-selling/consent-core R1, D1). The same person at two shops is
+/// two contacts. Keyed by Meta's business-scoped id when Meta gives one, else by the E.164 number.
+model Contact {
+  id           String    @id @default(cuid())
+  orgId        String
+  org          Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  bsuid        String?
+  phoneE164    String?
+  name         String?
+  /// `NAME_SOURCE`: TYPED, SYNCED, PLATFORM. A synced name fills only an empty one (Q1).
+  nameSource   String?
+  email        String?
+  /// `CONTACT_LANGUAGE`: EN, HI.
+  language     String    @default("EN")
+  /// `CONTACT_SOURCE`: how the shop came to know them.
+  source       String
+  /// Claimed once by the first-offer job; set means never sent another (Q11).
+  firstOfferAt DateTime?
+  createdAt    DateTime  @default(now())
+
+  consentEvents ConsentEvent[]
+  consents      Consent[]
+
+  // Also (orgId, lower(name)) in the migration, for the Audience page's search.
+  @@unique([orgId, bsuid])
+  @@unique([orgId, phoneE164])
+}
+
+/// Every consent change, appended and never edited (consent-core R2, D1): the proof of when and how.
+model ConsentEvent {
+  id        String   @id @default(cuid())
+  /// The sender: a shop, or null for Bhendi Bazaar itself (parent Q27).
+  orgId     String?
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  /// `CONSENT_CHANNEL`: WHATSAPP, EMAIL.
+  channel   String
+  /// `CONSENT_CHANGE`: OPT_IN, STOP.
+  change    String
+  /// `CONSENT_SOURCE`.
+  source    String
+  /// The order id, inbound message id, file or attestation that proves it (Q7).
+  evidence  Json
+  at        DateTime @default(now())
+
+  projections Consent[]
+
+  @@index([contactId, at])
+}
+
+/// The current state per (contact, sender, channel), written only in the transaction that appends its
+/// event (consent-core D1). Not yet is the absence of a row (Q7).
+model Consent {
+  contactId     String
+  contact       Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  /// A shop's org id, or `PLATFORM` for Bhendi Bazaar.
+  sender        String
+  channel       String
+  /// `CONSENT_STATE`: OPTED_IN, STOPPED.
+  state         String
+  since         DateTime
+  sourceEventId String
+  sourceEvent   ConsentEvent @relation(fields: [sourceEventId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, sender, channel])
+  @@index([sender, channel, state])
 }
 
 /// One listing a shop has on a marketplace, as the marketplace reported it (channel-import D1).

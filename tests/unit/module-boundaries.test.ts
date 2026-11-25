@@ -106,6 +106,8 @@ const PUBLIC_SURFACE: Record<string, string[]> = {
   requests: [],
   // feature-access D1: services and types only; every domain asks it, it asks none.
   subscriptions: [],
+  // consent-core D2: `may` and the consent commands, through the service and types only.
+  audience: [],
 };
 
 /** Always public, in every domain. */

@@ -1,6 +1,6 @@
 # Documentation
 
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 - **Covers:** `docs/*.md`, `docs/adr/*.md`, `docs/specs/*/`
 
 A map of this directory. Every link here points at a file that exists — if one does not, that is a defect ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)).
@@ -40,6 +40,7 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 | [server/bidding/CLAUDE.md](../server/bidding/CLAUDE.md) | Bidding — timed auctions, and the sale gate that suspends an item from normal sale |
 | [server/notifications/CLAUDE.md](../server/notifications/CLAUDE.md) | Notifications — transactional email |
 | [server/subscriptions/CLAUDE.md](../server/subscriptions/CLAUDE.md) | Subscriptions — the paid-feature switches and the one check every domain asks |
+| [server/audience/CLAUDE.md](../server/audience/CLAUDE.md) | Audience — a shop's contacts, their marketing consent, and the one `may` every sender asks |
 | [src/components/CLAUDE.md](../src/components/CLAUDE.md) | The front end — its layers, and the gates each rule answers to (not a domain; loads when a component is read) |
 | [src/app/api/CLAUDE.md](../src/app/api/CLAUDE.md) | Route handlers — authorize, parse, delegate, answer (not a domain) |
 

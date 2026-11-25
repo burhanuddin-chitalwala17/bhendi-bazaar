@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -79,6 +79,7 @@ Each domain's shapes are in its own file, so a change reads only the one it touc
 | identity | [contracts/identity.md](contracts/identity.md) | Addresses and phone numbers |
 | requests | [contracts/requests.md](contracts/requests.md) | Setup requests |
 | subscriptions | [contracts/subscriptions.md](contracts/subscriptions.md) | Feature access |
+| audience | [contracts/audience.md](contracts/audience.md) | Contacts and marketing consent |
 
 Shapes every domain shares stay here.
 
