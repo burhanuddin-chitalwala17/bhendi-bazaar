@@ -1,0 +1,31 @@
+src/components/channel/connect-result-note.tsx
+  s_c01598c08f8572::t_42b3855fb3b60f 49
+docs/specs/social-selling/connect-instagram/decisions.md
+  s_c01598c08f8572::t_42b3855fb3b60f 24
+prisma/schema.prisma
+  s_c01598c08f8572::t_42b3855fb3b60f 2574-2575
+tests/integration/instagram-card.test.ts
+  s_c01598c08f8572::t_cc1bf874be6115 180,187-190
+docs/contracts/channels.md
+  s_c01598c08f8572::t_42b3855fb3b60f 73
+src/components/channel/channel-card-list.tsx
+  s_c01598c08f8572::t_42b3855fb3b60f 16,53
+tests/unit/instagram-card.test.tsx
+  s_c01598c08f8572::t_cc1bf874be6115 6-9,220-267
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "8f01f51a54e8194d7cf09f48cf70f846fb178273",
+  "prompts": {},
+  "sessions": {
+    "s_c01598c08f8572": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "11eb770c-d5ee-4e39-97b6-7dab8baefa73",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
