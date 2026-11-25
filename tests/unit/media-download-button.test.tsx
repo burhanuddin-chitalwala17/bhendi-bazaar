@@ -31,7 +31,9 @@ describe("MediaDownloadButton", () => {
     h.canDownload.mockResolvedValue(undefined);
     render(<MediaDownloadButton orgId="org-1" asset={photo} />);
     expect(screen.getByRole("link", { name: MEDIA_VIEWER_COPY.download }).getAttribute("href")).toBe(HREF);
-    tap();
+    // false: the anchor's own navigation is held until HEAD answers.
+    expect(tap()).toBe(false);
+    expect(h.assign).not.toHaveBeenCalled();
     await waitFor(() => expect(h.assign).toHaveBeenCalledWith(HREF));
     expect(h.canDownload).toHaveBeenCalledWith("org-1", "asset-1");
     expect(toast.error).not.toHaveBeenCalled();
