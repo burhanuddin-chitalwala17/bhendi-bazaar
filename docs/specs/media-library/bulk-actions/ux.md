@@ -1,7 +1,7 @@
 # UX — bulk-actions
 
 - **Status:** Signed off
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 - **Prototype:** https://claude.ai/artifact/A3rngfrZXuCHNRTme36QSy (journey 2)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), ../viewer/ux.md (`94a656e9:docs/specs/media-library/viewer/ux.md`)
 
@@ -127,6 +127,10 @@
 | Zip, too big | That's {size}, more than {limit} at once · Select fewer and download in two goes. |
 | Zip, partial | Downloaded {ok} of {total} files · {n} couldn't be fetched. · Try those {n} again |
 | Zip, none fetched | Couldn't fetch any of these files. Try again later. |
+| Zip, too big mid-download | This selection is more than 500 MB · Select fewer and download in two goes. |
+| Zip, removed left out | {n} were removed and can't be downloaded. |
+| Zip, no longer ours left out | {n} are no longer in your library. |
+| Zip, nothing to zip | Nothing to download · YouTube links aren't files. |
 | Retire dialog title | Retire {n} pictures? |
 | Retire dialog body | They leave the library now, and their files are deleted after thirty days. |
 | Retire dialog, some used | {m} more are still in use, so they'll stay. Filter by Usage: In use to find them. |
@@ -145,4 +149,4 @@
 
 ## Sign-off
 
-Signed off by owner, 2026-11-24.
+Signed off by owner, 2026-11-24. Four zip lines (too big mid-download, removed, no longer ours, nothing to zip) added and approved by owner, 2026-11-25 (Q16).
