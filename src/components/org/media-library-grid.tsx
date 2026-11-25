@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { toast } from "sonner";
@@ -10,9 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { PRODUCT_GRID_CLASSES } from "@/components/shared/product-grid";
-import { PRODUCT_TILE_SIZES } from "@/components/shared/product-card";
 import { YouTubeEmbed } from "@/components/product/youtube-embed";
-import { YouTubePoster } from "@/components/product/youtube-poster";
 import { VideoPlayer } from "@/components/product/video-player";
 import { MediaLibraryPicker } from "@/components/product/media-library-picker";
 import { LoadMore } from "@/components/shared/load-more";
@@ -21,6 +19,14 @@ import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { useMutation } from "@/hooks/core/useMutation";
 import { orgMediaApiClient } from "@/components/org/orgMediaApiClient";
 import { MediaDownloadButton } from "@/components/org/media-download-button";
+import { LazyLibraryViewer } from "@/components/org/LazyLibraryViewer";
+import {
+  KIND_LABELS,
+  LARGE_TILE_SIZES,
+  MediaLibraryTile,
+  MediaTile,
+  STATE_BADGES,
+} from "@/components/org/media-library-tile";
 import { CropDialog } from "@/components/product/crop-dialog";
 import { ImproveDialog } from "@/components/product/improve-dialog";
 import { ImproveSplitButton } from "@/components/content/improve-split-button";
@@ -38,7 +44,7 @@ import {
   type MediaUseDto,
 } from "@server/catalog/media-library.types";
 import type { Pagination } from "@server/shared/pagination";
-import { MEDIA_GRID_COPY } from "./media-library-copy";
+import { MEDIA_GRID_COPY, MEDIA_VIEWER_COPY } from "./media-library-copy";
 import { FEATURE } from "@/components/subscriptions/features";
 
 interface MediaLibraryGridProps {
@@ -55,18 +61,6 @@ const SOURCE_LABELS: Record<MediaAssetDto["source"], string> = {
   UPLOAD: MEDIA_GRID_COPY.sourceUpload,
   DERIVED: MEDIA_GRID_COPY.sourceDerived,
   EMBED: MEDIA_GRID_COPY.sourceEmbed,
-};
-
-const KIND_LABELS: Record<MediaAssetDto["kind"], string> = {
-  IMAGE: MEDIA_GRID_COPY.kindImage,
-  VIDEO_EMBED: MEDIA_GRID_COPY.kindEmbed,
-  VIDEO: MEDIA_GRID_COPY.kindVideo,
-};
-
-/** A hosted video's readiness, as the tile says it (video-hosting D7); nothing for a state with nothing to say. */
-const STATE_BADGES: Partial<Record<MediaAssetDto["state"], { label: string; variant: "outline" | "destructive" }>> = {
-  PROCESSING: { label: MEDIA_GRID_COPY.stateProcessing, variant: "outline" },
-  FAILED: { label: MEDIA_GRID_COPY.stateFailed, variant: "destructive" },
 };
 
 const formatBytes = (bytes: number | null) =>
@@ -91,6 +85,9 @@ export function MediaLibraryGrid({ orgId, orgCode, initial, query }: MediaLibrar
   const [improveTool, setImproveTool] = useState<AvailableTool | null>(null);
   const [styling, setStyling] = useState<MediaAssetDto | null>(null);
   const [showUses, setShowUses] = useState(false);
+  /** Which item the viewer is on, or null while it is closed (viewer trd D9). */
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const tilesRef = useRef<HTMLUListElement>(null);
   const [isPosterPickerOpen, setPosterPickerOpen] = useState(false);
 
   const openId = open?.id ?? null;
@@ -210,39 +207,10 @@ export function MediaLibraryGrid({ orgId, orgCode, initial, query }: MediaLibrar
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">{MEDIA_GRID_COPY.itemCount(total)}</p>
-      <ul className={PRODUCT_GRID_CLASSES}>
-        {assets.map((asset) => (
+      <ul className={PRODUCT_GRID_CLASSES} ref={tilesRef}>
+        {assets.map((asset, at) => (
           <li key={asset.id}>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => show(asset)}
-              className="relative aspect-square h-auto w-full overflow-hidden rounded-card bg-muted p-0"
-              aria-label={isVideoKind(asset.kind) ? KIND_LABELS[asset.kind] : MEDIA_GRID_COPY.photoLabel(asset.width ?? "?", asset.height ?? "?")}
-            >
-              <MediaTile asset={asset} />
-              {/* Only a count, and only where there is one: most of a library is used nowhere yet,
-                  and a badge on all of it says nothing. The Usage filter is how they are found. */}
-              {asset.uses > 0 && (
-                <Badge className="absolute right-1 top-1">{MEDIA_GRID_COPY.useCount(asset.uses)}</Badge>
-              )}
-              {STATE_BADGES[asset.state] && (
-                <Badge className="absolute left-1 top-1" variant={STATE_BADGES[asset.state]?.variant}>
-                  {STATE_BADGES[asset.state]?.label}
-                </Badge>
-              )}
-              {/* Only on a reference that is nothing else (media-tags ux): a product photo also used as a reference is still a product photo. */}
-              {asset.tags.includes(MEDIA_TAG.REFERENCE) && !asset.tags.includes(MEDIA_TAG.PRODUCT) && (
-                <Badge className="absolute bottom-1 left-1" variant="secondary">
-                  {MEDIA_GRID_COPY.tagLabel.REFERENCE}
-                </Badge>
-              )}
-              {asset.durationMs !== null && (
-                <Badge className="absolute bottom-1 right-1" variant="secondary">
-                  {formatDuration(asset.durationMs)}
-                </Badge>
-              )}
-            </Button>
+            <MediaLibraryTile asset={asset} onOpen={() => show(asset)} onFullScreen={() => setViewerIndex(at)} />
           </li>
         ))}
       </ul>
@@ -276,6 +244,15 @@ export function MediaLibraryGrid({ orgId, orgCode, initial, query }: MediaLibrar
               </div>
               {/* Offered on a retired item too: its file is kept for thirty days (viewer Q10). */}
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setViewerIndex(assets.findIndex((asset) => asset.id === open.id))}
+                >
+                  <Icon name="fullscreen" className="mr-2" />
+                  {MEDIA_VIEWER_COPY.viewFullImage}
+                </Button>
                 <MediaDownloadButton orgId={orgId} asset={open} />
               </div>
               {open.kind === "VIDEO" && open.state !== "RETIRED" && (
@@ -470,6 +447,27 @@ export function MediaLibraryGrid({ orgId, orgCode, initial, query }: MediaLibrar
         onClose={() => setStyling(null)}
       />
 
+      {/* Closing returns to where it was opened from, scrolled to the item last shown (viewer Q11). */}
+      <LazyLibraryViewer
+        orgId={orgId}
+        assets={assets}
+        total={total}
+        index={viewerIndex}
+        onIndexChange={setViewerIndex}
+        onMore={() => void loadMore()}
+        done={done}
+        loading={loading}
+        onClose={() => {
+          const at = viewerIndex;
+          setViewerIndex(null);
+          if (at !== null) tilesRef.current?.children[at]?.scrollIntoView({ block: "center" });
+        }}
+        onDetails={(asset) => {
+          setViewerIndex(null);
+          show(asset);
+        }}
+      />
+
       <CropDialog
         photo={reframing ? { id: reframing.id, src: reframing.ref } : null}
         remaining={0}
@@ -482,32 +480,6 @@ export function MediaLibraryGrid({ orgId, orgCode, initial, query }: MediaLibrar
       />
     </div>
   );
-}
-
-/**
- * A photo at its stored width (ADR-0075); a video as its poster, marked so it reads as one. A hosted video
- * has a poster only once the worker has made it (video-hosting D7); before that, and after a
- * failure, the tile is a film mark and the badge says which.
- */
-/** The sheet's preview: the panel's width from `md`, the phone's otherwise (ADR-0026). */
-const LARGE_TILE_SIZES = "(min-width: 768px) 384px, 100vw";
-
-function MediaTile({ asset, large = false }: { asset: MediaAssetDto; large?: boolean }) {
-  const sizes = large ? LARGE_TILE_SIZES : PRODUCT_TILE_SIZES;
-  if (asset.kind === "VIDEO_EMBED") {
-    return <YouTubePoster ref_={asset.ref} sizes={sizes} />;
-  }
-  if (asset.kind === "VIDEO") {
-    return (
-      <>
-        {asset.poster && <NextImage src={asset.poster} alt="" fill sizes={sizes} className="object-cover" />}
-        <span className="absolute inset-0 flex items-center justify-center bg-scrim/40 text-hero-foreground">
-          <Icon name="video" size={large ? "xl" : "lg"} />
-        </span>
-      </>
-    );
-  }
-  return <NextImage src={asset.ref} alt="" fill sizes={sizes} className="object-cover" />;
 }
 
 function UseLine({ use }: { use: MediaUseDto }) {

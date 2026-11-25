@@ -39,8 +39,8 @@ interface LibraryViewerProps {
 /**
  * One library item, full screen, and the rest of the library a swipe away (viewer spec R1–R6).
  *
- * The list is the grid's own, so what the seller flicks through is what they were just looking at;
- * this surface holds nothing but where in it they are (trd D9). Each slide renders by kind, and only
+ * The list is the grid's own, so what the shop flicks through is what they were just looking at;
+ * this surface holds nothing but where in that list they are (trd D9). Each slide renders by kind, and only
  * the current one mounts a player, so no iframe or video element loads for a slide out of view (D8).
  */
 export function LibraryViewer({
