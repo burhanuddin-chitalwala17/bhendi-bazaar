@@ -29,6 +29,6 @@ current-state projection). **Does not own:** sending, counting sends or caps (ca
 |---|---|
 | `consent.types.ts` | The closed sets, `MayAnswer`, the DTOs |
 | `consent-rules.ts` | `answerMay`, `nextConsent`: the pure rules |
-| `audience.service.ts` | `may`, `recordOptIn`, `recordStop`, `history` |
+| `audience.service.ts` | `may`, `recordOptIn`, `recordStop`, `history`, `isShopContact` |
 | `contact.repository.ts` | The one repository of `Contact` |
 | `consent.repository.ts` | The one writer of `ConsentEvent` and `Consent` |

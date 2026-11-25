@@ -864,6 +864,10 @@ model Org {
   posts              Post[]
   conversations      Conversation[]
   checkoutLinks      CheckoutLink[]
+  messagingSettings  MessagingSettings?
+  messagingSpend     MessagingSpend[]
+  whatsAppSends      WhatsAppSend[]
+  marketingTouches   MarketingTouch[]
 
   @@index([email])
   @@index([isActive])
@@ -2839,8 +2843,10 @@ model Contact {
   firstOfferAt DateTime?
   createdAt    DateTime  @default(now())
 
-  consentEvents ConsentEvent[]
-  consents      Consent[]
+  consentEvents    ConsentEvent[]
+  consents         Consent[]
+  whatsAppSends    WhatsAppSend[]
+  marketingTouches MarketingTouch[]
 
   // Also (orgId, lower(name)) in the migration, for the Audience page's search.
   @@unique([orgId, bsuid])
@@ -3611,4 +3617,85 @@ model PostDestination {
 
   /// A post goes to each destination once; also the `(postId)` index.
   @@unique([postId, kind])
+}
+
+/// A shop's messaging settings (social-selling/whatsapp-sending D6). No row reads as the defaults with
+/// the limit unanswered.
+model MessagingSettings {
+  orgId                  String    @id
+  org                    Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  /// Paise; null is "No limit" once `limitSetAt` is set, and unanswered before it (R2).
+  limitPaise             Int?
+  limitSetAt             DateTime?
+  /// `ShopHours`: a weekday to `{ open, close }` in IST, or null for closed.
+  hours                  Json
+  howOftenDay            Int       @default(1)
+  howOftenWeek           Int       @default(4)
+  greetingDelaySeconds   Int       @default(30)
+  botPauseHours          Int       @default(12)
+  alertsPerProductPerDay Int       @default(1)
+  version                Int       @default(0)
+  updatedAt              DateTime  @updatedAt
+}
+
+/// Spend per shop per IST month in paise (A-D13). Reserved by a queued send, settled to Meta's actual.
+model MessagingSpend {
+  orgId         String
+  org           Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  /// "2026-11", the IST calendar month.
+  month         String
+  reservedPaise Int       @default(0)
+  spentPaise    Int       @default(0)
+  /// Claimed by the first hold at the limit this month, so the shop is told once (D4).
+  limitNoticeAt DateTime?
+
+  // Non-negative amounts are a CHECK in the migration.
+  @@id([orgId, month])
+}
+
+/// Every business-initiated WhatsApp message, written by the port (D1) and claimed by the send job (D2).
+model WhatsAppSend {
+  id             String   @id @default(cuid())
+  orgId          String
+  org            Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  contactId      String
+  contact        Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  templateName   String
+  /// `TEMPLATE_LANGUAGE`.
+  language       String
+  values         Json
+  /// `SEND_PURPOSE`.
+  purpose        String
+  sourceRef      String
+  idempotencyKey String
+  /// `WA_SEND_STATE`; pinned by a CHECK in the migration.
+  state          String
+  /// `SKIP_REASON` or `HELD_REASON`, by state.
+  reason         String?
+  /// Paise reserved against `spendMonth`; 0 until the send is queued.
+  estimatePaise  Int      @default(0)
+  /// Paise Meta charged, from the status webhook (D2).
+  actualPaise    Int?
+  /// The IST month its reservation sits in.
+  spendMonth     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([orgId, idempotencyKey])
+  @@index([orgId, state, createdAt])
+}
+
+/// One marketing message a buyer got from a shop, on any channel; the how-often rule counts these (A-D13).
+model MarketingTouch {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  at        DateTime @default(now())
+  /// `TOUCH_CHANNEL`.
+  channel   String
+  sourceRef String
+
+  @@index([orgId, contactId, at])
 }

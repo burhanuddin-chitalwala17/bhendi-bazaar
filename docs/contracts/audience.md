@@ -17,4 +17,4 @@ sender asks it inside its own transaction. **`recordOptIn`** and **`recordStop`*
 order, message, file or attestation as a JSON object) and an optional `tx`, and answer
 **`ConsentChangeResult`** (`changed`, `state`); `changed: false` when the state already held or an upload met a
 STOP. A shop's id on another shop's contact is 404. **`history(orgId, contactId, limit?)`** answers
-**`ConsentHistoryEntryDTO[]`** (`channel`, `change`, `source`, `evidence`, `at`), newest first.
+**`ConsentHistoryEntryDTO[]`** (`channel`, `change`, `source`, `evidence`, `at`), newest first. **`isShopContact(orgId, contactId, tx?)`** answers whether the contact is that shop's own.

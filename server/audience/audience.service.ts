@@ -62,4 +62,9 @@ export const audienceService = {
     if ((await contactRepository.orgOf(contactId)) !== orgId) throw new NotFoundError(CONTACT_NOT_FOUND);
     return consentRepository.historyFor(orgId, contactId, limit);
   },
+
+  /** Whether the contact is this shop's own (R1): a sender writes nothing about another shop's. */
+  async isShopContact(orgId: string, contactId: string, tx?: Prisma.TransactionClient): Promise<boolean> {
+    return (await contactRepository.orgOf(contactId, tx)) === orgId;
+  },
 };

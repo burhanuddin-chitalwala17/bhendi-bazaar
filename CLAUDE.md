@@ -45,6 +45,7 @@ Each is a directory under `server/`, owning its own service, repository, and typ
 | requests | `server/requests/` | Tickets for what a shop can't fix itself: requirements the admin enables, issues a developer fixes. Keyed by the fix, never by the shop |
 | subscriptions | `server/subscriptions/` | What each shop may use of the paid features (Channels, Storefront, Image enhancement, Social selling), and the one check every domain asks. Imports only `shared` |
 | audience | `server/audience/` | A shop's contacts and their marketing consent: the append-only log, its projection, and the one `may` every marketing sender asks |
+| campaigns | `server/campaigns/` | The one door every business-initiated WhatsApp message goes through (consent, how often, the spending limit), what each costs, and the shop's messaging settings |
 | social | `server/social/` | A shop's posts: drafts, destinations and their states. Knows no platform; a destination is a plug |
 | *(shared)* | `server/shared/` | Prisma client, audit log, pagination, retry, the job-queue seam, the closed set of channels, the one writer of `Address`, the neutral social facts (`social-events/`) and each shop's sealing key (`seal/`, ADR-0085). Only what genuinely spans domains — not a dumping ground |
 

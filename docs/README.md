@@ -42,6 +42,7 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 | [server/inbox/CLAUDE.md](../server/inbox/CLAUDE.md) | Inbox — a shop's social conversations, fed by sinks, sealed per shop |
 | [server/subscriptions/CLAUDE.md](../server/subscriptions/CLAUDE.md) | Subscriptions — the paid-feature switches and the one check every domain asks |
 | [server/audience/CLAUDE.md](../server/audience/CLAUDE.md) | Audience — a shop's contacts, their marketing consent, and the one `may` every sender asks |
+| [server/campaigns/CLAUDE.md](../server/campaigns/CLAUDE.md) | Campaigns — the WhatsApp send port, spend against the limit, and messaging settings |
 | [server/social/CLAUDE.md](../server/social/CLAUDE.md) | Social — a shop's posts and their destinations, knowing no platform |
 | [src/components/CLAUDE.md](../src/components/CLAUDE.md) | The front end — its layers, and the gates each rule answers to (not a domain; loads when a component is read) |
 | [src/app/api/CLAUDE.md](../src/app/api/CLAUDE.md) | Route handlers — authorize, parse, delegate, answer (not a domain) |

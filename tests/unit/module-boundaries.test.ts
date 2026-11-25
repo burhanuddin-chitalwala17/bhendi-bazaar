@@ -112,6 +112,8 @@ const PUBLIC_SURFACE: Record<string, string[]> = {
   social: [],
   // social-selling inbox-core: services and types only; its repositories and sinks stay inside.
   inbox: [],
+  // whatsapp-sending D1: the send port and messaging settings, through the services and types only.
+  campaigns: [],
 };
 
 /** Always public, in every domain. */
