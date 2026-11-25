@@ -109,7 +109,7 @@ export interface MediaBulkRetireOutcome {
   notFound: string[];
 }
 
-/** What a bulk tag did to each id (bulk-actions D1, D3); videos and links are `notPhoto`. */
+/** What a bulk tag did to each id (bulk-actions D1, D3). `changed` ids now read as asked, including any that already did. */
 export interface MediaBulkTagOutcome {
   changed: string[];
   notPhoto: string[];

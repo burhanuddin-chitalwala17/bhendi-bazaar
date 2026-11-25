@@ -1,6 +1,6 @@
 # Handoff — media-library/bulk-actions U1 (bulk routes)
 
-- **Status:** In progress — code, tests and gates green; /bb-review pending
+- **Status:** Done — unit committed as `catalog: bulk retire, tag and download-links routes [CONTRACT]`
 - **Last pushed sha:** (see `git log origin/claude/media-library-build -1`)
 - **Goal:** TRD Delivery U1: schemas (`ids` ≤100, de-duplicated), `retireMany`, `setTagMany`, `downloadLinks` (500 MB cap, `ZIP_LIMIT_BYTES`), `findManyForOrg`, `addTag` widened to exclude RETIRED, three `orgMediaApiClient` methods, `docs/contracts/catalog.md` lines. No UI. Closes A3 (server half), A4, A5, A6; Q3, Q4, Q5, Q10 (Q11 filename part).
 
@@ -16,9 +16,18 @@
 - Gate green; integration 761 passed / 7 skipped (join-equivalence needs a populated catalogue).
 - decisions.md: Q3, Q4, Q5, Q10 → implemented (unit 1).
 
-## Next steps
-1. /bb-review in a fresh subagent; fix findings.
-2. Commit `catalog: bulk retire, tag and download-links routes [CONTRACT]`; push; Status Done with notes for U2.
+## Review (/bb-review, fresh subagent) — nothing blocking
+- TRD named `mediaAssetService` for the bulk methods → TRD amended (dated note after D6) to name `mediaBulkService`.
+- wip subjects lack `[CONTRACT]` → the final unit commit carries it (wip commits are pushed; no force-push).
+- `changed` counts photos that already read as asked → documented on the DTO and in `docs/contracts/catalog.md`.
+- Left as is (noted for U3): a row retired elsewhere mid-request counts `retired` not `alreadyRetired`; an unexpected error (or `setTag`'s 3-retry throw) mid-loop answers 500 after partial work — U3's `router.refresh()` shows the truth; ~5 queries per retired id (TRD D2 accepted).
+
+## Notes for U2 / U3
+- U2 (`after U1`): `orgMediaApiClient.downloadLinks` answers `{ files: [{ id, url, filename, bytes }], noFile, totalBytes }`; `bytes` may be null (legacy), so `buildZip` must check real lengths while streaming. Links live 900 s.
+- 422 over the cap: `ApiError.details` = `[{ path: "totalBytes", message: "<n>" }, { path: "limitBytes", message: "<n>" }]`; parse with `Number()` for the ux copy "That's {size}, more than {limit} at once".
+- Ids absent from `files`/`noFile` were not this org's (or pending); the client should treat them as gone.
+- Q11's zip name (`<shop code>-library-<date>.zip`) is still U2/U3's to build; per-file names already come from the server.
+- CORS `GET` on the bucket (D5, Q14) is still the owner's action before U3.
 
 ## Resume (macOS)
 ```

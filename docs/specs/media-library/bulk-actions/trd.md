@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 - **References:** [spec.md](spec.md), [ux.md](ux.md), [decisions.md](decisions.md), ../viewer/trd.md (`94a656e9:docs/specs/media-library/viewer/trd.md`), [ADR-0003](../../../adr/0003-one-repository-per-aggregate.md), [ADR-0028](../../../adr/0028-images-live-in-cloudflare-r2.md), [ADR-0032](../../../adr/0032-records-people-authored-are-retired-not-deleted.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0048](../../../adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -33,6 +33,7 @@ Checked against the field (ADR-0046).
 - **D4 — Download links.** `mediaAssetService.downloadLinks(orgId, ids)` reads the rows (`findManyForOrg`). It sums `bytes` over rows that have an `objectKey`. Over `ZIP_LIMIT_BYTES = 500 * 1024 * 1024` it refuses. Otherwise it signs each with `presignDownload` from viewer D1, using the same filename (viewer D3). The links are valid for 15 minutes, long enough for a slow phone to fetch 500 MB. A row with null `bytes` (legacy backfill) is counted as 0 and the client checks the real length as it streams. The server cap is the authority, and the client's check only stops runaway memory.
 - **D5 — The browser reads the bytes, so the bucket's CORS must allow `GET`.** Today it allows `PUT` only (OPERATIONS.md §4). U2 adds `GET` with the same origins to that policy and updates OPERATIONS.md with the step and its reason. **This is an owner action in Cloudflare before U3 ships.** Until then the zip fails with "Couldn't fetch any of these files". *Rejected:* a same-origin proxy route, for the same reasons as viewer D1.
 - **D6 — Zipping.** `fflate`'s streaming `Zip` with one `ZipPassThrough` (stored, level 0) per file. Each file's `fetch` body stream is fed chunk by chunk, and the output chunks collect into a `Blob`. Files go one at a time, so peak memory is the zip plus one chunk. Progress is per file finished. Cancel aborts the current fetch through an `AbortController` and drops the parts. A file whose fetch fails is skipped and reported (Q13). "Try those n again" calls `download-links` with only those ids. The zip is named per Q11 and saved through an object URL on an anchor.
+- **Amended 2026-11-25 (U1 build):** `retireMany`, `setTagMany` and `downloadLinks` live on `mediaBulkService` (`server/catalog/media-bulk.service.ts`), not `mediaAssetService`, wherever D2–D4 name the latter. Bulk calls `mediaAssetService.retire`, so re-exporting it there would be an import cycle, and that file is at its size pin. Precedent: `product-bulk.service.ts`.
 - **D7 — Where the code goes (ADR-0048).**
   - The three requests go in `orgMediaApiClient`. The byte fetch of a presigned URL goes in `mediaFilesApiClient.ts` (new, `src/components/org/`), the one place a raw `fetch` of our bucket happens.
   - `useLibrarySelection` holds the selected ids and the mode.
