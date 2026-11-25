@@ -1,0 +1,63 @@
+tests/unit/object-store.test.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 164-169
+server/catalog/media-bulk.service.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 1-115
+src/lib/api-error-response.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 52-56
+docs/contracts/catalog.md
+  s_9d5fa95bbe24d4::t_1b9567802e74be 3,28
+src/components/org/orgMediaApiClient.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 3-10,65-77
+tests/integration/media-bulk.test.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 1-213
+tests/unit/media-bulk-schema.test.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 1-35
+server/subscriptions/feature-registry.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 83-85
+src/app/api/org/[orgId]/media/tags/route.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 1-15
+docs/specs/media-library/bulk-actions/decisions.md
+  s_9d5fa95bbe24d4::t_1b9567802e74be 3,13-15,20
+server/shared/domain-error.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 15-16,20-25,31
+handoff/media-library-bulk-actions-u1.md
+  s_9d5fa95bbe24d4::t_1b9567802e74be 1-39
+server/catalog/object-store.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 267,269-273,275
+src/app/api/CLAUDE.md
+  s_9d5fa95bbe24d4::t_1b9567802e74be 3
+src/app/api/org/[orgId]/media/retire/route.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 1-15
+server/catalog/media-library.types.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 104-130
+tests/unit/media-tags-repository.test.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 66,69
+docs/ARCHITECTURE.md
+  s_9d5fa95bbe24d4::t_2a933abc780300 18,77
+server/catalog/media-asset.repository.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 494-501,548,553
+src/app/api/org/[orgId]/media/download-links/route.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 1-15
+docs/CONTRACTS.md
+  s_9d5fa95bbe24d4::t_1b9567802e74be 3,57-59
+src/lib/validation/schemas/media-library.schema.ts
+  s_9d5fa95bbe24d4::t_1b9567802e74be 70-85
+docs/specs/media-library/bulk-actions/trd.md
+  s_9d5fa95bbe24d4::t_1b9567802e74be 6,36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "8bf0fb03a857fa429fe2f03e7dd2915334d415aa",
+  "prompts": {},
+  "sessions": {
+    "s_9d5fa95bbe24d4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f00ee551-450c-4171-b74f-9342da83f47a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
