@@ -103,3 +103,15 @@ export const MEDIA_TAKEDOWN_COPY = {
   submitting: "Taking it down…",
   submit: "Take it down",
 } as const;
+
+/** The viewer and the sheet's Download (viewer ux.md copy deck). */
+export const MEDIA_VIEWER_COPY = {
+  download: "Download",
+  downloadFailed: "Couldn't download",
+  downloadFailedHint: "Check your connection and try again.",
+  tryAgain: "Try again",
+  fileGone: "This file was deleted thirty days after it was retired.",
+  notInLibrary: "This picture isn't in your library.",
+  youtubeNoFile: "This video lives on YouTube, so there's no file to download.",
+  openOnYouTube: "Open on YouTube",
+} as const;

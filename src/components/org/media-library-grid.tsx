@@ -20,6 +20,7 @@ import { useMediaLibraryPages } from "@/hooks/product/useMediaLibraryPages";
 import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { useMutation } from "@/hooks/core/useMutation";
 import { orgMediaApiClient } from "@/components/org/orgMediaApiClient";
+import { MediaDownloadButton } from "@/components/org/media-download-button";
 import { CropDialog } from "@/components/product/crop-dialog";
 import { ImproveDialog } from "@/components/product/improve-dialog";
 import { ImproveSplitButton } from "@/components/content/improve-split-button";
@@ -272,6 +273,10 @@ export function MediaLibraryGrid({ orgId, orgCode, initial, query }: MediaLibrar
                 ) : (
                   <MediaTile asset={open} large />
                 )}
+              </div>
+              {/* Offered on a retired item too: its file is kept for thirty days (viewer Q10). */}
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <MediaDownloadButton orgId={orgId} asset={open} />
               </div>
               {open.kind === "VIDEO" && open.state !== "RETIRED" && (
                 <div className="flex flex-wrap gap-2">
