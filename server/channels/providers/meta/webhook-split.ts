@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { sha256Hex } from "@server/shared/hash";
+import { canonicalJson, sha256Hex } from "@server/shared/hash";
 import { SOCIAL_PLATFORM, type SocialPlatform } from "../../social/types";
 
 /**
@@ -48,19 +48,9 @@ const INSTAGRAM_ENVELOPE = z.object({
   ),
 });
 
-/** Sorted keys, so the same change always hashes the same. */
-function canonical(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
-  if (value && typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-    return `{${entries.map(([key, inner]) => `${JSON.stringify(key)}:${canonical(inner)}`).join(",")}}`;
-  }
-  return JSON.stringify(value) ?? "null";
-}
-
 /** Every key carries the account it arrived for: the same Meta id can reach two shops (a DM between them). */
 function hashKey(product: SocialPlatform, account: string, field: string, value: unknown): string {
-  return `${product}:${account}:${field}:h:${sha256Hex(new TextEncoder().encode(canonical(value)))}`;
+  return `${product}:${account}:${field}:h:${sha256Hex(new TextEncoder().encode(canonicalJson(value)))}`;
 }
 
 /** Meta sends seconds in some places and milliseconds in others. */

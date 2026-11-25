@@ -25,3 +25,10 @@ export function formatCurrency(paise: number, currency: "INR" = "INR") {
     maximumFractionDigits: wholeRupees ? 0 : 2,
   }).format(paise / 100);
 }
+
+/** 249950 → "2499.50 INR", the price spelling Google's and Meta's catalogues read; division and remainder, never a float. */
+export function feedPrice(paise: number): string {
+  const rupees = Math.trunc(paise / 100);
+  const rest = paise % 100;
+  return `${rupees}.${String(rest).padStart(2, "0")} INR`;
+}

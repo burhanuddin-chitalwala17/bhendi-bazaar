@@ -1,4 +1,5 @@
 import { CHANNEL } from "@server/shared/channels";
+import { feedPrice } from "@server/shared/money";
 import type { CategoryMapRow } from "./channel-map.repository";
 import type { BuiltField } from "./field-map.types";
 
@@ -67,12 +68,8 @@ export function categoryFor(
 export const isBuyable = (product: { stock: number; biddingSlug?: string | null }) =>
   product.stock > 0 && !product.biddingSlug;
 
-/** Integer paise as `2499.50 INR` — division and remainder, never a float (Invariant 3). */
-export function formatPrice(paise: number): string {
-  const rupees = Math.trunc(paise / 100);
-  const rest = paise % 100;
-  return `${rupees}.${String(rest).padStart(2, "0")} INR`;
-}
+/** Integer paise as `2499.50 INR` (Invariant 3); one spelling shared with the WhatsApp catalogue. */
+export const formatPrice = feedPrice;
 
 /** Characters XML 1.0 forbids; one pasted from Word or WhatsApp would void the whole file. */
 const NOT_XML = /[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/gu;

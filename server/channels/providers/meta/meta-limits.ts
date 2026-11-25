@@ -39,6 +39,34 @@ export const META_LIMITS = {
     source: "developers.facebook.com Marketing API › Product Catalog › items_batch",
     checked: "2026-11-23",
   },
+  /** Characters in a catalogue item's title. */
+  catalogueTitleChars: {
+    value: 200,
+    unit: "characters",
+    source: "developers.facebook.com Commerce Platform › Catalog › Supported fields (title)",
+    checked: "2026-11-25",
+  },
+  /** Characters in a catalogue item's description. */
+  catalogueDescriptionChars: {
+    value: 9999,
+    unit: "characters",
+    source: "developers.facebook.com Commerce Platform › Catalog › Supported fields (description)",
+    checked: "2026-11-25",
+  },
+  /** Characters in a catalogue item's brand. */
+  catalogueBrandChars: {
+    value: 100,
+    unit: "characters",
+    source: "developers.facebook.com Commerce Platform › Catalog › Supported fields (brand)",
+    checked: "2026-11-25",
+  },
+  /** Additional images on one catalogue item, after its main image. */
+  catalogueAdditionalImages: {
+    value: 20,
+    unit: "images",
+    source: "developers.facebook.com Commerce Platform › Catalog › Supported fields (additional_image_link)",
+    checked: "2026-11-25",
+  },
   /** Days after a comment within which one private reply may be sent. */
   instagramPrivateReplyDays: {
     value: 7,
