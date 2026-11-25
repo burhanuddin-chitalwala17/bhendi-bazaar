@@ -21,13 +21,3 @@ export const ORG_PAGE_TITLES = {
   publish: "Review changes",
   openShop: "Open your shop",
 } as const;
-
-/** library/page.tsx: the kind and source filters. */
-export const LIBRARY_FILTER_COPY = {
-  photos: "Photos",
-  videos: "Videos",
-  youtubeLinks: "YouTube links",
-  uploaded: "Uploaded",
-  croppedOrMade: "Cropped or made",
-  videoLink: "Video link",
-} as const;

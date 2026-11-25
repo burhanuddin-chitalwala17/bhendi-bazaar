@@ -1,7 +1,7 @@
 # Spec — bulk-actions
 
 - **Summary:** A seller selects many library items at once and downloads them as one zip, retires them, or tags them
-- **Status:** Accepted
+- **Status:** Implemented
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-24

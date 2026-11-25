@@ -11,8 +11,12 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/components/shared/forms/date-range-field", () => ({
-  DateRangeField: ({ onChange }: { onChange: (range: { from?: string; to?: string }) => void }) => (
-    <button type="button" onClick={() => onChange({ from: "2026-09-01", to: "2026-09-27" })}>pick range</button>
+  DateRangeField: ({ value, onChange }: { value: { from?: string; to?: string }; onChange: (range: { from?: string; to?: string }) => void }) => (
+    <>
+      <input type="hidden" name="from" value={value.from ?? ""} />
+      <input type="hidden" name="to" value={value.to ?? ""} />
+      <button type="button" onClick={() => onChange({ from: "2026-09-01", to: "2026-09-27" })}>pick range</button>
+    </>
   ),
 }));
 
@@ -31,6 +35,25 @@ describe("MediaLibraryFilters", () => {
     expect(replace).toHaveBeenCalledWith("/org/org-1/library?kind=IMAGE", { scroll: false });
     fireEvent.click(screen.getByRole("checkbox"));
     expect(replace).toHaveBeenLastCalledWith("/org/org-1/library?kind=IMAGE&retired=1", { scroll: false });
+  });
+
+  it("the shared fields write the same URL as before: tag and source join a range already picked (picker-filters D1)", () => {
+    render(<MediaLibraryFilters filters={{ ...base, kind: "IMAGE" }} range={{ from: "2026-09-01" }} kinds={kinds} sources={sources} />);
+    fireEvent.change(screen.getByLabelText("Tag"), { target: { value: "PRODUCT" } });
+    expect(replace).toHaveBeenLastCalledWith("/org/org-1/library?tag=PRODUCT&kind=IMAGE&from=2026-09-01", { scroll: false });
+    fireEvent.change(screen.getByLabelText("Came from"), { target: { value: "UPLOAD" } });
+    expect(replace).toHaveBeenLastCalledWith("/org/org-1/library?tag=PRODUCT&kind=IMAGE&source=UPLOAD&from=2026-09-01", { scroll: false });
+    fireEvent.click(screen.getByText("pick range"));
+    expect(replace).toHaveBeenLastCalledWith("/org/org-1/library?tag=PRODUCT&kind=IMAGE&source=UPLOAD&from=2026-09-01&to=2026-09-27", { scroll: false });
+    expect(replace).toHaveBeenCalledTimes(3);
+  });
+
+  it("follows the URL when it moves underneath, so a stale range is never put back (picker-filters D1)", () => {
+    const { rerender } = render(<MediaLibraryFilters filters={base} range={{ from: "2026-09-01", to: "2026-09-27" }} kinds={kinds} sources={sources} />);
+    rerender(<MediaLibraryFilters filters={{ ...base, kind: "IMAGE" }} range={{}} kinds={kinds} sources={sources} />);
+    expect((screen.getByLabelText("Kind") as HTMLSelectElement).value).toBe("IMAGE");
+    fireEvent.change(screen.getByLabelText("Usage"), { target: { value: "used" } });
+    expect(replace).toHaveBeenLastCalledWith("/org/org-1/library?kind=IMAGE&usage=used", { scroll: false });
   });
 
   it("clearing every filter navigates to the bare path", () => {

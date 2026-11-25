@@ -1,4 +1,4 @@
-import type { MediaTag } from "@server/catalog/media-library.types";
+import type { MediaAssetDto, MediaTag } from "@server/catalog/media-library.types";
 
 /** The media library's words: the grid and its sheet, the filters, the upload button, the takedown (ADR-0067). */
 const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
@@ -75,6 +75,19 @@ export const MEDIA_FILTERS_COPY = {
   when: "When",
   showRetired: "Show retired",
 } as const;
+
+/**
+ * The Kind and Came from choices, keyed by the mirrored enum values so the Library page and the
+ * picker (a client component, which cannot import the enums) read one list (picker-filters D2).
+ */
+const KIND_LABEL = { IMAGE: "Photos", VIDEO: "Videos", VIDEO_EMBED: "YouTube links" } as const satisfies Record<MediaAssetDto["kind"], string>;
+const SOURCE_LABEL = { UPLOAD: "Uploaded", DERIVED: "Cropped or made", EMBED: "Video link" } as const satisfies Record<MediaAssetDto["source"], string>;
+
+const optionsOf = <T extends string>(labels: Record<T, string>) =>
+  (Object.keys(labels) as T[]).map((value) => ({ value, label: labels[value] }));
+
+export const MEDIA_KIND_OPTIONS = optionsOf(KIND_LABEL);
+export const MEDIA_SOURCE_OPTIONS = optionsOf(SOURCE_LABEL);
 
 export const MEDIA_UPLOAD_COPY = {
   failed: "Upload failed",

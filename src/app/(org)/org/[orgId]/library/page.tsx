@@ -3,14 +3,14 @@ import { mediaAssetService } from "@server/catalog/media-asset.service";
 import { creditService } from "@server/payouts/credit.service";
 import { ShopCreditsButton } from "@/components/payouts/shop-credits-button";
 import { parseMediaLibraryFilters } from "@/lib/validation/schemas/media-library.schema";
-import { MediaAssetKind, MediaAssetSource } from "@prisma/client";
-import { MediaLibraryFilters, type FilterOption } from "@/components/org/media-library-filters";
+import { MediaLibraryFilters } from "@/components/org/media-library-filters";
+import { MEDIA_KIND_OPTIONS, MEDIA_SOURCE_OPTIONS } from "@/components/org/media-library-copy";
 import { MediaLibraryGrid } from "@/components/org/media-library-grid";
 import { MediaLibraryUpload } from "@/components/org/media-library-upload";
 import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { PageHeader } from "@/components/shared/page-shell";
 import { ORG_PAGES_COPY } from "@/components/org/pages-copy";
-import { LIBRARY_FILTER_COPY, ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
+import { ORG_PAGE_TITLES } from "@/app/(org)/org/org-pages-copy";
 
 export const metadata = {
   title: ORG_PAGE_TITLES.library,
@@ -18,17 +18,6 @@ export const metadata = {
 };
 
 type Search = Record<string, string | string[] | undefined>;
-
-const KIND_OPTIONS: FilterOption[] = [
-  { value: MediaAssetKind.IMAGE, label: LIBRARY_FILTER_COPY.photos },
-  { value: MediaAssetKind.VIDEO, label: LIBRARY_FILTER_COPY.videos },
-  { value: MediaAssetKind.VIDEO_EMBED, label: LIBRARY_FILTER_COPY.youtubeLinks },
-];
-const SOURCE_OPTIONS: FilterOption[] = [
-  { value: MediaAssetSource.UPLOAD, label: LIBRARY_FILTER_COPY.uploaded },
-  { value: MediaAssetSource.DERIVED, label: LIBRARY_FILTER_COPY.croppedOrMade },
-  { value: MediaAssetSource.EMBED, label: LIBRARY_FILTER_COPY.videoLink },
-];
 
 /** The filter keys, read by name: the awaited `searchParams` does not enumerate, so a spread sees nothing. */
 const FILTER_KEYS = ["tag", "kind", "usage", "source", "from", "to", "productId", "slot", "retired"] as const;
@@ -73,7 +62,7 @@ export default async function OrgLibraryPage({
         </div>
       </div>
 
-      <MediaLibraryFilters filters={filters} range={{ from: raw.from, to: raw.to }} kinds={KIND_OPTIONS} sources={SOURCE_OPTIONS} />
+      <MediaLibraryFilters filters={filters} range={{ from: raw.from, to: raw.to }} kinds={MEDIA_KIND_OPTIONS} sources={MEDIA_SOURCE_OPTIONS} />
 
       <MediaLibraryGrid key={filterQuery} orgId={scope.orgId} orgCode={org?.code ?? null} initial={{ assets, pagination }} query={filterQuery} />
     </div>
