@@ -1,0 +1,84 @@
+docs/contracts/channels.md
+  s_c01598c08f8572::t_5a2390a48ae800 72-80
+src/lib/rate-limit/registry.ts
+  s_c01598c08f8572::t_38bf65004d4b50 50-51
+src/app/api/org/[orgId]/channels/whatsapp/connect/route.ts
+  s_c01598c08f8572::t_38bf65004d4b50 1-15
+server/channels/channel-connection.types.ts
+  s_c01598c08f8572::t_51c8699409422c 117-119
+  s_c01598c08f8572::t_e9eeef7dbab10e 27-30,110-115
+server/channels/providers/meta/embedded-signup.ts
+  s_c01598c08f8572::t_2ed59091c9a2b4 1-65
+tests/integration/whatsapp-signup.test.ts
+  s_c01598c08f8572::t_658c0b971cb44c 1-149,151,153-203
+  s_c01598c08f8572::t_7e3649b8a6e619 150,152
+src/components/channel/channelsApiClient.ts
+  s_c01598c08f8572::t_51c8699409422c 10,64
+  s_c01598c08f8572::t_2464c0a500a3bc 11,62-63,65-69
+src/components/channel/whatsapp-connect-button.tsx
+  s_c01598c08f8572::t_ceadb6551e2049 1-64
+tests/unit/security-headers.test.ts
+  s_c01598c08f8572::t_264fa0cbe6f9a6 57-66
+docs/CONTRACTS.md
+  s_c01598c08f8572::t_5a2390a48ae800 3
+docs/specs/social-selling/connect-whatsapp/decisions.md
+  s_c01598c08f8572::t_5685e439cfc9bc 3,17,20-26
+server/channels/connect-state.ts
+  s_c01598c08f8572::t_28bd6ed52053e8 38-39,42,44,49
+prisma/migrations/20261125100000_whatsapp_signup/migration.sql
+  s_c01598c08f8572::t_68fde6ee219da6 1-7
+tests/unit/file-size.test.ts
+  s_c01598c08f8572::t_b96874a6a4c8ad 56-59
+server/channels/CLAUDE.md
+  s_c01598c08f8572::t_c3f0eefab8d598 82,86
+server/subscriptions/feature-registry.ts
+  s_c01598c08f8572::t_b96874a6a4c8ad 157-160
+  s_c01598c08f8572::t_38bf65004d4b50 32
+server/channels/channel-connection.repository.ts
+  s_c01598c08f8572::t_dcbd2ad5612b82 37-38,85
+  s_c01598c08f8572::t_8598c3f97bfa4f 268-285,287-305,307-316
+  s_c01598c08f8572::t_eb3facdabed149 112-114,261-267,286,306
+src/components/channel/meta-sdk.ts
+  s_c01598c08f8572::t_2464c0a500a3bc 1-112
+docs/ARCHITECTURE.md
+  s_c01598c08f8572::t_5a2390a48ae800 18,61,77
+server/channels/whatsapp-connect.service.ts
+  s_c01598c08f8572::t_278a9ce1a14153 1-7,9-11,13-39,41-104,106-114
+  s_c01598c08f8572::t_51c8699409422c 8,12,40
+  s_c01598c08f8572::t_9bd62c7c52289d 105
+src/lib/validation/schemas/whatsapp-signup.schema.ts
+  s_c01598c08f8572::t_28bd6ed52053e8 1-19
+src/app/api/channels/whatsapp/signup/route.ts
+  s_c01598c08f8572::t_6a56a94e7306c4 12,19
+  s_c01598c08f8572::t_38bf65004d4b50 1-11,13-18,20-45
+server/channels/whatsapp-setup.job.ts
+  s_c01598c08f8572::t_28bd6ed52053e8 1-15
+src/components/channel/useWhatsAppSignup.ts
+  s_c01598c08f8572::t_ceadb6551e2049 1-74
+src/lib/security-headers.ts
+  s_c01598c08f8572::t_6a56a94e7306c4 34-40,110,134,144
+prisma/schema.prisma
+  s_c01598c08f8572::t_68fde6ee219da6 2517,2579-2581
+tests/unit/whatsapp-connect.test.tsx
+  s_c01598c08f8572::t_0e22d3e1cc5d6d 51,55,66,68,70-71,108,111
+  s_c01598c08f8572::t_e5f28f940396d5 62,67,69,74-75
+  s_c01598c08f8572::t_b6453be8214c38 1-50,52-54,56-61,63-65,72-73,76-107,109-110,112-113
+src/components/channel/channel-copy.ts
+  s_c01598c08f8572::t_ceadb6551e2049 277-285
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "6eff6d6146852c721cc06dca3e88bb5dbed72c75",
+  "prompts": {},
+  "sessions": {
+    "s_c01598c08f8572": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "11eb770c-d5ee-4e39-97b6-7dab8baefa73",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
