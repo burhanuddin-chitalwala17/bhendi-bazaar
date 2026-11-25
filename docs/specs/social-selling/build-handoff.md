@@ -1,11 +1,29 @@
 # Social selling — build handoff
 
-- **Verified:** 2026-11-24
+- **Verified:** 2026-11-25
 - **Branch:** `meta-whatsapp-connector` (rebased on `main` at 1d1bb2a3). Never merge it into `main`; never touch `inappnotification`; never force-push.
 - **Read first:** [trd.md](trd.md) (architecture, A-D1…D21), [decisions.md](decisions.md), ADR-0084…0087, and the subfeature's own spec, decisions, ux and trd.
 
 > Read this file to continue the build from any account. It is updated and pushed after every unit, so the
 > branch's last commit and this file agree on where the build stands.
+
+## Continue here (new account, 2026-11-25)
+
+The first account reached its usage limit; the master session stopped and its check-in is disabled.
+Everything on GitHub is on `meta-whatsapp-connector` up to this commit.
+
+1. **connect-instagram U3 is built but not on GitHub.** Session "Build: connect-instagram unit 3"
+   (`session_01Kc21QXpCPcPCStef6CTnBY`, first account) committed it locally (6bf1848b, 4b4e0f58, 4490fd4c,
+   65b511f8, merge c9e37846: card, checklist, Turn on replies, return notes, migration
+   `20261124200000_instagram_card_facts`; gate green, 826 integration tests). Its push was refused by that
+   session's safety check three times. Either open that session in the first account once its limit resets and
+   approve `git push origin meta-whatsapp-connector`, or, if its container is gone, **rebuild U3** in the new
+   account (it is the first queue row below). Do not rebuild while that push might still land.
+2. Then run the queue below, one unit per fresh session, with the prompt template. A new account may also act as
+   master: "Read docs/specs/social-selling/build-handoff.md and act as the master session: start the next
+   queued unit as a new session using the template there, and keep this file updated after each unit."
+3. Usage: a unit costs roughly $5–12 of usage; two units plus a master fill a 5-hour allowance. A session that
+   stops on the limit is resumed with a message after the reset, not restarted.
 
 ## How the build runs
 
@@ -43,7 +61,7 @@ Do not start the next unit.
 
 | # | Unit | Depends on | State |
 |---|---|---|---|
-| 2 | connect-instagram U3 — card, checklist, Turn on replies, return notes | U2 | building |
+| 2 | connect-instagram U3 — card, checklist, Turn on replies, return notes | U2 | built, not pushed (see Continue here 1) |
 | 3 | connect-whatsapp U1 — CSP, SDK leaf, state, signup route | — | queued |
 | 4 | connect-whatsapp U2 — setup job and health | U1 | queued |
 | 5 | connect-whatsapp U3 — card states, checklist, disconnect | U2, connect-instagram U3 | queued |
@@ -74,6 +92,11 @@ the four subfeatures above only.
 
 ## Blockers raised by build sessions
 
+- 2026-11-25: the U3 session's push to origin was refused three times by its auto-mode safety check (see
+  Continue here 1).
+- **Seed fails on a fresh database** (not this feature, found by U3): a migration creates the platform org and
+  `20261121110000_shop_credits` grants it a `CreditLine`, which `prisma/seed.ts` never deletes, so the org delete
+  hits `CreditLine_orgId_fkey`. Workaround: delete the `CreditLine` rows, then seed.
 - 2026-11-24 19:50 UTC: the U3 session hit the account's 5-hour usage limit before pushing anything; resumed
   2026-11-25 04:30 UTC after the reset. A stopped session is resumed with a message, not restarted.
 - (Not this feature.) The U2 session holds two local commits for `main` (push settings, CLAUDE.md); the repo's
