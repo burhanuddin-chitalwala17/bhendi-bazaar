@@ -15,7 +15,7 @@ const SPECS = join(ROOT, "docs/specs");
  */
 const PREDATES_DECISION_LOGS = new Map<string, string>(
   [
-    "bidding", "bulk-catalog-upload", "channel-registry", "checkout-abandonment", "contact-us", "copy-product",
+    "bidding", "channel-registry", "checkout-abandonment", "contact-us", "copy-product",
     "home-banners", "image-delivery", "image-enhancement", "international-phone", "inventory-reservation",
     "listing-vocabulary", "listing-vocabulary/categories", "listing-vocabulary/inherited-facts",
     "listing-vocabulary/product-types", "listing-vocabulary/variants", "media-library", "media-library/renditions",
