@@ -4,7 +4,7 @@
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-11-24
-- **References:** [spec.md](spec.md), [ux.md](ux.md), [decisions.md](decisions.md), [../viewer/trd.md](../viewer/trd.md), [ADR-0003](../../../adr/0003-one-repository-per-aggregate.md), [ADR-0028](../../../adr/0028-images-live-in-cloudflare-r2.md), [ADR-0032](../../../adr/0032-records-people-authored-are-retired-not-deleted.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0048](../../../adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)
+- **References:** [spec.md](spec.md), [ux.md](ux.md), [decisions.md](decisions.md), ../viewer/trd.md (`94a656e9:docs/specs/media-library/viewer/trd.md`), [ADR-0003](../../../adr/0003-one-repository-per-aggregate.md), [ADR-0028](../../../adr/0028-images-live-in-cloudflare-r2.md), [ADR-0032](../../../adr/0032-records-people-authored-are-retired-not-deleted.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0048](../../../adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
 

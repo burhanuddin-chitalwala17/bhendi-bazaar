@@ -3,7 +3,7 @@
 - **Status:** Signed off
 - **Verified:** 2026-11-24
 - **Prototype:** https://claude.ai/artifact/A3rngfrZXuCHNRTme36QSy (journey 2)
-- **References:** [spec.md](spec.md), [decisions.md](decisions.md), [../viewer/ux.md](../viewer/ux.md)
+- **References:** [spec.md](spec.md), [decisions.md](decisions.md), ../viewer/ux.md (`94a656e9:docs/specs/media-library/viewer/ux.md`)
 
 ## Journeys
 
