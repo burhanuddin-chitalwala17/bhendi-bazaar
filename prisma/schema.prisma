@@ -671,7 +671,7 @@ model CheckoutLink {
   /// Restrict: a link records attribution (ADR-0020).
   orgId              String
   org                Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  /// [{ productId, quantity }]: what the link adds, and nothing else.
+  /// [{ productId, quantity, pickSize? }]: what the link adds (pickSize: the buyer picks the size, D6), and nothing else.
   items              Json
   source             CheckoutLinkSource
   /// The inbox order, answer or campaign it was made for (Q3).

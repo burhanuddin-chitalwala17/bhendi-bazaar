@@ -7,6 +7,8 @@ import { CouponField } from "./components/CouponField";
 import { useCheckoutOffers } from "./hooks/useCheckoutOffers";
 import { useCheckoutSnapshot } from "./hooks/useCheckoutSnapshot";
 import { MultiShippingSection } from "./components/MultiShippingSection";
+import { CheckoutLinkGroups } from "./components/CheckoutLinkGroups";
+import { useCheckoutLinkNotes } from "./hooks/useCheckoutLinkNotes";
 import { CheckoutActions } from "./components/CheckoutActions";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { SkeletonRows } from "@/components/shared/states/skeletons";
@@ -33,7 +35,8 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
   const { user } = useAuth();
   const { open: openAuthSheet } = useAuthSheet();
 
-  const { items: checkoutItems, ready: snapshotReady } = useCheckoutSnapshot(buyNowProduct);
+  const { items: checkoutItems, ready: snapshotReady, remove: removeLine } = useCheckoutSnapshot(buyNowProduct);
+  const linkNotes = useCheckoutLinkNotes(checkoutItems);
 
   const {
     groups: shippingGroups,
@@ -166,6 +169,8 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
   return (
     <div className="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-10">
       <div className="space-y-6">
+        <CheckoutLinkGroups items={checkoutItems} notes={linkNotes} onRemove={removeLine} />
+
         <Step number={1} title={CHECKOUT_COPY.deliverTo} error={shown.address}>
           {user ? (
             <AuthenticatedAddress

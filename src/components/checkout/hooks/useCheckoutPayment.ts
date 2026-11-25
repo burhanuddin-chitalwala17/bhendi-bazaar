@@ -91,11 +91,14 @@ export function useCheckoutPayment() {
                 quantity: number;
                 size?: string;
                 color?: string;
+                fromLinkId?: string;
               }) => ({
                 productId: item.productId,
                 quantity: item.quantity,
                 size: item.size || undefined,
                 color: item.color || undefined,
+                // Which chat this line came from, for attribution only (checkout-links D5).
+                fromLinkId: item.fromLinkId || undefined,
               }),
             ),
             selectedRate: { quote: group.selectedRate.quote },

@@ -183,7 +183,14 @@ export interface ShippingGroupInput {
   fromState: string;
 
   /** Unpriced on purpose: the server prices every line from the catalogue (Invariant 1). */
-  items: Array<{ productId: string; quantity: number; size?: string; color?: string }>;
+  items: Array<{
+    productId: string;
+    quantity: number;
+    size?: string;
+    color?: string;
+    /** The checkout link that added this line: attribution only, never a price (checkout-links D5). */
+    fromLinkId?: string;
+  }>;
 
   /** The signed quote of the chosen rate; the server reads courier and charge from it, nothing else. */
   selectedRate: { quote: string };

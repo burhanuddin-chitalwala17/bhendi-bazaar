@@ -1,6 +1,7 @@
 /**
- * checkout-links unit 1: a link is made holding products and quantities, opened once per cart at
- * today's prices with anything out of stock left out, and an edited or expired one adds nothing.
+ * checkout-links: a link is made holding products and quantities, opened once per cart at today's
+ * prices with anything out of stock left out, and an edited or expired one adds nothing (unit 1);
+ * checkout's notes, the size step and the all-gone open (unit 2).
  */
 import "dotenv/config";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -27,10 +28,10 @@ describe.skipIf(!isDisposableDb)("checkout links", () => {
     const products = await prisma.product.findMany({ where: { name: { startsWith: PREFIX } }, select: { id: true } });
     await prisma.checkoutLink.deleteMany({ where: { sourceRef: { startsWith: PREFIX } } });
     await prisma.product.deleteMany({ where: { id: { in: products.map((p) => p.id) } } });
+    await prisma.productFamily.deleteMany({ where: { name: { startsWith: PREFIX } } });
   });
 
-  async function product(price: number, stock: number, orgId = fx.orgId) {
-    const name = unique();
+  async function product(price: number, stock: number, orgId = fx.orgId, name = unique(), familyId?: string) {
     const location =
       orgId === fx.orgId
         ? fx.orgAddressId
@@ -38,14 +39,14 @@ describe.skipIf(!isDisposableDb)("checkout links", () => {
     return prisma.product.create({
       data: {
         name, slug: name, description: "fixture", price, thumbnail: "https://example.invalid/x.webp",
-        weight: 0.5, categoryId: fx.categoryId, orgId,
+        weight: 0.5, categoryId: fx.categoryId, orgId, familyId,
         ...(location ? { stockLocations: { create: { orgAddressId: location, quantity: stock } } } : {}),
       },
       select: { id: true, slug: true, name: true },
     });
   }
 
-  const make = (items: Array<{ productId: string; quantity: number }>) =>
+  const make = (items: Array<{ productId: string; quantity: number; pickSize?: boolean }>) =>
     service.create({ orgId: fx.orgId, items, source: "INBOX_ORDER", sourceRef: unique() });
 
   it("a link opens with its items at today's prices, never the price it was made at (spec A1)", async () => {
@@ -174,5 +175,90 @@ describe.skipIf(!isDisposableDb)("checkout links", () => {
       expect.arrayContaining([[kurta.id, link.id], [scarf.id, undefined]]),
     );
     await cartRepository.clear(fx.userId);
+  });
+
+  describe("unit 2: checkout's notes, the size step, an all-gone link", () => {
+    it("checkout names an item left out and shows a price that moved, from the link's own items (spec A2, D4)", async () => {
+      const kurta = await product(129_900, 5);
+      const dupatta = await product(49_900, 1);
+      const link = await make([{ productId: kurta.id, quantity: 1 }, { productId: dupatta.id, quantity: 1 }]);
+      await prisma.productStock.updateMany({ where: { productId: dupatta.id }, data: { quantity: 0 } });
+      await prisma.product.update({ where: { id: kurta.id }, data: { price: 119_900 } });
+
+      const [note] = await service.notes([{ linkId: link.id, productIds: [kurta.id] }]);
+      expect(note).toMatchObject({ linkId: link.id, shopHandle: FIXTURE_KEYS.orgHandle });
+      expect(note.leftOut).toEqual([{ productId: dupatta.id, productName: dupatta.name }]);
+      expect(note.priceChanges).toEqual([{ productId: kurta.id, nowPaise: 119_900, wasPaise: 129_900 }]);
+    });
+
+    it("a link line the buyer removed is not called out of stock; a product not in the link is not priced (D4, Q7)", async () => {
+      const kurta = await product(129_900, 5);
+      const dupatta = await product(49_900, 5);
+      const stranger = await product(10_000, 5);
+      const link = await make([{ productId: kurta.id, quantity: 1 }, { productId: dupatta.id, quantity: 1 }]);
+      await prisma.product.update({ where: { id: stranger.id }, data: { price: 20_000 } });
+
+      const [note] = await service.notes([{ linkId: link.id, productIds: [kurta.id, stranger.id] }]);
+      expect(note.leftOut).toEqual([]);
+      expect(note.priceChanges).toEqual([]);
+      expect(await service.notes([{ linkId: "no-such-link", productIds: [kurta.id] }])).toEqual([]);
+    });
+
+    it("a link with everything out of stock adds nothing and claims nothing, so it works once restocked (ux.md: All out of stock)", async () => {
+      const target = await product(49_900, 1);
+      const made = await make([{ productId: target.id, quantity: 1 }]);
+      await prisma.productStock.updateMany({ where: { productId: target.id }, data: { quantity: 0 } });
+
+      const cart = `device:${unique()}`;
+      const gone = await service.open(FIXTURE_KEYS.orgHandle, made.token, cart);
+      expect(gone).toMatchObject({ kind: "opened", alreadyOpened: false, lines: [], leftOut: [{ productId: target.id }] });
+      expect(await prisma.checkoutLinkOpen.count({ where: { linkId: made.id } })).toBe(0);
+
+      await prisma.productStock.updateMany({ where: { productId: target.id }, data: { quantity: 3 } });
+      const back = await service.open(FIXTURE_KEYS.orgHandle, made.token, cart);
+      if (back.kind !== "opened") throw new Error(back.kind);
+      expect(back.lines.map((l) => l.productId)).toEqual([target.id]);
+    });
+
+    it("a link for a product sold in sizes asks for one among the sizes in stock, and adds the size picked (D6)", async () => {
+      const familyName = unique();
+      const family = await prisma.productFamily.create({ data: { orgId: fx.orgId, name: familyName } });
+      const small = await product(99_900, 0, fx.orgId, `${familyName}-a-S`, family.id);
+      const medium = await product(99_900, 4, fx.orgId, `${familyName}-b-M`, family.id);
+      const large = await product(109_900, 4, fx.orgId, `${familyName}-c-L`, family.id);
+      const unrelated = await product(10_000, 5);
+      const link = await make([{ productId: medium.id, quantity: 1, pickSize: true }]);
+
+      const stored = await prisma.checkoutLink.findUniqueOrThrow({ where: { id: link.id } });
+      expect(stored.displayPricesPaise).toMatchObject({ [large.id]: 109_900, [medium.id]: 99_900 });
+
+      const resolved = await service.resolve(FIXTURE_KEYS.orgHandle, link.token);
+      if (resolved.kind !== "live") throw new Error(resolved.kind);
+      expect(resolved.sizeSteps).toEqual([
+        { productId: medium.id, options: [expect.objectContaining({ productId: medium.id }), expect.objectContaining({ productId: large.id })] },
+      ]);
+      expect(resolved.sizeSteps[0].options.map((o) => o.productId)).not.toContain(small.id);
+
+      const opened = await service.open(FIXTURE_KEYS.orgHandle, link.token, `device:${unique()}`, new Date(), [large.id]);
+      if (opened.kind !== "opened") throw new Error(opened.kind);
+      expect(opened.lines.map((l) => [l.productId, l.price, l.fromLinkId])).toEqual([[large.id, 109_900, link.id]]);
+
+      // A pick that is not one of the family's sizes is ignored: the link's own item is added.
+      const forged = await service.open(FIXTURE_KEYS.orgHandle, link.token, `device:${unique()}`, new Date(), [unrelated.id, small.id]);
+      if (forged.kind !== "opened") throw new Error(forged.kind);
+      expect(forged.lines.map((l) => l.productId)).toEqual([medium.id]);
+
+      // Checkout counts the picked size as the link's item, and prices it against its own snapshot.
+      await prisma.product.update({ where: { id: large.id }, data: { price: 104_900 } });
+      const [note] = await service.notes([{ linkId: link.id, productIds: [large.id] }]);
+      expect(note.leftOut).toEqual([]);
+      expect(note.priceChanges).toEqual([{ productId: large.id, nowPaise: 104_900, wasPaise: 109_900 }]);
+    });
+
+    it("a product in no family has no size to pick: the link opens as it is (D6)", async () => {
+      const kurta = await product(129_900, 5);
+      const link = await make([{ productId: kurta.id, quantity: 1, pickSize: true }]);
+      expect(await service.resolve(FIXTURE_KEYS.orgHandle, link.token)).toEqual({ kind: "live", linkId: link.id, sizeSteps: [] });
+    });
   });
 });

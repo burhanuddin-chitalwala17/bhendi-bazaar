@@ -55,6 +55,8 @@ export const ROUTE_RATE_LIMITS = {
 
   // A buyer opens a link once; a token guesser many times (checkout-links D3).
   "POST /api/checkout-links/open": { policy: P.LINK },
+  // Checkout reads what changed about the links in its lines, once per checkout (checkout-links D4).
+  "POST /api/checkout-links/notes": { policy: P.CHECKOUT },
 
   "POST /api/checkout/allocate": { policy: P.CHECKOUT },
   "POST /api/checkout/promotions/quote": { policy: P.COUPON },

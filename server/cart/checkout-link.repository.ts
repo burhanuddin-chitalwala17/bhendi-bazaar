@@ -1,5 +1,14 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
-import { createCheckoutLinkInput, type CheckoutLinkItem, type CheckoutLinkSource } from "@server/cart/checkout-link.types";
+import { PAYMENT_STATUS } from "@server/checkout/order.types";
+import {
+  createCheckoutLinkInput,
+  type CheckoutLinkItem,
+  type CheckoutLinkSource,
+  type OrderLinkMark,
+} from "@server/cart/checkout-link.types";
+
+const parseItems = (items: unknown): CheckoutLinkItem[] => createCheckoutLinkInput.shape.items.parse(items);
 
 /** The only place `CheckoutLink` and `CheckoutLinkOpen` are written (Invariant 5). */
 export class CheckoutLinkRepository {
@@ -16,7 +25,11 @@ export class CheckoutLinkRepository {
       data: {
         token: data.token,
         orgId: data.orgId,
-        items: data.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+        items: data.items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          ...(item.pickSize ? { pickSize: true } : {}),
+        })),
         source: data.source,
         sourceRef: data.sourceRef,
         displayPricesPaise: data.displayPricesPaise,
@@ -31,13 +44,57 @@ export class CheckoutLinkRepository {
   async findByShopAndToken(
     shopHandle: string,
     token: string,
-  ): Promise<{ id: string; items: CheckoutLinkItem[]; expiresAt: Date } | null> {
+  ): Promise<{ id: string; orgId: string; items: CheckoutLinkItem[]; expiresAt: Date } | null> {
     const link = await prisma.checkoutLink.findFirst({
       where: { token, org: { handle: shopHandle } },
-      select: { id: true, items: true, expiresAt: true },
+      select: { id: true, orgId: true, items: true, expiresAt: true },
     });
     if (!link) return null;
-    return { id: link.id, items: createCheckoutLinkInput.shape.items.parse(link.items), expiresAt: link.expiresAt };
+    return { id: link.id, orgId: link.orgId, items: parseItems(link.items), expiresAt: link.expiresAt };
+  }
+
+  /** What checkout's note on a link is worked out from (D4). */
+  async findForNotes(ids: readonly string[]): Promise<
+    Array<{ id: string; orgId: string; items: CheckoutLinkItem[]; displayPricesPaise: Record<string, number>; shopName: string; shopHandle: string }>
+  > {
+    if (ids.length === 0) return [];
+    const links = await prisma.checkoutLink.findMany({
+      where: { id: { in: [...ids] } },
+      select: { id: true, orgId: true, items: true, displayPricesPaise: true, org: { select: { name: true, handle: true } } },
+    });
+    return links.map((link) => ({
+      id: link.id,
+      orgId: link.orgId,
+      items: parseItems(link.items),
+      displayPricesPaise: toPaiseRecord(link.displayPricesPaise),
+      shopName: link.org.name,
+      shopHandle: link.org.handle,
+    }));
+  }
+
+  /** What these links hold, read in the order's transaction (D5). */
+  async itemsIn(tx: Prisma.TransactionClient, ids: readonly string[]): Promise<Map<string, CheckoutLinkItem[]>> {
+    const links = await tx.checkoutLink.findMany({ where: { id: { in: [...ids] } }, select: { id: true, items: true } });
+    return new Map(links.map((link) => [link.id, parseItems(link.items)]));
+  }
+
+  /**
+   * Record the order a link became, inside the order's transaction (D5). Only a link of the shop the
+   * line was bought from, and never over an order already paid: a retried Pay makes a new order.
+   */
+  async recordOrderIn(tx: Prisma.TransactionClient, orderId: string, marks: readonly OrderLinkMark[]): Promise<void> {
+    const byOrg = new Map<string, string[]>();
+    for (const mark of marks) byOrg.set(mark.orgId, [...(byOrg.get(mark.orgId) ?? []), mark.linkId]);
+    for (const [orgId, ids] of byOrg) {
+      await tx.checkoutLink.updateMany({
+        where: {
+          id: { in: [...new Set(ids)] },
+          orgId,
+          OR: [{ orderId: null }, { order: { paymentStatus: { not: PAYMENT_STATUS.PAID } } }],
+        },
+        data: { orderId },
+      });
+    }
   }
 
   /** Which of these link ids exist: a cart line's mark naming none is dropped, not stored. */
@@ -55,6 +112,13 @@ export class CheckoutLinkRepository {
     });
     return count === 1;
   }
+}
+
+function toPaiseRecord(value: unknown): Record<string, number> {
+  if (!value || typeof value !== "object") return {};
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).filter((entry): entry is [string, number] => Number.isInteger(entry[1])),
+  );
 }
 
 export const checkoutLinkRepository = new CheckoutLinkRepository();

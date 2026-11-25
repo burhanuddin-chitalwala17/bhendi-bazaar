@@ -26,7 +26,13 @@ export async function POST(request: NextRequest) {
     const deviceId = known && DEVICE_ID.test(known) ? known : randomUUID();
     const cartKey = session?.user?.id ? `user:${session.user.id}` : `device:${deviceId}`;
 
-    const result = await checkoutLinkService.open(validation.data.shop, validation.data.token, cartKey);
+    const result = await checkoutLinkService.open(
+      validation.data.shop,
+      validation.data.token,
+      cartKey,
+      new Date(),
+      validation.data.sizes ?? [],
+    );
     const response = NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
     if (deviceId !== known) {
       response.cookies.set(DEVICE_COOKIE, deviceId, {

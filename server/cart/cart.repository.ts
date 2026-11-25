@@ -260,6 +260,29 @@ export class CartRepository {
     });
   }
 
+  /**
+   * Each product's family members, itself included, in the order the product page lists them
+   * (checkout-links D6). A product in no family maps to itself alone.
+   */
+  async familyMembersOf(productIds: readonly string[]): Promise<Map<string, string[]>> {
+    if (productIds.length === 0) return new Map();
+    const products = await prisma.product.findMany({
+      where: { id: { in: [...productIds] } },
+      select: { id: true, familyId: true },
+    });
+    const familyIds = [...new Set(products.flatMap((p) => (p.familyId ? [p.familyId] : [])))];
+    const members = familyIds.length
+      ? await prisma.product.findMany({
+          where: { familyId: { in: familyIds }, archivedAt: null },
+          select: { id: true, familyId: true },
+          orderBy: { name: "asc" },
+        })
+      : [];
+    return new Map(
+      products.map((p) => [p.id, p.familyId ? members.filter((m) => m.familyId === p.familyId).map((m) => m.id) : [p.id]]),
+    );
+  }
+
   /** Empty the cart, bumping the version so other tabs learn about it. */
   async clear(userId: string): Promise<void> {
     try {

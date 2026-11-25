@@ -20,15 +20,17 @@ vi.mock("next/navigation", () => ({
 
 import { POST } from "@/app/api/checkout-links/open/route";
 import CheckoutLinkPage from "@/app/(main)/c/[shop]/[token]/page";
+import { CheckoutLinkOpener } from "@/components/cart/checkout-link/CheckoutLinkOpener";
+import { CheckoutLinkSizeStep } from "@/components/cart/checkout-link/CheckoutLinkSizeStep";
 
 const DEVICE = "3f2c1b9a-0d4e-4c3b-9a8f-1e2d3c4b5a69";
 const TOKEN = "A".repeat(22);
 
-function request(cookie?: string) {
+function request(cookie?: string, extra: Record<string, unknown> = {}) {
   return new NextRequest("http://localhost/api/checkout-links/open", {
     method: "POST",
     headers: { "content-type": "application/json", ...(cookie ? { cookie } : {}) },
-    body: JSON.stringify({ shop: "niqab", token: TOKEN }),
+    body: JSON.stringify({ shop: "niqab", token: TOKEN, ...extra }),
   });
 }
 
@@ -41,12 +43,12 @@ describe("POST /api/checkout-links/open — whose cart a link is claimed for", (
   it("a signed-in buyer claims it for the account (spec A3)", async () => {
     session.current = { user: { id: "u1" } };
     await POST(request(`bb_device=${DEVICE}`));
-    expect(open).toHaveBeenCalledWith("niqab", TOKEN, "user:u1");
+    expect(open).toHaveBeenCalledWith("niqab", TOKEN, "user:u1", expect.any(Date), []);
   });
 
   it("a guest reuses the device cookie and is not given a new one (spec A3)", async () => {
     const response = await POST(request(`bb_device=${DEVICE}`));
-    expect(open).toHaveBeenCalledWith("niqab", TOKEN, `device:${DEVICE}`);
+    expect(open).toHaveBeenCalledWith("niqab", TOKEN, `device:${DEVICE}`, expect.any(Date), []);
     expect(response.cookies.get("bb_device")).toBeUndefined();
   });
 
@@ -55,12 +57,18 @@ describe("POST /api/checkout-links/open — whose cart a link is claimed for", (
     const set = response.cookies.get("bb_device");
     expect(set?.value).toMatch(/^[0-9a-f-]{36}$/);
     expect(set?.httpOnly).toBe(true);
-    expect(open).toHaveBeenCalledWith("niqab", TOKEN, `device:${set?.value}`);
+    expect(open).toHaveBeenCalledWith("niqab", TOKEN, `device:${set?.value}`, expect.any(Date), []);
+  });
+
+  it("passes the sizes picked on the size step, and nothing else (D6)", async () => {
+    await POST(request(`bb_device=${DEVICE}`, { sizes: ["m1"], price: 1 }));
+    expect(open).toHaveBeenCalledWith("niqab", TOKEN, `device:${DEVICE}`, expect.any(Date), ["m1"]);
   });
 });
 
 describe("the link page — where an edited or expired link goes (spec A4)", () => {
-  const page = (shop: string) => CheckoutLinkPage({ params: Promise.resolve({ shop, token: TOKEN }) });
+  const page = (shop: string, size?: string | string[]) =>
+    CheckoutLinkPage({ params: Promise.resolve({ shop, token: TOKEN }), searchParams: Promise.resolve({ size }) });
 
   it("an edited link opens the shop's page", async () => {
     resolve.mockResolvedValue({ kind: "unknown" });
@@ -78,7 +86,34 @@ describe("the link page — where an edited or expired link goes (spec A4)", () 
   });
 
   it("a live link renders the opener and redirects nowhere", async () => {
-    resolve.mockResolvedValue({ kind: "live", linkId: "l1" });
-    await expect(page("niqab")).resolves.toBeTruthy();
+    resolve.mockResolvedValue({ kind: "live", linkId: "l1", sizeSteps: [] });
+    const rendered = await page("niqab");
+    expect(rendered.type).toBe(CheckoutLinkOpener);
+    expect(rendered.props).toMatchObject({ shop: "niqab", token: TOKEN, sizes: [] });
+  });
+});
+
+describe("the link page — the size step (D6, ux.md journey 6)", () => {
+  const step = { productId: "m", options: [{ productId: "m", name: "Kurta M", thumbnail: "/m.webp" }, { productId: "l", name: "Kurta L", thumbnail: "/l.webp" }] };
+  const page = (size?: string | string[]) =>
+    CheckoutLinkPage({ params: Promise.resolve({ shop: "niqab", token: TOKEN }), searchParams: Promise.resolve({ size }) });
+
+  it("a size still to pick shows the step before anything is added", async () => {
+    resolve.mockResolvedValue({ kind: "live", linkId: "l1", sizeSteps: [step] });
+    const rendered = await page();
+    expect(rendered.type).toBe(CheckoutLinkSizeStep);
+    expect(rendered.props).toMatchObject({ step, picked: [] });
+  });
+
+  it("a size picked opens the link with it", async () => {
+    resolve.mockResolvedValue({ kind: "live", linkId: "l1", sizeSteps: [step] });
+    const rendered = await page("l");
+    expect(rendered.type).toBe(CheckoutLinkOpener);
+    expect(rendered.props).toMatchObject({ sizes: ["l"] });
+  });
+
+  it("a pick that is not one of the sizes still asks", async () => {
+    resolve.mockResolvedValue({ kind: "live", linkId: "l1", sizeSteps: [step] });
+    expect((await page("x")).type).toBe(CheckoutLinkSizeStep);
   });
 });

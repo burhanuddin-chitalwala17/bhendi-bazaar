@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
 import type { CartItem } from "@/domain/cart";
 
@@ -18,5 +18,11 @@ export function useCheckoutSnapshot(buyNowProduct?: CartItem) {
   // Adjusted during render, not in an effect: the first render after hydration already has them.
   if (items === null && cartHydrated) setItems(useCartStore.getState().items);
 
-  return { items: items ?? NONE, ready: items !== null };
+  /** Take a line out of this checkout and the bag together (checkout-links R3: "each removable"). */
+  const remove = useCallback((line: CartItem) => {
+    setItems((current) => current?.filter((item) => item.id !== line.id) ?? current);
+    useCartStore.getState().removeLines([line]);
+  }, []);
+
+  return { items: items ?? NONE, ready: items !== null, remove };
 }

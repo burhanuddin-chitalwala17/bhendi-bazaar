@@ -31,6 +31,7 @@ import { allocateAcrossOrgs } from "@server/checkout/allocation";
 import { assertLinesAreSaleable } from "@server/checkout/sale-gates";
 import { catalogueFacts, reserveStock, stockOnHand } from "@server/checkout/reservation";
 import { cartService } from "@server/cart/cart.service";
+import { checkoutLinkService } from "@server/cart/checkout-link.service";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
 import { ORDER_STATUS, PAYMENT_STATUS } from "@server/checkout/order.types";
 
@@ -198,7 +199,7 @@ export class OrderService {
             const key = lineKey(item);
             const existing = mergedLines.get(key);
             if (existing) existing.quantity += item.quantity;
-            else mergedLines.set(key, { ...item });
+            else mergedLines.set(key, { productId: item.productId, quantity: item.quantity, size: item.size, color: item.color });
           }
         }
         const requestedLines = [...mergedLines.values()];
@@ -450,6 +451,18 @@ export class OrderService {
           throw new Error("Allocated a parcel line that has no priced order item");
         }
         await createShipmentItemsForOrder(shipmentItems, tx);
+
+        // Which links this order came from (checkout-links D5), each named by the shop it was bought from.
+        await checkoutLinkService.recordOrderIn(
+          tx,
+          order.id,
+          input.shippingGroups.flatMap((group) =>
+            group.items.flatMap((item) => {
+              const orgId = productOrgs.get(item.productId);
+              return item.fromLinkId && orgId ? [{ linkId: item.fromLinkId, orgId, productId: item.productId }] : [];
+            }),
+          ),
+        );
 
         // Return order with shipments in the expected format. Line shape matches
         // what reads rebuild from rows: price = the unit price actually paid (D2).

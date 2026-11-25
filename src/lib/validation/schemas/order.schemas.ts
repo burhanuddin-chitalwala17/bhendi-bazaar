@@ -100,6 +100,8 @@ const shipmentItemSchema = z.object({
   // product's declared options server-side, where the catalogue row is in hand.
   size: z.string().trim().min(1).max(50).optional(),
   color: z.string().trim().min(1).max(50).optional(),
+  /** The checkout link that added this line, for attribution only (checkout-links D5). */
+  fromLinkId: z.string().min(1).max(40).optional(),
 });
 
 // The chosen rate is its signed quote alone: a price, courier or provider beside it would be a

@@ -14,7 +14,7 @@
  */
 import "dotenv/config";
 import { describe, it, expect, afterAll, beforeAll } from "vitest";
-import type { CreateOrderWithShipmentsInput } from "@server/checkout/order.types";
+import { PAYMENT_STATUS, type CreateOrderWithShipmentsInput } from "@server/checkout/order.types";
 import { ensureFixtures, isDisposableDb } from "../helpers/test-db";
 import { OutOfStockError } from "@server/shared/domain-error";
 import { billableWeightKg } from "@server/shipping/billable-weight";
@@ -53,6 +53,7 @@ describe.skipIf(!isDisposableDb)("createOrderWithShipments (local seeded db)", (
       return;
     }
     // Children first — money-bearing rows are Restrict (ADR-0020).
+    await prisma.checkoutLink.deleteMany({ where: { sourceRef: { startsWith: TEST_PREFIX } } });
     await prisma.shipmentItem.deleteMany({ where: { shipment: { orderId: { in: createdOrderIds } } } });
     await prisma.shipment.deleteMany({ where: { orderId: { in: createdOrderIds } } });
     await prisma.orderDiscount.deleteMany({ where: { orderId: { in: createdOrderIds } } });
@@ -355,5 +356,50 @@ describe.skipIf(!isDisposableDb)("createOrderWithShipments (local seeded db)", (
       select: { quantity: true },
     });
     expect(left.quantity, "the winner took the unit and the loser took nothing").toBe(0);
+  });
+
+  it("records the order a checkout link became, only for that shop's link and never over a paid order (checkout-links D5)", async () => {
+    const fixtures = await ensureFixtures();
+    const { checkoutLinkService } = await import("@server/cart/checkout-link.service");
+    const ref = `${TEST_PREFIX}link-${Date.now()}`;
+    const mark = (input: CreateOrderWithShipmentsInput, linkId: string, at = 0) => {
+      input.shippingGroups[0].items[at] = { ...input.shippingGroups[0].items[at], fromLinkId: linkId };
+      return input;
+    };
+
+    const first = await buildInput();
+    const link = await checkoutLinkService.create({
+      orgId: fixtures.orgId,
+      items: [{ productId: first.lines[0].productId, quantity: 1 }],
+      source: "INBOX_ORDER",
+      sourceRef: ref,
+    });
+    // Another shop's link named on this shop's line: not this order's to claim.
+    const theirs = await prisma.checkoutLink.create({
+      data: {
+        token: `${ref}-theirs`, orgId: fixtures.otherOrgId, items: [{ productId: first.lines[1].productId, quantity: 1 }], source: "CAMPAIGN", sourceRef: ref,
+        displayPricesPaise: {}, expiresAt: new Date(Date.now() + 60_000),
+      },
+    });
+    const again = () => structuredClone(first.input);
+    const read = (id: string) => prisma.checkoutLink.findUniqueOrThrow({ where: { id }, select: { orderId: true } });
+
+    // A link named on a line it does not hold records nothing: the mark is the browser's word.
+    const stranger = await createOrder(mark(again(), link.id, 1));
+    expect((await read(link.id)).orderId).toBeNull();
+
+    const unpaid = await createOrder(mark(mark(again(), link.id, 0), theirs.id, 1));
+    expect(stranger.id).not.toBe(unpaid.id);
+    expect((await read(link.id)).orderId).toBe(unpaid.id);
+    expect((await read(theirs.id)).orderId).toBeNull();
+
+    // A retried Pay is a new order: it takes over from the unpaid one.
+    const retried = await createOrder(mark(again(), link.id));
+    expect((await read(link.id)).orderId).toBe(retried.id);
+
+    // Once paid, a later order through the same link leaves the record alone.
+    await prisma.order.update({ where: { id: retried.id }, data: { paymentStatus: PAYMENT_STATUS.PAID } });
+    await createOrder(mark(again(), link.id));
+    expect((await read(link.id)).orderId).toBe(retried.id);
   });
 });

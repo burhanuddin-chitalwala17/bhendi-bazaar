@@ -19,7 +19,14 @@ export const CHECKOUT_LINK_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const createCheckoutLinkInput = z.object({
   orgId: z.string().min(1),
   items: z
-    .array(z.object({ productId: z.string().min(1), quantity: z.number().int().min(1).max(99) }))
+    .array(
+      z.object({
+        productId: z.string().min(1),
+        quantity: z.number().int().min(1).max(99),
+        /** The buyer picks the size among this product's family when opening (D6). */
+        pickSize: z.boolean().optional(),
+      }),
+    )
     .min(1)
     .max(20),
   source: z.enum([CHECKOUT_LINK_SOURCE.INBOX_ORDER, CHECKOUT_LINK_SOURCE.AUTOMATIC, CHECKOUT_LINK_SOURCE.CAMPAIGN]),
@@ -30,6 +37,7 @@ export type CreateCheckoutLinkInput = z.infer<typeof createCheckoutLinkInput>;
 export interface CheckoutLinkItem {
   productId: string;
   quantity: number;
+  pickSize?: boolean;
 }
 
 export interface CreatedCheckoutLink {
@@ -45,7 +53,15 @@ export type CheckoutLinkResolution =
   | { kind: "unknown" }
   /** The first product's slug, for its page and the expired line; null when it is gone. */
   | { kind: "expired"; productSlug: string | null }
-  | { kind: "live"; linkId: string };
+  | { kind: "live"; linkId: string; sizeSteps: SizeStep[] };
+
+/** One link item whose size the buyer picks before checkout (D6). */
+export interface SizeStep {
+  /** The link's own item, a member of the family. */
+  productId: string;
+  /** The family's members on sale with the quantity in stock, named as the product page names them. */
+  options: Array<{ productId: string; name: string; thumbnail: string }>;
+}
 
 /** A link item that was not added, by name (R4). */
 export interface LeftOutItem {
@@ -66,3 +82,29 @@ export type OpenCheckoutLinkResult =
       lines: CartItem[];
       leftOut: LeftOutItem[];
     };
+
+/** The lines of one link a checkout holds, as the buyer's device marked them (D4). */
+export interface CheckoutLinkNotesRequest {
+  linkId: string;
+  productIds: string[];
+}
+
+/** What checkout says about one link's lines (D4, ux.md state matrix). */
+export interface CheckoutLinkNote {
+  linkId: string;
+  shopName: string;
+  shopHandle: string;
+  /** Link items neither in this checkout nor addable now: "<item> is out of stock and was left out." */
+  leftOut: LeftOutItem[];
+  /** A marked line whose price moved since the link was made: "Now ₹x (was ₹y when sent)". Display only. */
+  priceChanges: Array<{ productId: string; nowPaise: number; wasPaise: number }>;
+}
+
+/** A line of an order being placed that a link added (D5). */
+export interface OrderLinkMark {
+  linkId: string;
+  /** The shop of the product on that line: a link only ever names its own shop's products. */
+  orgId: string;
+  /** The product on that line: one the link holds, or a size of one it lets the buyer pick. */
+  productId: string;
+}

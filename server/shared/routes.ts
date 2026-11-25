@@ -35,6 +35,9 @@ export const ROUTES = {
   productFromExpiredLink: (slug: string) => `/product/${slug}?link=expired`,
   /** A checkout link as sent in a chat (checkout-links D2). */
   checkoutLink: (shopHandle: string, token: string) => `/c/${shopHandle}/${token}`,
+  /** The same link with the sizes picked on its size step so far (checkout-links D6). */
+  checkoutLinkWithSizes: (shopHandle: string, token: string, sizes: readonly string[]) =>
+    `/c/${shopHandle}/${token}?${sizes.map((size) => `size=${encodeURIComponent(size)}`).join("&")}`,
   bid: (slug: string) => `/bid/${slug}`,
   order: (orderId: Id) => `/order/${orderId}`,
   stores: "/store",

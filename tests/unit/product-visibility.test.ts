@@ -48,8 +48,8 @@ const CENSUS: Record<string, { reads: number; note: string }> = {
     note: "deliberate — guards org deletion, and Product.orgId is Restrict, so an archived product blocks it exactly as an on-sale one does",
   },
   "server/cart/cart.repository.ts": {
-    reads: 2,
-    note: "deliberate — drops lines whose product no longer exists; filtering here would delete a cart line for a withdrawn product, and a removed line cannot come back on restore. `previewLines` (checkout-links D3) is deliberate too: it selects archivedAt and the org's standing so an archived or withdrawn product in a link comes back not on sale, by name, rather than vanishing",
+    reads: 4,
+    note: "deliberate — drops lines whose product no longer exists; filtering here would delete a cart line for a withdrawn product, and a removed line cannot come back on restore. `previewLines` (checkout-links D3) is deliberate too: it selects archivedAt and the org's standing so an archived or withdrawn product in a link comes back not on sale, by name, rather than vanishing. `familyMembersOf` (checkout-links D6) reads the link's own product unfiltered, to find its family even once archived, and its members with archivedAt null; whether each can be sold is `previewLines`' answer",
   },
   "server/listing/product-family.repository.ts": {
     reads: 2,

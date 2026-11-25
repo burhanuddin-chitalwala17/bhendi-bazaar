@@ -92,3 +92,14 @@ export const CHECKOUT_VALIDATION_COPY = {
 export const RAZORPAY_COPY = {
   description: "Order Payment",
 } as const;
+
+/** A checkout holding a link's items (checkout-links ux.md copy deck). */
+export const CHECKOUT_LINK_GROUP_COPY = {
+  fromChatWith: (shop: string) => `From your chat with ${shop}`,
+  fromChat: "From your chat",
+  alreadyInCart: "Already in your cart",
+  remove: "Remove",
+  removeItem: (item: string) => `Remove ${item}`,
+  leftOut: (item: string) => `${item} is out of stock and was left out.`,
+  priceChanged: (now: string, was: string) => `Now ${now} (was ${was} when sent)`,
+} as const;
