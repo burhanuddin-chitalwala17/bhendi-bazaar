@@ -25,7 +25,7 @@ green checkpoints and resume after the reset.
 
 **Paused for optimisation (owner, 2026-11-25):** no new units start; the running ones finish, then the build stops.
 
-**Running now (lane):** notifications-core U2 (3), notifications-core U3 (8), inbox-core U4 (14), consent-core U3 (6), checkout-links U2 (7), post-composer U2 (4), instagram-publishing U1 (2),
+**Running now (lane):** notifications-core U2 (3), notifications-core U3 (8), inbox-core U4 (14), consent-core U3 (6), post-composer U2 (4), instagram-publishing U1 (2),
 inbox-core U2 (5), inbox-core U3 (11), inbox-instagram U1 (12),. A lane whose unit is on origin
 is removed (worktree, local branch, its Postgres); a new unit gets a fresh lane. Lanes export `VITEST_MAX_WORKERS=2` (12 cores) and `GIT_TRACE2_EVENT=0` (git hangs on the git-ai daemon socket). Sessions write commit messages with `git commit -F -`, never a shared temp file (one was
 overwritten by another lane). Every TRD's Delivery lines carry `after …` marks — the next ready units are read from them.
@@ -72,6 +72,7 @@ Do not start the next unit.
 | ai-images/social-posts U1 | `ai-images/social-posts unit 1: social purpose, social.v1 prompt, model order and post presets [CONTRACT] [MIGRATION]` (da60a4ab). Q50 in ai-images/decisions.md; presets route moves to U4 |
 | connect-whatsapp U1 | `connect-whatsapp unit 1: CSP, SDK leaf, single-use state, signup route [CONTRACT] [MIGRATION]` (22a5bfed, fbdaa85f). Q18–Q25; **TRD D4 (Meta's weekly limit) has no unit — needs the sandbox's error code**; Q25 left to U2 |
 | ai-images/social-posts U3 | `ai-images/social-posts unit 3: captions from live facts, price staleness and Update price [CONTRACT] [MIGRATION]` (40ec4f42). Q50–Q53: `captionStillTrue(postId, caption)` takes the caption |
+| checkout-links U2 | `checkout-links unit 2: checkout groups a link's items with its notes, the size step, order attribution [CONTRACT]` (217ab934, 905ed63f). Q7–Q10; Q9: a forwarded link may point at an unpaid order |
 | Planning | notification-hub and publishing units marked (7017d471); all remaining units marked, social-posts U4 added, connection-ready event in post-composer U3 (34f25c60) |
 | Process | ADRs renumbered 0084–0087; rebased on main; next units' dependencies marked in their TRDs |
 
