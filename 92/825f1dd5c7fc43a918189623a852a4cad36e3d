@@ -1,0 +1,23 @@
+tests/unit/media-files-api-client.test.ts
+  s_9d5fa95bbe24d4::t_fd88f4eef2078f 1-23
+tests/unit/use-library-zip.test.ts
+  s_9d5fa95bbe24d4::t_fde75677e60f9b 1-169
+tests/unit/build-zip.test.ts
+  s_9d5fa95bbe24d4::t_e9608652c95ce8 1-118
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "92825f1dd5c7fc43a918189623a852a4cad36e3d",
+  "prompts": {},
+  "sessions": {
+    "s_9d5fa95bbe24d4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f00ee551-450c-4171-b74f-9342da83f47a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
