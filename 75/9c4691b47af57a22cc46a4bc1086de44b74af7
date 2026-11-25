@@ -1,0 +1,21 @@
+docs/specs/media-library/bulk-actions/ux.md
+  s_9d5fa95bbe24d4::t_410bade85b1b9b 4,130-133,152
+docs/specs/media-library/bulk-actions/decisions.md
+  s_9d5fa95bbe24d4::t_410bade85b1b9b 26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "759c4691b47af57a22cc46a4bc1086de44b74af7",
+  "prompts": {},
+  "sessions": {
+    "s_9d5fa95bbe24d4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f00ee551-450c-4171-b74f-9342da83f47a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
