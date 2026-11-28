@@ -9,10 +9,14 @@ import { FormController, FormInput, FormSelect } from "../FormField";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useListingValues, type ValueOption, type ValuesByList } from "@/components/shared/forms/product/useListingValues";
 import { ANSWER, FACT_DECLARATIONS, type FactKey } from "@server/listing/listing-facts";
+import { answered } from "@server/listing/fill-facts";
 import { resolveProductType } from "@server/listing/product-type";
 import type { ProductTypeRecord } from "@server/listing/product-type.types";
 import type { FormProductType } from "@server/listing/form-channels.service";
-import { ANY_KIND, groupQuestions, type ChannelUse, type Question } from "@server/listing/form-channels";
+import { ANY_KIND, FIELD_FILTER, filterQuestions, type ChannelUse, type Question } from "@server/listing/form-channels";
+import { CHANNEL } from "@server/shared/channels";
+import { Button } from "@/components/ui/button";
+import { useFieldFilter } from "./useFieldFilter";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import type { ProductFormInput } from "@/components/product/console/types";
 import { ProductFamilyField, type FamilyOption } from "./ProductFamilyField";
@@ -44,6 +48,11 @@ interface ProductFactFieldsProps {
 
 /** A blank number box is "not answered", never NaN — valueAsNumber's NaN failed the schema and blocked the save. */
 const blankIsUnanswered = (value: unknown) => (value === "" || value == null ? null : Number(value));
+// An unticked box looks the same untouched or cleared, so only a tick counts as filled.
+const isAnswered = (value: unknown) => value !== false && answered(value as Parameters<typeof answered>[0]);
+
+/** The marketplaces offered as chips, in the order a channel is shown (listing-model Q35). */
+const FILTER_CHANNELS = [CHANNEL.AMAZON, CHANNEL.FLIPKART, CHANNEL.MEESHO];
 
 /**
  * The questions this product's type asks
@@ -96,6 +105,15 @@ export function ProductFactFields({
 
   const { values, loading } = useListingValues(orgId, lists, initialValues);
   const kind = useWatch({ control, name: "kind" }) as string | null | undefined;
+  const factAnswers = useWatch({ control, name: "facts" as never }) as Record<string, unknown> | undefined;
+  const measureAnswers = useWatch({ control, name: "measurements" as never }) as Record<string, unknown> | undefined;
+  // The kind picks its channel types (Q7).
+  const filter = useMemo(() => {
+    if (!type) return null;
+    const use = type.channelUse?.[kind || ANY_KIND] ?? type.channelUse?.[ANY_KIND] ?? {};
+    return filterQuestions(type.facts, type.measures, use, FILTER_CHANNELS);
+  }, [type, kind]);
+  const { active, pick } = useFieldFilter(filter?.chips ?? []);
 
   if (!type) {
     return (
@@ -164,52 +182,60 @@ export function ProductFactFields({
         </div>
       )}
 
-      {(() => {
-        // Required now: the store's required measurements and what a channel the shop sells on needs;
-        // every other question under "Also helps on…" (R2, ux state matrix). The kind picks its channel types (Q7).
-        const use = type.channelUse?.[kind || ANY_KIND] ?? type.channelUse?.[ANY_KIND] ?? {};
-        const groups = groupQuestions(type.facts, type.measures, use);
+      {filter && active && (() => {
         const factErrors = (errors.facts as Record<string, { message?: string }> | undefined) ?? {};
         const measureErrors = (errors.measurements as Record<string, { message?: string }> | undefined) ?? {};
-        // A collapsed group opens itself when it holds an error, so no refusal hides (review).
-        const restHasError = groups.rest.some((q) => (q.kind === "fact" ? factErrors : measureErrors)[q.key]?.message);
-        const render = (q: Question) => (
-          <div key={`${q.kind}:${q.key}`} className="space-y-1">
-            {q.kind === "fact" ? (
-              <FactField
-                fact={q.key as FactKey}
-                type={type}
-                control={control}
-                register={register}
-                options={values[FACT_DECLARATIONS[q.key as FactKey]?.list ?? ""] ?? []}
-                loading={loading}
-                error={factErrors[q.key]?.message}
-                origin={origins[q.key]}
-                readOnly={readOnly}
-              />
-            ) : (
-              <MeasureField measure={type.measures.find((m) => m.key === q.key)!} register={register} error={measureErrors[q.key]?.message} origin={origins[q.key]} readOnly={readOnly} />
-            )}
-            <ChannelBadges use={groups.badges[q.key]} />
-          </div>
-        );
-        const helps = groups.helps.map((c) => PRODUCT_FACT_FIELDS_COPY.channelShort[c] ?? c);
+        const errorOf = (q: Question) => (q.kind === "fact" ? factErrors : measureErrors)[q.key]?.message;
+        const filledIn = (q: Question) => isAnswered((q.kind === "fact" ? factAnswers : measureAnswers)?.[q.key]);
+        const shown = new Set(active.questions.map((q) => q.key));
+        const body = active.key === FIELD_FILTER.ALL || active.key === FIELD_FILTER.REQUIRED
+          ? PRODUCT_FACT_FIELDS_COPY.filterBody[active.key]
+          : PRODUCT_FACT_FIELDS_COPY.filterBody.channel(PRODUCT_FACT_FIELDS_COPY.channelShort[active.key] ?? active.key);
         return (
-          <>
-            {groups.required.length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-sm font-medium text-foreground">{PRODUCT_FACT_FIELDS_COPY.requiredNow}</h3>
-                <p className="mt-1 text-2xs text-muted-foreground">{PRODUCT_FACT_FIELDS_COPY.requiredNowBody}</p>
-                <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">{groups.required.map(render)}</div>
-              </div>
-            )}
-            {groups.rest.length > 0 && (
-              <details className="mt-4 rounded-card border border-border px-3" open={restHasError || undefined}>
-                <summary className="flex min-h-10 cursor-pointer items-center py-2 text-sm font-medium text-foreground">{PRODUCT_FACT_FIELDS_COPY.alsoHelpsOn(helps)}</summary>
-                <div className="grid grid-cols-1 gap-4 pb-3 md:grid-cols-2">{groups.rest.map(render)}</div>
-              </details>
-            )}
-          </>
+          <div className="mt-4">
+            <div role="group" aria-label={PRODUCT_FACT_FIELDS_COPY.filterLabel} className="flex flex-wrap gap-2">
+              {filter.chips.map((chip) => (
+                <Button
+                  key={chip.key}
+                  type="button"
+                  size="sm"
+                  variant={chip.key === active.key ? "default" : "outline"}
+                  aria-pressed={chip.key === active.key}
+                  onClick={() => pick(chip.key)}
+                >
+                  {PRODUCT_FACT_FIELDS_COPY.filterChip[chip.key] ?? chip.key}
+                  <span className="sr-only"> </span>
+                  <span className="text-2xs opacity-80">{PRODUCT_FACT_FIELDS_COPY.filled(chip.questions.filter(filledIn).length, chip.questions.length)}</span>
+                  <span className="sr-only"> {PRODUCT_FACT_FIELDS_COPY.filledSr}</span>
+                </Button>
+              ))}
+            </div>
+            <p className="mt-2 text-2xs text-muted-foreground">{body}</p>
+            <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {filter.chips[0].questions.map((q) => (
+                // Hidden, never unmounted, so an answer survives a chip change; a field with an error always shows.
+                <div key={`${q.kind}:${q.key}`} className={shown.has(q.key) || errorOf(q) ? "space-y-1" : "hidden"}>
+                  {q.kind === "fact" ? (
+                    <FactField
+                      fact={q.key as FactKey}
+                      type={type}
+                      control={control}
+                      register={register}
+                      options={values[FACT_DECLARATIONS[q.key as FactKey]?.list ?? ""] ?? []}
+                      loading={loading}
+                      error={errorOf(q)}
+                      origin={origins[q.key]}
+                      required={filter.storeRequired.has(q.key)}
+                      readOnly={readOnly}
+                    />
+                  ) : (
+                    <MeasureField measure={type.measures.find((m) => m.key === q.key)!} register={register} error={errorOf(q)} origin={origins[q.key]} required={filter.storeRequired.has(q.key)} readOnly={readOnly} />
+                  )}
+                  <ChannelBadges use={filter.badges[q.key]} />
+                </div>
+              ))}
+            </div>
+          </div>
         );
       })()}
     </section>
@@ -217,16 +243,18 @@ export function ProductFactFields({
 }
 
 /** One measurement in the unit its type fixes (categories D6). */
-function MeasureField({ measure, register, error, origin, readOnly }: {
+function MeasureField({ measure, register, error, origin, required, readOnly }: {
   measure: { key: string; label: string; unit: string };
   register: UseFormRegister<ProductFormInput>;
   error?: string;
   origin?: string;
+  required: boolean;
   readOnly: boolean;
 }) {
   return (
     <FormInput
       label={`${measure.label} (${measure.unit})`}
+      required={required}
       type="number"
       step="0.1"
       inputMode="decimal"
@@ -238,7 +266,7 @@ function MeasureField({ measure, register, error, origin, readOnly }: {
   );
 }
 
-/** Which channels need a question, as small chips under it (dynamic-form R2, parent Q27). */
+/** Who asks a question, as small chips under it: the store's own required ones stand out, marketplaces do not (Q35). */
 function ChannelBadges({ use }: { use?: ChannelUse }) {
   if (!use || use.required.length + use.helps.length === 0) return null;
   return (
@@ -259,6 +287,7 @@ function FactField({
   loading,
   origin,
   error,
+  required,
   readOnly,
 }: {
   fact: FactKey;
@@ -269,6 +298,7 @@ function FactField({
   loading: boolean;
   origin?: string;
   error?: string;
+  required: boolean;
   readOnly: boolean;
 }) {
   const declaration = FACT_DECLARATIONS[fact];
@@ -303,6 +333,7 @@ function FactField({
     return (
       <FormInput
         label={label}
+        required={required}
         type="number"
         inputMode="numeric"
         disabled={readOnly}
@@ -317,6 +348,7 @@ function FactField({
     return (
       <FormInput
         label={label}
+        required={required}
         disabled={readOnly}
         error={error}
         hint={hint}
@@ -328,6 +360,7 @@ function FactField({
   return (
     <FormSelect
       label={label}
+      required={required}
       // Never disabled while the answers load (product-form A8): the hint says why it is empty.
       disabled={readOnly}
       error={error}

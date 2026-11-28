@@ -1,6 +1,6 @@
 # Decisions — listing-model
 
-- **Verified:** 2026-11-07
+- **Verified:** 2026-11-28
 
 > Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented ones ([ADR-0062](../../adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)).
 > Owner decides money, policy, irreversible data, external commitments, taste.
@@ -36,7 +36,7 @@
 | Q24 | A fixed value set for every product of a type: can the shop change it? | Yes, it is a default pre-filled on every product of the type; the shop can override it per product | Owner | 2026-11-07 | Owner's answer | decided |
 | Q25 | Existing answers that don't fit a new question? | Keep both, never guess: the old answer stays as its own attribute, the new question starts empty | Owner | 2026-11-07 | Owner's answer; marketplace-integration Q42 (nothing filled from a guess) | decided |
 | Q26 | Which new attributes are added now? | All four groups: bags (style, inner material, pockets, capacity, strap type as channels mean it), clothing (fabric type, care, size system and class), fragrance and incense (item form, unit count), jewellery (stone and metal details); plus generic name, model name and number of items for every type | Owner | 2026-11-07 | Owner ticked every group and the shared fields | decided |
-| Q27 | How is the form laid out? | "Required now" (BB and connected channels), then "Also helps on…" (other channels) collapsed; each question shows small channel badges | Owner | 2026-11-07 | Owner's answer | decided |
+| Q27 | How is the form laid out? | "Required now" (BB and connected channels), then "Also helps on…" (other channels) collapsed; each question shows small channel badges | Owner | 2026-11-07 | Owner's answer | superseded by Q35 |
 | Q28 | A newly connected channel and existing products? | Home shows "38 products need 4 details for Flipkart" opening the bulk-fill page; a product is created on the channel only once complete | Owner | 2026-11-07 | Owner's answer | decided |
 | Q29 | What must a brand have to be saved? | Name only; maker, packer and importer (with address and pincode) optional, completeness flags what each channel needs | Owner | 2026-11-07 | Owner's answer | decided |
 | Q30 | When is the old model removed? | Right after dynamic-form, in the same release | Owner | 2026-11-07 | Owner's answer. Was recommended: two weeks after, with the nightly comparison clean | decided |
@@ -44,6 +44,7 @@
 | Q32 | Which channels does the programme cover? | All five: Amazon, Flipkart and Meesho (marketplaces) and Google Shopping and Meta (feed channels). Google and Meta get the same catalogue, maps and completeness; their output is the shopfront feed, not an API create | Owner | 2026-11-07 | Owner: "make sure we also cover the meta and google channels as well". Today they have hand-typed maps read from Google's spec on 2026-10-04 | decided |
 | Q33 | With one release and no waiting window, how is the data move kept safe? | The release runs the backfill and a full old-vs-new comparison of every product's values before the switch; any mismatch stops the release. The old tables are dropped by a separate migration in the same deploy only after the comparison is clean, and a database backup is taken first | Claude · reversible | 2026-11-07 | Q30 and Q31 remove the two-week window; the safety moves to a verified switch | decided |
 | Q34 | Are UX prototypes built for this programme? | No. Each subfeature with screens keeps a `ux.md` (journeys, state matrix, copy), which the owner signs off in place of a prototype | Owner | 2026-11-07 | Owner: "we can skip prototype for this one … keep the ux document for reference". The mapping screen is read-and-edit (Q23) and the form's states are fully specified in text | decided |
+| Q35 | How is the product form laid out, now the collapsed group hides questions? | Every question open in one list. Chips narrow it: All (default), Required, then Amazon, Flipkart, Meesho, each with a filled/total count; a marketplace that asks nothing of the type gets no chip. Required and the `*` marker mean only what bhendi-bazaar.com needs; a marketplace's needs show under its own chip. Nothing blocks saving | Owner | 2026-11-28 | Owner: "the collapse is a bad idea … keep the fields all open"; a shop with no channels on saw three fields and took the rest for missing. "Required is only for bhendi-bazaar.com platform". Supersedes Q27 | decided |
 
 ## Parked (Later)
 - None yet.

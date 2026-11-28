@@ -58,7 +58,7 @@ export function channelUseFor(bbType: string, channels: readonly TypeChannel[], 
   return out;
 }
 
-/** The badge the store's own required questions carry (ux: "Required now holds BB's questions"). */
+/** The badge the store's own required questions carry. */
 export const STORE_CHANNEL = "store";
 
 export interface Question {
@@ -66,30 +66,41 @@ export interface Question {
   key: string;
 }
 
+/** What the form's filter chips pick: every question, the store's own required ones, or one channel's. */
+export const FIELD_FILTER = { ALL: "all", REQUIRED: "required" } as const;
+export type FieldFilter = (typeof FIELD_FILTER)[keyof typeof FIELD_FILTER] | string;
+
+export interface FilterChip {
+  key: FieldFilter;
+  /** Questions under this chip; a chip with none is not offered. */
+  questions: Question[];
+}
+
 /**
- * The form's two groups (dynamic-form R2, ux state matrix): Required now holds the store's own required
- * measurements and what a channel the shop sells on requires; every other question sits under "Also helps
- * on…", with the channels it helps. Pure, so the split is tested apart from the form.
+ * Every question, in one open list, with chips that narrow it (listing-model Q35): All, Required
+ * (what bhendi-bazaar.com itself needs) and one per marketplace that asks something of this type.
+ * The required marker is the store's alone; a channel's own needs show only under its chip. Pure.
  */
-export function groupQuestions(
+export function filterQuestions(
   facts: readonly FactKey[],
   measures: ReadonlyArray<{ key: MeasureKey; required: boolean }>,
   use: ChannelUseByQuestion,
-): { required: Question[]; rest: Question[]; helps: string[]; badges: Record<string, ChannelUse> } {
+  channels: readonly string[],
+): { storeRequired: Set<string>; chips: FilterChip[]; badges: Record<string, ChannelUse> } {
+  const all: Question[] = [...facts.map((key) => ({ kind: "fact" as const, key })), ...measures.map((m) => ({ kind: "measure" as const, key: m.key }))];
+  const storeRequired = new Set(measures.filter((m) => m.required).map((m) => m.key as string));
   const badges: Record<string, ChannelUse> = {};
-  const required: Question[] = [];
-  const rest: Question[] = [];
-  for (const key of facts) {
-    const u = use[key];
-    if (u) badges[key] = u;
-    (u && u.required.length > 0 ? required : rest).push({ kind: "fact", key });
+  for (const q of all) {
+    const u = use[q.key];
+    const required = storeRequired.has(q.key) ? [STORE_CHANNEL] : [];
+    const asks = [...new Set([...(u?.required ?? []), ...(u?.helps ?? [])])];
+    if (required.length + asks.length > 0) badges[q.key] = { required, helps: asks };
   }
-  for (const m of measures) {
-    const u = use[m.key] ?? { required: [], helps: [] };
-    const own = m.required ? { required: [STORE_CHANNEL, ...u.required], helps: u.helps } : u;
-    if (own.required.length + own.helps.length > 0) badges[m.key] = own;
-    (own.required.length > 0 ? required : rest).push({ kind: "measure", key: m.key });
-  }
-  const helps = [...new Set(rest.flatMap((q) => badges[q.key]?.helps ?? []))];
-  return { required, rest, helps, badges };
+  const asked = (channel: string) => all.filter((q) => badges[q.key]?.helps.includes(channel));
+  const chips: FilterChip[] = [
+    { key: FIELD_FILTER.ALL, questions: all },
+    { key: FIELD_FILTER.REQUIRED, questions: all.filter((q) => storeRequired.has(q.key)) },
+    ...channels.map((c) => ({ key: c, questions: asked(c) })),
+  ].filter((chip) => chip.key === FIELD_FILTER.ALL || chip.questions.length > 0);
+  return { storeRequired, chips, badges };
 }

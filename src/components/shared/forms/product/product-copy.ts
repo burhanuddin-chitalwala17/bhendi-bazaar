@@ -91,10 +91,16 @@ export const PRODUCT_EDIT_OVERVIEW_COPY = {
 
 /** ProductFactFields.tsx */
 export const PRODUCT_FACT_FIELDS_COPY = {
-  // listing-model/dynamic-form ux copy deck: grouped by what the shop's channels need (R2).
-  requiredNow: "Required now",
-  requiredNowBody: "What the places you sell on need before they take this product. It saves either way.",
-  alsoHelpsOn: (channels: string[]) => (channels.length > 0 ? `Also helps on ${channels.join(", ")}` : "More details"),
+  // Every question open, narrowed by a chip (listing-model Q35). Required is bhendi-bazaar.com's alone.
+  filterLabel: "Show",
+  filterChip: { all: "All", required: "Required", amazon: "Amazon", flipkart: "Flipkart", meesho: "Meesho" } as Record<string, string>,
+  filled: (done: number, total: number) => `${done}/${total}`,
+  filledSr: "filled",
+  filterBody: {
+    all: "Everything a buyer or a marketplace may ask. Leave anything you do not know — it saves either way.",
+    required: "What bhendi-bazaar.com needs before it shows this product.",
+    channel: (name: string) => `What ${name} asks about this kind of thing. It saves either way.`,
+  },
   channelShort: { store: "This store", amazon: "Amazon", flipkart: "Flipkart", meesho: "Meesho", google: "Google", meta: "Meta" } as Record<string, string>,
   kind: "Kind",
   productDetails: "Product details",

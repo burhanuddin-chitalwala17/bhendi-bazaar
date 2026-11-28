@@ -97,7 +97,7 @@ async function fillAbayaDetails() {
   fireEvent.change(screen.getByLabelText("Colour"), { target: { value: "black" } });
   fireEvent.change(screen.getByLabelText("Fabric"), { target: { value: "crepe" } });
   fireEvent.change(screen.getByLabelText("Sleeve length"), { target: { value: "full" } });
-  fireEvent.change(screen.getByLabelText("Length (in)"), { target: { value: "54" } });
+  fireEvent.change(screen.getByLabelText(/^Length \(in\)/), { target: { value: "54" } });
 }
 
 /** Everything else a save needs, ending on Review. */
@@ -176,7 +176,7 @@ describe("the category-change sheet (spec R6)", () => {
     expect(screen.getByRole("button", { name: /^Category/ })).toHaveTextContent("Abaya");
     fireEvent.click(chip("Details"));
     expect(screen.getByLabelText("Fabric")).toHaveValue("crepe");
-    expect(screen.getByLabelText("Length (in)")).toHaveValue(54);
+    expect(screen.getByLabelText(/^Length \(in\)/)).toHaveValue(54);
   });
 
   it("switching back after confirming restores the answers (spec A4)", async () => {
@@ -195,7 +195,7 @@ describe("the category-change sheet (spec R6)", () => {
     fireEvent.click(chip("Details"));
     expect(screen.getByLabelText("Fabric")).toHaveValue("crepe");
     expect(screen.getByLabelText("Sleeve length")).toHaveValue("full");
-    expect(screen.getByLabelText("Length (in)")).toHaveValue(54);
+    expect(screen.getByLabelText(/^Length \(in\)/)).toHaveValue(54);
   });
 
   it("a kind kept from Abaya shows again when switched back", async () => {
@@ -226,7 +226,7 @@ describe("the category-change sheet (spec R6)", () => {
     await pick("Ring");
     fireEvent.click(await screen.findByRole("button", { name: "Change to Ring" }));
     fireEvent.click(chip("Details"));
-    fireEvent.change(screen.getByLabelText("Inner diameter (mm)"), { target: { value: "17" } });
+    fireEvent.change(screen.getByLabelText(/^Inner diameter \(mm\)/), { target: { value: "17" } });
     fireEvent.click(chip("Photos and video"));
     fireEvent.click(screen.getByRole("button", { name: "stub: add a cover photo" }));
     fireEvent.click(chip("What it is"));
@@ -280,7 +280,7 @@ describe("a blank number box is not an answer", () => {
   it("a blank measurement saves", async () => {
     const onSubmit = renderForm();
     await fillAbayaDetails();
-    fireEvent.change(screen.getByLabelText("Length (in)"), { target: { value: "" } });
+    fireEvent.change(screen.getByLabelText(/^Length \(in\)/), { target: { value: "" } });
     await fillTheRest("Crepe Abaya");
     fireEvent.click(screen.getByRole("button", { name: "Put on sale" }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
@@ -291,7 +291,7 @@ describe("a blank number box is not an answer", () => {
   it("a blank Length left behind by Abaya → Ring never blocks the save", async () => {
     const onSubmit = renderForm();
     await fillAbayaDetails();
-    fireEvent.change(screen.getByLabelText("Length (in)"), { target: { value: "" } });
+    fireEvent.change(screen.getByLabelText(/^Length \(in\)/), { target: { value: "" } });
     await pick("Ring");
     fireEvent.click(await screen.findByRole("button", { name: "Change to Ring" }));
     await fillTheRest("Silver Ring");

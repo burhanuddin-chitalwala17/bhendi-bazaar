@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { channelUseFor, groupQuestions } from "@server/listing/form-channels";
+import { channelUseFor, filterQuestions } from "@server/listing/form-channels";
 import type { FieldMapRow } from "@server/listing/field-map.types";
 
 const field = (key: string, requirement: string) => ({ key, label: key, requirement, kind: "text", allowedValues: null, allowedUnits: null, adapterFills: false });
@@ -27,7 +27,7 @@ const amazon = {
 const flipkart = { channel: "flipkart", fields: [field("Bag Capacity", "required")], maps: [map("flipkart", "Bag Capacity", { attributeKey: "capacity" })] };
 
 describe("the form's channel badges", () => {
-  it("puts what a connected channel requires under Required now, badged with it (A1)", () => {
+  it("marks what a connected channel requires as required by it (A1)", () => {
     const use = channelUseFor("bag", [amazon, flipkart], new Set(["amazon"]));
     for (const q of ["style", "innerMaterial", "pocketCount", "strapType", "audience"]) expect(use[q], q).toEqual({ required: ["amazon"], helps: [] });
   });
@@ -44,22 +44,33 @@ describe("the form's channel badges", () => {
   });
 });
 
-describe("the form's two groups (ux state matrix)", () => {
+describe("the form's filter chips (listing-model Q35)", () => {
   const measures = [{ key: "length" as const, required: true }, { key: "capacity" as const, required: false }];
+  const keys = (qs: { key: string }[]) => qs.map((q) => q.key);
 
-  it("Required now holds the store's required measurements and what a connected channel requires; the rest helps", () => {
+  it("All holds every question; Required holds only what bhendi-bazaar.com needs, whatever channels are on", () => {
     const use = channelUseFor("bag", [amazon, flipkart], new Set(["amazon"]));
-    const g = groupQuestions(["style", "colour", "pattern"], measures, use);
-    expect(g.required.map((q) => q.key)).toEqual(["style", "length"]);
-    expect(g.badges.length).toEqual({ required: ["store"], helps: [] });
-    expect(g.rest.map((q) => q.key)).toEqual(["colour", "pattern", "capacity"]);
-    expect(g.helps).toEqual(["amazon", "flipkart"]);
+    const f = filterQuestions(["style", "colour", "pattern"], measures, use, ["amazon", "flipkart", "meesho"]);
+    expect(keys(f.chips[0].questions)).toEqual(["style", "colour", "pattern", "length", "capacity"]);
+    expect(f.chips[1]).toEqual({ key: "required", questions: [{ kind: "measure", key: "length" }] });
+    expect([...f.storeRequired]).toEqual(["length"]);
   });
 
-  it("with no channel connected, only the store's own required questions are Required now", () => {
-    const g = groupQuestions(["style", "colour"], measures, {});
-    expect(g.required.map((q) => q.key)).toEqual(["length"]);
-    expect(g.rest.map((q) => q.key)).toEqual(["style", "colour", "capacity"]);
+  it("a channel chip holds every question that channel asks, connected or not", () => {
+    const f = filterQuestions(["style", "colour", "pattern"], measures, channelUseFor("bag", [amazon, flipkart], new Set()), ["amazon", "flipkart", "meesho"]);
+    expect(keys(f.chips.find((c) => c.key === "amazon")!.questions)).toEqual(["style", "pattern"]);
+    expect(keys(f.chips.find((c) => c.key === "flipkart")!.questions)).toEqual(["capacity"]);
+  });
+
+  it("a channel that asks nothing of this type gets no chip", () => {
+    const f = filterQuestions(["style"], measures, channelUseFor("bag", [amazon], new Set()), ["amazon", "flipkart", "meesho"]);
+    expect(f.chips.map((c) => c.key)).toEqual(["all", "required", "amazon"]);
+  });
+
+  it("only the store's own questions carry the required badge", () => {
+    const f = filterQuestions(["style"], measures, channelUseFor("bag", [amazon], new Set(["amazon"])), ["amazon"]);
+    expect(f.badges.style).toEqual({ required: [], helps: ["amazon"] });
+    expect(f.badges.length).toEqual({ required: ["store"], helps: [] });
   });
 
   it("another type's own map never badges this type", () => {
